@@ -43,6 +43,9 @@ jobs:
       RUN_REPORT_ENABLED: "false"
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
+      # Do not publish controlled fallback too early. Regular cron is every 2h,
+      # so a 20:00 MSK kickoff can be published at the 18:00 MSK run, not at 01:30.
+      PUBLISH_WINDOW_HOURS: "2"
       MANUAL_CONTROLLED_PUBLISH_ENABLED: "true"
 
       DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE: "true"
