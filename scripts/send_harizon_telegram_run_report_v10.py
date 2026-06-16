@@ -97,7 +97,7 @@ def render(payload: dict[str, Any]) -> str:
     lines: list[str] = []
     if expand:
         lines.append(
-            f"• Inventory target repair: {expand.get('matches_after', 0)}/{expand.get('target', 300)}; "
+            f"• Inventory target status: {expand.get('matches_after', 0)}/{expand.get('target', 300)}; "
             f"shortfall {_as_int(expand.get('target_shortfall'))}; status {expand.get('status') or 'n/a'}."
         )
     if backfill:

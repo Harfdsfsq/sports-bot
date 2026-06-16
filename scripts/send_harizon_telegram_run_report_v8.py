@@ -169,6 +169,9 @@ def build_payload() -> dict[str, Any]:
             "matches_with_2plus_books_any_market": _as_int(odds_api_snapshot.get("matches_with_2plus_books_any_market")),
             "matches_with_2plus_books_same_side_market": _as_int(odds_api_snapshot.get("matches_with_2plus_books_same_side_market")),
         }
+    inventory_target_expand = _load_json(EXPORT_DIR / "latest-day-inventory-target-expand.json")
+    if inventory_target_expand:
+        payload.setdefault("diagnostics", {})["inventory_target_expand"] = inventory_target_expand
     publication_ledger_sync = _load_json(PUBLICATION_LEDGER_SYNC_PATH)
     if publication_ledger_sync:
         payload.setdefault("diagnostics", {})["publication_ledger_sync"] = publication_ledger_sync
@@ -281,6 +284,7 @@ def render(payload: dict[str, Any]) -> str:
     bookmaker_backfill = diag.get("bookmaker_quorum_backfill") if isinstance(diag.get("bookmaker_quorum_backfill"), dict) else {}
     odds_api_snapshot = diag.get("odds_api_io_offer_snapshot") if isinstance(diag.get("odds_api_io_offer_snapshot"), dict) else {}
     timing_guard = diag.get("publication_timing_guard") if isinstance(diag.get("publication_timing_guard"), dict) else {}
+    inventory_target_expand = diag.get("inventory_target_expand") if isinstance(diag.get("inventory_target_expand"), dict) else {}
     github_actions = diag.get("github_actions") if isinstance(diag.get("github_actions"), dict) else {}
     publication_ledger_sync = diag.get("publication_ledger_sync") if isinstance(diag.get("publication_ledger_sync"), dict) else {}
     window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
@@ -294,6 +298,19 @@ def render(payload: dict[str, Any]) -> str:
     ready_model = _as_int(truth_counts.get("matches_ready_for_model")) or _as_int(coverage.get("ready_for_model"))
     ready_publish = _as_int(truth_counts.get("matches_ready_for_publish"))
     run_matches = _as_int(coverage.get("matches_seen"))
+    inv_target = (
+        _as_int(inventory_target_expand.get("target"))
+        or _as_int(truth_counts.get("target_matches"))
+        or _as_int(coverage.get("day_inventory_target"))
+        or 300
+    )
+    target_shortfall = _as_int(inventory_target_expand.get("target_shortfall"))
+    if not target_shortfall and inv_target:
+        target_shortfall = max(0, inv_target - inv_total)
+    target_status = str(inventory_target_expand.get("status") or "").strip()
+    target_note = f"; shortfall {target_shortfall}" if target_shortfall else ""
+    if target_status:
+        target_note += f"; status {target_status}"
 
     raw_top_reason = str(payload.get("top_reason") or "").strip()
     timing_deferred_total = _as_int(timing_guard.get("deferred_total"))
@@ -361,7 +378,7 @@ def render(payload: dict[str, Any]) -> str:
         f"• Главная причина: {top_reason}",
         "",
         "📦 Инвентарь и покрытие",
-        f"• Инвентарь дня: {inv_total} матчей. Runtime rows processed: {run_matches} (это не размер inventory).",
+        f"• Инвентарь дня: собрано {inv_total}/{inv_target} матчей (правило: до 300 лучших{target_note}). Runtime rows processed: {run_matches} (это не размер inventory).",
         f"• 1+ линия: {with_odds}/{inv_total} ({_pct(with_odds, inv_total)}) | 1+ контекст: {with_context}/{inv_total} ({_pct(with_context, inv_total)})",
         f"• 2+ букмекера: {price2}/{inv_total} ({_pct(price2, inv_total)})",
     ]

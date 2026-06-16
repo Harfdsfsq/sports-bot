@@ -5,11 +5,8 @@ from __future__ import annotations
 Core fixture providers:
 - odds_api_io: primary fixture + current odds event ids through existing runner bootstrap;
 - bzzoiro: v2 event discovery with source ids and lightweight context hints;
+- sstats: Games/list fixture discovery plus lightweight context ids;
 - sportlogic: quota-governed fixture discovery and later independent odds source.
-
-SStats is intentionally not used as a fixture source here. It is a historical
-form/context provider and should enrich canonical matches during the 2-hour
-runtime, not create today's inventory rows from historical games.
 """
 
 import asyncio
@@ -17,6 +14,7 @@ import json
 import os
 import re
 import sys
+from collections import Counter
 from dataclasses import asdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -47,7 +45,7 @@ SUMMARY_PATH = EXPORT_DIR / "latest-day-inventory-summary.json"
 CORE_REPORT_PATH = EXPORT_DIR / "latest-day-inventory-core-build-report.json"
 CROSSWALK_PATH = EXPORT_DIR / "latest-day-inventory-core-crosswalk.json"
 
-CORE_PROVIDERS = ("odds_api_io", "bzzoiro", "sportlogic")
+CORE_PROVIDERS = ("odds_api_io", "bzzoiro", "sstats", "sportlogic")
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -107,7 +105,7 @@ def event_id(row: dict[str, Any], *keys: str) -> str:
         value = row.get(key)
         if value not in (None, ""):
             return str(value).strip()
-    for key in ("id", "event_id", "gameId", "game_id", "flashId", "source_event_id"):
+    for key in ("id", "Id", "event_id", "gameId", "GameId", "GameID", "game_id", "flashId", "source_event_id"):
         value = row.get(key)
         if value not in (None, ""):
             return str(value).strip()
@@ -374,19 +372,28 @@ async def fetch_sportlogic(settings: Settings, local_date: str) -> tuple[list[Ma
 
 def sstats_team(row: dict[str, Any], side: str) -> str:
     candidates = [
-        f"{side}Team.name", f"{side}.name", f"{side}_team.name", f"{side}Name", f"{side}_name", f"{side}Team", f"{side}",
+        f"{side}Team.name", f"{side}Team.Name", f"{side}.name", f"{side}_team.name",
+        f"{side}Name", f"{side}_name", f"{side}Team", f"{side}",
+        "Home" if side == "home" else "Away",
+        "team1" if side == "home" else "team2",
+        "Team1" if side == "home" else "Team2",
+        "teamHome.name" if side == "home" else "teamAway.name",
     ]
     value = nested(row, *candidates)
     if isinstance(value, dict):
         value = value.get("name") or value.get("title")
+    if not value and isinstance(row.get("teams"), list) and len(row["teams"]) >= 2:
+        idx = 0 if side == "home" else 1
+        team = row["teams"][idx] if isinstance(row["teams"][idx], dict) else {}
+        value = team.get("name") or team.get("Name") or team.get("title")
     return clean_text(value)
 
 
 def sstats_row_to_match(row: dict[str, Any], settings: Settings) -> Match | None:
     home = sstats_team(row, "home") or clean_text(row.get("homeTeamName"))
     away = sstats_team(row, "away") or clean_text(row.get("awayTeamName"))
-    league = nested(row, "league.name", "competition.name", "tournament.name", "leagueName", "competitionName", "country") or "Unknown"
-    start = to_utc(nested(row, "date", "startTime", "start_time", "utcDate", "kickoff", "gameDate"))
+    league = nested(row, "league.name", "league.Name", "competition.name", "tournament.name", "leagueName", "LeagueName", "competitionName", "league", "League", "country") or "Unknown"
+    start = to_utc(nested(row, "dateTime", "DateTime", "startTime", "StartTime", "start_time", "utcDate", "kickoff", "Kickoff", "date", "Date", "gameTime", "GameTime", "gameDate"))
     if start is None:
         return None
     sid = event_id(row, "id", "gameId", "game_id", "flashId")
@@ -403,21 +410,19 @@ def sstats_row_to_match(row: dict[str, Any], settings: Settings) -> Match | None
 
 
 async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, Any]]:
-    stats: dict[str, Any] = {"enabled": env_bool("DAY_INVENTORY_ENABLE_SSTATS", True), "api_key_present": bool(os.getenv("SSTATS_API_KEY") or getattr(settings, "sstats_api_key", "")), "requests": 0, "response_errors": 0, "rows_fetched": 0, "matches_built": 0, "matches_for_target_date": 0, "http_statuses": []}
+    stats: dict[str, Any] = {"enabled": env_bool("DAY_INVENTORY_ENABLE_SSTATS", True), "api_key_present": bool(os.getenv("SSTATS_API_KEY") or getattr(settings, "sstats_api_key", "")), "requests": 0, "response_errors": 0, "rows_fetched": 0, "matches_built": 0, "matches_for_target_date": 0, "http_statuses": [], "endpoint": "Games/list"}
     if not stats["enabled"] or not stats["api_key_present"]:
         return [], stats
     key = str(os.getenv("SSTATS_API_KEY") or getattr(settings, "sstats_api_key", "") or "").strip()
-    target = date.fromisoformat(local_date)
-    window = env_int("DAY_INVENTORY_SSTATS_WINDOW_DAYS", 1)
-    date_from = (target - timedelta(days=window)).isoformat()
-    date_to = (target + timedelta(days=window)).isoformat()
     limit = env_int("DAY_INVENTORY_SSTATS_LIMIT", 1000)
     max_requests = env_int("DAY_INVENTORY_SSTATS_MAX_REQUESTS", 3)
     rows: list[dict[str, Any]] = []
-    async with httpx.AsyncClient(timeout=float(os.getenv("SSTATS_TIMEOUT_SECONDS") or 25.0)) as client:
+    timeout = float(os.getenv("SSTATS_TIMEOUT_SECONDS") or 25.0)
+    headers = {"User-Agent": "HARIZON-day-inventory-sstats/1.0", "Accept": "application/json,text/plain,*/*"}
+    async with httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=min(6.0, timeout)), follow_redirects=True, headers=headers) as client:
         offset = 0
         while stats["requests"] < max_requests:
-            params = {"from": date_from, "to": date_to, "limit": limit, "offset": offset, "apikey": key}
+            params = {"Date": local_date, "TimeZone": 3, "Limit": limit, "Offset": offset, "Order": 1, "apikey": key}
             try:
                 stats["requests"] += 1
                 resp = await client.get("https://api.sstats.net/Games/list", params=params)
@@ -440,10 +445,14 @@ async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match]
                 break
     stats["rows_fetched"] = len(rows)
     matches: list[Match] = []
+    seen_keys: set[str] = set()
     for row in rows:
         match = sstats_row_to_match(row, settings)
         if match is not None and local_date_for(settings, match.commence_time) == local_date:
-            matches.append(match)
+            key = match.source_event_id or match.match_key
+            if key not in seen_keys:
+                seen_keys.add(key)
+                matches.append(match)
     stats["matches_built"] = len(matches)
     stats["matches_for_target_date"] = len(matches)
     return matches, stats
@@ -455,7 +464,7 @@ def merge_matches(matches_by_provider: dict[str, list[Match]], settings: Setting
     crosswalk: dict[str, Any] = {"matched_rows": [], "unmatched_rows": [], "provider_rows": {k: len(v) for k, v in matches_by_provider.items()}}
 
     # Seed with odds_api_io first because it has current line ids.
-    ordered = ["odds_api_io", "bzzoiro", "sportlogic"]
+    ordered = ["odds_api_io", "bzzoiro", "sstats", "sportlogic"]
     for provider in ordered:
         for match in matches_by_provider.get(provider, []):
             best_key: str | None = None
@@ -531,6 +540,8 @@ def priority_score(match: Match, now_utc: datetime) -> float:
         score += 30
     if "bzzoiro" in sources:
         score += 18
+    if "sstats" in sources:
+        score += 18
     if "sportlogic" in sources:
         score += 18
     if meta.get("bzzoiro_has_context_hint") or meta.get("sportlogic_context") or meta.get("sstats_has_context_hint"):
@@ -562,9 +573,9 @@ def enrich_payload_coverage(payload: dict[str, Any]) -> dict[str, Any]:
         meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
         coverage = dict(row.get("coverage") or {})
         has_odds = bool({"odds_api_io", "sportlogic"} & sources) or bool(meta.get("has_current_odds_provider"))
-        has_context = "bzzoiro" in sources or bool(meta.get("bzzoiro_has_context_hint"))
-        has_xg = bool(meta.get("bzzoiro_context_fields"))
-        has_form = False
+        has_context = bool({"bzzoiro", "sstats"} & sources) or bool(meta.get("bzzoiro_has_context_hint") or meta.get("sstats_has_context_hint"))
+        has_xg = bool(meta.get("bzzoiro_context_fields") or meta.get("sstats_context_fields"))
+        has_form = "sstats" in sources
         coverage.update({
             "fixture_core": True,
             "odds": has_odds,
@@ -606,6 +617,7 @@ async def main_async() -> int:
     results = await asyncio.gather(
         fetch_odds_api_io(settings, local_date),
         fetch_bzzoiro(settings, local_date),
+        fetch_sstats(settings, local_date),
         fetch_sportlogic(settings, local_date),
         return_exceptions=True,
     )
@@ -647,7 +659,7 @@ async def main_async() -> int:
         "target_matches": max_matches,
         "target_shortfall": max(0, max_matches - len(selected)),
         "target_full": len(selected) >= max_matches,
-        "inventory_policy": "merge-only top-300 core fixture inventory; SStats is reserved for runtime form/context enrichment",
+        "inventory_policy": "merge-only top-300 core fixture inventory from odds-api.io, Bzzoiro, SStats and quota-governed SportLogic; deep detail endpoints remain runtime shortlist enrichment",
         "providers": {name: dict(source_meta["attempts"].get(name, {}).get("stats") or {}) for name in CORE_PROVIDERS},
         "counts": dict(payload.get("counts") or {}),
         "source_match_counts": dict(payload.get("source_match_counts") or {}),

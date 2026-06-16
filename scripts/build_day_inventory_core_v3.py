@@ -109,7 +109,7 @@ def install_strict_merge(core: Any) -> None:
                 "swapped_allowed": True,
             },
         }
-        ordered = ["odds_api_io", "bzzoiro", "sstats"]
+        ordered = ["odds_api_io", "bzzoiro", "sstats", "sportlogic"]
         for provider in ordered:
             for match in matches_by_provider.get(provider, []):
                 best_key = None
@@ -202,7 +202,7 @@ def install_strict_enrich(core: Any) -> None:
             if isinstance(meta.get("sources_seen"), str):
                 sources.update(x for x in meta["sources_seen"].split(",") if x)
             coverage = dict(row.get("coverage") or {})
-            has_odds = "odds_api_io" in sources or bool(meta.get("has_current_odds_provider"))
+            has_odds = bool({"odds_api_io", "sportlogic"} & sources) or bool(meta.get("has_current_odds_provider"))
             has_context = bool({"sstats", "bzzoiro"} & sources) or bool(meta.get("bzzoiro_has_context_hint") or meta.get("sstats_has_context_hint"))
             has_xg = bool(meta.get("bzzoiro_context_fields") or meta.get("sstats_context_fields"))
             has_form = "sstats" in sources

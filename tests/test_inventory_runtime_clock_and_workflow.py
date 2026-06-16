@@ -61,8 +61,25 @@ def test_inventory_priority_recomputes_near_kickoff_minutes(tmp_path, monkeypatc
 
 def test_workflow_runs_inventory_line_state_before_controlled_fallback():
     workflow = Path(".github/workflows/run-bot.yml").read_text(encoding="utf-8")
-    update_pos = workflow.index("Update inventory priority and line movement state")
-    fallback_pos = workflow.index("Publish controlled fallback")
-    assert update_pos < fallback_pos
-    assert "scripts/update_day_inventory_priority_and_line_state.py" in workflow
-    assert "scripts/repair_inventory_refresh_plan_counts.py" in workflow
+    run_pos = workflow.index("name: Run bot")
+    diagnostics_pos = workflow.index("name: Persist movement watchlist and diagnostics")
+    assert run_pos < diagnostics_pos
+    assert "scripts/restore_awaiting_movement_candidates.py" in workflow
+    assert "scripts/persist_awaiting_movement_candidates.py" in workflow
+
+
+def test_remote_cronjob_owns_regular_and_inventory_schedules():
+    for workflow_name in ("run-bot.yml", "build-day-inventory.yml"):
+        workflow = Path(".github/workflows", workflow_name).read_text(encoding="utf-8")
+        assert "  schedule:" not in workflow
+        assert "cron:" not in workflow
+        assert "workflow_dispatch:" in workflow
+
+
+def test_inventory_workflow_uses_core_rule_providers():
+    workflow = Path(".github/workflows/build-day-inventory.yml").read_text(encoding="utf-8")
+    assert 'DAY_INVENTORY_ENABLE_BZZOIRO: "true"' in workflow
+    assert 'DAY_INVENTORY_ENABLE_SSTATS: "true"' in workflow
+    assert 'DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"' in workflow
+    assert 'ENABLE_ODDS_API_IO: "true"' in workflow
+    assert 'SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "4"' in workflow
