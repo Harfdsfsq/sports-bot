@@ -878,6 +878,28 @@ def canonical_publication_key(candidate: dict[str, Any]) -> str:
     return raw
 
 
+def publication_point_value(candidate: dict[str, Any]) -> float | None:
+    for key in ("point", "line", "total", "handicap"):
+        value = candidate.get(key)
+        if value not in (None, ""):
+            try:
+                return float(str(value).replace(",", "."))
+            except Exception:
+                return None
+    return None
+
+
+def is_allowed_totals_publication_point(candidate: dict[str, Any]) -> bool:
+    fam = family_norm(candidate)
+    if fam not in {"totals", "teamtotals"}:
+        return True
+    point = publication_point_value(candidate)
+    if point is None:
+        return False
+    doubled = point * 2.0
+    return abs(doubled - round(doubled)) <= 1e-6
+
+
 def _truth_match_key(candidate: dict[str, Any]) -> str:
     return str(candidate.get("match_key") or candidate.get("canonical_match_id") or candidate.get("event_key") or "").strip().lower()
 
@@ -1035,6 +1057,25 @@ def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, 
     if not isinstance(rows, list):
         rows = []
 
+    target_side = canonical_selection_key(candidate)
+    target_point = publication_point_value(candidate)
+
+    def offer_matches_candidate(row: dict[str, Any]) -> bool:
+        offer_family = family_norm({"family": row.get("family") or row.get("market_family") or candidate.get("family")})
+        if offer_family and offer_family != family_norm(candidate):
+            return False
+        side = canonical_selection_key({
+            "family": offer_family or candidate.get("family"),
+            "selection": row.get("selection") or row.get("name") or row.get("outcome"),
+            "selection_key": row.get("selection_key"),
+        })
+        if target_side in {"over", "under", "home", "away", "draw"} and side and side != target_side:
+            return False
+        offer_point = publication_point_value(row)
+        if target_point is not None and offer_point is not None and abs(offer_point - target_point) > 1e-6:
+            return False
+        return True
+
     prices_by_book: dict[str, float] = {}
     selected_price = as_float(metrics.get("odds") or candidate.get("odds"), 0.0)
     selected_book = (selected_bookmaker(candidate) or "selected_bookmaker").strip().lower() or "selected_bookmaker"
@@ -1043,6 +1084,8 @@ def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, 
 
     for row in rows:
         if not isinstance(row, dict):
+            continue
+        if not offer_matches_candidate(row):
             continue
         price = as_float(row.get("price") or row.get("odds") or row.get("decimal_odds"), 0.0)
         if price <= 1.0:
@@ -1061,6 +1104,7 @@ def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, 
         "odds_sources_count": int(metrics.get("odds_sources_count") or 0),
         "priced_books_count": len(prices_by_book),
         "mode": "single_book_contract" if min_books <= 1 else "bookmaker_quorum",
+        "same_market_side_line_only": True,
     }
     if len(prices_by_book) < min_books:
         return [f"tier_b_bookmaker_quorum_prices_missing:{len(prices_by_book)}/{min_books}"]
@@ -1116,6 +1160,8 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
     fam = family_norm(candidate)
     if fam not in env_set("CONTROLLED_FALLBACK_ALLOWED_FAMILIES", "totals,dnb,teamtotals,btts"):
         reasons.append(f"family_not_allowed:{fam}")
+    if not is_allowed_totals_publication_point(candidate):
+        reasons.append("market_point:quarter_totals_not_allowed")
     reasons.extend(kickoff_window_reasons(candidate))
     dup = duplicate_reason(candidate, sent_index)
     if dup:
@@ -1134,6 +1180,20 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
         reasons.append("missing_sources")
     if fam == "h2h" and metrics["odds"] > 2.25:
         reasons.append("h2h_rescue_odds_too_high")
+
+    if env_bool("CONTROLLED_FALLBACK_PRICE_INTEGRITY_GUARD_ENABLED", True):
+        try:
+            from scripts.filter_controlled_fallback_price_integrity import candidate_reject_reasons
+            price_reasons, price_details = candidate_reject_reasons({**candidate, "metrics": metrics})
+        except Exception:
+            price_reasons, price_details = [], {}
+        if price_reasons:
+            metrics["price_integrity_guard"] = {
+                "enabled": True,
+                "reasons": list(price_reasons),
+                "details": price_details,
+            }
+            reasons.extend([str(reason) for reason in price_reasons if str(reason).strip()])
 
     xg = metrics.get("xg_sanity") or {}
     if not bool(xg.get("enabled")) and str(xg.get("reason") or "") in {"xg_zero_placeholder", "xg_total_too_low_placeholder", "invalid_negative_xg"}:

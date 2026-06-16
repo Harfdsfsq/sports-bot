@@ -421,7 +421,7 @@ def render(payload: dict[str, Any]) -> str:
         f"• Главная причина: {top_reason}",
         "",
         "📦 Инвентарь и покрытие",
-        f"• Инвентарь дня: собрано {inv_total}/{inv_target} матчей (правило: до 300 лучших{target_note}). Runtime rows processed: {run_matches} (это не размер inventory).",
+        f"• Инвентарь дня: собрано {inv_total}/{inv_target} матчей (цель: 300 лучших, добор каждый run{target_note}). Runtime rows processed: {run_matches} (это не размер inventory).",
         f"• 1+ линия: {with_odds}/{inv_total} ({_pct(with_odds, inv_total)}) | 1+ контекст: {with_context}/{inv_total} ({_pct(with_context, inv_total)})",
         f"• 2+ букмекера: {price2}/{inv_total} ({_pct(price2, inv_total)})",
     ]

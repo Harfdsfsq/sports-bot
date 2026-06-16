@@ -275,6 +275,13 @@ def _text_reasons(text: str) -> list[str]:
         min_edge = _ef("TELEGRAM_MAIN_PICK_MIN_EDGE_PP", 3.0)
         if edge < min_edge:
             reasons.append(f"telegram_pick_edge_below_min:{edge:.2f}/{min_edge:.2f}")
+    total_line = re.search(
+        r"(?:total|тотал|ставка|рынок)[^\n\r]{0,80}?\b([0-9]+(?:[.,](?:25|75)))\b",
+        text,
+        re.I,
+    )
+    if total_line:
+        reasons.append(f"telegram_quarter_total_line_not_allowed:{total_line.group(1).replace(',', '.')}")
     over15 = re.search(r"Ставка:\s*Тотал\s*[—-]\s*(?:Больше|Over|ТБ)\s*\(?1[,.]5\)?", text, re.I)
     odds = re.search(r"Коэффициент:\s*([0-9]+(?:[.,][0-9]+)?)", text)
     if over15 and odds:

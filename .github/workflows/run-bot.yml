@@ -52,7 +52,7 @@ jobs:
       DAY_INVENTORY_TARGET_SIZE: "300"
       DAY_INVENTORY_MAX_MATCHES: "300"
       DAY_INVENTORY_FORCE_TOP_300: "true"
-      DAY_INVENTORY_FORCE_FULL_300: "false"
+      DAY_INVENTORY_FORCE_FULL_300: "true"
       DAY_INVENTORY_FORCE_PROVIDER_MERGE: "true"
       DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED: "true"
       DAY_INVENTORY_ENABLE_BZZOIRO: "true"
@@ -315,6 +315,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Backfill day inventory to target
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache/day_inventory .data/day_inventory artifacts/run-bot
+          shortfall="$(python -c "import json,pathlib; p=pathlib.Path('.data/exports/latest-day-inventory-target-expand.json'); d=json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}; print(int(d.get('target_shortfall') or 0))" 2>/dev/null || echo 300)"
+          echo "day inventory backfill shortfall=${shortfall}"
+          if [ "${shortfall}" -gt 0 ]; then
+            echo "core inventory backfill start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            if timeout 180s python -u scripts/build_day_inventory_core_v3.py; then
+              echo "core inventory backfill completed"
+            else
+              status=$?
+              echo "core inventory backfill failed or timed out with status ${status}; continuing with known rows"
+            fi
+            python -u scripts/expand_day_inventory_to_target.py || true
+          fi
+          python -u scripts/guard_day_inventory_no_shrink.py snapshot || true
+          cp .data/exports/latest-day-inventory-target-expand.json artifacts/run-bot/latest-day-inventory-target-expand.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-summary.json artifacts/run-bot/latest-day-inventory-summary.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-build-report.json artifacts/run-bot/latest-day-inventory-core-build-report.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-crosswalk.json artifacts/run-bot/latest-day-inventory-core-crosswalk.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-strict-merge-report.json artifacts/run-bot/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
+
       - name: Apply publication family policy
         shell: bash
         run: |
@@ -465,7 +489,7 @@ jobs:
           fi
           mkdir -p .data/exports artifacts/run-bot
           python -u scripts/apply_publication_family_policy.py || true
-          python -u scripts/publish_controlled_fallback_guarded.py || python -u scripts/publish_controlled_fallback.py || true
+          python -u scripts/publish_controlled_fallback_guarded.py || true
           python -u scripts/ensure_controlled_fallback_report.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
