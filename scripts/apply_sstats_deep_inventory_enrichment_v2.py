@@ -139,7 +139,7 @@ def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds
         cov.update({"odds": True, "odds_sources_count": row["odds_sources_count"]})
 
 
-async def call(client: httpx.AsyncClient, name: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
+async def call(client: httpx.AsyncClient, name: str, path: str, params: dict[str, Any], *, include_payload: bool = False) -> dict[str, Any]:
     params = dict(params)
     key = env("SSTATS_API_KEY")
     if key:
@@ -152,7 +152,10 @@ async def call(client: httpx.AsyncClient, name: str, path: str, params: dict[str
             payload = response.json()
         except Exception:
             payload = response.text
-        return {"name": name, "status": "OK" if 200 <= status < 300 else str(status), "http_status": status, "rows": len(rows(payload)), "ms": round((time.perf_counter() - started) * 1000, 1)}
+        result = {"name": name, "status": "OK" if 200 <= status < 300 else str(status), "http_status": status, "rows": len(rows(payload)), "ms": round((time.perf_counter() - started) * 1000, 1)}
+        if include_payload:
+            result["payload"] = payload
+        return result
     except Exception as exc:
         return {"name": name, "status": "ERROR", "error": f"{type(exc).__name__}: {exc}", "rows": 0}
 

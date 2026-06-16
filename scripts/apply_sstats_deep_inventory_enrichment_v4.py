@@ -71,7 +71,88 @@ def count_family(row: dict[str, Any], family: str) -> int:
     return 0
 
 
-def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds_ok: bool, before_context: int, before_odds: int) -> None:
+def _float_or_none(value: Any) -> float | None:
+    try:
+        if value in (None, "") or isinstance(value, dict):
+            return None
+        return float(str(value).replace(",", "."))
+    except Exception:
+        return None
+
+
+def _first_float(row: dict[str, Any], keys: list[str]) -> float | None:
+    for key in keys:
+        value = _float_or_none(row.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def _nested_first_float(payload: Any, keys: list[str], *, side: str) -> float | None:
+    side_aliases = [side, side.capitalize(), "team1" if side == "home" else "team2", "Team1" if side == "home" else "Team2"]
+    if isinstance(payload, dict):
+        for alias in side_aliases:
+            obj = payload.get(alias)
+            if isinstance(obj, dict):
+                value = _first_float(obj, keys)
+                if value is not None:
+                    return value
+        value = _first_float(payload, [f"{side}_{key}" for key in keys] + [f"{side}{key}" for key in keys])
+        if value is not None:
+            return value
+        for child in payload.values():
+            value = _nested_first_float(child, keys, side=side)
+            if value is not None:
+                return value
+    elif isinstance(payload, list):
+        for item in payload:
+            value = _nested_first_float(item, keys, side=side)
+            if value is not None:
+                return value
+    return None
+
+
+def _valid_xg_pair(home: Any, away: Any) -> tuple[float | None, float | None]:
+    h = _float_or_none(home)
+    a = _float_or_none(away)
+    if h is None or a is None:
+        return None, None
+    if h < 0 or a < 0 or h + a < 0.25:
+        return None, None
+    return round(max(0.15, min(4.5, h)), 3), round(max(0.15, min(4.5, a)), 3)
+
+
+def extract_expected_goals(*payloads: Any) -> tuple[float | None, float | None, str]:
+    for source_name, payload in payloads:
+        if payload in (None, ""):
+            continue
+        if source_name == "last_games_stats":
+            hxg = _nested_first_float(payload, ["xg", "xG", "expectedGoals", "expected_goals"], side="home")
+            axg = _nested_first_float(payload, ["xg", "xG", "expectedGoals", "expected_goals"], side="away")
+            h, a = _valid_xg_pair(hxg, axg)
+            if h is not None and a is not None:
+                return h, a, source_name
+            hgf = _nested_first_float(payload, ["goalsFor", "goals_for", "goalsScored", "scored"], side="home")
+            aga = _nested_first_float(payload, ["goalsAgainst", "goals_against", "conceded"], side="away")
+            agf = _nested_first_float(payload, ["goalsFor", "goals_for", "goalsScored", "scored"], side="away")
+            hga = _nested_first_float(payload, ["goalsAgainst", "goals_against", "conceded"], side="home")
+            if None not in (hgf, aga, agf, hga):
+                h, a = _valid_xg_pair((float(hgf) + float(aga)) / 2.0, (float(agf) + float(hga)) / 2.0)
+                if h is not None and a is not None:
+                    return h, a, "last_games_stats_goals_blend"
+        for row in v2.rows(payload):
+            if not isinstance(row, dict):
+                continue
+            h, a = _valid_xg_pair(
+                _first_float(row, ["ExpectedGoalsHome", "HomeXg", "homeXg", "xgHome", "expectedHomeGoals", "home_expected_goals", "home_xg"]),
+                _first_float(row, ["ExpectedGoalsAway", "AwayXg", "awayXg", "xgAway", "expectedAwayGoals", "away_expected_goals", "away_xg"]),
+            )
+            if h is not None and a is not None:
+                return h, a, source_name
+    return None, None, "missing"
+
+
+def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds_ok: bool, before_context: int, before_odds: int, *, glicko_payload: Any = None, last_stats_payload: Any = None, detail_payload: Any = None) -> None:
     row.setdefault("source_ids", {})["sstats"] = str(game_id)
     row.setdefault("provider_source_ids", {})["sstats"] = str(game_id)
     v2.add_src(row, "sources_seen", "sstats")
@@ -83,16 +164,33 @@ def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds
     if not isinstance(cov, dict):
         cov = {}
         row["coverage"] = cov
+    existing_home, existing_away = _valid_xg_pair(row.get("expected_home"), row.get("expected_away"))
+    xg_home, xg_away, xg_source = extract_expected_goals(
+        ("last_games_stats", last_stats_payload),
+        ("glicko", glicko_payload),
+        ("game_detail", detail_payload),
+    )
+    if xg_home is None or xg_away is None:
+        xg_home, xg_away, xg_source = existing_home, existing_away, "existing_inventory"
+    has_xg_pair = xg_home is not None and xg_away is not None
+    if has_xg_pair:
+        row["expected_home"] = xg_home
+        row["expected_away"] = xg_away
+        row["sstats_expected_home"] = xg_home
+        row["sstats_expected_away"] = xg_away
+        row["sstats_xg_source"] = xg_source
     if deep_ok:
         c_added = v2.add_src(row, "context_sources", "sstats")
-        x_added = v2.add_src(row, "xg_sources", "sstats")
         f_added = v2.add_src(row, "form_sources", "sstats")
         row["context_sources_count"] = v2.set_count(row, "context_sources_count", "context_sources", before_context, c_added)
-        row["xg_sources_count"] = v2.set_count(row, "xg_sources_count", "xg_sources", count_family(row, "xg"), x_added)
+        if has_xg_pair:
+            x_added = v2.add_src(row, "xg_sources", "sstats")
+            row["xg_sources_count"] = v2.set_count(row, "xg_sources_count", "xg_sources", count_family(row, "xg"), x_added)
         row["form_sources_count"] = v2.set_count(row, "form_sources_count", "form_sources", count_family(row, "form"), f_added)
         row["latest_context_sources_max"] = max(v2.as_int(row.get("latest_context_sources_max")), row["context_sources_count"])
         row["latest_confirmation_sources_max"] = max(v2.as_int(row.get("latest_confirmation_sources_max")), row["context_sources_count"])
-        cov.update({"context": True, "xg": True, "form": True})
+        cov.update({"context": True, "form": True})
+        cov["xg"] = has_xg_pair
     if detail_ok:
         cov.update({"lineups": True, "venue_referee": True})
     if odds_ok:
@@ -159,26 +257,26 @@ async def run() -> dict[str, Any]:
             before_odds = count_family(row, "odds")
             group = f"context{before_context}_odds{before_odds}"
             group_counts[group] = group_counts.get(group, 0) + 1
-            g = await v2.call(client, "glicko", f"/Games/glicko/{game_id}", {})
-            l = await v2.call(client, "last_games_stats", "/Games/last-games-stats", {"gameId": game_id, "limit": 25, "sameLeague": "false", "sameSeason": "false", "homeAway": "false"})
+            g = await v2.call(client, "glicko", f"/Games/glicko/{game_id}", {}, include_payload=True)
+            l = await v2.call(client, "last_games_stats", "/Games/last-games-stats", {"gameId": game_id, "limit": 25, "sameLeague": "false", "sameSeason": "false", "homeAway": "false"}, include_payload=True)
             req += 2
             d = {"status": "SKIPPED", "rows": 0}
             o = {"status": "SKIPPED", "rows": 0}
             if detail_left and req < max_req:
-                d = await v2.call(client, "game_detail", f"/Games/{game_id}", {})
+                d = await v2.call(client, "game_detail", f"/Games/{game_id}", {}, include_payload=True)
                 detail_left -= 1
                 req += 1
             if before_odds < threshold and odds_left and req < max_req:
                 o = await v2.call(client, "odds", f"/Odds/{game_id}", {"opening": "false"})
                 odds_left -= 1
                 req += 1
-            statuses.extend([g, l, d, o])
+            statuses.extend([{k: v for k, v in item.items() if k != "payload"} for item in (g, l, d, o)])
             deep_ok = g.get("status") == "OK" or l.get("status") == "OK"
             detail_ok = d.get("status") == "OK"
             odds_ok = o.get("status") == "OK" and v2.as_int(o.get("rows")) > 0
-            mark(row, game_id, deep_ok, detail_ok, odds_ok, before_context, before_odds)
+            mark(row, game_id, deep_ok, detail_ok, odds_ok, before_context, before_odds, glicko_payload=g.get("payload"), last_stats_payload=l.get("payload"), detail_payload=d.get("payload"))
             if deep_ok or detail_ok or odds_ok:
-                enriched.append({"match_key": key, "game_id": game_id, "home_team": row.get("home_team"), "away_team": row.get("away_team"), "deep_ok": deep_ok, "detail_ok": detail_ok, "odds_ok": odds_ok, "before_context": before_context, "after_context": row.get("context_sources_count"), "before_odds": before_odds, "after_odds": row.get("odds_sources_count")})
+                enriched.append({"match_key": key, "game_id": game_id, "home_team": row.get("home_team"), "away_team": row.get("away_team"), "deep_ok": deep_ok, "detail_ok": detail_ok, "odds_ok": odds_ok, "before_context": before_context, "after_context": row.get("context_sources_count"), "before_odds": before_odds, "after_odds": row.get("odds_sources_count"), "expected_home": row.get("expected_home"), "expected_away": row.get("expected_away"), "xg_source": row.get("sstats_xg_source")})
 
     if isinstance(inventory, dict):
         meta = inventory.setdefault("metadata", {})
