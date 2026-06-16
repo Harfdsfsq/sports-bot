@@ -1,13 +1,13 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: кандидаты ждут следующий cron для второго снимка линии (1)
+• Главная причина: tier c watch only
 
 📦 Инвентарь и покрытие
 • Инвентарь дня: собрано 174/300 матчей (цель: 300 лучших, добор каждый run; shortfall 126; target-expand stage 133/300, shortfall 167; status partial_known_rows_only). Runtime rows processed: 30 (это не размер inventory).
 • 1+ линия: 157/174 (90%) | 1+ контекст: 112/174 (64%)
 • 2+ букмекера: 150/174 (86%)
 • Raw 2+ букмекера odds-api.io current snapshot: 2 | normalized cumulative inventory: 150.
-• Odds-api offer snapshot: rows 405, matches 12, same-side 2+ books 2
+• Odds-api offer snapshot: rows 362, matches 12, same-side 2+ books 2
 • 2+ independent odds-source: 155/174 (89%) — A-tier strict metric; для B-tier не обязательный блок.
 • 2+ контекста: 85/174 (49%)
 • Готово для модели: 96/174 (55%)
@@ -23,7 +23,7 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 2
+• Pre-kickoff проверок: 5 | матчей без следующего регулярного run: 2
 • Line guard: увидел 1, оставил 0, отложил 1 до следующего cron
 
 🧪 Воронка кандидатов
@@ -32,9 +32,9 @@
 • Controlled fallback: seen 2 | evaluated 2 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 6; смэтчил матчей 30; offers 405; 2+ букмекера 2; ошибок 0.
+• odds-api.io: events req 0, odds req 6; смэтчил матчей 30; offers 362; 2+ букмекера 2; ошибок 0.
 • Bzzoiro: direct req 4, v2 req 4; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 22; сырых строк 17221; контекстов 24; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 22; сырых строк 17221; контекстов 23; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 4; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
 • Комбинации источников линий: н/д
 
@@ -49,26 +49,26 @@
 • кандидат ждёт следующий cron для второго снимка линии: 1 (10%)
 
 🔎 Проверенные reserve-кандидаты
-1. Fortaleza — America FC | Меньше @1.96 | EV +9.4% | edge +4.8 п.п. | q 76.0
+1. Fortaleza — America FC | Меньше @1.90 | EV +8.3% | edge +4.4 п.п. | q 76.0
    • причина: tier c watch only, proxy single source edge below min, proxy single source ev below min, proxy single source confidence below min
-   • proxy single-source: fact edge 4.8pp / EV 9.4% / conf 70.9; min edge 8.0pp / EV 15.0% / conf 78.0
+   • proxy single-source: fact edge 4.4pp / EV 8.3% / conf 70.4; min edge 8.0pp / EV 15.0% / conf 78.0
    • xG sanity: missing (missing_xg)
-2. Qadsia — Al-Salmiya | Меньше @2.86 | EV +8.7% | edge +3.0 п.п. | q 70.8
+2. Qadsia — Al-Salmiya | Меньше @2.66 | EV +9.3% | edge +3.5 п.п. | q 69.1
    • причина: tier c watch only, telegram quality stop not allowed:post calibration probability guard, missing total xg sanity
    • xG sanity: missing (missing_xg)
 
 🧯 Диагностика новых стопоров
 • Inventory target-expand stage: 133/300; shortfall 167; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 10; normalized 78→38; gap after 0.
-• Legacy B-cover diagnostic: considered 81; promoted 2; top skips promotion_skip_duplicate_candidate 1; promotion_skip_edge_below_min 61; promotion_skip_ev_below_min 1; inventory rows 137; selected legacy B-cover rows 81 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• Legacy B-cover funnel: legacy rows 81; candidates seen 12; legacy rows без кандидата 74.
+• Bookmaker mapping repair: raw 2+ 10; normalized 78→37; gap after 0.
+• Legacy B-cover diagnostic: considered 81; promoted 0; top skips promotion_skip_duplicate_candidate 1; promotion_skip_edge_below_min 65; promotion_skip_no_offer_bucket 46; promotion_skip_odds_above_max 20; inventory rows 137; selected legacy B-cover rows 81 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• Legacy B-cover funnel: legacy rows 81; candidates seen 7; legacy rows без кандидата 76.
 
 📌 Что это значит
-• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
+• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекера + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27641286728
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27641286728
-• Artifact: run-bot-27641286728
+• Run ID: 27644925352
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27644925352
+• Artifact: run-bot-27644925352
 • workflow run-bot, attempt 1
