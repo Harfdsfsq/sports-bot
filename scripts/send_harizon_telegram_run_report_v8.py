@@ -324,6 +324,8 @@ def render(payload: dict[str, Any]) -> str:
     raw_top_reason = str(payload.get("top_reason") or "").strip()
     timing_deferred_total = _as_int(timing_guard.get("deferred_total"))
     top_reason = _reason_ru(raw_top_reason)
+    waiting_line_next_run = _as_int(line.get("waiting_next_run"))
+    dropped_final_line = _as_int(line.get("dropped_final"))
     published_count = _as_int(funnel.get("published_count"))
     fallback_published = _as_int(funnel.get("fallback_published_count"))
     published = published_count > 0 or payload.get("status") == "published"
@@ -331,6 +333,16 @@ def render(payload: dict[str, Any]) -> str:
     runtime_failed = bool(runtime_status_raw) and runtime_status_raw not in {"0", "0.0", "ok", "success"}
     if not published and timing_deferred_total > 0 and raw_top_reason.lower() in {"", "no viable controlled fallback", "no_viable_controlled_fallback", "none"}:
         top_reason = f"кандидаты отложены до финального run перед матчем ({timing_deferred_total})"
+    if (
+        not published
+        and waiting_line_next_run > 0
+        and raw_top_reason.lower() in {
+            "line_movement_guard_dropped",
+            "line_movement_guard_waiting_next_run",
+            "needs_next_cron_line_movement_recheck",
+        }
+    ):
+        top_reason = f"кандидаты ждут следующий cron для второго снимка линии ({waiting_line_next_run})"
     if published:
         status_line = "✅ прогноз опубликован"
     elif runtime_failed:
@@ -392,6 +404,17 @@ def render(payload: dict[str, Any]) -> str:
                 f"duplicates removed {duplicates_removed}; policy {policy}."
             )
 
+    line_guard_text = (
+        f"• Line guard: увидел {_as_int(line.get('seen'))}, "
+        f"оставил {_as_int(line.get('kept'))}, "
+    )
+    if waiting_line_next_run and dropped_final_line <= 0:
+        line_guard_text += f"отложил {waiting_line_next_run} до следующего cron"
+    elif waiting_line_next_run:
+        line_guard_text += f"отложил {waiting_line_next_run}, снял {dropped_final_line}"
+    else:
+        line_guard_text += f"снял {_as_int(line.get('dropped'))}"
+
     lines: list[str] = [
         "🧾 HARIZON — понятный отчёт по запуску",
         status_line,
@@ -451,7 +474,7 @@ def render(payload: dict[str, Any]) -> str:
         "",
         "🛡️ Движение линии и финальный фильтр",
         f"• Pre-kickoff проверок: {_as_int(line.get('final_pre_kickoff_checks'))} | матчей без следующего регулярного run: {_as_int(line.get('no_more_regular_run_before_kickoff'))}",
-        f"• Line guard: увидел {_as_int(line.get('seen'))}, оставил {_as_int(line.get('kept'))}, снял {_as_int(line.get('dropped'))}",
+        line_guard_text,
         "",
         "🧪 Воронка кандидатов",
         f"• Raw/candidates before quality: {_as_int(funnel.get('raw_candidates'))}/{_as_int(funnel.get('candidates_before_quality'))}",

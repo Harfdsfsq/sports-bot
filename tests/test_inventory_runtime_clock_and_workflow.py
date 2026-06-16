@@ -63,9 +63,12 @@ def test_workflow_runs_inventory_line_state_before_controlled_fallback():
     workflow = Path(".github/workflows/run-bot.yml").read_text(encoding="utf-8")
     run_pos = workflow.index("name: Run bot")
     diagnostics_pos = workflow.index("name: Persist movement watchlist and diagnostics")
+    fallback_pos = workflow.index("name: Evaluate controlled fallback publication")
     assert run_pos < diagnostics_pos
+    assert diagnostics_pos < fallback_pos
     assert "scripts/restore_awaiting_movement_candidates.py" in workflow
     assert "scripts/persist_awaiting_movement_candidates.py" in workflow
+    assert "scripts/publish_controlled_fallback_guarded.py" in workflow
 
 
 def test_remote_cronjob_owns_regular_and_inventory_schedules():
@@ -89,6 +92,10 @@ def test_run_bot_workflow_uses_rules_b_tier_and_sportlogic():
     workflow = Path(".github/workflows/run-bot.yml").read_text(encoding="utf-8")
     assert 'PUBLISH_TIER_B_MIN_ODDS_SOURCES: "1"' in workflow
     assert 'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "1"' in workflow
+    assert 'DAY_INVENTORY_FORCE_FULL_300: "false"' in workflow
+    assert 'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "1"' in workflow
+    assert 'CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES: "1"' in workflow
+    assert 'CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES: "1"' in workflow
     assert 'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"' in workflow
     assert 'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM: "false"' in workflow
     assert 'SPORTLOGIC_ENABLED: "true"' in workflow

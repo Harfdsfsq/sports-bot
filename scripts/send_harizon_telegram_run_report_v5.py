@@ -192,6 +192,30 @@ def first_positive(*values: Any) -> int:
     return 0
 
 
+def line_guard_waiting_next_run_count(line_guard: dict[str, Any]) -> int:
+    dropped = as_int(line_guard.get("candidates_dropped"))
+    if dropped <= 0:
+        return 0
+    waiting = 0
+    samples = []
+    for file_row in line_guard.get("files") or []:
+        if isinstance(file_row, dict):
+            value = file_row.get("dropped_sample")
+            if isinstance(value, list):
+                samples.extend(value)
+    for item in samples:
+        if not isinstance(item, dict):
+            continue
+        guard = first_dict(item.get("guard"))
+        reasons = [str(reason) for reason in guard.get("reasons") or []]
+        status = str(guard.get("line_movement_lifecycle_status") or "")
+        if status == "awaiting_next_run" or "needs_next_cron_line_movement_recheck" in reasons:
+            waiting += 1
+    if waiting:
+        return min(dropped, waiting)
+    return 0
+
+
 def freshness_minutes(path: str | Path) -> float | None:
     try:
         p = Path(path)
@@ -218,6 +242,7 @@ def reason_ru(reason: str) -> str:
         "controlled_rescue_no_candidate": "controlled reserve не нашёл безопасного кандидата",
         "fallback_publish_no_candidate": "fallback-публикация: нет кандидата",
         "line_movement_guard_dropped": "line movement guard снял кандидата",
+        "line_movement_guard_waiting_next_run": "кандидат ждёт следующий cron для второго снимка линии",
         "odds_api_io_auth_failed": "odds-api.io auth failed: invalid API key",
         "main_pipeline_published": "опубликовано основным пайплайном",
         "fallback_published": "опубликовано fallback-пайплайном",
@@ -385,8 +410,12 @@ def build_payload() -> dict[str, Any]:
         if isinstance(src, dict):
             for key, value in src.items():
                 reasons[str(key)] += as_int(value)
-    if as_int(line_guard.get("candidates_dropped")) > 0:
-        reasons["line_movement_guard_dropped"] += as_int(line_guard.get("candidates_dropped"))
+    line_waiting_next_run = line_guard_waiting_next_run_count(line_guard)
+    line_dropped = max(0, as_int(line_guard.get("candidates_dropped")) - line_waiting_next_run)
+    if line_waiting_next_run > 0:
+        reasons["line_movement_guard_waiting_next_run"] += line_waiting_next_run
+    if line_dropped > 0:
+        reasons["line_movement_guard_dropped"] += line_dropped
     if odds_auth_failed:
         reasons["odds_api_io_auth_failed"] += 1
 
@@ -407,7 +436,7 @@ def build_payload() -> dict[str, Any]:
     funnel = {
         "raw_candidates": raw_candidates,
         "candidates_before_quality": candidates_before_quality,
-        "passed_candidates": as_int(rescue_counts.get("passed_candidates")),
+        "passed_candidates": first_positive(rescue_counts.get("passed_candidates"), summary.get("candidates_raw"), raw_candidates),
         "publishable_candidates": publishable,
         "published_count": published_count,
         "main_pipeline_published_count": main_pipeline_published_count,
@@ -431,7 +460,7 @@ def build_payload() -> dict[str, Any]:
         "bzzoiro": {"requests": as_int(bzz.get("requests")), "contexts": as_int(bzz.get("contexts_built")), "events": as_int(bzz.get("events_fetched"), as_int(bzz.get("rows_fetched"))), "secondary_offers_added": as_int(bzz.get("secondary_offers_added")), "overlap": as_int(bzz.get("combo_with_odds_api_io")), "errors": as_int(bzz.get("response_errors"))},
         "sportlogic": {"enabled": bool(first_dict(data.get("sportlogic_final")).get("sportlogic", {}).get("enabled") if isinstance(first_dict(data.get("sportlogic_final")).get("sportlogic"), dict) else sport.get("enabled")), "requests": as_int(sport.get("requests")), "odds_requests": as_int(sport.get("odds_requests")), "matched": as_int(sport.get("events_matched")), "offers": as_int(sport.get("offers_parsed")), "errors": as_int(sport.get("response_errors")), "runtime_error": str(sport.get("runtime_error") or "")},
     }
-    line = {"final_pre_kickoff_checks": as_int(refresh.get("final_pre_kickoff_checks")), "no_more_regular_run_before_kickoff": as_int(refresh.get("no_more_regular_run_before_kickoff")), "seen": as_int(line_guard.get("candidates_seen")), "kept": as_int(line_guard.get("candidates_kept")), "dropped": as_int(line_guard.get("candidates_dropped"))}
+    line = {"final_pre_kickoff_checks": as_int(refresh.get("final_pre_kickoff_checks")), "no_more_regular_run_before_kickoff": as_int(refresh.get("no_more_regular_run_before_kickoff")), "seen": as_int(line_guard.get("candidates_seen")), "kept": as_int(line_guard.get("candidates_kept")), "dropped": as_int(line_guard.get("candidates_dropped")), "waiting_next_run": line_waiting_next_run, "dropped_final": line_dropped}
 
     if published_count > 0:
         status, status_ru = "published", "✅ прогноз опубликован"
