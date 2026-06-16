@@ -1202,8 +1202,8 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
         if str(metrics.get("quality_score_source") or "") == "proxy":
             reasons.append("tier_a_proxy_quality_not_allowed")
 
-    # Strict contract: both A and B require 2 independent odds sources, 2 books
-    # or price confirmations, and 2 context confirmations.
+    # HARIZON rules: A-tier is strict 2/2/2; B-tier is 1 odds/line source,
+    # 2 bookmakers/price confirmations, and 1 context/confirmation.
     if tier == "A":
         if env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES", True):
             min_odds_sources = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2)
@@ -1214,13 +1214,13 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
             reasons.append(f"tier_a_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
     elif tier == "B":
         if env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES", True):
-            min_odds_sources = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 2))
+            min_odds_sources = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 1))
             if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
                 reasons.append(f"tier_b_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
         min_books = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 2)))
         if int(metrics.get("books_count") or 0) < min_books:
             reasons.append(f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}")
-        min_confirmations = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 2)))
+        min_confirmations = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 1)))
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
             reasons.append(f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
         reasons.extend(_bookmaker_quorum_price_guard(candidate, metrics))

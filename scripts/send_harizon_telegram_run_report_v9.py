@@ -2,11 +2,10 @@ from __future__ import annotations
 
 """HARIZON Telegram run report v9.
 
-Strict A/B publication-contract renderer:
-- 2 independent odds sources;
-- 2 bookmaker/price confirmations;
-- 2 independent context confirmations;
-- line movement/value/xG/quality still required before publication.
+A/B publication-contract renderer from Правила.txt:
+- A-tier: 2 line/odds sources, 2 bookmaker/price confirmations, 2 contexts;
+- B-tier: 1 line/odds source, 2 bookmaker/price confirmations, 1 context;
+- line movement/value/xG/quality and price-integrity still apply to both.
 """
 
 import importlib.util
@@ -47,16 +46,6 @@ def _as_int(value: Any) -> int:
         return 0
 
 
-def _load_json(path: Path) -> dict[str, Any]:
-    try:
-        if path.exists() and path.stat().st_size > 0:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            return payload if isinstance(payload, dict) else {}
-    except Exception:
-        return {}
-    return {}
-
-
 def _write_status(payload: dict[str, Any]) -> None:
     try:
         V9_STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -93,7 +82,8 @@ def _counts(payload: dict[str, Any]) -> dict[str, int]:
     context2 = _as_int(truth_counts.get("matches_with_2plus_context_sources"))
     odds2 = _as_int(truth_counts.get("matches_with_2plus_odds_sources"))
     published = _as_int((payload.get("funnel") or {}).get("fallback_published_count")) if isinstance(payload.get("funnel"), dict) else 0
-    strict_cover = min(odds2, price2, context2) if inv_total else 0
+    b_cover = min(with_odds, price2, with_context) if inv_total else 0
+    a_cover = min(odds2, price2, context2) if inv_total else 0
     return {
         "inv_total": inv_total,
         "with_odds": with_odds,
@@ -101,47 +91,61 @@ def _counts(payload: dict[str, Any]) -> dict[str, int]:
         "price2": price2,
         "context2": context2,
         "odds2": odds2,
-        "b_cover": strict_cover,
-        "a_cover": strict_cover,
+        "b_cover": b_cover,
+        "a_cover": a_cover,
         "fallback_published": published,
     }
 
 
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
-    payload["version"] = "harizon-telegram-report-v9-strict-ab-contract"
+    payload["version"] = "harizon-telegram-report-v9-rules-ab-contract"
     payload.setdefault("diagnostics", {})["ab_tier_contract"] = {
         "A": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
-        "B": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
-        "independent_odds_sources": "required",
+        "B": {"min_odds_sources": 1, "min_bookmakers": 2, "min_context_sources": 1},
+        "independent_odds_sources": "required_for_a_tier_only",
     }
     return payload
+
+
+def _replace_odds_source_line(line: str) -> str:
+    if "—" in line:
+        prefix = line.split("—", 1)[0].rstrip()
+    elif " - " in line:
+        prefix = line.split(" - ", 1)[0].rstrip()
+    else:
+        prefix = line.rstrip()
+    return f"{prefix} — A-tier strict metric; для B-tier не обязательный блок."
 
 
 def _rewrite_contract_lines(text: str, counts: dict[str, int]) -> str:
     out: list[str] = []
     for line in text.splitlines():
         lower = line.lower()
-        if "B-tier bookmaker coverage:" in line or "B-tier 1+ bookmaker/context coverage:" in line:
-            out.append(f"• B-tier strict coverage: {counts['b_cover']} | fallback опубликовано: {counts['fallback_published']}")
+        if (
+            "b-tier bookmaker coverage:" in lower
+            or "b-tier 1+ bookmaker/context coverage:" in lower
+            or "b-tier strict coverage:" in lower
+        ):
+            out.append(f"• B-tier 1 line/2 books/1 context coverage: {counts['b_cover']} | fallback опубликовано: {counts['fallback_published']}")
             continue
-        if "B-tier =" in line:
-            out.append("  B-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.")
+        if "b-tier =" in lower:
+            out.append("  B-tier = 1+ линия/odds-source + 2+ букмекера/ценовых подтверждения + 1+ контекст + движение линии + value.")
             continue
-        if "A-tier =" in line:
+        if "a-tier =" in lower:
             out.append("  A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.")
             continue
-        if "odds-source" in lower and "2+" in lower and any(marker in lower for marker in ("диагност", "diagnostic", "не блок публикации", "только диагност", "РґРёР°Рі".lower())):
-            out.append("• 2+ independent odds-source: обязательный блок публикации вместе с 2+ букмекерами и 2+ контекстами.")
+        if lower.lstrip().startswith("• 2+ independent odds-source:"):
+            out.append(_replace_odds_source_line(line))
             continue
-        if "B-cover 1+" in line or re.search(r"Пересечение 2\+.*2\+", line):
-            out.append(f"• Strict-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до {counts['a_cover']} матчей.")
+        if "strict-cover" in lower or "b-cover 1+" in lower or re.search(r"пересечение 2\+.*2\+", lower):
+            out.append(f"• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до {counts['a_cover']} матчей; B-cover: до {counts['b_cover']} матчей.")
             continue
-        if "Ценовой контракт" in line or "Р¦РµРЅРѕРІРѕР№" in line:
-            out.append("• Контракт публикации сейчас: A/B-tier = 2+ odds-source + 2+ букмекера + 2+ контекста; price-integrity guard обязателен.")
+        if "контракт публикации сейчас" in lower or "ценовой контракт" in lower:
+            out.append("• Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекера + 1 контекст; price-integrity guard обязателен.")
             continue
-        if "Не форсировать публикацию" in line or "РќРµ С„РѕСЂСЃРёСЂРѕРІР°С‚СЊ" in line:
-            out.append("• Не форсировать публикацию: кандидат должен пройти 2 odds-source, 2 букмекера, 2 контекста, xG/quality/value/line movement.")
+        if "не форсировать публикацию" in lower:
+            out.append("• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.")
             continue
         out.append(line)
     return "\n".join(out)
@@ -160,7 +164,7 @@ _write_status({
     "status": "installed",
     "renderer": "v9",
     "main_module": "v8.v7.v5",
-    "contract": "A/B=2 odds sources + 2 bookmakers + 2 contexts",
+    "contract": "A=2 odds sources + 2 bookmakers + 2 contexts; B=1 odds source + 2 bookmakers + 1 context",
 })
 
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-"""Apply the strict HARIZON A/B publication evidence contract.
+"""Apply the HARIZON A/B publication evidence contract from Правила.txt.
 
-Both A-tier and B-tier require 2 independent odds sources, 2 bookmaker/price
-confirmations, 2 context sources and the normal value/quality/movement guards.
-The tier label may still rank candidates, but it no longer relaxes evidence.
+A-tier requires 2 odds/line confirmations, 2 bookmakers and 2 contexts.
+B-tier is intentionally lighter: 1 odds/line source, 2 bookmakers and 1 context,
+with the normal value/quality/price-integrity/line-movement guards still active.
 """
 
 import json
@@ -18,35 +18,35 @@ CONTRACT_ENV = {
     "PUBLISH_COVERAGE_TIER_MODE": "hybrid",
     "PUBLISH_MIN_BOOKS": "2",
     "MIN_BOOKS_PUBLISH": "2",
-    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
-    "MIN_CONTEXT_SOURCES_PUBLISH": "2",
-    "PUBLISH_MIN_ODDS_SOURCES": "2",
-    "MIN_SOURCES_PUBLISH": "2",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "1",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "1",
+    "PUBLISH_MIN_ODDS_SOURCES": "1",
+    "MIN_SOURCES_PUBLISH": "1",
     "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
     "PUBLISH_TIER_A_MIN_BOOKS": "2",
     "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
-    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1",
     "PUBLISH_TIER_B_MIN_BOOKS": "2",
-    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
 
     # Controlled fallback must follow the same owner contract.
-    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
-    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
-    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
+    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
     "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
+    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "false",
+    "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "false",
     "CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES": "true",
     "CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES": "2",
     "CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS": "2",
     "CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES": "2",
     "CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES": "true",
-    "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": "true",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": "false",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "1",
     "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "2",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "2",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
     "CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD": "true",
 
     # V7: prevent unpublished/evaluated rows from blocking future review as
@@ -95,14 +95,14 @@ def main() -> int:
         "status": "applied",
         "contract": {
             "A": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
-            "B": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
-            "independent_odds_sources": "required",
+            "B": {"min_odds_sources": 1, "min_bookmakers": 2, "min_context_sources": 1},
+            "independent_odds_sources": "required_for_a_tier_only",
             "guards_unchanged": ["quality", "line_movement", "price_integrity", "dedupe"],
         },
         "env": CONTRACT_ENV,
     }
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("Applied strict A/B publication contract: 2 odds + 2 books + 2 context")
+    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/2 books/1 context")
     return 0
 
 

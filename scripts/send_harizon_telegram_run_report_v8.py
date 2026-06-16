@@ -5,7 +5,7 @@ from __future__ import annotations
 Readable bookmaker-quorum report. Publication price contract:
 - selected market side confirmed by 2+ real bookmakers;
 - price-integrity guard stays mandatory;
-- 2+ independent odds sources are a mandatory publication block.
+- 2+ independent odds sources are an A-tier strict metric, not a B-tier block.
 """
 
 import importlib.util
@@ -25,6 +25,7 @@ TIMING_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-publication-timing-
 BOOKMAKER_BACKFILL_PATH = EXPORT_DIR / "latest-odds-api-bookmaker-quorum-mapping-backfill.json"
 ODDS_API_OFFER_SNAPSHOT_PATH = EXPORT_DIR / "latest-odds-api-io-offer-snapshot.json"
 PUBLICATION_LEDGER_SYNC_PATH = EXPORT_DIR / "latest-publication-ledger-sync.json"
+RUN_BOT_STEP_STATUS_PATH = EXPORT_DIR / "latest-run-bot-step-status.json"
 
 
 def _load_v7() -> Any:
@@ -175,6 +176,9 @@ def build_payload() -> dict[str, Any]:
     publication_ledger_sync = _load_json(PUBLICATION_LEDGER_SYNC_PATH)
     if publication_ledger_sync:
         payload.setdefault("diagnostics", {})["publication_ledger_sync"] = publication_ledger_sync
+    run_bot_step_status = _load_json(RUN_BOT_STEP_STATUS_PATH)
+    if run_bot_step_status:
+        payload.setdefault("diagnostics", {})["run_bot_step_status"] = run_bot_step_status
     payload.setdefault("diagnostics", {})["github_actions"] = {
         "run_id": os.getenv("GITHUB_RUN_ID") or "",
         "run_attempt": os.getenv("GITHUB_RUN_ATTEMPT") or "",
@@ -285,6 +289,7 @@ def render(payload: dict[str, Any]) -> str:
     odds_api_snapshot = diag.get("odds_api_io_offer_snapshot") if isinstance(diag.get("odds_api_io_offer_snapshot"), dict) else {}
     timing_guard = diag.get("publication_timing_guard") if isinstance(diag.get("publication_timing_guard"), dict) else {}
     inventory_target_expand = diag.get("inventory_target_expand") if isinstance(diag.get("inventory_target_expand"), dict) else {}
+    run_bot_step_status = diag.get("run_bot_step_status") if isinstance(diag.get("run_bot_step_status"), dict) else {}
     github_actions = diag.get("github_actions") if isinstance(diag.get("github_actions"), dict) else {}
     publication_ledger_sync = diag.get("publication_ledger_sync") if isinstance(diag.get("publication_ledger_sync"), dict) else {}
     window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
@@ -304,11 +309,15 @@ def render(payload: dict[str, Any]) -> str:
         or _as_int(coverage.get("day_inventory_target"))
         or 300
     )
-    target_shortfall = _as_int(inventory_target_expand.get("target_shortfall"))
-    if not target_shortfall and inv_target:
-        target_shortfall = max(0, inv_target - inv_total)
+    target_shortfall = max(0, inv_target - inv_total) if inv_target else 0
+    expand_matches_after = _as_int(inventory_target_expand.get("matches_after"))
+    expand_target_shortfall = _as_int(inventory_target_expand.get("target_shortfall"))
     target_status = str(inventory_target_expand.get("status") or "").strip()
     target_note = f"; shortfall {target_shortfall}" if target_shortfall else ""
+    if expand_matches_after and expand_matches_after != inv_total:
+        target_note += f"; target-expand stage {expand_matches_after}/{inv_target}"
+        if expand_target_shortfall:
+            target_note += f", shortfall {expand_target_shortfall}"
     if target_status:
         target_note += f"; status {target_status}"
 
@@ -318,10 +327,15 @@ def render(payload: dict[str, Any]) -> str:
     published_count = _as_int(funnel.get("published_count"))
     fallback_published = _as_int(funnel.get("fallback_published_count"))
     published = published_count > 0 or payload.get("status") == "published"
+    runtime_status_raw = str(run_bot_step_status.get("status") if run_bot_step_status else "").strip()
+    runtime_failed = bool(runtime_status_raw) and runtime_status_raw not in {"0", "0.0", "ok", "success"}
     if not published and timing_deferred_total > 0 and raw_top_reason.lower() in {"", "no viable controlled fallback", "no_viable_controlled_fallback", "none"}:
         top_reason = f"кандидаты отложены до финального run перед матчем ({timing_deferred_total})"
     if published:
         status_line = "✅ прогноз опубликован"
+    elif runtime_failed:
+        status_line = "🔴 Прогнозный прогон не завершился: ниже post-run диагностика по сохранённым артефактам."
+        top_reason = f"runtime failed: run-once завершился status {runtime_status_raw}"
     elif timing_deferred_total > 0 and raw_top_reason.lower() in {"", "no viable controlled fallback", "no_viable_controlled_fallback", "none"}:
         status_line = "🟡 Прогнозов нет: есть кандидаты, но timing guard отложил их до финального run."
     else:

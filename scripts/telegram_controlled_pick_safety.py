@@ -177,7 +177,7 @@ def _reasons(candidate: Any) -> list[str]:
     if edge < min_edge:
         reasons.append(f"main_pick_edge_below_min:{edge:.2f}/{min_edge:.2f}")
 
-    min_sources = max(2, _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 2), _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2))
+    min_sources = max(1, _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 1), _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 1))
     if sources < min_sources:
         reasons.append(f"main_pick_odds_sources_below_min:{sources}/{min_sources}")
         if _b("TELEGRAM_MAIN_PICK_STRICT_SINGLE_SOURCE", True):
@@ -264,7 +264,7 @@ def _text_reasons(text: str) -> list[str]:
     if not _pick_text(text):
         return []
     reasons: list[str] = []
-    min_sources = max(2, _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2), _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 2))
+    min_sources = max(1, _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 1), _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 1))
     source_values = _text_sources(text)
     for value in source_values:
         if value < min_sources:

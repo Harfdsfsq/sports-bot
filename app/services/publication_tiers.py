@@ -42,13 +42,7 @@ def _env_int(name: str, default: int, minimum: int = 0) -> int:
 
 
 def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | None = None) -> PublicationTierDecision:
-    """Classify a candidate by the HARIZON publication contract.
-
-    A/B tiers remain useful for labels and ranking, but both tiers must satisfy
-    the same hard evidence floor before Telegram: 2 independent odds sources,
-    2 bookmaker/price confirmations, 2 context sources, and a line-movement
-    decision that is either confirmed or final because no regular cron remains.
-    """
+    """Classify a candidate by the HARIZON publication contract."""
 
     now = (now or datetime.now(UTC)).astimezone(UTC)
     coverage = sync_candidate_publish_coverage(candidate, settings)
@@ -72,9 +66,9 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     tier_a_books = max(hard_books, _env_int("PUBLISH_TIER_A_MIN_BOOKS", hard_books, hard_books))
     tier_a_context = max(hard_context, _env_int("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", hard_context, hard_context))
     tier_a_odds = max(hard_odds, _env_int("PUBLISH_TIER_A_MIN_ODDS_SOURCES", hard_odds, hard_odds))
-    tier_b_books = max(hard_books, _env_int("PUBLISH_TIER_B_MIN_BOOKS", hard_books, hard_books))
-    tier_b_context = max(hard_context, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", hard_context, hard_context))
-    tier_b_odds = max(hard_odds, _env_int("PUBLISH_TIER_B_MIN_ODDS_SOURCES", hard_odds, hard_odds))
+    tier_b_books = max(2, _env_int("PUBLISH_TIER_B_MIN_BOOKS", 2, 1))
+    tier_b_context = max(1, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", 1, 1))
+    tier_b_odds = max(1, _env_int("PUBLISH_TIER_B_MIN_ODDS_SOURCES", 1, 1))
 
     movement = evaluate_and_record_line_movement(candidate, settings, now=now)
     report["line_movement"] = movement
@@ -137,8 +131,8 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     report["tier_b_bookmaker_quorum_passed"] = is_b
     report["tier_a_strict_coverage_passed"] = is_a
     report["tier_b_strict_coverage_passed"] = is_b
-    report["tier_confirmation_mode"] = "strict_independent_sources"
-    report["tier_b_confirmation_mode"] = "strict_independent_sources" if is_b else "none"
+    report["tier_confirmation_mode"] = "rules_ab_tier_contract"
+    report["tier_b_confirmation_mode"] = "single_line_context_plus_two_books" if is_b else "none"
     report["can_publish"] = passed
     report["found_value_but_blocked"] = bool(not passed)
     return PublicationTierDecision(passed=passed, tier=tier, reasons=reasons, report=report)

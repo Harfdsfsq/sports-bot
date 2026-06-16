@@ -2,14 +2,12 @@ from __future__ import annotations
 
 """Shared publication threshold helpers for HARIZON.
 
-The production publication contract is strict:
+The rules define a strict A-tier and a lighter B-tier:
 
-* at least 2 independent odds sources;
-* at least 2 bookmaker/price confirmations;
-* at least 2 independent context sources.
+* A-tier: 2 odds/line sources, 2 bookmaker/price confirmations, 2 contexts;
+* B-tier: 1 odds/line source, 2 bookmaker/price confirmations, 1 context.
 
-Tiers still exist for ranking and threshold labels, but B-tier is not allowed to
-downgrade source coverage below the documented minimums.
+Value, quality, price-integrity and line-movement guards still apply to both.
 """
 
 import os
@@ -53,7 +51,7 @@ def b_tier_enabled(settings: Any | None = None) -> bool:
 
 
 def publish_floor(settings: Any | None = None) -> int:
-    return 2
+    return 1
 
 
 def publish_min_odds_sources(settings: Any | None = None, default: int | None = None) -> int:
@@ -73,11 +71,11 @@ def publish_min_context_sources(settings: Any | None = None, default: int | None
 
 
 def publish_min_books(settings: Any | None = None, default: int | None = None) -> int:
-    fallback = publish_floor(settings) if default is None else int(default)
+    fallback = 2 if default is None else int(default)
     setting_value = getattr(settings, "min_books_publish", None) if settings is not None else None
     raw = os.getenv("PUBLISH_MIN_BOOKS") or os.getenv("MIN_BOOKS_PUBLISH")
     value = as_int(raw if raw not in (None, "") else setting_value, fallback)
-    return max(publish_floor(settings), value)
+    return max(2, value)
 
 
 def controlled_fallback_min_odds_sources(settings: Any | None = None) -> int:

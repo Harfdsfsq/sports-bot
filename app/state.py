@@ -5,7 +5,7 @@ import hashlib
 import json
 from collections.abc import Sequence
 from dataclasses import asdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 UTC = timezone.utc
 from pathlib import Path
 from typing import Any
@@ -1092,9 +1092,29 @@ class JsonStateStore:
         }
 
     @staticmethod
+    def _json_default(value: Any) -> Any:
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+        if isinstance(value, Path):
+            return str(value)
+        if isinstance(value, set):
+            return sorted(value, key=str)
+        if hasattr(value, "model_dump"):
+            try:
+                return value.model_dump()
+            except Exception:
+                pass
+        if hasattr(value, "__dict__"):
+            try:
+                return dict(value.__dict__)
+            except Exception:
+                pass
+        return str(value)
+
+    @staticmethod
     def _write_json(path: Path, payload: Any) -> Path:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=JsonStateStore._json_default), encoding='utf-8')
         return path
 
     @staticmethod
@@ -1117,7 +1137,11 @@ class JsonStateStore:
         if value is None:
             return ''
         if isinstance(value, (dict, list)):
-            return json.dumps(value, ensure_ascii=False, sort_keys=True)
+            return json.dumps(value, ensure_ascii=False, sort_keys=True, default=JsonStateStore._json_default)
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+        if isinstance(value, Path):
+            return str(value)
         return value
 
     @staticmethod
