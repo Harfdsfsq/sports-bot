@@ -1,18 +1,19 @@
 🧾 HARIZON — понятный отчёт по запуску
-✅ прогноз опубликован
-• Главная причина: опубликовано основным пайплайном
+🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
+• Главная причина: missing total xg sanity
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 174/300 матчей (цель: 300 лучших, добор каждый run; shortfall 126; target-expand stage 133/300, shortfall 167; status partial_known_rows_only). Runtime rows processed: 0 (это не размер inventory).
+• Инвентарь дня: собрано 174/300 матчей (цель: 300 лучших, добор каждый run; shortfall 126; target-expand stage 133/300, shortfall 167; status partial_known_rows_only). Runtime rows processed: 32 (это не размер inventory).
 • 1+ линия: 157/174 (90%) | 1+ контекст: 112/174 (64%)
 • 2+ букмекера: 150/174 (86%)
-• Odds-api offer snapshot: rows 955, matches 15, same-side 2+ books 5
+• Raw 2+ букмекера odds-api.io current snapshot: 4 | normalized cumulative inventory: 150.
+• Odds-api offer snapshot: rows 821, matches 14, same-side 2+ books 4
 • 2+ independent odds-source: 155/174 (89%) — A-tier strict metric; для B-tier не обязательный блок.
 • 2+ контекста: 85/174 (49%)
 • Готово для модели: 96/174 (55%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 66 | опубликовано: 5
+• A-tier strict-ready: 66 | опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
 • B-tier 1 line/2 books/1 context coverage: 112 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекера/ценовых подтверждения + 1+ контекст + движение линии + value.
@@ -22,39 +23,54 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 10 | матчей без следующего регулярного run: 10
-• Line guard: увидел 4, оставил 3, снял 1
+• Pre-kickoff проверок: 8 | матчей без следующего регулярного run: 6
+• Line guard: увидел 3, оставил 2, снял 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/0
-• Quality прошло: 0 | publishable: 0 | опубликовано: 5
-• Controlled fallback: seen 0 | evaluated 0 | published 0
+• Raw/candidates before quality: 2/6
+• Quality прошло: 2 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 15 | evaluated 15 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
-• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 8; смэтчил матчей 32; offers 821; 2+ букмекера 4; ошибок 0.
+• Bzzoiro: direct req 4, v2 req 4; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 22; сырых строк 17221; контекстов 24; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 4; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• line movement guard снял кандидата: 1 (100%)
+• missing total xg sanity: 8 (14%)
+• tier c watch only: 7 (12%)
+• tier b canonical edge below min: 6 (11%)
+• tier b canonical ev below min: 6 (11%)
+• tier a publication score below min: 5 (9%)
+• tier a proxy quality not allowed: 5 (9%)
+• tier b publication score below min: 5 (9%)
+• tier c publication score below min: 5 (9%)
+• Диагностика legacy odds-source: 6 — не заменяет обязательные 2+ odds-source
 
 🔎 Проверенные reserve-кандидаты
-• Нет проверенных reserve-кандидатов в свежем fallback report.
+1. Akranes — Valur Reykjavik | Меньше @2.03 | EV +5.3% | edge +2.6 п.п. | q 76.0
+   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b canonical edge below min, tier b canonical ev below min
+2. Akranes — Valur Reykjavik | Меньше @2.03 | EV +5.1% | edge +2.5 п.п. | q 74.1
+   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b canonical edge below min, tier b canonical ev below min
+3. Stjarnan — Breidablik | Больше @1.69 | EV +5.0% | edge +2.9 п.п. | q 74.5
+   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b canonical edge below min, tier b canonical ev below min
+4. Stjarnan — Breidablik | Больше @1.69 | EV +4.5% | edge +2.6 п.п. | q 70.1
+   • причина: tier a publication score below min, tier a proxy quality not allowed, tier a confirmation sources below min:1/2, tier b confidence below min
 
 🧯 Диагностика новых стопоров
 • Inventory target-expand stage: 133/300; shortfall 167; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 21; normalized 78→16; gap after 5.
-• Legacy B-cover diagnostic: considered 81; promoted 5; top skips promotion_skip_edge_below_min 44; promotion_skip_ev_below_min 2; promotion_skip_no_offer_bucket 68; inventory rows 137; selected legacy B-cover rows 81 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• Legacy B-cover funnel: legacy rows 81; candidates seen 15; legacy rows без кандидата 74.
+• Bookmaker mapping repair: raw 2+ 17; normalized 78→38; gap after 0.
+• Legacy B-cover diagnostic: considered 81; promoted 3; top skips promotion_skip_duplicate_candidate 2; promotion_skip_edge_below_min 78; promotion_skip_ev_below_min 1; inventory rows 137; selected legacy B-cover rows 81 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• Legacy B-cover funnel: legacy rows 81; candidates seen 40; legacy rows без кандидата 72.
 
 📌 Что это значит
-• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
+• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекера + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27637595940
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27637595940
-• Artifact: run-bot-27637595940
+• Run ID: 27639504279
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27639504279
+• Artifact: run-bot-27639504279
 • workflow run-bot, attempt 1

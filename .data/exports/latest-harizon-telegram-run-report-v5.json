@@ -1,21 +1,32 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 0,
+      "contexts": 1,
+      "contexts_total_effective": 1,
       "errors": 0,
-      "events": 0,
+      "events": 22,
+      "events_total_effective": 22,
       "overlap": 0,
-      "requests": 0,
-      "secondary_offers_added": 0
+      "requests": 4,
+      "requests_total_effective": 4,
+      "secondary_offers_added": 0,
+      "v2_contexts": 1,
+      "v2_errors": 0,
+      "v2_events": 22,
+      "v2_lineups_resources": 0,
+      "v2_odds_resources": 1,
+      "v2_prediction_resources": 1,
+      "v2_requests": 4,
+      "v2_stats_resources": 1
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 0,
+      "books_2plus": 4,
       "errors": 0,
       "events_req": 0,
-      "matched": 0,
-      "odds_req": 0,
-      "offers": 0
+      "matched": 32,
+      "odds_req": 8,
+      "offers": 821
     },
     "sportlogic": {
       "diagnosis": "sportlogic_no_current_games_probe_only",
@@ -38,17 +49,20 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 0,
+      "contexts": 24,
       "deep_enriched": 0,
+      "direct_contexts": 0,
       "errors": 0,
-      "requests": 0,
-      "rows": 0
+      "requests": 22,
+      "rows": 17221,
+      "runtime_patch": "",
+      "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 0.38348435958226523,
-    "fallback_age_min": 0.17805486917495728,
-    "run_log_age_min": 0.37645101149876914,
+    "debug_age_min": 1.1904708902041117,
+    "fallback_age_min": 0.42895418405532837,
+    "run_log_age_min": 1.181868282953898,
     "signal_stack_age_min": null
   },
   "coverage": {
@@ -57,15 +71,15 @@
     "day_inventory_total": 174,
     "day_inventory_with_context": 112,
     "day_inventory_with_odds": 155,
-    "matches_seen": 0,
-    "matches_with_2plus_books": 0,
-    "matches_with_context": 0,
-    "matches_with_offers": 0,
-    "odds_offers_primary": 0,
+    "matches_seen": 32,
+    "matches_with_2plus_books": 4,
+    "matches_with_context": 27,
+    "matches_with_offers": 14,
+    "odds_offers_primary": 821,
     "ready_for_model": 94,
     "secondary_combinations": {}
   },
-  "created_at_utc": "2026-06-16T18:05:49.247442+00:00",
+  "created_at_utc": "2026-06-16T18:40:07.816868+00:00",
   "diagnostics": {
     "ab_tier_contract": {
       "A": {
@@ -82,10 +96,10 @@
     },
     "b_cover_candidate_gap": {
       "b_cover_rows": 81,
-      "b_cover_without_candidate": 74,
-      "candidate_rows_seen": 15,
-      "candidate_rows_seen_before_promotion": 10,
-      "created_at_utc": "2026-06-16T18:05:40.441899+00:00",
+      "b_cover_without_candidate": 72,
+      "candidate_rows_seen": 40,
+      "candidate_rows_seen_before_promotion": 37,
+      "created_at_utc": "2026-06-16T18:39:53.217891+00:00",
       "inventory_load": {
         "candidate_source_scores": [
           {
@@ -133,8 +147,8 @@
         ],
         "prebuild_coverage_truth": {
           "enabled": true,
-          "finished_at_utc": "2026-06-16T18:05:40.002534+00:00",
-          "started_at_utc": "2026-06-16T18:05:39.640132+00:00",
+          "finished_at_utc": "2026-06-16T18:39:47.764395+00:00",
+          "started_at_utc": "2026-06-16T18:39:47.249885+00:00",
           "status": "ok",
           "steps": [
             {
@@ -204,10 +218,10 @@
         ]
       },
       "inventory_rows": 137,
-      "promoted_count": 5,
+      "promoted_count": 3,
       "promotion": {
         "considered_b_cover_rows": 81,
-        "created_at_utc": "2026-06-16T18:05:40.429222+00:00",
+        "created_at_utc": "2026-06-16T18:39:53.196306+00:00",
         "enabled": true,
         "inventory_load": {
           "candidate_source_scores": [
@@ -256,8 +270,8 @@
           ],
           "prebuild_coverage_truth": {
             "enabled": true,
-            "finished_at_utc": "2026-06-16T18:05:40.002534+00:00",
-            "started_at_utc": "2026-06-16T18:05:39.640132+00:00",
+            "finished_at_utc": "2026-06-16T18:39:47.764395+00:00",
+            "started_at_utc": "2026-06-16T18:39:47.249885+00:00",
             "status": "ok",
             "steps": [
               {
@@ -328,47 +342,61 @@
         },
         "inventory_rows_seen": 137,
         "offer_diagnostics": {
-          "accepted_offer_rows": 599,
-          "scanned_dicts": 8466,
+          "accepted_offer_rows": 1371,
+          "scanned_dicts": 205452,
           "source_counts": {
-            "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-bets.json": 3,
-            "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-line-snapshots.json": 293,
-            "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-pending-bets.json": 3,
-            "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-picks.json": 1,
+            "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-bets.json": 3,
+            "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-line-snapshots.json": 245,
+            "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-pending-bets.json": 3,
             "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 7,
-            "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 275,
-            "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 10,
-            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 7
+            "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 239,
+            "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 16,
+            "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 19,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-b-cover-candidate-gap-report.json": 7,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-b-cover-value-promotion.json": 7,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-bets.json": 3,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-line-snapshots.json": 245,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-odds-api-io-offer-snapshot.json": 239,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-pending-bets.json": 3,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-rescue-candidates.json": 9,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 7,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-04-27.json": 72,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-06-15.json": 9,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-06-16.json": 119,
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/latest.json": 119
           }
         },
-        "promoted_count": 5,
+        "promoted_count": 3,
         "reason_counts": {
-          "promoted": 5,
-          "promotion_skip_edge_below_min": 44,
-          "promotion_skip_ev_below_min": 2,
-          "promotion_skip_no_offer_bucket": 68,
-          "promotion_skip_odds_above_max": 120,
-          "promotion_skip_odds_below_min": 114,
+          "promoted": 3,
+          "promotion_skip_duplicate_candidate": 2,
+          "promotion_skip_edge_below_min": 78,
+          "promotion_skip_ev_below_min": 1,
+          "promotion_skip_no_offer_bucket": 45,
+          "promotion_skip_odds_above_max": 94,
+          "promotion_skip_odds_below_min": 88,
           "promotion_skip_price_outlier": 11
         },
         "rescue_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
         "sample": [
           {
-            "adjusted_probability": 0.543083,
-            "away_team": "Valur Reykjavik",
+            "adjusted_probability": 0.554536,
+            "away_team": "Breidablik",
             "bookmaker": "betfair_exchange",
-            "books_count": 4,
-            "canonical_match_id": "soccer|akranes|valur reykjavik|2026-06-16",
+            "books_count": 3,
+            "canonical_match_id": "soccer|breidablik|stjarnan|2026-06-16",
             "commence_time": "2026-06-16T19:15:00+00:00",
-            "confidence": 71.622,
+            "confidence": 71.563,
             "confirmation_sources": [
+              "clubelo",
               "inventory_context",
               "model_xg",
               "sstats"
             ],
-            "confirmation_sources_count": 3,
+            "confirmation_sources_count": 4,
             "context": {
               "context_sources": [
+                "clubelo",
                 "inventory_context",
                 "model_xg",
                 "sstats"
@@ -378,145 +406,127 @@
             },
             "diagnostics": {
               "promotion": {
-                "canonical_edge_pp": 2.225,
-                "canonical_ev_pct": 4.272,
-                "created_at_utc": "2026-06-16T18:05:40.421854+00:00",
+                "canonical_edge_pp": 2.544,
+                "canonical_ev_pct": 4.807,
+                "created_at_utc": "2026-06-16T18:39:53.188343+00:00",
                 "created_by": "build_b_cover_candidate_gap_report.py",
-                "median_price": 1.885,
-                "selected_price": 1.92,
-                "selected_vs_median_deviation_pct": 1.857
+                "median_price": 1.85,
+                "selected_price": 1.89,
+                "selected_vs_median_deviation_pct": 2.162
               }
             },
-            "edge_pct": 2.225,
-            "ev_pct": 4.272,
+            "edge_pct": 2.544,
+            "ev_pct": 4.807,
             "expected_away": null,
             "expected_home": null,
             "family": "totals",
-            "home_team": "Akranes",
+            "home_team": "Stjarnan",
             "league_name": "Iceland - Efsta deild",
             "market_family": "totals",
-            "market_probability": 0.530504,
-            "match_key": "soccer|akranes|valur reykjavik|2026-06-16",
-            "model_probability": 0.543083,
-            "odds": 1.92,
+            "market_probability": 0.540541,
+            "match_key": "soccer|breidablik|stjarnan|2026-06-16",
+            "model_probability": 0.554536,
+            "odds": 1.89,
             "odds_sources_count": 1,
-            "point": 3.5,
-            "publication_score": 17.463,
+            "point": 4.0,
+            "publication_score": 17.516,
             "reasons": [
               "mode=b_cover_market_promotion",
               "model=conservative_median_market_anchor",
-              "books=4",
-              "context_sources=3",
-              "best_vs_median=1.86%"
+              "books=3",
+              "context_sources=4",
+              "best_vs_median=2.16%"
             ],
-            "selected_odds": 1.92,
-            "selection": "Больше",
-            "selection_key": "over",
+            "selected_odds": 1.89,
+            "selection": "Меньше",
+            "selection_key": "under",
             "source_summary": {
               "bookmaker": "betfair_exchange",
               "books": [
                 "bet365",
                 "betfair_exchange",
-                "sbobet",
-                "unibet"
+                "sbobet"
               ],
-              "books_count": 4,
+              "books_count": 3,
               "context_sources": [
+                "clubelo",
                 "inventory_context",
                 "model_xg",
                 "sstats"
               ],
-              "median_price": 1.885,
+              "median_price": 1.85,
               "prices": [
                 1.85,
-                1.86,
-                1.92,
-                1.91,
+                1.89,
                 1.85,
-                1.86,
-                1.92,
-                1.91
+                1.85,
+                1.89,
+                1.85
               ],
               "raw_bucket_offers": [
                 {
                   "bookmaker": "bet365",
                   "family": "totals",
-                  "point": 3.5,
+                  "point": 4.0,
                   "price": 1.85,
-                  "selection": "over",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "unibet",
-                  "family": "totals",
-                  "point": 3.5,
-                  "price": 1.86,
-                  "selection": "over",
+                  "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "betfair_exchange",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 1.92,
-                  "selection": "over",
+                  "point": 4.0,
+                  "price": 1.89,
+                  "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "sbobet",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 1.91,
-                  "selection": "over",
+                  "point": 4.0,
+                  "price": 1.85,
+                  "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "bet365",
                   "family": "totals",
-                  "point": 3.5,
+                  "point": 4.0,
                   "price": 1.85,
-                  "selection": "over",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "unibet",
-                  "family": "totals",
-                  "point": 3.5,
-                  "price": 1.86,
-                  "selection": "over",
+                  "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "betfair_exchange",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 1.92,
-                  "selection": "over",
+                  "point": 4.0,
+                  "price": 1.89,
+                  "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "sbobet",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 1.91,
-                  "selection": "over",
+                  "point": 4.0,
+                  "price": 1.85,
+                  "selection": "under",
                   "source": "odds_api_io"
                 }
               ],
               "selected_bookmaker": "betfair_exchange",
               "selected_source": "b_cover_market_promotion",
-              "selected_vs_median_deviation_pct": 1.857
+              "selected_vs_median_deviation_pct": 2.162
             },
-            "sources_count": 3
+            "sources_count": 4
           },
           {
-            "adjusted_probability": 0.541757,
-            "away_team": "Valur Reykjavik",
+            "adjusted_probability": 0.551833,
+            "away_team": "Breidablik",
             "bookmaker": "betfair_exchange",
-            "books_count": 4,
-            "canonical_match_id": "2026-06-16|akranes|valur reykjavik",
+            "books_count": 3,
+            "canonical_match_id": "2026-06-16|stjarnan|breidablik",
             "commence_time": "2026-06-16T19:15:00+00:00",
-            "confidence": 70.008,
+            "confidence": 68.333,
             "confirmation_sources": [
               "inventory_context",
               "model_xg"
@@ -532,538 +542,278 @@
             },
             "diagnostics": {
               "promotion": {
-                "canonical_edge_pp": 2.092,
-                "canonical_ev_pct": 4.017,
-                "created_at_utc": "2026-06-16T18:05:40.422526+00:00",
+                "canonical_edge_pp": 2.273,
+                "canonical_ev_pct": 4.297,
+                "created_at_utc": "2026-06-16T18:39:53.189129+00:00",
                 "created_by": "build_b_cover_candidate_gap_report.py",
-                "median_price": 1.885,
-                "selected_price": 1.92,
-                "selected_vs_median_deviation_pct": 1.857
+                "median_price": 1.85,
+                "selected_price": 1.89,
+                "selected_vs_median_deviation_pct": 2.162
               }
             },
-            "edge_pct": 2.092,
-            "ev_pct": 4.017,
-            "expected_away": null,
-            "expected_home": null,
-            "family": "totals",
-            "home_team": "Akranes",
-            "league_name": "Iceland - Efsta deild",
-            "market_family": "totals",
-            "market_probability": 0.530504,
-            "match_key": "2026-06-16|akranes|valur reykjavik",
-            "model_probability": 0.541757,
-            "odds": 1.92,
-            "odds_sources_count": 1,
-            "point": 3.5,
-            "publication_score": 15.805,
-            "reasons": [
-              "mode=b_cover_market_promotion",
-              "model=conservative_median_market_anchor",
-              "books=4",
-              "context_sources=2",
-              "best_vs_median=1.86%"
-            ],
-            "selected_odds": 1.92,
-            "selection": "Больше",
-            "selection_key": "over",
-            "source_summary": {
-              "bookmaker": "betfair_exchange",
-              "books": [
-                "bet365",
-                "betfair_exchange",
-                "sbobet",
-                "unibet"
-              ],
-              "books_count": 4,
-              "context_sources": [
-                "inventory_context",
-                "model_xg"
-              ],
-              "median_price": 1.885,
-              "prices": [
-                1.85,
-                1.86,
-                1.92,
-                1.91
-              ],
-              "raw_bucket_offers": [
-                {
-                  "bookmaker": "bet365",
-                  "family": "totals",
-                  "point": 3.5,
-                  "price": 1.85,
-                  "selection": "over",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "unibet",
-                  "family": "totals",
-                  "point": 3.5,
-                  "price": 1.86,
-                  "selection": "over",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "betfair_exchange",
-                  "family": "totals",
-                  "point": 3.5,
-                  "price": 1.92,
-                  "selection": "over",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "sbobet",
-                  "family": "totals",
-                  "point": 3.5,
-                  "price": 1.91,
-                  "selection": "over",
-                  "source": "odds_api_io"
-                }
-              ],
-              "selected_bookmaker": "betfair_exchange",
-              "selected_source": "b_cover_market_promotion",
-              "selected_vs_median_deviation_pct": 1.857
-            },
-            "sources_count": 2
-          },
-          {
-            "adjusted_probability": 0.443238,
-            "away_team": "Breidablik",
-            "bookmaker": "betfair_exchange",
-            "books_count": 3,
-            "canonical_match_id": "soccer|breidablik|stjarnan|2026-06-16",
-            "commence_time": "2026-06-16T19:15:00+00:00",
-            "confidence": 71.169,
-            "confirmation_sources": [
-              "inventory_context",
-              "model_xg",
-              "sstats"
-            ],
-            "confirmation_sources_count": 3,
-            "context": {
-              "context_sources": [
-                "inventory_context",
-                "model_xg",
-                "sstats"
-              ],
-              "expected_away": null,
-              "expected_home": null
-            },
-            "diagnostics": {
-              "promotion": {
-                "canonical_edge_pp": 3.001,
-                "canonical_ev_pct": 7.264,
-                "created_at_utc": "2026-06-16T18:05:40.423366+00:00",
-                "created_by": "build_b_cover_candidate_gap_report.py",
-                "median_price": 2.33,
-                "selected_price": 2.42,
-                "selected_vs_median_deviation_pct": 3.863
-              }
-            },
-            "edge_pct": 3.001,
-            "ev_pct": 7.264,
+            "edge_pct": 2.273,
+            "ev_pct": 4.297,
             "expected_away": null,
             "expected_home": null,
             "family": "totals",
             "home_team": "Stjarnan",
             "league_name": "Iceland - Efsta deild",
             "market_family": "totals",
-            "market_probability": 0.429185,
-            "match_key": "soccer|breidablik|stjarnan|2026-06-16",
-            "model_probability": 0.443238,
-            "odds": 2.42,
+            "market_probability": 0.540541,
+            "match_key": "2026-06-16|stjarnan|breidablik",
+            "model_probability": 0.551833,
+            "odds": 1.89,
             "odds_sources_count": 1,
-            "point": 3.5,
-            "publication_score": 21.256,
+            "point": 4.0,
+            "publication_score": 15.288,
             "reasons": [
               "mode=b_cover_market_promotion",
               "model=conservative_median_market_anchor",
               "books=3",
-              "context_sources=3",
-              "best_vs_median=3.86%"
+              "context_sources=2",
+              "best_vs_median=2.16%"
             ],
-            "selected_odds": 2.42,
+            "selected_odds": 1.89,
             "selection": "Меньше",
             "selection_key": "under",
             "source_summary": {
               "bookmaker": "betfair_exchange",
               "books": [
+                "bet365",
                 "betfair_exchange",
-                "sbobet",
-                "unibet"
+                "sbobet"
               ],
               "books_count": 3,
               "context_sources": [
                 "inventory_context",
-                "model_xg",
-                "sstats"
+                "model_xg"
               ],
-              "median_price": 2.33,
+              "median_price": 1.85,
               "prices": [
-                2.02,
-                2.42,
-                2.33,
-                2.42,
-                2.02,
-                2.42,
-                2.33
+                1.85,
+                1.89,
+                1.85,
+                1.85,
+                1.89,
+                1.85
               ],
               "raw_bucket_offers": [
                 {
-                  "bookmaker": "unibet",
+                  "bookmaker": "bet365",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 2.02,
+                  "point": 4.0,
+                  "price": 1.85,
                   "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "betfair_exchange",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 2.42,
+                  "point": 4.0,
+                  "price": 1.89,
                   "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "sbobet",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 2.33,
+                  "point": 4.0,
+                  "price": 1.85,
+                  "selection": "under",
+                  "source": "odds_api_io"
+                },
+                {
+                  "bookmaker": "bet365",
+                  "family": "totals",
+                  "point": 4.0,
+                  "price": 1.85,
                   "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "betfair_exchange",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 2.42,
-                  "selection": "under",
-                  "source": "raw_offer_artifacts"
-                },
-                {
-                  "bookmaker": "unibet",
-                  "family": "totals",
-                  "point": 3.5,
-                  "price": 2.02,
-                  "selection": "under",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "betfair_exchange",
-                  "family": "totals",
-                  "point": 3.5,
-                  "price": 2.42,
+                  "point": 4.0,
+                  "price": 1.89,
                   "selection": "under",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "sbobet",
                   "family": "totals",
-                  "point": 3.5,
-                  "price": 2.33,
+                  "point": 4.0,
+                  "price": 1.85,
                   "selection": "under",
                   "source": "odds_api_io"
                 }
               ],
               "selected_bookmaker": "betfair_exchange",
               "selected_source": "b_cover_market_promotion",
-              "selected_vs_median_deviation_pct": 3.863
-            },
-            "sources_count": 3
-          },
-          {
-            "adjusted_probability": 0.570154,
-            "away_team": "KR Reykjavik",
-            "bookmaker": "bet365",
-            "books_count": 4,
-            "canonical_match_id": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
-            "commence_time": "2026-06-16T19:15:00+00:00",
-            "confidence": 70.665,
-            "confirmation_sources": [
-              "model_xg",
-              "sstats"
-            ],
-            "confirmation_sources_count": 2,
-            "context": {
-              "context_sources": [
-                "model_xg",
-                "sstats"
-              ],
-              "expected_away": null,
-              "expected_home": null
-            },
-            "diagnostics": {
-              "promotion": {
-                "canonical_edge_pp": 2.961,
-                "canonical_ev_pct": 5.479,
-                "created_at_utc": "2026-06-16T18:05:40.424478+00:00",
-                "created_by": "build_b_cover_candidate_gap_report.py",
-                "median_price": 1.8,
-                "selected_price": 1.85,
-                "selected_vs_median_deviation_pct": 2.778
-              }
-            },
-            "edge_pct": 2.961,
-            "ev_pct": 5.479,
-            "expected_away": null,
-            "expected_home": null,
-            "family": "totals",
-            "home_team": "Vikingur Reykjavik",
-            "league_name": "Iceland - Efsta deild",
-            "market_family": "totals",
-            "market_probability": 0.555556,
-            "match_key": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
-            "model_probability": 0.570154,
-            "odds": 1.85,
-            "odds_sources_count": 1,
-            "point": 4.5,
-            "publication_score": 19.223,
-            "reasons": [
-              "mode=b_cover_market_promotion",
-              "model=conservative_median_market_anchor",
-              "books=4",
-              "context_sources=2",
-              "best_vs_median=2.78%"
-            ],
-            "selected_odds": 1.85,
-            "selection": "Меньше",
-            "selection_key": "under",
-            "source_summary": {
-              "bookmaker": "bet365",
-              "books": [
-                "bet365",
-                "betfair_exchange",
-                "sbobet",
-                "unibet"
-              ],
-              "books_count": 4,
-              "context_sources": [
-                "model_xg",
-                "sstats"
-              ],
-              "median_price": 1.8,
-              "prices": [
-                1.85,
-                1.5,
-                1.83,
-                1.74,
-                1.85,
-                1.8,
-                1.8
-              ],
-              "raw_bucket_offers": [
-                {
-                  "bookmaker": "bet365",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.85,
-                  "selection": "under",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "unibet",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.5,
-                  "selection": "under",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "betfair_exchange",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.83,
-                  "selection": "under",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "sbobet",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.74,
-                  "selection": "under",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "bet365",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.85,
-                  "selection": "under",
-                  "source": "raw_offer_artifacts"
-                },
-                {
-                  "bookmaker": "betfair_exchange",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.8,
-                  "selection": "under",
-                  "source": "raw_offer_artifacts"
-                },
-                {
-                  "bookmaker": "betfair_exchange",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.8,
-                  "selection": "under",
-                  "source": "raw_offer_artifacts"
-                }
-              ],
-              "selected_bookmaker": "bet365",
-              "selected_source": "b_cover_market_promotion",
-              "selected_vs_median_deviation_pct": 2.778
+              "selected_vs_median_deviation_pct": 2.162
             },
             "sources_count": 2
           },
           {
-            "adjusted_probability": 0.568765,
+            "adjusted_probability": 0.588239,
             "away_team": "KR Reykjavik",
-            "bookmaker": "bet365",
-            "books_count": 4,
-            "canonical_match_id": "2026-06-16|vikingur reykjavik|kr reykjavik",
+            "bookmaker": "betfair_exchange",
+            "books_count": 2,
+            "canonical_match_id": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
             "commence_time": "2026-06-16T19:15:00+00:00",
-            "confidence": 69.05,
+            "confidence": 67.953,
             "confirmation_sources": [
-              "inventory_context"
+              "clubelo",
+              "model_xg",
+              "sstats"
             ],
-            "confirmation_sources_count": 1,
+            "confirmation_sources_count": 3,
             "context": {
               "context_sources": [
-                "inventory_context"
+                "clubelo",
+                "model_xg",
+                "sstats"
               ],
               "expected_away": null,
               "expected_home": null
             },
             "diagnostics": {
               "promotion": {
-                "canonical_edge_pp": 2.822,
-                "canonical_ev_pct": 5.222,
-                "created_at_utc": "2026-06-16T18:05:40.425097+00:00",
+                "canonical_edge_pp": 2.327,
+                "canonical_ev_pct": 4.118,
+                "created_at_utc": "2026-06-16T18:39:53.190671+00:00",
                 "created_by": "build_b_cover_candidate_gap_report.py",
-                "median_price": 1.8,
-                "selected_price": 1.85,
-                "selected_vs_median_deviation_pct": 2.778
+                "median_price": 1.735,
+                "selected_price": 1.77,
+                "selected_vs_median_deviation_pct": 2.017
               }
             },
-            "edge_pct": 2.822,
-            "ev_pct": 5.222,
+            "edge_pct": 2.327,
+            "ev_pct": 4.118,
             "expected_away": null,
             "expected_home": null,
             "family": "totals",
             "home_team": "Vikingur Reykjavik",
             "league_name": "Iceland - Efsta deild",
             "market_family": "totals",
-            "market_probability": 0.555556,
-            "match_key": "2026-06-16|vikingur reykjavik|kr reykjavik",
-            "model_probability": 0.568765,
-            "odds": 1.85,
+            "market_probability": 0.576369,
+            "match_key": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
+            "model_probability": 0.588239,
+            "odds": 1.77,
             "odds_sources_count": 1,
-            "point": 4.5,
-            "publication_score": 17.55,
+            "point": 4.0,
+            "publication_score": 15.09,
             "reasons": [
               "mode=b_cover_market_promotion",
               "model=conservative_median_market_anchor",
-              "books=4",
-              "context_sources=1",
-              "best_vs_median=2.78%"
+              "books=2",
+              "context_sources=3",
+              "best_vs_median=2.02%"
             ],
-            "selected_odds": 1.85,
-            "selection": "Меньше",
-            "selection_key": "under",
+            "selected_odds": 1.77,
+            "selection": "Больше",
+            "selection_key": "over",
             "source_summary": {
-              "bookmaker": "bet365",
+              "bookmaker": "betfair_exchange",
               "books": [
-                "bet365",
                 "betfair_exchange",
-                "sbobet",
-                "unibet"
+                "sbobet"
               ],
-              "books_count": 4,
+              "books_count": 2,
               "context_sources": [
-                "inventory_context"
+                "clubelo",
+                "model_xg",
+                "sstats"
               ],
-              "median_price": 1.8,
+              "median_price": 1.735,
               "prices": [
-                1.85,
-                1.5,
-                1.83,
-                1.74,
-                1.85,
-                1.8,
-                1.8
+                1.77,
+                1.7,
+                1.77,
+                1.7,
+                1.77,
+                1.7,
+                1.77,
+                1.7
               ],
               "raw_bucket_offers": [
                 {
-                  "bookmaker": "bet365",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.85,
-                  "selection": "under",
-                  "source": "odds_api_io"
-                },
-                {
-                  "bookmaker": "unibet",
-                  "family": "totals",
-                  "point": 4.5,
-                  "price": 1.5,
-                  "selection": "under",
-                  "source": "odds_api_io"
-                },
-                {
                   "bookmaker": "betfair_exchange",
                   "family": "totals",
-                  "point": 4.5,
-                  "price": 1.83,
-                  "selection": "under",
+                  "point": 4.0,
+                  "price": 1.77,
+                  "selection": "over",
                   "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "sbobet",
                   "family": "totals",
-                  "point": 4.5,
-                  "price": 1.74,
-                  "selection": "under",
+                  "point": 4.0,
+                  "price": 1.7,
+                  "selection": "over",
                   "source": "odds_api_io"
                 },
                 {
-                  "bookmaker": "bet365",
+                  "bookmaker": "betfair_exchange",
                   "family": "totals",
-                  "point": 4.5,
-                  "price": 1.85,
-                  "selection": "under",
-                  "source": "raw_offer_artifacts"
+                  "point": 4.0,
+                  "price": 1.77,
+                  "selection": "over",
+                  "source": "odds_api_io"
+                },
+                {
+                  "bookmaker": "sbobet",
+                  "family": "totals",
+                  "point": 4.0,
+                  "price": 1.7,
+                  "selection": "over",
+                  "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "betfair_exchange",
                   "family": "totals",
-                  "point": 4.5,
-                  "price": 1.8,
-                  "selection": "under",
-                  "source": "raw_offer_artifacts"
+                  "point": 4.0,
+                  "price": 1.77,
+                  "selection": "over",
+                  "source": "odds_api_io"
+                },
+                {
+                  "bookmaker": "sbobet",
+                  "family": "totals",
+                  "point": 4.0,
+                  "price": 1.7,
+                  "selection": "over",
+                  "source": "odds_api_io"
                 },
                 {
                   "bookmaker": "betfair_exchange",
                   "family": "totals",
-                  "point": 4.5,
-                  "price": 1.8,
-                  "selection": "under",
-                  "source": "raw_offer_artifacts"
+                  "point": 4.0,
+                  "price": 1.77,
+                  "selection": "over",
+                  "source": "odds_api_io"
+                },
+                {
+                  "bookmaker": "sbobet",
+                  "family": "totals",
+                  "point": 4.0,
+                  "price": 1.7,
+                  "selection": "over",
+                  "source": "odds_api_io"
                 }
               ],
-              "selected_bookmaker": "bet365",
+              "selected_bookmaker": "betfair_exchange",
               "selected_source": "b_cover_market_promotion",
-              "selected_vs_median_deviation_pct": 2.778
+              "selected_vs_median_deviation_pct": 2.017
             },
-            "sources_count": 1
+            "sources_count": 3
           }
         ],
         "status": "ok",
         "target_date": "2026-06-16"
       },
       "reason_counts": {
-        "b_cover_has_candidate": 7,
-        "b_cover_no_candidate_missing_xg_like_context": 74,
+        "b_cover_has_candidate": 9,
+        "b_cover_no_candidate_missing_xg_like_context": 72,
         "not_b_cover_missing_bookmaker": 1,
         "not_b_cover_missing_context": 56
       },
@@ -1513,7 +1263,7 @@
     },
     "b_cover_value_promotion": {
       "considered_b_cover_rows": 81,
-      "created_at_utc": "2026-06-16T18:05:40.429222+00:00",
+      "created_at_utc": "2026-06-16T18:39:53.196306+00:00",
       "enabled": true,
       "inventory_load": {
         "candidate_source_scores": [
@@ -1562,8 +1312,8 @@
         ],
         "prebuild_coverage_truth": {
           "enabled": true,
-          "finished_at_utc": "2026-06-16T18:05:40.002534+00:00",
-          "started_at_utc": "2026-06-16T18:05:39.640132+00:00",
+          "finished_at_utc": "2026-06-16T18:39:47.764395+00:00",
+          "started_at_utc": "2026-06-16T18:39:47.249885+00:00",
           "status": "ok",
           "steps": [
             {
@@ -1634,47 +1384,61 @@
       },
       "inventory_rows_seen": 137,
       "offer_diagnostics": {
-        "accepted_offer_rows": 599,
-        "scanned_dicts": 8466,
+        "accepted_offer_rows": 1371,
+        "scanned_dicts": 205452,
         "source_counts": {
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-bets.json": 3,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-line-snapshots.json": 293,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-pending-bets.json": 3,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-picks.json": 1,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-bets.json": 3,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-line-snapshots.json": 245,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-pending-bets.json": 3,
           "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 7,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 275,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 10,
-          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 7
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 239,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 16,
+          "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 19,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-b-cover-candidate-gap-report.json": 7,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-b-cover-value-promotion.json": 7,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-bets.json": 3,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-line-snapshots.json": 245,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-odds-api-io-offer-snapshot.json": 239,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-pending-bets.json": 3,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-rescue-candidates.json": 9,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 7,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-04-27.json": 72,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-06-15.json": 9,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-06-16.json": 119,
+          "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/latest.json": 119
         }
       },
-      "promoted_count": 5,
+      "promoted_count": 3,
       "reason_counts": {
-        "promoted": 5,
-        "promotion_skip_edge_below_min": 44,
-        "promotion_skip_ev_below_min": 2,
-        "promotion_skip_no_offer_bucket": 68,
-        "promotion_skip_odds_above_max": 120,
-        "promotion_skip_odds_below_min": 114,
+        "promoted": 3,
+        "promotion_skip_duplicate_candidate": 2,
+        "promotion_skip_edge_below_min": 78,
+        "promotion_skip_ev_below_min": 1,
+        "promotion_skip_no_offer_bucket": 45,
+        "promotion_skip_odds_above_max": 94,
+        "promotion_skip_odds_below_min": 88,
         "promotion_skip_price_outlier": 11
       },
       "rescue_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
       "sample": [
         {
-          "adjusted_probability": 0.543083,
-          "away_team": "Valur Reykjavik",
+          "adjusted_probability": 0.554536,
+          "away_team": "Breidablik",
           "bookmaker": "betfair_exchange",
-          "books_count": 4,
-          "canonical_match_id": "soccer|akranes|valur reykjavik|2026-06-16",
+          "books_count": 3,
+          "canonical_match_id": "soccer|breidablik|stjarnan|2026-06-16",
           "commence_time": "2026-06-16T19:15:00+00:00",
-          "confidence": 71.622,
+          "confidence": 71.563,
           "confirmation_sources": [
+            "clubelo",
             "inventory_context",
             "model_xg",
             "sstats"
           ],
-          "confirmation_sources_count": 3,
+          "confirmation_sources_count": 4,
           "context": {
             "context_sources": [
+              "clubelo",
               "inventory_context",
               "model_xg",
               "sstats"
@@ -1684,145 +1448,127 @@
           },
           "diagnostics": {
             "promotion": {
-              "canonical_edge_pp": 2.225,
-              "canonical_ev_pct": 4.272,
-              "created_at_utc": "2026-06-16T18:05:40.421854+00:00",
+              "canonical_edge_pp": 2.544,
+              "canonical_ev_pct": 4.807,
+              "created_at_utc": "2026-06-16T18:39:53.188343+00:00",
               "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 1.885,
-              "selected_price": 1.92,
-              "selected_vs_median_deviation_pct": 1.857
+              "median_price": 1.85,
+              "selected_price": 1.89,
+              "selected_vs_median_deviation_pct": 2.162
             }
           },
-          "edge_pct": 2.225,
-          "ev_pct": 4.272,
+          "edge_pct": 2.544,
+          "ev_pct": 4.807,
           "expected_away": null,
           "expected_home": null,
           "family": "totals",
-          "home_team": "Akranes",
+          "home_team": "Stjarnan",
           "league_name": "Iceland - Efsta deild",
           "market_family": "totals",
-          "market_probability": 0.530504,
-          "match_key": "soccer|akranes|valur reykjavik|2026-06-16",
-          "model_probability": 0.543083,
-          "odds": 1.92,
+          "market_probability": 0.540541,
+          "match_key": "soccer|breidablik|stjarnan|2026-06-16",
+          "model_probability": 0.554536,
+          "odds": 1.89,
           "odds_sources_count": 1,
-          "point": 3.5,
-          "publication_score": 17.463,
+          "point": 4.0,
+          "publication_score": 17.516,
           "reasons": [
             "mode=b_cover_market_promotion",
             "model=conservative_median_market_anchor",
-            "books=4",
-            "context_sources=3",
-            "best_vs_median=1.86%"
+            "books=3",
+            "context_sources=4",
+            "best_vs_median=2.16%"
           ],
-          "selected_odds": 1.92,
-          "selection": "Больше",
-          "selection_key": "over",
+          "selected_odds": 1.89,
+          "selection": "Меньше",
+          "selection_key": "under",
           "source_summary": {
             "bookmaker": "betfair_exchange",
             "books": [
               "bet365",
               "betfair_exchange",
-              "sbobet",
-              "unibet"
+              "sbobet"
             ],
-            "books_count": 4,
+            "books_count": 3,
             "context_sources": [
+              "clubelo",
               "inventory_context",
               "model_xg",
               "sstats"
             ],
-            "median_price": 1.885,
+            "median_price": 1.85,
             "prices": [
               1.85,
-              1.86,
-              1.92,
-              1.91,
+              1.89,
               1.85,
-              1.86,
-              1.92,
-              1.91
+              1.85,
+              1.89,
+              1.85
             ],
             "raw_bucket_offers": [
               {
                 "bookmaker": "bet365",
                 "family": "totals",
-                "point": 3.5,
+                "point": 4.0,
                 "price": 1.85,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 3.5,
-                "price": 1.86,
-                "selection": "over",
+                "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "betfair_exchange",
                 "family": "totals",
-                "point": 3.5,
-                "price": 1.92,
-                "selection": "over",
+                "point": 4.0,
+                "price": 1.89,
+                "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "sbobet",
                 "family": "totals",
-                "point": 3.5,
-                "price": 1.91,
-                "selection": "over",
+                "point": 4.0,
+                "price": 1.85,
+                "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "bet365",
                 "family": "totals",
-                "point": 3.5,
+                "point": 4.0,
                 "price": 1.85,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 3.5,
-                "price": 1.86,
-                "selection": "over",
+                "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "betfair_exchange",
                 "family": "totals",
-                "point": 3.5,
-                "price": 1.92,
-                "selection": "over",
+                "point": 4.0,
+                "price": 1.89,
+                "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "sbobet",
                 "family": "totals",
-                "point": 3.5,
-                "price": 1.91,
-                "selection": "over",
+                "point": 4.0,
+                "price": 1.85,
+                "selection": "under",
                 "source": "odds_api_io"
               }
             ],
             "selected_bookmaker": "betfair_exchange",
             "selected_source": "b_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 1.857
+            "selected_vs_median_deviation_pct": 2.162
           },
-          "sources_count": 3
+          "sources_count": 4
         },
         {
-          "adjusted_probability": 0.541757,
-          "away_team": "Valur Reykjavik",
+          "adjusted_probability": 0.551833,
+          "away_team": "Breidablik",
           "bookmaker": "betfair_exchange",
-          "books_count": 4,
-          "canonical_match_id": "2026-06-16|akranes|valur reykjavik",
+          "books_count": 3,
+          "canonical_match_id": "2026-06-16|stjarnan|breidablik",
           "commence_time": "2026-06-16T19:15:00+00:00",
-          "confidence": 70.008,
+          "confidence": 68.333,
           "confirmation_sources": [
             "inventory_context",
             "model_xg"
@@ -1838,536 +1584,320 @@
           },
           "diagnostics": {
             "promotion": {
-              "canonical_edge_pp": 2.092,
-              "canonical_ev_pct": 4.017,
-              "created_at_utc": "2026-06-16T18:05:40.422526+00:00",
+              "canonical_edge_pp": 2.273,
+              "canonical_ev_pct": 4.297,
+              "created_at_utc": "2026-06-16T18:39:53.189129+00:00",
               "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 1.885,
-              "selected_price": 1.92,
-              "selected_vs_median_deviation_pct": 1.857
+              "median_price": 1.85,
+              "selected_price": 1.89,
+              "selected_vs_median_deviation_pct": 2.162
             }
           },
-          "edge_pct": 2.092,
-          "ev_pct": 4.017,
-          "expected_away": null,
-          "expected_home": null,
-          "family": "totals",
-          "home_team": "Akranes",
-          "league_name": "Iceland - Efsta deild",
-          "market_family": "totals",
-          "market_probability": 0.530504,
-          "match_key": "2026-06-16|akranes|valur reykjavik",
-          "model_probability": 0.541757,
-          "odds": 1.92,
-          "odds_sources_count": 1,
-          "point": 3.5,
-          "publication_score": 15.805,
-          "reasons": [
-            "mode=b_cover_market_promotion",
-            "model=conservative_median_market_anchor",
-            "books=4",
-            "context_sources=2",
-            "best_vs_median=1.86%"
-          ],
-          "selected_odds": 1.92,
-          "selection": "Больше",
-          "selection_key": "over",
-          "source_summary": {
-            "bookmaker": "betfair_exchange",
-            "books": [
-              "bet365",
-              "betfair_exchange",
-              "sbobet",
-              "unibet"
-            ],
-            "books_count": 4,
-            "context_sources": [
-              "inventory_context",
-              "model_xg"
-            ],
-            "median_price": 1.885,
-            "prices": [
-              1.85,
-              1.86,
-              1.92,
-              1.91
-            ],
-            "raw_bucket_offers": [
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 3.5,
-                "price": 1.85,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 3.5,
-                "price": 1.86,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 3.5,
-                "price": 1.92,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "sbobet",
-                "family": "totals",
-                "point": 3.5,
-                "price": 1.91,
-                "selection": "over",
-                "source": "odds_api_io"
-              }
-            ],
-            "selected_bookmaker": "betfair_exchange",
-            "selected_source": "b_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 1.857
-          },
-          "sources_count": 2
-        },
-        {
-          "adjusted_probability": 0.443238,
-          "away_team": "Breidablik",
-          "bookmaker": "betfair_exchange",
-          "books_count": 3,
-          "canonical_match_id": "soccer|breidablik|stjarnan|2026-06-16",
-          "commence_time": "2026-06-16T19:15:00+00:00",
-          "confidence": 71.169,
-          "confirmation_sources": [
-            "inventory_context",
-            "model_xg",
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "context": {
-            "context_sources": [
-              "inventory_context",
-              "model_xg",
-              "sstats"
-            ],
-            "expected_away": null,
-            "expected_home": null
-          },
-          "diagnostics": {
-            "promotion": {
-              "canonical_edge_pp": 3.001,
-              "canonical_ev_pct": 7.264,
-              "created_at_utc": "2026-06-16T18:05:40.423366+00:00",
-              "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 2.33,
-              "selected_price": 2.42,
-              "selected_vs_median_deviation_pct": 3.863
-            }
-          },
-          "edge_pct": 3.001,
-          "ev_pct": 7.264,
+          "edge_pct": 2.273,
+          "ev_pct": 4.297,
           "expected_away": null,
           "expected_home": null,
           "family": "totals",
           "home_team": "Stjarnan",
           "league_name": "Iceland - Efsta deild",
           "market_family": "totals",
-          "market_probability": 0.429185,
-          "match_key": "soccer|breidablik|stjarnan|2026-06-16",
-          "model_probability": 0.443238,
-          "odds": 2.42,
+          "market_probability": 0.540541,
+          "match_key": "2026-06-16|stjarnan|breidablik",
+          "model_probability": 0.551833,
+          "odds": 1.89,
           "odds_sources_count": 1,
-          "point": 3.5,
-          "publication_score": 21.256,
+          "point": 4.0,
+          "publication_score": 15.288,
           "reasons": [
             "mode=b_cover_market_promotion",
             "model=conservative_median_market_anchor",
             "books=3",
-            "context_sources=3",
-            "best_vs_median=3.86%"
+            "context_sources=2",
+            "best_vs_median=2.16%"
           ],
-          "selected_odds": 2.42,
+          "selected_odds": 1.89,
           "selection": "Меньше",
           "selection_key": "under",
           "source_summary": {
             "bookmaker": "betfair_exchange",
             "books": [
+              "bet365",
               "betfair_exchange",
-              "sbobet",
-              "unibet"
+              "sbobet"
             ],
             "books_count": 3,
             "context_sources": [
               "inventory_context",
-              "model_xg",
-              "sstats"
+              "model_xg"
             ],
-            "median_price": 2.33,
+            "median_price": 1.85,
             "prices": [
-              2.02,
-              2.42,
-              2.33,
-              2.42,
-              2.02,
-              2.42,
-              2.33
+              1.85,
+              1.89,
+              1.85,
+              1.85,
+              1.89,
+              1.85
             ],
             "raw_bucket_offers": [
               {
-                "bookmaker": "unibet",
+                "bookmaker": "bet365",
                 "family": "totals",
-                "point": 3.5,
-                "price": 2.02,
+                "point": 4.0,
+                "price": 1.85,
                 "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "betfair_exchange",
                 "family": "totals",
-                "point": 3.5,
-                "price": 2.42,
+                "point": 4.0,
+                "price": 1.89,
                 "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "sbobet",
                 "family": "totals",
-                "point": 3.5,
-                "price": 2.33,
+                "point": 4.0,
+                "price": 1.85,
+                "selection": "under",
+                "source": "odds_api_io"
+              },
+              {
+                "bookmaker": "bet365",
+                "family": "totals",
+                "point": 4.0,
+                "price": 1.85,
                 "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "betfair_exchange",
                 "family": "totals",
-                "point": 3.5,
-                "price": 2.42,
-                "selection": "under",
-                "source": "raw_offer_artifacts"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 3.5,
-                "price": 2.02,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 3.5,
-                "price": 2.42,
+                "point": 4.0,
+                "price": 1.89,
                 "selection": "under",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "sbobet",
                 "family": "totals",
-                "point": 3.5,
-                "price": 2.33,
+                "point": 4.0,
+                "price": 1.85,
                 "selection": "under",
                 "source": "odds_api_io"
               }
             ],
             "selected_bookmaker": "betfair_exchange",
             "selected_source": "b_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 3.863
-          },
-          "sources_count": 3
-        },
-        {
-          "adjusted_probability": 0.570154,
-          "away_team": "KR Reykjavik",
-          "bookmaker": "bet365",
-          "books_count": 4,
-          "canonical_match_id": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
-          "commence_time": "2026-06-16T19:15:00+00:00",
-          "confidence": 70.665,
-          "confirmation_sources": [
-            "model_xg",
-            "sstats"
-          ],
-          "confirmation_sources_count": 2,
-          "context": {
-            "context_sources": [
-              "model_xg",
-              "sstats"
-            ],
-            "expected_away": null,
-            "expected_home": null
-          },
-          "diagnostics": {
-            "promotion": {
-              "canonical_edge_pp": 2.961,
-              "canonical_ev_pct": 5.479,
-              "created_at_utc": "2026-06-16T18:05:40.424478+00:00",
-              "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 1.8,
-              "selected_price": 1.85,
-              "selected_vs_median_deviation_pct": 2.778
-            }
-          },
-          "edge_pct": 2.961,
-          "ev_pct": 5.479,
-          "expected_away": null,
-          "expected_home": null,
-          "family": "totals",
-          "home_team": "Vikingur Reykjavik",
-          "league_name": "Iceland - Efsta deild",
-          "market_family": "totals",
-          "market_probability": 0.555556,
-          "match_key": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
-          "model_probability": 0.570154,
-          "odds": 1.85,
-          "odds_sources_count": 1,
-          "point": 4.5,
-          "publication_score": 19.223,
-          "reasons": [
-            "mode=b_cover_market_promotion",
-            "model=conservative_median_market_anchor",
-            "books=4",
-            "context_sources=2",
-            "best_vs_median=2.78%"
-          ],
-          "selected_odds": 1.85,
-          "selection": "Меньше",
-          "selection_key": "under",
-          "source_summary": {
-            "bookmaker": "bet365",
-            "books": [
-              "bet365",
-              "betfair_exchange",
-              "sbobet",
-              "unibet"
-            ],
-            "books_count": 4,
-            "context_sources": [
-              "model_xg",
-              "sstats"
-            ],
-            "median_price": 1.8,
-            "prices": [
-              1.85,
-              1.5,
-              1.83,
-              1.74,
-              1.85,
-              1.8,
-              1.8
-            ],
-            "raw_bucket_offers": [
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.85,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.5,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.83,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "sbobet",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.74,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.85,
-                "selection": "under",
-                "source": "raw_offer_artifacts"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.8,
-                "selection": "under",
-                "source": "raw_offer_artifacts"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.8,
-                "selection": "under",
-                "source": "raw_offer_artifacts"
-              }
-            ],
-            "selected_bookmaker": "bet365",
-            "selected_source": "b_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 2.778
+            "selected_vs_median_deviation_pct": 2.162
           },
           "sources_count": 2
         },
         {
-          "adjusted_probability": 0.568765,
+          "adjusted_probability": 0.588239,
           "away_team": "KR Reykjavik",
-          "bookmaker": "bet365",
-          "books_count": 4,
-          "canonical_match_id": "2026-06-16|vikingur reykjavik|kr reykjavik",
+          "bookmaker": "betfair_exchange",
+          "books_count": 2,
+          "canonical_match_id": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
           "commence_time": "2026-06-16T19:15:00+00:00",
-          "confidence": 69.05,
+          "confidence": 67.953,
           "confirmation_sources": [
-            "inventory_context"
+            "clubelo",
+            "model_xg",
+            "sstats"
           ],
-          "confirmation_sources_count": 1,
+          "confirmation_sources_count": 3,
           "context": {
             "context_sources": [
-              "inventory_context"
+              "clubelo",
+              "model_xg",
+              "sstats"
             ],
             "expected_away": null,
             "expected_home": null
           },
           "diagnostics": {
             "promotion": {
-              "canonical_edge_pp": 2.822,
-              "canonical_ev_pct": 5.222,
-              "created_at_utc": "2026-06-16T18:05:40.425097+00:00",
+              "canonical_edge_pp": 2.327,
+              "canonical_ev_pct": 4.118,
+              "created_at_utc": "2026-06-16T18:39:53.190671+00:00",
               "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 1.8,
-              "selected_price": 1.85,
-              "selected_vs_median_deviation_pct": 2.778
+              "median_price": 1.735,
+              "selected_price": 1.77,
+              "selected_vs_median_deviation_pct": 2.017
             }
           },
-          "edge_pct": 2.822,
-          "ev_pct": 5.222,
+          "edge_pct": 2.327,
+          "ev_pct": 4.118,
           "expected_away": null,
           "expected_home": null,
           "family": "totals",
           "home_team": "Vikingur Reykjavik",
           "league_name": "Iceland - Efsta deild",
           "market_family": "totals",
-          "market_probability": 0.555556,
-          "match_key": "2026-06-16|vikingur reykjavik|kr reykjavik",
-          "model_probability": 0.568765,
-          "odds": 1.85,
+          "market_probability": 0.576369,
+          "match_key": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
+          "model_probability": 0.588239,
+          "odds": 1.77,
           "odds_sources_count": 1,
-          "point": 4.5,
-          "publication_score": 17.55,
+          "point": 4.0,
+          "publication_score": 15.09,
           "reasons": [
             "mode=b_cover_market_promotion",
             "model=conservative_median_market_anchor",
-            "books=4",
-            "context_sources=1",
-            "best_vs_median=2.78%"
+            "books=2",
+            "context_sources=3",
+            "best_vs_median=2.02%"
           ],
-          "selected_odds": 1.85,
-          "selection": "Меньше",
-          "selection_key": "under",
+          "selected_odds": 1.77,
+          "selection": "Больше",
+          "selection_key": "over",
           "source_summary": {
-            "bookmaker": "bet365",
+            "bookmaker": "betfair_exchange",
             "books": [
-              "bet365",
               "betfair_exchange",
-              "sbobet",
-              "unibet"
+              "sbobet"
             ],
-            "books_count": 4,
+            "books_count": 2,
             "context_sources": [
-              "inventory_context"
+              "clubelo",
+              "model_xg",
+              "sstats"
             ],
-            "median_price": 1.8,
+            "median_price": 1.735,
             "prices": [
-              1.85,
-              1.5,
-              1.83,
-              1.74,
-              1.85,
-              1.8,
-              1.8
+              1.77,
+              1.7,
+              1.77,
+              1.7,
+              1.77,
+              1.7,
+              1.77,
+              1.7
             ],
             "raw_bucket_offers": [
               {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.85,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 4.5,
-                "price": 1.5,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
                 "bookmaker": "betfair_exchange",
                 "family": "totals",
-                "point": 4.5,
-                "price": 1.83,
-                "selection": "under",
+                "point": 4.0,
+                "price": 1.77,
+                "selection": "over",
                 "source": "odds_api_io"
               },
               {
                 "bookmaker": "sbobet",
                 "family": "totals",
-                "point": 4.5,
-                "price": 1.74,
-                "selection": "under",
+                "point": 4.0,
+                "price": 1.7,
+                "selection": "over",
                 "source": "odds_api_io"
               },
               {
-                "bookmaker": "bet365",
+                "bookmaker": "betfair_exchange",
                 "family": "totals",
-                "point": 4.5,
-                "price": 1.85,
-                "selection": "under",
-                "source": "raw_offer_artifacts"
+                "point": 4.0,
+                "price": 1.77,
+                "selection": "over",
+                "source": "odds_api_io"
+              },
+              {
+                "bookmaker": "sbobet",
+                "family": "totals",
+                "point": 4.0,
+                "price": 1.7,
+                "selection": "over",
+                "source": "odds_api_io"
               },
               {
                 "bookmaker": "betfair_exchange",
                 "family": "totals",
-                "point": 4.5,
-                "price": 1.8,
-                "selection": "under",
-                "source": "raw_offer_artifacts"
+                "point": 4.0,
+                "price": 1.77,
+                "selection": "over",
+                "source": "odds_api_io"
+              },
+              {
+                "bookmaker": "sbobet",
+                "family": "totals",
+                "point": 4.0,
+                "price": 1.7,
+                "selection": "over",
+                "source": "odds_api_io"
               },
               {
                 "bookmaker": "betfair_exchange",
                 "family": "totals",
-                "point": 4.5,
-                "price": 1.8,
-                "selection": "under",
-                "source": "raw_offer_artifacts"
+                "point": 4.0,
+                "price": 1.77,
+                "selection": "over",
+                "source": "odds_api_io"
+              },
+              {
+                "bookmaker": "sbobet",
+                "family": "totals",
+                "point": 4.0,
+                "price": 1.7,
+                "selection": "over",
+                "source": "odds_api_io"
               }
             ],
-            "selected_bookmaker": "bet365",
+            "selected_bookmaker": "betfair_exchange",
             "selected_source": "b_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 2.778
+            "selected_vs_median_deviation_pct": 2.017
           },
-          "sources_count": 1
+          "sources_count": 3
         }
       ],
       "status": "ok",
       "target_date": "2026-06-16"
     },
-    "bzzoiro_v2": {},
+    "bzzoiro_v2": {
+      "api_key_present": true,
+      "api_version": "v2",
+      "base_url": "https://sports.bzzoiro.com/api/v2",
+      "context_limit_enforced": false,
+      "contexts_built": 1,
+      "enabled": true,
+      "errors": 0,
+      "event_matches": 1,
+      "event_metadata_fetched": 0,
+      "event_odds_fetched": 1,
+      "event_prediction_fetched": 1,
+      "event_rejected_league_mismatch": 0,
+      "event_rejected_low_score": 0,
+      "event_rejected_no_quality": 31,
+      "event_stats_fetched": 1,
+      "events_fetched": 22,
+      "http_statuses": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "last_body_preview": "{\"id\":4795,\"created_at\":\"2026-06-02T10:52:53Z\",\"event\":{\"id\":9979,\"event_date\":\"2026-06-16T23:00:00Z\",\"status\":\"notstarted\",\"home_team_id\":152,\"home_team\":\"Fortaleza\",\"away_team_id\":838,\"away_team\":\"América Mineiro\",\"league_id\":34,\"league_name\":\"Brasileirão Serie B\"},\"markets\":{\"match_result\":{\"prob_home\":81.6,\"prob_draw\":11.9,\"prob_away\":6.5,\"predicted\":\"H\"},\"expected_goals\":{\"home\":1.35,\"away\":0.72},\"over_under\":{\"prob_over_15\":84.2,\"prob_over_25\":41.0,\"prob_over_35\":21.3},\"btts\":{\"prob_yes\":47.4},\"score\":{\"most_likely\":\"1-0\"}},\"recommendations\":{\"favorite\":\"H\",\"favorite_prob\":81.6,\"bet_favorite\":false,\"over_15\":false,\"over_25\":false,\"over_35\":false,\"btts\":false,\"winner\":false},\"model\":{\"confidence\":0.8159,\"version\":\"v5.0\"}}",
+      "last_error": null,
+      "last_url": "https://sports.bzzoiro.com/api/v2/events/9979/prediction/",
+      "lineups_resources": 0,
+      "matched_exact": 0,
+      "matched_fuzzy": 1,
+      "matched_loose": 0,
+      "odds_resources": 1,
+      "payload_shapes": [
+        "dict:count,next,previous,results",
+        "dict:event_id,odds",
+        "dict:average_positions,event_id,momentum,shotmap,stats,xg_per_minute",
+        "dict:created_at,event,id,markets,model,recommendations"
+      ],
+      "prediction_resources": 1,
+      "provider_version": "bzzoiro-v2-clean-2026-04-29",
+      "request_limit_removed": true,
+      "requests": 4,
+      "response_errors": 0,
+      "retry_attempts": 0,
+      "stats_resources": 1
+    },
     "coverage_truth": {
       "counts": {
         "matches_missing_context_2plus": 89,
@@ -2398,263 +1928,53 @@
         },
         "csv": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.csv",
         "json": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-        "updated_at_utc": "2026-06-16T18:05:39.891790+00:00"
+        "updated_at_utc": "2026-06-16T18:39:47.661086+00:00"
       }
     },
     "github_actions": {
       "repository": "Harfdsfsq/sports-bot",
       "run_attempt": "1",
-      "run_id": "27637595940",
+      "run_id": "27639504279",
       "workflow": "run-bot"
     },
     "inventory_bookmaker_backfill": {
-      "changed_inventory_rows": 5,
-      "created_at_utc": "2026-06-16T18:05:39.456066+00:00",
-      "examples": [
-        {
-          "after_books": 1,
-          "away_team": "Tallahassee Reckoning",
-          "before_books": 0,
-          "home_team": "Brevard SC Riptide",
-          "match_key": "2026-06-16|brevard riptide|tallahassee reckoning",
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 2.15,
-              "selection": "Brevard SC Riptide"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 3.5,
-              "selection": "Draw"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 2.75,
-              "selection": "Tallahassee Reckoning"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 1.666,
-              "selection": "Brevard SC Riptide"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 2.1,
-              "selection": "Tallahassee Reckoning"
-            }
-          ]
-        },
-        {
-          "after_books": 1,
-          "away_team": "Erie Sports Center",
-          "before_books": 0,
-          "home_team": "Cleveland Force SC",
-          "match_key": "2026-06-16|cleveland force|erie sports center",
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 1.25,
-              "selection": "Cleveland Force SC"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 6.0,
-              "selection": "Draw"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 7.5,
-              "selection": "Erie Sports Center"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 1.1,
-              "selection": "Cleveland Force SC"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 6.5,
-              "selection": "Erie Sports Center"
-            }
-          ]
-        },
-        {
-          "after_books": 1,
-          "away_team": "Rochester FC",
-          "before_books": 0,
-          "home_team": "Rockford Raptors",
-          "match_key": "2026-06-16|rockford raptors|rochester",
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 1.909,
-              "selection": "Rockford Raptors"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 3.5,
-              "selection": "Draw"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 3.3,
-              "selection": "Rochester FC"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 1.444,
-              "selection": "Rockford Raptors"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 2.625,
-              "selection": "Rochester FC"
-            }
-          ]
-        },
-        {
-          "after_books": 1,
-          "away_team": "Boston City",
-          "before_books": 0,
-          "home_team": "Boston Bolts",
-          "match_key": "2026-06-16|boston bolts|boston city",
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 1.333,
-              "selection": "Boston Bolts"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 5.0,
-              "selection": "Draw"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 6.0,
-              "selection": "Boston City"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 1.142,
-              "selection": "Boston Bolts"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 5.0,
-              "selection": "Boston City"
-            }
-          ]
-        },
-        {
-          "after_books": 1,
-          "away_team": "Long Island",
-          "before_books": 0,
-          "home_team": "Manhattan SC",
-          "match_key": "2026-06-16|manhattan|long island",
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 3.2,
-              "selection": "Manhattan SC"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 3.9,
-              "selection": "Draw"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": null,
-              "price": 1.8,
-              "selection": "Long Island"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 2.625,
-              "selection": "Manhattan SC"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": null,
-              "price": 1.444,
-              "selection": "Long Island"
-            }
-          ]
-        }
-      ],
+      "changed_inventory_rows": 0,
+      "created_at_utc": "2026-06-16T18:39:47.067742+00:00",
+      "examples": [],
       "inventory_path_used": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-16.json",
       "inventory_rows": 174,
-      "mapping_gap_after": 5,
-      "matched_inventory_rows": 21,
-      "normalized_2plus_after": 16,
+      "mapping_gap_after": 0,
+      "matched_inventory_rows": 43,
+      "normalized_2plus_after": 38,
       "normalized_2plus_before": 78,
-      "raw_2plus_matches": 21,
-      "raw_groups": 54,
-      "scanned_dicts": 8289,
+      "raw_2plus_matches": 17,
+      "raw_groups": 74,
+      "scanned_dicts": 196887,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-bets.json": 5,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-line-snapshots.json": 1172,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-pending-bets.json": 5,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/180525-picks.json": 1,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-bets.json": 5,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-line-snapshots.json": 888,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-16/183856-pending-bets.json": 5,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 7,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 900,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 10,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 7
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 766,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 16,
+        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 40,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-b-cover-candidate-gap-report.json": 7,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-b-cover-value-promotion.json": 7,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-bets.json": 5,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-line-snapshots.json": 888,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-odds-api-io-offer-snapshot.json": 766,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-pending-bets.json": 5,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-rescue-candidates.json": 9,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 7,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-04-27.json": 72,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-06-15.json": 9,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-06-16.json": 135,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/latest.json": 135
       },
       "target_date": "2026-06-16"
     },
     "inventory_target_expand": {
-      "created_at_utc": "2026-06-16T18:02:14.809041+00:00",
+      "created_at_utc": "2026-06-16T18:36:00.816740+00:00",
       "existing_before": 133,
       "matches_after": 133,
       "parse_errors": [
@@ -2683,16 +2003,23 @@
       "target_timezone": "Europe/Moscow"
     },
     "odds_api_io_offer_snapshot": {
-      "matches_count": 15,
-      "matches_with_2plus_books_any_market": 5,
-      "matches_with_2plus_books_same_side_market": 5,
-      "rows_count": 955,
+      "matches_count": 14,
+      "matches_with_2plus_books_any_market": 4,
+      "matches_with_2plus_books_same_side_market": 4,
+      "rows_count": 821,
       "status": "ok"
     },
     "progressive_core_coverage": {
       "contract": {},
       "counts": {},
       "gap_sample_size": 0
+    },
+    "run_bot_step_status": {
+      "run_id": "27639504279",
+      "status": 0,
+      "status_text": "ok",
+      "updated_at_utc": "2026-06-16T18:39:07Z",
+      "workflow": "run-bot"
     },
     "sportlogic": {
       "diagnosis": "sportlogic_no_current_games_probe_only",
@@ -2711,22 +2038,29 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 0,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "candidates_before_quality": 6,
+    "fallback_candidates_seen": 15,
+    "fallback_evaluated": 15,
     "fallback_published": false,
     "fallback_published_count": 0,
-    "fallback_status": "fallback_artifact_missing_after_step",
-    "final_publication_status": "published",
-    "main_pipeline_published": true,
-    "main_pipeline_published_count": 5,
-    "passed_candidates": 0,
+    "fallback_status": "no_viable_controlled_fallback",
+    "final_publication_status": "not_published",
+    "main_pipeline_publication_counter_diagnostics": {
+      "counter_inconsistent": false,
+      "ignored_ledger_sent_pending_count": 0,
+      "sent_pending_count": 5,
+      "sent_picks_count": 0,
+      "summary_has_publication_counters": true
+    },
+    "main_pipeline_published": false,
+    "main_pipeline_published_count": 0,
+    "passed_candidates": 2,
     "publish_filter_blocked": 0,
     "publish_filter_input": 0,
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
-    "published_count": 5,
-    "raw_candidates": 0,
+    "published_count": 0,
+    "raw_candidates": 2,
     "windowed_audit_candidates": 0,
     "windowed_publish_allowed": 0,
     "windowed_publish_blocked": 0
@@ -2734,128 +2068,541 @@
   "line_guard": {
     "dropped": 1,
     "dropped_final": 1,
-    "final_pre_kickoff_checks": 10,
-    "kept": 3,
-    "no_more_regular_run_before_kickoff": 10,
-    "seen": 4,
+    "final_pre_kickoff_checks": 8,
+    "kept": 2,
+    "no_more_regular_run_before_kickoff": 6,
+    "seen": 3,
     "waiting_next_run": 0
   },
   "reasons": [
     {
-      "count": 1,
-      "reason": "line_movement_guard_dropped",
-      "reason_ru": "line movement guard снял кандидата"
+      "count": 8,
+      "reason": "missing_total_xg_sanity",
+      "reason_ru": "missing total xg sanity"
+    },
+    {
+      "count": 7,
+      "reason": "tier_c_watch_only",
+      "reason_ru": "tier c watch only"
+    },
+    {
+      "count": 6,
+      "reason": "tier_a_odds_sources_below_min:1/2",
+      "reason_ru": "tier a odds sources below min:1/2"
+    },
+    {
+      "count": 6,
+      "reason": "tier_b_canonical_edge_below_min",
+      "reason_ru": "tier b canonical edge below min"
+    },
+    {
+      "count": 6,
+      "reason": "tier_b_canonical_ev_below_min",
+      "reason_ru": "tier b canonical ev below min"
+    },
+    {
+      "count": 5,
+      "reason": "tier_a_publication_score_below_min",
+      "reason_ru": "tier a publication score below min"
+    },
+    {
+      "count": 5,
+      "reason": "tier_a_proxy_quality_not_allowed",
+      "reason_ru": "tier a proxy quality not allowed"
+    },
+    {
+      "count": 5,
+      "reason": "tier_b_publication_score_below_min",
+      "reason_ru": "tier b publication score below min"
+    },
+    {
+      "count": 5,
+      "reason": "tier_c_publication_score_below_min",
+      "reason_ru": "tier c publication score below min"
+    },
+    {
+      "count": 3,
+      "reason": "proxy_single_source_edge_below_min",
+      "reason_ru": "proxy single source edge below min"
+    },
+    {
+      "count": 3,
+      "reason": "proxy_single_source_ev_below_min",
+      "reason_ru": "proxy single source ev below min"
+    },
+    {
+      "count": 3,
+      "reason": "proxy_single_source_confidence_below_min",
+      "reason_ru": "proxy single source confidence below min"
     }
   ],
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "Valur Reykjavik",
+        "away_team_ru": "Валур Рейкджавик",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-16T19:15:00+00:00",
+        "commence_time_display": "16.06.2026 22:15 MSK",
+        "family": "totals",
+        "home_team": "Akranes",
+        "home_team_ru": "Акранес",
+        "league_name": "Iceland - Efsta deild",
+        "league_name_ru": "Икеланд - Ефста дейлд",
+        "match_key": "soccer|akranes|valur reykjavik|2026-06-16",
+        "metrics": {
+          "adjusted_probability": 0.518883,
+          "books_count": 4,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.627,
+          "canonical_ev_pct": 5.333,
+          "confidence": 72.1,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "clubelo",
+            "sstats"
+          ],
+          "confirmation_sources_count": 3,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.383,
+          "market_probability": 0.505051,
+          "model_probability": 0.518883,
+          "odds": 2.03,
+          "odds_sources_count": 1,
+          "publication_score": 19.488,
+          "quality_reasons": [],
+          "quality_score": 76.0,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.492611,
+          "sources_count": 3,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 4,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.98,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 4,
+            "same_market_side_line_only": true,
+            "selected_price": 2.03,
+            "selected_vs_median_deviation_pct": 2.525
+          },
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_a_publication_score_below_min",
+          "tier_a_proxy_quality_not_allowed",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_canonical_ev_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_publication_score_below_min"
+        ],
+        "reject_reasons_ru": [
+          "уровень A: publication score below min",
+          "уровень A не принимает proxy-качество",
+          "уровень A: odds sources below min:1/2",
+          "запас value ниже минимума уровня B",
+          "EV ниже минимума уровня B",
+          "уровень B: publication score below min",
+          "уровень C: publication score below min"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "Valur Reykjavik",
+        "away_team_ru": "Валур Рейкджавик",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-16T19:15:00+00:00",
+        "commence_time_display": "16.06.2026 22:15 MSK",
+        "family": "totals",
+        "home_team": "Akranes",
+        "home_team_ru": "Акранес",
+        "league_name": "Iceland - Efsta deild",
+        "league_name_ru": "Икеланд - Ефста дейлд",
+        "match_key": "2026-06-16|akranes|valur reykjavik",
+        "metrics": {
+          "adjusted_probability": 0.517621,
+          "books_count": 4,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.501,
+          "canonical_ev_pct": 5.077,
+          "confidence": 70.485,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.257,
+          "market_probability": 0.505051,
+          "model_probability": 0.517621,
+          "odds": 2.03,
+          "odds_sources_count": 1,
+          "publication_score": 17.841,
+          "quality_reasons": [],
+          "quality_score": 74.067,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.492611,
+          "sources_count": 2,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 4,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.98,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 4,
+            "same_market_side_line_only": true,
+            "selected_price": 2.03,
+            "selected_vs_median_deviation_pct": 2.525
+          },
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_a_publication_score_below_min",
+          "tier_a_proxy_quality_not_allowed",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_canonical_ev_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_publication_score_below_min"
+        ],
+        "reject_reasons_ru": [
+          "уровень A: publication score below min",
+          "уровень A не принимает proxy-качество",
+          "уровень A: odds sources below min:1/2",
+          "запас value ниже минимума уровня B",
+          "EV ниже минимума уровня B",
+          "уровень B: publication score below min",
+          "уровень C: publication score below min"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "Breidablik",
+        "away_team_ru": "Брейдаблик",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-16T19:15:00+00:00",
+        "commence_time_display": "16.06.2026 22:15 MSK",
+        "family": "totals",
+        "home_team": "Stjarnan",
+        "home_team_ru": "Стджарнан",
+        "league_name": "Iceland - Efsta deild",
+        "league_name_ru": "Икеланд - Ефста дейлд",
+        "match_key": "soccer|breidablik|stjarnan|2026-06-16",
+        "metrics": {
+          "adjusted_probability": 0.621111,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.94,
+          "canonical_ev_pct": 4.968,
+          "confidence": 70.136,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "clubelo",
+            "sstats"
+          ],
+          "confirmation_sources_count": 3,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.505,
+          "market_probability": 0.606061,
+          "model_probability": 0.621111,
+          "odds": 1.69,
+          "odds_sources_count": 1,
+          "publication_score": 18.492,
+          "quality_reasons": [],
+          "quality_score": 74.464,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.591716,
+          "sources_count": 3,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 3,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.65,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 3,
+            "same_market_side_line_only": true,
+            "selected_price": 1.69,
+            "selected_vs_median_deviation_pct": 2.424
+          },
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_a_publication_score_below_min",
+          "tier_a_proxy_quality_not_allowed",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_canonical_ev_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_publication_score_below_min"
+        ],
+        "reject_reasons_ru": [
+          "уровень A: publication score below min",
+          "уровень A не принимает proxy-качество",
+          "уровень A: odds sources below min:1/2",
+          "запас value ниже минимума уровня B",
+          "EV ниже минимума уровня B",
+          "уровень B: publication score below min",
+          "уровень C: publication score below min"
+        ],
+        "selection": "Больше",
+        "tier": null
+      },
+      {
+        "away_team": "Breidablik",
+        "away_team_ru": "Брейдаблик",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-16T19:15:00+00:00",
+        "commence_time_display": "16.06.2026 22:15 MSK",
+        "family": "totals",
+        "home_team": "Stjarnan",
+        "home_team_ru": "Стджарнан",
+        "league_name": "Iceland - Efsta deild",
+        "league_name_ru": "Икеланд - Ефста дейлд",
+        "match_key": "2026-06-16|stjarnan|breidablik",
+        "metrics": {
+          "adjusted_probability": 0.618081,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.637,
+          "canonical_ev_pct": 4.456,
+          "confidence": 66.905,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.202,
+          "market_probability": 0.606061,
+          "model_probability": 0.618081,
+          "odds": 1.69,
+          "odds_sources_count": 1,
+          "publication_score": 15.097,
+          "quality_reasons": [],
+          "quality_score": 70.144,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.591716,
+          "sources_count": 1,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 3,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.65,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 3,
+            "same_market_side_line_only": true,
+            "selected_price": 1.69,
+            "selected_vs_median_deviation_pct": 2.424
+          },
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_a_publication_score_below_min",
+          "tier_a_proxy_quality_not_allowed",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_b_confidence_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_canonical_ev_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_publication_score_below_min"
+        ],
+        "reject_reasons_ru": [
+          "уровень A: publication score below min",
+          "уровень A не принимает proxy-качество",
+          "уровень A: odds sources below min:1/2",
+          "уровень A: confirmation sources below min:1/2",
+          "уверенность ниже минимума уровня B",
+          "запас value ниже минимума уровня B",
+          "EV ниже минимума уровня B",
+          "уровень B: publication score below min",
+          "уровень C: publication score below min"
+        ],
+        "selection": "Больше",
+        "tier": null
+      },
+      {
+        "away_team": "KR Reykjavik",
+        "away_team_ru": "KR Рейкджавик",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-16T19:15:00+00:00",
+        "commence_time_display": "16.06.2026 22:15 MSK",
+        "family": "totals",
+        "home_team": "Vikingur Reykjavik",
+        "home_team_ru": "Викингур Рейкджавик",
+        "league_name": "Iceland - Efsta deild",
+        "league_name_ru": "Икеланд - Ефста дейлд",
+        "match_key": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
+        "metrics": {
+          "adjusted_probability": 0.565279,
+          "books_count": 4,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.474,
+          "canonical_ev_pct": 4.577,
+          "confidence": 70.259,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "clubelo",
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.279,
+          "market_probability": 0.552486,
+          "model_probability": 0.565279,
+          "odds": 1.85,
+          "odds_sources_count": 1,
+          "publication_score": 17.211,
+          "quality_reasons": [],
+          "quality_score": 73.158,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.540541,
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 4.5,
+        "reject_reasons": [
+          "duplicate_state:bets"
+        ],
+        "reject_reasons_ru": [
+          "duplicate state:bets"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      }
+    ],
     "top_priority_matches": [
-      {
-        "away_team": "Senegal",
-        "home_team": "France",
-        "kickoff_utc": "2026-06-16T19:00:00+00:00",
-        "league_name": "World Cup 2026",
-        "match_key": "2026-06-16|france|senegal",
-        "minutes_to_kickoff": 54.56,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 157.814,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-15T19:04:20.367189+00:00",
-          "latest_useful_run_at_utc": "2026-06-16T18:30:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Al-Salmiya",
-        "home_team": "Qadsia",
-        "kickoff_utc": "2026-06-16T18:45:00+00:00",
-        "league_name": "Kuwait - Premier League, Championship Group",
-        "match_key": "soccer|al salmiya|qadsia|2026-06-16",
-        "minutes_to_kickoff": 39.56,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 146.814,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-16T17:05:23.484883+00:00",
-          "latest_useful_run_at_utc": "2026-06-16T18:15:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Al-Salmiya",
-        "home_team": "Qadsia",
-        "kickoff_utc": "2026-06-16T18:45:00+00:00",
-        "league_name": "Kuwait - Premier League, Championship Group",
-        "match_key": "2026-06-16|qadsia|al salmiya",
-        "minutes_to_kickoff": 39.56,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 146.814,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-16T17:05:48.750655+00:00",
-          "latest_useful_run_at_utc": "2026-06-16T18:15:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Senegal",
-        "home_team": "France",
-        "kickoff_utc": "2026-06-16T19:00:00+00:00",
-        "league_name": "World Cup 2026",
-        "match_key": "soccer|france|senegal|2026-06-16",
-        "minutes_to_kickoff": 54.56,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.814,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-16T11:28:14.887693+00:00",
-          "latest_useful_run_at_utc": "2026-06-16T18:30:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
       {
         "away_team": "Valur Reykjavik",
         "home_team": "Akranes",
         "kickoff_utc": "2026-06-16T19:15:00+00:00",
         "league_name": "Iceland - Efsta deild",
         "match_key": "soccer|akranes|valur reykjavik|2026-06-16",
-        "minutes_to_kickoff": 69.56,
+        "minutes_to_kickoff": 36.07,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 136.814,
+        "priority": 147.978,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-15T23:06:11.229631+00:00",
+          "last_odds_refresh_utc": "2026-04-26T22:32:01.692784+00:00",
           "latest_useful_run_at_utc": "2026-06-16T18:45:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
@@ -2871,14 +2618,37 @@
         "kickoff_utc": "2026-06-16T19:15:00+00:00",
         "league_name": "Iceland - Efsta deild",
         "match_key": "2026-06-16|akranes|valur reykjavik",
-        "minutes_to_kickoff": 69.56,
+        "minutes_to_kickoff": 36.07,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 136.814,
+        "priority": 147.978,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-16T12:00:50.760808+00:00",
+          "last_odds_refresh_utc": "2026-06-16T18:05:39.778385+00:00",
+          "latest_useful_run_at_utc": "2026-06-16T18:45:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Breidablik",
+        "home_team": "Stjarnan",
+        "kickoff_utc": "2026-06-16T19:15:00+00:00",
+        "league_name": "Iceland - Efsta deild",
+        "match_key": "soccer|breidablik|stjarnan|2026-06-16",
+        "minutes_to_kickoff": 36.07,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 147.978,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-04-26T22:32:01.692784+00:00",
           "latest_useful_run_at_utc": "2026-06-16T18:45:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
@@ -2887,13 +2657,82 @@
           "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
+      },
+      {
+        "away_team": "Breidablik",
+        "home_team": "Stjarnan",
+        "kickoff_utc": "2026-06-16T19:15:00+00:00",
+        "league_name": "Iceland - Efsta deild",
+        "match_key": "2026-06-16|stjarnan|breidablik",
+        "minutes_to_kickoff": 36.07,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 147.978,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-06-16T18:05:39.778609+00:00",
+          "latest_useful_run_at_utc": "2026-06-16T18:45:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "KR Reykjavik",
+        "home_team": "Vikingur Reykjavik",
+        "kickoff_utc": "2026-06-16T19:15:00+00:00",
+        "league_name": "Iceland - Efsta deild",
+        "match_key": "soccer|kr reykjavik|vikingur reykjavik|2026-06-16",
+        "minutes_to_kickoff": 36.07,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 147.978,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-06-16T10:07:27.699673+00:00",
+          "latest_useful_run_at_utc": "2026-06-16T18:45:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "KR Reykjavik",
+        "home_team": "Vikingur Reykjavik",
+        "kickoff_utc": "2026-06-16T19:15:00+00:00",
+        "league_name": "Iceland - Efsta deild",
+        "match_key": "2026-06-16|vikingur reykjavik|kr reykjavik",
+        "minutes_to_kickoff": 36.07,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 147.978,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-06-16T18:05:39.778830+00:00",
+          "latest_useful_run_at_utc": "2026-06-16T18:45:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-16T19:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
       }
     ]
   },
-  "status": "published",
-  "status_ru": "✅ прогноз опубликован",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 3452,
-  "top_reason": "main_pipeline_published",
+  "text_length": 4834,
+  "top_reason": "missing_total_xg_sanity",
   "version": "harizon-telegram-report-v10-inventory-bookmaker-funnel-promotion-diagnostics"
 }
