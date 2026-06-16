@@ -24,6 +24,8 @@ STATUS = EXPORT / "latest-artifact-prune-status.json"
 
 KEEP_EXPORT_NAMES = {
     "latest-run-bot.log",
+    "latest-run-bot-step-status.json",
+    "latest-run-bot-error-status.json",
     "latest-controlled-fallback-report.json",
     "latest-controlled-fallback-prepublish-guard.json",
     "latest-harizon-telegram-run-report.txt",
@@ -124,10 +126,16 @@ def main() -> int:
     before = _size(ART) + _size(EXPORT)
     removed: list[dict[str, Any]] = []
 
-    # Drop duplicated heavy copies under artifacts/run-bot.
-    for rel in ("cache", "exports/cache", "exports/line_history"):
+    # Drop duplicated heavy copies under artifacts/run-bot.  The workflow should not
+    # copy these folders anymore, but older runs / partial retries may leave them
+    # around.  Removing the whole folder and rebuilding a compact bundle is safer
+    # than pruning nested date/cache trees one by one.
+    for rel in ("cache", "exports", "day_inventory", "line_history"):
         _remove(ART / rel, removed)
-    for parent in (ART / "exports", EXPORT):
+
+    # Also prune heavy export files in the source export folder before upload.
+    # Keep only compact latest reports; remove dated folders, snapshots and jsonl.
+    for parent in (EXPORT,):
         _prune_json_folder(parent, KEEP_EXPORT_NAMES, removed)
         if parent.exists():
             for pattern in ("*line-snapshots*.json", "*odds_movement*.json", "*.jsonl", "*.zip"):
