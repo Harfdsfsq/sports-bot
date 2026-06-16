@@ -180,3 +180,31 @@ def test_telegram_text_blocks_quarter_total_line():
     reasons = safety._text_reasons(text)
 
     assert "telegram_quarter_total_line_not_allowed:2.25" in reasons
+
+
+def test_telegram_text_blocks_c_signal_profile():
+    from scripts import telegram_controlled_pick_safety as safety
+
+    text = (
+        "1. Vikingur Reykjavik - KR Reykjavik\n"
+        "Signal profile: C 60.7/100 | quality 66.8 | lines 3 | sources 1 | risk: single-source\n"
+        "Stake: totals under 4.5 @ 1.80"
+    )
+
+    reasons = safety._text_reasons(text)
+
+    assert "telegram_signal_profile_c_blocked" in reasons
+
+
+def test_telegram_text_blocks_single_source_non_core_stack():
+    from scripts import telegram_controlled_pick_safety as safety
+
+    text = (
+        "best bet\n"
+        "Signal profile: B 66.7/100 | quality 70.2 | lines 3 | sources 1 | risk: single-source, non-core\n"
+        "Stake: totals under 4.5 @ 1.80"
+    )
+
+    reasons = safety._text_reasons(text)
+
+    assert "telegram_single_source_non_core_blocked" in reasons

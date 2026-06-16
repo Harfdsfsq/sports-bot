@@ -47,6 +47,9 @@ SAFE_RUNTIME_DEFAULTS = {
     "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
     "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
     "TELEGRAM_MIN_ODDS_SOURCES": "1",
+    "HARIZON_TELEGRAM_PICK_SAFETY_ENABLED": "true",
+    "TELEGRAM_BLOCK_C_SIGNAL_PROFILE": "true",
+    "TELEGRAM_BLOCK_SINGLE_SOURCE_NON_CORE": "true",
     "FALLBACK_PUBLISH_MODE_ENABLED": "false",
     "MODEL_RELAXED_FALLBACK_ENABLED": "false",
     "FORCE_PUBLISH_WHEN_EMPTY_ENABLED": "false",
@@ -260,6 +263,7 @@ class RuntimePreflight:
             "app.services.api_runtime_enhancements",
             "app.services.market_integrity",
             "app.providers.odds_api_io_startup_compat",
+            "scripts.telegram_controlled_pick_safety",
         ):
             try:
                 module = import_module(module_path)

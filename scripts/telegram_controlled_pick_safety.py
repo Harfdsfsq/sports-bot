@@ -260,10 +260,24 @@ def _text_sources(text: str) -> list[int]:
     return found
 
 
+def _weak_profile_text(text: str) -> bool:
+    low = str(text or "").lower()
+    if "single-source" in low or "non-core" in low:
+        return True
+    return bool(re.search(r"\bc\s+[0-9]+(?:[.,][0-9]+)?\s*/\s*100\b", str(text or ""), re.I) and "quality" in low)
+
+
 def _text_reasons(text: str) -> list[str]:
-    if not _pick_text(text):
+    if not (_pick_text(text) or _weak_profile_text(text)):
         return []
     reasons: list[str] = []
+    low = str(text or "").lower()
+    if _b("TELEGRAM_BLOCK_C_SIGNAL_PROFILE", True):
+        if re.search(r"\bc\s+[0-9]+(?:[.,][0-9]+)?\s*/\s*100\b", text, re.I) and "quality" in low:
+            reasons.append("telegram_signal_profile_c_blocked")
+    if _b("TELEGRAM_BLOCK_SINGLE_SOURCE_NON_CORE", True):
+        if "single-source" in low and "non-core" in low:
+            reasons.append("telegram_single_source_non_core_blocked")
     min_sources = max(1, _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 1), _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 1))
     source_values = _text_sources(text)
     for value in source_values:
