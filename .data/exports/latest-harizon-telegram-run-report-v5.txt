@@ -1,79 +1,79 @@
 🧾 HARIZON — понятный отчёт по запуску
-✅ прогноз опубликован
-• Главная причина: опубликовано fallback-пайплайном
+🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
+• Главная причина: направление ставки конфликтует с xG
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 250/300, shortfall 50; status partial_known_rows_only). Runtime rows processed: 54 (это не размер inventory).
-• 1+ линия: 279/300 (93%) | 1+ контекст: 133/300 (44%)
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 250/300, shortfall 50; status partial_known_rows_only). Runtime rows processed: 99 (это не размер inventory).
+• 1+ линия: 279/300 (93%) | 1+ контекст: 134/300 (45%)
 • 2+ букмекера: 270/300 (90%)
-• Raw 2+ букмекера odds-api.io current snapshot: 18 | normalized cumulative inventory: 270.
-• Odds-api offer snapshot: rows 3083, matches 33, same-side 2+ books 18
+• Raw 2+ букмекера odds-api.io current snapshot: 35 | normalized cumulative inventory: 270.
+• Odds-api offer snapshot: rows 5648, matches 65, same-side 2+ books 35
 • 2+ independent odds-source: 242/300 (81%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 79/300 (26%)
-• Готово для модели: 120/300 (40%)
+• 2+ контекста: 88/300 (29%)
+• Готово для модели: 121/300 (40%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 50 | опубликовано: 1
+• A-tier strict-ready: 58 | опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/2+ bookmaker/1+ context coverage: 133 | fallback опубликовано: 1
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 134 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 79 матчей; B-cover: до 133 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 88 матчей; B-cover: до 134 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 2
-• Line guard: увидел 2, оставил 0, отложил 1, снял 1
+• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
+• Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/4
-• Quality прошло: 1 | publishable: 0 | опубликовано: 1
-• Controlled fallback: seen 12 | evaluated 12 | published 1
+• Raw/candidates before quality: 1/1
+• Quality прошло: 1 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 25 | evaluated 25 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 10; смэтчил матчей 46; offers 3083; 2+ букмекера 18; ошибок 0.
+• odds-api.io: events req 0, odds req 20; смэтчил матчей 91; offers 5648; 2+ букмекера 35; ошибок 0.
 • Bzzoiro: direct req 25, v2 req 25; v2 ctx 14; v2 odds 8; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 16; сырых строк 12166; контекстов 35; deep-enriched 13; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 16; сырых строк 12163; контекстов 50; deep-enriched 15; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• tier c watch only: 4 (16%)
-• направление ставки конфликтует с xG: 3 (12%)
-• tier a publication score below min: 2 (8%)
-• tier a proxy quality not allowed: 2 (8%)
-• tier b confidence below min: 2 (8%)
-• tier b canonical edge below min: 2 (8%)
-• tier b canonical ev below min: 2 (8%)
-• tier b publication score below min: 2 (8%)
-• Диагностика legacy odds-source: 2 — не заменяет обязательные 2+ odds-source
+• направление ставки конфликтует с xG: 10 (20%)
+• tier c watch only: 8 (16%)
+• missing total xg sanity: 7 (14%)
+• модель слишком оптимистична относительно xG-ориентира: 5 (10%)
+• tier a publication score below min: 3 (6%)
+• tier a proxy quality not allowed: 3 (6%)
+• tier b canonical edge below min: 3 (6%)
+• tier b canonical ev below min: 3 (6%)
+• Диагностика legacy odds-source: 3 — не заменяет обязательные 2+ odds-source
 
 🔎 Проверенные reserve-кандидаты
-1. Seoul City WFC — Mungyeong Sangmu | Меньше @2.06 | EV +6.8% | edge +3.3 п.п. | q 73.8
-   • причина: tier a publication score below min, tier a proxy quality not allowed, tier a confirmation sources below min:1/2, tier b confidence below min
-   • proxy single-source: fact edge 3.3pp / EV 6.8% / conf 66.2; min edge 8.0pp / EV 15.0% / conf 78.0
+1. Seoul City WFC — Mungyeong Sangmu | Меньше @2.10 | EV +8.4% | edge +4.0 п.п. | q 76.0
+   • причина: tier c watch only, proxy single source edge below min, proxy single source ev below min, proxy single source confidence below min
+   • proxy single-source: fact edge 4.0pp / EV 8.4% / conf 66.9; min edge 8.0pp / EV 15.0% / conf 78.0
    • xG sanity: missing (missing_xg)
-2. Grindavik — Fylkir Reykjavik | Меньше @2.72 | EV +7.4% | edge +2.7 п.п. | q 75.0
-   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b confidence below min, tier b canonical edge below min
-3. IR Reykjavik — Grotta | Больше @2.02 | EV +5.7% | edge +2.8 п.п. | q 74.1
-   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-4. Kairat — Kyzylzhar | Больше @1.95 | EV +6.3% | edge +3.2 п.п. | q 76.0
+2. Mbeya City — Simba | Меньше @1.96 | EV +4.7% | edge +2.4 п.п. | q 72.4
+   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b canonical edge below min, tier b canonical ev below min
+3. Grindavik — Fylkir Reykjavik | Меньше @2.76 | EV +9.1% | edge +3.3 п.п. | q 76.0
    • причина: направление ставки конфликтует с xG
+4. IR Reykjavik — Grotta | Больше @2.07 | EV +6.9% | edge +3.4 п.п. | q 76.0
+   • причина: tier c watch only
 
 🧯 Диагностика новых стопоров
 • Inventory target-expand stage: 250/300; shortfall 50; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 79; normalized 92→32; gap after 47.
-• Fresh B-cover diagnostic: rows 62; with current offer 22; without current offer 40; fresh buckets 2493; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 5; top skips promotion_skip_odds_below_min 359; promotion_skip_odds_above_max 322; promotion_skip_edge_below_min 167; promotion_skip_no_offer_bucket 68; promotion_skip_price_outlier 22.
-• Rescue xG/confirmation enrichment: candidates 11; xG added 8; confirmation added 9; missing context match 0.
+• Bookmaker mapping repair: raw 2+ 146; normalized 94→52; gap after 94.
+• Fresh B-cover diagnostic: rows 68; with current offer 38; without current offer 30; fresh buckets 4363; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 17; top skips promotion_skip_odds_below_min 562; promotion_skip_odds_above_max 525; promotion_skip_edge_below_min 221; promotion_skip_no_offer_bucket 38; promotion_skip_price_outlier 38.
+• Rescue xG/confirmation enrichment: candidates 24; xG added 16; confirmation added 19; missing context match 0.
 
 📌 Что это значит
-• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
+• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27662826090
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27662826090
-• Artifact: run-bot-27662826090
+• Run ID: 27666909231
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27666909231
+• Artifact: run-bot-27666909231
 • workflow run-bot, attempt 1
