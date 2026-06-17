@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-06-17T09:04:39.466604+00:00",
+  "created_at": "2026-06-17T11:04:43.542876+00:00",
   "enabled": true,
   "summary": {
     "total_tracked_bets": 60,
@@ -609,115 +609,126 @@
     ]
   },
   "recent_learning_state": {
-    "archive_path": ".logs/runs/2026-06-17/074239-run.json",
+    "updated_at": "2026-06-17T09:09:35.870209+00:00",
+    "summary": {
+      "total_tracked_bets": 60,
+      "settled_binary_bets": 15,
+      "count": 15,
+      "wins": 7,
+      "losses": 8,
+      "stake": 15.0,
+      "pnl": -0.58,
+      "roi_pct": -3.87,
+      "hit_rate_pct": 46.67,
+      "avg_odds": 2.185
+    },
+    "learning": {
+      "enabled": true,
+      "min_sample": 8,
+      "segments_tracked": 6,
+      "positive_segments": [
+        {
+          "segment": "odds:2.05-2.74",
+          "count": 8,
+          "calibration_delta_probability": 0.0487,
+          "roi_pct": 19.12,
+          "hit_rate_pct": 50.0,
+          "avg_predicted_probability": 0.4513
+        },
+        {
+          "segment": "bookmaker:betfair exchange",
+          "count": 10,
+          "calibration_delta_probability": 0.0245,
+          "roi_pct": 4.9,
+          "hit_rate_pct": 50.0,
+          "avg_predicted_probability": 0.4755
+        },
+        {
+          "segment": "market:totals:under",
+          "count": 8,
+          "calibration_delta_probability": 0.0157,
+          "roi_pct": 0.25,
+          "hit_rate_pct": 50.0,
+          "avg_predicted_probability": 0.4843
+        }
+      ],
+      "negative_segments": [
+        {
+          "segment": "league:other",
+          "count": 11,
+          "calibration_delta_probability": -0.049,
+          "roi_pct": -12.36,
+          "hit_rate_pct": 45.45,
+          "avg_predicted_probability": 0.5036
+        },
+        {
+          "segment": "context:market_signal",
+          "count": 15,
+          "calibration_delta_probability": -0.0223,
+          "roi_pct": -3.87,
+          "hit_rate_pct": 46.67,
+          "avg_predicted_probability": 0.489
+        },
+        {
+          "segment": "family:totals",
+          "count": 15,
+          "calibration_delta_probability": -0.0223,
+          "roi_pct": -3.87,
+          "hit_rate_pct": 46.67,
+          "avg_predicted_probability": 0.489
+        }
+      ]
+    },
+    "error_analysis": {
+      "settled_bets": 15,
+      "lost_bets": 8,
+      "top_failure_tags": {
+        "non_core_league": 6,
+        "market_simple_mode": 5,
+        "totals_over": 4,
+        "thin_ev": 1
+      },
+      "by_family": {
+        "totals": {
+          "count": 15,
+          "wins": 7,
+          "losses": 8,
+          "stake": 15.0,
+          "pnl": -0.58,
+          "roi_pct": -3.87,
+          "hit_rate_pct": 46.67,
+          "avg_odds": 2.185
+        }
+      },
+      "by_league_bucket": {
+        "other": {
+          "count": 11,
+          "wins": 5,
+          "losses": 6,
+          "stake": 11.0,
+          "pnl": -1.36,
+          "roi_pct": -12.36,
+          "hit_rate_pct": 45.45,
+          "avg_odds": 2.103
+        },
+        "preferred": {
+          "count": 4,
+          "wins": 2,
+          "losses": 2,
+          "stake": 4.0,
+          "pnl": 0.78,
+          "roi_pct": 19.5,
+          "hit_rate_pct": 50.0,
+          "avg_odds": 2.41
+        }
+      }
+    },
     "daily_quality_analysis": {
       "by_family": {},
       "by_league_bucket": {},
       "lost_bets": 0,
       "settled_bets": 0,
       "top_failure_tags": {}
-    },
-    "error_analysis": {
-      "by_family": {
-        "totals": {
-          "avg_odds": 2.185,
-          "count": 15,
-          "hit_rate_pct": 46.67,
-          "losses": 8,
-          "pnl": -0.58,
-          "roi_pct": -3.87,
-          "stake": 15.0,
-          "wins": 7
-        }
-      },
-      "by_league_bucket": {
-        "other": {
-          "avg_odds": 2.103,
-          "count": 11,
-          "hit_rate_pct": 45.45,
-          "losses": 6,
-          "pnl": -1.36,
-          "roi_pct": -12.36,
-          "stake": 11.0,
-          "wins": 5
-        },
-        "preferred": {
-          "avg_odds": 2.41,
-          "count": 4,
-          "hit_rate_pct": 50.0,
-          "losses": 2,
-          "pnl": 0.78,
-          "roi_pct": 19.5,
-          "stake": 4.0,
-          "wins": 2
-        }
-      },
-      "lost_bets": 8,
-      "settled_bets": 15,
-      "top_failure_tags": {
-        "high_odds": 1,
-        "market_simple_mode": 5,
-        "non_core_league": 6,
-        "thin_ev": 1,
-        "totals_over": 4
-      }
-    },
-    "learning": {
-      "enabled": true,
-      "min_sample": 8,
-      "negative_segments": [
-        {
-          "avg_predicted_probability": 0.5036,
-          "calibration_delta_probability": -0.049,
-          "count": 11,
-          "hit_rate_pct": 45.45,
-          "roi_pct": -12.36,
-          "segment": "league:other"
-        },
-        {
-          "avg_predicted_probability": 0.489,
-          "calibration_delta_probability": -0.0223,
-          "count": 15,
-          "hit_rate_pct": 46.67,
-          "roi_pct": -3.87,
-          "segment": "context:market_signal"
-        },
-        {
-          "avg_predicted_probability": 0.489,
-          "calibration_delta_probability": -0.0223,
-          "count": 15,
-          "hit_rate_pct": 46.67,
-          "roi_pct": -3.87,
-          "segment": "family:totals"
-        }
-      ],
-      "positive_segments": [
-        {
-          "avg_predicted_probability": 0.4513,
-          "calibration_delta_probability": 0.0487,
-          "count": 8,
-          "hit_rate_pct": 50.0,
-          "roi_pct": 19.12,
-          "segment": "odds:2.05-2.74"
-        },
-        {
-          "avg_predicted_probability": 0.4755,
-          "calibration_delta_probability": 0.0245,
-          "count": 10,
-          "hit_rate_pct": 50.0,
-          "roi_pct": 4.9,
-          "segment": "bookmaker:betfair exchange"
-        },
-        {
-          "avg_predicted_probability": 0.4843,
-          "calibration_delta_probability": 0.0157,
-          "count": 8,
-          "hit_rate_pct": 50.0,
-          "roi_pct": 0.25,
-          "segment": "market:totals:under"
-        }
-      ],
-      "segments_tracked": 6
     },
     "next_day_adjustments": {
       "actions": [],
@@ -728,18 +739,6 @@
       "settled_bets": 0
     },
     "report_date": "2026-06-16",
-    "summary": {
-      "avg_odds": 2.185,
-      "count": 15,
-      "hit_rate_pct": 46.67,
-      "losses": 8,
-      "pnl": -0.58,
-      "roi_pct": -3.87,
-      "settled_binary_bets": 15,
-      "stake": 15.0,
-      "total_tracked_bets": 54,
-      "wins": 7
-    },
-    "updated_at": "2026-06-17T07:42:39.879732+00:00"
+    "archive_path": ".logs/runs/2026-06-17/090935-run.json"
   }
 }
