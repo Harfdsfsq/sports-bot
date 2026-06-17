@@ -1,77 +1,77 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier c watch only
+✅ прогноз опубликован
+• Главная причина: опубликовано fallback-пайплайном
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 254/300, shortfall 46; status partial_known_rows_only). Runtime rows processed: 196 (это не размер inventory).
-• 1+ линия: 277/300 (92%) | 1+ контекст: 144/300 (48%)
-• 2+ букмекера: 270/300 (90%)
-• Raw 2+ букмекера odds-api.io current snapshot: 59 | normalized cumulative inventory: 270.
-• Odds-api offer snapshot: rows 8004, matches 113, same-side 2+ books 55
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 254/300, shortfall 46; status partial_known_rows_only). Runtime rows processed: 164 (это не размер inventory).
+• 1+ линия: 277/300 (92%) | 1+ контекст: 159/300 (53%)
+• 2+ букмекера: 271/300 (90%)
+• Raw 2+ букмекера odds-api.io current snapshot: 46 | normalized cumulative inventory: 271.
+• Odds-api offer snapshot: rows 6545, matches 90, same-side 2+ books 44
 • 2+ independent odds-source: 240/300 (80%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 98/300 (33%)
-• Готово для модели: 131/300 (44%)
+• 2+ контекста: 107/300 (36%)
+• Готово для модели: 146/300 (49%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 65 | опубликовано: 0
+• A-tier strict-ready: 70 | опубликовано: 1
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/2+ bookmaker/1+ context coverage: 144 | fallback опубликовано: 0
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 159 | fallback опубликовано: 1
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 98 матчей; B-cover: до 144 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 107 матчей; B-cover: до 159 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 42 | матчей без следующего регулярного run: 32
-• Line guard: увидел 2, оставил 0, отложил 2 до следующего cron
+• Pre-kickoff проверок: 40 | матчей без следующего регулярного run: 34
+• Line guard: увидел 2, оставил 0, отложил 1, снял 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 4/4
-• Quality прошло: 4 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 28 | evaluated 28 | published 0
+• Raw/candidates before quality: 2/2
+• Quality прошло: 2 | publishable: 0 | опубликовано: 1
+• Controlled fallback: seen 26 | evaluated 26 | published 1
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 38; смэтчил матчей 185; offers 8004; 2+ букмекера 59; ошибок 0.
-• Bzzoiro: direct req 34, v2 req 34; v2 ctx 19; v2 odds 11; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 16; сырых строк 12303; контекстов 133; deep-enriched 15; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 32; смэтчил матчей 160; offers 6545; 2+ букмекера 46; ошибок 0.
+• Bzzoiro: direct req 22, v2 req 22; v2 ctx 9; v2 odds 7; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 16; сырых строк 12303; контекстов 113; deep-enriched 16; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 4; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• tier c watch only: 12 (23%)
-• направление ставки конфликтует с xG: 7 (13%)
-• модель слишком оптимистична относительно xG-ориентира: 5 (9%)
-• tier b canonical edge below min: 5 (9%)
-• tier b canonical ev below min: 5 (9%)
-• quality quarantine shadow insufficient history: 4 (8%)
-• tier a publication score below min: 3 (6%)
-• tier a proxy quality not allowed: 3 (6%)
-• Диагностика legacy odds-source: 5 — не заменяет обязательные 2+ odds-source
+• tier b canonical edge below min: 11 (12%)
+• tier b canonical ev below min: 11 (12%)
+• tier a publication score below min: 9 (10%)
+• tier a proxy quality not allowed: 9 (10%)
+• tier b publication score below min: 9 (10%)
+• tier c publication score below min: 9 (10%)
+• tier b confidence below min: 8 (9%)
+• tier a confirmation sources below min:1/2: 7 (8%)
+• Диагностика legacy odds-source: 11 — не заменяет обязательные 2+ odds-source
 
 🔎 Проверенные reserve-кандидаты
-1. Grindavik — Fylkir Reykjavik | Меньше @2.90 | EV +12.1% | edge +4.2 п.п. | q 76.0
-   • причина: tier c watch only
-2. IR Reykjavik — Grotta | Меньше @2.25 | EV +10.2% | edge +4.5 п.п. | q 76.0
-   • причина: tier c watch only
-3. Kairat — Kyzylzhar | Больше @1.90 | EV +10.9% | edge +5.8 п.п. | q 76.0
+1. Paide — Harju JK Laagri | Меньше @1.64 | EV +11.9% | edge +7.3 п.п. | q 76.0
+   • причина: duplicate fallback sent index, duplicate persisted fallback sent index
+2. Vestmannaeyjar — Hafnarfjordur | Больше @1.87 | EV +11.5% | edge +6.2 п.п. | q 76.0
+3. Kauno — FK Banga | Больше @1.89 | EV +8.8% | edge +4.7 п.п. | q 76.0
    • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-4. Iberia — Rustavi | Меньше @2.40 | EV +9.2% | edge +3.8 п.п. | q 76.0
-   • причина: tier c watch only
+4. Black Bulls FC — Ferroviario Da Beira | Меньше @1.80 | EV +4.0% | edge +2.2 п.п. | q 66.9
+   • причина: tier a publication score below min, tier a proxy quality not allowed, tier a confirmation sources below min:1/2, tier b confidence below min
+   • proxy single-source: fact edge 2.2pp / EV 4.0% / conf 64.9; min edge 8.0pp / EV 15.0% / conf 78.0
 
 🧯 Диагностика новых стопоров
 • Inventory target-expand stage: 254/300; shortfall 46; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 235; normalized 102→89; gap after 146.
-• Fresh B-cover diagnostic: rows 79; with current offer 46; without current offer 33; fresh buckets 6061; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 24; top skips promotion_skip_odds_below_min 502; promotion_skip_odds_above_max 458; promotion_skip_edge_below_min 245; promotion_skip_no_offer_bucket 33; promotion_skip_price_outlier 32.
-• Rescue xG/confirmation enrichment: candidates 24; xG added 21; confirmation added 16; missing context match 0.
+• Bookmaker mapping repair: raw 2+ 178; normalized 106→68; gap after 110.
+• Fresh B-cover diagnostic: rows 89; with current offer 35; without current offer 54; fresh buckets 5102; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 19; top skips promotion_skip_odds_below_min 488; promotion_skip_odds_above_max 435; promotion_skip_edge_below_min 239; promotion_skip_no_offer_bucket 72; promotion_skip_price_outlier 20.
+• Rescue xG/confirmation enrichment: candidates 24; xG added 22; confirmation added 21; missing context match 0.
 
 📌 Что это значит
-• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
+• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27690799957
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27690799957
-• Artifact: run-bot-27690799957
+• Run ID: 27698517688
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27698517688
+• Artifact: run-bot-27698517688
 • workflow run-bot, attempt 1
