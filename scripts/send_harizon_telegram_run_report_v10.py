@@ -5,6 +5,7 @@ from __future__ import annotations
 Adds current blockers diagnostics on top of v9 without changing publication logic:
 - fresh B-cover diagnostics instead of legacy-only promotion text;
 - explicit env-aware B-tier/SportLogic wording;
+- Bzzoiro overlap-bridge metrics;
 - rescue xG/confirmation enrichment summary;
 - compact technical status for run-bot/prune/artifact payload.
 """
@@ -92,6 +93,7 @@ def build_payload() -> dict[str, Any]:
     diag['b_cover_value_promotion'] = _load_json(EXPORT_DIR / 'latest-b-cover-value-promotion.json')
     diag['fresh_b_cover_diagnostics'] = _load_json(EXPORT_DIR / 'latest-fresh-b-cover-diagnostics.json')
     diag['rescue_xg_confirmation_enrichment'] = _load_json(EXPORT_DIR / 'latest-rescue-xg-confirmation-enrichment.json')
+    diag['bzzoiro_overlap_bridge'] = _load_json(EXPORT_DIR / 'latest-bzzoiro-overlap-bridge.json')
     diag['run_bot_step_status'] = _load_json(EXPORT_DIR / 'latest-run-bot-step-status.json')
     diag['artifact_prune_status'] = _load_json(EXPORT_DIR / 'latest-artifact-prune-status.json')
     diag['workflow_env_contract'] = {
@@ -161,12 +163,29 @@ def _replace_sportlogic_line(text: str, payload: dict[str, Any]) -> str:
     return text
 
 
+def _replace_bzzoiro_line(text: str, payload: dict[str, Any]) -> str:
+    diag = payload.get('diagnostics') if isinstance(payload.get('diagnostics'), dict) else {}
+    bridge = diag.get('bzzoiro_overlap_bridge') if isinstance(diag.get('bzzoiro_overlap_bridge'), dict) else {}
+    bridged_offers = _as_int(bridge.get('bzzoiro_offer_rows'))
+    match_overlap = _as_int(bridge.get('overlap_match_rows'))
+    bucket_overlap = _as_int(bridge.get('overlap_same_bucket_rows'))
+    if bridged_offers <= 0:
+        return text
+    pattern = r'(• Bzzoiro: direct req .*?secondary offers )\d+(; overlap odds-api\.io )\d+(; ошибок .*?\.)'
+    replacement = rf'\g<1>{bridged_offers}\g<2>{bucket_overlap}\g<3>'
+    if re.search(pattern, text):
+        text = re.sub(pattern, replacement, text, count=1)
+    # Keep a precise line in diagnostics too, because the provider line reports bridged totals, not native v2 odds rows.
+    return text
+
+
 def _diagnostics_lines(payload: dict[str, Any]) -> list[str]:
     diag = payload.get('diagnostics') if isinstance(payload.get('diagnostics'), dict) else {}
     expand = diag.get('inventory_target_expand') if isinstance(diag.get('inventory_target_expand'), dict) else {}
     backfill = diag.get('inventory_bookmaker_backfill') if isinstance(diag.get('inventory_bookmaker_backfill'), dict) else {}
     fresh = diag.get('fresh_b_cover_diagnostics') if isinstance(diag.get('fresh_b_cover_diagnostics'), dict) else {}
     enrich = diag.get('rescue_xg_confirmation_enrichment') if isinstance(diag.get('rescue_xg_confirmation_enrichment'), dict) else {}
+    bzz_bridge = diag.get('bzzoiro_overlap_bridge') if isinstance(diag.get('bzzoiro_overlap_bridge'), dict) else {}
     step_status = diag.get('run_bot_step_status') if isinstance(diag.get('run_bot_step_status'), dict) else {}
     prune = diag.get('artifact_prune_status') if isinstance(diag.get('artifact_prune_status'), dict) else {}
 
@@ -185,6 +204,12 @@ def _diagnostics_lines(payload: dict[str, Any]) -> list[str]:
             f"• Bookmaker mapping repair: raw 2+ {_as_int(backfill.get('raw_2plus_matches'))}; "
             f"normalized {_as_int(backfill.get('normalized_2plus_before'))}→{_as_int(backfill.get('normalized_2plus_after'))}; "
             f"gap after {_as_int(backfill.get('mapping_gap_after'))}."
+        )
+    if bzz_bridge:
+        lines.append(
+            f"• Bzzoiro overlap bridge: offers {_as_int(bzz_bridge.get('bzzoiro_offer_rows'))}; "
+            f"match-overlap {_as_int(bzz_bridge.get('overlap_match_rows'))}; "
+            f"same-bucket overlap {_as_int(bzz_bridge.get('overlap_same_bucket_rows'))}."
         )
     if fresh:
         lines.append(
@@ -222,6 +247,7 @@ def render(payload: dict[str, Any]) -> str:
     text = _base_render(payload)
     text = _replace_contract_text(text, payload)
     text = _replace_sportlogic_line(text, payload)
+    text = _replace_bzzoiro_line(text, payload)
 
     lines = _diagnostics_lines(payload)
     if lines:
@@ -246,7 +272,7 @@ v9.v8.v7.render = render
 _write_status({
     'status': 'installed',
     'renderer': 'v10',
-    'adds': ['fresh_b_cover_diagnostics', 'rescue_xg_confirmation_enrichment', 'env_contract_text', 'sportlogic_disabled_by_env'],
+    'adds': ['fresh_b_cover_diagnostics', 'rescue_xg_confirmation_enrichment', 'env_contract_text', 'sportlogic_disabled_by_env', 'bzzoiro_overlap_bridge'],
 })
 
 
