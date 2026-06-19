@@ -22,6 +22,11 @@ DAY_DIR = ROOT / '.data' / 'day_inventory'
 OUT = EXPORT_DIR / 'latest-runtime-context-coverage-bridge.json'
 LIVE_ODDS_SOURCES = {'odds_api_io', 'bzzoiro', 'sportlogic'}
 IGNORED_CONTEXT = {'', 'market', 'odds_api_io', 'line_history', 'ensemble'}
+TEAM_STOPWORDS = {
+    'fc', 'cf', 'sc', 'afc', 'fk', 'ac', 'bc', 'club', 'team', 'jfc',
+    'reserve', 'reserves', 'res', 'women', 'woman', 'w', 'u21', 'u20', 'u19',
+    'ii', 'iii', 'b', 'youth', 'academy', 'de', 'the',
+}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -77,6 +82,17 @@ def norm(value: Any) -> str:
     return aliases.get(text, text)
 
 
+def norm_team(value: Any) -> str:
+    text = norm(value).replace('_', ' ')
+    tokens = [tok for tok in text.split() if tok and tok not in TEAM_STOPWORDS]
+    return ' '.join(tokens) or text
+
+
+def short_team(value: Any) -> str:
+    tokens = norm_team(value).split()
+    return ' '.join(tokens[:3])
+
+
 def list_any(value: Any) -> list[str]:
     if isinstance(value, dict):
         return [str(k).strip() for k in value if str(k).strip()]
@@ -89,6 +105,15 @@ def list_any(value: Any) -> list[str]:
 
 def ensure_bucket(index: dict[str, dict[str, Any]], key: str) -> dict[str, Any]:
     return index.setdefault(key, {'context': set(), 'line_sources': set(), 'odds_sources': set(), 'books': set(), 'price': set(), 'samples': []})
+
+
+def merge_bucket(dst: dict[str, Any], src: dict[str, Any]) -> None:
+    for key in ('context', 'line_sources', 'odds_sources', 'books', 'price'):
+        dst.setdefault(key, set()).update(src.get(key) or set())
+    dst.setdefault('samples', [])
+    for sample in src.get('samples') or []:
+        if len(dst['samples']) < 12:
+            dst['samples'].append(sample)
 
 
 def add_sample(bucket: dict[str, Any], source: str, detail: dict[str, Any]) -> None:
@@ -107,6 +132,80 @@ def rows_from(path: Path) -> list[dict[str, Any]]:
             if isinstance(value, list):
                 return [dict(x) for x in value if isinstance(x, dict)]
     return []
+
+
+def key_aliases_from_parts(date: str, home: str, away: str) -> set[str]:
+    out: set[str] = set()
+    date = str(date or '').strip()[:10]
+    home_n = norm_team(home)
+    away_n = norm_team(away)
+    if not date or not home_n or not away_n:
+        return out
+    out.add(f'{date}|{home_n}|{away_n}')
+    out.add(f'{date}|{short_team(home_n)}|{short_team(away_n)}')
+    out.add(f'{date}|{home_n[:18]}|{away_n[:18]}')
+    return {x for x in out if x.strip('|')}
+
+
+def key_aliases_from_key(raw_key: Any) -> set[str]:
+    raw = str(raw_key or '').strip()
+    if not raw:
+        return set()
+    out = {raw, norm(raw)}
+    tokens = [tok.strip() for tok in raw.split('|') if tok.strip()]
+    date = ''
+    for tok in tokens:
+        match = re.search(r'20\d{2}-\d{2}-\d{2}', tok)
+        if match:
+            date = match.group(0)
+            break
+    text_tokens = [tok for tok in tokens if not re.search(r'20\d{2}-\d{2}-\d{2}', tok) and norm(tok) not in {'soccer', 'football'}]
+    if date and len(text_tokens) >= 2:
+        out.update(key_aliases_from_parts(date, text_tokens[0], text_tokens[1]))
+    return out
+
+
+def row_aliases(row: dict[str, Any]) -> set[str]:
+    out: set[str] = set()
+    for key in (row.get('match_key'), row.get('canonical_match_id')):
+        out.update(key_aliases_from_key(key))
+    raw_date = str(row.get('kickoff_utc') or row.get('commence_time') or row.get('kickoff_local') or '')[:10]
+    home = row.get('home_team') or row.get('home') or row.get('team_home')
+    away = row.get('away_team') or row.get('away') or row.get('team_away')
+    out.update(key_aliases_from_parts(raw_date, str(home or ''), str(away or '')))
+    return {x for x in out if x and x.strip('|')}
+
+
+def expanded_runtime_index(raw_index: dict[str, dict[str, Any]]) -> tuple[dict[str, dict[str, Any]], int]:
+    expanded: dict[str, dict[str, Any]] = {}
+    alias_links = 0
+    for raw_key, ev in raw_index.items():
+        aliases = key_aliases_from_key(raw_key)
+        aliases.add(str(raw_key))
+        for alias in aliases:
+            if not alias:
+                continue
+            bucket = ensure_bucket(expanded, alias)
+            before = sum(len(bucket.get(k) or []) for k in ('context', 'line_sources', 'odds_sources', 'books', 'price'))
+            merge_bucket(bucket, ev)
+            after = sum(len(bucket.get(k) or []) for k in ('context', 'line_sources', 'odds_sources', 'books', 'price'))
+            alias_links += int(after > before and alias != raw_key)
+    return expanded, alias_links
+
+
+def evidence_for_row(runtime_index: dict[str, dict[str, Any]], row: dict[str, Any]) -> tuple[dict[str, Any] | None, list[str]]:
+    aliases = row_aliases(row)
+    merged = {'context': set(), 'line_sources': set(), 'odds_sources': set(), 'books': set(), 'price': set(), 'samples': []}
+    matched: list[str] = []
+    for alias in aliases:
+        ev = runtime_index.get(alias)
+        if not ev:
+            continue
+        merge_bucket(merged, ev)
+        matched.append(alias)
+    if not matched:
+        return None, []
+    return merged, matched[:8]
 
 
 def build_runtime_index() -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
@@ -213,15 +312,20 @@ def main() -> int:
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
 
-    runtime, stats = build_runtime_index()
+    raw_runtime, stats = build_runtime_index()
+    runtime, alias_links = expanded_runtime_index(raw_runtime)
     updated = 0
+    alias_matched_rows = 0
+    exact_matched_rows = 0
     for row in rows:
         if not isinstance(row, dict):
             continue
         key = str(row.get('match_key') or row.get('canonical_match_id') or '').strip()
-        ev = runtime.get(key)
+        ev, matched_aliases = evidence_for_row(runtime, row)
         if not ev:
             continue
+        exact_matched_rows += int(key in matched_aliases)
+        alias_matched_rows += int(key not in matched_aliases)
         before = json.dumps(row, ensure_ascii=False, sort_keys=True)
         coverage = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
         metadata = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
@@ -255,6 +359,7 @@ def main() -> int:
         metadata['books_count'] = max(as_int(metadata.get('books_count')), len(books))
         metadata['price_confirmation_sources_count'] = max(as_int(metadata.get('price_confirmation_sources_count')), len(price), len(books))
         metadata['runtime_context_bridge_updated_utc'] = now_iso
+        metadata['runtime_context_bridge_matched_aliases'] = matched_aliases
         if ev.get('samples'):
             metadata['runtime_context_bridge_samples'] = ev['samples'][:8]
         row['metadata'] = metadata
@@ -280,11 +385,33 @@ def main() -> int:
     inventory['updated_at_utc'] = now_iso
     sources = inventory.setdefault('sources', {})
     if isinstance(sources, dict):
-        sources['runtime_context_coverage_bridge'] = {'updated_at_utc': now_iso, 'runtime_matches': len(runtime), 'rows_updated': updated, **stats}
+        sources['runtime_context_coverage_bridge'] = {
+            'updated_at_utc': now_iso,
+            'runtime_matches': len(raw_runtime),
+            'runtime_alias_entries': len(runtime),
+            'runtime_alias_links': alias_links,
+            'rows_updated': updated,
+            'exact_matched_rows': exact_matched_rows,
+            'alias_matched_rows': alias_matched_rows,
+            **stats,
+        }
     write_json(inv_path, inventory)
     for alias in (DAY_DIR / 'current.json', DAY_DIR / 'latest.json', DAY_DIR / 'today.json'):
         write_json(alias, inventory)
-    report = {'status': 'ok', 'date_local': date, 'inventory_path': str(inv_path), 'runtime_matches': len(runtime), 'rows_updated': updated, 'stats': stats, 'counts': counts, 'updated_at_utc': now_iso}
+    report = {
+        'status': 'ok',
+        'date_local': date,
+        'inventory_path': str(inv_path),
+        'runtime_matches': len(raw_runtime),
+        'runtime_alias_entries': len(runtime),
+        'runtime_alias_links': alias_links,
+        'rows_updated': updated,
+        'exact_matched_rows': exact_matched_rows,
+        'alias_matched_rows': alias_matched_rows,
+        'stats': stats,
+        'counts': counts,
+        'updated_at_utc': now_iso,
+    }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
