@@ -61,6 +61,9 @@ jobs:
       DAY_INVENTORY_FORCE_FULL_300: "true"
       DAY_INVENTORY_FORCE_PROVIDER_MERGE: "true"
       DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED: "true"
+      HARIZON_COVERAGE_UPLIFT_ENABLED: "true"
+      HARIZON_COVERAGE_UPLIFT_NEAR_WINDOW_HOURS: "24"
+      HARIZON_COVERAGE_UPLIFT_TARGET_CONTEXT_ROWS: "180"
       DAY_INVENTORY_ENABLE_BZZOIRO: "true"
       DAY_INVENTORY_ENABLE_SSTATS: "true"
       DAY_INVENTORY_ENABLE_SPORTLOGIC: "false"
@@ -361,6 +364,20 @@ jobs:
             echo "per-run API quota contract failed or timed out with status ${status}; continuing with previous env"
           fi
           python -u scripts/apply_publication_family_policy.py || true
+
+      - name: Apply coverage uplift runtime policy
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
+          echo "coverage uplift runtime policy start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 45s python -u scripts/apply_coverage_uplift_runtime_policy.py; then
+            echo "coverage uplift runtime policy applied"
+          else
+            status=$?
+            echo "coverage uplift runtime policy failed or timed out with status ${status}; continuing with previous env"
+          fi
+          cp .data/exports/latest-coverage-uplift-runtime-policy.json artifacts/run-bot/latest-coverage-uplift-runtime-policy.json 2>/dev/null || true
 
       - name: Provider smoke
         shell: bash
