@@ -143,11 +143,26 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
     return settings
 
 
+def _bridge_runtime_context_coverage(summary: dict[str, Any] | None) -> None:
+    if not _parse_bool(os.getenv('HARIZON_RUNTIME_CONTEXT_COVERAGE_BRIDGE_ENABLED', 'true')):
+        return
+    try:
+        from scripts.bridge_runtime_context_coverage import main as bridge_main
+        code = bridge_main()
+        if isinstance(summary, dict):
+            summary['runtime_context_coverage_bridge_exit_code'] = code
+    except Exception as exc:
+        logging.getLogger(__name__).warning('runtime context coverage bridge failed: %s: %s', type(exc).__name__, exc)
+        if isinstance(summary, dict):
+            summary['runtime_context_coverage_bridge_error'] = f'{type(exc).__name__}: {exc}'
+
+
 async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'run-once':
         await asyncio.to_thread(RuntimePreflight(settings).run_before_prediction)
         runner = PredictionRunner(settings)
         summary = await runner.run_once()
+        _bridge_runtime_context_coverage(summary)
         return 0, summary
     return 1, None
 
