@@ -2,17 +2,13 @@ from __future__ import annotations
 
 """Guarded entrypoint for controlled fallback publication.
 
-The normal model pipeline already has a windowed coverage/movement publication
-filter. Live runs showed that the controlled fallback script could still publish
-the same candidate after the main publish filter rejected it with
-`needs_next_cron_line_movement_recheck`. It also wrote the fallback sent-index to
-.data/fallback-sent-index.json, but that file was not committed, so the same
-match/market could be sent again in the next run.
+V17 adds two production safeguards on top of the base controlled fallback:
+1. controlled fallback can publish only inside the final publish window
+   (default 2 hours before kickoff);
+2. controlled fallback is capped per local day (default 3 picks/day).
 
-This wrapper keeps the original controlled-fallback evaluator but adds two hard
-prepublish guards:
-1. respect latest-windowed-core-publication-filter movement blocks;
-2. dedupe against previous controlled-fallback reports and sent-index.
+The wrapper also keeps prior protection: movement-window blocks, final cron line
+recheck, active duplicate dedupe, and persisted sent-index dedupe.
 """
 
 import importlib.util
@@ -20,9 +16,9 @@ import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,7 +26,12 @@ BASE_PATH = Path(__file__).resolve().with_name("publish_controlled_fallback.py")
 REPORT_PATH = ROOT / ".data" / "exports" / "latest-controlled-fallback-prepublish-guard.json"
 
 _GUARD_EVENTS: list[dict[str, Any]] = []
-MOVEMENT_READY_STATUSES = {"movement_confirmed", "movement_rechecked_across_cron_windows", "publish_now_no_next_cron", "movement_ready"}
+MOVEMENT_READY_STATUSES = {
+    "movement_confirmed",
+    "movement_rechecked_across_cron_windows",
+    "publish_now_no_next_cron",
+    "movement_ready",
+}
 
 
 def _load_base_module() -> Any:
@@ -50,6 +51,24 @@ def _truthy(value: Any, default: bool = False) -> bool:
     if not raw:
         return default
     return raw in {"1", "true", "yes", "on", "force"}
+
+
+def _as_int(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ""):
+            return default
+        return int(float(str(value).strip()))
+    except Exception:
+        return default
+
+
+def _as_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value in (None, ""):
+            return default
+        return float(str(value).strip())
+    except Exception:
+        return default
 
 
 def _load_json(path: str | Path, default: Any) -> Any:
@@ -100,13 +119,28 @@ def _parse_dt(value: Any) -> datetime | None:
         return None
 
 
+def _local_tz() -> ZoneInfo:
+    for name in (
+        os.getenv("CONTROLLED_FALLBACK_DAILY_LIMIT_TIMEZONE"),
+        os.getenv("LINE_MOVEMENT_CRON_TIMEZONE"),
+        os.getenv("APP_TIMEZONE"),
+        os.getenv("TZ"),
+        "Europe/Moscow",
+    ):
+        try:
+            return ZoneInfo(str(name))
+        except Exception:
+            continue
+    return ZoneInfo("Europe/Moscow")
+
+
 def _canonical_selection(row: dict[str, Any]) -> str:
     explicit = _norm(row.get("selection_key"))
     family = _norm(row.get("family") or row.get("market_family"))
     selection = str(row.get("selection") or "").strip().casefold().replace("ё", "е")
     if explicit in {"under", "over", "home", "away", "draw"}:
         return explicit
-    if family in {"totals", "teamtotals"}:
+    if family in {"totals", "teamtotals", "spreads"}:
         if any(token in selection for token in ("under", "меньше", "тотал меньше", "тм")):
             return "under"
         if any(token in selection for token in ("over", "больше", "тотал больше", "тб")):
@@ -171,16 +205,6 @@ def _candidate_movement_confirmed(candidate: dict[str, Any]) -> bool:
     return False
 
 
-def controlled_line_movement_report_guarded(candidate: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
-    if _candidate_movement_confirmed(candidate):
-        report = {"passed": True, "status": "movement_confirmed", "reasons": []}
-        metrics["line_movement"] = report
-        return report
-    report = candidate.get("line_movement_guard") if isinstance(candidate.get("line_movement_guard"), dict) else {}
-    metrics["line_movement"] = report
-    return report
-
-
 def _windowed_movement_reasons(candidate: dict[str, Any]) -> list[str]:
     if not _truthy(os.getenv("CONTROLLED_FALLBACK_RESPECT_WINDOWED_MOVEMENT_GUARD"), True):
         return []
@@ -238,7 +262,7 @@ def _duplicate_previous_report_reason(candidate: dict[str, Any]) -> str | None:
         kickoff = _parse_dt(row.get("commence_time") or row.get("kickoff"))
         if kickoff is not None and kickoff < datetime.now(UTC):
             continue
-        sent_at = _parse_dt(report.get("created_at") or row.get("sent_at"))
+        sent_at = _parse_dt(report.get("created_at") or row.get("sent_at") or row.get("published_at"))
         if sent_at is not None and sent_at < cutoff:
             continue
         if _same_candidate(candidate, row):
@@ -262,13 +286,8 @@ def _duplicate_sent_index_reason(candidate: dict[str, Any]) -> str | None:
             return "duplicate_persisted_fallback_sent_index"
     return None
 
-def _strict_duplicate_reason(candidate: dict[str, Any]) -> str | None:
-    """Do not resend the same match/market/side/line until kickoff/settlement.
 
-    The base fallback index used localized selection text in the hash, so the same
-    Under 3.5 could be sent again when the row was regenerated as promotion data
-    or when the bookmaker price changed.
-    """
+def _strict_duplicate_reason(candidate: dict[str, Any]) -> str | None:
     if not _truthy(os.getenv("CONTROLLED_FALLBACK_STRICT_MATCH_MARKET_DEDUPE"), True):
         return None
     places = [
@@ -296,7 +315,6 @@ def _strict_duplicate_reason(candidate: dict[str, Any]) -> str | None:
     now = datetime.now(UTC)
     cand_sig = _candidate_signature(candidate)
     for row in rows:
-        # Keep active/upcoming rows only.  Unknown kickoff rows are still deduped for the safety window.
         kickoff = _parse_dt(row.get("commence_time") or row.get("kickoff") or row.get("start_time"))
         sent_at = _parse_dt(row.get("sent_at") or row.get("created_at") or row.get("published_at"))
         if kickoff is not None and kickoff < now:
@@ -346,7 +364,7 @@ def _line_state_has_previous_recheck(candidate: dict[str, Any], now: datetime) -
     kickoff = _parse_dt(candidate.get("commence_time") or candidate.get("kickoff") or candidate.get("start_time"))
     day = (kickoff or now).date().isoformat()
     paths = [ROOT / ".data" / "line_history" / f"{day}.json", ROOT / ".data" / "line_history" / "latest.json"]
-    min_recheck = float(os.getenv("CONTROLLED_FALLBACK_MIN_RECHECK_MINUTES") or os.getenv("LINE_MOVEMENT_MIN_RECHECK_MINUTES") or 60.0)
+    min_recheck = _as_float(os.getenv("CONTROLLED_FALLBACK_MIN_RECHECK_MINUTES") or os.getenv("LINE_MOVEMENT_MIN_RECHECK_MINUTES") or 60.0, 60.0)
     current_run_id = os.getenv("GITHUB_RUN_ID") or os.getenv("HARIZON_RUN_ID") or ""
     for path in paths:
         payload = _load_json(path, {})
@@ -357,7 +375,6 @@ def _line_state_has_previous_recheck(candidate: dict[str, Any], now: datetime) -
         if key and isinstance(lines.get(key), dict):
             entries.append(lines.get(key))
         else:
-            # Fall back to signature comparison by scanning entries.
             entries.extend([v for v in lines.values() if isinstance(v, dict)])
         for entry in entries:
             snaps = entry.get("snapshots") if isinstance(entry, dict) else []
@@ -373,7 +390,6 @@ def _line_state_has_previous_recheck(candidate: dict[str, Any], now: datetime) -
                     continue
                 if (now - captured).total_seconds() / 60.0 >= min_recheck:
                     return True
-    # Already annotated candidates from the main pipeline can pass.
     return _candidate_movement_confirmed(candidate)
 
 
@@ -384,8 +400,8 @@ def _final_cron_recheck_reasons(candidate: dict[str, Any]) -> list[str]:
     if kickoff is None:
         return ["controlled_fallback_missing_kickoff_for_final_recheck"]
     now = datetime.now(UTC)
-    min_lead = int(float(os.getenv("LINE_MOVEMENT_MIN_LEAD_MINUTES") or os.getenv("MIN_KICKOFF_LEAD_MINUTES") or 15))
-    interval = int(float(os.getenv("CRON_EXPECTED_INTERVAL_MINUTES") or os.getenv("LINE_MOVEMENT_CRON_INTERVAL_MINUTES") or 120))
+    min_lead = _as_int(os.getenv("LINE_MOVEMENT_MIN_LEAD_MINUTES") or os.getenv("MIN_KICKOFF_LEAD_MINUTES") or 15, 15)
+    interval = _as_int(os.getenv("CRON_EXPECTED_INTERVAL_MINUTES") or os.getenv("LINE_MOVEMENT_CRON_INTERVAL_MINUTES") or 120, 120)
     next_run = _next_scheduled_run_at(now, interval)
     latest_useful = kickoff - timedelta(minutes=max(0, min_lead))
     has_next_regular_run = bool(next_run is not None and next_run <= latest_useful)
@@ -395,8 +411,6 @@ def _final_cron_recheck_reasons(candidate: dict[str, Any]) -> list[str]:
         reasons.append("controlled_fallback_next_regular_run_before_kickoff")
         reasons.append("controlled_fallback_missing_line_recheck")
     elif not has_next_regular_run:
-        # Final window: no regular cron remains before kickoff, so the current
-        # run is allowed to be the last movement/value check.
         has_previous_recheck = True
     if not has_previous_recheck and "controlled_fallback_missing_line_recheck" not in reasons:
         reasons.append("controlled_fallback_missing_line_recheck")
@@ -417,16 +431,168 @@ def _final_cron_recheck_reasons(candidate: dict[str, Any]) -> list[str]:
     return reasons
 
 
+def _publish_window_reasons(candidate: dict[str, Any]) -> list[str]:
+    if not _truthy(os.getenv("CONTROLLED_FALLBACK_ENFORCE_PUBLISH_WINDOW"), True):
+        return []
+    kickoff = _parse_dt(candidate.get("commence_time") or candidate.get("kickoff") or candidate.get("start_time"))
+    if kickoff is None:
+        return []
+    now = datetime.now(UTC)
+    min_lead = _as_int(os.getenv("LINE_MOVEMENT_MIN_LEAD_MINUTES") or os.getenv("MIN_KICKOFF_LEAD_MINUTES") or 15, 15)
+    window_hours = _as_float(os.getenv("CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS") or os.getenv("PUBLISH_WINDOW_HOURS") or 2.0, 2.0)
+    latest_allowed = now + timedelta(hours=max(0.25, window_hours))
+    earliest_allowed = now + timedelta(minutes=max(0, min_lead))
+    reasons: list[str] = []
+    if kickoff < now:
+        reasons.append("match_already_started")
+    elif kickoff < earliest_allowed:
+        reasons.append("match_time_outside_window")
+    elif kickoff > latest_allowed:
+        reasons.append("controlled_fallback_publish_window_too_early")
+        reasons.append("match_time_too_late")
+    if reasons:
+        _GUARD_EVENTS.append({
+            "guard": "controlled_fallback_publish_window",
+            "match_key": candidate.get("match_key"),
+            "home_team": candidate.get("home_team"),
+            "away_team": candidate.get("away_team"),
+            "kickoff_utc": kickoff.isoformat(),
+            "now_utc": now.isoformat(),
+            "publish_window_hours": window_hours,
+            "earliest_allowed_utc": earliest_allowed.isoformat(),
+            "latest_allowed_utc": latest_allowed.isoformat(),
+            "reasons": reasons,
+        })
+    return reasons
+
+
+def _iter_payload_rows(payload: Any, *, report_published: bool = False) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if isinstance(payload, dict):
+        # fallback sent-index is usually a mapping of signature -> pick row
+        for val in payload.values():
+            if isinstance(val, dict):
+                rows.append(val)
+        for key in ("selected_all", "bets", "published_candidates", "items", "rows"):
+            val = payload.get(key)
+            if isinstance(val, list):
+                rows.extend([x for x in val if isinstance(x, dict)])
+            elif isinstance(val, dict):
+                rows.append(val)
+        if isinstance(payload.get("selected"), dict) and (report_published or payload.get("published")):
+            row = dict(payload["selected"])
+            row.setdefault("published", True)
+            row.setdefault("created_at", payload.get("created_at"))
+            rows.append(row)
+    elif isinstance(payload, list):
+        rows.extend([x for x in payload if isinstance(x, dict)])
+    return rows
+
+
+def _is_published_pick_row(row: dict[str, Any]) -> bool:
+    status = str(row.get("status") or row.get("publication_status") or "").strip().lower()
+    if status in {"published", "sent", "pending", "won", "lost", "push", "void", "cancelled", "refunded"}:
+        return True
+    if bool(row.get("telegram_sent")) or bool(row.get("published")):
+        return True
+    if row.get("sent_at") or row.get("published_at"):
+        return True
+    # fallback-sent-index rows may have neither telegram_sent nor status; having a kickoff + odds is enough there.
+    if row.get("commence_time") and row.get("odds") and (row.get("home_team") or row.get("match_key")):
+        return True
+    return False
+
+
+def _row_local_day(row: dict[str, Any], tz: ZoneInfo) -> str | None:
+    prefer_published = _truthy(os.getenv("CONTROLLED_FALLBACK_DAILY_LIMIT_USE_PUBLISHED_AT"), True)
+    keys = ["published_at", "sent_at", "created_at", "telegram_sent_at", "commence_time", "kickoff", "start_time"] if prefer_published else ["commence_time", "kickoff", "start_time", "published_at", "sent_at", "created_at"]
+    for key in keys:
+        dt = _parse_dt(row.get(key))
+        if dt is not None:
+            return dt.astimezone(tz).date().isoformat()
+    return None
+
+
+def _daily_existing_fallback_count() -> dict[str, Any]:
+    tz = _local_tz()
+    today = datetime.now(UTC).astimezone(tz).date().isoformat()
+    paths = [
+        ROOT / ".data" / "fallback-sent-index.json",
+        ROOT / ".data" / "published-candidate-index.json",
+        ROOT / ".data" / "state.json",
+        ROOT / ".data" / "exports" / "latest-controlled-fallback-report.json",
+        ROOT / "artifacts" / "controlled-fallback-report.json",
+    ]
+    seen: set[str] = set()
+    samples: list[dict[str, Any]] = []
+    for path in paths:
+        payload = _load_json(path, {})
+        report_published = isinstance(payload, dict) and bool(payload.get("published"))
+        for row in _iter_payload_rows(payload, report_published=report_published):
+            if not _is_published_pick_row(row):
+                continue
+            if _row_local_day(row, tz) != today:
+                continue
+            sig = _candidate_signature(row)
+            key = "|".join([sig.get("match_key") or f"{sig.get('home')}--{sig.get('away')}", sig.get("family"), sig.get("selection"), sig.get("point")])
+            if not key.strip("|"):
+                key = json.dumps(row, ensure_ascii=False, sort_keys=True)[:300]
+            if key in seen:
+                continue
+            seen.add(key)
+            if len(samples) < 10:
+                samples.append({
+                    "source_path": str(path),
+                    "key": key,
+                    "home_team": row.get("home_team") or row.get("home"),
+                    "away_team": row.get("away_team") or row.get("away"),
+                    "selection": row.get("selection"),
+                    "point": row.get("point"),
+                    "published_at": row.get("published_at") or row.get("sent_at") or row.get("created_at"),
+                    "commence_time": row.get("commence_time") or row.get("kickoff") or row.get("start_time"),
+                })
+    return {"date": today, "count": len(seen), "samples": samples}
+
+
+def _daily_limit_reasons(candidate: dict[str, Any]) -> list[str]:
+    if not _truthy(os.getenv("CONTROLLED_FALLBACK_DAILY_LIMIT_ENABLED"), True):
+        return []
+    limit = _as_int(os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED") or os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER") or 0, 0)
+    if limit <= 0:
+        return []
+    info = _daily_existing_fallback_count()
+    count = int(info.get("count") or 0)
+    if count < limit:
+        return []
+    reason = f"controlled_fallback_daily_limit_reached:{count}/{limit}"
+    _GUARD_EVENTS.append({
+        "guard": "controlled_fallback_daily_limit",
+        "match_key": candidate.get("match_key"),
+        "home_team": candidate.get("home_team"),
+        "away_team": candidate.get("away_team"),
+        "family": candidate.get("family"),
+        "selection": candidate.get("selection"),
+        "point": candidate.get("point"),
+        "date": info.get("date"),
+        "existing_count": count,
+        "limit": limit,
+        "samples": info.get("samples") or [],
+        "reasons": [reason],
+    })
+    return [reason]
+
 
 _original_hard_reject_reasons = base.hard_reject_reasons
 
 
 def hard_reject_reasons_guarded(candidate: dict[str, Any], metrics: dict[str, Any], sent_index: dict[str, Any]) -> list[str]:
     reasons = list(_original_hard_reject_reasons(candidate, metrics, sent_index) or [])
-    extra = []
+    extra: list[str] = []
     duplicate = _strict_duplicate_reason(candidate) or _duplicate_sent_index_reason(candidate) or _duplicate_previous_report_reason(candidate)
     if duplicate:
         extra.append(duplicate)
+    extra.extend(_publish_window_reasons(candidate))
+    extra.extend(_daily_limit_reasons(candidate))
     extra.extend(_final_cron_recheck_reasons(candidate))
     extra.extend(_windowed_movement_reasons(candidate))
     if extra:
@@ -450,6 +616,10 @@ def main() -> int:
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "status": "starting",
+        "policy_version": "controlled-fallback-guard-v17-two-hour-window-daily-cap",
+        "publish_window_hours": _as_float(os.getenv("CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS") or os.getenv("PUBLISH_WINDOW_HOURS") or 2.0, 2.0),
+        "daily_limit": _as_int(os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED") or os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER") or 0, 0),
+        "daily_existing": _daily_existing_fallback_count(),
         "windowed_filter_path": str(ROOT / ".data" / "exports" / "latest-windowed-core-publication-filter.json"),
         "events": [],
     }
@@ -468,7 +638,7 @@ def main() -> int:
         payload["error"] = f"{type(exc).__name__}: {exc}"
         return 1
     finally:
-        payload["events"] = _GUARD_EVENTS[:100]
+        payload["events"] = _GUARD_EVENTS[:200]
         payload["blocked_events"] = len(_GUARD_EVENTS)
         _write_json(REPORT_PATH, payload)
 
