@@ -4,7 +4,7 @@ from __future__ import annotations
 
 Adds current blockers diagnostics on top of v9 without changing publication logic:
 - fresh B-cover diagnostics instead of legacy-only promotion text;
-- explicit env/policy-aware B-tier/SportLogic wording;
+- explicit policy-aware B-tier/SportLogic wording;
 - Bzzoiro overlap-bridge metrics;
 - rescue xG/confirmation enrichment summary;
 - compact technical status for run-bot/prune/artifact payload.
@@ -79,10 +79,18 @@ def _policy_env_value(policy: dict[str, Any], key: str) -> Any:
     return env.get(key)
 
 
-def _contract_min_books(policy: dict[str, Any], tier: str, default: int) -> int:
+def _contract_tier_payload(policy: dict[str, Any], tier: str) -> dict[str, Any]:
     contract = policy.get('contract') if isinstance(policy.get('contract'), dict) else {}
-    tier_payload = contract.get(tier) if isinstance(contract.get(tier), dict) else {}
-    return _as_int(tier_payload.get('min_bookmakers')) or default
+    payload = contract.get(tier) if isinstance(contract.get(tier), dict) else {}
+    return payload
+
+
+def _contract_min_books(policy: dict[str, Any], tier: str, default: int) -> int:
+    return _as_int(_contract_tier_payload(policy, tier).get('min_bookmakers')) or default
+
+
+def _contract_min_context(policy: dict[str, Any], tier: str, default: int) -> int:
+    return _as_int(_contract_tier_payload(policy, tier).get('min_context_sources')) or default
 
 
 def build_payload() -> dict[str, Any]:
@@ -100,10 +108,16 @@ def build_payload() -> dict[str, Any]:
     diag['run_bot_step_status'] = _load_json(EXPORT_DIR / 'latest-run-bot-step-status.json')
     diag['artifact_prune_status'] = _load_json(EXPORT_DIR / 'latest-artifact-prune-status.json')
     diag['ab_tier_bookmaker_contract_policy'] = policy
+
+    # IMPORTANT: prefer the explicit policy artifact over environment variables.
+    # The workflow can still contain older defaults in env, but the apply step
+    # writes the source-of-truth policy for the current run. Without this order
+    # the Telegram report can display B=2 books while fallback is configured as
+    # B=1 book.
     diag['workflow_env_contract'] = {
-        'a_tier_min_books': _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS') or _policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS')) or _contract_min_books(policy, 'A', 2),
-        'b_tier_min_books': _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS') or _policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS')) or _contract_min_books(policy, 'B', 1),
-        'b_tier_min_context': _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES') or _policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES')) or 1,
+        'a_tier_min_books': _contract_min_books(policy, 'A', _as_int(_policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS')) or _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS')) or 2),
+        'b_tier_min_books': _contract_min_books(policy, 'B', _as_int(_policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS')) or _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS')) or 1),
+        'b_tier_min_context': _contract_min_context(policy, 'B', _as_int(_policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES')) or _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES')) or 1),
         'sportlogic_enabled': _env_bool('SPORTLOGIC_ENABLED', _env_bool('ENABLE_SPORTLOGIC', False)),
         'day_inventory_sportlogic_enabled': _env_bool('DAY_INVENTORY_ENABLE_SPORTLOGIC', False),
     }
@@ -129,9 +143,6 @@ def _replace_contract_text(text: str, payload: dict[str, Any]) -> str:
     b_books = max(1, _as_int(env.get('b_tier_min_books') or 1))
     b_ctx = max(1, _as_int(env.get('b_tier_min_context') or 1))
 
-    # v9/v10 had several historical strings: some used "2 books", some
-    # "2+ bookmaker", some Russian wording. Normalize all of them from the
-    # policy artifact/env rather than from stale hard-coded text.
     text = re.sub(
         r'B-tier 1\+?\s*(?:line|линия)/(?:2|\d+)\+?\s*(?:books?|bookmaker|букмекер(?:а|ов)?)/(?:1|\d+)\+?\s*(?:context|контекст) coverage:',
         f'B-tier 1+ line/{b_books}+ bookmaker/{b_ctx}+ context coverage:',
@@ -286,7 +297,7 @@ v9.v8.v7.render = render
 _write_status({
     'status': 'installed',
     'renderer': 'v10',
-    'adds': ['fresh_b_cover_diagnostics', 'rescue_xg_confirmation_enrichment', 'env_contract_text', 'sportlogic_disabled_by_env', 'bzzoiro_overlap_bridge', 'one_book_b_tier_contract_text'],
+    'adds': ['fresh_b_cover_diagnostics', 'rescue_xg_confirmation_enrichment', 'policy_first_contract_text', 'sportlogic_disabled_by_env', 'bzzoiro_overlap_bridge', 'one_book_b_tier_contract_text'],
 })
 
 
