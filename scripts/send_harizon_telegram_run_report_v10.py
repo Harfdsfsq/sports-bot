@@ -4,7 +4,7 @@ from __future__ import annotations
 
 Adds current blockers diagnostics on top of v9 without changing publication logic:
 - fresh B-cover diagnostics instead of legacy-only promotion text;
-- explicit env-aware B-tier/SportLogic wording;
+- explicit env/policy-aware B-tier/SportLogic wording;
 - Bzzoiro overlap-bridge metrics;
 - rescue xG/confirmation enrichment summary;
 - compact technical status for run-bot/prune/artifact payload.
@@ -59,15 +59,6 @@ def _as_int(value: Any) -> int:
         return 0
 
 
-def _as_float(value: Any) -> float:
-    try:
-        if value in (None, ''):
-            return 0.0
-        return float(str(value).replace(',', '.'))
-    except Exception:
-        return 0.0
-
-
 def _env_bool(name: str, default: bool = False) -> bool:
     raw = os.getenv(name)
     if raw is None:
@@ -83,10 +74,22 @@ def _write_status(payload: dict[str, Any]) -> None:
         pass
 
 
+def _policy_env_value(policy: dict[str, Any], key: str) -> Any:
+    env = policy.get('env') if isinstance(policy.get('env'), dict) else {}
+    return env.get(key)
+
+
+def _contract_min_books(policy: dict[str, Any], tier: str, default: int) -> int:
+    contract = policy.get('contract') if isinstance(policy.get('contract'), dict) else {}
+    tier_payload = contract.get(tier) if isinstance(contract.get(tier), dict) else {}
+    return _as_int(tier_payload.get('min_bookmakers')) or default
+
+
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     payload['version'] = 'harizon-telegram-report-v10-fresh-diagnostics-and-contract-text'
     diag = payload.setdefault('diagnostics', {})
+    policy = _load_json(EXPORT_DIR / 'latest-ab-tier-bookmaker-contract-policy.json')
     diag['inventory_target_expand'] = _load_json(EXPORT_DIR / 'latest-day-inventory-target-expand.json')
     diag['inventory_bookmaker_backfill'] = _load_json(EXPORT_DIR / 'latest-inventory-bookmaker-backfill.json')
     diag['b_cover_candidate_gap'] = _load_json(EXPORT_DIR / 'latest-b-cover-candidate-gap-report.json')
@@ -96,9 +99,11 @@ def build_payload() -> dict[str, Any]:
     diag['bzzoiro_overlap_bridge'] = _load_json(EXPORT_DIR / 'latest-bzzoiro-overlap-bridge.json')
     diag['run_bot_step_status'] = _load_json(EXPORT_DIR / 'latest-run-bot-step-status.json')
     diag['artifact_prune_status'] = _load_json(EXPORT_DIR / 'latest-artifact-prune-status.json')
+    diag['ab_tier_bookmaker_contract_policy'] = policy
     diag['workflow_env_contract'] = {
-        'b_tier_min_books': _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS') or os.getenv('PUBLISH_TIER_B_MIN_BOOKS') or os.getenv('PUBLISH_MIN_BOOKS') or 1),
-        'b_tier_min_context': _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES') or os.getenv('PUBLISH_TIER_B_MIN_CONTEXT_SOURCES') or 1),
+        'a_tier_min_books': _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS') or _policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS')) or _contract_min_books(policy, 'A', 2),
+        'b_tier_min_books': _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS') or _policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS')) or _contract_min_books(policy, 'B', 1),
+        'b_tier_min_context': _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES') or _policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES')) or 1,
         'sportlogic_enabled': _env_bool('SPORTLOGIC_ENABLED', _env_bool('ENABLE_SPORTLOGIC', False)),
         'day_inventory_sportlogic_enabled': _env_bool('DAY_INVENTORY_ENABLE_SPORTLOGIC', False),
     }
@@ -124,29 +129,38 @@ def _replace_contract_text(text: str, payload: dict[str, Any]) -> str:
     b_books = max(1, _as_int(env.get('b_tier_min_books') or 1))
     b_ctx = max(1, _as_int(env.get('b_tier_min_context') or 1))
 
-    text = text.replace(
-        'B-tier 1 line/2 books/1 context coverage:',
+    # v9/v10 had several historical strings: some used "2 books", some
+    # "2+ bookmaker", some Russian wording. Normalize all of them from the
+    # policy artifact/env rather than from stale hard-coded text.
+    text = re.sub(
+        r'B-tier 1\+?\s*(?:line|линия)/(?:2|\d+)\+?\s*(?:books?|bookmaker|букмекер(?:а|ов)?)/(?:1|\d+)\+?\s*(?:context|контекст) coverage:',
         f'B-tier 1+ line/{b_books}+ bookmaker/{b_ctx}+ context coverage:',
+        text,
     )
-    text = text.replace(
-        'B-tier = 1+ линия/odds-source + 2+ букмекера/ценовых подтверждения + 1+ контекст + движение линии + value.',
+    text = re.sub(
+        r'B-tier = 1\+ линия/odds-source \+ (?:2\+?|\d+\+?) букмекер(?:а|ов)?/ценов(?:ое|ых) подтверждени(?:е|я) \+ (?:1\+?|\d+\+?) контекст \+ движение линии \+ value\.',
         f'B-tier = 1+ линия/odds-source + {b_books}+ букмекер/ценовое подтверждение + {b_ctx}+ контекст + движение линии + value.',
+        text,
     )
-    text = text.replace(
-        'B-tier = 1 odds-source + 2 букмекера + 1 контекст',
+    text = re.sub(
+        r'B-tier = 1 odds-source \+ (?:2|\d+) букмекер(?:а|ов)? \+ (?:1|\d+) контекст',
         f'B-tier = 1 odds-source + {b_books} букмекер + {b_ctx} контекст',
+        text,
     )
-    text = text.replace(
-        'B-tier = 1+ букмекер + 1+ контекст',
-        f'B-tier = {b_books}+ букмекер + {b_ctx}+ контекст',
-    )
-    text = text.replace(
-        'B-tier теперь считается по 1+ букмекеру и 1+ контексту.',
+    text = re.sub(
+        r'B-tier теперь считается по (?:1|2|\d+)\+ букмекеру и (?:1|\d+)\+ контексту\.',
         f'B-tier теперь считается по {b_books}+ букмекеру и {b_ctx}+ контексту.',
+        text,
     )
-    text = text.replace(
-        'Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера.',
+    text = re.sub(
+        r'Ценовой контракт сейчас: B-tier (?:1|2|\d+)\+ букмекер; A-tier 2\+ букмекера\.',
         f'Ценовой контракт сейчас: B-tier {b_books}+ букмекер; A-tier 2+ букмекера.',
+        text,
+    )
+    text = re.sub(
+        r'Контракт публикации сейчас: A-tier = 2 odds-source \+ 2 букмекера \+ 2 контекста; B-tier = 1 odds-source \+ (?:2|\d+) букмекер(?:а|ов)? \+ (?:1|\d+) контекст;',
+        f'Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + {b_books} букмекер + {b_ctx} контекст;',
+        text,
     )
     return text
 
@@ -167,16 +181,12 @@ def _replace_bzzoiro_line(text: str, payload: dict[str, Any]) -> str:
     diag = payload.get('diagnostics') if isinstance(payload.get('diagnostics'), dict) else {}
     bridge = diag.get('bzzoiro_overlap_bridge') if isinstance(diag.get('bzzoiro_overlap_bridge'), dict) else {}
     bridged_offers = _as_int(bridge.get('bzzoiro_offer_rows'))
-    match_overlap = _as_int(bridge.get('overlap_match_rows'))
     bucket_overlap = _as_int(bridge.get('overlap_same_bucket_rows'))
     if bridged_offers <= 0:
         return text
     pattern = r'(• Bzzoiro: direct req .*?secondary offers )\d+(; overlap odds-api\.io )\d+(; ошибок .*?\.)'
     replacement = rf'\g<1>{bridged_offers}\g<2>{bucket_overlap}\g<3>'
-    if re.search(pattern, text):
-        text = re.sub(pattern, replacement, text, count=1)
-    # Keep a precise line in diagnostics too, because the provider line reports bridged totals, not native v2 odds rows.
-    return text
+    return re.sub(pattern, replacement, text, count=1) if re.search(pattern, text) else text
 
 
 def _diagnostics_lines(payload: dict[str, Any]) -> list[str]:
@@ -188,11 +198,15 @@ def _diagnostics_lines(payload: dict[str, Any]) -> list[str]:
     bzz_bridge = diag.get('bzzoiro_overlap_bridge') if isinstance(diag.get('bzzoiro_overlap_bridge'), dict) else {}
     step_status = diag.get('run_bot_step_status') if isinstance(diag.get('run_bot_step_status'), dict) else {}
     prune = diag.get('artifact_prune_status') if isinstance(diag.get('artifact_prune_status'), dict) else {}
+    contract = diag.get('workflow_env_contract') if isinstance(diag.get('workflow_env_contract'), dict) else {}
 
     lines: list[str] = []
     if step_status and _as_int(step_status.get('status')) != 0:
+        lines.append(f"• Run bot status: non-zero {_as_int(step_status.get('status'))}; отчёт/артефакты собраны post-run.")
+    if contract:
         lines.append(
-            f"• Run bot status: non-zero {_as_int(step_status.get('status'))}; отчёт/артефакты собраны post-run."
+            f"• Active A/B contract: A=2 odds/2 books/2 context; "
+            f"B=1 odds/{max(1, _as_int(contract.get('b_tier_min_books') or 1))} book/{max(1, _as_int(contract.get('b_tier_min_context') or 1))} context."
         )
     if expand:
         lines.append(
@@ -212,10 +226,13 @@ def _diagnostics_lines(payload: dict[str, Any]) -> list[str]:
             f"same-bucket overlap {_as_int(bzz_bridge.get('overlap_same_bucket_rows'))}."
         )
     if fresh:
+        active = _as_int(fresh.get('active_b_cover_rows'))
+        active_with = _as_int(fresh.get('active_b_cover_with_any_current_offer_match'))
         lines.append(
             f"• Fresh B-cover diagnostic: rows {_as_int(fresh.get('b_cover_rows'))}; "
             f"with current offer {_as_int(fresh.get('b_cover_with_any_current_offer_match'))}; "
             f"without current offer {_as_int(fresh.get('b_cover_without_current_offer_match'))}; "
+            f"active {active}; active with offer {active_with}; "
             f"fresh buckets {_as_int(fresh.get('current_market_buckets_totals_spreads'))}; "
             f"single-source candidates {_as_int(fresh.get('fallback_single_source_candidates'))}; "
             f"missing xG candidates {_as_int(fresh.get('fallback_missing_xg_candidates'))}."
@@ -225,9 +242,7 @@ def _diagnostics_lines(payload: dict[str, Any]) -> list[str]:
             lines.append(f"• Fresh fallback blockers: {_top_reasons(reasons, limit=6)}.")
         prom_reasons = fresh.get('promotion_reason_counts') if isinstance(fresh.get('promotion_reason_counts'), dict) else {}
         if prom_reasons:
-            lines.append(
-                f"• Fresh promotion: promoted {_as_int(fresh.get('promotion_promoted_count'))}; top skips {_top_reasons(prom_reasons, limit=5)}."
-            )
+            lines.append(f"• Fresh promotion: promoted {_as_int(fresh.get('promotion_promoted_count'))}; top skips {_top_reasons(prom_reasons, limit=5)}.")
     else:
         lines.append('• Fresh B-cover diagnostic: report missing; проверь latest-fresh-b-cover-diagnostics.json.')
     if enrich:
@@ -252,7 +267,6 @@ def render(payload: dict[str, Any]) -> str:
     lines = _diagnostics_lines(payload)
     if lines:
         block = '🧯 Диагностика новых стопоров\n' + '\n'.join(lines) + '\n\n'
-        # Replace old/legacy diagnostics block if v9 already produced one; otherwise insert before meaning block.
         pattern = r'🧯 Диагностика новых стопоров\n.*?(?=📌 Что это значит\n)'
         if re.search(pattern, text, flags=re.S):
             text = re.sub(pattern, block, text, count=1, flags=re.S)
@@ -272,7 +286,7 @@ v9.v8.v7.render = render
 _write_status({
     'status': 'installed',
     'renderer': 'v10',
-    'adds': ['fresh_b_cover_diagnostics', 'rescue_xg_confirmation_enrichment', 'env_contract_text', 'sportlogic_disabled_by_env', 'bzzoiro_overlap_bridge'],
+    'adds': ['fresh_b_cover_diagnostics', 'rescue_xg_confirmation_enrichment', 'env_contract_text', 'sportlogic_disabled_by_env', 'bzzoiro_overlap_bridge', 'one_book_b_tier_contract_text'],
 })
 
 
