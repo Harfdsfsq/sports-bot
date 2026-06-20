@@ -1,32 +1,42 @@
 {
-  "all_source_match_counts": {
-    "bzzoiro": 18,
-    "odds_api_io": 297
+  "alias_update": {
+    "paths": [
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+    ],
+    "status": "ok",
+    "target_date": "2026-06-21"
   },
   "build_status": "ok",
   "counts": {
     "fixture_sources_seen": 2,
     "leagues_seen": 83,
     "matches_added": 300,
+    "matches_added_from_latest_run": 0,
     "matches_after_core_merge": 356,
     "matches_after_top_cut": 300,
-    "matches_next_12h": 124,
-    "matches_next_12h_ready": 10,
-    "matches_next_6h": 102,
-    "matches_next_6h_ready": 10,
+    "matches_next_12h": 215,
+    "matches_next_12h_ready": 31,
+    "matches_next_6h": 118,
+    "matches_next_6h_ready": 31,
     "matches_raw_before_merge": 372,
-    "matches_ready_for_model": 15,
-    "matches_ready_for_publish": 0,
-    "matches_total": 300,
+    "matches_ready_for_model": 54,
+    "matches_ready_for_publish": 11,
+    "matches_seen_latest_run": 162,
+    "matches_total": 469,
+    "matches_total_high_watermark": 469,
     "matches_updated": 0,
+    "matches_updated_from_latest_run": 0,
+    "matches_with_2plus_context_sources": 20,
     "matches_with_2plus_core_fixture_sources": 15,
     "matches_with_3_core_fixture_sources": 0,
-    "matches_with_context": 18,
-    "matches_with_form": 0,
+    "matches_with_context": 63,
+    "matches_with_form": 47,
     "matches_with_news": 0,
-    "matches_with_odds": 297,
+    "matches_with_odds": 408,
     "matches_with_weather": 0,
-    "matches_with_xg": 18,
+    "matches_with_xg": 15,
     "multi_source_fixture_matches": 15,
     "providers_seen": 2,
     "target_full": true,
@@ -243,14 +253,82 @@
         }
       }
     },
+    "coverage_repair": {
+      "evidence_matches": 174,
+      "rows_repaired": 26,
+      "updated_at_utc": "2026-06-20T22:00:19.221016+00:00"
+    },
+    "fixture_expansion": {
+      "added": 0,
+      "providers": {
+        "allsportsapi": {
+          "body_preview": "{\"success\":1}",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 0
+        },
+        "football_data": {
+          "body_preview": "{\"filters\":{\"dateFrom\":\"2026-06-21\",\"dateTo\":\"2026-06-21\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":1,\"competitions\":\"WC\",\"first\":\"2026-06-21\",\"last\":\"2026-06-21\",\"played\":0},\"matches\":[{\"area\":{\"id\":2267,\"name\":\"World\",\"code\":\"INT\",\"flag\":null},\"competition\":{\"id\":2000,\"name\":\"FIFA World Cup\",\"code\":\"WC\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/wm26.png\"},\"season\":{\"id\":2398,\"startDate\":\"2026-06-11\",\"endDate\":\"2026-07-19\",\"currentMatchday\":1,\"winner\":null},\"id\":537354,\"utcDat",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 1
+        },
+        "thesportsdb": {
+          "body_preview": "{\"events\":[{\"idEvent\":\"2391751\",\"idAPIfootball\":\"1489392\",\"strTimestamp\":\"2026-06-21T00:00:00\",\"strEvent\":\"Ecuador vs Cura\\u00e7ao\",\"strEventAlternate\":\"Cura\\u00e7ao @ Ecuador\",\"strFilename\":\"FIFA World Cup 2026-06-21 Ecuador vs Cura\\u00e7ao\",\"strSport\":\"Soccer\",\"idLeague\":\"4429\",\"strLeague\":\"FIFA World Cup\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/e7er5g1696521789.png\",\"strSeason\":\"2026\",\"strDescriptionEN\":\"\",\"strHomeTeam\":\"Ecuador\",\"strAwayTeam\":\"Cura\\u00e7",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 3
+        }
+      },
+      "rows_fetched": 4,
+      "updated": 4,
+      "updated_at_utc": "2026-06-20T22:00:16.272886+00:00"
+    },
+    "latest_match_accumulation": {
+      "added": 0,
+      "latest_rows_seen": 162,
+      "rejected": 0,
+      "updated": 0,
+      "updated_at_utc": "2026-06-20T22:00:19.016621+00:00"
+    },
     "mode": "core_fixture_discovery_top300",
+    "priority_and_refresh_plan": {
+      "active_rows": 320,
+      "final_pre_kickoff_checks": 63,
+      "low_quality_rows_filtered_from_priority": 148,
+      "needs_odds_refresh": 10,
+      "no_more_regular_run_before_kickoff": 40,
+      "updated_at_utc": "2026-06-20T21:58:32.549474+00:00"
+    },
     "providers": [
       "odds_api_io",
       "bzzoiro",
       "sstats",
       "sportlogic"
-    ]
+    ],
+    "refresh_plan_count_repair": {
+      "active_matches": 468,
+      "final_pre_kickoff_checks": 63,
+      "matches_missing_odds_coverage": 61,
+      "matches_needing_odds_refresh": 196,
+      "matches_stale_odds_refresh": 186,
+      "no_more_regular_run_before_kickoff": 40,
+      "updated_at_utc": "2026-06-20T21:58:32.549474+00:00"
+    },
+    "runtime_context_coverage_bridge": {
+      "alias_matched_rows": 4,
+      "consensus_rows": 2509,
+      "context_rows": 22,
+      "exact_matched_rows": 130,
+      "line_rows": 3803,
+      "rows_updated": 134,
+      "runtime_alias_entries": 533,
+      "runtime_alias_links": 180,
+      "runtime_matches": 162,
+      "serving_rows": 162,
+      "updated_at_utc": "2026-06-20T21:58:34.404496+00:00"
+    }
   },
   "timezone": "Europe/Moscow",
-  "updated_at_utc": "2026-06-20T21:02:00.131015+00:00"
+  "updated_at_utc": "2026-06-20T22:00:19.221016+00:00"
 }
