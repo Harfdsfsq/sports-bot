@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 86,
-      "rows_seen": 86,
+      "rows_kept": 18,
+      "rows_seen": 18,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 484,
-      "rows_seen": 486,
-      "rows_stale": 2
+      "rows_kept": 460,
+      "rows_seen": 472,
+      "rows_stale": 12
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 72,
-      "rows_seen": 72,
+      "rows_kept": 67,
+      "rows_seen": 67,
       "rows_stale": 0
     }
   },
@@ -35,28 +35,28 @@
     "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 184,
-    "controlled_candidates_seen": 43,
+    "contexts_built": 130,
+    "controlled_candidates_seen": 9,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 302,
-    "matches_seen": 199,
-    "matches_with_offers": 154
+    "coverage_candidates_current_date": 279,
+    "matches_seen": 146,
+    "matches_with_offers": 113
   },
-  "created_at": "2026-06-21T13:13:53.611994+00:00",
+  "created_at": "2026-06-21T15:12:15.880258+00:00",
   "family_counts": {
-    "h2h": 1,
-    "spreads": 175,
-    "totals": 126
+    "h2h": 15,
+    "spreads": 154,
+    "totals": 110
   },
-  "matches_with_candidates": 90,
+  "matches_with_candidates": 89,
   "missing_data_flags": {
-    "confidence_below_micro_c": 294,
-    "edge_below_micro_c": 283,
-    "ev_below_micro_c": 278,
-    "single_book": 219,
-    "single_context_source": 265,
-    "single_odds_source": 299
+    "confidence_below_micro_c": 277,
+    "edge_below_micro_c": 269,
+    "ev_below_micro_c": 260,
+    "single_book": 201,
+    "single_context_source": 245,
+    "single_odds_source": 278
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -79,11 +79,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 130,
+      "events_matched": 94,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2990,
+      "offers_parsed": 2102,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -98,11 +98,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 102,
+      "events_matched": 65,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 11366,
+      "offers_parsed": 7217,
       "provider": "account2",
       "rate_limited": false,
       "response_errors": 0,
@@ -113,8 +113,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": null,
-      "contexts_built": 14,
-      "direct_event_contexts_built": 14,
+      "contexts_built": 6,
+      "direct_event_contexts_built": 6,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -140,7 +140,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 1512,
+      "offers_parsed": 698,
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": 0,
@@ -177,7 +177,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 189,
+      "matches_built": 137,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -192,11 +192,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 219,
+      "events_fetched": 158,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 189,
+      "matches_built": 137,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -208,8 +208,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 184,
-      "direct_event_contexts_built": 184,
+      "contexts_built": 130,
+      "direct_event_contexts_built": 130,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -263,7 +263,7 @@
       "offers_parsed": null,
       "provider": "thesportsdb",
       "rate_limited": false,
-      "response_errors": 2,
+      "response_errors": 1,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -490,61 +490,56 @@
     "working": 11
   },
   "reject_reason_counts_from_rows": {
-    "post_calibration_edge_guard": 1
+    "bad_historical_segment_guard": 2,
+    "controlled_fallback_daily_limit_reached:3/3": 2
   },
   "target_date": "2026-06-21",
   "top_near_miss": [
     {
-      "away_team": "Atyrau",
+      "away_team": "Uruguay Montevideo FC",
       "best_candidate": {
-        "adjusted_probability": 0.566712,
-        "books_count": 3,
-        "canonical_edge_pp": 6.038,
+        "adjusted_probability": 0.394106,
+        "books_count": 2,
+        "canonical_edge_pp": 4.199,
         "canonical_ev_pct": 11.926,
-        "confidence": 70.267,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
+        "confidence": 68.467,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
         "family": "totals",
-        "odds": 1.975,
+        "odds": 2.84,
         "odds_sources_count": 1,
         "origin": "rescue",
-        "point": 2.0,
+        "point": 1.5,
         "reject_reasons": [],
-        "selection": "Больше",
+        "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 75.532,
-      "best_edge_pp": 6.038,
+      "best_confidence": 69.254,
+      "best_edge_pp": 4.199,
       "best_ev_pct": 11.926,
       "books_max": 3,
-      "candidate_count": 7,
-      "commence_time": "2026-06-21T14:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "candidate_count": 2,
+      "commence_time": "2026-06-21T18:30:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
-        "spreads": 3,
-        "totals": 4
+        "totals": 2
       },
-      "home_team": "FC Yelimai",
-      "league_name": "Kazakhstan - Premier League",
-      "match_key": "soccer|atyrau|yelimai|2026-06-21",
+      "home_team": "Rentistas",
+      "league_name": "Uruguay - Segunda Division",
+      "match_key": "2026-06-21|rentistas|uruguay montevideo",
       "missing_flags": {
-        "confidence_below_micro_c": 6,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 5,
-        "single_book": 3,
-        "single_context_source": 6,
-        "single_odds_source": 7
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 2
       },
       "odds_sources_max": 1,
       "origins": {
-        ".logs/debug-last-run.json": 5,
         "rescue": 2
       },
-      "reject_reasons": {
-        "post_calibration_edge_guard": 1
-      },
+      "reject_reasons": {},
       "sources_max": 1
     },
     {
@@ -555,8 +550,8 @@
         "canonical_edge_pp": 4.199,
         "canonical_ev_pct": 11.926,
         "confidence": 68.467,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
         "family": "totals",
         "odds": 2.84,
         "odds_sources_count": 1,
@@ -566,211 +561,12 @@
         "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 68.467,
+      "best_confidence": 69.254,
       "best_edge_pp": 4.199,
       "best_ev_pct": 11.926,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-06-21T18:30:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Rentistas",
-      "league_name": "Uruguay - Segunda Division",
-      "match_key": "2026-06-21|rentistas|uruguay montevideo",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "single_context_source": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Haninge",
-      "best_candidate": {
-        "adjusted_probability": 0.382472,
-        "books_count": 2,
-        "canonical_edge_pp": 4.001,
-        "canonical_ev_pct": 11.682,
-        "confidence": 68.357,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.92,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 73.25,
-      "best_edge_pp": 4.001,
-      "best_ev_pct": 11.682,
-      "books_max": 2,
-      "candidate_count": 6,
-      "commence_time": "2026-06-21T14:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 3
-      },
-      "home_team": "Smedby",
-      "league_name": "Sweden - Division 2, Sodra Svealand",
-      "match_key": "soccer|haninge|smedby|2026-06-21",
-      "missing_flags": {
-        "confidence_below_micro_c": 6,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 4,
-        "single_book": 4,
-        "single_context_source": 5,
-        "single_odds_source": 6
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 4,
-        "rescue": 2
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Olympic",
-      "best_candidate": {
-        "adjusted_probability": 0.383889,
-        "books_count": 2,
-        "canonical_edge_pp": 3.906,
-        "canonical_ev_pct": 11.328,
-        "confidence": 68.197,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 2.9,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 68.197,
-      "best_edge_pp": 3.906,
-      "best_ev_pct": 11.328,
-      "books_max": 2,
-      "candidate_count": 4,
-      "commence_time": "2026-06-21T14:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 1
-      },
-      "home_team": "Ariana FC",
-      "league_name": "Sweden - Ettan, Sodra",
-      "match_key": "soccer|ariana|olympic|2026-06-21",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 3,
-        "single_book": 3,
-        "single_context_source": 3,
-        "single_odds_source": 4
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 3,
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Paide",
-      "best_candidate": {
-        "adjusted_probability": 0.449567,
-        "books_count": 3,
-        "canonical_edge_pp": 4.471,
-        "canonical_ev_pct": 11.043,
-        "confidence": 69.869,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.47,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 75.95,
-      "best_edge_pp": 4.471,
-      "best_ev_pct": 11.043,
-      "books_max": 3,
-      "candidate_count": 7,
-      "commence_time": "2026-06-21T14:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 4
-      },
-      "home_team": "Tallinna",
-      "league_name": "Estonia - Premium Liiga",
-      "match_key": "soccer|paide|tallinna|2026-06-21",
-      "missing_flags": {
-        "confidence_below_micro_c": 6,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 5,
-        "single_book": 4,
-        "single_context_source": 6,
-        "single_odds_source": 7
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5,
-        "rescue": 2
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Stabaek",
-      "best_candidate": {
-        "adjusted_probability": 0.372556,
-        "books_count": 3,
-        "canonical_edge_pp": 3.699,
-        "canonical_ev_pct": 11.022,
-        "confidence": 69.86,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.98,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 69.86,
-      "best_edge_pp": 3.699,
-      "best_ev_pct": 11.022,
       "books_max": 3,
       "candidate_count": 5,
-      "commence_time": "2026-06-21T14:00:00+00:00",
+      "commence_time": "2026-06-21T18:30:00+00:00",
       "confirmation_sources_max": 3,
       "context_sources_max": 3,
       "controlled_count": 0,
@@ -778,9 +574,60 @@
         "spreads": 3,
         "totals": 2
       },
-      "home_team": "Strommen",
-      "league_name": "Norway - 1st Division",
-      "match_key": "soccer|stabaek|strommen|2026-06-21",
+      "home_team": "Rentistas",
+      "league_name": "Uruguay - Segunda Division",
+      "match_key": "soccer|rentistas|uruguay montevideo|2026-06-21",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 3,
+        "single_context_source": 4,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Fylkir Reykjavik",
+      "best_candidate": {
+        "adjusted_probability": 0.365286,
+        "books_count": 2,
+        "canonical_edge_pp": 3.742,
+        "canonical_ev_pct": 11.412,
+        "confidence": 68.236,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 3.05,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 68.236,
+      "best_edge_pp": 3.742,
+      "best_ev_pct": 11.412,
+      "books_max": 2,
+      "candidate_count": 5,
+      "commence_time": "2026-06-21T19:15:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 2
+      },
+      "home_team": "Grotta",
+      "league_name": "Iceland - 1 deild",
+      "match_key": "soccer|fylkir reykjavik|grotta|2026-06-21",
       "missing_flags": {
         "confidence_below_micro_c": 5,
         "edge_below_micro_c": 5,
@@ -798,165 +645,17 @@
       "sources_max": 1
     },
     {
-      "away_team": "Afturelding",
+      "away_team": "Banfield",
       "best_candidate": {
-        "adjusted_probability": 0.385316,
+        "adjusted_probability": 0.376909,
         "books_count": 2,
-        "canonical_edge_pp": 3.809,
-        "canonical_ev_pct": 10.971,
-        "confidence": 68.037,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.88,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 68.037,
-      "best_edge_pp": 3.809,
-      "best_ev_pct": 10.971,
-      "books_max": 2,
-      "candidate_count": 4,
-      "commence_time": "2026-06-21T14:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 1
-      },
-      "home_team": "IF Vestri",
-      "league_name": "Iceland - 1 deild",
-      "match_key": "soccer|afturelding|if vestri|2026-06-21",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 3,
-        "single_book": 3,
-        "single_context_source": 3,
-        "single_odds_source": 4
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 3,
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Floresta",
-      "best_candidate": {
-        "adjusted_probability": 0.504126,
-        "books_count": 3,
-        "canonical_edge_pp": 4.958,
-        "canonical_ev_pct": 10.908,
-        "confidence": 69.808,
+        "canonical_edge_pp": 3.793,
+        "canonical_ev_pct": 11.188,
+        "confidence": 68.135,
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.2,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.0,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 1
-      },
-      "best_confidence": 69.808,
-      "best_edge_pp": 4.958,
-      "best_ev_pct": 10.908,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-06-21T19:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Brusque",
-      "league_name": "Brazil - Brasileiro Serie C",
-      "match_key": "2026-06-21|brusque|floresta",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "single_context_source": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Brujas de Salamanca",
-      "best_candidate": {
-        "adjusted_probability": 0.472045,
-        "books_count": 3,
-        "canonical_edge_pp": 4.47,
-        "canonical_ev_pct": 10.459,
-        "confidence": 69.606,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 2.34,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 1
-      },
-      "best_confidence": 69.606,
-      "best_edge_pp": 4.47,
-      "best_ev_pct": 10.459,
-      "books_max": 3,
-      "candidate_count": 4,
-      "commence_time": "2026-06-21T16:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 1
-      },
-      "home_team": "D. Colina",
-      "league_name": "Chile - Liga Segunda Division, North",
-      "match_key": "soccer|brujas salamanca|d colina|2026-06-21",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 3,
-        "ev_below_micro_c": 3,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 4
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 3,
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Deportivo Merlo",
-      "best_candidate": {
-        "adjusted_probability": 0.408876,
-        "books_count": 2,
-        "canonical_edge_pp": 3.713,
-        "canonical_ev_pct": 9.988,
-        "confidence": 67.594,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 2.69,
+        "odds": 2.95,
         "odds_sources_count": 1,
         "origin": "rescue",
         "point": 1.5,
@@ -964,12 +663,12 @@
         "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 70.46,
-      "best_edge_pp": 3.713,
-      "best_ev_pct": 9.988,
-      "books_max": 2,
+      "best_confidence": 72.93,
+      "best_edge_pp": 3.793,
+      "best_ev_pct": 11.188,
+      "books_max": 3,
       "candidate_count": 6,
-      "commence_time": "2026-06-21T17:30:00+00:00",
+      "commence_time": "2026-06-21T18:00:00+00:00",
       "confirmation_sources_max": 1,
       "context_sources_max": 1,
       "controlled_count": 0,
@@ -977,9 +676,9 @@
         "spreads": 3,
         "totals": 3
       },
-      "home_team": "Sarandi",
-      "league_name": "Argentina - Primera B",
-      "match_key": "soccer|merlo|sarandi|2026-06-21",
+      "home_team": "Newell's Old Boys",
+      "league_name": "Argentina - Primera Division A, Women, Apertura",
+      "match_key": "soccer|banfield|newell s old boys|2026-06-21",
       "missing_flags": {
         "confidence_below_micro_c": 6,
         "edge_below_micro_c": 6,
@@ -991,6 +690,300 @@
       "odds_sources_max": 1,
       "origins": {
         ".logs/debug-last-run.json": 5,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "LD Alajuelense",
+      "best_candidate": {
+        "adjusted_probability": 0.685289,
+        "books_count": 2,
+        "canonical_edge_pp": 6.609,
+        "canonical_ev_pct": 10.674,
+        "confidence": 67.903,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.615,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 67.903,
+      "best_edge_pp": 6.609,
+      "best_ev_pct": 10.674,
+      "books_max": 2,
+      "candidate_count": 3,
+      "commence_time": "2026-06-21T17:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 1,
+        "totals": 2
+      },
+      "home_team": "Deportivo Saprissa",
+      "league_name": "Costa Rica - Primera Division, Women, Qualification Playoffs",
+      "match_key": "soccer|ld alajuelense|saprissa|2026-06-21",
+      "missing_flags": {
+        "confidence_below_micro_c": 3,
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 2,
+        "single_book": 2,
+        "single_context_source": 3,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 2,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Philadelphia",
+      "best_candidate": {
+        "adjusted_probability": 0.399423,
+        "books_count": 3,
+        "canonical_edge_pp": 3.71,
+        "canonical_ev_pct": 10.241,
+        "confidence": 69.508,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.76,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.508,
+      "best_edge_pp": 3.71,
+      "best_ev_pct": 10.241,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-06-21T23:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Orlando City B",
+      "league_name": "USA - MLS Next Pro",
+      "match_key": "2026-06-21|orlando city|philadelphia",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Juazeirense",
+      "best_candidate": {
+        "adjusted_probability": 0.419211,
+        "books_count": 2,
+        "canonical_edge_pp": 3.826,
+        "canonical_ev_pct": 10.043,
+        "confidence": 67.619,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.625,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 67.619,
+      "best_edge_pp": 3.826,
+      "best_ev_pct": 10.043,
+      "books_max": 2,
+      "candidate_count": 3,
+      "commence_time": "2026-06-21T19:30:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 2,
+        "totals": 1
+      },
+      "home_team": "Serra Branca EC PB",
+      "league_name": "Brazil - Brasileiro Serie D, Knockout Stage",
+      "match_key": "soccer|juazeirense|serra branca pb|2026-06-21",
+      "missing_flags": {
+        "confidence_below_micro_c": 3,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 2,
+        "single_book": 2,
+        "single_context_source": 3,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 2,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Floresta",
+      "best_candidate": {
+        "adjusted_probability": 0.504126,
+        "books_count": 3,
+        "canonical_edge_pp": 4.541,
+        "canonical_ev_pct": 9.9,
+        "confidence": 69.355,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.18,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.355,
+      "best_edge_pp": 4.541,
+      "best_ev_pct": 9.9,
+      "books_max": 3,
+      "candidate_count": 2,
+      "commence_time": "2026-06-21T19:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Brusque",
+      "league_name": "Brazil - Brasileiro Serie C",
+      "match_key": "2026-06-21|brusque|floresta",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 2
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Floresta",
+      "best_candidate": {
+        "adjusted_probability": 0.504126,
+        "books_count": 3,
+        "canonical_edge_pp": 4.541,
+        "canonical_ev_pct": 9.9,
+        "confidence": 69.355,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.18,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.355,
+      "best_edge_pp": 4.541,
+      "best_ev_pct": 9.9,
+      "books_max": 3,
+      "candidate_count": 5,
+      "commence_time": "2026-06-21T19:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 2
+      },
+      "home_team": "Brusque",
+      "league_name": "Brazil - Brasileiro Serie C",
+      "match_key": "soccer|brusque|floresta|2026-06-21",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 4,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Real San Joaquin",
+      "best_candidate": {
+        "adjusted_probability": 0.644252,
+        "books_count": 3,
+        "canonical_edge_pp": 5.602,
+        "canonical_ev_pct": 9.523,
+        "confidence": 69.185,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.7,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.185,
+      "best_edge_pp": 5.602,
+      "best_ev_pct": 9.523,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-06-21T20:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "CD Provincial Ovalle FC",
+      "league_name": "Chile - Liga Segunda Division, North",
+      "match_key": "2026-06-21|provincial ovalle|real san joaquin",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
         "rescue": 1
       },
       "reject_reasons": {},
