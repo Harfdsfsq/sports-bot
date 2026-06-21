@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +46,13 @@ def _as_int(value: Any) -> int:
         return 0
 
 
+def _rendered_candidate_counter(text: str) -> tuple[int, int] | None:
+    match = re.search(r'Raw/candidates before quality:\s*(\d+)\s*/\s*(\d+)', text)
+    if not match:
+        return None
+    return int(match.group(1)), int(match.group(2))
+
+
 def build_payload() -> dict[str, Any]:
     try:
         from scripts.build_a_tier_funnel_diagnostics import main as funnel_main
@@ -59,7 +67,7 @@ def build_payload() -> dict[str, Any]:
     return payload
 
 
-def _extra_lines(payload: dict[str, Any]) -> list[str]:
+def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
     diag = payload.get('diagnostics') if isinstance(payload.get('diagnostics'), dict) else {}
     funnel = diag.get('a_tier_funnel_diagnostics') if isinstance(diag.get('a_tier_funnel_diagnostics'), dict) else {}
     guard = diag.get('controlled_fallback_prepublish_guard') if isinstance(diag.get('controlled_fallback_prepublish_guard'), dict) else {}
@@ -73,15 +81,20 @@ def _extra_lines(payload: dict[str, Any]) -> list[str]:
         release = _as_int(guard.get('reserved_slot_release_local_hour') or contract.get('reserved_slot_release_hour')) or 18
         lines.append(f'• Daily slot allocator: published today {count}/{limit}; reserved slots {reserved}; release {release:02d}:00 local.')
     if funnel:
+        rendered_counter = _rendered_candidate_counter(base_text)
+        raw_after_quality = _as_int(funnel.get('raw_candidates_after_quality'))
+        raw_before_quality = _as_int(funnel.get('raw_candidates_before_quality'))
+        if rendered_counter is not None:
+            raw_after_quality, raw_before_quality = rendered_counter
         lines.append(
-            f"• A-tier funnel: cover {_as_int(funnel.get('a_cover_rows'))}; active future {_as_int(funnel.get('active_future_a_cover_rows'))}; in publish window {_as_int(funnel.get('in_publish_window_a_cover_rows'))}; raw candidates {_as_int(funnel.get('raw_candidates_before_quality'))}; active A-cover with raw {_as_int(funnel.get('active_a_cover_with_raw_candidate'))}; active without raw {_as_int(funnel.get('active_a_cover_without_raw_candidate'))}; A-cover in fallback {_as_int(funnel.get('a_cover_seen_in_fallback'))}; active in fallback {_as_int(funnel.get('active_a_cover_seen_in_fallback'))}; A-cover published {_as_int(funnel.get('a_cover_published_rows'))}."
+            f"• A-tier funnel: cover {_as_int(funnel.get('a_cover_rows'))}; active future {_as_int(funnel.get('active_future_a_cover_rows'))}; in publish window {_as_int(funnel.get('in_publish_window_a_cover_rows'))}; raw/quality {raw_after_quality}/{raw_before_quality}; active A-cover with raw {_as_int(funnel.get('active_a_cover_with_raw_candidate'))}; active without raw {_as_int(funnel.get('active_a_cover_without_raw_candidate'))}; A-cover in fallback {_as_int(funnel.get('a_cover_seen_in_fallback'))}; active in fallback {_as_int(funnel.get('active_a_cover_seen_in_fallback'))}; A-cover published {_as_int(funnel.get('a_cover_published_rows'))}."
         )
     return lines
 
 
 def render(payload: dict[str, Any]) -> str:
     text = _base_render(payload)
-    lines = _extra_lines(payload)
+    lines = _extra_lines(payload, text)
     if not lines:
         return text
     insert = '\n'.join(lines)
