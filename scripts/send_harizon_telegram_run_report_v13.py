@@ -74,7 +74,7 @@ def _extra_lines(payload: dict[str, Any]) -> list[str]:
         lines.append(f'• Daily slot allocator: published today {count}/{limit}; reserved slots {reserved}; release {release:02d}:00 local.')
     if funnel:
         lines.append(
-            f"• A-tier funnel: cover {_as_int(funnel.get('a_cover_rows'))}; raw candidates {_as_int(funnel.get('raw_candidates_before_quality'))}; A-cover with raw {_as_int(funnel.get('a_cover_with_raw_candidate'))}; without raw {_as_int(funnel.get('a_cover_without_raw_candidate'))}; A-cover in fallback {_as_int(funnel.get('a_cover_seen_in_fallback'))}; A-cover published {_as_int(funnel.get('a_cover_published_rows'))}."
+            f"• A-tier funnel: cover {_as_int(funnel.get('a_cover_rows'))}; active future {_as_int(funnel.get('active_future_a_cover_rows'))}; in publish window {_as_int(funnel.get('in_publish_window_a_cover_rows'))}; raw candidates {_as_int(funnel.get('raw_candidates_before_quality'))}; active A-cover with raw {_as_int(funnel.get('active_a_cover_with_raw_candidate'))}; active without raw {_as_int(funnel.get('active_a_cover_without_raw_candidate'))}; A-cover in fallback {_as_int(funnel.get('a_cover_seen_in_fallback'))}; active in fallback {_as_int(funnel.get('active_a_cover_seen_in_fallback'))}; A-cover published {_as_int(funnel.get('a_cover_published_rows'))}."
         )
     return lines
 
