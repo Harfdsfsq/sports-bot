@@ -3,80 +3,79 @@
 • Главная причина: controlled fallback daily limit reached:3/3
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 244 (это не размер inventory).
-• 1+ линия: 258/300 (86%) | 1+ контекст: 165/300 (55%)
-• 2+ букмекера: 257/300 (86%)
-• Raw 2+ букмекера odds-api.io current snapshot: 130 | normalized cumulative inventory: 257.
-• Odds-api offer snapshot: rows 17099, matches 182, same-side 2+ books 127
-• 2+ independent odds-source: 177/300 (59%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 136/300 (45%)
-• Готово для модели: 157/300 (52%)
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 199 (это не размер inventory).
+• 1+ линия: 271/300 (90%) | 1+ контекст: 151/300 (50%)
+• 2+ букмекера: 271/300 (90%)
+• Raw 2+ букмекера odds-api.io current snapshot: 108 | normalized cumulative inventory: 271.
+• Odds-api offer snapshot: rows 14356, matches 152, same-side 2+ books 104
+• 2+ independent odds-source: 181/300 (60%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ контекста: 117/300 (39%)
+• Готово для модели: 147/300 (49%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 93 | опубликовано: 0
+• A-tier strict-ready: 74 | опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/1+ bookmaker/1+ context coverage: 165 | fallback опубликовано: 0
+• B-tier 1+ line/1+ bookmaker/1+ context coverage: 151 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 1+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 136 матчей; B-cover: до 165 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 117 матчей; B-cover: до 151 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 64 | матчей без следующего регулярного run: 60
+• Pre-kickoff проверок: 111 | матчей без следующего регулярного run: 107
 • Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 6/24
-• Quality прошло: 6 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 23 | evaluated 23 | published 0
+• Raw/candidates before quality: 7/24
+• Quality прошло: 7 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 43 | evaluated 43 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 50; смэтчил матчей 242; offers 17099; 2+ букмекера 130; ошибок 0.
-• Bzzoiro: direct req 53, v2 req 53; v2 ctx 13; v2 odds 13; secondary offers 546; overlap odds-api.io 538; ошибок 0.
-• SStats: запросы 29; сырых строк 24619; контекстов 219; deep-enriched 25; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 40; смэтчил матчей 196; offers 14356; 2+ букмекера 108; ошибок 0.
+• Bzzoiro: direct req 54, v2 req 54; v2 ctx 14; v2 odds 13; secondary offers 585; overlap odds-api.io 575; ошибок 0.
+• SStats: запросы 29; сырых строк 24619; контекстов 184; deep-enriched 26; team-form 0; direct 0; ошибок 0.
 • SportLogic: disabled_by_env; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• controlled fallback daily limit reached:3/3: 23 (51%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 6 (13%)
-• направление ставки конфликтует с xG: 4 (9%)
-• модель слишком оптимистична относительно xG-ориентира: 4 (9%)
-• quality bad historical segment guard: 4 (9%)
-• quality: вероятность после калибровки ниже порога: 2 (4%)
-• market point:quarter totals not allowed: 2 (4%)
+• controlled fallback daily limit reached:3/3: 43 (57%)
+• направление ставки конфликтует с xG: 9 (12%)
+• модель слишком оптимистична относительно xG-ориентира: 7 (9%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 6 (8%)
+• quality bad historical segment guard: 4 (5%)
+• quality: вероятность после калибровки ниже порога: 2 (3%)
+• market point:quarter totals not allowed: 2 (3%)
+• price integrity:selected price vs bookmaker median outlier: 1 (1%)
 
 🔎 Проверенные reserve-кандидаты
-1. Defense Force — Ethiopian Medhin | Меньше @2.43 | EV +9.4% | edge +3.9 п.п. | q 76.0
+1. Avai — Cuiaba | Меньше @1.88 | EV +5.2% | edge +2.8 п.п. | q 73.1
    • причина: controlled fallback daily limit reached:3/3
-   • proxy single-source: fact edge 3.9pp / EV 9.4% / conf 67.3; min edge 8.0pp / EV 15.0% / conf 78.0
    • xG sanity: missing (missing_xg)
-2. Okzhetpes — Tobol | Меньше @1.98 | EV +8.4% | edge +4.2 п.п. | q 76.0
-   • причина: controlled fallback daily limit reached:3/3
-   • proxy single-source: fact edge 4.2pp / EV 8.4% / conf 70.5; min edge 8.0pp / EV 15.0% / conf 78.0
-   • xG sanity: missing (missing_xg)
-3. Okzhetpes — Tobol | Меньше @1.98 | EV +8.7% | edge +4.4 п.п. | q 76.0
-   • причина: controlled fallback daily limit reached:3/3
-4. Red Lions — Chitipa United | Больше @1.95 | EV +4.6% | edge +2.3 п.п. | q 68.1
+2. Avai — Cuiaba | Меньше @1.88 | EV +4.9% | edge +2.6 п.п. | q 71.0
    • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:3/3
-   • proxy single-source: fact edge 2.3pp / EV 4.6% / conf 65.2; min edge 8.0pp / EV 15.0% / conf 78.0
+3. Caxias do Sul — Maringa | Меньше @1.87 | EV +7.0% | edge +3.7 п.п. | q 76.0
+   • причина: controlled fallback daily limit reached:3/3
+   • proxy single-source: fact edge 3.7pp / EV 7.0% / conf 69.8; min edge 8.0pp / EV 15.0% / conf 78.0
+4. Tallinna — Paide | Меньше @2.47 | EV +11.0% | edge +4.5 п.п. | q 76.0
+   • причина: controlled fallback daily limit reached:3/3
+   • proxy single-source: fact edge 4.5pp / EV 11.0% / conf 69.9; min edge 8.0pp / EV 15.0% / conf 78.0
 
 🧯 Диагностика новых стопоров
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/1 book/1 context.
 • Inventory target-expand stage: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 511; normalized 305→249; gap after 262.
-• Bzzoiro overlap bridge: offers 546; match-overlap 546; same-bucket overlap 538.
-• Fresh B-cover diagnostic: rows 156; with current offer 113; without current offer 43; active 131; active with offer 113; fresh buckets 20026; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 36; top skips promotion_skip_odds_below_min 933; promotion_skip_odds_above_max 916; promotion_skip_edge_below_min 341; promotion_skip_price_outlier 81; promotion_skip_no_offer_bucket 14.
-• Rescue xG/confirmation enrichment: candidates 38; xG added 23; confirmation added 36; missing context match 2.
+• Bookmaker mapping repair: raw 2+ 420; normalized 272→202; gap after 218.
+• Bzzoiro overlap bridge: offers 585; match-overlap 585; same-bucket overlap 575.
+• Fresh B-cover diagnostic: rows 147; with current offer 116; without current offer 31; active 127; active with offer 116; fresh buckets 17177; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 36; top skips promotion_skip_odds_below_min 911; promotion_skip_odds_above_max 903; promotion_skip_edge_below_min 363; promotion_skip_price_outlier 99; promotion_skip_no_offer_bucket 12.
+• Rescue xG/confirmation enrichment: candidates 36; xG added 24; confirmation added 36; missing context match 0.
 
 📌 Что это значит
 • Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 1 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27902196603
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27902196603
-• Artifact: run-bot-27902196603
+• Run ID: 27905140174
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27905140174
+• Artifact: run-bot-27905140174
 • workflow run-bot, attempt 1
