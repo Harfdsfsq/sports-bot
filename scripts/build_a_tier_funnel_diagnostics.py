@@ -61,6 +61,12 @@ def as_int(value: Any) -> int:
         return 0
 
 
+def boolish(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value or '').strip().lower() in {'1', 'true', 'yes', 'y', 'on'}
+
+
 def count_nested(row: dict[str, Any], *names: str) -> int:
     best = 0
     for src in (row, row.get('metadata'), row.get('source_summary'), row.get('coverage'), row.get('metrics')):
@@ -112,15 +118,39 @@ def reason_list(row: dict[str, Any]) -> list[str]:
     return out
 
 
+def odds_source_count(row: dict[str, Any]) -> int:
+    return count_nested(row, 'independent_odds_sources_count', 'odds_sources_count', 'sources_count', 'independent_odds_sources', 'odds_sources', 'sources')
+
+
+def price_confirmation_count(row: dict[str, Any]) -> int:
+    # coverage-truth rows use price_confirmations, not only books_count.
+    return count_nested(
+        row,
+        'price_confirmations',
+        'price_confirmation_sources_count',
+        'price_sources_count',
+        'books_count',
+        'bookmakers_count',
+        'same_side_books_max',
+        'books',
+        'bookmakers',
+    )
+
+
+def context_count(row: dict[str, Any]) -> int:
+    return count_nested(row, 'context_sources_count', 'confirmation_sources_count', 'context_count', 'context_sources', 'confirmation_sources', 'context_confirmations')
+
+
 def is_a_cover(row: dict[str, Any]) -> bool:
-    odds_sources = count_nested(row, 'independent_odds_sources_count', 'odds_sources_count', 'sources_count', 'independent_odds_sources', 'odds_sources', 'sources')
-    books = count_nested(row, 'books_count', 'bookmakers_count', 'price_confirmation_sources_count', 'same_side_books_max', 'books', 'bookmakers', 'price_confirmations')
-    contexts = count_nested(row, 'context_sources_count', 'confirmation_sources_count', 'context_count', 'context_sources', 'confirmation_sources', 'context_confirmations')
-    return odds_sources >= 2 and books >= 2 and contexts >= 2
+    if boolish(row.get('tier_a_coverage_ready')) or boolish(row.get('ready_for_publish')):
+        return True
+    return odds_source_count(row) >= 2 and price_confirmation_count(row) >= 2 and context_count(row) >= 2
 
 
 def main() -> int:
-    inv = rows(load(EXPORT / 'latest-day-inventory-coverage-truth.json', {}))
+    inv_payload = load(EXPORT / 'latest-day-inventory-coverage-truth.json', {})
+    inv = rows(inv_payload)
+    counts = inv_payload.get('counts') if isinstance(inv_payload, dict) and isinstance(inv_payload.get('counts'), dict) else {}
     a_cover_rows = [row for row in inv if is_a_cover(row)]
     a_keys = {match_key(row) for row in a_cover_rows if match_key(row)}
 
@@ -158,9 +188,9 @@ def main() -> int:
             'away_team': row.get('away_team') or row.get('away') or away,
             'league_name': row.get('league_name') or row.get('league'),
             'kickoff': row.get('commence_time') or row.get('kickoff_utc') or row.get('start_time'),
-            'odds_sources': count_nested(row, 'independent_odds_sources_count', 'odds_sources_count', 'sources_count', 'independent_odds_sources', 'odds_sources', 'sources'),
-            'books': count_nested(row, 'books_count', 'bookmakers_count', 'price_confirmation_sources_count', 'same_side_books_max', 'books', 'bookmakers', 'price_confirmations'),
-            'contexts': count_nested(row, 'context_sources_count', 'confirmation_sources_count', 'context_count', 'context_sources', 'confirmation_sources', 'context_confirmations'),
+            'odds_sources': odds_source_count(row),
+            'price_confirmations': price_confirmation_count(row),
+            'contexts': context_count(row),
         })
         if len(missing_raw_samples) >= 12:
             break
@@ -169,6 +199,7 @@ def main() -> int:
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
         'status': 'ok',
         'a_cover_rows': len(a_cover_rows),
+        'coverage_truth_matches_ready_for_publish': as_int(counts.get('matches_ready_for_publish')),
         'raw_candidates_before_quality': len(raw_candidates),
         'a_cover_with_raw_candidate': len(a_keys & raw_keys),
         'a_cover_without_raw_candidate': max(0, len(a_keys - raw_keys)),
@@ -183,8 +214,8 @@ def main() -> int:
         'quality_score_sources': dict(quality_sources),
         'missing_raw_candidate_samples': missing_raw_samples,
         'plain_explanation': [
-            'A-cover is only evidence coverage. It becomes A-tier publication only if raw candidate generation, value, xG, quality, movement and final publish guards also pass.',
-            'If a_cover_without_raw_candidate is high, the loss happens before tier checks: the candidate factory/model does not create a candidate for many A-cover matches.',
+            'A-cover is evidence coverage only. It becomes A-tier publication only if raw candidate generation, value, xG, quality, movement and final publish guards also pass.',
+            'If a_cover_without_raw_candidate is high, the loss happens before tier checks: candidate factory/model does not create a candidate for many A-cover matches.',
             'If a_cover_seen_in_fallback is high but a_cover_published_rows is zero, inspect fallback_reason_counts and quality_score_sources.',
         ],
     }
