@@ -51,6 +51,18 @@ CONTRACT_ENV = {
     "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
     "CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD": "true",
 
+    # Best-of-day allocator: do not spend all 3 B-tier fallback slots too early.
+    # Before 18:00 MSK only 2 normal fallback slots are available; the reserved
+    # slot can still be used by an elite candidate. After 18:00 all slots unlock.
+    "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOT_ENABLED": "true",
+    "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": "1",
+    "CONTROLLED_FALLBACK_RESERVED_SLOT_RELEASE_LOCAL_HOUR": "18",
+    "CONTROLLED_FALLBACK_RESERVED_SLOT_RELEASE_LOCAL_MINUTE": "0",
+    "CONTROLLED_FALLBACK_RESERVED_SLOT_ELITE_MIN_EV_PCT": "12.0",
+    "CONTROLLED_FALLBACK_RESERVED_SLOT_ELITE_MIN_EDGE_PP": "6.5",
+    "CONTROLLED_FALLBACK_RESERVED_SLOT_ELITE_MIN_CONFIDENCE": "73.0",
+    "CONTROLLED_FALLBACK_RESERVED_SLOT_ELITE_MIN_QUALITY": "74.0",
+
     # V7: prevent unpublished/evaluated rows from blocking future review as
     # duplicate_match_market_selection_line. Published/sent/state indexes remain.
     "CONTROLLED_FALLBACK_STRICT_MATCH_MARKET_DEDUPE": "false",
@@ -99,13 +111,18 @@ def main() -> int:
         "contract": {
             "A": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
             "B": {"min_odds_sources": 1, "min_bookmakers": 1, "min_context_sources": 1},
+            "daily_allocator": {
+                "reserved_slots": 1,
+                "release_local_time": "18:00",
+                "elite_override": {"min_ev_pct": 12.0, "min_edge_pp": 6.5, "min_confidence": 73.0, "min_quality": 74.0},
+            },
             "independent_odds_sources": "required_for_a_tier_only",
             "guards_unchanged": ["quality", "line_movement", "price_integrity", "dedupe", "daily_limit", "publish_window"],
         },
         "env": CONTRACT_ENV,
     }
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context")
+    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; reserved daily slot enabled")
     return 0
 
 
