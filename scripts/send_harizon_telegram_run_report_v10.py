@@ -6,6 +6,8 @@ Adds current blockers diagnostics on top of v9 without changing publication logi
 - fresh B-cover diagnostics instead of legacy-only promotion text;
 - explicit policy-aware B-tier/SportLogic wording;
 - Bzzoiro overlap-bridge metrics;
+- controlled fallback shadow ranking after daily cap;
+- A-tier blocker diagnostics;
 - rescue xG/confirmation enrichment summary;
 - compact technical status for run-bot/prune/artifact payload.
 """
@@ -59,6 +61,15 @@ def _as_int(value: Any) -> int:
         return 0
 
 
+def _as_float(value: Any) -> float:
+    try:
+        if value in (None, ''):
+            return 0.0
+        return float(str(value).replace(',', '.'))
+    except Exception:
+        return 0.0
+
+
 def _env_bool(name: str, default: bool = False) -> bool:
     raw = os.getenv(name)
     if raw is None:
@@ -70,6 +81,14 @@ def _write_status(payload: dict[str, Any]) -> None:
     try:
         STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
         STATUS_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    except Exception:
+        pass
+
+
+def _run_shadow_diagnostics() -> None:
+    try:
+        from scripts.build_controlled_fallback_shadow_ranking import main as shadow_main
+        shadow_main()
     except Exception:
         pass
 
@@ -94,6 +113,7 @@ def _contract_min_context(policy: dict[str, Any], tier: str, default: int) -> in
 
 
 def build_payload() -> dict[str, Any]:
+    _run_shadow_diagnostics()
     payload = _base_build_payload()
     payload['version'] = 'harizon-telegram-report-v10-fresh-diagnostics-and-contract-text'
     diag = payload.setdefault('diagnostics', {})
@@ -105,15 +125,12 @@ def build_payload() -> dict[str, Any]:
     diag['fresh_b_cover_diagnostics'] = _load_json(EXPORT_DIR / 'latest-fresh-b-cover-diagnostics.json')
     diag['rescue_xg_confirmation_enrichment'] = _load_json(EXPORT_DIR / 'latest-rescue-xg-confirmation-enrichment.json')
     diag['bzzoiro_overlap_bridge'] = _load_json(EXPORT_DIR / 'latest-bzzoiro-overlap-bridge.json')
+    diag['controlled_fallback_shadow_ranking'] = _load_json(EXPORT_DIR / 'latest-controlled-fallback-shadow-ranking.json')
+    diag['a_tier_publication_diagnostics'] = _load_json(EXPORT_DIR / 'latest-a-tier-publication-diagnostics.json')
     diag['run_bot_step_status'] = _load_json(EXPORT_DIR / 'latest-run-bot-step-status.json')
     diag['artifact_prune_status'] = _load_json(EXPORT_DIR / 'latest-artifact-prune-status.json')
     diag['ab_tier_bookmaker_contract_policy'] = policy
 
-    # IMPORTANT: prefer the explicit policy artifact over environment variables.
-    # The workflow can still contain older defaults in env, but the apply step
-    # writes the source-of-truth policy for the current run. Without this order
-    # the Telegram report can display B=2 books while fallback is configured as
-    # B=1 book.
     diag['workflow_env_contract'] = {
         'a_tier_min_books': _contract_min_books(policy, 'A', _as_int(_policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS')) or _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS')) or 2),
         'b_tier_min_books': _contract_min_books(policy, 'B', _as_int(_policy_env_value(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS')) or _as_int(os.getenv('CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS')) or 1),
@@ -135,6 +152,23 @@ def _top_reasons(reasons: Any, *, limit: int = 5) -> str:
         if len(parts) >= limit:
             break
     return '; '.join(parts) if parts else 'n/a'
+
+
+def _format_shadow_top(shadow: dict[str, Any]) -> str:
+    rows = shadow.get('top_would_publish_without_daily_cap') if isinstance(shadow.get('top_would_publish_without_daily_cap'), list) else []
+    if not rows:
+        return 'нет clean-кандидатов после снятия daily cap'
+    parts: list[str] = []
+    for row in rows[:3]:
+        if not isinstance(row, dict):
+            continue
+        home = row.get('home_team') or ''
+        away = row.get('away_team') or ''
+        sel = row.get('selection') or ''
+        point = row.get('point')
+        point_text = '' if point in (None, '', 'null') else f' {point}'
+        parts.append(f"{home} — {away} {sel}{point_text} EV {_as_float(row.get('ev_pct')):+.1f}% edge {_as_float(row.get('edge_pp')):+.1f}pp")
+    return '; '.join(parts) if parts else 'нет clean-кандидатов после снятия daily cap'
 
 
 def _replace_contract_text(text: str, payload: dict[str, Any]) -> str:
@@ -207,6 +241,8 @@ def _diagnostics_lines(payload: dict[str, Any]) -> list[str]:
     fresh = diag.get('fresh_b_cover_diagnostics') if isinstance(diag.get('fresh_b_cover_diagnostics'), dict) else {}
     enrich = diag.get('rescue_xg_confirmation_enrichment') if isinstance(diag.get('rescue_xg_confirmation_enrichment'), dict) else {}
     bzz_bridge = diag.get('bzzoiro_overlap_bridge') if isinstance(diag.get('bzzoiro_overlap_bridge'), dict) else {}
+    shadow = diag.get('controlled_fallback_shadow_ranking') if isinstance(diag.get('controlled_fallback_shadow_ranking'), dict) else {}
+    a_tier_diag = diag.get('a_tier_publication_diagnostics') if isinstance(diag.get('a_tier_publication_diagnostics'), dict) else {}
     step_status = diag.get('run_bot_step_status') if isinstance(diag.get('run_bot_step_status'), dict) else {}
     prune = diag.get('artifact_prune_status') if isinstance(diag.get('artifact_prune_status'), dict) else {}
     contract = diag.get('workflow_env_contract') if isinstance(diag.get('workflow_env_contract'), dict) else {}
@@ -218,6 +254,18 @@ def _diagnostics_lines(payload: dict[str, Any]) -> list[str]:
         lines.append(
             f"• Active A/B contract: A=2 odds/2 books/2 context; "
             f"B=1 odds/{max(1, _as_int(contract.get('b_tier_min_books') or 1))} book/{max(1, _as_int(contract.get('b_tier_min_context') or 1))} context."
+        )
+    if shadow:
+        lines.append(
+            f"• Shadow ranking after daily cap: clean {_as_int(shadow.get('blocked_only_by_daily_cap'))}; "
+            f"daily+other {_as_int(shadow.get('blocked_by_daily_cap_and_other_guards'))}; "
+            f"duplicates removed {_as_int(shadow.get('duplicates_removed'))}; top: {_format_shadow_top(shadow)}."
+        )
+    if a_tier_diag:
+        blockers = a_tier_diag.get('tier_a_blocker_counts') if isinstance(a_tier_diag.get('tier_a_blocker_counts'), dict) else {}
+        qsrc = a_tier_diag.get('quality_score_sources') if isinstance(a_tier_diag.get('quality_score_sources'), dict) else {}
+        lines.append(
+            f"• A-tier blockers: {_top_reasons(blockers, limit=5)}; quality sources {_top_reasons(qsrc, limit=3)}."
         )
     if expand:
         lines.append(
@@ -297,7 +345,7 @@ v9.v8.v7.render = render
 _write_status({
     'status': 'installed',
     'renderer': 'v10',
-    'adds': ['fresh_b_cover_diagnostics', 'rescue_xg_confirmation_enrichment', 'policy_first_contract_text', 'sportlogic_disabled_by_env', 'bzzoiro_overlap_bridge', 'one_book_b_tier_contract_text'],
+    'adds': ['fresh_b_cover_diagnostics', 'rescue_xg_confirmation_enrichment', 'policy_first_contract_text', 'sportlogic_disabled_by_env', 'bzzoiro_overlap_bridge', 'one_book_b_tier_contract_text', 'shadow_ranking_after_daily_cap', 'a_tier_blockers'],
 })
 
 
