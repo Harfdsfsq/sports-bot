@@ -4,19 +4,23 @@ from __future__ import annotations
 
 Diagnostic-only. It explains why A-tier coverage does not become A-tier
 publication by comparing A-cover inventory rows with raw candidates, fallback
-candidates and publishable outputs.
+candidates and publishable outputs. It separates full-day coverage from active
+future/in-window coverage so old inventory rows do not make A-tier look healthier
+than it is late in the day.
 """
 
 import json
+import os
 import re
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 ROOT = Path('.').resolve()
 EXPORT = ROOT / '.data' / 'exports'
 OUT = EXPORT / 'latest-a-tier-funnel-diagnostics.json'
+UTC = timezone.utc
 
 
 def load(path: Path, default: Any) -> Any:
@@ -61,10 +65,42 @@ def as_int(value: Any) -> int:
         return 0
 
 
+def as_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value in (None, ''):
+            return default
+        return float(str(value).replace(',', '.'))
+    except Exception:
+        return default
+
+
 def boolish(value: Any) -> bool:
     if isinstance(value, bool):
         return value
     return str(value or '').strip().lower() in {'1', 'true', 'yes', 'y', 'on'}
+
+
+def parse_dt(value: Any) -> datetime | None:
+    try:
+        if value in (None, ''):
+            return None
+        text = str(value).strip()
+        if text.endswith('Z'):
+            text = text[:-1] + '+00:00'
+        dt = datetime.fromisoformat(text)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
+    except Exception:
+        return None
+
+
+def kickoff(row: dict[str, Any]) -> datetime | None:
+    for key in ('commence_time', 'kickoff_utc', 'kickoff', 'start_time'):
+        dt = parse_dt(row.get(key))
+        if dt is not None:
+            return dt
+    return None
 
 
 def count_nested(row: dict[str, Any], *names: str) -> int:
@@ -123,18 +159,7 @@ def odds_source_count(row: dict[str, Any]) -> int:
 
 
 def price_confirmation_count(row: dict[str, Any]) -> int:
-    # coverage-truth rows use price_confirmations, not only books_count.
-    return count_nested(
-        row,
-        'price_confirmations',
-        'price_confirmation_sources_count',
-        'price_sources_count',
-        'books_count',
-        'bookmakers_count',
-        'same_side_books_max',
-        'books',
-        'bookmakers',
-    )
+    return count_nested(row, 'price_confirmations', 'price_confirmation_sources_count', 'price_sources_count', 'books_count', 'bookmakers_count', 'same_side_books_max', 'books', 'bookmakers')
 
 
 def context_count(row: dict[str, Any]) -> int:
@@ -147,12 +172,45 @@ def is_a_cover(row: dict[str, Any]) -> bool:
     return odds_source_count(row) >= 2 and price_confirmation_count(row) >= 2 and context_count(row) >= 2
 
 
+def future_rows(items: list[dict[str, Any]], now: datetime, *, min_lead_min: int = 0) -> list[dict[str, Any]]:
+    cutoff = now + timedelta(minutes=max(0, min_lead_min))
+    out = []
+    for row in items:
+        ko = kickoff(row)
+        if ko is not None and ko >= cutoff:
+            out.append(row)
+    return out
+
+
+def in_publish_window_rows(items: list[dict[str, Any]], now: datetime, *, min_lead_min: int, window_hours: float) -> list[dict[str, Any]]:
+    earliest = now + timedelta(minutes=max(0, min_lead_min))
+    latest = now + timedelta(hours=max(0.25, window_hours))
+    out = []
+    for row in items:
+        ko = kickoff(row)
+        if ko is not None and earliest <= ko <= latest:
+            out.append(row)
+    return out
+
+
+def count_overlap(left: list[dict[str, Any]], right_keys: set[str]) -> int:
+    return len({match_key(row) for row in left if match_key(row)} & right_keys)
+
+
 def main() -> int:
+    now = datetime.now(UTC)
+    min_lead = as_int(os.getenv('LINE_MOVEMENT_MIN_LEAD_MINUTES') or os.getenv('MIN_KICKOFF_LEAD_MINUTES') or 15)
+    publish_window_hours = as_float(os.getenv('CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS') or os.getenv('PUBLISH_WINDOW_HOURS') or 2.0, 2.0)
+
     inv_payload = load(EXPORT / 'latest-day-inventory-coverage-truth.json', {})
     inv = rows(inv_payload)
     counts = inv_payload.get('counts') if isinstance(inv_payload, dict) and isinstance(inv_payload.get('counts'), dict) else {}
     a_cover_rows = [row for row in inv if is_a_cover(row)]
+    active_a_cover_rows = future_rows(a_cover_rows, now, min_lead_min=min_lead)
+    in_window_a_cover_rows = in_publish_window_rows(a_cover_rows, now, min_lead_min=min_lead, window_hours=publish_window_hours)
     a_keys = {match_key(row) for row in a_cover_rows if match_key(row)}
+    active_a_keys = {match_key(row) for row in active_a_cover_rows if match_key(row)}
+    in_window_a_keys = {match_key(row) for row in in_window_a_cover_rows if match_key(row)}
 
     raw_candidates = rows(load(EXPORT / 'latest-debug-candidates-before-quality.json', {}))
     quality_report = load(EXPORT / 'latest-quality-report.json', {})
@@ -177,7 +235,7 @@ def main() -> int:
         quality_sources[str(metrics.get('quality_score_source') or row.get('quality_score_source') or 'unknown')] += 1
 
     missing_raw_samples = []
-    for row in a_cover_rows:
+    for row in active_a_cover_rows or a_cover_rows:
         key = match_key(row)
         if key in raw_keys:
             continue
@@ -196,15 +254,25 @@ def main() -> int:
             break
 
     payload = {
-        'created_at_utc': datetime.now(timezone.utc).isoformat(),
+        'created_at_utc': now.isoformat(),
         'status': 'ok',
+        'min_lead_minutes': min_lead,
+        'publish_window_hours': publish_window_hours,
         'a_cover_rows': len(a_cover_rows),
+        'active_future_a_cover_rows': len(active_a_cover_rows),
+        'in_publish_window_a_cover_rows': len(in_window_a_cover_rows),
         'coverage_truth_matches_ready_for_publish': as_int(counts.get('matches_ready_for_publish')),
         'raw_candidates_before_quality': len(raw_candidates),
         'a_cover_with_raw_candidate': len(a_keys & raw_keys),
         'a_cover_without_raw_candidate': max(0, len(a_keys - raw_keys)),
+        'active_a_cover_with_raw_candidate': len(active_a_keys & raw_keys),
+        'active_a_cover_without_raw_candidate': max(0, len(active_a_keys - raw_keys)),
+        'in_window_a_cover_with_raw_candidate': len(in_window_a_keys & raw_keys),
+        'in_window_a_cover_without_raw_candidate': max(0, len(in_window_a_keys - raw_keys)),
         'fallback_evaluated_rows': len(evaluated),
         'a_cover_seen_in_fallback': len(a_keys & evaluated_keys),
+        'active_a_cover_seen_in_fallback': len(active_a_keys & evaluated_keys),
+        'in_window_a_cover_seen_in_fallback': len(in_window_a_keys & evaluated_keys),
         'published_pick_rows': len(picks),
         'a_cover_published_rows': len(a_keys & pick_keys),
         'quality_report_status': quality_report.get('status') if isinstance(quality_report, dict) else None,
@@ -214,13 +282,13 @@ def main() -> int:
         'quality_score_sources': dict(quality_sources),
         'missing_raw_candidate_samples': missing_raw_samples,
         'plain_explanation': [
-            'A-cover is evidence coverage only. It becomes A-tier publication only if raw candidate generation, value, xG, quality, movement and final publish guards also pass.',
-            'If a_cover_without_raw_candidate is high, the loss happens before tier checks: candidate factory/model does not create a candidate for many A-cover matches.',
-            'If a_cover_seen_in_fallback is high but a_cover_published_rows is zero, inspect fallback_reason_counts and quality_score_sources.',
+            'A-cover is full-day evidence coverage. Active future/in-window A-cover is the actionable subset for the current run.',
+            'A-cover becomes A-tier publication only if raw candidate generation, value, xG, quality, movement and final publish guards also pass.',
+            'If active_a_cover_without_raw_candidate is high, the loss happens before tier checks: candidate factory/model does not create a candidate for active A-cover matches.',
         ],
     }
     dump(OUT, payload)
-    print(json.dumps({'status': 'ok', 'a_cover_rows': payload['a_cover_rows'], 'a_cover_with_raw_candidate': payload['a_cover_with_raw_candidate'], 'a_cover_without_raw_candidate': payload['a_cover_without_raw_candidate']}, ensure_ascii=False))
+    print(json.dumps({'status': 'ok', 'a_cover_rows': payload['a_cover_rows'], 'active_future_a_cover_rows': payload['active_future_a_cover_rows'], 'in_publish_window_a_cover_rows': payload['in_publish_window_a_cover_rows'], 'active_a_cover_with_raw_candidate': payload['active_a_cover_with_raw_candidate']}, ensure_ascii=False))
     return 0
 
 
