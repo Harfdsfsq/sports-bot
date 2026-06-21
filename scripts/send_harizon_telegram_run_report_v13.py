@@ -53,16 +53,36 @@ def _rendered_candidate_counter(text: str) -> tuple[int, int] | None:
     return int(match.group(1)), int(match.group(2))
 
 
+def _top_counter_items(value: Any, limit: int = 4) -> str:
+    if not isinstance(value, dict):
+        return 'n/a'
+    items = []
+    for key, raw in value.items():
+        count = _as_int(raw)
+        if count > 0:
+            items.append((str(key), count))
+    items.sort(key=lambda item: item[1], reverse=True)
+    if not items:
+        return 'n/a'
+    return '; '.join(f'{key} {count}' for key, count in items[:limit])
+
+
 def build_payload() -> dict[str, Any]:
     try:
         from scripts.build_a_tier_funnel_diagnostics import main as funnel_main
         funnel_main()
     except Exception:
         pass
+    try:
+        from scripts.build_a_cover_candidate_gap_report import main as gap_main
+        gap_main()
+    except Exception:
+        pass
     payload = _base_build_payload()
     payload['version'] = 'harizon-telegram-report-v13-a-tier-funnel'
     diag = payload.setdefault('diagnostics', {})
     diag['a_tier_funnel_diagnostics'] = _load_json(EXPORT_DIR / 'latest-a-tier-funnel-diagnostics.json')
+    diag['a_cover_candidate_gap_report'] = _load_json(EXPORT_DIR / 'latest-a-cover-candidate-gap-report.json')
     diag['controlled_fallback_prepublish_guard'] = _load_json(EXPORT_DIR / 'latest-controlled-fallback-prepublish-guard.json')
     return payload
 
@@ -70,6 +90,7 @@ def build_payload() -> dict[str, Any]:
 def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
     diag = payload.get('diagnostics') if isinstance(payload.get('diagnostics'), dict) else {}
     funnel = diag.get('a_tier_funnel_diagnostics') if isinstance(diag.get('a_tier_funnel_diagnostics'), dict) else {}
+    gap = diag.get('a_cover_candidate_gap_report') if isinstance(diag.get('a_cover_candidate_gap_report'), dict) else {}
     guard = diag.get('controlled_fallback_prepublish_guard') if isinstance(diag.get('controlled_fallback_prepublish_guard'), dict) else {}
     contract = diag.get('workflow_env_contract') if isinstance(diag.get('workflow_env_contract'), dict) else {}
     lines: list[str] = []
@@ -88,6 +109,10 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
             raw_after_quality, raw_before_quality = rendered_counter
         lines.append(
             f"• A-tier funnel: cover {_as_int(funnel.get('a_cover_rows'))}; active future {_as_int(funnel.get('active_future_a_cover_rows'))}; in publish window {_as_int(funnel.get('in_publish_window_a_cover_rows'))}; raw/quality {raw_after_quality}/{raw_before_quality}; active A-cover with raw {_as_int(funnel.get('active_a_cover_with_raw_candidate'))}; active without raw {_as_int(funnel.get('active_a_cover_without_raw_candidate'))}; A-cover in fallback {_as_int(funnel.get('a_cover_seen_in_fallback'))}; active in fallback {_as_int(funnel.get('active_a_cover_seen_in_fallback'))}; A-cover published {_as_int(funnel.get('a_cover_published_rows'))}."
+        )
+    if gap:
+        lines.append(
+            f"• A-cover candidate gap: active {_as_int(gap.get('active_future_a_cover_rows'))}; in-window {_as_int(gap.get('in_publish_window_a_cover_rows'))}; statuses {_top_counter_items(gap.get('status_counts'), 3)}; top reasons {_top_counter_items(gap.get('reason_counts'), 5)}."
         )
     return lines
 
