@@ -74,13 +74,52 @@ def as_int(value: Any) -> int:
         return 0
 
 
+def kickoff_date(row: dict[str, Any]) -> str:
+    for key in ('commence_time', 'kickoff_utc', 'kickoff', 'start_time', 'match_key', 'canonical_match_id', 'event_key'):
+        match = re.search(r'20\d{2}-\d{2}-\d{2}', str(row.get(key) or ''))
+        if match:
+            return match.group(0)
+    return ''
+
+
+def team_value(row: dict[str, Any], side: str) -> str:
+    if side == 'home':
+        keys = ('home_team', 'home', 'home_name', 'team_home')
+    else:
+        keys = ('away_team', 'away', 'away_name', 'team_away')
+    for key in keys:
+        value = norm(row.get(key))
+        if value:
+            return value
+    return ''
+
+
+def visible_match_key(row: dict[str, Any]) -> str:
+    home = team_value(row, 'home')
+    away = team_value(row, 'away')
+    date = kickoff_date(row)
+    league = norm(row.get('league_name') or row.get('league') or row.get('competition'))
+    if home and away:
+        return '|'.join([date, league, home, away])
+    raw = norm(row.get('match_key') or row.get('canonical_match_id') or row.get('event_key'))
+    return raw
+
+
+def canonical_family(row: dict[str, Any]) -> str:
+    raw = norm(row.get('family') or row.get('market_family') or row.get('market') or row.get('market_key'))
+    if any(token in raw for token in ('total', 'goals', 'over under')):
+        return 'totals'
+    if any(token in raw for token in ('spread', 'handicap', 'фора')):
+        return 'spreads'
+    return raw
+
+
 def canonical_selection(row: dict[str, Any]) -> str:
     explicit = norm(row.get('selection_key'))
     selection = str(row.get('selection') or '').strip().casefold().replace('ё', 'е')
-    fam = norm(row.get('family') or row.get('market_family'))
     if explicit in {'under', 'over', 'home', 'away', 'draw'}:
         return explicit
-    if fam in {'totals', 'teamtotals', 'spreads'}:
+    if canonical_family(row) in {'totals', 'teamtotals', 'spreads'} or 'тотал' in selection:
         if any(x in selection for x in ('under', 'меньше', 'тотал меньше', 'тм')):
             return 'under'
         if any(x in selection for x in ('over', 'больше', 'тотал больше', 'тб')):
@@ -88,13 +127,28 @@ def canonical_selection(row: dict[str, Any]) -> str:
     return explicit or norm(selection)
 
 
+def line_point(row: dict[str, Any]) -> str:
+    explicit = point(row.get('point') or row.get('line') or row.get('handicap'))
+    if explicit:
+        return explicit
+    # Some rows store the line only inside localized selection text.
+    selection = str(row.get('selection') or '')
+    match = re.search(r'(?<!\d)(\d+(?:[\.,]\d+)?)(?!\d)', selection)
+    return point(match.group(1)) if match else ''
+
+
 def candidate_key(row: dict[str, Any]) -> str:
+    # Do not prefer provider-specific match_key here. The same visible pick can
+    # have different source match ids in debug/rescue pools; shadow ranking must
+    # dedupe by the user-visible market key.
+    visible = visible_match_key(row)
+    if not visible:
+        visible = norm(row.get('match_key') or row.get('canonical_match_id') or row.get('event_key'))
     return '|'.join([
-        norm(row.get('match_key') or row.get('canonical_match_id') or row.get('event_key'))
-        or f"{norm(row.get('home_team'))}--{norm(row.get('away_team'))}",
-        norm(row.get('family') or row.get('market_family')),
+        visible,
+        canonical_family(row),
         canonical_selection(row),
-        point(row.get('point') or row.get('line') or row.get('handicap')),
+        line_point(row),
     ])
 
 
@@ -116,8 +170,7 @@ def clean_non_daily_reasons(row: dict[str, Any]) -> list[str]:
 
 
 def metrics(row: dict[str, Any]) -> dict[str, Any]:
-    m = row.get('metrics') if isinstance(row.get('metrics'), dict) else {}
-    return m
+    return row.get('metrics') if isinstance(row.get('metrics'), dict) else {}
 
 
 def score(row: dict[str, Any]) -> float:
@@ -128,9 +181,8 @@ def score(row: dict[str, Any]) -> float:
     confidence = as_float(m.get('confidence'))
     publication = as_float(m.get('publication_score'))
     odds = as_float(m.get('odds') or row.get('odds'))
-    reason_penalty = 0.0
     non_daily = clean_non_daily_reasons(row)
-    reason_penalty += 7.0 * sum(1 for r in non_daily if 'xg' in r or 'conflict' in r)
+    reason_penalty = 7.0 * sum(1 for r in non_daily if 'xg' in r or 'conflict' in r)
     reason_penalty += 5.0 * sum(1 for r in non_daily if 'negative' in r or 'отриц' in r or 'below_min' in r)
     odds_penalty = max(0.0, odds - 2.8) * 2.5 if odds else 0.0
     return ev + edge * 1.15 + quality * 0.05 + confidence * 0.07 + publication * 0.12 - reason_penalty - odds_penalty
@@ -288,14 +340,13 @@ def main() -> int:
     a_tier = build_a_tier_diag(report)
     dump(SHADOW_OUT, shadow)
     dump(A_TIER_OUT, a_tier)
-
-    # Also enrich the live fallback report so Telegram/report builders can read one source.
     if report:
         report['shadow_ranking'] = {
             'blocked_only_by_daily_cap': shadow.get('blocked_only_by_daily_cap'),
             'blocked_by_daily_cap_and_other_guards': shadow.get('blocked_by_daily_cap_and_other_guards'),
             'top_would_publish_without_daily_cap': shadow.get('top_would_publish_without_daily_cap', [])[:5],
             'reason_counts_without_daily_cap': shadow.get('reason_counts_without_daily_cap', {}),
+            'duplicates_removed': shadow.get('duplicates_removed'),
         }
         report['a_tier_diagnostics'] = {
             'tier_a_blocker_counts': a_tier.get('tier_a_blocker_counts', {}),
@@ -304,7 +355,7 @@ def main() -> int:
         }
         dump(REPORT, report)
         dump(ROOT / 'artifacts' / 'controlled-fallback-report.json', report)
-    print(json.dumps({'status': 'ok', 'blocked_only_by_daily_cap': shadow.get('blocked_only_by_daily_cap'), 'a_tier_blockers': a_tier.get('tier_a_blocker_counts')}, ensure_ascii=False))
+    print(json.dumps({'status': 'ok', 'blocked_only_by_daily_cap': shadow.get('blocked_only_by_daily_cap'), 'duplicates_removed': shadow.get('duplicates_removed'), 'a_tier_blockers': a_tier.get('tier_a_blocker_counts')}, ensure_ascii=False))
     return 0
 
 
