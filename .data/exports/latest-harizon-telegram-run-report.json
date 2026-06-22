@@ -24,9 +24,9 @@
       "books_2plus": 45,
       "errors": 0,
       "events_req": 0,
-      "matched": 65,
+      "matched": 69,
       "odds_req": 14,
-      "offers": 6576
+      "offers": 6659
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -49,8 +49,8 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 66,
-      "deep_enriched": 35,
+      "contexts": 69,
+      "deep_enriched": 31,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 29,
@@ -60,9 +60,9 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.5913042704264323,
-    "fallback_age_min": 0.0003050724665323893,
-    "run_log_age_min": 0.38916186094284055,
+    "debug_age_min": 0.630837078889211,
+    "fallback_age_min": 0.0003010392189025879,
+    "run_log_age_min": 0.4243989507357279,
     "signal_stack_age_min": null
   },
   "coverage": {
@@ -71,22 +71,22 @@
     "day_inventory_total": 214,
     "day_inventory_with_context": 142,
     "day_inventory_with_odds": 199,
-    "matches_seen": 67,
+    "matches_seen": 71,
     "matches_with_2plus_books": 45,
-    "matches_with_context": 66,
+    "matches_with_context": 69,
     "matches_with_offers": 60,
-    "odds_offers_primary": 6576,
+    "odds_offers_primary": 6659,
     "ready_for_model": 129,
     "secondary_combinations": {}
   },
-  "created_at_utc": "2026-06-22T07:06:32.044537+00:00",
+  "created_at_utc": "2026-06-22T09:06:52.752438+00:00",
   "diagnostics": {
     "a_cover_candidate_gap_report": {
       "a_cover_rows": 116,
       "active_future_a_cover_rows": 86,
-      "created_at_utc": "2026-06-22T07:06:32.020492+00:00",
+      "created_at_utc": "2026-06-22T09:06:52.728885+00:00",
       "fallback_evaluated_rows": 0,
-      "in_publish_window_a_cover_rows": 0,
+      "in_publish_window_a_cover_rows": 2,
       "plain_explanation": "If active_a_cover_not_selected_by_candidate_layers is high, coverage is ready but main/fallback candidate selection did not create a candidate for those matches.",
       "reason_counts": {
         "active_a_cover_not_selected_by_candidate_layers": 86
@@ -256,15 +256,15 @@
     },
     "a_cover_value_promotion": {
       "active_a_cover_rows": 98,
-      "considered_a_cover_rows": 0,
-      "created_at_utc": "2026-06-22T07:06:15.269782+00:00",
+      "considered_a_cover_rows": 2,
+      "created_at_utc": "2026-06-22T09:06:34.476276+00:00",
       "enabled": true,
       "existing_rescue_stats": {
         "dropped_outside_window": 36,
         "kept": 0,
         "loaded": 36
       },
-      "in_publish_window_a_cover_rows": 0,
+      "in_publish_window_a_cover_rows": 2,
       "inventory_load": {
         "candidate_source_scores": [
           {
@@ -371,21 +371,21 @@
       },
       "inventory_rows_seen": 145,
       "offer_diagnostics": {
-        "accepted_offer_rows": 3838,
-        "scanned_dicts": 104482,
+        "accepted_offer_rows": 3851,
+        "scanned_dicts": 105049,
         "source_counts": {
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/070555-line-snapshots.json": 1837,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/090613-line-snapshots.json": 1847,
           "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 12,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 100,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1819,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 103,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1829,
           "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 36,
-          "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 34
+          "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 24
         }
       },
       "prebuild_coverage_truth": {
         "enabled": true,
-        "finished_at_utc": "2026-06-22T07:06:15.096028+00:00",
-        "started_at_utc": "2026-06-22T07:06:14.400151+00:00",
+        "finished_at_utc": "2026-06-22T09:06:34.288110+00:00",
+        "started_at_utc": "2026-06-22T09:06:33.525299+00:00",
         "status": "ok",
         "steps": [
           {
@@ -397,7 +397,10 @@
       },
       "promoted_count": 0,
       "reason_counts": {
-        "promotion_skip_outside_active_publish_window": 98
+        "promotion_skip_edge_below_min": 1,
+        "promotion_skip_odds_above_max": 1,
+        "promotion_skip_odds_below_min": 2,
+        "promotion_skip_outside_active_publish_window": 96
       },
       "rescue_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
       "safety_note": "promotion only appends candidates to fallback review; guarded publisher still enforces value, xG, line recheck, duplicate, daily cap and price-integrity guards",
@@ -417,13 +420,13 @@
       "active_a_cover_without_raw_candidate": 65,
       "active_future_a_cover_rows": 86,
       "coverage_truth_matches_ready_for_publish": 116,
-      "created_at_utc": "2026-06-22T07:06:32.011761+00:00",
+      "created_at_utc": "2026-06-22T09:06:52.719915+00:00",
       "fallback_evaluated_rows": 0,
       "fallback_reason_counts": {},
-      "in_publish_window_a_cover_rows": 0,
+      "in_publish_window_a_cover_rows": 2,
       "in_window_a_cover_seen_in_fallback": 0,
       "in_window_a_cover_with_raw_candidate": 0,
-      "in_window_a_cover_without_raw_candidate": 0,
+      "in_window_a_cover_without_raw_candidate": 2,
       "min_lead_minutes": 15,
       "missing_raw_candidate_samples": [
         {
@@ -573,7 +576,7 @@
       "status": "ok"
     },
     "a_tier_publication_diagnostics": {
-      "created_at_utc": "2026-06-22T07:06:32.028499+00:00",
+      "created_at_utc": "2026-06-22T09:06:52.736987+00:00",
       "duplicates_removed": 0,
       "evaluated_rows": 0,
       "plain_explanation": [
@@ -618,7 +621,7 @@
         ],
         "independent_odds_sources": "required_for_a_tier_only"
       },
-      "created_at_utc": "2026-06-22T07:02:23.605502+00:00",
+      "created_at_utc": "2026-06-22T09:02:17.971122+00:00",
       "env": {
         "CONTROLLED_FALLBACK_DEDUPE_PREVIOUS_REPORT": "true",
         "CONTROLLED_FALLBACK_DEDUPE_SENT_INDEX_STRICT": "true",
@@ -695,14 +698,14 @@
       "independent_odds_sources": "required_for_a_tier_only"
     },
     "bzzoiro_overlap_bridge": {
-      "bzzoiro_offer_rows": 100,
-      "created_at_utc": "2026-06-22T07:06:23.432245+00:00",
+      "bzzoiro_offer_rows": 103,
+      "created_at_utc": "2026-06-22T09:06:43.438746+00:00",
       "odds_reference_aliases": 282,
       "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
-      "overlap_match_rows": 100,
-      "overlap_same_bucket_rows": 97,
+      "overlap_match_rows": 103,
+      "overlap_same_bucket_rows": 100,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 121
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 123
       },
       "status": "ok"
     },
@@ -721,7 +724,7 @@
       "event_prediction_fetched": 2,
       "event_rejected_league_mismatch": 0,
       "event_rejected_low_score": 0,
-      "event_rejected_no_quality": 50,
+      "event_rejected_no_quality": 54,
       "event_stats_fetched": 2,
       "events_fetched": 17,
       "http_statuses": [
@@ -735,7 +738,7 @@
         200,
         200
       ],
-      "last_body_preview": "{\"event_id\":9990,\"event_date\":\"2026-06-22T23:00:00Z\",\"league_id\":34,\"league_name\":\"Brasileirão Serie B\",\"home_team_id\":844,\"home_team\":\"Ponte Preta\",\"away_team_id\":836,\"away_team\":\"Grêmio Novorizontino\",\"bookmakers_count\":15,\"total_odds\":384,\"markets\":{\"1x2\":{\"HOME\":{\"outcome\":\"HOME\",\"line\":null,\"outcome_name\":\"Ponte Preta\",\"best_odds\":5.35,\"best_bookmaker_slug\":\"pinnacle\",\"best_bookmaker_name\":\"Pinnacle\",\"bookmakers\":{\"1xbet\":{\"decimal_odds\":4.98,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-22T00:06:19Z\"},\"betano\":{\"decimal_odds\":4.9,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-22T06:07:09Z\"},\"pinnacle\":{\"decimal_odds\":5.35,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-22T00:06:19Z\"},\"interwetten\":{\"decimal_odds\":4.8,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-20T00:06:38Z\"},\"unibet\":{\"decimal_odds\":4.75,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-20T00:06:38Z\"},\"novibet\":{\"decimal_odds\":4.85,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-22T06:07:09Z\"},\"bwin\":{\"decimal_odds\":4.5,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-21T18:05:48Z\"},\"sportingbet\":{\"decimal_odds\":4.6,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-22T05:07:12Z\"},\"betway\":{\"decimal_odds\":5.0,\"movement\":\"DRIFTING\",\"upd",
+      "last_body_preview": "{\"event_id\":9990,\"event_date\":\"2026-06-22T23:00:00Z\",\"league_id\":34,\"league_name\":\"Brasileirão Serie B\",\"home_team_id\":844,\"home_team\":\"Ponte Preta\",\"away_team_id\":836,\"away_team\":\"Grêmio Novorizontino\",\"bookmakers_count\":15,\"total_odds\":384,\"markets\":{\"1x2\":{\"HOME\":{\"outcome\":\"HOME\",\"line\":null,\"outcome_name\":\"Ponte Preta\",\"best_odds\":5.35,\"best_bookmaker_slug\":\"pinnacle\",\"best_bookmaker_name\":\"Pinnacle\",\"bookmakers\":{\"1xbet\":{\"decimal_odds\":4.98,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-22T08:05:06Z\"},\"betano\":{\"decimal_odds\":4.85,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-22T08:05:06Z\"},\"pinnacle\":{\"decimal_odds\":5.35,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-22T00:06:19Z\"},\"interwetten\":{\"decimal_odds\":4.8,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-20T00:06:38Z\"},\"unibet\":{\"decimal_odds\":4.75,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-20T00:06:38Z\"},\"novibet\":{\"decimal_odds\":4.85,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-22T06:07:09Z\"},\"bwin\":{\"decimal_odds\":4.5,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-21T18:05:48Z\"},\"sportingbet\":{\"decimal_odds\":4.6,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-22T05:07:12Z\"},\"betway\":{\"decimal_odds\":5.0,\"movement\":\"DRIFTING\",\"",
       "last_error": null,
       "last_url": "https://sports.bzzoiro.com/api/v2/events/9990/odds/comparison/",
       "lineups_resources": 0,
@@ -764,7 +767,7 @@
       ],
       "prediction_resources": 2,
       "provider_odds_hinted_contexts": 2,
-      "provider_odds_hints": 242,
+      "provider_odds_hints": 244,
       "provider_version": "bzzoiro-v2-clean-2026-04-29",
       "request_limit_removed": true,
       "requests": 9,
@@ -778,7 +781,7 @@
     "controlled_fallback_prepublish_guard": {
       "base_exit_code": 0,
       "blocked_events": 0,
-      "created_at_utc": "2026-06-22T07:06:17.568744+00:00",
+      "created_at_utc": "2026-06-22T09:06:37.006073+00:00",
       "daily_existing": {
         "count": 0,
         "date": "2026-06-22",
@@ -797,7 +800,7 @@
     "controlled_fallback_shadow_ranking": {
       "blocked_by_daily_cap_and_other_guards": 0,
       "blocked_only_by_daily_cap": 0,
-      "created_at_utc": "2026-06-22T07:06:32.028483+00:00",
+      "created_at_utc": "2026-06-22T09:06:52.736971+00:00",
       "daily_cap_blocked_unique_rows": 0,
       "duplicates_removed": 0,
       "evaluated_rows": 0,
@@ -841,7 +844,7 @@
         },
         "csv": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.csv",
         "json": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-        "updated_at_utc": "2026-06-22T07:06:29.288246+00:00"
+        "updated_at_utc": "2026-06-22T09:06:49.734938+00:00"
       }
     },
     "fresh_b_cover_diagnostics": {
@@ -852,27 +855,27 @@
       "b_cover_with_any_current_offer_match": 77,
       "b_cover_without_current_offer_match": 43,
       "bzzoiro_overlap_bridge": {
-        "bzzoiro_offer_rows": 100,
-        "created_at_utc": "2026-06-22T07:06:23.432245+00:00",
+        "bzzoiro_offer_rows": 103,
+        "created_at_utc": "2026-06-22T09:06:43.438746+00:00",
         "odds_reference_aliases": 282,
         "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
-        "overlap_match_rows": 100,
-        "overlap_same_bucket_rows": 97,
+        "overlap_match_rows": 103,
+        "overlap_same_bucket_rows": 100,
         "source_counts": {
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 121
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 123
         },
         "status": "ok"
       },
-      "created_at_utc": "2026-06-22T07:06:23.427686+00:00",
+      "created_at_utc": "2026-06-22T09:06:43.433787+00:00",
       "current_market_bucket_book_count_histogram": {
-        "1": 7931,
+        "1": 7978,
         "19": 2,
-        "2": 645,
+        "2": 651,
         "24": 2,
-        "3": 123,
+        "3": 146,
         "4": 48
       },
-      "current_market_buckets_totals_spreads": 8751,
+      "current_market_buckets_totals_spreads": 8827,
       "current_market_bzzoiro_buckets_totals_spreads": 31,
       "fallback_candidates_seen": 0,
       "fallback_low_confidence_candidates": 0,
@@ -885,34 +888,34 @@
       "fallback_status": "no_viable_controlled_fallback",
       "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
       "inventory_rows": 214,
-      "offer_rows_seen": 17187,
+      "offer_rows_seen": 17372,
       "offer_source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 100,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 5499,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 5012,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 6576
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 103,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 5547,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 5063,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 6659
       },
-      "promotion_considered_b_cover_rows": 99,
+      "promotion_considered_b_cover_rows": 96,
       "promotion_promoted_count": 36,
       "promotion_reason_counts": {
         "promoted": 36,
         "promotion_skip_edge_below_min": 254,
-        "promotion_skip_ev_below_min": 2,
-        "promotion_skip_no_offer_bucket": 26,
-        "promotion_skip_odds_above_max": 716,
-        "promotion_skip_odds_below_min": 794,
-        "promotion_skip_price_outlier": 38
+        "promotion_skip_ev_below_min": 4,
+        "promotion_skip_no_offer_bucket": 25,
+        "promotion_skip_odds_above_max": 702,
+        "promotion_skip_odds_below_min": 771,
+        "promotion_skip_price_outlier": 32
       }
     },
     "github_actions": {
       "repository": "Harfdsfsq/sports-bot",
       "run_attempt": "1",
-      "run_id": "27935345414",
+      "run_id": "27941407279",
       "workflow": "run-bot"
     },
     "inventory_bookmaker_backfill": {
       "changed_inventory_rows": 0,
-      "created_at_utc": "2026-06-22T07:06:28.596967+00:00",
+      "created_at_utc": "2026-06-22T09:06:49.001882+00:00",
       "examples": [],
       "inventory_path_used": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-22.json",
       "inventory_rows": 214,
@@ -921,13 +924,13 @@
       "normalized_2plus_after": 88,
       "normalized_2plus_before": 110,
       "raw_2plus_matches": 177,
-      "raw_groups": 245,
-      "scanned_dicts": 100666,
+      "raw_groups": 244,
+      "scanned_dicts": 101239,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/070555-line-snapshots.json": 6839,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/090613-line-snapshots.json": 6922,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 12,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 100,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 6565,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 103,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 6648,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 36,
         "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 49,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 12
@@ -935,7 +938,7 @@
       "target_date": "2026-06-22"
     },
     "inventory_target_expand": {
-      "created_at_utc": "2026-06-22T07:02:15.979161+00:00",
+      "created_at_utc": "2026-06-22T09:02:08.464648+00:00",
       "existing_before": 192,
       "matches_after": 192,
       "parse_errors": [
@@ -970,7 +973,7 @@
       "matches_count": 59,
       "matches_with_2plus_books_any_market": 45,
       "matches_with_2plus_books_same_side_market": 44,
-      "rows_count": 6576,
+      "rows_count": 6659,
       "status": "ok"
     },
     "progressive_core_coverage": {
@@ -981,9 +984,9 @@
     "rescue_xg_confirmation_enrichment": {
       "candidates_seen": 0,
       "confirmation_added": 0,
-      "context_keys": 155,
-      "context_pairs": 155,
-      "created_at_utc": "2026-06-22T07:06:17.471235+00:00",
+      "context_keys": 159,
+      "context_pairs": 159,
+      "created_at_utc": "2026-06-22T09:06:36.907801+00:00",
       "examples": [],
       "missing_context_match": 0,
       "note": "Best-effort artifact-only enrichment; no external API calls.",
@@ -992,10 +995,10 @@
     },
     "run_bot_step_status": {
       "note": "run-once status is recorded; workflow continues so diagnostics/report/artifacts can complete",
-      "run_id": "27935345414",
+      "run_id": "27941407279",
       "status": 0,
       "status_text": "ok",
-      "updated_at_utc": "2026-06-22T07:06:08Z",
+      "updated_at_utc": "2026-06-22T09:06:27Z",
       "workflow": "run-bot"
     },
     "sportlogic": {
@@ -1052,9 +1055,9 @@
   "line_guard": {
     "dropped": 0,
     "dropped_final": 0,
-    "final_pre_kickoff_checks": 0,
+    "final_pre_kickoff_checks": 1,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 0,
+    "no_more_regular_run_before_kickoff": 1,
     "seen": 0,
     "waiting_next_run": 0
   },
@@ -1063,14 +1066,37 @@
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
+        "away_team": "Brunswick City",
+        "home_team": "Melbourne Victory",
+        "kickoff_utc": "2026-06-22T10:15:00+00:00",
+        "league_name": "Australia - Victoria Premier League 1",
+        "match_key": "soccer|brunswick city|melbourne victory|2026-06-22",
+        "minutes_to_kickoff": 68.77,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 137.076,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-06-22T09:06:15.948774+00:00",
+          "latest_useful_run_at_utc": "2026-06-22T09:45:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-22T11:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
         "away_team": "Tartu Tammeka",
         "home_team": "Viljandi Tulevik",
         "kickoff_utc": "2026-06-22T12:00:00+00:00",
         "league_name": "Estonia - Esiliiga B",
         "match_key": "2026-06-22|viljandi tulevik|tartu tammeka",
-        "minutes_to_kickoff": 294.08,
-        "pre_kickoff_status": "near_window",
-        "priority": 85.747,
+        "minutes_to_kickoff": 173.77,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 110.076,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -1081,7 +1107,7 @@
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T09:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-22T11:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       },
@@ -1091,9 +1117,9 @@
         "kickoff_utc": "2026-06-22T12:00:00+00:00",
         "league_name": "Ethiopia - Premier League",
         "match_key": "2026-06-22|fasil kenema|arba minch ketema",
-        "minutes_to_kickoff": 294.08,
-        "pre_kickoff_status": "near_window",
-        "priority": 85.747,
+        "minutes_to_kickoff": 173.77,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 110.076,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -1104,7 +1130,7 @@
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T09:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-22T11:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       },
@@ -1114,9 +1140,9 @@
         "kickoff_utc": "2026-06-22T12:00:00+00:00",
         "league_name": "Ethiopia - Premier League",
         "match_key": "2026-06-22|wolaita dicha|ethio electric",
-        "minutes_to_kickoff": 294.08,
-        "pre_kickoff_status": "near_window",
-        "priority": 85.747,
+        "minutes_to_kickoff": 173.77,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 110.076,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -1127,76 +1153,53 @@
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T09:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-22T11:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       },
       {
-        "away_team": "FC Gori",
-        "home_team": "Merani Martvili",
-        "kickoff_utc": "2026-06-22T13:00:00+00:00",
-        "league_name": "Georgia - Erovnuli Liga 2",
-        "match_key": "2026-06-22|merani martvili|gori",
-        "minutes_to_kickoff": 354.08,
-        "pre_kickoff_status": "near_window",
-        "priority": 83.247,
+        "away_team": "Tartu Tammeka",
+        "home_team": "Viljandi Tulevik",
+        "kickoff_utc": "2026-06-22T12:00:00+00:00",
+        "league_name": "Estonia - Esiliiga B",
+        "match_key": "soccer|tartu tammeka|viljandi tulevik|2026-06-22",
+        "minutes_to_kickoff": 173.77,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 102.076,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
           "has_next_regular_run_before_kickoff": true,
-          "last_odds_refresh_utc": "2026-06-21T21:06:45.368952+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T12:30:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T09:00:00+00:00",
-          "no_more_regular_run_before_kickoff": false
-        }
-      },
-      {
-        "away_team": "Brunswick City",
-        "home_team": "Melbourne Victory",
-        "kickoff_utc": "2026-06-22T10:15:00+00:00",
-        "league_name": "Australia - Victoria Premier League 1",
-        "match_key": "soccer|brunswick city|melbourne victory|2026-06-22",
-        "minutes_to_kickoff": 189.08,
-        "pre_kickoff_status": "near_window",
-        "priority": 82.122,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "has_next_regular_run_before_kickoff": true,
-          "last_odds_refresh_utc": "2026-06-22T07:05:57.524946+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T09:45:00+00:00",
+          "last_odds_refresh_utc": "2026-06-22T09:06:15.948774+00:00",
+          "latest_useful_run_at_utc": "2026-06-22T11:30:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-06-22T09:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-22T11:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       },
       {
-        "away_team": "Hadiya Hossana",
-        "home_team": "Welwalo Adigrat",
-        "kickoff_utc": "2026-06-22T15:00:00+00:00",
+        "away_team": "Arba Minch Ketema",
+        "home_team": "Fasil Kenema",
+        "kickoff_utc": "2026-06-22T12:00:00+00:00",
         "league_name": "Ethiopia - Premier League",
-        "match_key": "2026-06-22|welwalo adigrat|hadiya hossana",
-        "minutes_to_kickoff": 474.08,
-        "pre_kickoff_status": "near_window",
-        "priority": 78.247,
+        "match_key": "soccer|arba minch ketema|fasil kenema|2026-06-22",
+        "minutes_to_kickoff": 173.77,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 102.076,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
           "has_next_regular_run_before_kickoff": true,
-          "last_odds_refresh_utc": "2026-06-21T21:06:45.368952+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T14:30:00+00:00",
+          "last_odds_refresh_utc": "2026-06-22T09:06:15.948774+00:00",
+          "latest_useful_run_at_utc": "2026-06-22T11:30:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T09:00:00+00:00",
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-22T11:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       }
@@ -1205,7 +1208,7 @@
   "status": "lines_but_no_raw_candidates",
   "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 4818,
+  "text_length": 4919,
   "top_reason": "no_viable_controlled_fallback",
   "version": "harizon-telegram-report-v13-a-tier-funnel"
 }
