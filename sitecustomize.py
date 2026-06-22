@@ -3,10 +3,12 @@ from __future__ import annotations
 """Repository startup shim.
 
 Production policy now lives in normal application modules and workflow files.
-This shim keeps local helper scripts importable and installs one guarded runtime
-compatibility hook: controlled fallback B-tier must follow the configured
-HARIZON contract (1+ bookmaker when CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS=1),
-while A-tier and price/xG/value guards stay strict.
+This shim keeps local helper scripts importable and installs guarded runtime
+compatibility hooks:
+- helper scripts default to the workflow-local inventory day when no explicit
+  DAY_INVENTORY_TARGET_DATE is exported;
+- controlled fallback B-tier follows the configured HARIZON contract while
+  A-tier and price/xG/value guards stay strict.
 """
 
 import importlib
@@ -14,8 +16,10 @@ import importlib.util
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent
 SCRIPTS = ROOT / "scripts"
@@ -32,6 +36,26 @@ def _truthy(value: str | None, default: bool = False) -> bool:
     if raw in {"0", "false", "no", "off", "none", "null"}:
         return False
     return raw in {"1", "true", "yes", "on", "force"}
+
+
+def _runtime_timezone() -> ZoneInfo:
+    for value in (os.getenv("APP_TIMEZONE"), os.getenv("TZ"), "Europe/Moscow"):
+        try:
+            return ZoneInfo(str(value))
+        except Exception:
+            continue
+    return ZoneInfo("Europe/Moscow")
+
+
+def _default_inventory_day() -> str:
+    cached = str(os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
+    if cached:
+        return cached[:10]
+    return datetime.now(timezone.utc).astimezone(_runtime_timezone()).date().isoformat()
+
+
+if not os.getenv("DAY_INVENTORY_TARGET_DATE") and not _truthy(os.getenv("HARIZON_DISABLE_SITECUSTOMIZE_LOCAL_DAY")):
+    os.environ["DAY_INVENTORY_TARGET_DATE"] = _default_inventory_day()
 
 
 def _as_int(value: Any, default: int = 0) -> int:
@@ -92,9 +116,6 @@ def _patch_controlled_fallback_module(module: Any) -> None:
         return
 
     def bookmaker_quorum_price_guard_contract(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
-        # A/B policy is explicit in workflow env: B-tier may be 1+ bookmaker.
-        # Preserve the external price-integrity guard in hard_reject_reasons; this
-        # only prevents the legacy internal quorum helper from forcing 2 books.
         min_books = _tier_min_books("B")
         if min_books > 1 and callable(original_price_guard):
             return list(original_price_guard(candidate, metrics) or [])
@@ -147,6 +168,7 @@ def _patch_controlled_fallback_module(module: Any) -> None:
         "policy": "B-tier uses configured min books; CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS=1 is not promoted to 2",
         "b_tier_min_books": _tier_min_books("B"),
         "a_tier_min_books": _tier_min_books("A"),
+        "target_date": os.getenv("DAY_INVENTORY_TARGET_DATE"),
     })
 
 
