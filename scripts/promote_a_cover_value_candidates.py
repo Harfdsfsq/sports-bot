@@ -25,12 +25,15 @@ ROOT = Path('.').resolve()
 EXPORT = ROOT / '.data' / 'exports'
 OUT = EXPORT / 'latest-a-cover-value-promotion.json'
 RESCUE_PATH = EXPORT / 'latest-rescue-candidates.json'
+ARTIFACT_RESCUE_PATH = ROOT / 'artifacts' / 'run-bot' / 'latest-rescue-candidates.json'
 
 
 def _as_int(value: Any, default: int = 0) -> int:
     try:
         if value in (None, ''):
             return default
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value)
         return int(float(str(value)))
     except Exception:
         return default
@@ -82,19 +85,105 @@ def _in_active_window(row: dict[str, Any], now: datetime) -> bool:
     return kickoff <= now + timedelta(hours=hours)
 
 
+def _row_in_fallback_window(row: dict[str, Any], now: datetime) -> bool:
+    """Keep rescue rows that the fallback loader can actually evaluate now."""
+    kickoff = _kickoff(row)
+    if kickoff is None:
+        return _env_bool('CONTROLLED_FALLBACK_ALLOW_UNKNOWN_TIME', False)
+    min_lead = _as_int(os.getenv('LINE_MOVEMENT_MIN_LEAD_MINUTES') or os.getenv('MIN_KICKOFF_LEAD_MINUTES'), 15)
+    hours = max(0.25, _as_float(os.getenv('CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS') or os.getenv('PUBLISH_WINDOW_HOURS'), 2.0))
+    return now + timedelta(minutes=max(0, min_lead)) <= kickoff <= now + timedelta(hours=hours)
+
+
+def _list_count(container: dict[str, Any], *keys: str) -> int:
+    best = 0
+    for key in keys:
+        value = container.get(key)
+        if isinstance(value, str):
+            parts = [item.strip() for item in value.replace(';', ',').replace('|', ',').split(',') if item.strip()]
+            best = max(best, len(set(parts)))
+        else:
+            best = max(best, _as_int(value, 0))
+    return best
+
+
+def _source_count(row: dict[str, Any]) -> int:
+    """Count independent odds/line sources without relying on B-cover internals.
+
+    The first A-cover promotion version called bcover.source_count(), but that
+    helper does not exist in build_b_cover_candidate_gap_report.py.  Because the
+    workflow intentionally runs the promotion with `|| true`, that AttributeError
+    was hidden and no latest-a-cover-value-promotion.json was produced.
+    """
+    best = 0
+    for container in (
+        row,
+        row.get('coverage') if isinstance(row.get('coverage'), dict) else {},
+        row.get('metadata') if isinstance(row.get('metadata'), dict) else {},
+        row.get('source_summary') if isinstance(row.get('source_summary'), dict) else {},
+    ):
+        if not isinstance(container, dict):
+            continue
+        best = max(
+            best,
+            _list_count(
+                container,
+                'odds_sources_count',
+                'independent_odds_sources_count',
+                'line_sources_count',
+                'sources_count',
+                'odds_sources',
+                'independent_odds_sources',
+                'line_sources',
+                'sources',
+            ),
+        )
+    if best <= 0 and (row.get('source') or row.get('provider') or row.get('bookmaker') or row.get('odds')):
+        best = 1
+    return best
+
+
 def _is_a_cover(row: dict[str, Any]) -> bool:
-    if str(row.get('tier_a_coverage_ready') or row.get('ready_for_publish')).strip().lower() in {'1', 'true', 'yes', 'on'}:
+    if str(row.get('tier_a_coverage_ready') or '').strip().lower() in {'1', 'true', 'yes', 'on'}:
         return True
-    return bcover.source_count(row) >= 2 and bcover.book_count(row) >= 2 and bcover.context_count(row) >= 2
+    return _source_count(row) >= 2 and bcover.book_count(row) >= 2 and bcover.context_count(row) >= 2
 
 
 def _existing_signatures(rows: list[dict[str, Any]]) -> set[str]:
     return {bcover.candidate_signature(row) for row in rows if isinstance(row, dict)}
 
 
+def _load_existing_rescue(now: datetime) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    rows = bcover.rescue_rows_payload()
+    stats = {'loaded': len(rows), 'kept': 0, 'dropped_outside_window': 0}
+    if not _env_bool('PROMOTE_A_COVER_PRUNE_RESCUE_TO_PUBLISH_WINDOW', True):
+        stats['kept'] = len(rows)
+        return rows, stats
+    kept: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if _row_in_fallback_window(row, now):
+            kept.append(row)
+        else:
+            stats['dropped_outside_window'] += 1
+    stats['kept'] = len(kept)
+    return kept, stats
+
+
+def _clear_stale_artifact_rescue() -> bool:
+    try:
+        if ARTIFACT_RESCUE_PATH.exists():
+            ARTIFACT_RESCUE_PATH.unlink()
+            return True
+    except Exception:
+        return False
+    return False
+
+
 def _tune_candidate(candidate: dict[str, Any], inv_row: dict[str, Any]) -> dict[str, Any]:
     cand = dict(candidate)
-    src_count = max(2, bcover.source_count(inv_row), _as_int(cand.get('odds_sources_count'), 1))
+    src_count = max(2, _source_count(inv_row), _as_int(cand.get('odds_sources_count'), 1))
     book_count = max(2, bcover.book_count(inv_row), _as_int(cand.get('books_count'), 1))
     ctx_sources = bcover.context_sources(inv_row)
     ctx_count = max(2, bcover.context_count(inv_row), len(ctx_sources), _as_int(cand.get('confirmation_sources_count'), 1))
@@ -134,20 +223,18 @@ def _tune_candidate(candidate: dict[str, Any], inv_row: dict[str, Any]) -> dict[
     return cand
 
 
-def main() -> int:
+def run() -> dict[str, Any]:
     if not _env_bool('PROMOTE_A_COVER_VALUE_CANDIDATES_ENABLED', True):
-        payload = {'enabled': False, 'reason': 'disabled'}
-        _write_json(OUT, payload)
-        print(json.dumps(payload, ensure_ascii=False))
-        return 0
+        return {'enabled': False, 'reason': 'disabled'}
 
+    stale_artifact_rescue_removed = _clear_stale_artifact_rescue()
     day = bcover.target_date()
     prebuild = bcover.prebuild_coverage_truth_for_promotion()
     inventory, inventory_load = bcover.load_inventory_with_meta(day)
     now = datetime.now(UTC)
     offer_buckets, offer_diag = bcover.collect_offer_buckets(day)
 
-    existing = bcover.rescue_rows_payload()
+    existing, existing_stats = _load_existing_rescue(now)
     initial_candidates = bcover.candidate_rows()
     signatures = _existing_signatures(existing + initial_candidates)
     limit = _as_int(os.getenv('PROMOTE_A_COVER_VALUE_CANDIDATE_LIMIT'), 18)
@@ -169,7 +256,7 @@ def main() -> int:
         in_window_rows.append(row)
 
     # Prefer the rows with the deepest context/price/source coverage first.
-    in_window_rows.sort(key=lambda r: (bcover.context_count(r), bcover.book_count(r), bcover.source_count(r)), reverse=True)
+    in_window_rows.sort(key=lambda r: (bcover.context_count(r), bcover.book_count(r), _source_count(r)), reverse=True)
 
     for row in in_window_rows:
         considered += 1
@@ -201,12 +288,12 @@ def main() -> int:
         if limit and len(promoted) >= limit:
             break
 
-    if promoted:
-        merged = promoted + existing
-        # Preserve the old rescue rows and place A-cover promotions first for review.
-        _write_json(RESCUE_PATH, merged[: max(len(merged), len(existing) + len(promoted))])
+    merged = promoted + existing
+    # Always rewrite the rescue file so stale/outside-window rows from previous
+    # promotion passes do not keep polluting the fallback pool for future runs.
+    _write_json(RESCUE_PATH, merged[: max(len(merged), len(existing) + len(promoted))])
 
-    payload = {
+    return {
         'enabled': True,
         'status': 'ok',
         'created_at_utc': now.isoformat(),
@@ -219,13 +306,35 @@ def main() -> int:
         'reason_counts': dict(reasons.most_common()),
         'sample': promoted[:12],
         'rescue_path': str(RESCUE_PATH),
+        'existing_rescue_stats': existing_stats,
+        'stale_artifact_rescue_removed': stale_artifact_rescue_removed,
         'offer_diagnostics': offer_diag,
         'inventory_load': inventory_load,
         'prebuild_coverage_truth': prebuild,
         'safety_note': 'promotion only appends candidates to fallback review; guarded publisher still enforces value, xG, line recheck, duplicate, daily cap and price-integrity guards',
     }
+
+
+def main() -> int:
+    try:
+        payload = run()
+    except Exception as exc:
+        payload = {
+            'enabled': True,
+            'status': 'error',
+            'created_at_utc': datetime.now(UTC).isoformat(),
+            'error': f'{type(exc).__name__}: {exc}',
+            'safety_note': 'promotion failed before fallback; no Telegram publication guard was relaxed',
+        }
     _write_json(OUT, payload)
-    print(json.dumps({'status': 'ok', 'active_a_cover_rows': active_a_rows, 'in_publish_window_a_cover_rows': len(in_window_rows), 'promoted_count': len(promoted), 'top_reasons': dict(reasons.most_common(5))}, ensure_ascii=False))
+    print(json.dumps({
+        'status': payload.get('status'),
+        'active_a_cover_rows': payload.get('active_a_cover_rows'),
+        'in_publish_window_a_cover_rows': payload.get('in_publish_window_a_cover_rows'),
+        'promoted_count': payload.get('promoted_count'),
+        'top_reasons': dict((payload.get('reason_counts') or {}).items()) if isinstance(payload.get('reason_counts'), dict) else {},
+        'error': payload.get('error'),
+    }, ensure_ascii=False))
     return 0
 
 
