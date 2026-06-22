@@ -1,14 +1,75 @@
 {
-  "created_at_utc": "2026-06-22T22:04:55.564455+00:00",
+  "created_at_utc": "2026-06-22T23:08:06.403251+00:00",
   "duplicates_removed": 0,
-  "evaluated_rows": 0,
+  "evaluated_rows": 2,
   "plain_explanation": [
-    "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+    "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+    "A-tier publication score is below min on many candidates."
   ],
-  "quality_score_sources": {},
+  "quality_score_sources": {
+    "proxy": 2
+  },
   "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
   "status": "ok",
-  "tier_a_blocker_counts": {},
-  "top_a_tier_blocked_samples": [],
-  "unique_evaluated_rows": 0
+  "tier_a_blocker_counts": {
+    "tier_a_books_below_min": 1,
+    "tier_a_odds_sources_below_min:1/2": 1,
+    "tier_a_proxy_quality_not_allowed": 1,
+    "tier_a_publication_score_below_min": 1
+  },
+  "top_a_tier_blocked_samples": [
+    {
+      "a_tier_reasons": [
+        "tier_a_books_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2"
+      ],
+      "away_team": "Senegal",
+      "books_count": 1,
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-23T00:00:00+00:00",
+      "confidence": 68.725,
+      "confirmation_sources": [
+        "bzzoiro",
+        "football_data",
+        "sstats"
+      ],
+      "confirmation_sources_count": 4,
+      "daily_cap_reasons": [],
+      "dedupe_key": "2026-06-23|international fifa world cup|norway|senegal|totals|under|2.5",
+      "edge_pp": 3.315,
+      "ev_pct": 6.5,
+      "family": "totals",
+      "home_team": "Norway",
+      "league_name": "International - FIFA World Cup",
+      "match_key": "2026-06-23|norway|senegal",
+      "odds": 1.961,
+      "odds_sources_count": 1,
+      "other_reasons": [
+        "tier_a_books_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_books_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_bookmaker_quorum_books_below_min:1/2",
+        "tier_b_bookmaker_quorum_books_below_min:1/2",
+        "tier_c_books_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "point": 2.5,
+      "publication_score": 18.604,
+      "quality_score": 72.053,
+      "quality_score_source": "proxy",
+      "rank": 1,
+      "selection": "Меньше",
+      "shadow_score": -34.042,
+      "status_without_daily_cap": "blocked_by_other_guards",
+      "tier": null
+    }
+  ],
+  "unique_evaluated_rows": 2
 }
