@@ -1,11 +1,11 @@
 {
   "active_a_cover_rows": 99,
   "considered_a_cover_rows": 11,
-  "created_at_utc": "2026-06-22T11:06:55.959019+00:00",
+  "created_at_utc": "2026-06-22T13:06:52.278289+00:00",
   "enabled": true,
   "existing_rescue_stats": {
-    "dropped_outside_window": 32,
-    "kept": 4,
+    "dropped_outside_window": 31,
+    "kept": 5,
     "loaded": 36
   },
   "in_publish_window_a_cover_rows": 11,
@@ -115,21 +115,21 @@
   },
   "inventory_rows_seen": 145,
   "offer_diagnostics": {
-    "accepted_offer_rows": 3854,
-    "scanned_dicts": 105564,
+    "accepted_offer_rows": 3451,
+    "scanned_dicts": 100119,
     "source_counts": {
-      "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/110636-line-snapshots.json": 1849,
+      "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/130632-line-snapshots.json": 1659,
       "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 12,
       "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 98,
-      "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1831,
+      "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1641,
       "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 36,
-      "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 28
+      "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 5
     }
   },
   "prebuild_coverage_truth": {
     "enabled": true,
-    "finished_at_utc": "2026-06-22T11:06:55.783908+00:00",
-    "started_at_utc": "2026-06-22T11:06:55.101938+00:00",
+    "finished_at_utc": "2026-06-22T13:06:52.081748+00:00",
+    "started_at_utc": "2026-06-22T13:06:51.358003+00:00",
     "status": "ok",
     "steps": [
       {
@@ -139,14 +139,13 @@
       }
     ]
   },
-  "promoted_count": 2,
+  "promoted_count": 4,
   "reason_counts": {
-    "promoted": 2,
-    "promotion_skip_edge_below_min": 27,
-    "promotion_skip_ev_below_min": 1,
-    "promotion_skip_no_offer_bucket": 4,
-    "promotion_skip_odds_above_max": 71,
-    "promotion_skip_odds_below_min": 75,
+    "promoted": 4,
+    "promotion_skip_edge_below_min": 43,
+    "promotion_skip_ev_below_min": 2,
+    "promotion_skip_odds_above_max": 118,
+    "promotion_skip_odds_below_min": 129,
     "promotion_skip_outside_active_publish_window": 88,
     "promotion_skip_price_outlier": 2
   },
@@ -155,22 +154,22 @@
   "sample": [
     {
       "_candidate_source": "a_cover_market_promotion",
-      "adjusted_probability": 0.452036,
-      "away_team": "Deportivo Maldonado Reserve",
-      "bookmaker": "betfair_exchange",
-      "books_count": 131,
-      "canonical_match_id": "soccer|defensor|maldonado reserves|2026-06-22",
-      "commence_time": "2026-06-22T13:00:00+00:00",
-      "confidence": 66.793,
+      "adjusted_probability": 0.465048,
+      "away_team": "Ogre United",
+      "bookmaker": "unibet",
+      "books_count": 155,
+      "canonical_match_id": "soccer|ogre united|rfs|2026-06-22",
+      "commence_time": "2026-06-22T15:00:00+00:00",
+      "confidence": 66.686,
       "confirmation_sources": [
-        "day_inventory",
         "model_xg",
+        "openligadb",
         "sstats"
       ],
       "confirmation_sources_count": 3,
       "context": {
         "context_sources": [
-          "day_inventory",
+          "openligadb",
           "sstats"
         ],
         "expected_away": null,
@@ -178,17 +177,133 @@
       },
       "diagnostics": {
         "a_cover_promotion": {
-          "books_count": 131,
+          "books_count": 155,
           "context_sources_count": 3,
-          "created_at_utc": "2026-06-22T11:06:58.107727+00:00",
+          "created_at_utc": "2026-06-22T13:06:54.534388+00:00",
           "created_by": "promote_a_cover_value_candidates.py",
-          "inventory_match_key": "soccer|defensor|maldonado reserves|2026-06-22",
+          "inventory_match_key": "soccer|ogre united|rfs|2026-06-22",
+          "odds_sources_count": 2
+        },
+        "promotion": {
+          "canonical_edge_pp": 2.06,
+          "canonical_ev_pct": 4.636,
+          "created_at_utc": "2026-06-22T13:06:54.534296+00:00",
+          "created_by": "build_b_cover_candidate_gap_report.py",
+          "median_price": 2.195,
+          "selected_price": 2.25,
+          "selected_vs_median_deviation_pct": 2.506
+        }
+      },
+      "edge_pct": 2.06,
+      "ev_pct": 4.636,
+      "expected_away": null,
+      "expected_home": null,
+      "family": "totals",
+      "home_team": "FC RFS",
+      "league_name": "Latvia - Virsliga",
+      "market_family": "totals",
+      "market_probability": 0.455581,
+      "match_key": "soccer|ogre united|rfs|2026-06-22",
+      "model_probability": 0.465048,
+      "odds": 2.25,
+      "odds_sources_count": 2,
+      "point": 4.5,
+      "publication_score": 14.052,
+      "reasons": [
+        "mode=b_cover_market_promotion",
+        "model=conservative_median_market_anchor",
+        "books=2",
+        "context_sources=2",
+        "best_vs_median=2.51%",
+        "mode=a_cover_market_promotion",
+        "a_cover_sources=2/books=155/contexts=3"
+      ],
+      "selected_odds": 2.25,
+      "selection": "Больше",
+      "selection_key": "over",
+      "source_summary": {
+        "bookmaker": "unibet",
+        "books": [
+          "betfair_exchange",
+          "unibet"
+        ],
+        "books_count": 2,
+        "context_sources": [
+          "openligadb",
+          "sstats"
+        ],
+        "median_price": 2.195,
+        "prices": [
+          2.25,
+          2.14
+        ],
+        "publish_coverage_contract": {
+          "bookmakers_count": 155,
+          "context_sources_count": 3,
+          "note": "candidate still must pass guarded fallback final checks before Telegram publication",
+          "odds_sources_count": 2,
+          "tier": "A-cover-promoted-to-fallback-review"
+        },
+        "raw_bucket_offers": [
+          {
+            "bookmaker": "unibet",
+            "family": "totals",
+            "point": 4.5,
+            "price": 2.25,
+            "selection": "over",
+            "source": "odds_api_io"
+          },
+          {
+            "bookmaker": "betfair_exchange",
+            "family": "totals",
+            "point": 4.5,
+            "price": 2.14,
+            "selection": "over",
+            "source": "odds_api_io"
+          }
+        ],
+        "selected_bookmaker": "unibet",
+        "selected_source": "a_cover_market_promotion",
+        "selected_vs_median_deviation_pct": 2.506
+      },
+      "sources_count": 3
+    },
+    {
+      "_candidate_source": "a_cover_market_promotion",
+      "adjusted_probability": 0.452036,
+      "away_team": "Rustavi",
+      "bookmaker": "betfair_exchange",
+      "books_count": 139,
+      "canonical_match_id": "soccer|dila gori|rustavi|2026-06-22",
+      "commence_time": "2026-06-22T15:00:00+00:00",
+      "confidence": 66.793,
+      "confirmation_sources": [
+        "model_xg",
+        "openligadb",
+        "sstats"
+      ],
+      "confirmation_sources_count": 3,
+      "context": {
+        "context_sources": [
+          "openligadb",
+          "sstats"
+        ],
+        "expected_away": null,
+        "expected_home": null
+      },
+      "diagnostics": {
+        "a_cover_promotion": {
+          "books_count": 139,
+          "context_sources_count": 3,
+          "created_at_utc": "2026-06-22T13:06:54.534991+00:00",
+          "created_by": "promote_a_cover_value_candidates.py",
+          "inventory_match_key": "soccer|dila gori|rustavi|2026-06-22",
           "odds_sources_count": 2
         },
         "promotion": {
           "canonical_edge_pp": 2.1,
           "canonical_ev_pct": 4.872,
-          "created_at_utc": "2026-06-22T11:06:58.107644+00:00",
+          "created_at_utc": "2026-06-22T13:06:54.534907+00:00",
           "created_by": "build_b_cover_candidate_gap_report.py",
           "median_price": 2.26,
           "selected_price": 2.32,
@@ -200,11 +315,11 @@
       "expected_away": null,
       "expected_home": null,
       "family": "totals",
-      "home_team": "Defensor",
-      "league_name": "Uruguay - Tercera Division, Reserves",
+      "home_team": "Dila Gori",
+      "league_name": "Georgia - Erovnuli Liga",
       "market_family": "totals",
       "market_probability": 0.442478,
-      "match_key": "soccer|defensor|maldonado reserves|2026-06-22",
+      "match_key": "soccer|dila gori|rustavi|2026-06-22",
       "model_probability": 0.452036,
       "odds": 2.32,
       "odds_sources_count": 2,
@@ -217,11 +332,11 @@
         "context_sources=2",
         "best_vs_median=2.65%",
         "mode=a_cover_market_promotion",
-        "a_cover_sources=2/books=131/contexts=3"
+        "a_cover_sources=2/books=139/contexts=3"
       ],
       "selected_odds": 2.32,
-      "selection": "Меньше",
-      "selection_key": "under",
+      "selection": "Больше",
+      "selection_key": "over",
       "source_summary": {
         "bookmaker": "betfair_exchange",
         "books": [
@@ -230,16 +345,18 @@
         ],
         "books_count": 2,
         "context_sources": [
-          "day_inventory",
+          "openligadb",
           "sstats"
         ],
         "median_price": 2.26,
         "prices": [
           2.2,
+          2.32,
+          2.2,
           2.32
         ],
         "publish_coverage_contract": {
-          "bookmakers_count": 131,
+          "bookmakers_count": 139,
           "context_sources_count": 3,
           "note": "candidate still must pass guarded fallback final checks before Telegram publication",
           "odds_sources_count": 2,
@@ -251,7 +368,7 @@
             "family": "totals",
             "point": 2.5,
             "price": 2.2,
-            "selection": "under",
+            "selection": "over",
             "source": "odds_api_io"
           },
           {
@@ -259,7 +376,23 @@
             "family": "totals",
             "point": 2.5,
             "price": 2.32,
-            "selection": "under",
+            "selection": "over",
+            "source": "odds_api_io"
+          },
+          {
+            "bookmaker": "bet365",
+            "family": "totals",
+            "point": 2.5,
+            "price": 2.2,
+            "selection": "over",
+            "source": "odds_api_io"
+          },
+          {
+            "bookmaker": "betfair_exchange",
+            "family": "totals",
+            "point": 2.5,
+            "price": 2.32,
+            "selection": "over",
             "source": "odds_api_io"
           }
         ],
@@ -271,22 +404,135 @@
     },
     {
       "_candidate_source": "a_cover_market_promotion",
-      "adjusted_probability": 0.60589,
-      "away_team": "Arba Minch Ketema",
+      "adjusted_probability": 0.452036,
+      "away_team": "Rustavi",
       "bookmaker": "betfair_exchange",
-      "books_count": 129,
-      "canonical_match_id": "soccer|arba minch ketema|fasil kenema|2026-06-22",
-      "commence_time": "2026-06-22T12:00:00+00:00",
-      "confidence": 67.996,
+      "books_count": 139,
+      "canonical_match_id": "2026-06-22|dila gori|rustavi",
+      "commence_time": "2026-06-22T15:00:00+00:00",
+      "confidence": 66.793,
       "confirmation_sources": [
         "openligadb",
-        "sstats",
-        "weather"
+        "sstats"
       ],
-      "confirmation_sources_count": 3,
+      "confirmation_sources_count": 2,
       "context": {
         "context_sources": [
           "openligadb",
+          "sstats"
+        ],
+        "expected_away": null,
+        "expected_home": null
+      },
+      "diagnostics": {
+        "a_cover_promotion": {
+          "books_count": 139,
+          "context_sources_count": 2,
+          "created_at_utc": "2026-06-22T13:06:54.536875+00:00",
+          "created_by": "promote_a_cover_value_candidates.py",
+          "inventory_match_key": "2026-06-22|dila gori|rustavi",
+          "odds_sources_count": 2
+        },
+        "promotion": {
+          "canonical_edge_pp": 2.1,
+          "canonical_ev_pct": 4.872,
+          "created_at_utc": "2026-06-22T13:06:54.536798+00:00",
+          "created_by": "build_b_cover_candidate_gap_report.py",
+          "median_price": 2.26,
+          "selected_price": 2.32,
+          "selected_vs_median_deviation_pct": 2.655
+        }
+      },
+      "edge_pct": 2.1,
+      "ev_pct": 4.872,
+      "expected_away": null,
+      "expected_home": null,
+      "family": "totals",
+      "home_team": "Dila Gori",
+      "league_name": "Georgia - Erovnuli Liga",
+      "market_family": "totals",
+      "market_probability": 0.442478,
+      "match_key": "2026-06-22|dila gori|rustavi",
+      "model_probability": 0.452036,
+      "odds": 2.32,
+      "odds_sources_count": 2,
+      "point": 2.5,
+      "publication_score": 14.404,
+      "reasons": [
+        "mode=b_cover_market_promotion",
+        "model=conservative_median_market_anchor",
+        "books=2",
+        "context_sources=2",
+        "best_vs_median=2.65%",
+        "mode=a_cover_market_promotion",
+        "a_cover_sources=2/books=139/contexts=2"
+      ],
+      "selected_odds": 2.32,
+      "selection": "Больше",
+      "selection_key": "over",
+      "source_summary": {
+        "bookmaker": "betfair_exchange",
+        "books": [
+          "bet365",
+          "betfair_exchange"
+        ],
+        "books_count": 2,
+        "context_sources": [
+          "openligadb",
+          "sstats"
+        ],
+        "median_price": 2.26,
+        "prices": [
+          2.2,
+          2.32
+        ],
+        "publish_coverage_contract": {
+          "bookmakers_count": 139,
+          "context_sources_count": 2,
+          "note": "candidate still must pass guarded fallback final checks before Telegram publication",
+          "odds_sources_count": 2,
+          "tier": "A-cover-promoted-to-fallback-review"
+        },
+        "raw_bucket_offers": [
+          {
+            "bookmaker": "bet365",
+            "family": "totals",
+            "point": 2.5,
+            "price": 2.2,
+            "selection": "over",
+            "source": "odds_api_io"
+          },
+          {
+            "bookmaker": "betfair_exchange",
+            "family": "totals",
+            "point": 2.5,
+            "price": 2.32,
+            "selection": "over",
+            "source": "odds_api_io"
+          }
+        ],
+        "selected_bookmaker": "betfair_exchange",
+        "selected_source": "a_cover_market_promotion",
+        "selected_vs_median_deviation_pct": 2.655
+      },
+      "sources_count": 2
+    },
+    {
+      "_candidate_source": "a_cover_market_promotion",
+      "adjusted_probability": 0.485212,
+      "away_team": "Hadiya Hossana",
+      "bookmaker": "betfair_exchange",
+      "books_count": 127,
+      "canonical_match_id": "soccer|hadiya hossana|welwalo adigrat|2026-06-22",
+      "commence_time": "2026-06-22T15:00:00+00:00",
+      "confidence": 66.763,
+      "confirmation_sources": [
+        "sstats",
+        "weather"
+      ],
+      "confirmation_sources_count": 2,
+      "context": {
+        "context_sources": [
           "sstats",
           "weather"
         ],
@@ -295,50 +541,50 @@
       },
       "diagnostics": {
         "a_cover_promotion": {
-          "books_count": 129,
-          "context_sources_count": 3,
-          "created_at_utc": "2026-06-22T11:06:58.108277+00:00",
+          "books_count": 127,
+          "context_sources_count": 2,
+          "created_at_utc": "2026-06-22T13:06:54.537381+00:00",
           "created_by": "promote_a_cover_value_candidates.py",
-          "inventory_match_key": "soccer|arba minch ketema|fasil kenema|2026-06-22",
+          "inventory_match_key": "soccer|hadiya hossana|welwalo adigrat|2026-06-22",
           "odds_sources_count": 2
         },
         "promotion": {
-          "canonical_edge_pp": 2.449,
-          "canonical_ev_pct": 4.213,
-          "created_at_utc": "2026-06-22T11:06:58.108202+00:00",
+          "canonical_edge_pp": 2.225,
+          "canonical_ev_pct": 4.806,
+          "created_at_utc": "2026-06-22T13:06:54.537309+00:00",
           "created_by": "build_b_cover_candidate_gap_report.py",
-          "median_price": 1.685,
-          "selected_price": 1.72,
-          "selected_vs_median_deviation_pct": 2.077
+          "median_price": 2.105,
+          "selected_price": 2.16,
+          "selected_vs_median_deviation_pct": 2.613
         }
       },
-      "edge_pct": 2.449,
-      "ev_pct": 4.213,
+      "edge_pct": 2.225,
+      "ev_pct": 4.806,
       "expected_away": null,
       "expected_home": null,
       "family": "totals",
-      "home_team": "Fasil Kenema",
+      "home_team": "Welwalo Adigrat",
       "league_name": "Ethiopia - Premier League",
       "market_family": "totals",
-      "market_probability": 0.593472,
-      "match_key": "soccer|arba minch ketema|fasil kenema|2026-06-22",
-      "model_probability": 0.60589,
-      "odds": 1.72,
+      "market_probability": 0.475059,
+      "match_key": "soccer|hadiya hossana|welwalo adigrat|2026-06-22",
+      "model_probability": 0.485212,
+      "odds": 2.16,
       "odds_sources_count": 2,
       "point": 1.5,
-      "publication_score": 15.444,
+      "publication_score": 14.576,
       "reasons": [
         "mode=b_cover_market_promotion",
         "model=conservative_median_market_anchor",
         "books=2",
-        "context_sources=3",
-        "best_vs_median=2.08%",
+        "context_sources=2",
+        "best_vs_median=2.61%",
         "mode=a_cover_market_promotion",
-        "a_cover_sources=2/books=129/contexts=3"
+        "a_cover_sources=2/books=127/contexts=2"
       ],
-      "selected_odds": 1.72,
-      "selection": "Больше",
-      "selection_key": "over",
+      "selected_odds": 2.16,
+      "selection": "Меньше",
+      "selection_key": "under",
       "source_summary": {
         "bookmaker": "betfair_exchange",
         "books": [
@@ -347,18 +593,17 @@
         ],
         "books_count": 2,
         "context_sources": [
-          "openligadb",
           "sstats",
           "weather"
         ],
-        "median_price": 1.685,
+        "median_price": 2.105,
         "prices": [
-          1.65,
-          1.72
+          2.05,
+          2.16
         ],
         "publish_coverage_contract": {
-          "bookmakers_count": 129,
-          "context_sources_count": 3,
+          "bookmakers_count": 127,
+          "context_sources_count": 2,
           "note": "candidate still must pass guarded fallback final checks before Telegram publication",
           "odds_sources_count": 2,
           "tier": "A-cover-promoted-to-fallback-review"
@@ -368,24 +613,24 @@
             "bookmaker": "unibet",
             "family": "totals",
             "point": 1.5,
-            "price": 1.65,
-            "selection": "over",
+            "price": 2.05,
+            "selection": "under",
             "source": "odds_api_io"
           },
           {
             "bookmaker": "betfair_exchange",
             "family": "totals",
             "point": 1.5,
-            "price": 1.72,
-            "selection": "over",
+            "price": 2.16,
+            "selection": "under",
             "source": "odds_api_io"
           }
         ],
         "selected_bookmaker": "betfair_exchange",
         "selected_source": "a_cover_market_promotion",
-        "selected_vs_median_deviation_pct": 2.077
+        "selected_vs_median_deviation_pct": 2.613
       },
-      "sources_count": 3
+      "sources_count": 2
     }
   ],
   "stale_artifact_rescue_removed": true,
