@@ -1,17 +1,21 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+      "A-tier publication score is below min on many candidates."
     ],
     "quality_score_sources": {
       "proxy": 2,
       "raw": 1
     },
-    "tier_a_blocker_counts": {}
+    "tier_a_blocker_counts": {
+      "tier_a_odds_sources_below_min:1/2": 1,
+      "tier_a_proxy_quality_not_allowed": 1,
+      "tier_a_publication_score_below_min": 1
+    }
   },
   "candidates_seen": 5,
-  "created_at": "2026-06-22T21:36:53.935094+00:00",
-  "dry_run": false,
+  "created_at": "2026-06-22T21:53:12.078036+00:00",
   "enabled": true,
   "evaluated": [
     {
@@ -27,15 +31,15 @@
       "league_name_ru": "Бразилия - Брасилейро Серие C",
       "match_key": "soccer|confianca|guarani|2026-06-22",
       "metrics": {
-        "adjusted_probability": 0.536327,
+        "adjusted_probability": 0.527791,
         "books_count": 4,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 3.633,
-        "canonical_ev_pct": 7.265,
-        "confidence": 71.469,
+        "canonical_edge_pp": 2.779,
+        "canonical_ev_pct": 5.558,
+        "confidence": 70.701,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -53,9 +57,9 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.685,
-        "market_probability": 0.519481,
-        "model_probability": 0.536327,
+        "market_edge_pp": 1.365,
+        "market_probability": 0.514139,
+        "model_probability": 0.527791,
         "odds": 2.0,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
@@ -65,22 +69,34 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 22.62,
+        "publication_score": 18.95,
         "quality_reasons": [],
-        "quality_score": 76.0,
+        "quality_score": 75.42,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
         "selected_implied_probability": 0.5,
         "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 4,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.945,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 4,
+          "same_market_side_line_only": true,
+          "selected_price": 2.0,
+          "selected_vs_median_deviation_pct": 2.828
+        },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 26.266,
-          "xg_direction_ok": false,
-          "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 26.266,
-          "xg_model_optimism_gap_pp": 26.266,
-          "xg_probability": 0.273667,
-          "xg_probability_pct": 27.367,
+          "xg_abs_gap_pp": 19.854,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 19.854,
+          "xg_model_gap_pp": -19.854,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.726333,
+          "xg_probability_pct": 72.633,
           "xg_source": "home_away",
           "xg_total": 1.816
         }
@@ -88,14 +104,24 @@
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "xg_direction_conflict",
-        "xg_probability_gap_hard_reject"
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
       ],
       "reject_reasons_ru": [
-        "направление ставки конфликтует с xG",
-        "модель слишком оптимистична относительно xG-ориентира"
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень C: publication score below min"
       ],
-      "selection": "Больше",
+      "selection": "Меньше",
       "tier": null
     },
     {
@@ -111,15 +137,15 @@
       "league_name_ru": "Бразилия - Брасилейро Серие C",
       "match_key": "2026-06-22|confianca|guarani",
       "metrics": {
-        "adjusted_probability": 0.535028,
+        "adjusted_probability": 0.526505,
         "books_count": 4,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 3.503,
-        "canonical_ev_pct": 7.006,
-        "confidence": 69.853,
+        "canonical_edge_pp": 2.651,
+        "canonical_ev_pct": 5.301,
+        "confidence": 69.085,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -137,9 +163,9 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.555,
-        "market_probability": 0.519481,
-        "model_probability": 0.535028,
+        "market_edge_pp": 1.237,
+        "market_probability": 0.514139,
+        "model_probability": 0.526505,
         "odds": 2.0,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
@@ -149,9 +175,9 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 20.962,
+        "publication_score": 17.297,
         "quality_reasons": [],
-        "quality_score": 76.0,
+        "quality_score": 73.301,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
         "selected_implied_probability": 0.5,
@@ -160,13 +186,13 @@
           "books_count": 4,
           "enabled": true,
           "max_deviation_pct": 8.0,
-          "median_price": 1.925,
+          "median_price": 1.945,
           "mode": "bookmaker_quorum",
           "odds_sources_count": 1,
           "priced_books_count": 4,
           "same_market_side_line_only": true,
           "selected_price": 2.0,
-          "selected_vs_median_deviation_pct": 3.896
+          "selected_vs_median_deviation_pct": 2.828
         },
         "xg_sanity": {
           "enabled": false,
@@ -179,21 +205,27 @@
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "tier_c_watch_only",
-        "proxy_single_source_edge_below_min",
-        "proxy_single_source_ev_below_min",
-        "proxy_single_source_confidence_below_min",
-        "missing_total_xg_sanity"
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
       ],
       "reject_reasons_ru": [
-        "уровень C: watch only",
-        "proxy/single-source: value-запас ниже строгого минимума",
-        "proxy/single-source: EV ниже строгого минимума",
-        "proxy/single-source: уверенность ниже строгого минимума",
-        "missing total xg sanity"
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень C: publication score below min"
       ],
-      "selection": "Больше",
-      "tier": "уровень C"
+      "selection": "Меньше",
+      "tier": null
     },
     {
       "away_team": "Linqueno",
@@ -253,37 +285,31 @@
         "quality_score_source": "proxy",
         "selected_implied_probability": 0.581395,
         "sources_count": 2,
-        "tier_b_bookmaker_quorum": {
-          "books_count": 3,
-          "enabled": true,
-          "max_deviation_pct": 8.0,
-          "median_price": 1.6,
-          "mode": "bookmaker_quorum",
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
-          "same_market_side_line_only": true,
-          "selected_price": 1.72,
-          "selected_vs_median_deviation_pct": 7.5
-        },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 2.01,
+          "xg_abs_gap_pp": 2.768,
           "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 2.01,
-          "xg_model_gap_pp": -2.01,
+          "xg_model_conservative_gap_pp": 2.768,
+          "xg_model_gap_pp": -2.768,
           "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.670722,
-          "xg_probability_pct": 67.072,
+          "xg_probability": 0.6783,
+          "xg_probability_pct": 67.83,
           "xg_source": "home_away",
-          "xg_total": 2.022
+          "xg_total": 1.994
         }
       },
-      "ok": true,
+      "ok": false,
       "point": 2.5,
-      "reject_reasons": [],
-      "reject_reasons_ru": [],
+      "reject_reasons": [
+        "duplicate_fallback_sent_index",
+        "duplicate_persisted_fallback_sent_index"
+      ],
+      "reject_reasons_ru": [
+        "такой прогноз уже отправлялся ранее",
+        "duplicate persisted fallback sent index"
+      ],
       "selection": "Меньше",
-      "tier": "уровень B"
+      "tier": null
     },
     {
       "away_team": "Linqueno",
@@ -393,15 +419,15 @@
       "league_name_ru": "Бразилия - Брасилейро Серие C",
       "match_key": "soccer|confianca|guarani|2026-06-22",
       "metrics": {
-        "adjusted_probability": 0.452563,
+        "adjusted_probability": 0.464469,
         "books_count": 4,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": -4.744,
-        "canonical_ev_pct": -9.487,
-        "confidence": 72.002,
+        "canonical_edge_pp": -2.097,
+        "canonical_ev_pct": -4.319,
+        "confidence": 74.24,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -419,10 +445,10 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": -4.833,
-        "market_probability": 0.500892,
-        "model_probability": 0.513383,
-        "odds": 2.0,
+        "market_edge_pp": -3.15,
+        "market_probability": 0.495974,
+        "model_probability": 0.513769,
+        "odds": 2.06,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -431,14 +457,14 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 70.174,
+        "publication_score": 76.875,
         "quality_reasons": [
           "bad_historical_segment_guard"
         ],
-        "quality_score": 51.669,
-        "quality_score_raw": 51.669,
+        "quality_score": 41.438,
+        "quality_score_raw": 41.438,
         "quality_score_source": "raw",
-        "selected_implied_probability": 0.5,
+        "selected_implied_probability": 0.485437,
         "sources_count": 1,
         "xg_sanity": {
           "enabled": false,
@@ -456,18 +482,18 @@
       "reject_reasons_ru": [
         "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
       ],
-      "selection": "Меньше 2.5",
+      "selection": "Больше 2.5",
       "tier": null
     }
   ],
-  "message": "🔥 1 контролируемый прогноз на ближайшие 2 часа\n\n💼 Банк: 1000.00 | Открытый риск: 0.00 | Доступно: 1000.00\n\n⚠️ Режим: контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.\n\n1. 9 де Джулио Рафаела — Линквено\n🎯 Ставка: Тотал — Меньше (2.5)\n💸 Коэффициент: 1.72\n📊 Скорректированная оценка: 65.1%\n📉 Рынок/консенсус: 62.5%\n✅ Уверенность: 71.8% | качество 76.0 (оценка резерва) | уровень B\n📚 Линии: 3 | odds sources: 1 | confirmation sources: 2\n🔎 Подтверждения: sstats | betfair_exchange / b_cover_market_promotion\n🧮 Контрольная ценность: запас +6.9 п.п. | EV +11.9%\n🏆 Турнир: Аргентина - Торнео Федерал A, Груп 1\n🕒 Начало: 23.06.2026 02:15 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n📈 Ожидаемые голы: 1.07 : 0.95\n🔎 xG-проверка: ориентир 67.1% | разрыв -2.0 п.п.\n📝 Комментарий: ставка разрешена только после повторного пересчёта от выбранного коэффициента и проверки времени матча. Если матч уже начался или вышел за окно публикации, резервный публикователь такую ставку не отправляет.",
+  "no_pick_report_sent": true,
   "pool_counts": {
     "debug_candidates_before_quality": 1,
     "debug_candidates_before_quality_duplicate_in_pool": 1,
-    "debug_candidates_before_quality_stale_or_outside_window": 18,
+    "debug_candidates_before_quality_stale_or_outside_window": 16,
     "latest_rescue_candidates": 4
   },
-  "published": true,
+  "published": false,
   "scan_policy": {
     "max_picks_per_run": 3,
     "min_confirmation_sources": 1,
@@ -476,246 +502,26 @@
     "publish_window_hours": 2,
     "use_context_source_index": true
   },
-  "selected": {
-    "away_team": "Linqueno",
-    "away_team_ru": "Линквено",
-    "bet_payload": {
-      "away_team": "Linqueno",
-      "commence_time": "2026-06-22T23:15:00+00:00",
-      "family": "totals",
-      "home_team": "CA 9 de Julio Rafaela",
-      "kickoff": "2026-06-22T23:15:00+00:00",
-      "league_name": "Argentina - Torneo Federal A, Group 1",
-      "match_name": "CA 9 de Julio Rafaela — Linqueno",
-      "odds": 1.72,
-      "selection": "Меньше",
-      "stake": 5.0,
-      "stake_amount": 5.0
-    },
-    "canonical_publication_key": "soccer|ca 9 julio rafaela|linqueno|2026-06-22|totals|under|2.5|",
-    "commence_time": "2026-06-22T23:15:00+00:00",
-    "commence_time_display": "23.06.2026 02:15 MSK",
-    "dedupe_key": "f9e1a3308a349f8f78e7d234aad599b805173d8a",
-    "family": "totals",
-    "home_team": "CA 9 de Julio Rafaela",
-    "home_team_ru": "9 де Джулио Рафаела",
-    "kickoff": "2026-06-22T23:15:00+00:00",
-    "league_name": "Argentina - Torneo Federal A, Group 1",
-    "league_name_ru": "Аргентина - Торнео Федерал A, Груп 1",
-    "market_family": "totals",
-    "match_key": "soccer|ca 9 julio rafaela|linqueno|2026-06-22",
-    "match_name": "CA 9 de Julio Rafaela — Linqueno",
-    "metrics": {
-      "adjusted_probability": 0.650625,
-      "books_count": 3,
-      "btts_sanity": {
-        "enabled": false,
-        "reason": "family_not_btts"
-      },
-      "canonical_edge_pp": 6.923,
-      "canonical_ev_pct": 11.908,
-      "confidence": 71.758,
-      "confirmation_meta": {
-        "weather_confirmation_relevant": false,
-        "weather_dropped_as_neutral": false,
-        "weather_neutral": true,
-        "weather_risk_flag": false,
-        "weather_supports_over": false,
-        "weather_supports_under": false
-      },
-      "confirmation_sources": [
-        "sstats"
-      ],
-      "confirmation_sources_count": 2,
-      "dnb_sanity": {
-        "enabled": false,
-        "reason": "family_not_dnb"
-      },
-      "line_sources": [],
-      "market_edge_pp": 2.563,
-      "market_probability": 0.625,
-      "model_probability": 0.650625,
-      "odds": 1.72,
-      "odds_sources_count": 1,
-      "proxy_single_source_thresholds": {
-        "applies": false,
-        "enabled": true,
-        "min_confidence": 78.0,
-        "min_edge_pp": 8.0,
-        "min_ev_pct": 15.0
-      },
-      "publication_score": 33.34,
-      "quality_reasons": [],
-      "quality_score": 76.0,
-      "quality_score_raw": 0.0,
-      "quality_score_source": "proxy",
-      "selected_implied_probability": 0.581395,
-      "sources_count": 2,
-      "tier_b_bookmaker_quorum": {
-        "books_count": 3,
-        "enabled": true,
-        "max_deviation_pct": 8.0,
-        "median_price": 1.6,
-        "mode": "bookmaker_quorum",
-        "odds_sources_count": 1,
-        "priced_books_count": 3,
-        "same_market_side_line_only": true,
-        "selected_price": 1.72,
-        "selected_vs_median_deviation_pct": 7.5
-      },
-      "xg_sanity": {
-        "enabled": true,
-        "xg_abs_gap_pp": 2.01,
-        "xg_direction_ok": true,
-        "xg_model_conservative_gap_pp": 2.01,
-        "xg_model_gap_pp": -2.01,
-        "xg_model_optimism_gap_pp": 0.0,
-        "xg_probability": 0.670722,
-        "xg_probability_pct": 67.072,
-        "xg_source": "home_away",
-        "xg_total": 2.022
-      }
-    },
-    "odds": 1.72,
-    "point": 2.5,
-    "price": 1.72,
-    "publication_lifecycle_status": "telegram_sent",
-    "selected_odds": 1.72,
-    "selection": "Меньше",
-    "stake": 5.0,
-    "stake_amount": 5.0,
-    "status": "pending",
-    "telegram_sent": true,
-    "tier": "уровень B"
-  },
-  "selected_all": [
-    {
-      "away_team": "Linqueno",
-      "away_team_ru": "Линквено",
-      "bet_payload": {
-        "away_team": "Linqueno",
-        "commence_time": "2026-06-22T23:15:00+00:00",
-        "family": "totals",
-        "home_team": "CA 9 de Julio Rafaela",
-        "kickoff": "2026-06-22T23:15:00+00:00",
-        "league_name": "Argentina - Torneo Federal A, Group 1",
-        "match_name": "CA 9 de Julio Rafaela — Linqueno",
-        "odds": 1.72,
-        "selection": "Меньше",
-        "stake": 5.0,
-        "stake_amount": 5.0
-      },
-      "canonical_publication_key": "soccer|ca 9 julio rafaela|linqueno|2026-06-22|totals|under|2.5|",
-      "commence_time": "2026-06-22T23:15:00+00:00",
-      "commence_time_display": "23.06.2026 02:15 MSK",
-      "dedupe_key": "f9e1a3308a349f8f78e7d234aad599b805173d8a",
-      "family": "totals",
-      "home_team": "CA 9 de Julio Rafaela",
-      "home_team_ru": "9 де Джулио Рафаела",
-      "kickoff": "2026-06-22T23:15:00+00:00",
-      "league_name": "Argentina - Torneo Federal A, Group 1",
-      "league_name_ru": "Аргентина - Торнео Федерал A, Груп 1",
-      "market_family": "totals",
-      "match_key": "soccer|ca 9 julio rafaela|linqueno|2026-06-22",
-      "match_name": "CA 9 de Julio Rafaela — Linqueno",
-      "metrics": {
-        "adjusted_probability": 0.650625,
-        "books_count": 3,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 6.923,
-        "canonical_ev_pct": 11.908,
-        "confidence": 71.758,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 2,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 2.563,
-        "market_probability": 0.625,
-        "model_probability": 0.650625,
-        "odds": 1.72,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 33.34,
-        "quality_reasons": [],
-        "quality_score": 76.0,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.581395,
-        "sources_count": 2,
-        "tier_b_bookmaker_quorum": {
-          "books_count": 3,
-          "enabled": true,
-          "max_deviation_pct": 8.0,
-          "median_price": 1.6,
-          "mode": "bookmaker_quorum",
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
-          "same_market_side_line_only": true,
-          "selected_price": 1.72,
-          "selected_vs_median_deviation_pct": 7.5
-        },
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 2.01,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 2.01,
-          "xg_model_gap_pp": -2.01,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.670722,
-          "xg_probability_pct": 67.072,
-          "xg_source": "home_away",
-          "xg_total": 2.022
-        }
-      },
-      "odds": 1.72,
-      "point": 2.5,
-      "price": 1.72,
-      "publication_lifecycle_status": "telegram_sent",
-      "selected_odds": 1.72,
-      "selection": "Меньше",
-      "stake": 5.0,
-      "stake_amount": 5.0,
-      "status": "pending",
-      "telegram_sent": true,
-      "tier": "уровень B"
-    }
-  ],
-  "selected_count": 1,
   "shadow_ranking": {
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
     "duplicates_removed": 2,
     "reason_counts_without_daily_cap": {
       "canonical_negative_value": 1,
-      "xg_direction_conflict": 1,
-      "xg_probability_gap_hard_reject": 1
+      "duplicate_fallback_sent_index": 1,
+      "duplicate_persisted_fallback_sent_index": 1,
+      "tier_a_odds_sources_below_min:1/2": 1,
+      "tier_a_proxy_quality_not_allowed": 1,
+      "tier_a_publication_score_below_min": 1,
+      "tier_b_canonical_edge_below_min": 1,
+      "tier_b_canonical_ev_below_min": 1,
+      "tier_b_publication_score_below_min": 1,
+      "tier_c_publication_score_below_min": 1
     },
     "top_would_publish_without_daily_cap": []
   },
-  "status": "published",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":2996,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782164215,\"text\":\"\\ud83d\\udd25 1 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u043f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437 \\u043d\\u0430 \\u0431\\u043b\\u0438\\u0436\\u0430\\u0439\\u0448\\u0438\\u0435 2 \\u0447\\u0430\\u0441\\u0430\\n\\n\\ud83d\\udcbc \\u0411\\u0430\\u043d\\u043a: 1000.00 | \\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u044b\\u0439 \\u0440\\u0438\\u0441\\u043a: 0.00 | \\u0414\\u043e\\u0441\\u0442\\u0443\\u043f\\u043d\\u043e: 1000.00\\n\\n\\u26a0\\ufe0f \\u0420\\u0435\\u0436\\u0438\\u043c: \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432, \\u0443\\u0440\\u043e\\u0432\\u0435\\u043d\\u044c B. \\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u0",
+  "status": "no_viable_controlled_fallback",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":2999,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782165193,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
@@ -723,5 +529,6 @@
     "manual_late_mode_enabled": false,
     "min_kickoff_lead_minutes": 30,
     "publish_window_hours": 2
-  }
+  },
+  "watchlist": []
 }
