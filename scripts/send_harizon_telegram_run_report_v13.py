@@ -83,6 +83,7 @@ def build_payload() -> dict[str, Any]:
     diag = payload.setdefault('diagnostics', {})
     diag['a_tier_funnel_diagnostics'] = _load_json(EXPORT_DIR / 'latest-a-tier-funnel-diagnostics.json')
     diag['a_cover_candidate_gap_report'] = _load_json(EXPORT_DIR / 'latest-a-cover-candidate-gap-report.json')
+    diag['a_cover_value_promotion'] = _load_json(EXPORT_DIR / 'latest-a-cover-value-promotion.json')
     diag['controlled_fallback_prepublish_guard'] = _load_json(EXPORT_DIR / 'latest-controlled-fallback-prepublish-guard.json')
     return payload
 
@@ -91,6 +92,7 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
     diag = payload.get('diagnostics') if isinstance(payload.get('diagnostics'), dict) else {}
     funnel = diag.get('a_tier_funnel_diagnostics') if isinstance(diag.get('a_tier_funnel_diagnostics'), dict) else {}
     gap = diag.get('a_cover_candidate_gap_report') if isinstance(diag.get('a_cover_candidate_gap_report'), dict) else {}
+    promotion = diag.get('a_cover_value_promotion') if isinstance(diag.get('a_cover_value_promotion'), dict) else {}
     guard = diag.get('controlled_fallback_prepublish_guard') if isinstance(diag.get('controlled_fallback_prepublish_guard'), dict) else {}
     contract = diag.get('workflow_env_contract') if isinstance(diag.get('workflow_env_contract'), dict) else {}
     lines: list[str] = []
@@ -109,6 +111,14 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
             raw_after_quality, raw_before_quality = rendered_counter
         lines.append(
             f"• A-tier funnel: cover {_as_int(funnel.get('a_cover_rows'))}; active future {_as_int(funnel.get('active_future_a_cover_rows'))}; in publish window {_as_int(funnel.get('in_publish_window_a_cover_rows'))}; raw/quality {raw_after_quality}/{raw_before_quality}; active A-cover with raw {_as_int(funnel.get('active_a_cover_with_raw_candidate'))}; active without raw {_as_int(funnel.get('active_a_cover_without_raw_candidate'))}; A-cover in fallback {_as_int(funnel.get('a_cover_seen_in_fallback'))}; active in fallback {_as_int(funnel.get('active_a_cover_seen_in_fallback'))}; A-cover published {_as_int(funnel.get('a_cover_published_rows'))}."
+        )
+    if promotion:
+        status = str(promotion.get('status') or 'n/a')
+        existing_stats = promotion.get('existing_rescue_stats') if isinstance(promotion.get('existing_rescue_stats'), dict) else {}
+        error = str(promotion.get('error') or '').strip()
+        suffix = f'; error {error}' if error else ''
+        lines.append(
+            f"• A-cover promotion: status {status}; promoted {_as_int(promotion.get('promoted_count'))}; active {_as_int(promotion.get('active_a_cover_rows'))}; in-window {_as_int(promotion.get('in_publish_window_a_cover_rows'))}; considered {_as_int(promotion.get('considered_a_cover_rows'))}; rescue kept {_as_int(existing_stats.get('kept'))}/{_as_int(existing_stats.get('loaded'))}; dropped stale {_as_int(existing_stats.get('dropped_outside_window'))}; top skips {_top_counter_items(promotion.get('reason_counts'), 5)}{suffix}."
         )
     if gap:
         lines.append(
