@@ -21,12 +21,12 @@
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 29,
+      "books_2plus": 26,
       "errors": 0,
       "events_req": 0,
-      "matched": 72,
+      "matched": 73,
       "odds_req": 16,
-      "offers": 4060
+      "offers": 3870
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -49,8 +49,8 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 69,
-      "deep_enriched": 38,
+      "contexts": 72,
+      "deep_enriched": 29,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 29,
@@ -60,52 +60,36 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.8315755486488342,
-    "fallback_age_min": 0.00023309787114461262,
-    "run_log_age_min": 0.40720916986465455,
+    "debug_age_min": 0.6672588268915812,
+    "fallback_age_min": 0.0003144105275472005,
+    "run_log_age_min": 0.46997195879618325,
     "signal_stack_age_min": null
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 0,
     "bzzoiro_secondary_offers_added": 0,
-    "day_inventory_total": 214,
-    "day_inventory_with_context": 144,
-    "day_inventory_with_odds": 210,
-    "matches_seen": 83,
-    "matches_with_2plus_books": 29,
-    "matches_with_context": 69,
-    "matches_with_offers": 59,
-    "odds_offers_primary": 4060,
-    "ready_for_model": 140,
+    "day_inventory_total": 169,
+    "day_inventory_with_context": 105,
+    "day_inventory_with_odds": 147,
+    "matches_seen": 84,
+    "matches_with_2plus_books": 26,
+    "matches_with_context": 72,
+    "matches_with_offers": 57,
+    "odds_offers_primary": 3870,
+    "ready_for_model": 98,
     "secondary_combinations": {}
   },
-  "created_at_utc": "2026-06-22T21:53:23.308071+00:00",
+  "created_at_utc": "2026-06-22T22:04:55.581085+00:00",
   "diagnostics": {
     "a_cover_candidate_gap_report": {
-      "a_cover_rows": 118,
-      "active_future_a_cover_rows": 5,
-      "created_at_utc": "2026-06-22T21:53:23.288981+00:00",
-      "fallback_evaluated_rows": 5,
-      "in_publish_window_a_cover_rows": 4,
+      "a_cover_rows": 70,
+      "active_future_a_cover_rows": 69,
+      "created_at_utc": "2026-06-22T22:04:55.557063+00:00",
+      "fallback_evaluated_rows": 0,
+      "in_publish_window_a_cover_rows": 9,
       "plain_explanation": "If active_a_cover_not_selected_by_candidate_layers is high, coverage is ready but main/fallback candidate selection did not create a candidate for those matches.",
       "reason_counts": {
-        "active_a_cover_not_selected_by_candidate_layers": 3,
-        "canonical_negative_value": 1,
-        "duplicate_fallback_sent_index": 1,
-        "duplicate_persisted_fallback_sent_index": 1,
-        "missing_total_xg_sanity": 1,
-        "proxy_single_source_confidence_below_min": 1,
-        "proxy_single_source_edge_below_min": 1,
-        "proxy_single_source_ev_below_min": 1,
-        "quality_bad_historical_segment_guard": 1,
-        "tier_a_confirmation_sources_below_min:1/2": 1,
-        "tier_a_odds_sources_below_min:1/2": 2,
-        "tier_a_proxy_quality_not_allowed": 2,
-        "tier_a_publication_score_below_min": 2,
-        "tier_b_canonical_edge_below_min": 2,
-        "tier_b_canonical_ev_below_min": 2,
-        "tier_b_publication_score_below_min": 2,
-        "tier_c_publication_score_below_min": 2
+        "active_a_cover_not_selected_by_candidate_layers": 69
       },
       "samples": [
         {
@@ -117,16 +101,22 @@
           "odds_sources": 1,
           "price_confirmations": 161,
           "reasons": [
-            "tier_a_publication_score_below_min",
-            "tier_a_proxy_quality_not_allowed",
-            "tier_a_odds_sources_below_min:1/2",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_c_publication_score_below_min",
-            "tier_a_publication_score_below_min"
+            "active_a_cover_not_selected_by_candidate_layers"
           ],
-          "status": "active_a_cover_seen_in_fallback"
+          "status": "active_a_cover_not_selected_by_candidate_layers"
+        },
+        {
+          "away_team": "Gremio Novorizontino",
+          "contexts": 2,
+          "home_team": "Ponte Preta",
+          "kickoff_utc": "2026-06-22T23:00:00+00:00",
+          "match_key": "2026-06-22|ponte preta|gremio novorizontino",
+          "odds_sources": 2,
+          "price_confirmations": 357,
+          "reasons": [
+            "active_a_cover_not_selected_by_candidate_layers"
+          ],
+          "status": "active_a_cover_not_selected_by_candidate_layers"
         },
         {
           "away_team": "Gremio Novorizontino",
@@ -148,7 +138,7 @@
           "kickoff_utc": "2026-06-22T23:00:00+00:00",
           "match_key": "2026-06-22|vermont green|hartford athletic",
           "odds_sources": 1,
-          "price_confirmations": 1,
+          "price_confirmations": 2,
           "reasons": [
             "active_a_cover_not_selected_by_candidate_layers"
           ],
@@ -163,23 +153,96 @@
           "odds_sources": 1,
           "price_confirmations": 123,
           "reasons": [
-            "duplicate_fallback_sent_index",
-            "duplicate_persisted_fallback_sent_index",
-            "proxy_single_source_edge_below_min",
-            "proxy_single_source_ev_below_min",
-            "proxy_single_source_confidence_below_min",
-            "missing_total_xg_sanity"
+            "active_a_cover_not_selected_by_candidate_layers"
           ],
-          "status": "active_a_cover_seen_in_fallback"
+          "status": "active_a_cover_not_selected_by_candidate_layers"
+        },
+        {
+          "away_team": "Linqueno",
+          "contexts": 1,
+          "home_team": "CA 9 de Julio Rafaela",
+          "kickoff_utc": "2026-06-22T23:15:00+00:00",
+          "match_key": "2026-06-22|ca 9 de julio rafaela|linqueno",
+          "odds_sources": 1,
+          "price_confirmations": 109,
+          "reasons": [
+            "active_a_cover_not_selected_by_candidate_layers"
+          ],
+          "status": "active_a_cover_not_selected_by_candidate_layers"
+        },
+        {
+          "away_team": "Long Island Rough Riders",
+          "contexts": 1,
+          "home_team": "Paisley Athletic FC",
+          "kickoff_utc": "2026-06-22T23:30:00+00:00",
+          "match_key": "2026-06-22|paisley athletic fc|long island rough riders",
+          "odds_sources": 1,
+          "price_confirmations": 12,
+          "reasons": [
+            "active_a_cover_not_selected_by_candidate_layers"
+          ],
+          "status": "active_a_cover_not_selected_by_candidate_layers"
         },
         {
           "away_team": "Senegal",
-          "contexts": 2,
+          "contexts": 4,
+          "home_team": "Norway",
+          "kickoff_utc": "2026-06-23T00:00:00+00:00",
+          "match_key": "2026-06-23|norway|senegal",
+          "odds_sources": 2,
+          "price_confirmations": 221,
+          "reasons": [
+            "active_a_cover_not_selected_by_candidate_layers"
+          ],
+          "status": "active_a_cover_not_selected_by_candidate_layers"
+        },
+        {
+          "away_team": "Senegal",
+          "contexts": 5,
           "home_team": "Norway",
           "kickoff_utc": "2026-06-23T00:00:00+00:00",
           "match_key": "2026-06-23|norway|senegal",
           "odds_sources": 1,
-          "price_confirmations": 3,
+          "price_confirmations": 221,
+          "reasons": [
+            "active_a_cover_not_selected_by_candidate_layers"
+          ],
+          "status": "active_a_cover_not_selected_by_candidate_layers"
+        },
+        {
+          "away_team": "McKinney Chupacabras FC",
+          "contexts": 1,
+          "home_team": "Denton Diablos",
+          "kickoff_utc": "2026-06-23T00:30:00+00:00",
+          "match_key": "2026-06-23|denton diablos|mckinney chupacabras fc",
+          "odds_sources": 1,
+          "price_confirmations": 11,
+          "reasons": [
+            "active_a_cover_not_selected_by_candidate_layers"
+          ],
+          "status": "active_a_cover_not_selected_by_candidate_layers"
+        },
+        {
+          "away_team": "Atletico Union",
+          "contexts": 1,
+          "home_team": "Flatirons",
+          "kickoff_utc": "2026-06-23T01:00:00+00:00",
+          "match_key": "2026-06-23|flatirons|atletico union",
+          "odds_sources": 1,
+          "price_confirmations": 1,
+          "reasons": [
+            "active_a_cover_not_selected_by_candidate_layers"
+          ],
+          "status": "active_a_cover_not_selected_by_candidate_layers"
+        },
+        {
+          "away_team": "Algeria",
+          "contexts": 3,
+          "home_team": "Jordan",
+          "kickoff_utc": "2026-06-23T03:00:00+00:00",
+          "match_key": "2026-06-23|jordan|algeria",
+          "odds_sources": 1,
+          "price_confirmations": 220,
           "reasons": [
             "active_a_cover_not_selected_by_candidate_layers"
           ],
@@ -188,112 +251,111 @@
       ],
       "status": "ok",
       "status_counts": {
-        "active_a_cover_not_selected_by_candidate_layers": 3,
-        "active_a_cover_seen_in_fallback": 2
+        "active_a_cover_not_selected_by_candidate_layers": 69
       }
     },
     "a_cover_value_promotion": {
-      "active_a_cover_rows": 118,
-      "considered_a_cover_rows": 4,
-      "created_at_utc": "2026-06-22T21:53:10.251620+00:00",
+      "active_a_cover_rows": 62,
+      "considered_a_cover_rows": 2,
+      "created_at_utc": "2026-06-22T22:04:40.839970+00:00",
       "enabled": true,
       "existing_rescue_stats": {
-        "dropped_outside_window": 7,
-        "kept": 4,
-        "loaded": 11
+        "dropped_outside_window": 21,
+        "kept": 2,
+        "loaded": 23
       },
-      "in_publish_window_a_cover_rows": 4,
+      "in_publish_window_a_cover_rows": 2,
       "inventory_load": {
         "candidate_source_scores": [
           {
-            "b_cover_rows": 140,
+            "b_cover_rows": 87,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-23.json",
-            "ready_model_rows": 140,
-            "rows": 214
+            "ready_model_rows": 87,
+            "rows": 145
           },
           {
-            "b_cover_rows": 140,
+            "b_cover_rows": 87,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
-            "ready_model_rows": 140,
-            "rows": 214
+            "ready_model_rows": 87,
+            "rows": 145
           },
           {
-            "b_cover_rows": 140,
+            "b_cover_rows": 87,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
-            "ready_model_rows": 140,
-            "rows": 214
+            "ready_model_rows": 87,
+            "rows": 145
           },
           {
-            "b_cover_rows": 140,
+            "b_cover_rows": 87,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json",
-            "ready_model_rows": 140,
-            "rows": 214
+            "ready_model_rows": 87,
+            "rows": 145
           },
           {
-            "b_cover_rows": 139,
+            "b_cover_rows": 87,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-23.json",
-            "ready_model_rows": 139,
-            "rows": 214
+            "ready_model_rows": 87,
+            "rows": 145
           },
           {
-            "b_cover_rows": 139,
+            "b_cover_rows": 87,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json",
-            "ready_model_rows": 139,
-            "rows": 214
+            "ready_model_rows": 87,
+            "rows": 145
           },
           {
-            "b_cover_rows": 140,
+            "b_cover_rows": 87,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-            "ready_model_rows": 140,
-            "rows": 214
+            "ready_model_rows": 87,
+            "rows": 145
           }
         ],
-        "selected_b_cover_rows": 140,
+        "selected_b_cover_rows": 87,
         "selected_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-        "selected_ready_model_rows": 140,
-        "selected_rows": 214,
+        "selected_ready_model_rows": 87,
+        "selected_rows": 145,
         "sources": [
           {
-            "chosen_rows": 214,
-            "dated_rows": 15,
+            "chosen_rows": 145,
+            "dated_rows": 145,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-23.json",
-            "rows": 214
+            "rows": 169
           },
           {
-            "chosen_rows": 214,
-            "dated_rows": 15,
+            "chosen_rows": 145,
+            "dated_rows": 145,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
-            "rows": 214
+            "rows": 169
           },
           {
-            "chosen_rows": 214,
-            "dated_rows": 15,
+            "chosen_rows": 145,
+            "dated_rows": 145,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
-            "rows": 214
+            "rows": 169
           },
           {
-            "chosen_rows": 214,
-            "dated_rows": 15,
+            "chosen_rows": 145,
+            "dated_rows": 145,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json",
-            "rows": 214
+            "rows": 169
           },
           {
-            "chosen_rows": 214,
-            "dated_rows": 15,
+            "chosen_rows": 145,
+            "dated_rows": 145,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-23.json",
-            "rows": 214
+            "rows": 169
           },
           {
-            "chosen_rows": 214,
-            "dated_rows": 15,
+            "chosen_rows": 145,
+            "dated_rows": 145,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json",
-            "rows": 214
+            "rows": 169
           },
           {
-            "chosen_rows": 214,
-            "dated_rows": 15,
+            "chosen_rows": 145,
+            "dated_rows": 145,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-            "rows": 214
+            "rows": 169
           },
           {
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-cumulative-coverage.json",
@@ -307,23 +369,23 @@
           }
         ]
       },
-      "inventory_rows_seen": 214,
+      "inventory_rows_seen": 145,
       "offer_diagnostics": {
-        "accepted_offer_rows": 2783,
-        "scanned_dicts": 101960,
+        "accepted_offer_rows": 2792,
+        "scanned_dicts": 100767,
         "source_counts": {
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/215232-line-snapshots.json": 1076,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 7,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/220414-line-snapshots.json": 1070,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 12,
           "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 715,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 962,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 7,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 956,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 23,
           "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 16
         }
       },
       "prebuild_coverage_truth": {
         "enabled": true,
-        "finished_at_utc": "2026-06-22T21:53:10.062863+00:00",
-        "started_at_utc": "2026-06-22T21:53:09.508715+00:00",
+        "finished_at_utc": "2026-06-22T22:04:40.687545+00:00",
+        "started_at_utc": "2026-06-22T22:04:40.146427+00:00",
         "status": "ok",
         "steps": [
           {
@@ -335,8 +397,11 @@
       },
       "promoted_count": 0,
       "reason_counts": {
-        "promotion_skip_no_offer_bucket": 4,
-        "promotion_skip_outside_active_publish_window": 114
+        "promotion_skip_duplicate_candidate": 2,
+        "promotion_skip_edge_below_min": 4,
+        "promotion_skip_odds_above_max": 10,
+        "promotion_skip_odds_below_min": 4,
+        "promotion_skip_outside_active_publish_window": 60
       },
       "rescue_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
       "safety_note": "promotion only appends candidates to fallback review; guarded publisher still enforces value, xG, line recheck, duplicate, daily cap and price-integrity guards",
@@ -347,38 +412,22 @@
     },
     "a_tier_funnel_diagnostics": {
       "a_cover_published_rows": 0,
-      "a_cover_rows": 118,
-      "a_cover_seen_in_fallback": 2,
+      "a_cover_rows": 70,
+      "a_cover_seen_in_fallback": 0,
       "a_cover_with_raw_candidate": 0,
-      "a_cover_without_raw_candidate": 92,
-      "active_a_cover_seen_in_fallback": 2,
+      "a_cover_without_raw_candidate": 63,
+      "active_a_cover_seen_in_fallback": 0,
       "active_a_cover_with_raw_candidate": 0,
-      "active_a_cover_without_raw_candidate": 5,
-      "active_future_a_cover_rows": 5,
-      "coverage_truth_matches_ready_for_publish": 118,
-      "created_at_utc": "2026-06-22T21:53:23.284659+00:00",
-      "fallback_evaluated_rows": 5,
-      "fallback_reason_counts": {
-        "canonical_negative_value": 1,
-        "duplicate_fallback_sent_index": 1,
-        "duplicate_persisted_fallback_sent_index": 1,
-        "missing_total_xg_sanity": 1,
-        "proxy_single_source_confidence_below_min": 1,
-        "proxy_single_source_edge_below_min": 1,
-        "proxy_single_source_ev_below_min": 1,
-        "tier_a_confirmation_sources_below_min:1/2": 1,
-        "tier_a_odds_sources_below_min:1/2": 2,
-        "tier_a_proxy_quality_not_allowed": 2,
-        "tier_a_publication_score_below_min": 2,
-        "tier_b_canonical_edge_below_min": 2,
-        "tier_b_canonical_ev_below_min": 2,
-        "tier_b_publication_score_below_min": 2,
-        "tier_c_publication_score_below_min": 2
-      },
-      "in_publish_window_a_cover_rows": 4,
-      "in_window_a_cover_seen_in_fallback": 2,
+      "active_a_cover_without_raw_candidate": 62,
+      "active_future_a_cover_rows": 69,
+      "coverage_truth_matches_ready_for_publish": 70,
+      "created_at_utc": "2026-06-22T22:04:55.551891+00:00",
+      "fallback_evaluated_rows": 0,
+      "fallback_reason_counts": {},
+      "in_publish_window_a_cover_rows": 9,
+      "in_window_a_cover_seen_in_fallback": 0,
       "in_window_a_cover_with_raw_candidate": 0,
-      "in_window_a_cover_without_raw_candidate": 4,
+      "in_window_a_cover_without_raw_candidate": 7,
       "min_lead_minutes": 15,
       "missing_raw_candidate_samples": [
         {
@@ -398,6 +447,16 @@
           "kickoff": "2026-06-22T23:00:00+00:00",
           "league_name": "Brazil - Brasileiro Serie B",
           "match_key": "2026-06-22|brazil brasileiro serie b|ponte preta|gremio novorizontino",
+          "odds_sources": 2,
+          "price_confirmations": 357
+        },
+        {
+          "away_team": "Gremio Novorizontino",
+          "contexts": 2,
+          "home_team": "Ponte Preta",
+          "kickoff": "2026-06-22T23:00:00+00:00",
+          "league_name": "Brazil - Brasileiro Serie B",
+          "match_key": "2026-06-22|brazil brasileiro serie b|ponte preta|gremio novorizontino",
           "odds_sources": 1,
           "price_confirmations": 5
         },
@@ -409,7 +468,7 @@
           "league_name": "USA - USL W League",
           "match_key": "2026-06-22|usa usl w league|vermont green|hartford athletic",
           "odds_sources": 1,
-          "price_confirmations": 1
+          "price_confirmations": 2
         },
         {
           "away_team": "Linqueno",
@@ -422,14 +481,74 @@
           "price_confirmations": 123
         },
         {
+          "away_team": "Linqueno",
+          "contexts": 1,
+          "home_team": "CA 9 de Julio Rafaela",
+          "kickoff": "2026-06-22T23:15:00+00:00",
+          "league_name": "Argentina - Torneo Federal A, Group 1",
+          "match_key": "2026-06-22|argentina torneo federal a group 1|ca 9 de julio rafaela|linqueno",
+          "odds_sources": 1,
+          "price_confirmations": 109
+        },
+        {
+          "away_team": "Long Island Rough Riders",
+          "contexts": 1,
+          "home_team": "Paisley Athletic FC",
+          "kickoff": "2026-06-22T23:30:00+00:00",
+          "league_name": "USA - USL W League",
+          "match_key": "2026-06-22|usa usl w league|paisley athletic fc|long island rough riders",
+          "odds_sources": 1,
+          "price_confirmations": 12
+        },
+        {
           "away_team": "Senegal",
-          "contexts": 2,
+          "contexts": 4,
           "home_team": "Norway",
           "kickoff": "2026-06-23T00:00:00+00:00",
           "league_name": "International - FIFA World Cup",
           "match_key": "2026-06-23|international fifa world cup|norway|senegal",
+          "odds_sources": 2,
+          "price_confirmations": 221
+        },
+        {
+          "away_team": "Senegal",
+          "contexts": 5,
+          "home_team": "Norway",
+          "kickoff": "2026-06-23T00:00:00+00:00",
+          "league_name": "World Cup 2026",
+          "match_key": "2026-06-23|world cup 2026|norway|senegal",
           "odds_sources": 1,
-          "price_confirmations": 3
+          "price_confirmations": 221
+        },
+        {
+          "away_team": "McKinney Chupacabras FC",
+          "contexts": 1,
+          "home_team": "Denton Diablos",
+          "kickoff": "2026-06-23T00:30:00+00:00",
+          "league_name": "USA - USL, League Two",
+          "match_key": "2026-06-23|usa usl league two|denton diablos|mckinney chupacabras fc",
+          "odds_sources": 1,
+          "price_confirmations": 11
+        },
+        {
+          "away_team": "Atletico Union",
+          "contexts": 1,
+          "home_team": "Flatirons",
+          "kickoff": "2026-06-23T01:00:00+00:00",
+          "league_name": "USA - USL, League Two",
+          "match_key": "2026-06-23|usa usl league two|flatirons|atletico union",
+          "odds_sources": 1,
+          "price_confirmations": 1
+        },
+        {
+          "away_team": "Algeria",
+          "contexts": 3,
+          "home_team": "Jordan",
+          "kickoff": "2026-06-23T03:00:00+00:00",
+          "league_name": "World Cup 2026",
+          "match_key": "2026-06-23|world cup 2026|jordan|algeria",
+          "odds_sources": 1,
+          "price_confirmations": 220
         }
       ],
       "plain_explanation": [
@@ -452,80 +571,24 @@
         "total_tracked_bets": 88,
         "wins": 11
       },
-      "quality_score_sources": {
-        "proxy": 4,
-        "raw": 1
-      },
+      "quality_score_sources": {},
       "raw_candidate_reason_counts": {},
       "raw_candidates_before_quality": 0,
       "status": "ok"
     },
     "a_tier_publication_diagnostics": {
-      "created_at_utc": "2026-06-22T21:53:23.295389+00:00",
-      "duplicates_removed": 2,
-      "evaluated_rows": 5,
+      "created_at_utc": "2026-06-22T22:04:55.564455+00:00",
+      "duplicates_removed": 0,
+      "evaluated_rows": 0,
       "plain_explanation": [
-        "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
-        "A-tier publication score is below min on many candidates."
+        "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
       ],
-      "quality_score_sources": {
-        "proxy": 2,
-        "raw": 1
-      },
+      "quality_score_sources": {},
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
-      "tier_a_blocker_counts": {
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_quality_not_allowed": 1,
-        "tier_a_publication_score_below_min": 1
-      },
-      "top_a_tier_blocked_samples": [
-        {
-          "a_tier_reasons": [
-            "tier_a_publication_score_below_min",
-            "tier_a_proxy_quality_not_allowed",
-            "tier_a_odds_sources_below_min:1/2"
-          ],
-          "away_team": "Guarani",
-          "books_count": 4,
-          "candidate_source": "latest_rescue_candidates",
-          "commence_time": "2026-06-22T22:30:00+00:00",
-          "confidence": 70.701,
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 2,
-          "daily_cap_reasons": [],
-          "dedupe_key": "2026-06-22|brazil brasileiro serie c|confianca|guarani|totals|under|2.5",
-          "edge_pp": 2.779,
-          "ev_pct": 5.558,
-          "family": "totals",
-          "home_team": "Confianca",
-          "league_name": "Brazil - Brasileiro Serie C",
-          "match_key": "soccer|confianca|guarani|2026-06-22",
-          "odds": 2.0,
-          "odds_sources_count": 1,
-          "other_reasons": [
-            "tier_a_publication_score_below_min",
-            "tier_a_proxy_quality_not_allowed",
-            "tier_a_odds_sources_below_min:1/2",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_c_publication_score_below_min"
-          ],
-          "point": 2.5,
-          "publication_score": 18.95,
-          "quality_score": 75.42,
-          "quality_score_source": "proxy",
-          "rank": 1,
-          "selection": "Меньше",
-          "shadow_score": -10.252,
-          "status_without_daily_cap": "blocked_by_other_guards",
-          "tier": null
-        }
-      ],
-      "unique_evaluated_rows": 3
+      "tier_a_blocker_counts": {},
+      "top_a_tier_blocked_samples": [],
+      "unique_evaluated_rows": 0
     },
     "ab_tier_bookmaker_contract_policy": {
       "contract": {
@@ -559,7 +622,7 @@
         ],
         "independent_odds_sources": "required_for_a_tier_only"
       },
-      "created_at_utc": "2026-06-22T21:48:26.455544+00:00",
+      "created_at_utc": "2026-06-22T21:59:59.449990+00:00",
       "env": {
         "CONTROLLED_FALLBACK_DEDUPE_PREVIOUS_REPORT": "true",
         "CONTROLLED_FALLBACK_DEDUPE_SENT_INDEX_STRICT": "true",
@@ -637,8 +700,8 @@
     },
     "bzzoiro_overlap_bridge": {
       "bzzoiro_offer_rows": 763,
-      "created_at_utc": "2026-06-22T21:53:17.300805+00:00",
-      "odds_reference_aliases": 253,
+      "created_at_utc": "2026-06-22T22:04:48.120404+00:00",
+      "odds_reference_aliases": 245,
       "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
       "overlap_match_rows": 763,
       "overlap_same_bucket_rows": 527,
@@ -662,7 +725,7 @@
       "event_prediction_fetched": 12,
       "event_rejected_league_mismatch": 0,
       "event_rejected_low_score": 0,
-      "event_rejected_no_quality": 51,
+      "event_rejected_no_quality": 53,
       "event_stats_fetched": 12,
       "events_fetched": 17,
       "http_statuses": [
@@ -808,8 +871,8 @@
     },
     "controlled_fallback_prepublish_guard": {
       "base_exit_code": 0,
-      "blocked_events": 1,
-      "created_at_utc": "2026-06-22T21:53:12.069215+00:00",
+      "blocked_events": 0,
+      "created_at_utc": "2026-06-22T22:04:43.042862+00:00",
       "daily_existing": {
         "count": 1,
         "date": "2026-06-23",
@@ -827,20 +890,7 @@
         ]
       },
       "daily_limit": 3,
-      "events": [
-        {
-          "away_team": "Linqueno",
-          "family": "totals",
-          "guard": "controlled_fallback_prepublish",
-          "home_team": "CA 9 de Julio Rafaela",
-          "match_key": "soccer|ca 9 julio rafaela|linqueno|2026-06-22",
-          "point": 2.5,
-          "reasons": [
-            "duplicate_persisted_fallback_sent_index"
-          ],
-          "selection": "Меньше"
-        }
-      ],
+      "events": [],
       "policy_version": "controlled-fallback-guard-v18-two-hour-window-daily-cap-reserved-slot",
       "publish_window_hours": 2.0,
       "reserved_slot_enabled": true,
@@ -852,86 +902,64 @@
     "controlled_fallback_shadow_ranking": {
       "blocked_by_daily_cap_and_other_guards": 0,
       "blocked_only_by_daily_cap": 0,
-      "created_at_utc": "2026-06-22T21:53:23.295259+00:00",
+      "created_at_utc": "2026-06-22T22:04:55.564438+00:00",
       "daily_cap_blocked_unique_rows": 0,
-      "duplicates_removed": 2,
-      "evaluated_rows": 5,
+      "duplicates_removed": 0,
+      "evaluated_rows": 0,
       "published": false,
-      "reason_counts": {
-        "canonical_negative_value": 1,
-        "duplicate_fallback_sent_index": 1,
-        "duplicate_persisted_fallback_sent_index": 1,
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_quality_not_allowed": 1,
-        "tier_a_publication_score_below_min": 1,
-        "tier_b_canonical_edge_below_min": 1,
-        "tier_b_canonical_ev_below_min": 1,
-        "tier_b_publication_score_below_min": 1,
-        "tier_c_publication_score_below_min": 1
-      },
-      "reason_counts_without_daily_cap": {
-        "canonical_negative_value": 1,
-        "duplicate_fallback_sent_index": 1,
-        "duplicate_persisted_fallback_sent_index": 1,
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_quality_not_allowed": 1,
-        "tier_a_publication_score_below_min": 1,
-        "tier_b_canonical_edge_below_min": 1,
-        "tier_b_canonical_ev_below_min": 1,
-        "tier_b_publication_score_below_min": 1,
-        "tier_c_publication_score_below_min": 1
-      },
+      "reason_counts": {},
+      "reason_counts_without_daily_cap": {},
       "report_status": "no_viable_controlled_fallback",
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
       "top_blocked_after_daily_cap_removed": [],
       "top_would_publish_without_daily_cap": [],
-      "unique_evaluated_rows": 3
+      "unique_evaluated_rows": 0
     },
     "coverage_truth": {
       "counts": {
-        "matches_missing_context_2plus": 77,
-        "matches_missing_odds_source_2plus": 20,
+        "matches_missing_context_2plus": 81,
+        "matches_missing_odds_source_2plus": 44,
         "matches_missing_price_2plus": 24,
-        "matches_ready_for_model": 140,
-        "matches_ready_for_publish": 118,
-        "matches_total": 214,
-        "matches_with_2plus_context_sources": 137,
-        "matches_with_2plus_odds_sources": 194,
-        "matches_with_2plus_price_confirmations": 190,
-        "matches_with_context": 144,
-        "matches_with_odds": 210
+        "matches_ready_for_model": 98,
+        "matches_ready_for_publish": 70,
+        "matches_total": 169,
+        "matches_with_2plus_context_sources": 88,
+        "matches_with_2plus_odds_sources": 125,
+        "matches_with_2plus_price_confirmations": 145,
+        "matches_with_context": 105,
+        "matches_with_odds": 147
       },
       "source": {
         "counts": {
-          "matches_missing_context_2plus": 77,
-          "matches_missing_odds_source_2plus": 20,
+          "matches_missing_context_2plus": 81,
+          "matches_missing_odds_source_2plus": 44,
           "matches_missing_price_2plus": 24,
-          "matches_ready_for_model": 140,
-          "matches_ready_for_publish": 118,
-          "matches_total": 214,
-          "matches_with_2plus_context_sources": 137,
-          "matches_with_2plus_odds_sources": 194,
-          "matches_with_2plus_price_confirmations": 190,
-          "matches_with_context": 144,
-          "matches_with_odds": 210
+          "matches_ready_for_model": 98,
+          "matches_ready_for_publish": 70,
+          "matches_total": 169,
+          "matches_with_2plus_context_sources": 88,
+          "matches_with_2plus_odds_sources": 125,
+          "matches_with_2plus_price_confirmations": 145,
+          "matches_with_context": 105,
+          "matches_with_odds": 147
         },
         "csv": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.csv",
         "json": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-        "updated_at_utc": "2026-06-22T21:53:21.280565+00:00"
+        "updated_at_utc": "2026-06-22T22:04:52.982218+00:00"
       }
     },
     "fresh_b_cover_diagnostics": {
-      "active_b_cover_rows": 15,
-      "active_b_cover_with_any_current_offer_match": 14,
-      "active_b_cover_without_current_offer_match": 1,
-      "b_cover_rows": 131,
-      "b_cover_with_any_current_offer_match": 14,
-      "b_cover_without_current_offer_match": 117,
+      "active_b_cover_rows": 95,
+      "active_b_cover_with_any_current_offer_match": 77,
+      "active_b_cover_without_current_offer_match": 18,
+      "b_cover_rows": 96,
+      "b_cover_with_any_current_offer_match": 77,
+      "b_cover_without_current_offer_match": 19,
       "bzzoiro_overlap_bridge": {
         "bzzoiro_offer_rows": 763,
-        "created_at_utc": "2026-06-22T21:53:17.300805+00:00",
-        "odds_reference_aliases": 253,
+        "created_at_utc": "2026-06-22T22:04:48.120404+00:00",
+        "odds_reference_aliases": 245,
         "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
         "overlap_match_rows": 763,
         "overlap_same_bucket_rows": 527,
@@ -940,24 +968,24 @@
         },
         "status": "ok"
       },
-      "created_at_utc": "2026-06-22T21:53:17.296961+00:00",
+      "created_at_utc": "2026-06-22T22:04:48.116766+00:00",
       "current_market_bucket_book_count_histogram": {
-        "1": 4443,
+        "1": 4441,
         "11": 6,
         "12": 4,
         "13": 8,
         "18": 2,
         "19": 2,
-        "2": 354,
+        "2": 330,
         "23": 2,
         "24": 6,
-        "3": 70,
-        "4": 22,
+        "3": 68,
+        "4": 20,
         "5": 4
       },
-      "current_market_buckets_totals_spreads": 4923,
+      "current_market_buckets_totals_spreads": 4893,
       "current_market_bzzoiro_buckets_totals_spreads": 236,
-      "fallback_candidates_seen": 5,
+      "fallback_candidates_seen": 0,
       "fallback_low_confidence_candidates": 0,
       "fallback_low_edge_candidates": 0,
       "fallback_low_ev_candidates": 0,
@@ -967,56 +995,60 @@
       "fallback_single_source_candidates": 0,
       "fallback_status": "no_viable_controlled_fallback",
       "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-      "inventory_rows": 214,
-      "offer_rows_seen": 12492,
+      "inventory_rows": 169,
+      "offer_rows_seen": 12251,
       "offer_source_counts": {
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 763,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 3641,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 4028,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 4060
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 3510,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 4108,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 3870
       },
-      "promotion_considered_b_cover_rows": 102,
-      "promotion_promoted_count": 0,
+      "promotion_considered_b_cover_rows": 87,
+      "promotion_promoted_count": 27,
       "promotion_reason_counts": {
-        "promotion_skip_edge_below_min": 10,
-        "promotion_skip_no_offer_bucket": 99,
-        "promotion_skip_odds_above_max": 34,
-        "promotion_skip_odds_below_min": 29,
-        "promotion_skip_price_outlier": 3
+        "promoted": 27,
+        "promotion_skip_edge_below_min": 248,
+        "promotion_skip_ev_below_min": 3,
+        "promotion_skip_no_offer_bucket": 19,
+        "promotion_skip_odds_above_max": 384,
+        "promotion_skip_odds_below_min": 569,
+        "promotion_skip_price_outlier": 60
       }
     },
     "github_actions": {
       "repository": "Harfdsfsq/sports-bot",
       "run_attempt": "1",
-      "run_id": "27986202123",
+      "run_id": "27986819591",
       "workflow": "run-bot"
     },
     "inventory_bookmaker_backfill": {
       "changed_inventory_rows": 0,
-      "created_at_utc": "2026-06-22T21:53:20.715549+00:00",
+      "created_at_utc": "2026-06-22T22:04:52.384005+00:00",
       "examples": [],
-      "inventory_path_used": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-22.json",
-      "inventory_rows": 214,
-      "mapping_gap_after": 9,
-      "matched_inventory_rows": 4,
-      "normalized_2plus_after": 3,
-      "normalized_2plus_before": 112,
-      "raw_2plus_matches": 12,
-      "raw_groups": 18,
-      "scanned_dicts": 96030,
+      "inventory_path_used": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-23.json",
+      "inventory_rows": 169,
+      "mapping_gap_after": 55,
+      "matched_inventory_rows": 79,
+      "normalized_2plus_after": 49,
+      "normalized_2plus_before": 56,
+      "raw_2plus_matches": 104,
+      "raw_groups": 217,
+      "scanned_dicts": 95031,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/215232-line-snapshots.json": 572,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 48,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 448,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 4,
-        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 2
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/220414-line-snapshots.json": 5366,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 12,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 715,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 3580,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 27,
+        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 41,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 12
       },
-      "target_date": "2026-06-22"
+      "target_date": "2026-06-23"
     },
     "inventory_target_expand": {
-      "created_at_utc": "2026-06-22T21:48:13.585441+00:00",
-      "existing_before": 159,
-      "matches_after": 159,
+      "created_at_utc": "2026-06-22T21:59:50.606511+00:00",
+      "existing_before": 50,
+      "matches_after": 70,
       "parse_errors": [
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T010551Z.json",
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T050126Z.json",
@@ -1024,7 +1056,7 @@
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T050126Z.json",
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-history-guard-audit.json"
       ],
-      "rows_collected": 158,
+      "rows_collected": 70,
       "source_counts": {
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-21.json": 2,
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-22.json": 20,
@@ -1034,22 +1066,22 @@
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json": 50,
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-21.json": 2,
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-22.json": 20,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-23.json": 159,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json": 159,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json": 159,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json": 159
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-23.json": 20,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json": 20,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json": 20,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json": 20
       },
       "status": "partial_known_rows_only",
       "target": 300,
       "target_date": "2026-06-23",
-      "target_shortfall": 141,
+      "target_shortfall": 230,
       "target_timezone": "Europe/Moscow"
     },
     "odds_api_io_offer_snapshot": {
-      "matches_count": 51,
-      "matches_with_2plus_books_any_market": 29,
-      "matches_with_2plus_books_same_side_market": 27,
-      "rows_count": 4060,
+      "matches_count": 49,
+      "matches_with_2plus_books_any_market": 26,
+      "matches_with_2plus_books_same_side_market": 25,
+      "rows_count": 3870,
       "status": "ok"
     },
     "progressive_core_coverage": {
@@ -1058,23 +1090,17 @@
       "gap_sample_size": 0
     },
     "rescue_xg_confirmation_enrichment": {
-      "candidates_seen": 4,
-      "confirmation_added": 4,
-      "context_keys": 171,
-      "context_pairs": 171,
-      "created_at_utc": "2026-06-22T21:53:05.297462+00:00",
+      "candidates_seen": 2,
+      "confirmation_added": 2,
+      "context_keys": 172,
+      "context_pairs": 172,
+      "created_at_utc": "2026-06-22T22:04:35.322028+00:00",
       "examples": [
         {
           "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 1.274,
-          "expected_home": 0.542,
-          "match": "Confianca — Guarani"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 1.021,
-          "expected_home": 0.973,
-          "match": "CA 9 de Julio Rafaela — Linqueno"
+          "expected_away": 1.35,
+          "expected_home": 1.27,
+          "match": "Norway — Senegal"
         }
       ],
       "missing_context_match": 0,
@@ -1082,14 +1108,14 @@
       "touched_files": [
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json"
       ],
-      "xg_added": 2
+      "xg_added": 1
     },
     "run_bot_step_status": {
       "note": "run-once status is recorded; workflow continues so diagnostics/report/artifacts can complete",
-      "run_id": "27986202123",
+      "run_id": "27986819591",
       "status": 0,
       "status_text": "ok",
-      "updated_at_utc": "2026-06-22T21:52:58Z",
+      "updated_at_utc": "2026-06-22T22:04:27Z",
       "workflow": "run-bot"
     },
     "sportlogic": {
@@ -1116,9 +1142,9 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 18,
-    "fallback_candidates_seen": 5,
-    "fallback_evaluated": 5,
+    "candidates_before_quality": 16,
+    "fallback_candidates_seen": 0,
+    "fallback_evaluated": 0,
     "fallback_published": false,
     "fallback_published_count": 0,
     "fallback_status": "no_viable_controlled_fallback",
@@ -1132,574 +1158,51 @@
     },
     "main_pipeline_published": false,
     "main_pipeline_published_count": 0,
-    "passed_candidates": 1,
+    "passed_candidates": 0,
     "publish_filter_blocked": 0,
     "publish_filter_input": 0,
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 1,
+    "raw_candidates": 0,
     "windowed_audit_candidates": 0,
     "windowed_publish_allowed": 0,
     "windowed_publish_blocked": 0
   },
   "line_guard": {
-    "dropped": 0,
+    "dropped": 2,
     "dropped_final": 0,
-    "final_pre_kickoff_checks": 6,
-    "kept": 4,
-    "no_more_regular_run_before_kickoff": 4,
-    "seen": 4,
-    "waiting_next_run": 0
+    "final_pre_kickoff_checks": 11,
+    "kept": 0,
+    "no_more_regular_run_before_kickoff": 6,
+    "seen": 2,
+    "waiting_next_run": 2
   },
   "reasons": [
     {
       "count": 2,
-      "reason": "tier_a_publication_score_below_min",
-      "reason_ru": "tier a publication score below min"
-    },
-    {
-      "count": 2,
-      "reason": "tier_a_proxy_quality_not_allowed",
-      "reason_ru": "tier a proxy quality not allowed"
-    },
-    {
-      "count": 2,
-      "reason": "tier_a_odds_sources_below_min:1/2",
-      "reason_ru": "tier a odds sources below min:1/2"
-    },
-    {
-      "count": 2,
-      "reason": "tier_b_canonical_edge_below_min",
-      "reason_ru": "tier b canonical edge below min"
-    },
-    {
-      "count": 2,
-      "reason": "tier_b_canonical_ev_below_min",
-      "reason_ru": "tier b canonical ev below min"
-    },
-    {
-      "count": 2,
-      "reason": "tier_b_publication_score_below_min",
-      "reason_ru": "tier b publication score below min"
-    },
-    {
-      "count": 2,
-      "reason": "tier_c_publication_score_below_min",
-      "reason_ru": "tier c publication score below min"
-    },
-    {
-      "count": 1,
-      "reason": "tier_a_confirmation_sources_below_min:1/2",
-      "reason_ru": "tier a confirmation sources below min:1/2"
-    },
-    {
-      "count": 1,
-      "reason": "duplicate_fallback_sent_index",
-      "reason_ru": "duplicate fallback sent index"
-    },
-    {
-      "count": 1,
-      "reason": "duplicate_persisted_fallback_sent_index",
-      "reason_ru": "duplicate persisted fallback sent index"
-    },
-    {
-      "count": 1,
-      "reason": "proxy_single_source_edge_below_min",
-      "reason_ru": "proxy single source edge below min"
-    },
-    {
-      "count": 1,
-      "reason": "proxy_single_source_ev_below_min",
-      "reason_ru": "proxy single source ev below min"
+      "reason": "line_movement_guard_waiting_next_run",
+      "reason_ru": "кандидат ждёт следующий cron для второго снимка линии"
     }
   ],
   "samples": {
-    "fallback_evaluated": [
-      {
-        "away_team": "Guarani",
-        "away_team_ru": "Гуарани",
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-22T22:30:00+00:00",
-        "commence_time_display": "23.06.2026 01:30 MSK",
-        "family": "totals",
-        "home_team": "Confianca",
-        "home_team_ru": "Конфианка",
-        "league_name": "Brazil - Brasileiro Serie C",
-        "league_name_ru": "Бразилия - Брасилейро Серие C",
-        "match_key": "soccer|confianca|guarani|2026-06-22",
-        "metrics": {
-          "adjusted_probability": 0.527791,
-          "books_count": 4,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 2.779,
-          "canonical_ev_pct": 5.558,
-          "confidence": 70.701,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 2,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 1.365,
-          "market_probability": 0.514139,
-          "model_probability": 0.527791,
-          "odds": 2.0,
-          "odds_sources_count": 1,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 18.95,
-          "quality_reasons": [],
-          "quality_score": 75.42,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "proxy",
-          "selected_implied_probability": 0.5,
-          "sources_count": 2,
-          "tier_b_bookmaker_quorum": {
-            "books_count": 4,
-            "enabled": true,
-            "max_deviation_pct": 8.0,
-            "median_price": 1.945,
-            "mode": "bookmaker_quorum",
-            "odds_sources_count": 1,
-            "priced_books_count": 4,
-            "same_market_side_line_only": true,
-            "selected_price": 2.0,
-            "selected_vs_median_deviation_pct": 2.828
-          },
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 19.854,
-            "xg_direction_ok": true,
-            "xg_model_conservative_gap_pp": 19.854,
-            "xg_model_gap_pp": -19.854,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.726333,
-            "xg_probability_pct": 72.633,
-            "xg_source": "home_away",
-            "xg_total": 1.816
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_a_publication_score_below_min",
-          "tier_a_proxy_quality_not_allowed",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_b_canonical_edge_below_min",
-          "tier_b_canonical_ev_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_c_publication_score_below_min"
-        ],
-        "reject_reasons_ru": [
-          "уровень A: publication score below min",
-          "уровень A не принимает proxy-качество",
-          "уровень A: odds sources below min:1/2",
-          "запас value ниже минимума уровня B",
-          "EV ниже минимума уровня B",
-          "уровень B: publication score below min",
-          "уровень C: publication score below min"
-        ],
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "Guarani",
-        "away_team_ru": "Гуарани",
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-22T22:30:00+00:00",
-        "commence_time_display": "23.06.2026 01:30 MSK",
-        "family": "totals",
-        "home_team": "Confianca",
-        "home_team_ru": "Конфианка",
-        "league_name": "Brazil - Brasileiro Serie C",
-        "league_name_ru": "Бразилия - Брасилейро Серие C",
-        "match_key": "2026-06-22|confianca|guarani",
-        "metrics": {
-          "adjusted_probability": 0.526505,
-          "books_count": 4,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 2.651,
-          "canonical_ev_pct": 5.301,
-          "confidence": 69.085,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 1,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 1.237,
-          "market_probability": 0.514139,
-          "model_probability": 0.526505,
-          "odds": 2.0,
-          "odds_sources_count": 1,
-          "proxy_single_source_thresholds": {
-            "applies": true,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 17.297,
-          "quality_reasons": [],
-          "quality_score": 73.301,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "proxy",
-          "selected_implied_probability": 0.5,
-          "sources_count": 1,
-          "tier_b_bookmaker_quorum": {
-            "books_count": 4,
-            "enabled": true,
-            "max_deviation_pct": 8.0,
-            "median_price": 1.945,
-            "mode": "bookmaker_quorum",
-            "odds_sources_count": 1,
-            "priced_books_count": 4,
-            "same_market_side_line_only": true,
-            "selected_price": 2.0,
-            "selected_vs_median_deviation_pct": 2.828
-          },
-          "xg_sanity": {
-            "enabled": false,
-            "reason": "missing_xg",
-            "xg_away_raw": null,
-            "xg_home_raw": null,
-            "xg_source": "invalid_or_missing"
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_a_publication_score_below_min",
-          "tier_a_proxy_quality_not_allowed",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_a_confirmation_sources_below_min:1/2",
-          "tier_b_canonical_edge_below_min",
-          "tier_b_canonical_ev_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_c_publication_score_below_min"
-        ],
-        "reject_reasons_ru": [
-          "уровень A: publication score below min",
-          "уровень A не принимает proxy-качество",
-          "уровень A: odds sources below min:1/2",
-          "уровень A: confirmation sources below min:1/2",
-          "запас value ниже минимума уровня B",
-          "EV ниже минимума уровня B",
-          "уровень B: publication score below min",
-          "уровень C: publication score below min"
-        ],
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "Linqueno",
-        "away_team_ru": "Линквено",
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-22T23:15:00+00:00",
-        "commence_time_display": "23.06.2026 02:15 MSK",
-        "family": "totals",
-        "home_team": "CA 9 de Julio Rafaela",
-        "home_team_ru": "9 де Джулио Рафаела",
-        "league_name": "Argentina - Torneo Federal A, Group 1",
-        "league_name_ru": "Аргентина - Торнео Федерал A, Груп 1",
-        "match_key": "soccer|ca 9 julio rafaela|linqueno|2026-06-22",
-        "metrics": {
-          "adjusted_probability": 0.650625,
-          "books_count": 3,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 6.923,
-          "canonical_ev_pct": 11.908,
-          "confidence": 71.758,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 2,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 2.563,
-          "market_probability": 0.625,
-          "model_probability": 0.650625,
-          "odds": 1.72,
-          "odds_sources_count": 1,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 33.34,
-          "quality_reasons": [],
-          "quality_score": 76.0,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "proxy",
-          "selected_implied_probability": 0.581395,
-          "sources_count": 2,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 2.768,
-            "xg_direction_ok": true,
-            "xg_model_conservative_gap_pp": 2.768,
-            "xg_model_gap_pp": -2.768,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.6783,
-            "xg_probability_pct": 67.83,
-            "xg_source": "home_away",
-            "xg_total": 1.994
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "duplicate_fallback_sent_index",
-          "duplicate_persisted_fallback_sent_index"
-        ],
-        "reject_reasons_ru": [
-          "такой прогноз уже отправлялся ранее",
-          "duplicate persisted fallback sent index"
-        ],
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "Linqueno",
-        "away_team_ru": "Линквено",
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-22T23:15:00+00:00",
-        "commence_time_display": "23.06.2026 02:15 MSK",
-        "family": "totals",
-        "home_team": "CA 9 de Julio Rafaela",
-        "home_team_ru": "9 де Джулио Рафаела",
-        "league_name": "Argentina - Torneo Federal A, Group 1",
-        "league_name_ru": "Аргентина - Торнео Федерал A, Груп 1",
-        "match_key": "2026-06-22|ca 9 julio rafaela|linqueno",
-        "metrics": {
-          "adjusted_probability": 0.649062,
-          "books_count": 3,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 6.767,
-          "canonical_ev_pct": 11.639,
-          "confidence": 70.137,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 1,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 2.406,
-          "market_probability": 0.625,
-          "model_probability": 0.649062,
-          "odds": 1.72,
-          "odds_sources_count": 1,
-          "proxy_single_source_thresholds": {
-            "applies": true,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 31.618,
-          "quality_reasons": [],
-          "quality_score": 76.0,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "proxy",
-          "selected_implied_probability": 0.581395,
-          "sources_count": 1,
-          "tier_b_bookmaker_quorum": {
-            "books_count": 3,
-            "enabled": true,
-            "max_deviation_pct": 8.0,
-            "median_price": 1.6,
-            "mode": "bookmaker_quorum",
-            "odds_sources_count": 1,
-            "priced_books_count": 3,
-            "same_market_side_line_only": true,
-            "selected_price": 1.72,
-            "selected_vs_median_deviation_pct": 7.5
-          },
-          "xg_sanity": {
-            "enabled": false,
-            "reason": "missing_xg",
-            "xg_away_raw": null,
-            "xg_home_raw": null,
-            "xg_source": "invalid_or_missing"
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "proxy_single_source_edge_below_min",
-          "proxy_single_source_ev_below_min",
-          "proxy_single_source_confidence_below_min",
-          "missing_total_xg_sanity"
-        ],
-        "reject_reasons_ru": [
-          "proxy/single-source: value-запас ниже строгого минимума",
-          "proxy/single-source: EV ниже строгого минимума",
-          "proxy/single-source: уверенность ниже строгого минимума",
-          "missing total xg sanity"
-        ],
-        "selection": "Меньше",
-        "tier": "уровень B"
-      },
-      {
-        "away_team": "Guarani",
-        "away_team_ru": "Гуарани",
-        "candidate_source": "debug_candidates_before_quality",
-        "commence_time": "2026-06-22T22:30:00+00:00",
-        "commence_time_display": "23.06.2026 01:30 MSK",
-        "family": "totals",
-        "home_team": "Confianca",
-        "home_team_ru": "Конфианка",
-        "league_name": "Brazil - Brasileiro Serie C",
-        "league_name_ru": "Бразилия - Брасилейро Серие C",
-        "match_key": "soccer|confianca|guarani|2026-06-22",
-        "metrics": {
-          "adjusted_probability": 0.464469,
-          "books_count": 4,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": -2.097,
-          "canonical_ev_pct": -4.319,
-          "confidence": 74.24,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 1,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": -3.15,
-          "market_probability": 0.495974,
-          "model_probability": 0.513769,
-          "odds": 2.06,
-          "odds_sources_count": 1,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 76.875,
-          "quality_reasons": [
-            "bad_historical_segment_guard"
-          ],
-          "quality_score": 41.438,
-          "quality_score_raw": 41.438,
-          "quality_score_source": "raw",
-          "selected_implied_probability": 0.485437,
-          "sources_count": 1,
-          "xg_sanity": {
-            "enabled": false,
-            "reason": "missing_xg",
-            "xg_away_raw": null,
-            "xg_home_raw": null,
-            "xg_source": "invalid_or_missing"
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "canonical_negative_value"
-        ],
-        "reject_reasons_ru": [
-          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
-        ],
-        "selection": "Больше 2.5",
-        "tier": null
-      }
-    ],
+    "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "Guarani",
-        "home_team": "Confianca",
-        "kickoff_utc": "2026-06-22T22:30:00+00:00",
-        "league_name": "Brazil - Brasileiro Serie C",
-        "match_key": "2026-06-22|confianca|guarani",
-        "minutes_to_kickoff": 37.46,
+        "away_team": "Gremio Novorizontino",
+        "home_team": "Ponte Preta",
+        "kickoff_utc": "2026-06-22T23:00:00+00:00",
+        "league_name": "Brazil - Brasileiro Serie B",
+        "match_key": "soccer|gremio novorizontino|ponte preta|2026-06-22",
+        "minutes_to_kickoff": 55.76,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.513,
+        "priority": 141.413,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-22T21:53:09.799586+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T22:00:00+00:00",
+          "last_odds_refresh_utc": "2026-06-22T22:04:16.423004+00:00",
+          "latest_useful_run_at_utc": "2026-06-22T22:30:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
@@ -1714,9 +1217,9 @@
         "kickoff_utc": "2026-06-22T23:00:00+00:00",
         "league_name": "Brazil - Brasileiro Serie B",
         "match_key": "2026-06-22|ponte preta|gremio novorizontino",
-        "minutes_to_kickoff": 67.46,
+        "minutes_to_kickoff": 55.76,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 137.513,
+        "priority": 141.413,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -1736,10 +1239,33 @@
         "home_team": "Vermont Green",
         "kickoff_utc": "2026-06-22T23:00:00+00:00",
         "league_name": "USA - USL W League",
-        "match_key": "2026-06-22|vermont green|hartford athletic",
-        "minutes_to_kickoff": 67.46,
+        "match_key": "soccer|hartford athletic|vermont green|2026-06-22",
+        "minutes_to_kickoff": 55.76,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 137.513,
+        "priority": 141.413,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-06-22T22:04:15.825349+00:00",
+          "latest_useful_run_at_utc": "2026-06-22T22:30:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-22T23:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Hartford Athletic",
+        "home_team": "Vermont Green",
+        "kickoff_utc": "2026-06-22T23:00:00+00:00",
+        "league_name": "USA - USL W League",
+        "match_key": "2026-06-22|vermont green|hartford athletic",
+        "minutes_to_kickoff": 55.76,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.413,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -1760,9 +1286,9 @@
         "kickoff_utc": "2026-06-22T23:30:00+00:00",
         "league_name": "USA - USL W League",
         "match_key": "2026-06-22|paisley athletic|long island rough riders",
-        "minutes_to_kickoff": 97.46,
+        "minutes_to_kickoff": 85.76,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 135.513,
+        "priority": 139.413,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -1783,14 +1309,14 @@
         "kickoff_utc": "2026-06-22T23:15:00+00:00",
         "league_name": "Argentina - Torneo Federal A, Group 1",
         "match_key": "2026-06-22|ca 9 julio rafaela|linqueno",
-        "minutes_to_kickoff": 82.46,
+        "minutes_to_kickoff": 70.76,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 132.513,
+        "priority": 136.413,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-22T21:53:09.799743+00:00",
+          "last_odds_refresh_utc": "2026-06-22T21:52:32.363946+00:00",
           "latest_useful_run_at_utc": "2026-06-22T22:45:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
@@ -1799,36 +1325,13 @@
           "next_scheduled_run_at_utc": "2026-06-22T23:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
-      },
-      {
-        "away_team": "Senegal",
-        "home_team": "Norway",
-        "kickoff_utc": "2026-06-23T00:00:00+00:00",
-        "league_name": "International - FIFA World Cup",
-        "match_key": "2026-06-23|norway|senegal",
-        "minutes_to_kickoff": 127.46,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 117.513,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": true,
-          "last_odds_refresh_utc": "2026-06-22T21:53:09.798870+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T23:30:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-06-22T23:00:00+00:00",
-          "no_more_regular_run_before_kickoff": false
-        }
       }
     ]
   },
-  "status": "candidates_but_quality_rejected",
-  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
+  "status": "lines_but_no_raw_candidates",
+  "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 6734,
-  "top_reason": "tier_a_publication_score_below_min",
+  "text_length": 5004,
+  "top_reason": "line_movement_guard_waiting_next_run",
   "version": "harizon-telegram-report-v13-a-tier-funnel"
 }
