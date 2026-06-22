@@ -21,12 +21,12 @@
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 31,
+      "books_2plus": 20,
       "errors": 0,
       "events_req": 0,
-      "matched": 48,
+      "matched": 41,
       "odds_req": 10,
-      "offers": 4244
+      "offers": 2968
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -49,7 +49,7 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 43,
+      "contexts": 33,
       "deep_enriched": 31,
       "direct_contexts": 0,
       "errors": 0,
@@ -60,9 +60,9 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.6362623929977417,
-    "fallback_age_min": 0.00031213760375976564,
-    "run_log_age_min": 0.43707070748011273,
+    "debug_age_min": 0.544655998547872,
+    "fallback_age_min": 0.00040688912073771156,
+    "run_log_age_min": 0.34781080881754556,
     "signal_stack_age_min": null
   },
   "coverage": {
@@ -71,178 +71,76 @@
     "day_inventory_total": 214,
     "day_inventory_with_context": 142,
     "day_inventory_with_odds": 199,
-    "matches_seen": 49,
-    "matches_with_2plus_books": 31,
-    "matches_with_context": 43,
-    "matches_with_offers": 41,
-    "odds_offers_primary": 4244,
+    "matches_seen": 41,
+    "matches_with_2plus_books": 20,
+    "matches_with_context": 33,
+    "matches_with_offers": 33,
+    "odds_offers_primary": 2968,
     "ready_for_model": 129,
     "secondary_combinations": {}
   },
-  "created_at_utc": "2026-06-22T17:07:11.055180+00:00",
+  "created_at_utc": "2026-06-22T19:07:08.658133+00:00",
   "diagnostics": {
     "a_cover_candidate_gap_report": {
       "a_cover_rows": 117,
-      "active_future_a_cover_rows": 26,
-      "created_at_utc": "2026-06-22T17:07:11.026402+00:00",
-      "fallback_evaluated_rows": 19,
-      "in_publish_window_a_cover_rows": 17,
+      "active_future_a_cover_rows": 7,
+      "created_at_utc": "2026-06-22T19:07:08.627699+00:00",
+      "fallback_evaluated_rows": 3,
+      "in_publish_window_a_cover_rows": 3,
       "plain_explanation": "If active_a_cover_not_selected_by_candidate_layers is high, coverage is ready but main/fallback candidate selection did not create a candidate for those matches.",
       "reason_counts": {
-        "active_a_cover_not_selected_by_candidate_layers": 16,
-        "canonical_negative_value": 5,
-        "missing_total_xg_sanity": 2,
-        "price_integrity:external_snapshot_bookmaker_median_outlier": 2,
-        "price_integrity:selected_price_vs_bookmaker_median_outlier": 2,
-        "quality_post_calibration_probability_guard": 5,
-        "tier_a_odds_sources_below_min:1/2": 4,
-        "tier_a_proxy_quality_not_allowed": 4,
-        "tier_a_publication_score_below_min": 10,
-        "tier_a_quality_below_min": 6,
-        "tier_b_canonical_edge_below_min": 10,
-        "tier_b_canonical_ev_below_min": 10,
-        "tier_b_confidence_below_min": 5,
-        "tier_b_publication_score_below_min": 10,
-        "tier_b_quality_below_min": 10,
-        "tier_c_publication_score_below_min": 10,
-        "tier_c_quality_below_min": 6,
-        "tier_c_watch_only": 4,
-        "xg_direction_conflict": 6,
-        "xg_probability_gap_hard_reject": 6
+        "active_a_cover_not_selected_by_candidate_layers": 5,
+        "canonical_negative_value": 2,
+        "controlled_fallback_daily_limit_reached:3/3": 6,
+        "quality_post_calibration_edge_guard": 2,
+        "xg_direction_conflict": 2,
+        "xg_probability_gap_hard_reject": 2
       },
       "samples": [
         {
-          "away_team": "Nykopings",
+          "away_team": "Pirata",
+          "contexts": 2,
+          "home_team": "Atletico Grau",
+          "kickoff_utc": "2026-06-22T20:15:00+00:00",
+          "match_key": "2026-06-22|atletico grau|pirata",
+          "odds_sources": 1,
+          "price_confirmations": 160,
+          "reasons": [
+            "xg_direction_conflict",
+            "xg_probability_gap_hard_reject",
+            "controlled_fallback_daily_limit_reached:3/3",
+            "controlled_fallback_daily_limit_reached:3/3",
+            "canonical_negative_value",
+            "controlled_fallback_daily_limit_reached:3/3",
+            "quality_post_calibration_edge_guard"
+          ],
+          "status": "active_a_cover_seen_in_fallback"
+        },
+        {
+          "away_team": "Pirata",
+          "contexts": 2,
+          "home_team": "Atletico Grau",
+          "kickoff_utc": "2026-06-22T20:15:00+00:00",
+          "match_key": "2026-06-22|atletico grau|pirata",
+          "odds_sources": 1,
+          "price_confirmations": 160,
+          "reasons": [
+            "xg_direction_conflict",
+            "xg_probability_gap_hard_reject",
+            "controlled_fallback_daily_limit_reached:3/3",
+            "controlled_fallback_daily_limit_reached:3/3",
+            "canonical_negative_value",
+            "controlled_fallback_daily_limit_reached:3/3",
+            "quality_post_calibration_edge_guard"
+          ],
+          "status": "active_a_cover_seen_in_fallback"
+        },
+        {
+          "away_team": "Iraq",
           "contexts": 1,
-          "home_team": "Sleipner",
-          "kickoff_utc": "2026-06-22T17:30:00+00:00",
-          "match_key": "2026-06-22|sleipner|nykopings",
-          "odds_sources": 1,
-          "price_confirmations": 153,
-          "reasons": [
-            "active_a_cover_not_selected_by_candidate_layers"
-          ],
-          "status": "active_a_cover_not_selected_by_candidate_layers"
-        },
-        {
-          "away_team": "Raagsveds",
-          "contexts": 2,
-          "home_team": "Syrianska",
-          "kickoff_utc": "2026-06-22T17:30:00+00:00",
-          "match_key": "2026-06-22|syrianska|raagsveds",
-          "odds_sources": 1,
-          "price_confirmations": 151,
-          "reasons": [
-            "active_a_cover_not_selected_by_candidate_layers"
-          ],
-          "status": "active_a_cover_not_selected_by_candidate_layers"
-        },
-        {
-          "away_team": "Al Arabi",
-          "contexts": 3,
-          "home_team": "Kuwait SC",
-          "kickoff_utc": "2026-06-22T17:45:00+00:00",
-          "match_key": "2026-06-22|kuwait sc|al arabi",
-          "odds_sources": 1,
-          "price_confirmations": 169,
-          "reasons": [
-            "canonical_negative_value",
-            "quality_post_calibration_probability_guard"
-          ],
-          "status": "active_a_cover_seen_in_fallback"
-        },
-        {
-          "away_team": "Figueirense",
-          "contexts": 5,
-          "home_team": "Joinville",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|joinville|figueirense",
-          "odds_sources": 1,
-          "price_confirmations": 269,
-          "reasons": [
-            "xg_direction_conflict",
-            "xg_probability_gap_hard_reject",
-            "canonical_negative_value",
-            "quality_post_calibration_probability_guard"
-          ],
-          "status": "active_a_cover_seen_in_fallback"
-        },
-        {
-          "away_team": "Throttur R",
-          "contexts": 3,
-          "home_team": "Thor/KA",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|thor ka|throttur r",
-          "odds_sources": 1,
-          "price_confirmations": 238,
-          "reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_publication_score_below_min",
-            "tier_b_quality_below_min",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_c_quality_below_min",
-            "tier_c_publication_score_below_min"
-          ],
-          "status": "active_a_cover_seen_in_fallback"
-        },
-        {
-          "away_team": "Throttur R",
-          "contexts": 3,
-          "home_team": "Thor/KA",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|thor ka|throttur r",
-          "odds_sources": 1,
-          "price_confirmations": 238,
-          "reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_publication_score_below_min",
-            "tier_b_quality_below_min",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_c_quality_below_min",
-            "tier_c_publication_score_below_min"
-          ],
-          "status": "active_a_cover_seen_in_fallback"
-        },
-        {
-          "away_team": "Breidablik",
-          "contexts": 3,
-          "home_team": "Vestmannaeyjar",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|vestmannaeyjar|breidablik",
-          "odds_sources": 1,
-          "price_confirmations": 35,
-          "reasons": [
-            "active_a_cover_not_selected_by_candidate_layers"
-          ],
-          "status": "active_a_cover_not_selected_by_candidate_layers"
-        },
-        {
-          "away_team": "Cusco",
-          "contexts": 3,
-          "home_team": "Deportivo Binacional",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|deportivo binacional|cusco",
-          "odds_sources": 1,
-          "price_confirmations": 338,
-          "reasons": [
-            "xg_direction_conflict",
-            "xg_probability_gap_hard_reject",
-            "tier_c_watch_only",
-            "canonical_negative_value",
-            "quality_post_calibration_probability_guard"
-          ],
-          "status": "active_a_cover_seen_in_fallback"
-        },
-        {
-          "away_team": "Racing Club Montevideo",
-          "contexts": 2,
-          "home_team": "Juventud de Las Piedras",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|juventud de las piedras|racing club montevideo",
+          "home_team": "France",
+          "kickoff_utc": "2026-06-22T21:00:00+00:00",
+          "match_key": "2026-06-22|france|iraq",
           "odds_sources": 1,
           "price_confirmations": 1,
           "reasons": [
@@ -251,53 +149,52 @@
           "status": "active_a_cover_not_selected_by_candidate_layers"
         },
         {
-          "away_team": "River Plate",
-          "contexts": 3,
-          "home_team": "Liverpool Montevideo",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|liverpool montevideo|river plate",
+          "away_team": "Guarani",
+          "contexts": 1,
+          "home_team": "Confianca",
+          "kickoff_utc": "2026-06-22T22:30:00+00:00",
+          "match_key": "2026-06-22|confianca|guarani",
           "odds_sources": 1,
-          "price_confirmations": 129,
+          "price_confirmations": 160,
           "reasons": [
-            "tier_a_publication_score_below_min",
-            "tier_a_proxy_quality_not_allowed",
-            "tier_a_odds_sources_below_min:1/2",
-            "tier_b_confidence_below_min",
-            "tier_b_quality_below_min",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min"
+            "active_a_cover_not_selected_by_candidate_layers"
           ],
-          "status": "active_a_cover_seen_in_fallback"
+          "status": "active_a_cover_not_selected_by_candidate_layers"
         },
         {
-          "away_team": "River Plate",
-          "contexts": 3,
-          "home_team": "Liverpool Montevideo",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|liverpool montevideo|river plate",
+          "away_team": "Gremio Novorizontino",
+          "contexts": 1,
+          "home_team": "Ponte Preta",
+          "kickoff_utc": "2026-06-22T23:00:00+00:00",
+          "match_key": "2026-06-22|ponte preta|gremio novorizontino",
           "odds_sources": 1,
-          "price_confirmations": 129,
+          "price_confirmations": 5,
           "reasons": [
-            "tier_a_publication_score_below_min",
-            "tier_a_proxy_quality_not_allowed",
-            "tier_a_odds_sources_below_min:1/2",
-            "tier_b_confidence_below_min",
-            "tier_b_quality_below_min",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min"
+            "active_a_cover_not_selected_by_candidate_layers"
           ],
-          "status": "active_a_cover_seen_in_fallback"
+          "status": "active_a_cover_not_selected_by_candidate_layers"
         },
         {
-          "away_team": "Nacional Montevideo",
-          "contexts": 2,
-          "home_team": "Progreso",
-          "kickoff_utc": "2026-06-22T18:00:00+00:00",
-          "match_key": "2026-06-22|progreso|nacional montevideo",
+          "away_team": "Linqueno",
+          "contexts": 1,
+          "home_team": "CA 9 de Julio Rafaela",
+          "kickoff_utc": "2026-06-22T23:15:00+00:00",
+          "match_key": "2026-06-22|ca 9 de julio rafaela|linqueno",
           "odds_sources": 1,
-          "price_confirmations": 112,
+          "price_confirmations": 122,
+          "reasons": [
+            "active_a_cover_not_selected_by_candidate_layers"
+          ],
+          "status": "active_a_cover_not_selected_by_candidate_layers"
+        },
+        {
+          "away_team": "Senegal",
+          "contexts": 1,
+          "home_team": "Norway",
+          "kickoff_utc": "2026-06-23T00:00:00+00:00",
+          "match_key": "2026-06-23|norway|senegal",
+          "odds_sources": 1,
+          "price_confirmations": 1,
           "reasons": [
             "active_a_cover_not_selected_by_candidate_layers"
           ],
@@ -306,21 +203,21 @@
       ],
       "status": "ok",
       "status_counts": {
-        "active_a_cover_not_selected_by_candidate_layers": 16,
-        "active_a_cover_seen_in_fallback": 10
+        "active_a_cover_not_selected_by_candidate_layers": 5,
+        "active_a_cover_seen_in_fallback": 2
       }
     },
     "a_cover_value_promotion": {
       "active_a_cover_rows": 99,
-      "considered_a_cover_rows": 17,
-      "created_at_utc": "2026-06-22T17:06:50.934447+00:00",
+      "considered_a_cover_rows": 3,
+      "created_at_utc": "2026-06-22T19:06:53.880829+00:00",
       "enabled": true,
       "existing_rescue_stats": {
-        "dropped_outside_window": 3,
-        "kept": 9,
-        "loaded": 12
+        "dropped_outside_window": 2,
+        "kept": 2,
+        "loaded": 4
       },
-      "in_publish_window_a_cover_rows": 17,
+      "in_publish_window_a_cover_rows": 3,
       "inventory_load": {
         "candidate_source_scores": [
           {
@@ -427,21 +324,21 @@
       },
       "inventory_rows_seen": 145,
       "offer_diagnostics": {
-        "accepted_offer_rows": 1241,
-        "scanned_dicts": 90942,
+        "accepted_offer_rows": 413,
+        "scanned_dicts": 82954,
         "source_counts": {
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/170632-line-snapshots.json": 581,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 12,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 41,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 575,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 12,
-          "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 20
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/190635-line-snapshots.json": 175,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 4,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 44,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 169,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 4,
+          "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 17
         }
       },
       "prebuild_coverage_truth": {
         "enabled": true,
-        "finished_at_utc": "2026-06-22T17:06:50.742326+00:00",
-        "started_at_utc": "2026-06-22T17:06:50.069213+00:00",
+        "finished_at_utc": "2026-06-22T19:06:53.686926+00:00",
+        "started_at_utc": "2026-06-22T19:06:52.867925+00:00",
         "status": "ok",
         "steps": [
           {
@@ -451,832 +348,18 @@
           }
         ]
       },
-      "promoted_count": 6,
+      "promoted_count": 0,
       "reason_counts": {
-        "promoted": 6,
-        "promotion_skip_duplicate_candidate": 1,
-        "promotion_skip_edge_below_min": 50,
-        "promotion_skip_ev_below_min": 1,
-        "promotion_skip_no_offer_bucket": 4,
-        "promotion_skip_odds_above_max": 117,
-        "promotion_skip_odds_below_min": 128,
-        "promotion_skip_outside_active_publish_window": 82,
+        "promotion_skip_edge_below_min": 8,
+        "promotion_skip_no_offer_bucket": 1,
+        "promotion_skip_odds_above_max": 20,
+        "promotion_skip_odds_below_min": 20,
+        "promotion_skip_outside_active_publish_window": 96,
         "promotion_skip_price_outlier": 4
       },
       "rescue_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
       "safety_note": "promotion only appends candidates to fallback review; guarded publisher still enforces value, xG, line recheck, duplicate, daily cap and price-integrity guards",
-      "sample": [
-        {
-          "_candidate_source": "a_cover_market_promotion",
-          "adjusted_probability": 0.496286,
-          "away_team": "Cusco",
-          "bookmaker": "betfair_exchange",
-          "books_count": 170,
-          "canonical_match_id": "soccer|binacional|cusco|2026-06-22",
-          "commence_time": "2026-06-22T18:00:00+00:00",
-          "confidence": 68.522,
-          "confirmation_sources": [
-            "model_xg",
-            "openligadb",
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "context": {
-            "context_sources": [
-              "openligadb",
-              "sstats"
-            ],
-            "expected_away": null,
-            "expected_home": null
-          },
-          "diagnostics": {
-            "a_cover_promotion": {
-              "books_count": 170,
-              "context_sources_count": 3,
-              "created_at_utc": "2026-06-22T17:06:52.851285+00:00",
-              "created_by": "promote_a_cover_value_candidates.py",
-              "inventory_match_key": "soccer|binacional|cusco|2026-06-22",
-              "odds_sources_count": 2
-            },
-            "promotion": {
-              "canonical_edge_pp": 2.235,
-              "canonical_ev_pct": 4.716,
-              "created_at_utc": "2026-06-22T17:06:52.851195+00:00",
-              "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 2.06,
-              "selected_price": 2.11,
-              "selected_vs_median_deviation_pct": 2.427
-            }
-          },
-          "edge_pct": 2.235,
-          "ev_pct": 4.716,
-          "expected_away": null,
-          "expected_home": null,
-          "family": "totals",
-          "home_team": "Deportivo Binacional",
-          "league_name": "Peru - Copa de la Liga, Group F",
-          "market_family": "totals",
-          "market_probability": 0.485437,
-          "match_key": "soccer|binacional|cusco|2026-06-22",
-          "model_probability": 0.496286,
-          "odds": 2.11,
-          "odds_sources_count": 2,
-          "point": 3.5,
-          "publication_score": 15.694,
-          "reasons": [
-            "mode=b_cover_market_promotion",
-            "model=conservative_median_market_anchor",
-            "books=3",
-            "context_sources=2",
-            "best_vs_median=2.43%",
-            "mode=a_cover_market_promotion",
-            "a_cover_sources=2/books=170/contexts=3"
-          ],
-          "selected_odds": 2.11,
-          "selection": "Больше",
-          "selection_key": "over",
-          "source_summary": {
-            "bookmaker": "betfair_exchange",
-            "books": [
-              "bet365",
-              "betfair_exchange",
-              "unibet"
-            ],
-            "books_count": 3,
-            "context_sources": [
-              "openligadb",
-              "sstats"
-            ],
-            "median_price": 2.06,
-            "prices": [
-              1.9,
-              2.06,
-              2.11,
-              1.9,
-              2.06,
-              2.11
-            ],
-            "publish_coverage_contract": {
-              "bookmakers_count": 170,
-              "context_sources_count": 3,
-              "note": "candidate still must pass guarded fallback final checks before Telegram publication",
-              "odds_sources_count": 2,
-              "tier": "A-cover-promoted-to-fallback-review"
-            },
-            "raw_bucket_offers": [
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 3.5,
-                "price": 1.9,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 3.5,
-                "price": 2.06,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 3.5,
-                "price": 2.11,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 3.5,
-                "price": 1.9,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 3.5,
-                "price": 2.06,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 3.5,
-                "price": 2.11,
-                "selection": "over",
-                "source": "odds_api_io"
-              }
-            ],
-            "selected_bookmaker": "betfair_exchange",
-            "selected_source": "a_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 2.427
-          },
-          "sources_count": 3
-        },
-        {
-          "_candidate_source": "a_cover_market_promotion",
-          "adjusted_probability": 0.513369,
-          "away_team": "Kazma",
-          "bookmaker": "betfair_exchange",
-          "books_count": 161,
-          "canonical_match_id": "soccer|kazma|qadsia|2026-06-22",
-          "commence_time": "2026-06-22T18:45:00+00:00",
-          "confidence": 70.558,
-          "confirmation_sources": [
-            "model_xg",
-            "openligadb",
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "context": {
-            "context_sources": [
-              "openligadb",
-              "sstats"
-            ],
-            "expected_away": null,
-            "expected_home": null
-          },
-          "diagnostics": {
-            "a_cover_promotion": {
-              "books_count": 161,
-              "context_sources_count": 3,
-              "created_at_utc": "2026-06-22T17:06:52.852562+00:00",
-              "created_by": "promote_a_cover_value_candidates.py",
-              "inventory_match_key": "soccer|kazma|qadsia|2026-06-22",
-              "odds_sources_count": 2
-            },
-            "promotion": {
-              "canonical_edge_pp": 2.556,
-              "canonical_ev_pct": 5.241,
-              "created_at_utc": "2026-06-22T17:06:52.852482+00:00",
-              "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 1.9975,
-              "selected_price": 2.05,
-              "selected_vs_median_deviation_pct": 2.628
-            }
-          },
-          "edge_pct": 2.556,
-          "ev_pct": 5.241,
-          "expected_away": null,
-          "expected_home": null,
-          "family": "totals",
-          "home_team": "Qadsia",
-          "league_name": "Kuwait - Premier League, Championship Group",
-          "market_family": "totals",
-          "market_probability": 0.500626,
-          "match_key": "soccer|kazma|qadsia|2026-06-22",
-          "model_probability": 0.513369,
-          "odds": 2.05,
-          "odds_sources_count": 2,
-          "point": 2.5,
-          "publication_score": 18.14,
-          "reasons": [
-            "mode=b_cover_market_promotion",
-            "model=conservative_median_market_anchor",
-            "books=4",
-            "context_sources=2",
-            "best_vs_median=2.63%",
-            "mode=a_cover_market_promotion",
-            "a_cover_sources=2/books=161/contexts=3"
-          ],
-          "selected_odds": 2.05,
-          "selection": "Меньше",
-          "selection_key": "under",
-          "source_summary": {
-            "bookmaker": "betfair_exchange",
-            "books": [
-              "bet365",
-              "betfair_exchange",
-              "sbobet",
-              "unibet"
-            ],
-            "books_count": 4,
-            "context_sources": [
-              "openligadb",
-              "sstats"
-            ],
-            "median_price": 1.9975,
-            "prices": [
-              1.975,
-              2.02,
-              2.05,
-              1.89,
-              1.975,
-              2.02,
-              2.05,
-              1.89
-            ],
-            "publish_coverage_contract": {
-              "bookmakers_count": 161,
-              "context_sources_count": 3,
-              "note": "candidate still must pass guarded fallback final checks before Telegram publication",
-              "odds_sources_count": 2,
-              "tier": "A-cover-promoted-to-fallback-review"
-            },
-            "raw_bucket_offers": [
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 2.5,
-                "price": 1.975,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 2.5,
-                "price": 2.02,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 2.5,
-                "price": 2.05,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "sbobet",
-                "family": "totals",
-                "point": 2.5,
-                "price": 1.89,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 2.5,
-                "price": 1.975,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "unibet",
-                "family": "totals",
-                "point": 2.5,
-                "price": 2.02,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 2.5,
-                "price": 2.05,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "sbobet",
-                "family": "totals",
-                "point": 2.5,
-                "price": 1.89,
-                "selection": "under",
-                "source": "odds_api_io"
-              }
-            ],
-            "selected_bookmaker": "betfair_exchange",
-            "selected_source": "a_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 2.628
-          },
-          "sources_count": 3
-        },
-        {
-          "_candidate_source": "a_cover_market_promotion",
-          "adjusted_probability": 0.417027,
-          "away_team": "Derry City",
-          "bookmaker": "betfair_exchange",
-          "books_count": 161,
-          "canonical_match_id": "soccer|derry city|shamrock|2026-06-22",
-          "commence_time": "2026-06-22T19:00:00+00:00",
-          "confidence": 67.079,
-          "confirmation_sources": [
-            "model_xg",
-            "openligadb",
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "context": {
-            "context_sources": [
-              "openligadb",
-              "sstats"
-            ],
-            "expected_away": null,
-            "expected_home": null
-          },
-          "diagnostics": {
-            "a_cover_promotion": {
-              "books_count": 161,
-              "context_sources_count": 3,
-              "created_at_utc": "2026-06-22T17:06:52.853427+00:00",
-              "created_by": "promote_a_cover_value_candidates.py",
-              "inventory_match_key": "soccer|derry city|shamrock|2026-06-22",
-              "odds_sources_count": 2
-            },
-            "promotion": {
-              "canonical_edge_pp": 2.177,
-              "canonical_ev_pct": 5.508,
-              "created_at_utc": "2026-06-22T17:06:52.853349+00:00",
-              "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 2.455,
-              "selected_price": 2.53,
-              "selected_vs_median_deviation_pct": 3.055
-            }
-          },
-          "edge_pct": 2.177,
-          "ev_pct": 5.508,
-          "expected_away": null,
-          "expected_home": null,
-          "family": "totals",
-          "home_team": "Shamrock",
-          "league_name": "Ireland - Premier Division",
-          "market_family": "totals",
-          "market_probability": 0.407332,
-          "match_key": "soccer|derry city|shamrock|2026-06-22",
-          "model_probability": 0.417027,
-          "odds": 2.53,
-          "odds_sources_count": 2,
-          "point": 2.0,
-          "publication_score": 15.288,
-          "reasons": [
-            "mode=b_cover_market_promotion",
-            "model=conservative_median_market_anchor",
-            "books=2",
-            "context_sources=2",
-            "best_vs_median=3.05%",
-            "mode=a_cover_market_promotion",
-            "a_cover_sources=2/books=161/contexts=3"
-          ],
-          "selected_odds": 2.53,
-          "selection": "Меньше",
-          "selection_key": "under",
-          "source_summary": {
-            "bookmaker": "betfair_exchange",
-            "books": [
-              "betfair_exchange",
-              "sbobet"
-            ],
-            "books_count": 2,
-            "context_sources": [
-              "openligadb",
-              "sstats"
-            ],
-            "median_price": 2.455,
-            "prices": [
-              2.53,
-              2.38
-            ],
-            "publish_coverage_contract": {
-              "bookmakers_count": 161,
-              "context_sources_count": 3,
-              "note": "candidate still must pass guarded fallback final checks before Telegram publication",
-              "odds_sources_count": 2,
-              "tier": "A-cover-promoted-to-fallback-review"
-            },
-            "raw_bucket_offers": [
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 2.0,
-                "price": 2.53,
-                "selection": "under",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "sbobet",
-                "family": "totals",
-                "point": 2.0,
-                "price": 2.38,
-                "selection": "under",
-                "source": "odds_api_io"
-              }
-            ],
-            "selected_bookmaker": "betfair_exchange",
-            "selected_source": "a_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 3.055
-          },
-          "sources_count": 3
-        },
-        {
-          "_candidate_source": "a_cover_market_promotion",
-          "adjusted_probability": 0.646023,
-          "away_team": "Figueirense",
-          "bookmaker": "betfair_exchange",
-          "books_count": 135,
-          "canonical_match_id": "soccer|figueirense|joinville|2026-06-22",
-          "commence_time": "2026-06-22T18:00:00+00:00",
-          "confidence": 69.358,
-          "confirmation_sources": [
-            "openligadb",
-            "sstats",
-            "thesportsdb"
-          ],
-          "confirmation_sources_count": 3,
-          "context": {
-            "context_sources": [
-              "openligadb",
-              "sstats",
-              "thesportsdb"
-            ],
-            "expected_away": null,
-            "expected_home": null
-          },
-          "diagnostics": {
-            "a_cover_promotion": {
-              "books_count": 135,
-              "context_sources_count": 3,
-              "created_at_utc": "2026-06-22T17:06:52.853716+00:00",
-              "created_by": "promote_a_cover_value_candidates.py",
-              "inventory_match_key": "soccer|figueirense|joinville|2026-06-22",
-              "odds_sources_count": 2
-            },
-            "promotion": {
-              "canonical_edge_pp": 4.361,
-              "canonical_ev_pct": 7.24,
-              "created_at_utc": "2026-06-22T17:06:52.853640+00:00",
-              "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 1.5965,
-              "selected_price": 1.66,
-              "selected_vs_median_deviation_pct": 3.977
-            }
-          },
-          "edge_pct": 4.361,
-          "ev_pct": 7.24,
-          "expected_away": null,
-          "expected_home": null,
-          "family": "totals",
-          "home_team": "Joinville",
-          "league_name": "Brazil - U20 Catarinense, Serie A",
-          "market_family": "totals",
-          "market_probability": 0.62637,
-          "match_key": "soccer|figueirense|joinville|2026-06-22",
-          "model_probability": 0.646023,
-          "odds": 1.66,
-          "odds_sources_count": 2,
-          "point": 2.5,
-          "publication_score": 22.749,
-          "reasons": [
-            "mode=b_cover_market_promotion",
-            "model=conservative_median_market_anchor",
-            "books=2",
-            "context_sources=3",
-            "best_vs_median=3.98%",
-            "mode=a_cover_market_promotion",
-            "a_cover_sources=2/books=135/contexts=3"
-          ],
-          "selected_odds": 1.66,
-          "selection": "Больше",
-          "selection_key": "over",
-          "source_summary": {
-            "bookmaker": "betfair_exchange",
-            "books": [
-              "bet365",
-              "betfair_exchange"
-            ],
-            "books_count": 2,
-            "context_sources": [
-              "openligadb",
-              "sstats",
-              "thesportsdb"
-            ],
-            "median_price": 1.5965,
-            "prices": [
-              1.533,
-              1.66
-            ],
-            "publish_coverage_contract": {
-              "bookmakers_count": 135,
-              "context_sources_count": 3,
-              "note": "candidate still must pass guarded fallback final checks before Telegram publication",
-              "odds_sources_count": 2,
-              "tier": "A-cover-promoted-to-fallback-review"
-            },
-            "raw_bucket_offers": [
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 2.5,
-                "price": 1.533,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 2.5,
-                "price": 1.66,
-                "selection": "over",
-                "source": "odds_api_io"
-              }
-            ],
-            "selected_bookmaker": "betfair_exchange",
-            "selected_source": "a_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 3.977
-          },
-          "sources_count": 3
-        },
-        {
-          "_candidate_source": "a_cover_market_promotion",
-          "adjusted_probability": 0.55344,
-          "away_team": "Throttur R",
-          "bookmaker": "sbobet",
-          "books_count": 120,
-          "canonical_match_id": "soccer|thor ka|throttur r|2026-06-22",
-          "commence_time": "2026-06-22T18:00:00+00:00",
-          "confidence": 68.719,
-          "confirmation_sources": [
-            "day_inventory",
-            "model_xg",
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "context": {
-            "context_sources": [
-              "day_inventory",
-              "sstats"
-            ],
-            "expected_away": null,
-            "expected_home": null
-          },
-          "diagnostics": {
-            "a_cover_promotion": {
-              "books_count": 120,
-              "context_sources_count": 3,
-              "created_at_utc": "2026-06-22T17:06:52.854660+00:00",
-              "created_by": "promote_a_cover_value_candidates.py",
-              "inventory_match_key": "soccer|thor ka|throttur r|2026-06-22",
-              "odds_sources_count": 2
-            },
-            "promotion": {
-              "canonical_edge_pp": 2.712,
-              "canonical_ev_pct": 5.154,
-              "created_at_utc": "2026-06-22T17:06:52.854582+00:00",
-              "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 1.85,
-              "selected_price": 1.9,
-              "selected_vs_median_deviation_pct": 2.703
-            }
-          },
-          "edge_pct": 2.712,
-          "ev_pct": 5.154,
-          "expected_away": null,
-          "expected_home": null,
-          "family": "totals",
-          "home_team": "Thor/KA",
-          "league_name": "Iceland - Urvalsdeild, Women",
-          "market_family": "totals",
-          "market_probability": 0.540541,
-          "match_key": "soccer|thor ka|throttur r|2026-06-22",
-          "model_probability": 0.55344,
-          "odds": 1.9,
-          "odds_sources_count": 2,
-          "point": 3.0,
-          "publication_score": 17.152,
-          "reasons": [
-            "mode=b_cover_market_promotion",
-            "model=conservative_median_market_anchor",
-            "books=3",
-            "context_sources=2",
-            "best_vs_median=2.70%",
-            "mode=a_cover_market_promotion",
-            "a_cover_sources=2/books=120/contexts=3"
-          ],
-          "selected_odds": 1.9,
-          "selection": "Больше",
-          "selection_key": "over",
-          "source_summary": {
-            "bookmaker": "sbobet",
-            "books": [
-              "bet365",
-              "betfair_exchange",
-              "sbobet"
-            ],
-            "books_count": 3,
-            "context_sources": [
-              "day_inventory",
-              "sstats"
-            ],
-            "median_price": 1.85,
-            "prices": [
-              1.85,
-              1.76,
-              1.9
-            ],
-            "publish_coverage_contract": {
-              "bookmakers_count": 120,
-              "context_sources_count": 3,
-              "note": "candidate still must pass guarded fallback final checks before Telegram publication",
-              "odds_sources_count": 2,
-              "tier": "A-cover-promoted-to-fallback-review"
-            },
-            "raw_bucket_offers": [
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 3.0,
-                "price": 1.85,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 3.0,
-                "price": 1.76,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "sbobet",
-                "family": "totals",
-                "point": 3.0,
-                "price": 1.9,
-                "selection": "over",
-                "source": "odds_api_io"
-              }
-            ],
-            "selected_bookmaker": "sbobet",
-            "selected_source": "a_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 2.703
-          },
-          "sources_count": 3
-        },
-        {
-          "_candidate_source": "a_cover_market_promotion",
-          "adjusted_probability": 0.55344,
-          "away_team": "Throttur R",
-          "bookmaker": "sbobet",
-          "books_count": 120,
-          "canonical_match_id": "2026-06-22|thor ka|throttur r",
-          "commence_time": "2026-06-22T18:00:00+00:00",
-          "confidence": 68.719,
-          "confirmation_sources": [
-            "day_inventory",
-            "sstats"
-          ],
-          "confirmation_sources_count": 2,
-          "context": {
-            "context_sources": [
-              "day_inventory",
-              "sstats"
-            ],
-            "expected_away": null,
-            "expected_home": null
-          },
-          "diagnostics": {
-            "a_cover_promotion": {
-              "books_count": 120,
-              "context_sources_count": 2,
-              "created_at_utc": "2026-06-22T17:06:52.855905+00:00",
-              "created_by": "promote_a_cover_value_candidates.py",
-              "inventory_match_key": "2026-06-22|thor ka|throttur r",
-              "odds_sources_count": 2
-            },
-            "promotion": {
-              "canonical_edge_pp": 2.712,
-              "canonical_ev_pct": 5.154,
-              "created_at_utc": "2026-06-22T17:06:52.855811+00:00",
-              "created_by": "build_b_cover_candidate_gap_report.py",
-              "median_price": 1.85,
-              "selected_price": 1.9,
-              "selected_vs_median_deviation_pct": 2.703
-            }
-          },
-          "edge_pct": 2.712,
-          "ev_pct": 5.154,
-          "expected_away": null,
-          "expected_home": null,
-          "family": "totals",
-          "home_team": "Thor/KA",
-          "league_name": "Iceland - Urvalsdeild, Women",
-          "market_family": "totals",
-          "market_probability": 0.540541,
-          "match_key": "2026-06-22|thor ka|throttur r",
-          "model_probability": 0.55344,
-          "odds": 1.9,
-          "odds_sources_count": 2,
-          "point": 3.0,
-          "publication_score": 17.152,
-          "reasons": [
-            "mode=b_cover_market_promotion",
-            "model=conservative_median_market_anchor",
-            "books=3",
-            "context_sources=2",
-            "best_vs_median=2.70%",
-            "mode=a_cover_market_promotion",
-            "a_cover_sources=2/books=120/contexts=2"
-          ],
-          "selected_odds": 1.9,
-          "selection": "Больше",
-          "selection_key": "over",
-          "source_summary": {
-            "bookmaker": "sbobet",
-            "books": [
-              "bet365",
-              "betfair_exchange",
-              "sbobet"
-            ],
-            "books_count": 3,
-            "context_sources": [
-              "day_inventory",
-              "sstats"
-            ],
-            "median_price": 1.85,
-            "prices": [
-              1.85,
-              1.76,
-              1.9
-            ],
-            "publish_coverage_contract": {
-              "bookmakers_count": 120,
-              "context_sources_count": 2,
-              "note": "candidate still must pass guarded fallback final checks before Telegram publication",
-              "odds_sources_count": 2,
-              "tier": "A-cover-promoted-to-fallback-review"
-            },
-            "raw_bucket_offers": [
-              {
-                "bookmaker": "bet365",
-                "family": "totals",
-                "point": 3.0,
-                "price": 1.85,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "betfair_exchange",
-                "family": "totals",
-                "point": 3.0,
-                "price": 1.76,
-                "selection": "over",
-                "source": "odds_api_io"
-              },
-              {
-                "bookmaker": "sbobet",
-                "family": "totals",
-                "point": 3.0,
-                "price": 1.9,
-                "selection": "over",
-                "source": "odds_api_io"
-              }
-            ],
-            "selected_bookmaker": "sbobet",
-            "selected_source": "a_cover_market_promotion",
-            "selected_vs_median_deviation_pct": 2.703
-          },
-          "sources_count": 2
-        }
-      ],
+      "sample": [],
       "stale_artifact_rescue_removed": true,
       "status": "ok",
       "target_date": "2026-06-22"
@@ -1284,161 +367,97 @@
     "a_tier_funnel_diagnostics": {
       "a_cover_published_rows": 0,
       "a_cover_rows": 117,
-      "a_cover_seen_in_fallback": 8,
+      "a_cover_seen_in_fallback": 1,
       "a_cover_with_raw_candidate": 0,
       "a_cover_without_raw_candidate": 91,
-      "active_a_cover_seen_in_fallback": 8,
+      "active_a_cover_seen_in_fallback": 1,
       "active_a_cover_with_raw_candidate": 0,
-      "active_a_cover_without_raw_candidate": 23,
-      "active_future_a_cover_rows": 26,
+      "active_a_cover_without_raw_candidate": 6,
+      "active_future_a_cover_rows": 7,
       "coverage_truth_matches_ready_for_publish": 117,
-      "created_at_utc": "2026-06-22T17:07:11.017046+00:00",
-      "fallback_evaluated_rows": 19,
+      "created_at_utc": "2026-06-22T19:07:08.619608+00:00",
+      "fallback_evaluated_rows": 3,
       "fallback_reason_counts": {
-        "canonical_negative_value": 4,
-        "missing_total_xg_sanity": 1,
-        "price_integrity:external_snapshot_bookmaker_median_outlier": 1,
-        "price_integrity:selected_price_vs_bookmaker_median_outlier": 1,
-        "tier_a_odds_sources_below_min:1/2": 2,
-        "tier_a_proxy_quality_not_allowed": 2,
-        "tier_a_publication_score_below_min": 6,
-        "tier_a_quality_below_min": 4,
-        "tier_b_canonical_edge_below_min": 6,
-        "tier_b_canonical_ev_below_min": 6,
-        "tier_b_confidence_below_min": 3,
-        "tier_b_publication_score_below_min": 6,
-        "tier_b_quality_below_min": 6,
-        "tier_c_publication_score_below_min": 6,
-        "tier_c_quality_below_min": 4,
-        "tier_c_watch_only": 3,
-        "xg_direction_conflict": 5,
-        "xg_probability_gap_hard_reject": 5
+        "canonical_negative_value": 1,
+        "controlled_fallback_daily_limit_reached:3/3": 3,
+        "xg_direction_conflict": 1,
+        "xg_probability_gap_hard_reject": 1
       },
-      "in_publish_window_a_cover_rows": 17,
-      "in_window_a_cover_seen_in_fallback": 8,
+      "in_publish_window_a_cover_rows": 3,
+      "in_window_a_cover_seen_in_fallback": 1,
       "in_window_a_cover_with_raw_candidate": 0,
-      "in_window_a_cover_without_raw_candidate": 15,
+      "in_window_a_cover_without_raw_candidate": 2,
       "min_lead_minutes": 15,
       "missing_raw_candidate_samples": [
         {
-          "away_team": "Nykopings",
+          "away_team": "Pirata",
+          "contexts": 2,
+          "home_team": "Atletico Grau",
+          "kickoff": "2026-06-22T20:15:00+00:00",
+          "league_name": "Peru - Copa de la Liga, Group D",
+          "match_key": "2026-06-22|peru copa de la liga group d|atletico grau|pirata",
+          "odds_sources": 1,
+          "price_confirmations": 160
+        },
+        {
+          "away_team": "Pirata",
+          "contexts": 2,
+          "home_team": "Atletico Grau",
+          "kickoff": "2026-06-22T20:15:00+00:00",
+          "league_name": "Peru - Copa de la Liga, Group D",
+          "match_key": "2026-06-22|peru copa de la liga group d|atletico grau|pirata",
+          "odds_sources": 1,
+          "price_confirmations": 160
+        },
+        {
+          "away_team": "Iraq",
           "contexts": 1,
-          "home_team": "Sleipner",
-          "kickoff": "2026-06-22T17:30:00+00:00",
-          "league_name": "Sweden - Division 2, Sodra Svealand",
-          "match_key": "2026-06-22|sweden division 2 sodra svealand|sleipner|nykopings",
-          "odds_sources": 1,
-          "price_confirmations": 153
-        },
-        {
-          "away_team": "Raagsveds",
-          "contexts": 2,
-          "home_team": "Syrianska",
-          "kickoff": "2026-06-22T17:30:00+00:00",
-          "league_name": "Sweden - Division 2, Sodra Svealand",
-          "match_key": "2026-06-22|sweden division 2 sodra svealand|syrianska|raagsveds",
-          "odds_sources": 1,
-          "price_confirmations": 151
-        },
-        {
-          "away_team": "Al Arabi",
-          "contexts": 3,
-          "home_team": "Kuwait SC",
-          "kickoff": "2026-06-22T17:45:00+00:00",
-          "league_name": "Kuwait - Premier League, Championship Group",
-          "match_key": "2026-06-22|kuwait premier league championship group|kuwait sc|al arabi",
-          "odds_sources": 1,
-          "price_confirmations": 169
-        },
-        {
-          "away_team": "Figueirense",
-          "contexts": 5,
-          "home_team": "Joinville",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Brazil - U20 Catarinense, Serie A",
-          "match_key": "2026-06-22|brazil u20 catarinense serie a|joinville|figueirense",
-          "odds_sources": 1,
-          "price_confirmations": 269
-        },
-        {
-          "away_team": "Throttur R",
-          "contexts": 3,
-          "home_team": "Thor/KA",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Iceland - Urvalsdeild, Women",
-          "match_key": "2026-06-22|iceland urvalsdeild women|thor ka|throttur r",
-          "odds_sources": 1,
-          "price_confirmations": 238
-        },
-        {
-          "away_team": "Throttur R",
-          "contexts": 3,
-          "home_team": "Thor/KA",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Iceland - Urvalsdeild, Women",
-          "match_key": "2026-06-22|iceland urvalsdeild women|thor ka|throttur r",
-          "odds_sources": 1,
-          "price_confirmations": 238
-        },
-        {
-          "away_team": "Breidablik",
-          "contexts": 3,
-          "home_team": "Vestmannaeyjar",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Iceland - Urvalsdeild, Women",
-          "match_key": "2026-06-22|iceland urvalsdeild women|vestmannaeyjar|breidablik",
-          "odds_sources": 1,
-          "price_confirmations": 35
-        },
-        {
-          "away_team": "Cusco",
-          "contexts": 3,
-          "home_team": "Deportivo Binacional",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Peru - Copa de la Liga, Group F",
-          "match_key": "2026-06-22|peru copa de la liga group f|deportivo binacional|cusco",
-          "odds_sources": 1,
-          "price_confirmations": 338
-        },
-        {
-          "away_team": "Racing Club Montevideo",
-          "contexts": 2,
-          "home_team": "Juventud de Las Piedras",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Uruguay - Tercera Division, Reserves",
-          "match_key": "2026-06-22|uruguay tercera division reserves|juventud de las piedras|racing club montevideo",
+          "home_team": "France",
+          "kickoff": "2026-06-22T21:00:00+00:00",
+          "league_name": "International - FIFA World Cup",
+          "match_key": "2026-06-22|international fifa world cup|france|iraq",
           "odds_sources": 1,
           "price_confirmations": 1
         },
         {
-          "away_team": "River Plate",
-          "contexts": 3,
-          "home_team": "Liverpool Montevideo",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Uruguay - Tercera Division, Reserves",
-          "match_key": "2026-06-22|uruguay tercera division reserves|liverpool montevideo|river plate",
+          "away_team": "Guarani",
+          "contexts": 1,
+          "home_team": "Confianca",
+          "kickoff": "2026-06-22T22:30:00+00:00",
+          "league_name": "Brazil - Brasileiro Serie C",
+          "match_key": "2026-06-22|brazil brasileiro serie c|confianca|guarani",
           "odds_sources": 1,
-          "price_confirmations": 129
+          "price_confirmations": 160
         },
         {
-          "away_team": "River Plate",
-          "contexts": 3,
-          "home_team": "Liverpool Montevideo",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Uruguay - Tercera Division, Reserves",
-          "match_key": "2026-06-22|uruguay tercera division reserves|liverpool montevideo|river plate",
+          "away_team": "Gremio Novorizontino",
+          "contexts": 1,
+          "home_team": "Ponte Preta",
+          "kickoff": "2026-06-22T23:00:00+00:00",
+          "league_name": "Brazil - Brasileiro Serie B",
+          "match_key": "2026-06-22|brazil brasileiro serie b|ponte preta|gremio novorizontino",
           "odds_sources": 1,
-          "price_confirmations": 129
+          "price_confirmations": 5
         },
         {
-          "away_team": "Nacional Montevideo",
-          "contexts": 2,
-          "home_team": "Progreso",
-          "kickoff": "2026-06-22T18:00:00+00:00",
-          "league_name": "Uruguay - Tercera Division, Reserves",
-          "match_key": "2026-06-22|uruguay tercera division reserves|progreso|nacional montevideo",
+          "away_team": "Linqueno",
+          "contexts": 1,
+          "home_team": "CA 9 de Julio Rafaela",
+          "kickoff": "2026-06-22T23:15:00+00:00",
+          "league_name": "Argentina - Torneo Federal A, Group 1",
+          "match_key": "2026-06-22|argentina torneo federal a group 1|ca 9 de julio rafaela|linqueno",
           "odds_sources": 1,
-          "price_confirmations": 112
+          "price_confirmations": 122
+        },
+        {
+          "away_team": "Senegal",
+          "contexts": 1,
+          "home_team": "Norway",
+          "kickoff": "2026-06-23T00:00:00+00:00",
+          "league_name": "International - FIFA World Cup",
+          "match_key": "2026-06-23|international fifa world cup|norway|senegal",
+          "odds_sources": 1,
+          "price_confirmations": 1
         }
       ],
       "plain_explanation": [
@@ -1462,217 +481,29 @@
         "wins": 11
       },
       "quality_score_sources": {
-        "proxy": 9,
-        "raw": 4,
-        "raw_missing": 6
+        "proxy": 2,
+        "raw": 1
       },
       "raw_candidate_reason_counts": {},
       "raw_candidates_before_quality": 0,
       "status": "ok"
     },
     "a_tier_publication_diagnostics": {
-      "created_at_utc": "2026-06-22T17:07:11.036744+00:00",
-      "duplicates_removed": 3,
-      "evaluated_rows": 19,
+      "created_at_utc": "2026-06-22T19:07:08.635833+00:00",
+      "duplicates_removed": 1,
+      "evaluated_rows": 3,
       "plain_explanation": [
-        "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
-        "A-tier publication score is below min on many candidates."
+        "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
       ],
       "quality_score_sources": {
-        "proxy": 7,
-        "raw": 4,
-        "raw_missing": 5
+        "proxy": 1,
+        "raw": 1
       },
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
-      "tier_a_blocker_counts": {
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_quality_not_allowed": 1,
-        "tier_a_publication_score_below_min": 4,
-        "tier_a_quality_below_min": 3
-      },
-      "top_a_tier_blocked_samples": [
-        {
-          "a_tier_reasons": [
-            "tier_a_publication_score_below_min",
-            "tier_a_proxy_quality_not_allowed",
-            "tier_a_odds_sources_below_min:1/2"
-          ],
-          "away_team": "River Plate",
-          "books_count": 2,
-          "candidate_source": "latest_rescue_candidates",
-          "commence_time": "2026-06-22T18:00:00+00:00",
-          "confidence": 66.409,
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 2,
-          "daily_cap_reasons": [],
-          "dedupe_key": "2026-06-22|uruguay tercera division reserves|liverpool montevideo|river plate|totals|over|2.5",
-          "edge_pp": 2.083,
-          "ev_pct": 4.02,
-          "family": "totals",
-          "home_team": "Liverpool Montevideo",
-          "league_name": "Uruguay - Tercera Division, Reserves",
-          "match_key": "soccer|liverpool montevideo|river plate|2026-06-22",
-          "odds": 1.93,
-          "odds_sources_count": 1,
-          "other_reasons": [
-            "tier_a_publication_score_below_min",
-            "tier_a_proxy_quality_not_allowed",
-            "tier_a_odds_sources_below_min:1/2",
-            "tier_b_confidence_below_min",
-            "tier_b_quality_below_min",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_c_publication_score_below_min"
-          ],
-          "point": 2.5,
-          "publication_score": 13.389,
-          "quality_score": 68.088,
-          "quality_score_source": "proxy",
-          "rank": 1,
-          "selection": "Больше",
-          "shadow_score": -23.925,
-          "status_without_daily_cap": "blocked_by_other_guards",
-          "tier": null
-        },
-        {
-          "a_tier_reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_publication_score_below_min"
-          ],
-          "away_team": "Kazma",
-          "books_count": 161,
-          "candidate_source": "a_cover_market_promotion",
-          "commence_time": "2026-06-22T18:45:00+00:00",
-          "confidence": 70.558,
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "daily_cap_reasons": [],
-          "dedupe_key": "2026-06-22|kuwait premier league championship group|qadsia|kazma|totals|under|2.5",
-          "edge_pp": 2.556,
-          "ev_pct": 5.241,
-          "family": "totals",
-          "home_team": "Qadsia",
-          "league_name": "Kuwait - Premier League, Championship Group",
-          "match_key": "soccer|kazma|qadsia|2026-06-22",
-          "odds": 2.05,
-          "odds_sources_count": 2,
-          "other_reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_publication_score_below_min",
-            "tier_b_quality_below_min",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_c_quality_below_min",
-            "tier_c_publication_score_below_min"
-          ],
-          "point": 2.5,
-          "publication_score": 18.14,
-          "quality_score": 0.0,
-          "quality_score_source": "raw_missing",
-          "rank": 2,
-          "selection": "Меньше",
-          "shadow_score": -24.704,
-          "status_without_daily_cap": "blocked_by_other_guards",
-          "tier": null
-        },
-        {
-          "a_tier_reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_publication_score_below_min"
-          ],
-          "away_team": "Throttur R",
-          "books_count": 120,
-          "candidate_source": "a_cover_market_promotion",
-          "commence_time": "2026-06-22T18:00:00+00:00",
-          "confidence": 68.719,
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "daily_cap_reasons": [],
-          "dedupe_key": "2026-06-22|iceland urvalsdeild women|thor ka|throttur r|totals|over|3",
-          "edge_pp": 2.712,
-          "ev_pct": 5.154,
-          "family": "totals",
-          "home_team": "Thor/KA",
-          "league_name": "Iceland - Urvalsdeild, Women",
-          "match_key": "soccer|thor ka|throttur r|2026-06-22",
-          "odds": 1.9,
-          "odds_sources_count": 2,
-          "other_reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_publication_score_below_min",
-            "tier_b_quality_below_min",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_c_quality_below_min",
-            "tier_c_publication_score_below_min"
-          ],
-          "point": 3.0,
-          "publication_score": 17.152,
-          "quality_score": 0.0,
-          "quality_score_source": "raw_missing",
-          "rank": 3,
-          "selection": "Больше",
-          "shadow_score": -24.859,
-          "status_without_daily_cap": "blocked_by_other_guards",
-          "tier": null
-        },
-        {
-          "a_tier_reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_publication_score_below_min"
-          ],
-          "away_team": "Derry City",
-          "books_count": 161,
-          "candidate_source": "a_cover_market_promotion",
-          "commence_time": "2026-06-22T19:00:00+00:00",
-          "confidence": 67.079,
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "daily_cap_reasons": [],
-          "dedupe_key": "2026-06-22|ireland premier division|shamrock|derry city|totals|under|2",
-          "edge_pp": 2.177,
-          "ev_pct": 5.508,
-          "family": "totals",
-          "home_team": "Shamrock",
-          "league_name": "Ireland - Premier Division",
-          "match_key": "soccer|derry city|shamrock|2026-06-22",
-          "odds": 2.53,
-          "odds_sources_count": 2,
-          "other_reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_publication_score_below_min",
-            "tier_b_confidence_below_min",
-            "tier_b_quality_below_min",
-            "tier_b_canonical_edge_below_min",
-            "tier_b_canonical_ev_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_c_quality_below_min",
-            "tier_c_publication_score_below_min"
-          ],
-          "point": 2.0,
-          "publication_score": 15.288,
-          "quality_score": 0.0,
-          "quality_score_source": "raw_missing",
-          "rank": 4,
-          "selection": "Меньше",
-          "shadow_score": -30.458,
-          "status_without_daily_cap": "blocked_by_other_guards",
-          "tier": null
-        }
-      ],
-      "unique_evaluated_rows": 16
+      "tier_a_blocker_counts": {},
+      "top_a_tier_blocked_samples": [],
+      "unique_evaluated_rows": 2
     },
     "ab_tier_bookmaker_contract_policy": {
       "contract": {
@@ -1706,7 +537,7 @@
         ],
         "independent_odds_sources": "required_for_a_tier_only"
       },
-      "created_at_utc": "2026-06-22T17:02:24.022039+00:00",
+      "created_at_utc": "2026-06-22T19:02:19.655229+00:00",
       "env": {
         "CONTROLLED_FALLBACK_DEDUPE_PREVIOUS_REPORT": "true",
         "CONTROLLED_FALLBACK_DEDUPE_SENT_INDEX_STRICT": "true",
@@ -1783,14 +614,14 @@
       "independent_odds_sources": "required_for_a_tier_only"
     },
     "bzzoiro_overlap_bridge": {
-      "bzzoiro_offer_rows": 300,
-      "created_at_utc": "2026-06-22T17:07:03.518355+00:00",
-      "odds_reference_aliases": 192,
+      "bzzoiro_offer_rows": 303,
+      "created_at_utc": "2026-06-22T19:07:01.673723+00:00",
+      "odds_reference_aliases": 153,
       "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
-      "overlap_match_rows": 300,
-      "overlap_same_bucket_rows": 294,
+      "overlap_match_rows": 303,
+      "overlap_same_bucket_rows": 297,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 318
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 321
       },
       "status": "ok"
     },
@@ -1809,7 +640,7 @@
       "event_prediction_fetched": 8,
       "event_rejected_league_mismatch": 0,
       "event_rejected_low_score": 0,
-      "event_rejected_no_quality": 33,
+      "event_rejected_no_quality": 32,
       "event_stats_fetched": 8,
       "events_fetched": 17,
       "http_statuses": [
@@ -1900,7 +731,7 @@
       ],
       "prediction_resources": 8,
       "provider_odds_hinted_contexts": 6,
-      "provider_odds_hints": 600,
+      "provider_odds_hints": 605,
       "provider_version": "bzzoiro-v2-clean-2026-04-29",
       "request_limit_removed": true,
       "requests": 33,
@@ -1913,10 +744,10 @@
     },
     "controlled_fallback_prepublish_guard": {
       "base_exit_code": 0,
-      "blocked_events": 0,
-      "created_at_utc": "2026-06-22T17:06:53.018515+00:00",
+      "blocked_events": 6,
+      "created_at_utc": "2026-06-22T19:06:55.804272+00:00",
       "daily_existing": {
-        "count": 2,
+        "count": 3,
         "date": "2026-06-22",
         "samples": [
           {
@@ -1938,11 +769,199 @@
             "published_at": "2026-06-22T15:07:12.043112+00:00",
             "selection": "Меньше",
             "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+          },
+          {
+            "away_team": "Figueirense",
+            "commence_time": "2026-06-22T18:00:00+00:00",
+            "home_team": "Joinville",
+            "key": "soccer figueirense joinville 2026 06 22|totals|under|3",
+            "point": 3.0,
+            "published_at": "2026-06-22T17:06:58.806289+00:00",
+            "selection": "Меньше",
+            "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
           }
         ]
       },
       "daily_limit": 3,
-      "events": [],
+      "events": [
+        {
+          "away_team": "Pirata",
+          "date": "2026-06-22",
+          "existing_count": 3,
+          "family": "totals",
+          "guard": "controlled_fallback_daily_limit",
+          "home_team": "Atletico Grau",
+          "limit": 3,
+          "match_key": "soccer|atletico grau|pirata|2026-06-22",
+          "point": 2.5,
+          "reasons": [
+            "controlled_fallback_daily_limit_reached:3/3"
+          ],
+          "samples": [
+            {
+              "away_team": "Hadiya Hossana",
+              "commence_time": "2026-06-22T15:00:00+00:00",
+              "home_team": "Welwalo Adigrat",
+              "key": "soccer hadiya hossana welwalo adigrat 2026 06 22|totals|over|1.5",
+              "point": 1.5,
+              "published_at": "2026-06-22T13:06:59.110437+00:00",
+              "selection": "Больше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            },
+            {
+              "away_team": "Ljungskile",
+              "commence_time": "2026-06-22T17:00:00+00:00",
+              "home_team": "Oddevold",
+              "key": "soccer ljungskile oddevold 2026 06 22|totals|under|2.5",
+              "point": 2.5,
+              "published_at": "2026-06-22T15:07:12.043112+00:00",
+              "selection": "Меньше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            },
+            {
+              "away_team": "Figueirense",
+              "commence_time": "2026-06-22T18:00:00+00:00",
+              "home_team": "Joinville",
+              "key": "soccer figueirense joinville 2026 06 22|totals|under|3",
+              "point": 3.0,
+              "published_at": "2026-06-22T17:06:58.806289+00:00",
+              "selection": "Меньше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            }
+          ],
+          "selection": "Больше"
+        },
+        {
+          "away_team": "Pirata",
+          "family": "totals",
+          "guard": "controlled_fallback_prepublish",
+          "home_team": "Atletico Grau",
+          "match_key": "soccer|atletico grau|pirata|2026-06-22",
+          "point": 2.5,
+          "reasons": [
+            "controlled_fallback_daily_limit_reached:3/3"
+          ],
+          "selection": "Больше"
+        },
+        {
+          "away_team": "Pirata",
+          "date": "2026-06-22",
+          "existing_count": 3,
+          "family": "totals",
+          "guard": "controlled_fallback_daily_limit",
+          "home_team": "Atletico Grau",
+          "limit": 3,
+          "match_key": "2026-06-22|atletico grau|pirata",
+          "point": 2.5,
+          "reasons": [
+            "controlled_fallback_daily_limit_reached:3/3"
+          ],
+          "samples": [
+            {
+              "away_team": "Hadiya Hossana",
+              "commence_time": "2026-06-22T15:00:00+00:00",
+              "home_team": "Welwalo Adigrat",
+              "key": "soccer hadiya hossana welwalo adigrat 2026 06 22|totals|over|1.5",
+              "point": 1.5,
+              "published_at": "2026-06-22T13:06:59.110437+00:00",
+              "selection": "Больше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            },
+            {
+              "away_team": "Ljungskile",
+              "commence_time": "2026-06-22T17:00:00+00:00",
+              "home_team": "Oddevold",
+              "key": "soccer ljungskile oddevold 2026 06 22|totals|under|2.5",
+              "point": 2.5,
+              "published_at": "2026-06-22T15:07:12.043112+00:00",
+              "selection": "Меньше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            },
+            {
+              "away_team": "Figueirense",
+              "commence_time": "2026-06-22T18:00:00+00:00",
+              "home_team": "Joinville",
+              "key": "soccer figueirense joinville 2026 06 22|totals|under|3",
+              "point": 3.0,
+              "published_at": "2026-06-22T17:06:58.806289+00:00",
+              "selection": "Меньше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            }
+          ],
+          "selection": "Больше"
+        },
+        {
+          "away_team": "Pirata",
+          "family": "totals",
+          "guard": "controlled_fallback_prepublish",
+          "home_team": "Atletico Grau",
+          "match_key": "2026-06-22|atletico grau|pirata",
+          "point": 2.5,
+          "reasons": [
+            "controlled_fallback_daily_limit_reached:3/3"
+          ],
+          "selection": "Больше"
+        },
+        {
+          "away_team": "Pirata",
+          "date": "2026-06-22",
+          "existing_count": 3,
+          "family": "totals",
+          "guard": "controlled_fallback_daily_limit",
+          "home_team": "Atletico Grau",
+          "limit": 3,
+          "match_key": "soccer|atletico grau|pirata|2026-06-22",
+          "point": 2.5,
+          "reasons": [
+            "controlled_fallback_daily_limit_reached:3/3"
+          ],
+          "samples": [
+            {
+              "away_team": "Hadiya Hossana",
+              "commence_time": "2026-06-22T15:00:00+00:00",
+              "home_team": "Welwalo Adigrat",
+              "key": "soccer hadiya hossana welwalo adigrat 2026 06 22|totals|over|1.5",
+              "point": 1.5,
+              "published_at": "2026-06-22T13:06:59.110437+00:00",
+              "selection": "Больше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            },
+            {
+              "away_team": "Ljungskile",
+              "commence_time": "2026-06-22T17:00:00+00:00",
+              "home_team": "Oddevold",
+              "key": "soccer ljungskile oddevold 2026 06 22|totals|under|2.5",
+              "point": 2.5,
+              "published_at": "2026-06-22T15:07:12.043112+00:00",
+              "selection": "Меньше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            },
+            {
+              "away_team": "Figueirense",
+              "commence_time": "2026-06-22T18:00:00+00:00",
+              "home_team": "Joinville",
+              "key": "soccer figueirense joinville 2026 06 22|totals|under|3",
+              "point": 3.0,
+              "published_at": "2026-06-22T17:06:58.806289+00:00",
+              "selection": "Меньше",
+              "source_path": "/home/runner/work/sports-bot/sports-bot/.data/fallback-sent-index.json"
+            }
+          ],
+          "selection": "Меньше 2.5"
+        },
+        {
+          "away_team": "Pirata",
+          "family": "totals",
+          "guard": "controlled_fallback_prepublish",
+          "home_team": "Atletico Grau",
+          "match_key": "soccer|atletico grau|pirata|2026-06-22",
+          "point": 2.5,
+          "reasons": [
+            "controlled_fallback_daily_limit_reached:3/3"
+          ],
+          "selection": "Меньше 2.5"
+        }
+      ],
       "policy_version": "controlled-fallback-guard-v18-two-hour-window-daily-cap-reserved-slot",
       "publish_window_hours": 2.0,
       "reserved_slot_enabled": true,
@@ -1952,59 +971,96 @@
       "windowed_filter_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-windowed-core-publication-filter.json"
     },
     "controlled_fallback_shadow_ranking": {
-      "blocked_by_daily_cap_and_other_guards": 0,
-      "blocked_only_by_daily_cap": 0,
-      "created_at_utc": "2026-06-22T17:07:11.036159+00:00",
-      "daily_cap_blocked_unique_rows": 0,
-      "duplicates_removed": 3,
-      "evaluated_rows": 19,
-      "published": true,
+      "blocked_by_daily_cap_and_other_guards": 1,
+      "blocked_only_by_daily_cap": 1,
+      "created_at_utc": "2026-06-22T19:07:08.635737+00:00",
+      "daily_cap_blocked_unique_rows": 2,
+      "duplicates_removed": 1,
+      "evaluated_rows": 3,
+      "published": false,
       "reason_counts": {
-        "canonical_negative_value": 4,
-        "missing_total_xg_sanity": 1,
-        "price_integrity:external_snapshot_bookmaker_median_outlier": 1,
-        "price_integrity:selected_price_vs_bookmaker_median_outlier": 1,
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_quality_not_allowed": 1,
-        "tier_a_publication_score_below_min": 4,
-        "tier_a_quality_below_min": 3,
-        "tier_b_canonical_edge_below_min": 4,
-        "tier_b_canonical_ev_below_min": 4,
-        "tier_b_confidence_below_min": 2,
-        "tier_b_publication_score_below_min": 4,
-        "tier_b_quality_below_min": 4,
-        "tier_c_publication_score_below_min": 4,
-        "tier_c_quality_below_min": 3,
-        "tier_c_watch_only": 3,
-        "xg_direction_conflict": 4,
-        "xg_probability_gap_hard_reject": 4
+        "canonical_negative_value": 1,
+        "controlled_fallback_daily_limit_reached:3/3": 2
       },
       "reason_counts_without_daily_cap": {
-        "canonical_negative_value": 4,
-        "missing_total_xg_sanity": 1,
-        "price_integrity:external_snapshot_bookmaker_median_outlier": 1,
-        "price_integrity:selected_price_vs_bookmaker_median_outlier": 1,
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_quality_not_allowed": 1,
-        "tier_a_publication_score_below_min": 4,
-        "tier_a_quality_below_min": 3,
-        "tier_b_canonical_edge_below_min": 4,
-        "tier_b_canonical_ev_below_min": 4,
-        "tier_b_confidence_below_min": 2,
-        "tier_b_publication_score_below_min": 4,
-        "tier_b_quality_below_min": 4,
-        "tier_c_publication_score_below_min": 4,
-        "tier_c_quality_below_min": 3,
-        "tier_c_watch_only": 3,
-        "xg_direction_conflict": 4,
-        "xg_probability_gap_hard_reject": 4
+        "canonical_negative_value": 1
       },
-      "report_status": "published",
+      "report_status": "no_viable_controlled_fallback",
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
-      "top_blocked_after_daily_cap_removed": [],
-      "top_would_publish_without_daily_cap": [],
-      "unique_evaluated_rows": 16
+      "top_blocked_after_daily_cap_removed": [
+        {
+          "away_team": "Pirata",
+          "books_count": 3,
+          "candidate_source": "debug_candidates_before_quality",
+          "commence_time": "2026-06-22T20:15:00+00:00",
+          "confidence": 71.407,
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "daily_cap_reasons": [
+            "controlled_fallback_daily_limit_reached:3/3"
+          ],
+          "dedupe_key": "2026-06-22|peru copa de la liga group d|atletico grau|pirata|totals|under|2.5",
+          "edge_pp": -2.996,
+          "ev_pct": -5.722,
+          "family": "totals",
+          "home_team": "Atletico Grau",
+          "league_name": "Peru - Copa de la Liga, Group D",
+          "match_key": "soccer|atletico grau|pirata|2026-06-22",
+          "odds": 1.91,
+          "odds_sources_count": 1,
+          "other_reasons": [
+            "canonical_negative_value"
+          ],
+          "point": 2.5,
+          "publication_score": 71.631,
+          "quality_score": 55.72,
+          "quality_score_source": "raw",
+          "rank": 1,
+          "selection": "Меньше 2.5",
+          "shadow_score": 2.213,
+          "status_without_daily_cap": "blocked_by_other_guards",
+          "tier": null
+        }
+      ],
+      "top_would_publish_without_daily_cap": [
+        {
+          "away_team": "Pirata",
+          "books_count": 3,
+          "candidate_source": "latest_rescue_candidates",
+          "commence_time": "2026-06-22T20:15:00+00:00",
+          "confidence": 68.034,
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "daily_cap_reasons": [
+            "controlled_fallback_daily_limit_reached:3/3"
+          ],
+          "dedupe_key": "2026-06-22|peru copa de la liga group d|atletico grau|pirata|totals|over|2.5",
+          "edge_pp": 3.348,
+          "ev_pct": 6.964,
+          "family": "totals",
+          "home_team": "Atletico Grau",
+          "league_name": "Peru - Copa de la Liga, Group D",
+          "match_key": "2026-06-22|atletico grau|pirata",
+          "odds": 2.08,
+          "odds_sources_count": 1,
+          "other_reasons": [],
+          "point": 2.5,
+          "publication_score": 19.405,
+          "quality_score": 75.791,
+          "quality_score_source": "proxy",
+          "rank": 1,
+          "selection": "Больше",
+          "shadow_score": 21.695,
+          "status_without_daily_cap": "would_publish_without_daily_cap",
+          "tier": null
+        }
+      ],
+      "unique_evaluated_rows": 2
     },
     "coverage_truth": {
       "counts": {
@@ -2036,104 +1092,103 @@
         },
         "csv": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.csv",
         "json": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-        "updated_at_utc": "2026-06-22T17:07:08.507511+00:00"
+        "updated_at_utc": "2026-06-22T19:07:06.278712+00:00"
       }
     },
     "fresh_b_cover_diagnostics": {
-      "active_b_cover_rows": 43,
-      "active_b_cover_with_any_current_offer_match": 20,
-      "active_b_cover_without_current_offer_match": 23,
+      "active_b_cover_rows": 10,
+      "active_b_cover_with_any_current_offer_match": 5,
+      "active_b_cover_without_current_offer_match": 5,
       "b_cover_rows": 120,
-      "b_cover_with_any_current_offer_match": 20,
-      "b_cover_without_current_offer_match": 100,
+      "b_cover_with_any_current_offer_match": 5,
+      "b_cover_without_current_offer_match": 115,
       "bzzoiro_overlap_bridge": {
-        "bzzoiro_offer_rows": 300,
-        "created_at_utc": "2026-06-22T17:07:03.518355+00:00",
-        "odds_reference_aliases": 192,
+        "bzzoiro_offer_rows": 303,
+        "created_at_utc": "2026-06-22T19:07:01.673723+00:00",
+        "odds_reference_aliases": 153,
         "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
-        "overlap_match_rows": 300,
-        "overlap_same_bucket_rows": 294,
+        "overlap_match_rows": 303,
+        "overlap_same_bucket_rows": 297,
         "source_counts": {
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 318
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 321
         },
         "status": "ok"
       },
-      "created_at_utc": "2026-06-22T17:07:03.513456+00:00",
+      "created_at_utc": "2026-06-22T19:07:01.668723+00:00",
       "current_market_bucket_book_count_histogram": {
-        "1": 4491,
+        "1": 2995,
         "11": 4,
         "12": 2,
         "13": 4,
         "19": 2,
-        "2": 486,
-        "3": 126,
-        "4": 38,
+        "2": 282,
+        "3": 82,
+        "4": 22,
         "5": 4
       },
-      "current_market_buckets_totals_spreads": 5157,
+      "current_market_buckets_totals_spreads": 3397,
       "current_market_bzzoiro_buckets_totals_spreads": 90,
-      "fallback_candidates_seen": 19,
-      "fallback_low_confidence_candidates": 1,
-      "fallback_low_edge_candidates": 1,
-      "fallback_low_ev_candidates": 1,
-      "fallback_missing_xg_candidates": 1,
+      "fallback_candidates_seen": 3,
+      "fallback_low_confidence_candidates": 0,
+      "fallback_low_edge_candidates": 0,
+      "fallback_low_ev_candidates": 0,
+      "fallback_missing_xg_candidates": 0,
       "fallback_reason_counts": {},
-      "fallback_rows_seen": 1,
-      "fallback_single_source_candidates": 1,
-      "fallback_status": "published",
+      "fallback_rows_seen": 0,
+      "fallback_single_source_candidates": 0,
+      "fallback_status": "no_viable_controlled_fallback",
       "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
       "inventory_rows": 214,
-      "offer_rows_seen": 11455,
+      "offer_rows_seen": 8030,
       "offer_source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 300,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 3450,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 3461,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 4244
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 303,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 2477,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 2282,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 2968
       },
       "promotion_considered_b_cover_rows": 101,
-      "promotion_promoted_count": 5,
+      "promotion_promoted_count": 1,
       "promotion_reason_counts": {
-        "promoted": 5,
-        "promotion_skip_duplicate_candidate": 2,
-        "promotion_skip_edge_below_min": 81,
-        "promotion_skip_no_offer_bucket": 81,
-        "promotion_skip_odds_above_max": 176,
-        "promotion_skip_odds_below_min": 180,
-        "promotion_skip_price_outlier": 14
+        "promoted": 1,
+        "promotion_skip_edge_below_min": 17,
+        "promotion_skip_no_offer_bucket": 96,
+        "promotion_skip_odds_above_max": 48,
+        "promotion_skip_odds_below_min": 43,
+        "promotion_skip_price_outlier": 9
       }
     },
     "github_actions": {
       "repository": "Harfdsfsq/sports-bot",
       "run_attempt": "1",
-      "run_id": "27969833207",
+      "run_id": "27976817244",
       "workflow": "run-bot"
     },
     "inventory_bookmaker_backfill": {
       "changed_inventory_rows": 0,
-      "created_at_utc": "2026-06-22T17:07:07.792563+00:00",
+      "created_at_utc": "2026-06-22T19:07:05.449424+00:00",
       "examples": [],
       "inventory_path_used": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-22.json",
       "inventory_rows": 214,
-      "mapping_gap_after": 36,
-      "matched_inventory_rows": 31,
-      "normalized_2plus_after": 28,
+      "mapping_gap_after": 11,
+      "matched_inventory_rows": 6,
+      "normalized_2plus_after": 5,
       "normalized_2plus_before": 112,
-      "raw_2plus_matches": 64,
-      "raw_groups": 75,
-      "scanned_dicts": 87175,
+      "raw_2plus_matches": 16,
+      "raw_groups": 22,
+      "scanned_dicts": 78623,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/170632-line-snapshots.json": 2219,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 5,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 41,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 2095,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 20,
-        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 43,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 5
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-22/190635-line-snapshots.json": 712,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 1,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 44,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 588,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 33,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 1
       },
       "target_date": "2026-06-22"
     },
     "inventory_target_expand": {
-      "created_at_utc": "2026-06-22T17:02:17.321707+00:00",
+      "created_at_utc": "2026-06-22T19:02:11.811380+00:00",
       "existing_before": 192,
       "matches_after": 192,
       "parse_errors": [
@@ -2165,10 +1220,10 @@
       "target_timezone": "Europe/Moscow"
     },
     "odds_api_io_offer_snapshot": {
-      "matches_count": 41,
-      "matches_with_2plus_books_any_market": 31,
-      "matches_with_2plus_books_same_side_market": 30,
-      "rows_count": 4244,
+      "matches_count": 33,
+      "matches_with_2plus_books_any_market": 20,
+      "matches_with_2plus_books_same_side_market": 20,
+      "rows_count": 2968,
       "status": "ok"
     },
     "progressive_core_coverage": {
@@ -2177,41 +1232,17 @@
       "gap_sample_size": 0
     },
     "rescue_xg_confirmation_enrichment": {
-      "candidates_seen": 15,
-      "confirmation_added": 8,
-      "context_keys": 137,
-      "context_pairs": 137,
-      "created_at_utc": "2026-06-22T17:06:52.924520+00:00",
+      "candidates_seen": 2,
+      "confirmation_added": 2,
+      "context_keys": 129,
+      "context_pairs": 129,
+      "created_at_utc": "2026-06-22T19:06:55.706449+00:00",
       "examples": [
         {
           "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 1.7647,
-          "expected_home": 0.3333,
-          "match": "Deportivo Binacional — Cusco"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 0.4364,
-          "expected_home": 1.6,
-          "match": "Qadsia — Kazma"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 0.5543,
-          "expected_home": 1.3714,
-          "match": "Shamrock — Derry City"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 1.193,
-          "expected_home": 0.749,
-          "match": "Joinville — Figueirense"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 2.428,
-          "expected_home": 2.073,
-          "match": "Thor/KA — Throttur R"
+          "expected_away": 0.5333,
+          "expected_home": 1.4286,
+          "match": "Atletico Grau — Pirata"
         }
       ],
       "missing_context_match": 0,
@@ -2219,14 +1250,14 @@
       "touched_files": [
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json"
       ],
-      "xg_added": 12
+      "xg_added": 1
     },
     "run_bot_step_status": {
       "note": "run-once status is recorded; workflow continues so diagnostics/report/artifacts can complete",
-      "run_id": "27969833207",
+      "run_id": "27976817244",
       "status": 0,
       "status_text": "ok",
-      "updated_at_utc": "2026-06-22T17:06:44Z",
+      "updated_at_utc": "2026-06-22T19:06:47Z",
       "workflow": "run-bot"
     },
     "sportlogic": {
@@ -2253,13 +1284,13 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 24,
-    "fallback_candidates_seen": 19,
-    "fallback_evaluated": 19,
-    "fallback_published": true,
-    "fallback_published_count": 1,
-    "fallback_status": "published",
-    "final_publication_status": "published",
+    "candidates_before_quality": 16,
+    "fallback_candidates_seen": 3,
+    "fallback_evaluated": 3,
+    "fallback_published": false,
+    "fallback_published_count": 0,
+    "fallback_status": "no_viable_controlled_fallback",
+    "final_publication_status": "not_published",
     "main_pipeline_publication_counter_diagnostics": {
       "counter_inconsistent": false,
       "ignored_ledger_sent_pending_count": 0,
@@ -2269,13 +1300,13 @@
     },
     "main_pipeline_published": false,
     "main_pipeline_published_count": 0,
-    "passed_candidates": 4,
+    "passed_candidates": 1,
     "publish_filter_blocked": 0,
     "publish_filter_input": 0,
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
-    "published_count": 1,
-    "raw_candidates": 4,
+    "published_count": 0,
+    "raw_candidates": 1,
     "windowed_audit_candidates": 0,
     "windowed_publish_allowed": 0,
     "windowed_publish_blocked": 0
@@ -2283,98 +1314,63 @@
   "line_guard": {
     "dropped": 0,
     "dropped_final": 0,
-    "final_pre_kickoff_checks": 12,
+    "final_pre_kickoff_checks": 3,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 12,
+    "no_more_regular_run_before_kickoff": 3,
     "seen": 0,
     "waiting_next_run": 0
   },
   "reasons": [
     {
-      "count": 6,
-      "reason": "tier_a_publication_score_below_min",
-      "reason_ru": "tier a publication score below min"
+      "count": 3,
+      "reason": "controlled_fallback_daily_limit_reached:3/3",
+      "reason_ru": "controlled fallback daily limit reached:3/3"
     },
     {
-      "count": 6,
-      "reason": "tier_b_quality_below_min",
-      "reason_ru": "tier b quality below min"
-    },
-    {
-      "count": 6,
-      "reason": "tier_b_canonical_edge_below_min",
-      "reason_ru": "tier b canonical edge below min"
-    },
-    {
-      "count": 6,
-      "reason": "tier_b_canonical_ev_below_min",
-      "reason_ru": "tier b canonical ev below min"
-    },
-    {
-      "count": 6,
-      "reason": "tier_b_publication_score_below_min",
-      "reason_ru": "tier b publication score below min"
-    },
-    {
-      "count": 6,
-      "reason": "tier_c_publication_score_below_min",
-      "reason_ru": "tier c publication score below min"
-    },
-    {
-      "count": 5,
+      "count": 1,
       "reason": "xg_direction_conflict",
       "reason_ru": "направление ставки конфликтует с xG"
     },
     {
-      "count": 5,
+      "count": 1,
       "reason": "xg_probability_gap_hard_reject",
       "reason_ru": "модель слишком оптимистична относительно xG-ориентира"
     },
     {
-      "count": 4,
-      "reason": "tier_a_quality_below_min",
-      "reason_ru": "tier a quality below min"
-    },
-    {
-      "count": 4,
-      "reason": "tier_c_quality_below_min",
-      "reason_ru": "tier c quality below min"
-    },
-    {
-      "count": 4,
+      "count": 1,
       "reason": "canonical_negative_value",
       "reason_ru": "отрицательная canonical value после пересчёта по выбранному коэффициенту"
     },
     {
-      "count": 4,
-      "reason": "quality_post_calibration_probability_guard",
-      "reason_ru": "quality: вероятность после калибровки ниже порога"
+      "count": 1,
+      "reason": "quality_post_calibration_edge_guard",
+      "reason_ru": "quality post calibration edge guard"
     }
   ],
   "samples": {
     "fallback_evaluated": [
       {
-        "away_team": "Cusco",
-        "away_team_ru": "Куско",
-        "candidate_source": "a_cover_market_promotion",
-        "commence_time": "2026-06-22T18:00:00+00:00",
-        "commence_time_display": "22.06.2026 21:00 MSK",
+        "away_team": "Pirata",
+        "away_team_ru": "Пирата",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-22T20:15:00+00:00",
+        "commence_time_display": "22.06.2026 23:15 MSK",
         "family": "totals",
-        "home_team": "Deportivo Binacional",
-        "home_team_ru": "Депортиво Бинакионал",
-        "league_name": "Peru - Copa de la Liga, Group F",
-        "league_name_ru": "Перу - Копа де Ла Лига, Груп F",
-        "match_key": "soccer|binacional|cusco|2026-06-22",
+        "home_team": "Atletico Grau",
+        "home_team_ru": "Атлетико Грау",
+        "league_name": "Peru - Copa de la Liga, Group D",
+        "league_name_ru": "Перу - Копа де Ла Лига, Груп D",
+        "match_key": "soccer|atletico grau|pirata|2026-06-22",
         "metrics": {
-          "adjusted_probability": 0.496286,
-          "books_count": 170,
+          "adjusted_probability": 0.51425,
+          "books_count": 3,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 2.235,
-          "canonical_ev_pct": 4.716,
-          "confidence": 68.522,
+          "canonical_edge_pp": 3.348,
+          "canonical_ev_pct": 6.964,
+          "confidence": 68.034,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": true,
@@ -2386,382 +1382,158 @@
           "confirmation_sources": [
             "sstats"
           ],
-          "confirmation_sources_count": 3,
+          "confirmation_sources_count": 1,
           "dnb_sanity": {
             "enabled": false,
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 1.085,
-          "market_probability": 0.485437,
-          "model_probability": 0.496286,
-          "odds": 2.11,
-          "odds_sources_count": 2,
+          "market_edge_pp": 1.425,
+          "market_probability": 0.5,
+          "model_probability": 0.51425,
+          "odds": 2.08,
+          "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
-            "applies": false,
+            "applies": true,
             "enabled": true,
             "min_confidence": 78.0,
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 15.694,
+          "publication_score": 19.405,
           "quality_reasons": [],
-          "quality_score": 0.0,
+          "quality_score": 75.791,
           "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "selected_implied_probability": 0.473934,
-          "sources_count": 3,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.480769,
+          "sources_count": 1,
           "xg_sanity": {
             "enabled": true,
-            "xg_abs_gap_pp": 33.531,
+            "xg_abs_gap_pp": 20.124,
             "xg_direction_ok": false,
             "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 33.531,
-            "xg_model_optimism_gap_pp": 33.531,
-            "xg_probability": 0.160979,
-            "xg_probability_pct": 16.098,
+            "xg_model_gap_pp": 20.124,
+            "xg_model_optimism_gap_pp": 20.124,
+            "xg_probability": 0.313012,
+            "xg_probability_pct": 31.301,
             "xg_source": "home_away",
-            "xg_total": 2.098
-          }
-        },
-        "ok": false,
-        "point": 3.5,
-        "reject_reasons": [
-          "xg_direction_conflict",
-          "xg_probability_gap_hard_reject"
-        ],
-        "reject_reasons_ru": [
-          "направление ставки конфликтует с xG",
-          "модель слишком оптимистична относительно xG-ориентира"
-        ],
-        "selection": "Больше",
-        "tier": null
-      },
-      {
-        "away_team": "Kazma",
-        "away_team_ru": "Казма",
-        "candidate_source": "a_cover_market_promotion",
-        "commence_time": "2026-06-22T18:45:00+00:00",
-        "commence_time_display": "22.06.2026 21:45 MSK",
-        "family": "totals",
-        "home_team": "Qadsia",
-        "home_team_ru": "Кадсиа",
-        "league_name": "Kuwait - Premier League, Championship Group",
-        "league_name_ru": "Кууайт - Премьер-лига, Чемпионшип Груп",
-        "match_key": "soccer|kazma|qadsia|2026-06-22",
-        "metrics": {
-          "adjusted_probability": 0.513369,
-          "books_count": 161,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 2.556,
-          "canonical_ev_pct": 5.241,
-          "confidence": 70.558,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": true,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 1.274,
-          "market_probability": 0.500626,
-          "model_probability": 0.513369,
-          "odds": 2.05,
-          "odds_sources_count": 2,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 18.14,
-          "quality_reasons": [],
-          "quality_score": 0.0,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "selected_implied_probability": 0.487805,
-          "sources_count": 3,
-          "tier_b_bookmaker_quorum": {
-            "books_count": 161,
-            "enabled": true,
-            "max_deviation_pct": 8.0,
-            "median_price": 1.9975,
-            "mode": "bookmaker_quorum",
-            "odds_sources_count": 2,
-            "priced_books_count": 4,
-            "same_market_side_line_only": true,
-            "selected_price": 2.05,
-            "selected_vs_median_deviation_pct": 2.628
-          },
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 15.346,
-            "xg_direction_ok": true,
-            "xg_model_conservative_gap_pp": 15.346,
-            "xg_model_gap_pp": -15.346,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.666825,
-            "xg_probability_pct": 66.683,
-            "xg_source": "home_away",
-            "xg_total": 2.036
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_publication_score_below_min",
-          "tier_b_quality_below_min",
-          "tier_b_canonical_edge_below_min",
-          "tier_b_canonical_ev_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_publication_score_below_min"
-        ],
-        "reject_reasons_ru": [
-          "качество ниже минимума уровня A",
-          "уровень A: publication score below min",
-          "качество ниже минимума уровня B",
-          "запас value ниже минимума уровня B",
-          "EV ниже минимума уровня B",
-          "уровень B: publication score below min",
-          "качество ниже минимума уровня C",
-          "уровень C: publication score below min"
-        ],
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "Derry City",
-        "away_team_ru": "Дерри Кити",
-        "candidate_source": "a_cover_market_promotion",
-        "commence_time": "2026-06-22T19:00:00+00:00",
-        "commence_time_display": "22.06.2026 22:00 MSK",
-        "family": "totals",
-        "home_team": "Shamrock",
-        "home_team_ru": "Шамрок",
-        "league_name": "Ireland - Premier Division",
-        "league_name_ru": "Иреланд - Премиер Дивисион",
-        "match_key": "soccer|derry city|shamrock|2026-06-22",
-        "metrics": {
-          "adjusted_probability": 0.417027,
-          "books_count": 161,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 2.177,
-          "canonical_ev_pct": 5.508,
-          "confidence": 67.079,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": true,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 0.969,
-          "market_probability": 0.407332,
-          "model_probability": 0.417027,
-          "odds": 2.53,
-          "odds_sources_count": 2,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 15.288,
-          "quality_reasons": [],
-          "quality_score": 0.0,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "selected_implied_probability": 0.395257,
-          "sources_count": 3,
-          "tier_b_bookmaker_quorum": {
-            "books_count": 161,
-            "enabled": true,
-            "max_deviation_pct": 8.0,
-            "median_price": 2.455,
-            "mode": "bookmaker_quorum",
-            "odds_sources_count": 2,
-            "priced_books_count": 2,
-            "same_market_side_line_only": true,
-            "selected_price": 2.53,
-            "selected_vs_median_deviation_pct": 3.055
-          },
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 0.946,
-            "xg_direction_ok": true,
-            "xg_model_conservative_gap_pp": 0.946,
-            "xg_model_gap_pp": -0.946,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.42649,
-            "xg_probability_pct": 42.649,
-            "xg_source": "home_away",
-            "xg_total": 1.926
-          }
-        },
-        "ok": false,
-        "point": 2.0,
-        "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_publication_score_below_min",
-          "tier_b_confidence_below_min",
-          "tier_b_quality_below_min",
-          "tier_b_canonical_edge_below_min",
-          "tier_b_canonical_ev_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_publication_score_below_min"
-        ],
-        "reject_reasons_ru": [
-          "качество ниже минимума уровня A",
-          "уровень A: publication score below min",
-          "уверенность ниже минимума уровня B",
-          "качество ниже минимума уровня B",
-          "запас value ниже минимума уровня B",
-          "EV ниже минимума уровня B",
-          "уровень B: publication score below min",
-          "качество ниже минимума уровня C",
-          "уровень C: publication score below min"
-        ],
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "Figueirense",
-        "away_team_ru": "Фигуейренсе",
-        "candidate_source": "a_cover_market_promotion",
-        "commence_time": "2026-06-22T18:00:00+00:00",
-        "commence_time_display": "22.06.2026 21:00 MSK",
-        "family": "totals",
-        "home_team": "Joinville",
-        "home_team_ru": "Джоинвилле",
-        "league_name": "Brazil - U20 Catarinense, Serie A",
-        "league_name_ru": "Бразилия - U20 Катариненсе, Серия A",
-        "match_key": "soccer|figueirense|joinville|2026-06-22",
-        "metrics": {
-          "adjusted_probability": 0.646023,
-          "books_count": 135,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 4.361,
-          "canonical_ev_pct": 7.24,
-          "confidence": 69.358,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": true,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "sstats",
-            "thesportsdb"
-          ],
-          "confirmation_sources_count": 3,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 1.965,
-          "market_probability": 0.62637,
-          "model_probability": 0.646023,
-          "odds": 1.66,
-          "odds_sources_count": 2,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 22.749,
-          "quality_reasons": [],
-          "quality_score": 0.0,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "selected_implied_probability": 0.60241,
-          "sources_count": 3,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 33.839,
-            "xg_direction_ok": false,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 33.839,
-            "xg_model_optimism_gap_pp": 33.839,
-            "xg_probability": 0.307629,
-            "xg_probability_pct": 30.763,
-            "xg_source": "home_away",
-            "xg_total": 1.942
+            "xg_total": 1.962
           }
         },
         "ok": false,
         "point": 2.5,
         "reject_reasons": [
           "xg_direction_conflict",
-          "xg_probability_gap_hard_reject"
+          "xg_probability_gap_hard_reject",
+          "controlled_fallback_daily_limit_reached:3/3"
         ],
         "reject_reasons_ru": [
           "направление ставки конфликтует с xG",
-          "модель слишком оптимистична относительно xG-ориентира"
+          "модель слишком оптимистична относительно xG-ориентира",
+          "controlled fallback daily limit reached:3/3"
         ],
         "selection": "Больше",
         "tier": null
       },
       {
-        "away_team": "Throttur R",
-        "away_team_ru": "Троттур R",
-        "candidate_source": "a_cover_market_promotion",
-        "commence_time": "2026-06-22T18:00:00+00:00",
-        "commence_time_display": "22.06.2026 21:00 MSK",
+        "away_team": "Pirata",
+        "away_team_ru": "Пирата",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-22T20:15:00+00:00",
+        "commence_time_display": "22.06.2026 23:15 MSK",
         "family": "totals",
-        "home_team": "Thor/KA",
-        "home_team_ru": "Тор/KA",
-        "league_name": "Iceland - Urvalsdeild, Women",
-        "league_name_ru": "Икеланд - Урвалсдейлд, Уомен",
-        "match_key": "soccer|thor ka|throttur r|2026-06-22",
+        "home_team": "Atletico Grau",
+        "home_team_ru": "Атлетико Грау",
+        "league_name": "Peru - Copa de la Liga, Group D",
+        "league_name_ru": "Перу - Копа де Ла Лига, Груп D",
+        "match_key": "2026-06-22|atletico grau|pirata",
         "metrics": {
-          "adjusted_probability": 0.55344,
-          "books_count": 120,
+          "adjusted_probability": 0.51425,
+          "books_count": 3,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 2.712,
-          "canonical_ev_pct": 5.154,
-          "confidence": 68.719,
+          "canonical_edge_pp": 3.348,
+          "canonical_ev_pct": 6.964,
+          "confidence": 68.034,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.425,
+          "market_probability": 0.5,
+          "model_probability": 0.51425,
+          "odds": 2.08,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": true,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 19.405,
+          "quality_reasons": [],
+          "quality_score": 75.791,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.480769,
+          "sources_count": 1,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "controlled_fallback_daily_limit_reached:3/3"
+        ],
+        "reject_reasons_ru": [
+          "controlled fallback daily limit reached:3/3"
+        ],
+        "selection": "Больше",
+        "tier": null
+      },
+      {
+        "away_team": "Pirata",
+        "away_team_ru": "Пирата",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-06-22T20:15:00+00:00",
+        "commence_time_display": "22.06.2026 23:15 MSK",
+        "family": "totals",
+        "home_team": "Atletico Grau",
+        "home_team_ru": "Атлетико Грау",
+        "league_name": "Peru - Copa de la Liga, Group D",
+        "league_name_ru": "Перу - Копа де Ла Лига, Груп D",
+        "match_key": "soccer|atletico grau|pirata|2026-06-22",
+        "metrics": {
+          "adjusted_probability": 0.493605,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": -2.996,
+          "canonical_ev_pct": -5.722,
+          "confidence": 71.407,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": true,
@@ -2773,17 +1545,17 @@
           "confirmation_sources": [
             "sstats"
           ],
-          "confirmation_sources_count": 3,
+          "confirmation_sources_count": 1,
           "dnb_sanity": {
             "enabled": false,
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 1.29,
-          "market_probability": 0.540541,
-          "model_probability": 0.55344,
-          "odds": 1.9,
-          "odds_sources_count": 2,
+          "market_edge_pp": -3.931,
+          "market_probability": 0.532911,
+          "model_probability": 0.550055,
+          "odds": 1.91,
+          "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
             "applies": false,
             "enabled": true,
@@ -2791,209 +1563,182 @@
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 17.152,
-          "quality_reasons": [],
-          "quality_score": 0.0,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "selected_implied_probability": 0.526316,
-          "sources_count": 3,
-          "tier_b_bookmaker_quorum": {
-            "books_count": 120,
-            "enabled": true,
-            "max_deviation_pct": 8.0,
-            "median_price": 1.85,
-            "mode": "bookmaker_quorum",
-            "odds_sources_count": 2,
-            "priced_books_count": 3,
-            "same_market_side_line_only": true,
-            "selected_price": 1.9,
-            "selected_vs_median_deviation_pct": 2.703
-          },
+          "publication_score": 71.631,
+          "quality_reasons": [
+            "post_calibration_edge_guard"
+          ],
+          "quality_score": 55.72,
+          "quality_score_raw": 55.72,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.52356,
+          "sources_count": 1,
           "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 10.443,
-            "xg_direction_ok": true,
-            "xg_model_conservative_gap_pp": 10.443,
-            "xg_model_gap_pp": -10.443,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.657873,
-            "xg_probability_pct": 65.787,
-            "xg_source": "home_away",
-            "xg_total": 4.501
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
           }
         },
         "ok": false,
-        "point": 3.0,
+        "point": 2.5,
         "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_publication_score_below_min",
-          "tier_b_quality_below_min",
-          "tier_b_canonical_edge_below_min",
-          "tier_b_canonical_ev_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_publication_score_below_min"
+          "canonical_negative_value",
+          "controlled_fallback_daily_limit_reached:3/3"
         ],
         "reject_reasons_ru": [
-          "качество ниже минимума уровня A",
-          "уровень A: publication score below min",
-          "качество ниже минимума уровня B",
-          "запас value ниже минимума уровня B",
-          "EV ниже минимума уровня B",
-          "уровень B: publication score below min",
-          "качество ниже минимума уровня C",
-          "уровень C: publication score below min"
+          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
+          "controlled fallback daily limit reached:3/3"
         ],
-        "selection": "Больше",
+        "selection": "Меньше 2.5",
         "tier": null
       }
     ],
     "top_priority_matches": [
       {
-        "away_team": "Al Arabi",
-        "home_team": "Kuwait SC",
-        "kickoff_utc": "2026-06-22T17:45:00+00:00",
-        "league_name": "Kuwait - Premier League, Championship Group",
-        "match_key": "2026-06-22|kuwait|al arabi",
-        "minutes_to_kickoff": 38.47,
+        "away_team": "Pirata",
+        "home_team": "Atletico Grau",
+        "kickoff_utc": "2026-06-22T20:15:00+00:00",
+        "league_name": "Peru - Copa de la Liga, Group D",
+        "match_key": "soccer|atletico grau|pirata|2026-06-22",
+        "minutes_to_kickoff": 68.41,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 155.178,
+        "priority": 137.195,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-21T21:06:45.368952+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T17:15:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Cusco",
-        "home_team": "Deportivo Binacional",
-        "kickoff_utc": "2026-06-22T18:00:00+00:00",
-        "league_name": "Peru - Copa de la Liga, Group F",
-        "match_key": "2026-06-22|deportivo binacional|cusco",
-        "minutes_to_kickoff": 53.47,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 150.178,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-21T21:06:45.368952+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T17:30:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Al Arabi",
-        "home_team": "Kuwait SC",
-        "kickoff_utc": "2026-06-22T17:45:00+00:00",
-        "league_name": "Kuwait - Premier League, Championship Group",
-        "match_key": "soccer|al arabi|kuwait|2026-06-22",
-        "minutes_to_kickoff": 38.47,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.178,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-22T17:06:33.693047+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T17:15:00+00:00",
+          "last_odds_refresh_utc": "2026-06-22T19:06:36.704970+00:00",
+          "latest_useful_run_at_utc": "2026-06-22T19:45:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-06-22T19:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-22T21:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Cusco",
-        "home_team": "Deportivo Binacional",
-        "kickoff_utc": "2026-06-22T18:00:00+00:00",
-        "league_name": "Peru - Copa de la Liga, Group F",
-        "match_key": "soccer|binacional|cusco|2026-06-22",
-        "minutes_to_kickoff": 53.47,
+        "away_team": "Pirata",
+        "home_team": "Atletico Grau",
+        "kickoff_utc": "2026-06-22T20:15:00+00:00",
+        "league_name": "Peru - Copa de la Liga, Group D",
+        "match_key": "2026-06-22|atletico grau|pirata",
+        "minutes_to_kickoff": 68.41,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 142.178,
+        "priority": 137.195,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-22T17:06:33.693047+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T17:30:00+00:00",
+          "last_odds_refresh_utc": "2026-06-22T15:07:22.575617+00:00",
+          "latest_useful_run_at_utc": "2026-06-22T19:45:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-06-22T19:00:00+00:00",
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-06-22T21:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Kazma",
-        "home_team": "Qadsia",
-        "kickoff_utc": "2026-06-22T18:45:00+00:00",
-        "league_name": "Kuwait - Premier League, Championship Group",
-        "match_key": "2026-06-22|qadsia|kazma",
-        "minutes_to_kickoff": 98.47,
+        "away_team": "Iraq",
+        "home_team": "France",
+        "kickoff_utc": "2026-06-22T21:00:00+00:00",
+        "league_name": "International - FIFA World Cup",
+        "match_key": "2026-06-22|france|iraq",
+        "minutes_to_kickoff": 113.41,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 135.178,
+        "priority": 122.195,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-21T21:06:45.368952+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T18:15:00+00:00",
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-06-22T20:30:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
+          "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T19:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-22T21:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Derry City",
-        "home_team": "Shamrock",
-        "kickoff_utc": "2026-06-22T19:00:00+00:00",
-        "league_name": "Ireland - Premier Division",
-        "match_key": "2026-06-22|shamrock|derry city",
-        "minutes_to_kickoff": 113.47,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 130.178,
+        "away_team": "Hartford Athletic",
+        "home_team": "Vermont Green",
+        "kickoff_utc": "2026-06-22T23:00:00+00:00",
+        "league_name": "USA - USL W League",
+        "match_key": "2026-06-22|vermont green|hartford athletic",
+        "minutes_to_kickoff": 233.41,
+        "pre_kickoff_status": "near_window",
+        "priority": 88.274,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-21T21:06:45.368952+00:00",
-          "latest_useful_run_at_utc": "2026-06-22T18:30:00+00:00",
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-06-22T22:30:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-22T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
+          "next_scheduled_run_at_utc": "2026-06-22T21:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Long Island Rough Riders",
+        "home_team": "Paisley Athletic FC",
+        "kickoff_utc": "2026-06-22T23:30:00+00:00",
+        "league_name": "USA - USL W League",
+        "match_key": "2026-06-22|paisley athletic|long island rough riders",
+        "minutes_to_kickoff": 263.41,
+        "pre_kickoff_status": "near_window",
+        "priority": 87.024,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-06-22T23:00:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-06-22T21:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Algeria",
+        "home_team": "Jordan",
+        "kickoff_utc": "2026-06-23T03:00:00+00:00",
+        "league_name": "World Cup 2026",
+        "match_key": "2026-06-23|jordan|algeria",
+        "minutes_to_kickoff": 473.41,
+        "pre_kickoff_status": "near_window",
+        "priority": 86.274,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-06-23T02:30:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-06-22T21:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
         }
       }
     ]
   },
-  "status": "published",
-  "status_ru": "✅ прогноз опубликован",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 6352,
-  "top_reason": "fallback_published",
+  "text_length": 6269,
+  "top_reason": "controlled_fallback_daily_limit_reached:3/3",
   "version": "harizon-telegram-report-v13-a-tier-funnel"
 }
