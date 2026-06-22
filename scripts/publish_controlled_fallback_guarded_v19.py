@@ -1,24 +1,12 @@
 from __future__ import annotations
 
-"""Guarded controlled fallback publisher v19.
-
-Adds a runtime preflight before the v18 guarded publisher:
-- repair invalid/empty day-inventory JSON aliases;
-- normalize required 0-4/4-8/... time windows;
-- run the existing priority + line-movement guard immediately before Telegram;
-- export an A-cover-to-candidate-layer gap report.
-
-The preflight is non-relaxing: it only repairs state, records line snapshots and
-adds diagnostics. It does not bypass v18 value, xG, duplicate, daily-cap,
-publish-window or movement guards.
-"""
-
 import importlib
 import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
+from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +20,17 @@ def _truthy(value: Any, default: bool = False) -> bool:
     if raw in {"0", "false", "no", "off", "none", "null"}:
         return False
     return raw in {"1", "true", "yes", "on", "force"}
+
+
+def _local_date() -> str:
+    explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
+    if explicit:
+        return explicit[:10]
+    try:
+        tz = ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
+    except Exception:
+        tz = ZoneInfo("Europe/Moscow")
+    return datetime.now(UTC).astimezone(tz).date().isoformat()
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -77,15 +76,24 @@ def run_preflight() -> dict[str, Any]:
         _write_json(OUT, payload)
         return payload
 
+    day = _local_date()
+    previous_day = os.getenv("DAY_INVENTORY_TARGET_DATE")
+    os.environ["DAY_INVENTORY_TARGET_DATE"] = day
+    os.environ.setdefault("DAY_INVENTORY_CACHE_DATE", day)
     steps = [
         _run_step("runtime_json_state_guard", _module_main("scripts.runtime_json_state_guard")),
         _run_step("normalize_day_inventory_time_windows", _module_main("scripts.normalize_day_inventory_time_windows")),
+        _run_step("backfill_inventory_bookmaker_coverage", _module_main("scripts.backfill_inventory_bookmaker_coverage")),
+        _run_step("build_b_cover_candidate_gap_report", _module_main("scripts.build_b_cover_candidate_gap_report")),
+        _run_step("promote_a_cover_value_candidates", _module_main("scripts.promote_a_cover_value_candidates")),
         _run_step("update_day_inventory_priority_and_line_state", _module_main("scripts.update_day_inventory_priority_and_line_state")),
         _run_step("build_a_cover_candidate_gap_report", _module_main("scripts.build_a_cover_candidate_gap_report")),
     ]
     payload = {
         "status": "ok" if all(step.get("status") in {"ok", "disabled"} for step in steps) else "completed_with_errors",
         "created_at_utc": datetime.now(UTC).isoformat(),
+        "date_local": day,
+        "previous_day_env": previous_day,
         "steps": steps,
     }
     _write_json(OUT, payload)
