@@ -1,30 +1,40 @@
 {
-  "all_source_match_counts": {
-    "bzzoiro": 5,
-    "odds_api_io": 124
+  "alias_update": {
+    "paths": [
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+    ],
+    "status": "ok",
+    "target_date": "2026-06-24"
   },
   "build_status": "ok",
   "counts": {
     "fixture_sources_seen": 2,
     "leagues_seen": 59,
     "matches_added": 129,
+    "matches_added_from_latest_run": 0,
     "matches_after_core_merge": 129,
     "matches_after_top_cut": 129,
-    "matches_next_12h": 46,
-    "matches_next_12h_ready": 0,
-    "matches_next_6h": 43,
-    "matches_next_6h_ready": 0,
+    "matches_next_12h": 60,
+    "matches_next_12h_ready": 27,
+    "matches_next_6h": 36,
+    "matches_next_6h_ready": 18,
     "matches_raw_before_merge": 129,
-    "matches_ready_for_model": 0,
-    "matches_ready_for_publish": 0,
-    "matches_total": 129,
+    "matches_ready_for_model": 45,
+    "matches_ready_for_publish": 4,
+    "matches_seen_latest_run": 48,
+    "matches_total": 277,
+    "matches_total_high_watermark": 277,
     "matches_updated": 0,
+    "matches_updated_from_latest_run": 0,
+    "matches_with_2plus_context_sources": 23,
     "matches_with_2plus_core_fixture_sources": 0,
     "matches_with_3_core_fixture_sources": 0,
-    "matches_with_context": 5,
-    "matches_with_form": 0,
+    "matches_with_context": 50,
+    "matches_with_form": 44,
     "matches_with_news": 0,
-    "matches_with_odds": 124,
+    "matches_with_odds": 266,
     "matches_with_weather": 0,
     "matches_with_xg": 5,
     "multi_source_fixture_matches": 0,
@@ -243,14 +253,82 @@
         }
       }
     },
+    "coverage_repair": {
+      "evidence_matches": 52,
+      "rows_repaired": 23,
+      "updated_at_utc": "2026-06-23T22:09:17.335729+00:00"
+    },
+    "fixture_expansion": {
+      "added": 0,
+      "providers": {
+        "allsportsapi": {
+          "body_preview": "{\"success\":1,\"result\":[{\"event_key\":1778200,\"event_date\":\"2026-06-24\",\"event_time\":\"16:00\",\"event_home_team\":\"Dainava Alytus\",\"home_team_key\":5257,\"event_away_team\":\"Transinvest\",\"away_team_key\":24991,\"event_halftime_result\":\"\",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"\",\"country_name\":\"Lithuania\",\"league_name\":\"Cup - Quarter-finals\",\"league_key\":423,\"league_round\":\"Quarter-finals\",\"league_season\":\"2026\",\"event_live\":\"0\",\"event_stadium\":\"Alytus Stadi",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 2
+        },
+        "football_data": {
+          "body_preview": "{\"filters\":{\"dateFrom\":\"2026-06-24\",\"dateTo\":\"2026-06-24\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 0
+        },
+        "thesportsdb": {
+          "body_preview": "{\"events\":[{\"idEvent\":\"2391764\",\"idAPIfootball\":\"1489405\",\"strTimestamp\":\"2026-06-24T22:00:00\",\"strEvent\":\"Morocco vs Haiti\",\"strEventAlternate\":\"Haiti @ Morocco\",\"strFilename\":\"FIFA World Cup 2026-06-24 Morocco vs Haiti\",\"strSport\":\"Soccer\",\"idLeague\":\"4429\",\"strLeague\":\"FIFA World Cup\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/e7er5g1696521789.png\",\"strSeason\":\"2026\",\"strDescriptionEN\":\"\",\"strHomeTeam\":\"Morocco\",\"strAwayTeam\":\"Haiti\",\"intHomeScore\":null,\"int",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 1
+        }
+      },
+      "rows_fetched": 3,
+      "updated": 3,
+      "updated_at_utc": "2026-06-23T22:09:14.349665+00:00"
+    },
+    "latest_match_accumulation": {
+      "added": 0,
+      "latest_rows_seen": 48,
+      "rejected": 0,
+      "updated": 0,
+      "updated_at_utc": "2026-06-23T22:09:17.232161+00:00"
+    },
     "mode": "core_fixture_discovery_top300",
+    "priority_and_refresh_plan": {
+      "active_rows": 218,
+      "final_pre_kickoff_checks": 27,
+      "low_quality_rows_filtered_from_priority": 54,
+      "needs_odds_refresh": 8,
+      "no_more_regular_run_before_kickoff": 17,
+      "updated_at_utc": "2026-06-23T22:07:38.785888+00:00"
+    },
     "providers": [
       "odds_api_io",
       "bzzoiro",
       "sstats",
       "sportlogic"
-    ]
+    ],
+    "refresh_plan_count_repair": {
+      "active_matches": 270,
+      "final_pre_kickoff_checks": 27,
+      "matches_missing_odds_coverage": 11,
+      "matches_needing_odds_refresh": 175,
+      "matches_stale_odds_refresh": 167,
+      "no_more_regular_run_before_kickoff": 17,
+      "updated_at_utc": "2026-06-23T22:07:38.785888+00:00"
+    },
+    "runtime_context_coverage_bridge": {
+      "alias_matched_rows": 1,
+      "consensus_rows": 1021,
+      "context_rows": 12,
+      "exact_matched_rows": 42,
+      "line_rows": 1723,
+      "rows_updated": 43,
+      "runtime_alias_entries": 158,
+      "runtime_alias_links": 54,
+      "runtime_matches": 48,
+      "serving_rows": 48,
+      "updated_at_utc": "2026-06-23T22:07:39.807697+00:00"
+    }
   },
   "timezone": "Europe/Moscow",
-  "updated_at_utc": "2026-06-23T21:02:00.746232+00:00"
+  "updated_at_utc": "2026-06-23T22:09:17.335729+00:00"
 }
