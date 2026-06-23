@@ -1,16 +1,119 @@
 {
-  "created_at_utc": "2026-06-23T11:08:08.656391+00:00",
-  "duplicates_removed": 0,
-  "evaluated_rows": 1,
+  "created_at_utc": "2026-06-23T13:08:23.337722+00:00",
+  "duplicates_removed": 4,
+  "evaluated_rows": 13,
   "plain_explanation": [
-    "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+    "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+    "A-tier publication score is below min on many candidates.",
+    "Some candidates still have fewer than the A-tier confirmation/context minimum."
   ],
   "quality_score_sources": {
-    "raw": 1
+    "proxy": 6,
+    "raw": 2,
+    "raw_missing": 1
   },
   "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
   "status": "ok",
-  "tier_a_blocker_counts": {},
-  "top_a_tier_blocked_samples": [],
-  "unique_evaluated_rows": 1
+  "tier_a_blocker_counts": {
+    "tier_a_confirmation_sources_below_min:1/2": 1,
+    "tier_a_odds_sources_below_min:1/2": 1,
+    "tier_a_proxy_quality_not_allowed": 1,
+    "tier_a_publication_score_below_min": 2,
+    "tier_a_quality_below_min": 1
+  },
+  "top_a_tier_blocked_samples": [
+    {
+      "a_tier_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2"
+      ],
+      "away_team": "Ilves",
+      "books_count": 3,
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-23T15:00:00+00:00",
+      "confidence": 67.95,
+      "confirmation_sources": [
+        "bzzoiro"
+      ],
+      "confirmation_sources_count": 1,
+      "daily_cap_reasons": [],
+      "dedupe_key": "2026-06-23|veikkausliiga|kuopion palloseura|ilves|totals|over|3",
+      "edge_pp": 3.167,
+      "ev_pct": 6.778,
+      "family": "totals",
+      "home_team": "Kuopion Palloseura",
+      "league_name": "Veikkausliiga",
+      "match_key": "2026-06-23|kuopion palloseura|ilves",
+      "odds": 2.14,
+      "odds_sources_count": 1,
+      "other_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_confidence_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "point": 3.0,
+      "publication_score": 18.828,
+      "quality_score": 75.126,
+      "quality_score_source": "proxy",
+      "rank": 1,
+      "selection": "Больше",
+      "shadow_score": -18.808,
+      "status_without_daily_cap": "blocked_by_other_guards",
+      "tier": null
+    },
+    {
+      "a_tier_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_publication_score_below_min"
+      ],
+      "away_team": "Prostejov",
+      "books_count": 170,
+      "candidate_source": "a_cover_market_promotion",
+      "commence_time": "2026-06-23T15:00:00+00:00",
+      "confidence": 65.398,
+      "confirmation_sources": [
+        "sstats"
+      ],
+      "confirmation_sources_count": 2,
+      "daily_cap_reasons": [],
+      "dedupe_key": "2026-06-23|international clubs club friendly games|brno|prostejov|totals|under|3",
+      "edge_pp": 2.674,
+      "ev_pct": 5.107,
+      "family": "totals",
+      "home_team": "Brno",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|brno|prostejov|2026-06-23",
+      "odds": 1.91,
+      "odds_sources_count": 2,
+      "other_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_b_confidence_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "point": 3.0,
+      "publication_score": 14.722,
+      "quality_score": 0.0,
+      "quality_score_source": "raw_missing",
+      "rank": 2,
+      "selection": "Меньше",
+      "shadow_score": -30.473,
+      "status_without_daily_cap": "blocked_by_other_guards",
+      "tier": null
+    }
+  ],
+  "unique_evaluated_rows": 9
 }
