@@ -45,6 +45,7 @@ def test_post_integrity_install_does_not_overwrite_existing_run_report(tmp_path,
 
 
 def test_controlled_rescue_appends_when_model_pool_is_not_empty(monkeypatch):
+    import app.services as services_pkg
     from app.services import controlled_candidate_rescue as rescue
 
     base_candidate = types.SimpleNamespace(
@@ -80,6 +81,7 @@ def test_controlled_rescue_appends_when_model_pool_is_not_empty(monkeypatch):
             return list(candidates)
 
     fake_model = types.SimpleNamespace(CandidateFactory=CandidateFactory)
+    monkeypatch.setattr(services_pkg, "model", fake_model, raising=False)
     monkeypatch.setitem(sys.modules, "app.services.model", fake_model)
     monkeypatch.setattr(rescue, "_build_rescue", lambda *args, **kwargs: ([rescue_candidate], [{"match_key": "match-2"}]))
     monkeypatch.setenv("CONTROLLED_CONSENSUS_CANDIDATE_RESCUE_ENABLED", "true")
