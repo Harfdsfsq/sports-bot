@@ -39,6 +39,117 @@ def _dt(value: Any) -> datetime | None:
         return None
 
 
+def _norm(value: Any) -> str:
+    return ' '.join(''.join(ch.lower() if ch.isalnum() else ' ' for ch in str(value or '').replace('_', ' ')).split())
+
+
+def _date(value: Any) -> str:
+    text = str(value or '')
+    m = re.search(r'(20\d{2}-\d{2}-\d{2})', text)
+    return m.group(1) if m else ''
+
+
+def _match_keys_from_parts(home: Any, away: Any, day: str) -> set[str]:
+    h = _norm(home)
+    a = _norm(away)
+    if not h or not a or not day:
+        return set()
+    return {f'soccer|{h}|{a}|{day}', f'soccer|{a}|{h}|{day}', f'{day}|{h}|{a}', f'{day}|{a}|{h}'}
+
+
+def _candidate_context_keys(candidate: Any) -> set[str]:
+    raw = str(getattr(candidate, 'match_key', '') or '')
+    day = _date(getattr(candidate, 'commence_time', '')) or _date(raw)
+    keys = {raw, raw.replace('_', ' ')} if raw else set()
+    keys.update(_match_keys_from_parts(getattr(candidate, 'home_team', ''), getattr(candidate, 'away_team', ''), day))
+    return {key for key in keys if key}
+
+
+def _context_value(ctx: Any, key: str, default: Any = None) -> Any:
+    if isinstance(ctx, dict):
+        return ctx.get(key, default)
+    return getattr(ctx, key, default)
+
+
+def _context_sources_from_value(ctx: Any) -> set[str]:
+    sources: set[str] = set()
+    source = _context_value(ctx, 'source') or _context_value(ctx, 'provider') or _context_value(ctx, 'context_source')
+    if source:
+        sources.add(str(source))
+    details = _context_value(ctx, 'details')
+    if isinstance(details, dict):
+        for key in ('context_sources', 'merged_sources', 'sources'):
+            value = details.get(key)
+            if isinstance(value, (list, tuple, set)):
+                sources.update(str(item) for item in value if str(item).strip())
+            elif isinstance(value, str) and value.strip():
+                sources.add(value.strip())
+    return sources
+
+
+def _context_xg(ctx: Any) -> tuple[float | None, float | None]:
+    home = _num(_context_value(ctx, 'expected_home'), None)
+    away = _num(_context_value(ctx, 'expected_away'), None)
+    if home is not None and away is not None:
+        return home, away
+    details = _context_value(ctx, 'details')
+    if isinstance(details, dict):
+        return _num(details.get('expected_home') or details.get('home_xg'), None), _num(details.get('expected_away') or details.get('away_xg'), None)
+    return None, None
+
+
+def _runtime_context_index(contexts_by_match: Any) -> dict[str, list[Any]]:
+    if not isinstance(contexts_by_match, dict):
+        return {}
+    out: dict[str, list[Any]] = {}
+    for raw_key, value in contexts_by_match.items():
+        items = value if isinstance(value, list) else [value]
+        keys = {str(raw_key), str(raw_key).replace('_', ' ')}
+        for ctx in items:
+            details = _context_value(ctx, 'details')
+            observations = details.get('context_observations') if isinstance(details, dict) else None
+            if isinstance(observations, list):
+                for obs in observations:
+                    if isinstance(obs, dict) and obs.get('match_key'):
+                        keys.add(str(obs.get('match_key')))
+        for key in keys:
+            if key:
+                out.setdefault(key, []).extend(items)
+    return out
+
+
+def _apply_runtime_context(candidate: Any, index: dict[str, list[Any]]) -> bool:
+    contexts: list[Any] = []
+    for key in _candidate_context_keys(candidate):
+        contexts.extend(index.get(key) or [])
+    if not contexts:
+        return False
+    sources: set[str] = set()
+    expected_home = expected_away = None
+    for ctx in contexts:
+        sources.update(_context_sources_from_value(ctx))
+        h, a = _context_xg(ctx)
+        if h is not None and a is not None and expected_home is None:
+            expected_home, expected_away = h, a
+    if not sources:
+        sources.add('runtime_context')
+    try:
+        summary = dict(getattr(candidate, 'source_summary', {}) or {})
+        existing = summary.get('context_sources')
+        merged = set(existing if isinstance(existing, list) else []) | sources
+        summary['context_sources'] = sorted(str(item) for item in merged if str(item).strip())
+        summary['runtime_context_bridge_sources'] = sorted(str(item) for item in sources if str(item).strip())
+        candidate.source_summary = summary
+        if expected_home is not None and expected_away is not None:
+            if getattr(candidate, 'expected_home', None) is None:
+                candidate.expected_home = expected_home
+            if getattr(candidate, 'expected_away', None) is None:
+                candidate.expected_away = expected_away
+    except Exception:
+        return False
+    return True
+
+
 def _key(candidate: Any) -> tuple[Any, Any, Any, Any, Any]:
     return (getattr(candidate, 'match_key', None), getattr(candidate, 'family', None), getattr(candidate, 'selection_key', None), getattr(candidate, 'point', None), getattr(candidate, 'team_side', None))
 
@@ -194,10 +305,13 @@ def install() -> None:
         file_candidates = _load()
         if not file_candidates:
             return candidates, rejections, debug
+        runtime_contexts = _runtime_context_index(contexts_by_match)
         seen = {_key(item) for item in candidates}
         merged = list(candidates)
-        appended = duplicate = 0
+        appended = duplicate = runtime_context_enriched = 0
         for item in file_candidates:
+            if _apply_runtime_context(item, runtime_contexts):
+                runtime_context_enriched += 1
             key = _key(item)
             if key in seen:
                 duplicate += 1
@@ -206,6 +320,7 @@ def install() -> None:
         synced = passed = failed = 0
         for item in merged:
             try:
+                _apply_runtime_context(item, runtime_contexts)
                 decision = sync_candidate_publish_coverage(item, None)
                 synced += 1
                 if decision.passed:
@@ -219,8 +334,9 @@ def install() -> None:
             rejections['rescue_file_append_bridge_appended'] = int(rejections.get('rescue_file_append_bridge_appended') or 0) + appended
             rejections['rescue_file_append_bridge_coverage_synced'] = int(rejections.get('rescue_file_append_bridge_coverage_synced') or 0) + synced
             rejections['rescue_file_append_bridge_coverage_passed'] = int(rejections.get('rescue_file_append_bridge_coverage_passed') or 0) + passed
+            rejections['rescue_file_append_bridge_runtime_context_enriched'] = int(rejections.get('rescue_file_append_bridge_runtime_context_enriched') or 0) + runtime_context_enriched
         debug = dict(debug or {})
-        debug['rescue_file_append_bridge'] = {'seen': len(file_candidates), 'appended': appended, 'duplicate': duplicate, 'input_candidates': len(candidates), 'output_candidates': len(merged), 'coverage_synced': synced, 'coverage_passed': passed, 'coverage_failed': failed}
+        debug['rescue_file_append_bridge'] = {'seen': len(file_candidates), 'appended': appended, 'duplicate': duplicate, 'input_candidates': len(candidates), 'output_candidates': len(merged), 'coverage_synced': synced, 'coverage_passed': passed, 'coverage_failed': failed, 'runtime_context_enriched': runtime_context_enriched}
         return merged, rejections, debug
 
     factory.build_candidates = patched
