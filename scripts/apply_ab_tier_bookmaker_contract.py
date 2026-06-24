@@ -74,11 +74,13 @@ CONTRACT_ENV = {
     "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
     "CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD": "true",
 
-    # Best-of-day allocator: keep one late slot, but v19 can lift the total cap
-    # to the 3-5/day target range when guards find enough candidates.
+    # Best-of-day allocator: keep one late slot, but release it from 17:00 MSK.
+    # At 4/5 after 17:00 there is not enough day left to keep hiding viable
+    # candidates behind the reserve reason; value/xG/quality/line guards still
+    # decide whether the 5th pick is actually publishable.
     "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOT_ENABLED": "true",
     "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": "1",
-    "CONTROLLED_FALLBACK_RESERVED_SLOT_RELEASE_LOCAL_HOUR": "18",
+    "CONTROLLED_FALLBACK_RESERVED_SLOT_RELEASE_LOCAL_HOUR": "17",
     "CONTROLLED_FALLBACK_RESERVED_SLOT_RELEASE_LOCAL_MINUTE": "0",
     "CONTROLLED_FALLBACK_RESERVED_SLOT_ELITE_MIN_EV_PCT": "12.0",
     "CONTROLLED_FALLBACK_RESERVED_SLOT_ELITE_MIN_EDGE_PP": "6.5",
@@ -147,7 +149,7 @@ def main() -> int:
             },
             "daily_allocator": {
                 "reserved_slots": 1,
-                "release_local_time": "18:00",
+                "release_local_time": "17:00",
                 "elite_override": {"min_ev_pct": 12.0, "min_edge_pp": 6.5, "min_confidence": 73.0, "min_quality": 74.0},
             },
             "independent_odds_sources": "required_for_a_tier_only",
@@ -156,7 +158,7 @@ def main() -> int:
         "env": CONTRACT_ENV,
     }
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; model prefilter widened; stable-history quality policy enabled; reserved daily slot enabled")
+    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; model prefilter widened; stable-history quality policy enabled; reserved daily slot releases at 17:00 local")
     return 0
 
 
