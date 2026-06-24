@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path('.').resolve()
 OUT_PATH = ROOT / '.data' / 'exports' / 'latest-publication-family-policy.json'
 ALLOWED = 'totals,spreads'
-RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v12-public-total-line-contract'
+RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v13-public-total-line-b-tier-one-book'
 
 ENV_UPDATES = {
     'HARIZON_RUNTIME_POLICY_VERSION': RUNTIME_POLICY_VERSION,
@@ -66,12 +66,12 @@ ENV_UPDATES = {
     'DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES': '300',
     'DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES': '300',
     'MAX_MATCHES_FOR_ODDS_FETCH': '300',
-    # Publication contract from Правила.txt: A is strict, B is lighter but still
-    # protected by 2 bookmakers, price integrity, quality and line movement.
+    # Publication contract from project rules: A is strict, B is lighter but still
+    # protected by price integrity, value, quality, xG and line movement.
     'PUBLISH_ALLOW_B_TIER': 'true',
     'PUBLISH_COVERAGE_TIER_MODE': 'hybrid',
-    'MIN_BOOKS_PUBLISH': '2',
-    'PUBLISH_MIN_BOOKS': '2',
+    'MIN_BOOKS_PUBLISH': '1',
+    'PUBLISH_MIN_BOOKS': '1',
     'MIN_SOURCES_PUBLISH': '1',
     'PUBLISH_MIN_ODDS_SOURCES': '1',
     'MIN_CONTEXT_SOURCES_PUBLISH': '1',
@@ -80,10 +80,10 @@ ENV_UPDATES = {
     'PUBLISH_TIER_A_MIN_BOOKS': '2',
     'PUBLISH_TIER_A_MIN_CONTEXT_SOURCES': '2',
     'PUBLISH_TIER_B_MIN_ODDS_SOURCES': '1',
-    'PUBLISH_TIER_B_MIN_BOOKS': '2',
+    'PUBLISH_TIER_B_MIN_BOOKS': '1',
     'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES': '1',
     'CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B': 'true',
-    'CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'true',
+    'CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES': 'false',
@@ -92,7 +92,7 @@ ENV_UPDATES = {
     'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '1',
     'CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES': '1',
     'CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES': '1',
-    'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS': '2',
+    'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES': '1',
@@ -138,7 +138,7 @@ def main() -> int:
         'notes': [
             'Only totals and spreads/handicaps may be published.',
             'Public totals must be whole or .5 lines; .25/.75 Asian totals are analysis-only.',
-            'A-tier requires 2 odds/line sources, 2 bookmaker prices and 2 context sources; B-tier requires 1 odds/line source, 2 bookmaker prices and 1 context source.',
+            'A-tier requires 2 odds/line sources, 2 bookmaker prices and 2 context sources; B-tier requires 1 odds/line source, 1 bookmaker price and 1 context source.',
             'Inventory target overrides are pinned here because the workflow calls this script before run and fallback.',
         ],
     }
