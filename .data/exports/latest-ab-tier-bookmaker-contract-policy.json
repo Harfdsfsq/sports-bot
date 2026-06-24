@@ -32,9 +32,37 @@
     ],
     "independent_odds_sources": "required_for_a_tier_only",
     "model_candidate_bridge": {
+      "main_pool_rescue_file_append": true,
       "max_candidates_per_match_pre_filter": 14,
       "max_internal_candidates_per_run": 24,
-      "purpose": "let totals/xG candidates reach quality filters before final guards"
+      "pre_run_a_cover_promotion_seed": {
+        "enabled": true,
+        "rescue_candidates": 0,
+        "rescue_path": ".data/exports/latest-rescue-candidates.json",
+        "steps": [
+          {
+            "module": "scripts.build_context_source_index",
+            "result": 0,
+            "status": "ok"
+          },
+          {
+            "module": "scripts.build_b_cover_candidate_gap_report",
+            "result": 0,
+            "status": "ok"
+          },
+          {
+            "module": "scripts.promote_a_cover_value_candidates",
+            "result": 0,
+            "status": "ok"
+          },
+          {
+            "module": "scripts.enrich_rescue_candidates_xg_confirmation",
+            "result": 0,
+            "status": "ok"
+          }
+        ]
+      },
+      "purpose": "let totals/xG and promoted A-cover candidates reach quality filters before final guards"
     },
     "quality_history_stability": {
       "calibration_min_sample": 24,
@@ -44,7 +72,7 @@
       "purpose": "avoid hard rejection from underpowered historical segments while keeping live guards active"
     }
   },
-  "created_at_utc": "2026-06-24T15:55:00.699973+00:00",
+  "created_at_utc": "2026-06-24T16:26:01.754944+00:00",
   "env": {
     "CALIBRATION_MIN_SAMPLE": "24",
     "CLV_QUALITY_MIN_SAMPLE": "18",
@@ -92,6 +120,9 @@
     "HISTORICAL_SEGMENT_HARD_MIN_BAD_SEGMENTS": "3",
     "HISTORICAL_SEGMENT_MIN_SAMPLE": "24",
     "LEARNING_SCORE_MIN_SAMPLE": "24",
+    "MAIN_POOL_RESCUE_FILE_ALLOWED_SOURCES": "a_cover_market_promotion,b_cover_market_promotion",
+    "MAIN_POOL_RESCUE_FILE_APPEND_ENABLED": "true",
+    "MAIN_POOL_RESCUE_FILE_APPEND_LIMIT": "24",
     "MAX_CANDIDATES_PER_MATCH_PRE_FILTER": "14",
     "MAX_INTERNAL_CANDIDATES_PER_RUN": "24",
     "MAX_NON_CORE_PICKS_PER_RUN": "3",
@@ -100,6 +131,7 @@
     "MIN_BOOKS_PUBLISH": "1",
     "MIN_CONTEXT_SOURCES_PUBLISH": "1",
     "MIN_SOURCES_PUBLISH": "1",
+    "PRE_RUN_A_COVER_PROMOTION_SEED_ENABLED": "true",
     "PROMOTE_B_COVER_MIN_EDGE_PP": "2.0",
     "PROMOTE_B_COVER_MIN_EV_PCT": "4.0",
     "PROMOTE_B_COVER_VALUE_CANDIDATE_LIMIT": "36",
