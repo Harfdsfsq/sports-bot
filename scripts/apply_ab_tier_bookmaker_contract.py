@@ -31,6 +31,17 @@ CONTRACT_ENV = {
     "PUBLISH_TIER_B_MIN_BOOKS": "1",
     "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
 
+    # Main model candidate bridge. CandidateFactory previously kept only 3
+    # candidates per match before the final quality/value filters. On matches
+    # with many spread/total buckets those 3 slots were often consumed by
+    # market-simple rows, so real totals/xG candidates never reached quality.
+    # This widens the pre-filter shortlist; publication guards below are not
+    # relaxed.
+    "MAX_CANDIDATES_PER_MATCH_PRE_FILTER": "12",
+    "MAX_INTERNAL_CANDIDATES_PER_RUN": "18",
+    "MAX_PICKS_PER_FAMILY": "4",
+    "MAX_SAME_REASON_SIGNATURE": "4",
+
     # Controlled fallback follows the same owner contract.
     "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
     "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
@@ -51,9 +62,8 @@ CONTRACT_ENV = {
     "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
     "CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD": "true",
 
-    # Best-of-day allocator: do not spend all 3 B-tier fallback slots too early.
-    # Before 18:00 MSK only 2 normal fallback slots are available; the reserved
-    # slot can still be used by an elite candidate. After 18:00 all slots unlock.
+    # Best-of-day allocator: keep one late slot, but v19 can lift the total cap
+    # to the 3-5/day target range when guards find enough candidates.
     "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOT_ENABLED": "true",
     "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": "1",
     "CONTROLLED_FALLBACK_RESERVED_SLOT_RELEASE_LOCAL_HOUR": "18",
@@ -111,6 +121,11 @@ def main() -> int:
         "contract": {
             "A": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
             "B": {"min_odds_sources": 1, "min_bookmakers": 1, "min_context_sources": 1},
+            "model_candidate_bridge": {
+                "max_candidates_per_match_pre_filter": int(CONTRACT_ENV["MAX_CANDIDATES_PER_MATCH_PRE_FILTER"]),
+                "max_internal_candidates_per_run": int(CONTRACT_ENV["MAX_INTERNAL_CANDIDATES_PER_RUN"]),
+                "purpose": "let totals/xG candidates reach quality filters before final guards",
+            },
             "daily_allocator": {
                 "reserved_slots": 1,
                 "release_local_time": "18:00",
@@ -122,7 +137,7 @@ def main() -> int:
         "env": CONTRACT_ENV,
     }
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; reserved daily slot enabled")
+    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; model prefilter widened; reserved daily slot enabled")
     return 0
 
 
