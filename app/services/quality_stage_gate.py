@@ -7,6 +7,12 @@ from typing import Any
 
 
 CONTEXT_INDEX = Path('.data/exports/latest-context-source-index.json')
+INVENTORY_CONTEXT_PATHS = (
+    Path('.data/day_inventory/latest.json'),
+    Path('.data/day_inventory/current.json'),
+    Path('artifacts/run-bot/day_inventory/latest.json'),
+    Path('artifacts/run-bot/day_inventory-latest.json'),
+)
 NON_MATCH_CONTEXT_SOURCES = {'ensemble', 'market', 'market_signal', 'unknown'}
 
 
@@ -22,6 +28,32 @@ def _num(value: Any, default: float = 0.0) -> float:
         return float(str(value).replace(',', '.')) if value not in (None, '') else default
     except Exception:
         return default
+
+
+def _count(value: Any) -> int:
+    try:
+        if value in (None, ''):
+            return 0
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value)
+        return int(float(str(value).replace(',', '.')))
+    except Exception:
+        return 0
+
+
+def _split_sources(value: Any) -> set[str]:
+    if value in (None, ''):
+        return set()
+    if isinstance(value, str):
+        return {part.strip() for part in value.replace(';', ',').replace('|', ',').split(',') if part.strip()}
+    if isinstance(value, (list, tuple, set)):
+        out: set[str] = set()
+        for item in value:
+            out.update(_split_sources(item))
+        return out
+    if isinstance(value, dict):
+        return {str(key).strip() for key in value.keys() if str(key).strip()}
+    return set()
 
 
 def _norm(value: Any) -> str:
@@ -58,6 +90,54 @@ def _load_context_index() -> dict[str, list[str]]:
         return by_match if isinstance(by_match, dict) else {}
     except Exception:
         return {}
+
+
+def _row_context_sources(row: dict[str, Any]) -> set[str]:
+    sources: set[str] = set()
+    for container in (row, row.get('coverage'), row.get('metadata')):
+        if not isinstance(container, dict):
+            continue
+        for key in ('context_sources', 'context_confirmations', 'all_context_sources', 'core_context_sources', 'supplemental_context_sources'):
+            sources.update(_split_sources(container.get(key)))
+        for count_key in ('context_sources_count', 'context_confirmations_count', 'confirmation_sources_count', 'context_source_count'):
+            if _count(container.get(count_key)) >= 1:
+                sources.add('inventory_context')
+        if container.get('context') or container.get('ready_for_model') or container.get('coverage_context'):
+            sources.add('inventory_context')
+    return sources
+
+
+def _load_inventory_context_index() -> dict[str, list[str]]:
+    if not _on('PUBLISH_COVERAGE_INVENTORY_CONTEXT_FALLBACK_ENABLED', True):
+        return {}
+    out: dict[str, set[str]] = {}
+    for path in INVENTORY_CONTEXT_PATHS:
+        try:
+            if not path.exists() or path.stat().st_size <= 0:
+                continue
+            payload = json.loads(path.read_text(encoding='utf-8'))
+            rows = payload.get('matches') if isinstance(payload, dict) else payload
+            if not isinstance(rows, list):
+                continue
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                sources = _row_context_sources(row)
+                if not sources:
+                    continue
+                raw_key = str(row.get('match_key') or row.get('canonical_match_id') or '')
+                home = _norm(row.get('home_team') or row.get('home'))
+                away = _norm(row.get('away_team') or row.get('away'))
+                day = _date(row.get('kickoff_utc') or row.get('commence_time') or row.get('date_local') or raw_key)
+                keys = [raw_key] if raw_key else []
+                if home and away and day:
+                    keys.extend([f'soccer|{home}|{away}|{day}', f'soccer|{away}|{home}|{day}'])
+                for key in keys:
+                    if key:
+                        out.setdefault(key, set()).update(sources)
+        except Exception:
+            continue
+    return {key: sorted(value) for key, value in out.items()}
 
 
 def _bridge_candidate(candidate: Any) -> bool:
@@ -137,18 +217,21 @@ def _install_context_index_bridge() -> None:
 
     def context_sources_with_index(candidate: Any) -> set[str]:
         original_sources = _real_context_sources(set(original(candidate) or set()))
-        index = _load_context_index()
         indexed_sources: set[str] = set()
+        context_index = _load_context_index()
+        inventory_index = _load_inventory_context_index()
         for key in _candidate_context_keys(candidate):
-            found = index.get(key)
-            if isinstance(found, list):
-                indexed_sources.update(str(item) for item in found if str(item).strip())
+            for source_index in (context_index, inventory_index):
+                found = source_index.get(key)
+                if isinstance(found, list):
+                    indexed_sources.update(str(item) for item in found if str(item).strip())
         merged = set(original_sources) | _real_context_sources(indexed_sources)
         if merged:
             try:
                 summary = getattr(candidate, 'source_summary', {}) or {}
                 summary['context_index_bridge_sources'] = sorted(_real_context_sources(indexed_sources))
                 summary['context_index_bridge_keys'] = _candidate_context_keys(candidate)
+                summary['inventory_context_fallback_used'] = 'inventory_context' in _real_context_sources(indexed_sources)
                 candidate.source_summary = summary
             except Exception:
                 pass
