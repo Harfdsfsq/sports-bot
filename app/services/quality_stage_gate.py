@@ -7,6 +7,7 @@ from typing import Any
 
 
 CONTEXT_INDEX = Path('.data/exports/latest-context-source-index.json')
+NON_MATCH_CONTEXT_SOURCES = {'ensemble', 'market', 'market_signal', 'unknown'}
 
 
 def _on(name: str, default: bool = True) -> bool:
@@ -110,17 +111,28 @@ def _install_context_index_bridge() -> None:
         return
     original = coverage_contract.context_sources_for_candidate
 
+    def _real_context_sources(values: set[str]) -> set[str]:
+        normalized = {coverage_contract.normalize_source(item) for item in values}
+        return {item for item in normalized if item and item not in coverage_contract.AGGREGATE_CONTEXT_SOURCES and item not in NON_MATCH_CONTEXT_SOURCES}
+
     def context_sources_with_index(candidate: Any) -> set[str]:
-        sources = set(original(candidate) or set())
-        if sources:
-            return sources
+        original_sources = _real_context_sources(set(original(candidate) or set()))
         index = _load_context_index()
+        indexed_sources: set[str] = set()
         for key in _candidate_context_keys(candidate):
             found = index.get(key)
             if isinstance(found, list):
-                sources.update(str(item) for item in found if str(item).strip())
-        normalized = {coverage_contract.normalize_source(item) for item in sources}
-        return {item for item in normalized if item and item not in coverage_contract.AGGREGATE_CONTEXT_SOURCES}
+                indexed_sources.update(str(item) for item in found if str(item).strip())
+        merged = set(original_sources) | _real_context_sources(indexed_sources)
+        if merged:
+            try:
+                summary = getattr(candidate, 'source_summary', {}) or {}
+                summary['context_index_bridge_sources'] = sorted(_real_context_sources(indexed_sources))
+                summary['context_index_bridge_keys'] = _candidate_context_keys(candidate)
+                candidate.source_summary = summary
+            except Exception:
+                pass
+        return merged
 
     coverage_contract.context_sources_for_candidate = context_sources_with_index
     coverage_contract._harizon_context_index_bridge_patch = True
