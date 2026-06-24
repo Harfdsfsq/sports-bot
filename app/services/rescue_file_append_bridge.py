@@ -144,6 +144,9 @@ def _coerce(row: dict[str, Any]) -> Any | None:
     candidate = CandidateBet(**data)
     try:
         candidate.source_summary['rescue_file_append_bridge'] = True
+        candidate.source_summary.pop('publish_coverage_contract', None)
+        candidate.source_summary.pop('publish_coverage_reasons', None)
+        candidate.source_summary.pop('publish_coverage_passed', None)
     except Exception:
         pass
     return candidate
@@ -178,6 +181,7 @@ def install() -> None:
     if not _on('MAIN_POOL_RESCUE_FILE_APPEND_ENABLED', True):
         return
     from app.services import model
+    from app.services.coverage_contract import sync_candidate_publish_coverage
     factory = getattr(model, 'CandidateFactory', None)
     if factory is None or getattr(factory, '_harizon_rescue_file_append_bridge', False):
         return
@@ -199,11 +203,24 @@ def install() -> None:
                 duplicate += 1
                 continue
             seen.add(key); merged.append(item); appended += 1
+        synced = passed = failed = 0
+        for item in merged:
+            try:
+                decision = sync_candidate_publish_coverage(item, None)
+                synced += 1
+                if decision.passed:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception:
+                failed += 1
         if isinstance(rejections, dict):
             rejections['rescue_file_append_bridge_seen'] = int(rejections.get('rescue_file_append_bridge_seen') or 0) + len(file_candidates)
             rejections['rescue_file_append_bridge_appended'] = int(rejections.get('rescue_file_append_bridge_appended') or 0) + appended
+            rejections['rescue_file_append_bridge_coverage_synced'] = int(rejections.get('rescue_file_append_bridge_coverage_synced') or 0) + synced
+            rejections['rescue_file_append_bridge_coverage_passed'] = int(rejections.get('rescue_file_append_bridge_coverage_passed') or 0) + passed
         debug = dict(debug or {})
-        debug['rescue_file_append_bridge'] = {'seen': len(file_candidates), 'appended': appended, 'duplicate': duplicate, 'input_candidates': len(candidates), 'output_candidates': len(merged)}
+        debug['rescue_file_append_bridge'] = {'seen': len(file_candidates), 'appended': appended, 'duplicate': duplicate, 'input_candidates': len(candidates), 'output_candidates': len(merged), 'coverage_synced': synced, 'coverage_passed': passed, 'coverage_failed': failed}
         return merged, rejections, debug
 
     factory.build_candidates = patched
