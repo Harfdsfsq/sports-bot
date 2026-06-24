@@ -5,7 +5,7 @@ from __future__ import annotations
 The rules define a strict A-tier and a lighter B-tier:
 
 * A-tier: 2 odds/line sources, 2 bookmaker/price confirmations, 2 contexts;
-* B-tier: 1 odds/line source, 2 bookmaker/price confirmations, 1 context.
+* B-tier: 1 odds/line source, 1 bookmaker/price confirmation, 1 context.
 
 Value, quality, price-integrity and line-movement guards still apply to both.
 """
@@ -71,11 +71,12 @@ def publish_min_context_sources(settings: Any | None = None, default: int | None
 
 
 def publish_min_books(settings: Any | None = None, default: int | None = None) -> int:
-    fallback = 2 if default is None else int(default)
+    floor = 1 if b_tier_enabled(settings) else 2
+    fallback = floor if default is None else int(default)
     setting_value = getattr(settings, "min_books_publish", None) if settings is not None else None
     raw = os.getenv("PUBLISH_MIN_BOOKS") or os.getenv("MIN_BOOKS_PUBLISH")
     value = as_int(raw if raw not in (None, "") else setting_value, fallback)
-    return max(2, value)
+    return max(floor, value)
 
 
 def controlled_fallback_min_odds_sources(settings: Any | None = None) -> int:
