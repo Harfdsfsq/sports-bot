@@ -8,7 +8,8 @@ compatibility hooks:
 - helper scripts default to the workflow-local inventory day when no explicit
   DAY_INVENTORY_TARGET_DATE is exported;
 - controlled fallback B-tier follows the configured HARIZON contract while
-  A-tier and price/xG/value guards stay strict.
+  A-tier and price/xG/value guards stay strict;
+- daily reports can read the durable run ledger export committed by run-bot.
 """
 
 import importlib
@@ -67,9 +68,44 @@ def _as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def _load_json(path: Path, default: Any) -> Any:
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return default
+
+
+def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    try:
+        if not path.exists():
+            return rows
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            item = json.loads(line)
+            if isinstance(item, dict):
+                rows.append(item)
+    except Exception:
+        pass
+    return rows
+
+
 def _write_contract_patch_report(payload: dict[str, Any]) -> None:
     try:
         out = ROOT / ".data" / "exports" / "latest-controlled-fallback-b-tier-contract-patch.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _write_daily_patch_report(payload: dict[str, Any]) -> None:
+    try:
+        out = ROOT / ".data" / "exports" / "latest-daily-ops-run-ledger-patch.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except Exception:
@@ -172,6 +208,50 @@ def _patch_controlled_fallback_module(module: Any) -> None:
     })
 
 
+def _patch_daily_ops_report_module(module: Any) -> None:
+    if getattr(module, "_harizon_run_ledger_export_patched", False):
+        return
+    original_collect_runs = getattr(module, "collect_runs", None)
+    if not callable(original_collect_runs):
+        return
+
+    def collect_runs_with_export(report_date: str) -> list[dict[str, Any]]:
+        rows = [dict(x) for x in (original_collect_runs(report_date) or []) if isinstance(x, dict)]
+        tz = module.app_tz()
+        ledger: list[dict[str, Any]] = []
+        payload = _load_json(ROOT / ".data" / "exports" / "latest-run-report-ledger.json", [])
+        if isinstance(payload, list):
+            ledger.extend(x for x in payload if isinstance(x, dict))
+        ledger.extend(_load_jsonl(ROOT / ".data" / "bets" / "run_report_ledger.jsonl"))
+        seen = {str(row.get("github_run_id") or "") + "|" + str(row.get("created_at") or row.get("created_at_utc") or "")[:16] for row in rows}
+        added = 0
+        for item in ledger:
+            created = item.get("created_at_utc") or item.get("created_at") or item.get("updated_at_utc")
+            try:
+                if module.local_date(created, tz) != report_date:
+                    continue
+            except Exception:
+                continue
+            key = str(item.get("github_run_id") or "") + "|" + str(created or "")[:16]
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append({
+                "created_at": created,
+                "summary": dict(item.get("summary") or {}),
+                "_archive_path": "export:latest-run-report-ledger.json",
+                "ledger_source": item.get("source") or "run-bot",
+                "github_run_id": item.get("github_run_id"),
+            })
+            added += 1
+        rows.sort(key=lambda row: str(row.get("created_at") or ""))
+        _write_daily_patch_report({"status": "installed", "report_date": report_date, "ledger_rows_seen": len(ledger), "ledger_rows_added": added})
+        return rows
+
+    module.collect_runs = collect_runs_with_export
+    module._harizon_run_ledger_export_patched = True
+
+
 _original_spec_from_file_location = importlib.util.spec_from_file_location
 
 
@@ -181,7 +261,7 @@ def _spec_from_file_location_patched(name: str, location: Any, *args: Any, **kwa
         path = Path(str(location)).resolve()
     except Exception:
         path = None
-    if spec is None or path is None or path.name != "publish_controlled_fallback.py":
+    if spec is None or path is None or path.name not in {"publish_controlled_fallback.py", "build_daily_ops_report.py"}:
         return spec
     loader = getattr(spec, "loader", None)
     exec_module = getattr(loader, "exec_module", None)
@@ -191,13 +271,19 @@ def _spec_from_file_location_patched(name: str, location: Any, *args: Any, **kwa
     def exec_module_patched(module: Any) -> Any:
         result = exec_module(module)
         try:
-            _patch_controlled_fallback_module(module)
+            if path.name == "publish_controlled_fallback.py":
+                _patch_controlled_fallback_module(module)
+            elif path.name == "build_daily_ops_report.py":
+                _patch_daily_ops_report_module(module)
         except Exception as exc:
-            _write_contract_patch_report({
-                "status": "error",
-                "error": f"{type(exc).__name__}: {exc}",
-                "policy": "B-tier single-book contract patch failed",
-            })
+            if path.name == "publish_controlled_fallback.py":
+                _write_contract_patch_report({
+                    "status": "error",
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "policy": "B-tier single-book contract patch failed",
+                })
+            else:
+                _write_daily_patch_report({"status": "error", "error": f"{type(exc).__name__}: {exc}"})
         return result
 
     loader.exec_module = exec_module_patched  # type: ignore[method-assign]
