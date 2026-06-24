@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -36,6 +37,7 @@ CONTEXT_ONLY_SOURCES = {
 
 AGGREGATE_CONTEXT_SOURCES = {"ensemble", "market", "market_signal", "unknown"}
 CONTEXT_SOURCE_INDEX_PATH = Path(".data/exports/latest-context-source-index.json")
+_CONTEXT_SOURCE_INDEX_BUILD_ATTEMPTED = False
 
 ODDS_SOURCE_ALIASES = {
     "account1": "odds_api_io",
@@ -292,10 +294,39 @@ def _candidate_context_index_keys(candidate: Any) -> list[str]:
     return list(dict.fromkeys(key for key in keys if key))
 
 
+def _ensure_context_source_index() -> None:
+    global _CONTEXT_SOURCE_INDEX_BUILD_ATTEMPTED
+    if _CONTEXT_SOURCE_INDEX_BUILD_ATTEMPTED:
+        return
+    _CONTEXT_SOURCE_INDEX_BUILD_ATTEMPTED = True
+    if CONTEXT_SOURCE_INDEX_PATH.exists() and CONTEXT_SOURCE_INDEX_PATH.stat().st_size > 0:
+        return
+    if not _truthy(os.getenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BUILD_ON_DEMAND"), True):
+        return
+    try:
+        builder_path = Path("scripts/build_context_source_index.py")
+        if not builder_path.exists():
+            builder_path = Path(__file__).resolve().parents[2] / "scripts" / "build_context_source_index.py"
+        if not builder_path.exists():
+            return
+        spec = importlib.util.spec_from_file_location("harizon_context_source_index_builder", builder_path)
+        if spec is None or spec.loader is None:
+            return
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        main = getattr(module, "main", None)
+        if callable(main):
+            main()
+    except Exception:
+        return
+
+
 def _context_index_sources(candidate: Any) -> set[str]:
     if not _truthy(os.getenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BRIDGE_ENABLED"), True):
         return set()
     try:
+        if not CONTEXT_SOURCE_INDEX_PATH.exists() or CONTEXT_SOURCE_INDEX_PATH.stat().st_size <= 0:
+            _ensure_context_source_index()
         if not CONTEXT_SOURCE_INDEX_PATH.exists() or CONTEXT_SOURCE_INDEX_PATH.stat().st_size <= 0:
             return set()
         payload = json.loads(CONTEXT_SOURCE_INDEX_PATH.read_text(encoding="utf-8"))
