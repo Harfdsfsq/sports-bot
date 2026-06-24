@@ -21,12 +21,12 @@
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 54,
+      "books_2plus": 60,
       "errors": 0,
       "events_req": 0,
-      "matched": 224,
+      "matched": 223,
       "odds_req": 46,
-      "offers": 5768
+      "offers": 7652
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -50,7 +50,7 @@
     },
     "sstats": {
       "contexts": 167,
-      "deep_enriched": 33,
+      "deep_enriched": 32,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 28,
@@ -60,38 +60,77 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.8334780017534892,
-    "fallback_age_min": 0.00030624866485595703,
-    "run_log_age_min": 0.6209198753039042,
+    "debug_age_min": 0.973427951335907,
+    "fallback_age_min": 0.00031855106353759763,
+    "run_log_age_min": 0.7584671934445699,
     "signal_stack_age_min": null
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 0,
     "bzzoiro_secondary_offers_added": 0,
     "day_inventory_total": 300,
-    "day_inventory_with_context": 174,
-    "day_inventory_with_odds": 276,
+    "day_inventory_with_context": 169,
+    "day_inventory_with_odds": 277,
     "matches_seen": 227,
-    "matches_with_2plus_books": 54,
-    "matches_with_context": 170,
+    "matches_with_2plus_books": 60,
+    "matches_with_context": 174,
     "matches_with_offers": 120,
-    "odds_offers_primary": 5768,
-    "ready_for_model": 162,
+    "odds_offers_primary": 7652,
+    "ready_for_model": 156,
     "secondary_combinations": {}
   },
-  "created_at_utc": "2026-06-24T03:14:09.967302+00:00",
+  "created_at_utc": "2026-06-24T05:13:54.526853+00:00",
   "diagnostics": {
     "a_cover_candidate_gap_report": {
-      "a_cover_rows": 116,
-      "active_future_a_cover_rows": 111,
-      "created_at_utc": "2026-06-24T03:14:09.941794+00:00",
-      "fallback_evaluated_rows": 0,
-      "in_publish_window_a_cover_rows": 0,
+      "a_cover_rows": 119,
+      "active_future_a_cover_rows": 119,
+      "created_at_utc": "2026-06-24T05:13:54.499006+00:00",
+      "fallback_evaluated_rows": 6,
+      "in_publish_window_a_cover_rows": 2,
       "plain_explanation": "If active_a_cover_not_selected_by_candidate_layers is high, coverage is ready but main/fallback candidate selection did not create a candidate for those matches.",
       "reason_counts": {
-        "active_a_cover_not_selected_by_candidate_layers": 111
+        "active_a_cover_not_selected_by_candidate_layers": 117,
+        "missing_total_xg_sanity": 2,
+        "proxy_single_source_confidence_below_min": 2,
+        "proxy_single_source_edge_below_min": 2,
+        "proxy_single_source_ev_below_min": 2,
+        "tier_a_confirmation_sources_below_min:1/2": 2,
+        "tier_a_odds_sources_below_min:1/2": 4,
+        "tier_a_proxy_quality_not_allowed": 4,
+        "tier_a_publication_score_below_min": 4,
+        "tier_a_quality_below_min": 4,
+        "tier_b_canonical_edge_below_min": 4,
+        "tier_b_canonical_ev_below_min": 4,
+        "tier_b_confidence_below_min": 4,
+        "tier_b_publication_score_below_min": 4,
+        "tier_b_quality_below_min": 8,
+        "tier_c_publication_score_below_min": 4,
+        "tier_c_quality_below_min": 4,
+        "tier_c_watch_only": 2,
+        "xg_direction_conflict": 2,
+        "xg_probability_gap_hard_reject": 2
       },
       "samples": [
+        {
+          "away_team": "Taian Tiankuang",
+          "contexts": 3,
+          "home_team": "Shanxi Chongde Ronghai",
+          "kickoff_utc": "2026-06-24T07:00:00+00:00",
+          "match_key": "2026-06-24|shanxi chongde ronghai|taian tiankuang",
+          "odds_sources": 1,
+          "price_confirmations": 280,
+          "reasons": [
+            "tier_a_publication_score_below_min",
+            "tier_a_proxy_quality_not_allowed",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_confirmation_sources_below_min:1/2",
+            "tier_b_confidence_below_min",
+            "tier_b_quality_below_min",
+            "tier_b_canonical_edge_below_min",
+            "tier_b_canonical_ev_below_min"
+          ],
+          "status": "active_a_cover_seen_in_fallback"
+        },
         {
           "away_team": "Taian Tiankuang",
           "contexts": 2,
@@ -99,24 +138,18 @@
           "kickoff_utc": "2026-06-24T07:00:00+00:00",
           "match_key": "2026-06-24|shanxi chongde ronghai|taian tiankuang",
           "odds_sources": 1,
-          "price_confirmations": 141,
+          "price_confirmations": 280,
           "reasons": [
-            "active_a_cover_not_selected_by_candidate_layers"
+            "tier_a_publication_score_below_min",
+            "tier_a_proxy_quality_not_allowed",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_confirmation_sources_below_min:1/2",
+            "tier_b_confidence_below_min",
+            "tier_b_quality_below_min",
+            "tier_b_canonical_edge_below_min",
+            "tier_b_canonical_ev_below_min"
           ],
-          "status": "active_a_cover_not_selected_by_candidate_layers"
-        },
-        {
-          "away_team": "Taian Tiankuang",
-          "contexts": 1,
-          "home_team": "Shanxi Chongde Ronghai",
-          "kickoff_utc": "2026-06-24T07:00:00+00:00",
-          "match_key": "2026-06-24|shanxi chongde ronghai|taian tiankuang",
-          "odds_sources": 1,
-          "price_confirmations": 141,
-          "reasons": [
-            "active_a_cover_not_selected_by_candidate_layers"
-          ],
-          "status": "active_a_cover_not_selected_by_candidate_layers"
+          "status": "active_a_cover_seen_in_fallback"
         },
         {
           "away_team": "Auckland City",
@@ -190,7 +223,7 @@
           "kickoff_utc": "2026-06-24T08:45:00+00:00",
           "match_key": "2026-06-24|banska bystrica|presov",
           "odds_sources": 1,
-          "price_confirmations": 139,
+          "price_confirmations": 151,
           "reasons": [
             "active_a_cover_not_selected_by_candidate_layers"
           ],
@@ -203,7 +236,7 @@
           "kickoff_utc": "2026-06-24T08:45:00+00:00",
           "match_key": "2026-06-24|banska bystrica|presov",
           "odds_sources": 1,
-          "price_confirmations": 139,
+          "price_confirmations": 151,
           "reasons": [
             "active_a_cover_not_selected_by_candidate_layers"
           ],
@@ -216,7 +249,7 @@
           "kickoff_utc": "2026-06-24T09:00:00+00:00",
           "match_key": "2026-06-24|palmerston rovers|mindil aces",
           "odds_sources": 1,
-          "price_confirmations": 11,
+          "price_confirmations": 24,
           "reasons": [
             "active_a_cover_not_selected_by_candidate_layers"
           ],
@@ -229,7 +262,7 @@
           "kickoff_utc": "2026-06-24T09:00:00+00:00",
           "match_key": "2026-06-24|gornik zabrze|niepo omice",
           "odds_sources": 1,
-          "price_confirmations": 34,
+          "price_confirmations": 37,
           "reasons": [
             "active_a_cover_not_selected_by_candidate_layers"
           ],
@@ -242,7 +275,7 @@
           "kickoff_utc": "2026-06-24T09:00:00+00:00",
           "match_key": "2026-06-24|gornik zabrze|niepo omice",
           "odds_sources": 1,
-          "price_confirmations": 34,
+          "price_confirmations": 37,
           "reasons": [
             "active_a_cover_not_selected_by_candidate_layers"
           ],
@@ -251,69 +284,70 @@
       ],
       "status": "ok",
       "status_counts": {
-        "active_a_cover_not_selected_by_candidate_layers": 111
+        "active_a_cover_not_selected_by_candidate_layers": 117,
+        "active_a_cover_seen_in_fallback": 2
       }
     },
     "a_cover_value_promotion": {
-      "active_a_cover_rows": 44,
-      "considered_a_cover_rows": 0,
-      "created_at_utc": "2026-06-24T03:13:50.639570+00:00",
+      "active_a_cover_rows": 49,
+      "considered_a_cover_rows": 2,
+      "created_at_utc": "2026-06-24T05:13:28.583058+00:00",
       "enabled": true,
       "existing_rescue_stats": {
-        "dropped_outside_window": 32,
-        "kept": 0,
-        "loaded": 32
+        "dropped_outside_window": 33,
+        "kept": 6,
+        "loaded": 39
       },
-      "in_publish_window_a_cover_rows": 0,
+      "in_publish_window_a_cover_rows": 2,
       "inventory_load": {
         "candidate_source_scores": [
           {
-            "b_cover_rows": 162,
+            "b_cover_rows": 156,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-24.json",
-            "ready_model_rows": 162,
+            "ready_model_rows": 156,
             "rows": 300
           },
           {
-            "b_cover_rows": 162,
+            "b_cover_rows": 156,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
-            "ready_model_rows": 162,
+            "ready_model_rows": 156,
             "rows": 300
           },
           {
-            "b_cover_rows": 162,
+            "b_cover_rows": 156,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
-            "ready_model_rows": 162,
+            "ready_model_rows": 156,
             "rows": 300
           },
           {
-            "b_cover_rows": 162,
+            "b_cover_rows": 156,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json",
-            "ready_model_rows": 162,
+            "ready_model_rows": 156,
             "rows": 300
           },
           {
-            "b_cover_rows": 192,
+            "b_cover_rows": 179,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-24.json",
-            "ready_model_rows": 192,
-            "rows": 354
+            "ready_model_rows": 179,
+            "rows": 348
           },
           {
-            "b_cover_rows": 192,
+            "b_cover_rows": 179,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json",
-            "ready_model_rows": 192,
-            "rows": 354
+            "ready_model_rows": 179,
+            "rows": 348
           },
           {
-            "b_cover_rows": 162,
+            "b_cover_rows": 156,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-            "ready_model_rows": 162,
+            "ready_model_rows": 156,
             "rows": 300
           }
         ],
-        "selected_b_cover_rows": 192,
+        "selected_b_cover_rows": 179,
         "selected_path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-24.json",
-        "selected_ready_model_rows": 192,
-        "selected_rows": 354,
+        "selected_ready_model_rows": 179,
+        "selected_rows": 348,
         "sources": [
           {
             "chosen_rows": 300,
@@ -340,16 +374,16 @@
             "rows": 300
           },
           {
-            "chosen_rows": 354,
-            "dated_rows": 354,
+            "chosen_rows": 348,
+            "dated_rows": 348,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-24.json",
-            "rows": 449
+            "rows": 443
           },
           {
-            "chosen_rows": 354,
-            "dated_rows": 354,
+            "chosen_rows": 348,
+            "dated_rows": 348,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json",
-            "rows": 449
+            "rows": 443
           },
           {
             "chosen_rows": 300,
@@ -369,23 +403,23 @@
           }
         ]
       },
-      "inventory_rows_seen": 354,
+      "inventory_rows_seen": 348,
       "offer_diagnostics": {
-        "accepted_offer_rows": 3449,
-        "scanned_dicts": 107851,
+        "accepted_offer_rows": 4571,
+        "scanned_dicts": 120242,
         "source_counts": {
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-24/031318-line-snapshots.json": 1578,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-24/051254-line-snapshots.json": 2136,
           "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 12,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 298,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1524,
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 32,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 297,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 2082,
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 39,
           "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 5
         }
       },
       "prebuild_coverage_truth": {
         "enabled": true,
-        "finished_at_utc": "2026-06-24T03:13:50.290434+00:00",
-        "started_at_utc": "2026-06-24T03:13:49.517961+00:00",
+        "finished_at_utc": "2026-06-24T05:13:28.221883+00:00",
+        "started_at_utc": "2026-06-24T05:13:27.429034+00:00",
         "status": "ok",
         "steps": [
           {
@@ -397,7 +431,11 @@
       },
       "promoted_count": 0,
       "reason_counts": {
-        "promotion_skip_outside_active_publish_window": 44
+        "promotion_skip_edge_below_min": 10,
+        "promotion_skip_odds_above_max": 20,
+        "promotion_skip_odds_below_min": 20,
+        "promotion_skip_outside_active_publish_window": 47,
+        "promotion_skip_price_outlier": 2
       },
       "rescue_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
       "safety_note": "promotion only appends candidates to fallback review; guarded publisher still enforces value, xG, line recheck, duplicate, daily cap and price-integrity guards",
@@ -408,24 +446,54 @@
     },
     "a_tier_funnel_diagnostics": {
       "a_cover_published_rows": 0,
-      "a_cover_rows": 116,
-      "a_cover_seen_in_fallback": 0,
+      "a_cover_rows": 119,
+      "a_cover_seen_in_fallback": 1,
       "a_cover_with_raw_candidate": 0,
-      "a_cover_without_raw_candidate": 91,
-      "active_a_cover_seen_in_fallback": 0,
+      "a_cover_without_raw_candidate": 94,
+      "active_a_cover_seen_in_fallback": 1,
       "active_a_cover_with_raw_candidate": 0,
-      "active_a_cover_without_raw_candidate": 88,
-      "active_future_a_cover_rows": 111,
-      "coverage_truth_matches_ready_for_publish": 116,
-      "created_at_utc": "2026-06-24T03:14:09.933515+00:00",
-      "fallback_evaluated_rows": 0,
-      "fallback_reason_counts": {},
-      "in_publish_window_a_cover_rows": 0,
-      "in_window_a_cover_seen_in_fallback": 0,
+      "active_a_cover_without_raw_candidate": 94,
+      "active_future_a_cover_rows": 119,
+      "coverage_truth_matches_ready_for_publish": 119,
+      "created_at_utc": "2026-06-24T05:13:54.490184+00:00",
+      "fallback_evaluated_rows": 6,
+      "fallback_reason_counts": {
+        "missing_total_xg_sanity": 1,
+        "proxy_single_source_confidence_below_min": 1,
+        "proxy_single_source_edge_below_min": 1,
+        "proxy_single_source_ev_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_odds_sources_below_min:1/2": 2,
+        "tier_a_proxy_quality_not_allowed": 2,
+        "tier_a_publication_score_below_min": 2,
+        "tier_a_quality_below_min": 2,
+        "tier_b_canonical_edge_below_min": 2,
+        "tier_b_canonical_ev_below_min": 2,
+        "tier_b_confidence_below_min": 2,
+        "tier_b_publication_score_below_min": 2,
+        "tier_b_quality_below_min": 4,
+        "tier_c_publication_score_below_min": 2,
+        "tier_c_quality_below_min": 2,
+        "tier_c_watch_only": 1,
+        "xg_direction_conflict": 1,
+        "xg_probability_gap_hard_reject": 1
+      },
+      "in_publish_window_a_cover_rows": 2,
+      "in_window_a_cover_seen_in_fallback": 1,
       "in_window_a_cover_with_raw_candidate": 0,
-      "in_window_a_cover_without_raw_candidate": 0,
+      "in_window_a_cover_without_raw_candidate": 1,
       "min_lead_minutes": 15,
       "missing_raw_candidate_samples": [
+        {
+          "away_team": "Taian Tiankuang",
+          "contexts": 3,
+          "home_team": "Shanxi Chongde Ronghai",
+          "kickoff": "2026-06-24T07:00:00+00:00",
+          "league_name": "China - China League 2",
+          "match_key": "2026-06-24|china china league 2|shanxi chongde ronghai|taian tiankuang",
+          "odds_sources": 1,
+          "price_confirmations": 280
+        },
         {
           "away_team": "Taian Tiankuang",
           "contexts": 2,
@@ -434,17 +502,7 @@
           "league_name": "China - China League 2",
           "match_key": "2026-06-24|china china league 2|shanxi chongde ronghai|taian tiankuang",
           "odds_sources": 1,
-          "price_confirmations": 141
-        },
-        {
-          "away_team": "Taian Tiankuang",
-          "contexts": 1,
-          "home_team": "Shanxi Chongde Ronghai",
-          "kickoff": "2026-06-24T07:00:00+00:00",
-          "league_name": "China - China League 2",
-          "match_key": "2026-06-24|china china league 2|shanxi chongde ronghai|taian tiankuang",
-          "odds_sources": 1,
-          "price_confirmations": 141
+          "price_confirmations": 280
         },
         {
           "away_team": "Auckland City",
@@ -504,7 +562,7 @@
           "league_name": "International Clubs - Club Friendly Games",
           "match_key": "2026-06-24|international clubs club friendly games|banska bystrica|presov",
           "odds_sources": 1,
-          "price_confirmations": 139
+          "price_confirmations": 151
         },
         {
           "away_team": "Presov",
@@ -514,7 +572,7 @@
           "league_name": "International Clubs - Club Friendly Games",
           "match_key": "2026-06-24|international clubs club friendly games|banska bystrica|presov",
           "odds_sources": 1,
-          "price_confirmations": 139
+          "price_confirmations": 151
         },
         {
           "away_team": "Mindil Aces",
@@ -524,7 +582,7 @@
           "league_name": "Australia - Northern Territory Premier League",
           "match_key": "2026-06-24|australia northern territory premier league|palmerston rovers|mindil aces",
           "odds_sources": 1,
-          "price_confirmations": 11
+          "price_confirmations": 24
         },
         {
           "away_team": "Niepołomice",
@@ -534,7 +592,7 @@
           "league_name": "International Clubs - Club Friendly Games",
           "match_key": "2026-06-24|international clubs club friendly games|gornik zabrze|niepo omice",
           "odds_sources": 1,
-          "price_confirmations": 34
+          "price_confirmations": 37
         },
         {
           "away_team": "Niepołomice",
@@ -544,7 +602,7 @@
           "league_name": "International Clubs - Club Friendly Games",
           "match_key": "2026-06-24|international clubs club friendly games|gornik zabrze|niepo omice",
           "odds_sources": 1,
-          "price_confirmations": 34
+          "price_confirmations": 37
         }
       ],
       "plain_explanation": [
@@ -567,24 +625,121 @@
         "total_tracked_bets": 88,
         "wins": 11
       },
-      "quality_score_sources": {},
+      "quality_score_sources": {
+        "proxy": 4,
+        "raw_missing": 2
+      },
       "raw_candidate_reason_counts": {},
       "raw_candidates_before_quality": 0,
       "status": "ok"
     },
     "a_tier_publication_diagnostics": {
-      "created_at_utc": "2026-06-24T03:14:09.951636+00:00",
-      "duplicates_removed": 0,
-      "evaluated_rows": 0,
+      "created_at_utc": "2026-06-24T05:13:54.509802+00:00",
+      "duplicates_removed": 3,
+      "evaluated_rows": 6,
       "plain_explanation": [
-        "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+        "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+        "A-tier publication score is below min on many candidates."
       ],
-      "quality_score_sources": {},
+      "quality_score_sources": {
+        "proxy": 2,
+        "raw_missing": 1
+      },
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
-      "tier_a_blocker_counts": {},
-      "top_a_tier_blocked_samples": [],
-      "unique_evaluated_rows": 0
+      "tier_a_blocker_counts": {
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_proxy_quality_not_allowed": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1
+      },
+      "top_a_tier_blocked_samples": [
+        {
+          "a_tier_reasons": [
+            "tier_a_quality_below_min"
+          ],
+          "away_team": "Taian Tiankuang",
+          "books_count": 141,
+          "candidate_source": "a_cover_market_promotion",
+          "commence_time": "2026-06-24T07:00:00+00:00",
+          "confidence": 70.133,
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "daily_cap_reasons": [],
+          "dedupe_key": "2026-06-24|china china league 2|shanxi chongde ronghai|taian tiankuang|totals|under|2.5",
+          "edge_pp": 5.284,
+          "ev_pct": 8.295,
+          "family": "totals",
+          "home_team": "Shanxi Chongde Ronghai",
+          "league_name": "China - China League 2",
+          "match_key": "soccer|shanxi chongde ronghai|taian tiankuang|2026-06-24",
+          "odds": 1.57,
+          "odds_sources_count": 2,
+          "other_reasons": [
+            "tier_a_quality_below_min",
+            "tier_b_quality_below_min",
+            "tier_c_quality_below_min"
+          ],
+          "point": 2.5,
+          "publication_score": 25.906,
+          "quality_score": 0.0,
+          "quality_score_source": "raw_missing",
+          "rank": 1,
+          "selection": "Меньше",
+          "shadow_score": 7.39,
+          "status_without_daily_cap": "blocked_by_other_guards",
+          "tier": null
+        },
+        {
+          "a_tier_reasons": [
+            "tier_a_publication_score_below_min",
+            "tier_a_proxy_quality_not_allowed",
+            "tier_a_odds_sources_below_min:1/2"
+          ],
+          "away_team": "Taian Tiankuang",
+          "books_count": 2,
+          "candidate_source": "latest_rescue_candidates",
+          "commence_time": "2026-06-24T07:00:00+00:00",
+          "confidence": 66.547,
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "daily_cap_reasons": [],
+          "dedupe_key": "2026-06-24|china china league 2|shanxi chongde ronghai|taian tiankuang|totals|over|1.5",
+          "edge_pp": 2.791,
+          "ev_pct": 4.326,
+          "family": "totals",
+          "home_team": "Shanxi Chongde Ronghai",
+          "league_name": "China - China League 2",
+          "match_key": "soccer|shanxi chongde ronghai|taian tiankuang|2026-06-24",
+          "odds": 1.55,
+          "odds_sources_count": 1,
+          "other_reasons": [
+            "tier_a_publication_score_below_min",
+            "tier_a_proxy_quality_not_allowed",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_b_confidence_below_min",
+            "tier_b_quality_below_min",
+            "tier_b_canonical_edge_below_min",
+            "tier_b_canonical_ev_below_min",
+            "tier_b_publication_score_below_min",
+            "tier_c_publication_score_below_min"
+          ],
+          "point": 1.5,
+          "publication_score": 15.158,
+          "quality_score": 69.965,
+          "quality_score_source": "proxy",
+          "rank": 2,
+          "selection": "Больше",
+          "shadow_score": -22.489,
+          "status_without_daily_cap": "blocked_by_other_guards",
+          "tier": null
+        }
+      ],
+      "unique_evaluated_rows": 3
     },
     "ab_tier_bookmaker_contract_policy": {
       "contract": {
@@ -618,7 +773,7 @@
         ],
         "independent_odds_sources": "required_for_a_tier_only"
       },
-      "created_at_utc": "2026-06-24T03:02:14.419175+00:00",
+      "created_at_utc": "2026-06-24T05:02:17.197114+00:00",
       "env": {
         "CONTROLLED_FALLBACK_DEDUPE_PREVIOUS_REPORT": "true",
         "CONTROLLED_FALLBACK_DEDUPE_SENT_INDEX_STRICT": "true",
@@ -695,14 +850,14 @@
       "independent_odds_sources": "required_for_a_tier_only"
     },
     "bzzoiro_overlap_bridge": {
-      "bzzoiro_offer_rows": 337,
-      "created_at_utc": "2026-06-24T03:14:00.044877+00:00",
-      "odds_reference_aliases": 554,
+      "bzzoiro_offer_rows": 336,
+      "created_at_utc": "2026-06-24T05:13:43.439083+00:00",
+      "odds_reference_aliases": 555,
       "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
-      "overlap_match_rows": 337,
-      "overlap_same_bucket_rows": 225,
+      "overlap_match_rows": 336,
+      "overlap_same_bucket_rows": 255,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 395
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 394
       },
       "status": "ok"
     },
@@ -812,7 +967,7 @@
     "controlled_fallback_prepublish_guard": {
       "base_exit_code": 0,
       "blocked_events": 0,
-      "created_at_utc": "2026-06-24T03:13:53.237208+00:00",
+      "created_at_utc": "2026-06-24T05:13:31.549725+00:00",
       "daily_existing": {
         "count": 1,
         "date": "2026-06-24",
@@ -842,85 +997,113 @@
     "controlled_fallback_shadow_ranking": {
       "blocked_by_daily_cap_and_other_guards": 0,
       "blocked_only_by_daily_cap": 0,
-      "created_at_utc": "2026-06-24T03:14:09.951620+00:00",
+      "created_at_utc": "2026-06-24T05:13:54.509519+00:00",
       "daily_cap_blocked_unique_rows": 0,
-      "duplicates_removed": 0,
-      "evaluated_rows": 0,
+      "duplicates_removed": 3,
+      "evaluated_rows": 6,
       "published": false,
-      "reason_counts": {},
-      "reason_counts_without_daily_cap": {},
+      "reason_counts": {
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_proxy_quality_not_allowed": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_canonical_ev_below_min": 1,
+        "tier_b_confidence_below_min": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 2,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 1,
+        "xg_direction_conflict": 1,
+        "xg_probability_gap_hard_reject": 1
+      },
+      "reason_counts_without_daily_cap": {
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_proxy_quality_not_allowed": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_canonical_ev_below_min": 1,
+        "tier_b_confidence_below_min": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 2,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 1,
+        "xg_direction_conflict": 1,
+        "xg_probability_gap_hard_reject": 1
+      },
       "report_status": "no_viable_controlled_fallback",
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
       "top_blocked_after_daily_cap_removed": [],
       "top_would_publish_without_daily_cap": [],
-      "unique_evaluated_rows": 0
+      "unique_evaluated_rows": 3
     },
     "coverage_truth": {
       "counts": {
-        "matches_missing_context_2plus": 149,
-        "matches_missing_odds_source_2plus": 51,
-        "matches_missing_price_2plus": 51,
-        "matches_ready_for_model": 162,
-        "matches_ready_for_publish": 116,
+        "matches_missing_context_2plus": 150,
+        "matches_missing_odds_source_2plus": 47,
+        "matches_missing_price_2plus": 48,
+        "matches_ready_for_model": 156,
+        "matches_ready_for_publish": 119,
         "matches_total": 300,
-        "matches_with_2plus_context_sources": 151,
-        "matches_with_2plus_odds_sources": 249,
-        "matches_with_2plus_price_confirmations": 249,
-        "matches_with_context": 174,
-        "matches_with_odds": 276
+        "matches_with_2plus_context_sources": 150,
+        "matches_with_2plus_odds_sources": 253,
+        "matches_with_2plus_price_confirmations": 252,
+        "matches_with_context": 169,
+        "matches_with_odds": 277
       },
       "source": {
         "counts": {
-          "matches_missing_context_2plus": 149,
-          "matches_missing_odds_source_2plus": 51,
-          "matches_missing_price_2plus": 51,
-          "matches_ready_for_model": 162,
-          "matches_ready_for_publish": 116,
+          "matches_missing_context_2plus": 150,
+          "matches_missing_odds_source_2plus": 47,
+          "matches_missing_price_2plus": 48,
+          "matches_ready_for_model": 156,
+          "matches_ready_for_publish": 119,
           "matches_total": 300,
-          "matches_with_2plus_context_sources": 151,
-          "matches_with_2plus_odds_sources": 249,
-          "matches_with_2plus_price_confirmations": 249,
-          "matches_with_context": 174,
-          "matches_with_odds": 276
+          "matches_with_2plus_context_sources": 150,
+          "matches_with_2plus_odds_sources": 253,
+          "matches_with_2plus_price_confirmations": 252,
+          "matches_with_context": 169,
+          "matches_with_odds": 277
         },
         "csv": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.csv",
         "json": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-        "updated_at_utc": "2026-06-24T03:14:06.669907+00:00"
+        "updated_at_utc": "2026-06-24T05:13:50.943243+00:00"
       }
     },
     "fresh_b_cover_diagnostics": {
-      "active_b_cover_rows": 138,
-      "active_b_cover_with_any_current_offer_match": 109,
-      "active_b_cover_without_current_offer_match": 29,
-      "b_cover_rows": 143,
-      "b_cover_with_any_current_offer_match": 109,
-      "b_cover_without_current_offer_match": 34,
+      "active_b_cover_rows": 140,
+      "active_b_cover_with_any_current_offer_match": 108,
+      "active_b_cover_without_current_offer_match": 32,
+      "b_cover_rows": 140,
+      "b_cover_with_any_current_offer_match": 108,
+      "b_cover_without_current_offer_match": 32,
       "bzzoiro_overlap_bridge": {
-        "bzzoiro_offer_rows": 337,
-        "created_at_utc": "2026-06-24T03:14:00.044877+00:00",
-        "odds_reference_aliases": 554,
+        "bzzoiro_offer_rows": 336,
+        "created_at_utc": "2026-06-24T05:13:43.439083+00:00",
+        "odds_reference_aliases": 555,
         "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
-        "overlap_match_rows": 337,
-        "overlap_same_bucket_rows": 225,
+        "overlap_match_rows": 336,
+        "overlap_same_bucket_rows": 255,
         "source_counts": {
-          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 395
+          "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json": 394
         },
         "status": "ok"
       },
-      "created_at_utc": "2026-06-24T03:14:00.038706+00:00",
+      "created_at_utc": "2026-06-24T05:13:43.432981+00:00",
       "current_market_bucket_book_count_histogram": {
-        "1": 6309,
-        "2": 398,
+        "1": 8692,
+        "2": 677,
         "24": 6,
-        "3": 78,
+        "3": 98,
         "4": 4,
         "7": 2,
         "8": 6
       },
-      "current_market_buckets_totals_spreads": 6803,
+      "current_market_buckets_totals_spreads": 9485,
       "current_market_bzzoiro_buckets_totals_spreads": 113,
-      "fallback_candidates_seen": 0,
+      "fallback_candidates_seen": 6,
       "fallback_low_confidence_candidates": 0,
       "fallback_low_edge_candidates": 0,
       "fallback_low_ev_candidates": 0,
@@ -931,59 +1114,104 @@
       "fallback_status": "no_viable_controlled_fallback",
       "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
       "inventory_rows": 300,
-      "offer_rows_seen": 15270,
+      "offer_rows_seen": 20107,
       "offer_source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 337,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 5073,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 4092,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 5768
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 336,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 6666,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 5453,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 7652
       },
-      "promotion_considered_b_cover_rows": 192,
-      "promotion_promoted_count": 35,
+      "promotion_considered_b_cover_rows": 179,
+      "promotion_promoted_count": 33,
       "promotion_reason_counts": {
-        "promoted": 35,
-        "promotion_skip_duplicate_candidate": 1,
-        "promotion_skip_edge_below_min": 348,
-        "promotion_skip_ev_below_min": 5,
-        "promotion_skip_no_offer_bucket": 82,
-        "promotion_skip_odds_above_max": 475,
-        "promotion_skip_odds_below_min": 643,
-        "promotion_skip_price_outlier": 53
+        "promoted": 33,
+        "promotion_skip_duplicate_candidate": 2,
+        "promotion_skip_edge_below_min": 350,
+        "promotion_skip_ev_below_min": 9,
+        "promotion_skip_no_offer_bucket": 70,
+        "promotion_skip_odds_above_max": 688,
+        "promotion_skip_odds_below_min": 822,
+        "promotion_skip_price_outlier": 70
       }
     },
     "github_actions": {
       "repository": "Harfdsfsq/sports-bot",
       "run_attempt": "1",
-      "run_id": "28072091340",
+      "run_id": "28076311650",
       "workflow": "run-bot"
     },
     "inventory_bookmaker_backfill": {
-      "changed_inventory_rows": 0,
-      "created_at_utc": "2026-06-24T03:14:05.766090+00:00",
-      "examples": [],
+      "changed_inventory_rows": 1,
+      "created_at_utc": "2026-06-24T05:13:50.051230+00:00",
+      "examples": [
+        {
+          "after_books": 69,
+          "away_team": "Trujillanos",
+          "before_books": 3,
+          "home_team": "Rayo Zuliano",
+          "match_key": "soccer|rayo zuliano|trujillanos|2026-06-24",
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": null,
+              "price": 1.7,
+              "selection": "Rayo Zuliano"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": null,
+              "price": 3.5,
+              "selection": "Draw"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": null,
+              "price": 4.2,
+              "selection": "Trujillanos"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "dnb",
+              "point": null,
+              "price": 1.3,
+              "selection": "Rayo Zuliano"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "dnb",
+              "point": null,
+              "price": 3.4,
+              "selection": "Trujillanos"
+            }
+          ]
+        }
+      ],
       "inventory_path_used": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-24.json",
-      "inventory_rows": 449,
-      "mapping_gap_after": 110,
+      "inventory_rows": 443,
+      "mapping_gap_after": 117,
       "matched_inventory_rows": 184,
-      "normalized_2plus_after": 97,
-      "normalized_2plus_before": 108,
-      "raw_2plus_matches": 207,
-      "raw_groups": 425,
-      "scanned_dicts": 103184,
+      "normalized_2plus_after": 110,
+      "normalized_2plus_before": 117,
+      "raw_2plus_matches": 227,
+      "raw_groups": 426,
+      "scanned_dicts": 115657,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-24/031318-line-snapshots.json": 6055,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-24/051254-line-snapshots.json": 7875,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 12,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 298,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 5314,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 35,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json": 297,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 7134,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 39,
         "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 26,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 12
       },
       "target_date": "2026-06-24"
     },
     "inventory_target_expand": {
-      "created_at_utc": "2026-06-24T03:02:07.567158+00:00",
-      "existing_before": 299,
+      "created_at_utc": "2026-06-24T05:02:09.532391+00:00",
+      "existing_before": 281,
       "matches_after": 300,
       "parse_errors": [
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T010551Z.json",
@@ -992,7 +1220,7 @@
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T050126Z.json",
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/exports/latest-history-guard-audit.json"
       ],
-      "rows_collected": 359,
+      "rows_collected": 355,
       "source_counts": {
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-22.json": 2,
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-23.json": 39,
@@ -1002,10 +1230,10 @@
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json": 129,
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-22.json": 2,
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-23.json": 39,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-24.json": 299,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json": 299,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json": 299,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json": 299
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-24.json": 281,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json": 281,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json": 281,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json": 281
       },
       "status": "ok_target_met",
       "target": 300,
@@ -1015,9 +1243,9 @@
     },
     "odds_api_io_offer_snapshot": {
       "matches_count": 116,
-      "matches_with_2plus_books_any_market": 54,
-      "matches_with_2plus_books_same_side_market": 44,
-      "rows_count": 5768,
+      "matches_with_2plus_books_any_market": 60,
+      "matches_with_2plus_books_same_side_market": 59,
+      "rows_count": 7652,
       "status": "ok"
     },
     "progressive_core_coverage": {
@@ -1026,23 +1254,38 @@
       "gap_sample_size": 0
     },
     "rescue_xg_confirmation_enrichment": {
-      "candidates_seen": 0,
-      "confirmation_added": 0,
+      "candidates_seen": 4,
+      "confirmation_added": 4,
       "context_keys": 315,
       "context_pairs": 314,
-      "created_at_utc": "2026-06-24T03:13:43.143960+00:00",
-      "examples": [],
+      "created_at_utc": "2026-06-24T05:13:20.403421+00:00",
+      "examples": [
+        {
+          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
+          "expected_away": 0.9877,
+          "expected_home": 0.8,
+          "match": "Shanxi Chongde Ronghai — Taian Tiankuang"
+        },
+        {
+          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
+          "expected_away": 0.9877,
+          "expected_home": 0.8,
+          "match": "Shanxi Chongde Ronghai — Taian Tiankuang"
+        }
+      ],
       "missing_context_match": 0,
       "note": "Best-effort artifact-only enrichment; no external API calls.",
-      "touched_files": [],
-      "xg_added": 0
+      "touched_files": [
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json"
+      ],
+      "xg_added": 2
     },
     "run_bot_step_status": {
       "note": "run-once status is recorded; workflow continues so diagnostics/report/artifacts can complete",
-      "run_id": "28072091340",
+      "run_id": "28076311650",
       "status": 0,
       "status_text": "ok",
-      "updated_at_utc": "2026-06-24T03:13:32Z",
+      "updated_at_utc": "2026-06-24T05:13:09Z",
       "workflow": "run-bot"
     },
     "sportlogic": {
@@ -1070,8 +1313,8 @@
   },
   "funnel": {
     "candidates_before_quality": 1,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "fallback_candidates_seen": 6,
+    "fallback_evaluated": 6,
     "fallback_published": false,
     "fallback_published_count": 0,
     "fallback_status": "no_viable_controlled_fallback",
@@ -1099,36 +1342,667 @@
   "line_guard": {
     "dropped": 0,
     "dropped_final": 0,
-    "final_pre_kickoff_checks": 0,
-    "kept": 0,
-    "no_more_regular_run_before_kickoff": 0,
-    "seen": 0,
+    "final_pre_kickoff_checks": 4,
+    "kept": 6,
+    "no_more_regular_run_before_kickoff": 2,
+    "seen": 6,
     "waiting_next_run": 0
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 4,
+      "reason": "tier_b_quality_below_min",
+      "reason_ru": "tier b quality below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_a_publication_score_below_min",
+      "reason_ru": "tier a publication score below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_a_proxy_quality_not_allowed",
+      "reason_ru": "tier a proxy quality not allowed"
+    },
+    {
+      "count": 2,
+      "reason": "tier_a_odds_sources_below_min:1/2",
+      "reason_ru": "tier a odds sources below min:1/2"
+    },
+    {
+      "count": 2,
+      "reason": "tier_b_confidence_below_min",
+      "reason_ru": "tier b confidence below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_b_canonical_edge_below_min",
+      "reason_ru": "tier b canonical edge below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_b_canonical_ev_below_min",
+      "reason_ru": "tier b canonical ev below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_b_publication_score_below_min",
+      "reason_ru": "tier b publication score below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_c_publication_score_below_min",
+      "reason_ru": "tier c publication score below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_a_quality_below_min",
+      "reason_ru": "tier a quality below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_c_quality_below_min",
+      "reason_ru": "tier c quality below min"
+    },
+    {
+      "count": 1,
+      "reason": "tier_a_confirmation_sources_below_min:1/2",
+      "reason_ru": "tier a confirmation sources below min:1/2"
+    }
+  ],
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "Taian Tiankuang",
+        "away_team_ru": "Тайан Тианкуанг",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-24T07:00:00+00:00",
+        "commence_time_display": "24.06.2026 10:00 MSK",
+        "family": "totals",
+        "home_team": "Shanxi Chongde Ronghai",
+        "home_team_ru": "Шанкси Чонгде Ронгхай",
+        "league_name": "China - China League 2",
+        "league_name_ru": "Чина - Чина Лигуе 2",
+        "match_key": "2026-06-24|shanxi chongde ronghai|taian tiankuang",
+        "metrics": {
+          "adjusted_probability": 0.671423,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.626,
+          "canonical_ev_pct": 4.071,
+          "confidence": 64.932,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.136,
+          "market_probability": 0.660066,
+          "model_probability": 0.671423,
+          "odds": 1.55,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": true,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 13.434,
+          "quality_reasons": [],
+          "quality_score": 67.78,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.645161,
+          "sources_count": 1,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 2,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.515,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 2,
+            "same_market_side_line_only": true,
+            "selected_price": 1.55,
+            "selected_vs_median_deviation_pct": 2.31
+          },
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 1.5,
+        "reject_reasons": [
+          "tier_a_publication_score_below_min",
+          "tier_a_proxy_quality_not_allowed",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_b_confidence_below_min",
+          "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_canonical_ev_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_publication_score_below_min"
+        ],
+        "reject_reasons_ru": [
+          "уровень A: publication score below min",
+          "уровень A не принимает proxy-качество",
+          "уровень A: odds sources below min:1/2",
+          "уровень A: confirmation sources below min:1/2",
+          "уверенность ниже минимума уровня B",
+          "качество ниже минимума уровня B",
+          "запас value ниже минимума уровня B",
+          "EV ниже минимума уровня B",
+          "уровень B: publication score below min",
+          "уровень C: publication score below min"
+        ],
+        "selection": "Больше",
+        "tier": null
+      },
+      {
+        "away_team": "Taian Tiankuang",
+        "away_team_ru": "Тайан Тианкуанг",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-24T07:00:00+00:00",
+        "commence_time_display": "24.06.2026 10:00 MSK",
+        "family": "totals",
+        "home_team": "Shanxi Chongde Ronghai",
+        "home_team_ru": "Шанкси Чонгде Ронгхай",
+        "league_name": "China - China League 2",
+        "league_name_ru": "Чина - Чина Лигуе 2",
+        "match_key": "soccer|shanxi chongde ronghai|taian tiankuang|2026-06-24",
+        "metrics": {
+          "adjusted_probability": 0.673073,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.791,
+          "canonical_ev_pct": 4.326,
+          "confidence": 66.547,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.301,
+          "market_probability": 0.660066,
+          "model_probability": 0.673073,
+          "odds": 1.55,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 15.158,
+          "quality_reasons": [],
+          "quality_score": 69.965,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.645161,
+          "sources_count": 2,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 2,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.515,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 2,
+            "same_market_side_line_only": true,
+            "selected_price": 1.55,
+            "selected_vs_median_deviation_pct": 2.31
+          },
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 1.5,
+        "reject_reasons": [
+          "tier_a_publication_score_below_min",
+          "tier_a_proxy_quality_not_allowed",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_b_confidence_below_min",
+          "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_canonical_ev_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_publication_score_below_min"
+        ],
+        "reject_reasons_ru": [
+          "уровень A: publication score below min",
+          "уровень A не принимает proxy-качество",
+          "уровень A: odds sources below min:1/2",
+          "уверенность ниже минимума уровня B",
+          "качество ниже минимума уровня B",
+          "запас value ниже минимума уровня B",
+          "EV ниже минимума уровня B",
+          "уровень B: publication score below min",
+          "уровень C: publication score below min"
+        ],
+        "selection": "Больше",
+        "tier": null
+      },
+      {
+        "away_team": "Taian Tiankuang",
+        "away_team_ru": "Тайан Тианкуанг",
+        "candidate_source": "a_cover_market_promotion",
+        "commence_time": "2026-06-24T07:00:00+00:00",
+        "commence_time_display": "24.06.2026 10:00 MSK",
+        "family": "totals",
+        "home_team": "Shanxi Chongde Ronghai",
+        "home_team_ru": "Шанкси Чонгде Ронгхай",
+        "league_name": "China - China League 2",
+        "league_name_ru": "Чина - Чина Лигуе 2",
+        "match_key": "2026-06-24|shanxi chongde ronghai|taian tiankuang",
+        "metrics": {
+          "adjusted_probability": 0.688111,
+          "books_count": 141,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 5.117,
+          "canonical_ev_pct": 8.033,
+          "confidence": 68.515,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 2.144,
+          "market_probability": 0.666667,
+          "model_probability": 0.688111,
+          "odds": 1.57,
+          "odds_sources_count": 2,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 24.172,
+          "quality_reasons": [],
+          "quality_score": 0.0,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "selected_implied_probability": 0.636943,
+          "sources_count": 2,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 141,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.5,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 2,
+            "priced_books_count": 3,
+            "same_market_side_line_only": true,
+            "selected_price": 1.57,
+            "selected_vs_median_deviation_pct": 4.667
+          },
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_b_quality_below_min",
+          "tier_c_quality_below_min"
+        ],
+        "reject_reasons_ru": [
+          "качество ниже минимума уровня A",
+          "качество ниже минимума уровня B",
+          "качество ниже минимума уровня C"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "Taian Tiankuang",
+        "away_team_ru": "Тайан Тианкуанг",
+        "candidate_source": "a_cover_market_promotion",
+        "commence_time": "2026-06-24T07:00:00+00:00",
+        "commence_time_display": "24.06.2026 10:00 MSK",
+        "family": "totals",
+        "home_team": "Shanxi Chongde Ronghai",
+        "home_team_ru": "Шанкси Чонгде Ронгхай",
+        "league_name": "China - China League 2",
+        "league_name_ru": "Чина - Чина Лигуе 2",
+        "match_key": "soccer|shanxi chongde ronghai|taian tiankuang|2026-06-24",
+        "metrics": {
+          "adjusted_probability": 0.689778,
+          "books_count": 141,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 5.284,
+          "canonical_ev_pct": 8.295,
+          "confidence": 70.133,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 2.311,
+          "market_probability": 0.666667,
+          "model_probability": 0.689778,
+          "odds": 1.57,
+          "odds_sources_count": 2,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 25.906,
+          "quality_reasons": [],
+          "quality_score": 0.0,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "selected_implied_probability": 0.636943,
+          "sources_count": 2,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 141,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.5,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 2,
+            "priced_books_count": 3,
+            "same_market_side_line_only": true,
+            "selected_price": 1.57,
+            "selected_vs_median_deviation_pct": 4.667
+          },
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 4.413,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 4.413,
+            "xg_model_gap_pp": -4.413,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.733913,
+            "xg_probability_pct": 73.391,
+            "xg_source": "home_away",
+            "xg_total": 1.788
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_b_quality_below_min",
+          "tier_c_quality_below_min"
+        ],
+        "reject_reasons_ru": [
+          "качество ниже минимума уровня A",
+          "качество ниже минимума уровня B",
+          "качество ниже минимума уровня C"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "Taian Tiankuang",
+        "away_team_ru": "Тайан Тианкуанг",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-06-24T07:00:00+00:00",
+        "commence_time_display": "24.06.2026 10:00 MSK",
+        "family": "totals",
+        "home_team": "Shanxi Chongde Ronghai",
+        "home_team_ru": "Шанкси Чонгде Ронгхай",
+        "league_name": "China - China League 2",
+        "league_name_ru": "Чина - Чина Лигуе 2",
+        "match_key": "2026-06-24|shanxi chongde ronghai|taian tiankuang",
+        "metrics": {
+          "adjusted_probability": 0.408858,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 3.849,
+          "canonical_ev_pct": 10.392,
+          "confidence": 69.576,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.516,
+          "market_probability": 0.393701,
+          "model_probability": 0.408858,
+          "odds": 2.7,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": true,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 24.348,
+          "quality_reasons": [],
+          "quality_score": 76.0,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "proxy",
+          "selected_implied_probability": 0.37037,
+          "sources_count": 1,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 3,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 2.54,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 3,
+            "same_market_side_line_only": true,
+            "selected_price": 2.7,
+            "selected_vs_median_deviation_pct": 6.299
+          },
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_c_watch_only",
+          "proxy_single_source_edge_below_min",
+          "proxy_single_source_ev_below_min",
+          "proxy_single_source_confidence_below_min",
+          "missing_total_xg_sanity"
+        ],
+        "reject_reasons_ru": [
+          "уровень C: watch only",
+          "proxy/single-source: value-запас ниже строгого минимума",
+          "proxy/single-source: EV ниже строгого минимума",
+          "proxy/single-source: уверенность ниже строгого минимума",
+          "missing total xg sanity"
+        ],
+        "selection": "Больше",
+        "tier": "уровень C"
+      }
+    ],
     "top_priority_matches": [
+      {
+        "away_team": "Taian Tiankuang",
+        "home_team": "Shanxi Chongde Ronghai",
+        "kickoff_utc": "2026-06-24T07:00:00+00:00",
+        "league_name": "China - China League 2",
+        "match_key": "soccer|shanxi chongde ronghai|taian tiankuang|2026-06-24",
+        "minutes_to_kickoff": 107.1,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 124.301,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-06-24T05:13:27.829429+00:00",
+          "latest_useful_run_at_utc": "2026-06-24T06:30:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-24T07:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Taian Tiankuang",
+        "home_team": "Shanxi Chongde Ronghai",
+        "kickoff_utc": "2026-06-24T07:00:00+00:00",
+        "league_name": "China - China League 2",
+        "match_key": "2026-06-24|shanxi chongde ronghai|taian tiankuang",
+        "minutes_to_kickoff": 107.1,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 124.301,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-06-24T05:13:27.829316+00:00",
+          "latest_useful_run_at_utc": "2026-06-24T06:30:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-24T07:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
       {
         "away_team": "Auckland City",
         "home_team": "East Coast Bays",
         "kickoff_utc": "2026-06-24T07:30:00+00:00",
         "league_name": "New Zealand - Northern League",
         "match_key": "2026-06-24|east coast bays|auckland city",
-        "minutes_to_kickoff": 256.7,
-        "pre_kickoff_status": "near_window",
-        "priority": 87.304,
+        "minutes_to_kickoff": 137.1,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 122.301,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
+          "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": true,
           "last_odds_refresh_utc": "2026-06-23T21:10:58.452681+00:00",
           "latest_useful_run_at_utc": "2026-06-24T07:00:00+00:00",
-          "max_current_line_age_minutes": 90,
+          "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-24T05:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-24T07:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Auckland City",
+        "home_team": "East Coast Bays",
+        "kickoff_utc": "2026-06-24T07:30:00+00:00",
+        "league_name": "New Zealand - Northern League",
+        "match_key": "soccer|auckland city|east coast bays|2026-06-24",
+        "minutes_to_kickoff": 137.1,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 114.301,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": "2026-06-24T05:13:27.617577+00:00",
+          "latest_useful_run_at_utc": "2026-06-24T07:00:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-24T07:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       },
@@ -1138,9 +2012,9 @@
         "kickoff_utc": "2026-06-24T09:00:00+00:00",
         "league_name": "Australia - Northern Territory Premier League",
         "match_key": "2026-06-24|palmerston rovers|mindil aces",
-        "minutes_to_kickoff": 346.7,
+        "minutes_to_kickoff": 227.1,
         "pre_kickoff_status": "near_window",
-        "priority": 83.554,
+        "priority": 88.538,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -1151,7 +2025,7 @@
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-24T05:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-24T07:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       },
@@ -1161,9 +2035,9 @@
         "kickoff_utc": "2026-06-24T09:00:00+00:00",
         "league_name": "International Clubs - Club Friendly Games",
         "match_key": "2026-06-24|ruzomberok|dynamo malzenice",
-        "minutes_to_kickoff": 346.7,
+        "minutes_to_kickoff": 227.1,
         "pre_kickoff_status": "near_window",
-        "priority": 83.554,
+        "priority": 88.538,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -1174,76 +2048,7 @@
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-24T05:00:00+00:00",
-          "no_more_regular_run_before_kickoff": false
-        }
-      },
-      {
-        "away_team": "Orgryte",
-        "home_team": "Tromsoe",
-        "kickoff_utc": "2026-06-24T13:00:00+00:00",
-        "league_name": "International Clubs - Club Friendly Games",
-        "match_key": "soccer|orgryte|tromsoe|2026-06-24",
-        "minutes_to_kickoff": 586.7,
-        "pre_kickoff_status": "near_window",
-        "priority": 81.554,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "has_next_regular_run_before_kickoff": true,
-          "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-06-24T12:30:00+00:00",
-          "max_current_line_age_minutes": 90,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-24T05:00:00+00:00",
-          "no_more_regular_run_before_kickoff": false
-        }
-      },
-      {
-        "away_team": "Jihlava",
-        "home_team": "Slovacko Uherske H.",
-        "kickoff_utc": "2026-06-24T10:00:00+00:00",
-        "league_name": "International Clubs - Club Friendly Games",
-        "match_key": "2026-06-24|slovacko uherske h|jihlava",
-        "minutes_to_kickoff": 406.7,
-        "pre_kickoff_status": "near_window",
-        "priority": 81.054,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "has_next_regular_run_before_kickoff": true,
-          "last_odds_refresh_utc": "2026-06-23T21:10:58.452681+00:00",
-          "latest_useful_run_at_utc": "2026-06-24T09:30:00+00:00",
-          "max_current_line_age_minutes": 90,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-24T05:00:00+00:00",
-          "no_more_regular_run_before_kickoff": false
-        }
-      },
-      {
-        "away_team": "Taian Tiankuang",
-        "home_team": "Shanxi Chongde Ronghai",
-        "kickoff_utc": "2026-06-24T07:00:00+00:00",
-        "league_name": "China - China League 2",
-        "match_key": "soccer|shanxi chongde ronghai|taian tiankuang|2026-06-24",
-        "minutes_to_kickoff": 226.7,
-        "pre_kickoff_status": "near_window",
-        "priority": 80.554,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "has_next_regular_run_before_kickoff": true,
-          "last_odds_refresh_utc": "2026-06-24T03:13:49.699762+00:00",
-          "latest_useful_run_at_utc": "2026-06-24T06:30:00+00:00",
-          "max_current_line_age_minutes": 90,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-06-24T05:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-24T07:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       }
@@ -1252,7 +2057,7 @@
   "status": "lines_but_no_raw_candidates",
   "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 4752,
-  "top_reason": "no_viable_controlled_fallback",
+  "text_length": 6680,
+  "top_reason": "tier_b_quality_below_min",
   "version": "harizon-telegram-report-v13-a-tier-funnel"
 }
