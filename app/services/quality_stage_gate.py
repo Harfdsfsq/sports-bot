@@ -67,7 +67,8 @@ def _bridge_candidate(candidate: Any) -> bool:
         summary.get('market_signal_derived')
         or summary.get('controlled_prefilter_rescue')
         or summary.get('controlled_rescue_append')
-        or any('controlled_prefilter_rescue' in str(item) or 'controlled_rescue' in str(item) for item in reasons)
+        or summary.get('rescue_file_append_bridge')
+        or any('controlled_prefilter_rescue' in str(item) or 'controlled_rescue' in str(item) or 'rescue_file_append' in str(item) for item in reasons)
     )
 
 
@@ -217,8 +218,17 @@ def _install_rescue_append_bridge() -> None:
     factory._harizon_native_rescue_append_bridge = True
 
 
+def _install_rescue_file_append_bridge() -> None:
+    try:
+        from app.services import rescue_file_append_bridge
+        rescue_file_append_bridge.install()
+    except Exception:
+        pass
+
+
 def install() -> None:
     if _on('QUALITY_STAGE_GATE_MARKET_BRIDGE_RELIEF_ENABLED', True):
         _install_quality_stage_gate()
     _install_context_index_bridge()
     _install_rescue_append_bridge()
+    _install_rescue_file_append_bridge()
