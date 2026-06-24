@@ -117,6 +117,7 @@ def run_preflight() -> dict[str, Any]:
     daily_slot_policy = _apply_daily_slot_target_policy()
     steps = [
         _run_step("runtime_json_state_guard", _module_main("scripts.runtime_json_state_guard")),
+        _run_step("normalize_persisted_publication_indexes", _module_main("scripts.normalize_persisted_publication_indexes")),
         _run_step("normalize_day_inventory_time_windows", _module_main("scripts.normalize_day_inventory_time_windows")),
         _run_step("backfill_inventory_bookmaker_coverage", _module_main("scripts.backfill_inventory_bookmaker_coverage")),
         _run_step("build_b_cover_candidate_gap_report", _module_main("scripts.build_b_cover_candidate_gap_report")),
