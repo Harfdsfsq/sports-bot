@@ -22,6 +22,16 @@ def _truthy(value: Any, default: bool = False) -> bool:
     return raw in {"1", "true", "yes", "on", "force"}
 
 
+def _int_env(name: str, default: int) -> int:
+    try:
+        value = os.getenv(name)
+        if value in (None, ""):
+            return default
+        return int(float(str(value).strip()))
+    except Exception:
+        return default
+
+
 def _local_date() -> str:
     explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
     if explicit:
@@ -31,6 +41,30 @@ def _local_date() -> str:
     except Exception:
         tz = ZoneInfo("Europe/Moscow")
     return datetime.now(UTC).astimezone(tz).date().isoformat()
+
+
+def _apply_daily_slot_target_policy() -> dict[str, Any]:
+    if _truthy(os.getenv("CONTROLLED_FALLBACK_DISABLE_DAILY_CAP_FLOOR"), False):
+        return {"status": "disabled"}
+    floor = max(1, _int_env("CONTROLLED_FALLBACK_DAILY_MAX_FLOOR", _int_env("HARIZON_TARGET_DAILY_MAX_PICKS", 5)))
+    before = {
+        "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED"),
+        "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER"),
+        "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": os.getenv("CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS"),
+    }
+    current_published = _int_env("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED", 0)
+    current_b_tier = _int_env("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER", 0)
+    if current_published <= 0 or current_published < floor:
+        os.environ["CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED"] = str(floor)
+    if current_b_tier <= 0 or current_b_tier < floor:
+        os.environ["CONTROLLED_FALLBACK_DAILY_MAX_B_TIER"] = str(floor)
+    os.environ.setdefault("CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS", "1")
+    after = {
+        "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED"),
+        "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER"),
+        "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": os.getenv("CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS"),
+    }
+    return {"status": "ok", "floor": floor, "before": before, "after": after, "policy": "allow target range up to 5/day while still reserving the final slot before release hour"}
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -80,6 +114,7 @@ def run_preflight() -> dict[str, Any]:
     previous_day = os.getenv("DAY_INVENTORY_TARGET_DATE")
     os.environ["DAY_INVENTORY_TARGET_DATE"] = day
     os.environ.setdefault("DAY_INVENTORY_CACHE_DATE", day)
+    daily_slot_policy = _apply_daily_slot_target_policy()
     steps = [
         _run_step("runtime_json_state_guard", _module_main("scripts.runtime_json_state_guard")),
         _run_step("normalize_day_inventory_time_windows", _module_main("scripts.normalize_day_inventory_time_windows")),
@@ -95,6 +130,7 @@ def run_preflight() -> dict[str, Any]:
         "created_at_utc": datetime.now(UTC).isoformat(),
         "date_local": day,
         "previous_day_env": previous_day,
+        "daily_slot_policy": daily_slot_policy,
         "steps": steps,
     }
     _write_json(OUT, payload)
