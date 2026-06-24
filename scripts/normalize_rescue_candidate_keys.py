@@ -32,8 +32,13 @@ def write_json(path: Path, payload: Any) -> None:
 
 def norm(value: Any) -> str:
     text = str(value or '').strip().lower().replace('ё', 'е')
+    text = text.replace('_', ' ')
     text = re.sub(r'[^a-z0-9а-я]+', ' ', text)
     return ' '.join(text.split())
+
+
+def key_part(value: Any) -> str:
+    return norm(value).replace(' ', '_')
 
 
 def point_text(value: Any) -> str:
@@ -77,15 +82,19 @@ def save_payload(path: Path, payload: Any, rows: list[dict[str, Any]], key: str 
 
 def canonical_match_key(row: dict[str, Any]) -> str:
     raw = str(row.get('canonical_match_id') or row.get('match_key') or row.get('event_key') or '').strip()
-    raw_norm = norm(raw)
-    if raw_norm.startswith('soccer ') and re.search(r'20\d{2} \d{2} \d{2}', raw_norm):
-        return raw.replace(' ', '_') if '|' in raw else raw
-    date = parse_dt(raw) or parse_dt(row.get('commence_time') or row.get('kickoff') or row.get('start_time'))
-    home = norm(row.get('home_team') or row.get('home'))
-    away = norm(row.get('away_team') or row.get('away'))
-    if not (date and home and away):
-        return raw
-    return f'soccer|{home}|{away}|{date}'
+    date = parse_dt(row.get('commence_time') or row.get('kickoff') or row.get('start_time')) or parse_dt(raw)
+    home = key_part(row.get('home_team') or row.get('home'))
+    away = key_part(row.get('away_team') or row.get('away'))
+    # Always prefer the explicit home/away fields when present. Some upstream
+    # rescue rows carry a raw soccer|away|home|date key, which can bypass duplicate
+    # guards. The displayed teams are the canonical publication identity.
+    if date and home and away:
+        return f'soccer|{home}|{away}|{date}'
+    if raw:
+        parts = [part.strip() for part in raw.split('|')]
+        if len(parts) >= 4 and parts[0].lower() == 'soccer':
+            return '|'.join(['soccer', key_part(parts[1]), key_part(parts[2]), parse_dt(parts[3]) or parts[3][:10]])
+    return raw
 
 
 def selection_key(row: dict[str, Any]) -> str:
@@ -103,11 +112,11 @@ def selection_key(row: dict[str, Any]) -> str:
 def normalize_row(row: dict[str, Any]) -> int:
     changed = 0
     canonical = canonical_match_key(row)
-    if canonical and canonical != row.get('match_key'):
-        row['source_match_key_before_normalization'] = row.get('match_key')
-        row['match_key'] = canonical
-        row.setdefault('canonical_match_id', canonical)
-        changed += 1
+    for key in ('match_key', 'canonical_match_id'):
+        if canonical and row.get(key) != canonical:
+            row[f'source_{key}_before_normalization'] = row.get(key)
+            row[key] = canonical
+            changed += 1
     family = norm(row.get('family') or row.get('market_family'))
     if family in {'total', 'totals', 'тотал'}:
         if row.get('family') != 'totals':
@@ -116,6 +125,7 @@ def normalize_row(row: dict[str, Any]) -> int:
         if row.get('market_family') != 'totals':
             row['market_family'] = 'totals'
             changed += 1
+        family = 'totals'
     sel = selection_key(row)
     if sel and row.get('selection_key') != sel:
         row['selection_key'] = sel
