@@ -121,6 +121,7 @@ def run_preflight() -> dict[str, Any]:
         _run_step("backfill_inventory_bookmaker_coverage", _module_main("scripts.backfill_inventory_bookmaker_coverage")),
         _run_step("build_b_cover_candidate_gap_report", _module_main("scripts.build_b_cover_candidate_gap_report")),
         _run_step("promote_a_cover_value_candidates", _module_main("scripts.promote_a_cover_value_candidates")),
+        _run_step("normalize_rescue_candidate_keys", _module_main("scripts.normalize_rescue_candidate_keys")),
         _run_step("enrich_rescue_candidates_xg_confirmation", _module_main("scripts.enrich_rescue_candidates_xg_confirmation")),
         _run_step("update_day_inventory_priority_and_line_state", _module_main("scripts.update_day_inventory_priority_and_line_state")),
         _run_step("build_a_cover_candidate_gap_report", _module_main("scripts.build_a_cover_candidate_gap_report")),
