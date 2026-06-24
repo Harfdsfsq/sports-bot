@@ -12,7 +12,9 @@ The normal value/quality/price-integrity/line-movement/dedupe guards stay active
 import json
 import os
 from datetime import datetime, timezone
+from importlib import import_module
 from pathlib import Path
+from typing import Any
 
 CONTRACT_ENV = {
     # Core A/B coverage contract.
@@ -41,6 +43,14 @@ CONTRACT_ENV = {
     "MAX_PICKS_PER_FAMILY": "6",
     "MAX_SAME_REASON_SIGNATURE": "6",
     "MAX_NON_CORE_PICKS_PER_RUN": "3",
+
+    # Let A-cover/B-cover promotion seed the main CandidateFactory pool before
+    # quality. This does not publish; main quality/value/xG/line/price guards
+    # still decide whether a promoted row can become publishable.
+    "MAIN_POOL_RESCUE_FILE_APPEND_ENABLED": "true",
+    "MAIN_POOL_RESCUE_FILE_ALLOWED_SOURCES": "a_cover_market_promotion,b_cover_market_promotion",
+    "MAIN_POOL_RESCUE_FILE_APPEND_LIMIT": "24",
+    "PRE_RUN_A_COVER_PROMOTION_SEED_ENABLED": "true",
 
     # Quality-history stability. Do not let a tiny published-bet sample hard-stop
     # the entire current market/rescue pool. With fewer than 50 settled binary
@@ -124,11 +134,51 @@ def _append_github_env(values: dict[str, str]) -> None:
             fh.write(f"{key}={value}\n")
 
 
+def _truthy(value: Any, default: bool = False) -> bool:
+    raw = str(value if value is not None else "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on", "force"}
+
+
+def _run_optional(module_path: str, func_name: str = "main") -> dict[str, Any]:
+    try:
+        module = import_module(module_path)
+        func = getattr(module, func_name, None)
+        if callable(func):
+            result = func()
+        else:
+            result = None
+        return {"status": "ok", "module": module_path, "result": result}
+    except Exception as exc:
+        return {"status": "error_ignored", "module": module_path, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def _preseed_main_pool_rescue() -> dict[str, Any]:
+    if not _truthy(os.getenv("PRE_RUN_A_COVER_PROMOTION_SEED_ENABLED"), True):
+        return {"enabled": False, "reason": "disabled"}
+    steps = [
+        _run_optional("scripts.build_context_source_index"),
+        _run_optional("scripts.build_b_cover_candidate_gap_report"),
+        _run_optional("scripts.promote_a_cover_value_candidates"),
+        _run_optional("scripts.enrich_rescue_candidates_xg_confirmation"),
+    ]
+    rescue_path = Path(".data/exports/latest-rescue-candidates.json")
+    count = 0
+    try:
+        payload = json.loads(rescue_path.read_text(encoding="utf-8")) if rescue_path.exists() else []
+        count = len(payload) if isinstance(payload, list) else 0
+    except Exception:
+        count = 0
+    return {"enabled": True, "steps": steps, "rescue_candidates": count, "rescue_path": str(rescue_path)}
+
+
 def main() -> int:
     os.environ.update(CONTRACT_ENV)
     _append_github_env(CONTRACT_ENV)
     out = Path(".data/exports/latest-ab-tier-bookmaker-contract-policy.json")
     out.parent.mkdir(parents=True, exist_ok=True)
+    preseed = _preseed_main_pool_rescue()
     payload = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "applied",
@@ -138,7 +188,9 @@ def main() -> int:
             "model_candidate_bridge": {
                 "max_candidates_per_match_pre_filter": int(CONTRACT_ENV["MAX_CANDIDATES_PER_MATCH_PRE_FILTER"]),
                 "max_internal_candidates_per_run": int(CONTRACT_ENV["MAX_INTERNAL_CANDIDATES_PER_RUN"]),
-                "purpose": "let totals/xG candidates reach quality filters before final guards",
+                "main_pool_rescue_file_append": True,
+                "pre_run_a_cover_promotion_seed": preseed,
+                "purpose": "let totals/xG and promoted A-cover candidates reach quality filters before final guards",
             },
             "quality_history_stability": {
                 "min_settled_binary_bets_for_historical_hard_guards": int(CONTRACT_ENV["QUALITY_MIN_HISTORY_BETS"]),
@@ -158,7 +210,7 @@ def main() -> int:
         "env": CONTRACT_ENV,
     }
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; model prefilter widened; stable-history quality policy enabled; reserved daily slot releases at 17:00 local")
+    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; model prefilter widened; stable-history quality policy enabled; pre-run A-cover rescue seed enabled; reserved daily slot releases at 17:00 local")
     return 0
 
 
