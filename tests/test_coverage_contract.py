@@ -187,6 +187,7 @@ def test_context_index_bridge_replaces_market_only_context(tmp_path, monkeypatch
         encoding="utf-8",
     )
     monkeypatch.setattr(quality_stage_gate, "CONTEXT_INDEX", index)
+    monkeypatch.setattr(coverage_contract, "CONTEXT_SOURCE_INDEX_PATH", index)
     monkeypatch.setenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BRIDGE_ENABLED", "true")
     if getattr(coverage_contract, "_harizon_context_index_bridge_patch", False):
         importlib.reload(coverage_contract)
@@ -215,3 +216,39 @@ def test_context_index_bridge_replaces_market_only_context(tmp_path, monkeypatch
     assert "clubelo" in decision.report["context_sources"]
     assert "market" not in decision.report["context_sources"]
     assert decision.report["context_sources_count"] == 2
+
+
+def test_coverage_contract_resolves_context_index_without_runtime_patch(tmp_path, monkeypatch):
+    import app.services.coverage_contract as coverage_contract
+
+    index = tmp_path / "latest-context-source-index.json"
+    index.write_text(
+        json.dumps({"by_match": {"soccer|uni craiova|sabah masazir|2026-06-24": ["sstats", "clubelo"]}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(coverage_contract, "CONTEXT_SOURCE_INDEX_PATH", index)
+    monkeypatch.setenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BRIDGE_ENABLED", "true")
+
+    item = candidate(
+        match_key="soccer|sabah_masazir|uni_craiova|2026-06-24",
+        home_team="Sabah Masazir",
+        away_team="Uni Craiova",
+        commence_time=datetime(2026, 6, 24, 18, 0, tzinfo=UTC),
+        source_summary={
+            "sources": ["odds_api_io"],
+            "books": ["Bet365", "Unibet"],
+            "context_sources": ["market"],
+            "context_source": "market_signal",
+        },
+        raw_bucket_offers=[
+            {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Under", "point": 3.5, "price": 2.0},
+            {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Under", "point": 3.5, "price": 1.95},
+        ],
+    )
+
+    decision = coverage_contract.evaluate_publish_candidate(item, Settings(_env_file=None, PUBLISH_MIN_ODDS_SOURCES=1, PUBLISH_MIN_CONTEXT_SOURCES=1, PUBLISH_MIN_BOOKS=2))
+
+    assert decision.passed, decision.reasons
+    assert decision.report["context_sources"] == ["clubelo", "sstats"]
+    assert decision.report["context_sources_count"] == 2
+    assert "market" not in decision.report["context_sources"]
