@@ -21,7 +21,9 @@
       "reserved_slots": 1
     },
     "guards_unchanged": [
-      "quality",
+      "value",
+      "xg",
+      "quality_score",
       "line_movement",
       "price_integrity",
       "dedupe",
@@ -30,13 +32,22 @@
     ],
     "independent_odds_sources": "required_for_a_tier_only",
     "model_candidate_bridge": {
-      "max_candidates_per_match_pre_filter": 12,
-      "max_internal_candidates_per_run": 18,
+      "max_candidates_per_match_pre_filter": 14,
+      "max_internal_candidates_per_run": 24,
       "purpose": "let totals/xG candidates reach quality filters before final guards"
+    },
+    "quality_history_stability": {
+      "calibration_min_sample": 24,
+      "historical_segment_min_sample": 24,
+      "learning_score_min_sample": 24,
+      "min_settled_binary_bets_for_historical_hard_guards": 50,
+      "purpose": "avoid hard rejection from underpowered historical segments while keeping live guards active"
     }
   },
-  "created_at_utc": "2026-06-24T11:44:37.825600+00:00",
+  "created_at_utc": "2026-06-24T12:03:25.330791+00:00",
   "env": {
+    "CALIBRATION_MIN_SAMPLE": "24",
+    "CLV_QUALITY_MIN_SAMPLE": "18",
     "CONTROLLED_FALLBACK_DEDUPE_PREVIOUS_REPORT": "true",
     "CONTROLLED_FALLBACK_DEDUPE_SENT_INDEX_STRICT": "true",
     "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "5.0",
@@ -78,10 +89,14 @@
     "CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY": "70.0",
     "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": "false",
     "CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES": "true",
-    "MAX_CANDIDATES_PER_MATCH_PRE_FILTER": "12",
-    "MAX_INTERNAL_CANDIDATES_PER_RUN": "18",
-    "MAX_PICKS_PER_FAMILY": "4",
-    "MAX_SAME_REASON_SIGNATURE": "4",
+    "HISTORICAL_SEGMENT_HARD_MIN_BAD_SEGMENTS": "3",
+    "HISTORICAL_SEGMENT_MIN_SAMPLE": "24",
+    "LEARNING_SCORE_MIN_SAMPLE": "24",
+    "MAX_CANDIDATES_PER_MATCH_PRE_FILTER": "14",
+    "MAX_INTERNAL_CANDIDATES_PER_RUN": "24",
+    "MAX_NON_CORE_PICKS_PER_RUN": "3",
+    "MAX_PICKS_PER_FAMILY": "6",
+    "MAX_SAME_REASON_SIGNATURE": "6",
     "MIN_BOOKS_PUBLISH": "1",
     "MIN_CONTEXT_SOURCES_PUBLISH": "1",
     "MIN_SOURCES_PUBLISH": "1",
@@ -98,7 +113,8 @@
     "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
     "PUBLISH_TIER_B_MIN_BOOKS": "1",
     "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
-    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1"
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1",
+    "QUALITY_MIN_HISTORY_BETS": "50"
   },
   "status": "applied"
 }
