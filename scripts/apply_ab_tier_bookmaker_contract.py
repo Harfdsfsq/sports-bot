@@ -31,16 +31,28 @@ CONTRACT_ENV = {
     "PUBLISH_TIER_B_MIN_BOOKS": "1",
     "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
 
-    # Main model candidate bridge. CandidateFactory previously kept only 3
-    # candidates per match before the final quality/value filters. On matches
-    # with many spread/total buckets those 3 slots were often consumed by
-    # market-simple rows, so real totals/xG candidates never reached quality.
-    # This widens the pre-filter shortlist; publication guards below are not
-    # relaxed.
-    "MAX_CANDIDATES_PER_MATCH_PRE_FILTER": "12",
-    "MAX_INTERNAL_CANDIDATES_PER_RUN": "18",
-    "MAX_PICKS_PER_FAMILY": "4",
-    "MAX_SAME_REASON_SIGNATURE": "4",
+    # Main model candidate bridge. CandidateFactory previously kept too few
+    # rows before final quality/value filters. On matches with many spread/total
+    # buckets those slots were often consumed by market-simple rows, so real
+    # totals/xG candidates never reached quality. This widens the pre-filter
+    # shortlist; publication guards below are not relaxed.
+    "MAX_CANDIDATES_PER_MATCH_PRE_FILTER": "14",
+    "MAX_INTERNAL_CANDIDATES_PER_RUN": "24",
+    "MAX_PICKS_PER_FAMILY": "6",
+    "MAX_SAME_REASON_SIGNATURE": "6",
+    "MAX_NON_CORE_PICKS_PER_RUN": "3",
+
+    # Quality-history stability. Do not let a tiny published-bet sample hard-stop
+    # the entire current market/rescue pool. With fewer than 50 settled binary
+    # bets, historical calibration/learning/segment guards stay informational;
+    # value, xG, line movement, price-integrity, duplicate and publication score
+    # guards still run.
+    "QUALITY_MIN_HISTORY_BETS": "50",
+    "CALIBRATION_MIN_SAMPLE": "24",
+    "LEARNING_SCORE_MIN_SAMPLE": "24",
+    "HISTORICAL_SEGMENT_MIN_SAMPLE": "24",
+    "HISTORICAL_SEGMENT_HARD_MIN_BAD_SEGMENTS": "3",
+    "CLV_QUALITY_MIN_SAMPLE": "18",
 
     # Controlled fallback follows the same owner contract.
     "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
@@ -126,18 +138,25 @@ def main() -> int:
                 "max_internal_candidates_per_run": int(CONTRACT_ENV["MAX_INTERNAL_CANDIDATES_PER_RUN"]),
                 "purpose": "let totals/xG candidates reach quality filters before final guards",
             },
+            "quality_history_stability": {
+                "min_settled_binary_bets_for_historical_hard_guards": int(CONTRACT_ENV["QUALITY_MIN_HISTORY_BETS"]),
+                "calibration_min_sample": int(CONTRACT_ENV["CALIBRATION_MIN_SAMPLE"]),
+                "learning_score_min_sample": int(CONTRACT_ENV["LEARNING_SCORE_MIN_SAMPLE"]),
+                "historical_segment_min_sample": int(CONTRACT_ENV["HISTORICAL_SEGMENT_MIN_SAMPLE"]),
+                "purpose": "avoid hard rejection from underpowered historical segments while keeping live guards active",
+            },
             "daily_allocator": {
                 "reserved_slots": 1,
                 "release_local_time": "18:00",
                 "elite_override": {"min_ev_pct": 12.0, "min_edge_pp": 6.5, "min_confidence": 73.0, "min_quality": 74.0},
             },
             "independent_odds_sources": "required_for_a_tier_only",
-            "guards_unchanged": ["quality", "line_movement", "price_integrity", "dedupe", "daily_limit", "publish_window"],
+            "guards_unchanged": ["value", "xg", "quality_score", "line_movement", "price_integrity", "dedupe", "daily_limit", "publish_window"],
         },
         "env": CONTRACT_ENV,
     }
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; model prefilter widened; reserved daily slot enabled")
+    print("Applied HARIZON A/B publication contract: A=2 odds/2 books/2 context, B=1 odds/1 book/1 context; model prefilter widened; stable-history quality policy enabled; reserved daily slot enabled")
     return 0
 
 
