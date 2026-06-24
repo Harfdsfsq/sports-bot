@@ -3,12 +3,12 @@
 • Главная причина: controlled fallback daily limit reached:5/5
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 169 (это не размер inventory).
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 152 (это не размер inventory).
 • 1+ линия: 277/300 (92%) | 1+ контекст: 189/300 (63%)
-• 2+ букмекера: 258/300 (86%)
-• Raw 2+ букмекера odds-api.io current snapshot: 50 | normalized cumulative inventory: 258.
-• Odds-api offer snapshot: rows 6756, matches 91, same-side 2+ books 50
-• 2+ independent odds-source: 271/300 (90%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ букмекера: 257/300 (86%)
+• Raw 2+ букмекера odds-api.io current snapshot: 41 | normalized cumulative inventory: 257.
+• Odds-api offer snapshot: rows 5490, matches 77, same-side 2+ books 41
+• 2+ independent odds-source: 272/300 (91%) — A-tier strict metric; для B-tier не обязательный блок.
 • 2+ контекста: 183/300 (61%)
 • Готово для модели: 168/300 (56%)
 
@@ -23,66 +23,64 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 73 | матчей без следующего регулярного run: 65
-• Line guard: увидел 45, оставил 45, снял 0
+• Pre-kickoff проверок: 50 | матчей без следующего регулярного run: 34
+• Line guard: увидел 25, оставил 19, отложил 6 до следующего cron
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/22
+• Raw/candidates before quality: 8/21
 • Quality прошло: 8 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 45 | evaluated 45 | published 0
+• Controlled fallback: seen 22 | evaluated 22 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 34; смэтчил матчей 167; offers 6756; 2+ букмекера 50; ошибок 0.
-• Bzzoiro: direct req 26, v2 req 26; v2 ctx 7; v2 odds 6; secondary offers 365; overlap odds-api.io 275; ошибок 0.
-• SStats: запросы 28; сырых строк 22541; контекстов 129; deep-enriched 31; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 30; смэтчил матчей 150; offers 5490; 2+ букмекера 41; ошибок 0.
+• Bzzoiro: direct req 26, v2 req 26; v2 ctx 7; v2 odds 6; secondary offers 346; overlap odds-api.io 263; ошибок 0.
+• SStats: запросы 28; сырых строк 22541; контекстов 119; deep-enriched 31; team-form 0; direct 0; ошибок 0.
 • SportLogic: disabled_by_env; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• controlled fallback daily limit reached:5/5: 45 (48%)
-• направление ставки конфликтует с xG: 14 (15%)
-• модель слишком оптимистична относительно xG-ориентира: 13 (14%)
-• quality no bet quality score guard: 12 (13%)
-• market point:quarter totals not allowed: 4 (4%)
-• quality: вероятность после калибровки ниже порога: 2 (2%)
-• price integrity:selected price vs bookmaker median outlier: 2 (2%)
-• price integrity:external snapshot bookmaker median outlier: 2 (2%)
+• controlled fallback daily limit reached:5/5: 22 (39%)
+• направление ставки конфликтует с xG: 9 (16%)
+• модель слишком оптимистична относительно xG-ориентира: 8 (14%)
+• quality no bet quality score guard: 6 (11%)
+• кандидат ждёт следующий cron для второго снимка линии: 6 (11%)
+• market point:quarter totals not allowed: 4 (7%)
+• quality: вероятность после калибровки ниже порога: 2 (4%)
 
 🔎 Проверенные reserve-кандидаты
-1. Uni Craiova — Sabah Masazir | Меньше @2.00 | EV +6.7% | edge +3.3 п.п. | q 0.0
-   • причина: controlled fallback daily limit reached:5/5
-   • xG sanity: missing (missing_xg)
-2. Uni Craiova — Sabah Masazir | Больше @2.01 | EV +9.7% | edge +4.8 п.п. | q 76.0
-   • причина: controlled fallback daily limit reached:5/5
-   • xG sanity: missing (missing_xg)
-3. Freienbach — Rapperswil-Jona | Больше @1.88 | EV +5.4% | edge +2.9 п.п. | q 72.1
+1. Freienbach — Rapperswil-Jona | Больше @1.87 | EV +5.0% | edge +2.7 п.п. | q 70.9
    • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
-4. Lilla Torg — Torns | Больше @1.58 | EV +4.5% | edge +2.9 п.п. | q 69.0
+2. Lilla Torg — Torns | Больше @1.86 | EV +4.1% | edge +2.2 п.п. | q 67.1
    • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
-   • proxy single-source: fact edge 2.9pp / EV 4.5% / conf 65.1; min edge 8.0pp / EV 15.0% / conf 78.0
+   • proxy single-source: fact edge 2.2pp / EV 4.1% / conf 65.0; min edge 8.0pp / EV 15.0% / conf 78.0
+3. Angby IF — Enskede | Больше @1.63 | EV +5.3% | edge +3.2 п.п. | q 71.0
+   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
+   • proxy single-source: fact edge 3.2pp / EV 5.3% / conf 65.5; min edge 8.0pp / EV 15.0% / conf 78.0
+4. Freienbach — Rapperswil-Jona | Больше @2.94 | EV +6.0% | edge +2.0 п.п. | q 0.0
+   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
 
 🧯 Диагностика новых стопоров
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/1 book/1 context.
 • Daily slot allocator: published today 5/5; reserved slots 1; release 17:00 local.
-• A-tier funnel: cover 149; active future 104; in publish window 33; raw/quality 8/22; active A-cover with raw 0; active without raw 84; A-cover in fallback 18; active in fallback 18; A-cover published 0.
-• A-cover promotion: status ok; promoted 1; active 74; in-window 24; considered 24; rescue kept 44/61; dropped stale 17; top skips promotion_skip_odds_below_min 247; promotion_skip_odds_above_max 235; promotion_skip_edge_below_min 98; promotion_skip_outside_active_publish_window 50; promotion_skip_price_outlier 20.
-• A-cover candidate gap: active 104; in-window 33; statuses active_a_cover_not_selected_by_candidate_layers 79; active_a_cover_seen_in_fallback 25; top reasons active_a_cover_not_selected_by_candidate_layers 79; controlled_fallback_daily_limit_reached:5/5 60; xg_direction_conflict 19; xg_probability_gap_hard_reject 18; quality_no_bet_quality_score_guard 15.
-• Shadow ranking after daily cap: clean 24; daily+other 12; duplicates removed 9; top: Uppsala — Hacken Gothenburg Больше 4 4.0 EV +12.2% edge +5.3pp; Uni Craiova — Sabah Masazir Меньше 3.5 EV +10.9% edge +6.9pp; Dainava Alytus — Transinvest Больше 3.5 3.5 EV +7.8% edge +3.3pp.
-• Effective blockers without daily cap: xg_direction_conflict 10; xg_probability_gap_hard_reject 10; market_point:quarter_totals_not_allowed 2; price_integrity:external_snapshot_bookmaker_median_outlier 1; price_integrity:selected_price_vs_bookmaker_median_outlier 1.
-• A-tier blockers: n/a; quality sources proxy 17; raw 11; raw_missing 8; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
+• A-tier funnel: cover 150; active future 105; in publish window 38; raw/quality 8/21; active A-cover with raw 0; active without raw 85; A-cover in fallback 11; active in fallback 11; A-cover published 0.
+• A-cover promotion: status ok; promoted 0; active 74; in-window 25; considered 25; rescue kept 25/36; dropped stale 11; top skips promotion_skip_odds_below_min 101; promotion_skip_odds_above_max 89; promotion_skip_outside_active_publish_window 49; promotion_skip_edge_below_min 40; promotion_skip_no_offer_bucket 16.
+• A-cover candidate gap: active 105; in-window 38; statuses active_a_cover_not_selected_by_candidate_layers 89; active_a_cover_seen_in_fallback 16; top reasons active_a_cover_not_selected_by_candidate_layers 89; controlled_fallback_daily_limit_reached:5/5 34; xg_direction_conflict 14; xg_probability_gap_hard_reject 13; market_point:quarter_totals_not_allowed 8.
+• Shadow ranking after daily cap: clean 10; daily+other 8; duplicates removed 4; top: Lindo — Smedby Меньше 2.5 2.5 EV +10.6% edge +3.9pp; Vastra Frolunda — Qviding Меньше 3.5 3.5 EV +5.9% edge +2.6pp; Vaxjo — Brommapojkarna Больше 3.5 3.5 EV +5.5% edge +2.1pp.
+• Effective blockers without daily cap: xg_direction_conflict 7; xg_probability_gap_hard_reject 7; market_point:quarter_totals_not_allowed 2.
+• A-tier blockers: n/a; quality sources raw 9; proxy 7; raw_missing 2; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
 • Inventory target-expand stage: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 171; normalized 105→78; gap after 93.
-• Bzzoiro overlap bridge: offers 365; match-overlap 365; same-bucket overlap 275.
-• Fresh B-cover diagnostic: rows 159; with current offer 85; without current offer 74; active 114; active with offer 85; fresh buckets 8691; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 16; top skips promotion_skip_odds_below_min 637; promotion_skip_odds_above_max 590; promotion_skip_edge_below_min 309; promotion_skip_no_offer_bucket 82; promotion_skip_price_outlier 39.
-• Rescue xG/confirmation enrichment: candidates 45; xG added 10; confirmation added 6; missing context match 0.
+• Bookmaker mapping repair: raw 2+ 135; normalized 104→59; gap after 76.
+• Bzzoiro overlap bridge: offers 346; match-overlap 346; same-bucket overlap 263.
+• Fresh B-cover diagnostic: rows 159; with current offer 64; without current offer 95; active 114; active with offer 64; fresh buckets 7105; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 14; top skips promotion_skip_odds_below_min 470; promotion_skip_odds_above_max 422; promotion_skip_edge_below_min 246; promotion_skip_no_offer_bucket 103; promotion_skip_price_outlier 28.
+• Rescue xG/confirmation enrichment: candidates 25; xG added 10; confirmation added 6; missing context match 0.
 
 📌 Что это значит
 • Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 1 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 28109011641
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/28109011641
-• Artifact: run-bot-28109011641
+• Run ID: 28109994415
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/28109994415
+• Artifact: run-bot-28109994415
 • workflow run-bot, attempt 1
