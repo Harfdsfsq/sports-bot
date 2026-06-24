@@ -1,12 +1,12 @@
 {
-  "created_at_utc": "2026-06-23T23:02:14.791525+00:00",
+  "created_at_utc": "2026-06-24T01:02:22.694584+00:00",
   "env_written_count": 113,
   "notes": [
     "Only data coverage/enrichment limits are raised; publication window, daily cap, xG, value and price guards stay strict.",
     "Odds-api.io request cap remains conservative; uplift is mostly target/pages/backfill driven.",
     "SportLogic is forced off because recent runs showed enabled=True with zero useful fixtures/offers."
   ],
-  "phase": "full_inventory",
+  "phase": "morning_backfill",
   "secrets_present": {
     "bzzoiro": true,
     "odds_api_io_key": true,
@@ -16,14 +16,14 @@
   "status": "installed",
   "targets": {
     "bzzoiro_context_match_limit": 300,
-    "bzzoiro_v2_match_limit": 220,
+    "bzzoiro_v2_match_limit": 200,
     "context_backfill_limit": 300,
     "inventory": 300,
     "near_window_hours": 24,
     "odds_api_io_target_matches": 300,
     "sportlogic": "disabled_by_env_zero_yield",
     "sstats_context_match_limit": 300,
-    "sstats_deep_context_limit": 200
+    "sstats_deep_context_limit": 180
   },
   "version": "v18-lines-context-uplift"
 }
