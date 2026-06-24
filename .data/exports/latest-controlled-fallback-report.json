@@ -1,41 +1,45 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+      "A-tier publication score is below min on many candidates."
     ],
     "quality_score_sources": {
-      "proxy": 5,
-      "raw": 2,
-      "raw_missing": 1
+      "proxy": 2,
+      "raw": 1
     },
-    "tier_a_blocker_counts": {}
+    "tier_a_blocker_counts": {
+      "tier_a_odds_sources_below_min:1/2": 1,
+      "tier_a_proxy_quality_not_allowed": 1,
+      "tier_a_publication_score_below_min": 1
+    }
   },
-  "candidates_seen": 10,
-  "created_at": "2026-06-24T19:10:16.628694+00:00",
+  "candidates_seen": 4,
+  "created_at": "2026-06-24T23:09:46.493687+00:00",
   "enabled": true,
   "evaluated": [
     {
-      "away_team": "Cobresal",
-      "away_team_ru": "Кобресал",
-      "candidate_source": "a_cover_market_promotion",
-      "commence_time": "2026-06-24T20:00:00+00:00",
-      "commence_time_display": "24.06.2026 23:00 MSK",
+      "away_team": "San Antonio",
+      "away_team_ru": "Сан Антонио",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-25T00:00:00+00:00",
+      "commence_time_display": "25.06.2026 03:00 MSK",
       "family": "totals",
-      "home_team": "Deportes La Serena",
-      "home_team_ru": "Депортес Ла Серена",
-      "league_name": "Chile - Copa Chile, Group C",
-      "league_name_ru": "Чили - Копа Чиле, Груп C",
-      "match_key": "soccer|deportes_la_serena|cobresal|2026-06-24",
+      "home_team": "Colorado Springs Sw.",
+      "home_team_ru": "Колорадо Спрингс Су.",
+      "league_name": "USA - USL, Championship",
+      "league_name_ru": "США - USL, Чемпионшип",
+      "match_key": "soccer|colorado_springs_sw|san_antonio|2026-06-25",
       "metrics": {
-        "adjusted_probability": 0.571092,
-        "books_count": 156,
+        "adjusted_probability": 0.559163,
+        "books_count": 1,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 2.315,
-        "canonical_ev_pct": 4.224,
-        "confidence": 69.801,
+        "canonical_edge_pp": 5.665,
+        "canonical_ev_pct": 11.273,
+        "confidence": 70.873,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -45,7 +49,9 @@
           "weather_supports_under": false
         },
         "confirmation_sources": [
-          "sstats"
+          "bzzoiro",
+          "sstats",
+          "thesportsdb"
         ],
         "confirmation_sources_count": 4,
         "dnb_sanity": {
@@ -53,92 +59,10 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.243,
-        "market_probability": 0.558659,
-        "model_probability": 0.571092,
-        "odds": 1.825,
-        "odds_sources_count": 6,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 16.387,
-        "quality_reasons": [],
-        "quality_score": 0.0,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "raw_missing",
-        "selected_implied_probability": 0.547945,
-        "sources_count": 4,
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 9.105,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 9.105,
-          "xg_model_gap_pp": -9.105,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.662145,
-          "xg_probability_pct": 66.214,
-          "xg_source": "home_away",
-          "xg_total": 2.054
-        }
-      },
-      "ok": false,
-      "point": 3.0,
-      "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
-      ],
-      "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
-      ],
-      "selection": "Меньше",
-      "tier": null
-    },
-    {
-      "away_team": "Cobresal",
-      "away_team_ru": "Кобресал",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-24T20:00:00+00:00",
-      "commence_time_display": "24.06.2026 23:00 MSK",
-      "family": "totals",
-      "home_team": "Deportes La Serena",
-      "home_team_ru": "Депортес Ла Серена",
-      "league_name": "Chile - Copa Chile, Group C",
-      "league_name_ru": "Чили - Копа Чиле, Груп C",
-      "match_key": "soccer|deportes_la_serena|cobresal|2026-06-24",
-      "metrics": {
-        "adjusted_probability": 0.713356,
-        "books_count": 2,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 6.819,
-        "canonical_ev_pct": 10.57,
-        "confidence": 70.857,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 3,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 2.842,
-        "market_probability": 0.684932,
-        "model_probability": 0.713356,
-        "odds": 1.55,
+        "market_edge_pp": 2.254,
+        "market_probability": 0.536625,
+        "model_probability": 0.559163,
+        "odds": 1.99,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -147,141 +71,59 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 31.495,
+        "publication_score": 28.794,
         "quality_reasons": [],
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.645161,
-        "sources_count": 3,
+        "selected_implied_probability": 0.502513,
+        "sources_count": 4,
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 13.395,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 13.395,
-          "xg_model_gap_pp": -13.395,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.847306,
-          "xg_probability_pct": 84.731,
+          "xg_abs_gap_pp": 5.321,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 5.321,
+          "xg_model_optimism_gap_pp": 5.321,
+          "xg_probability": 0.505951,
+          "xg_probability_pct": 50.595,
           "xg_source": "home_away",
-          "xg_total": 2.054
-        }
-      },
-      "ok": false,
-      "point": 3.5,
-      "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
-      ],
-      "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
-      ],
-      "selection": "Меньше",
-      "tier": null
-    },
-    {
-      "away_team": "Atletico Avila FC",
-      "away_team_ru": "Атлетико Авила",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-24T20:00:00+00:00",
-      "commence_time_display": "24.06.2026 23:00 MSK",
-      "family": "totals",
-      "home_team": "Academia Anzoategui FC",
-      "home_team_ru": "Академиа Анзоатегуи",
-      "league_name": "Venezuela - Copa Venezuela, Group A",
-      "league_name_ru": "Венезуела - Копа Венезуела, Груп A",
-      "match_key": "soccer|academia_anzoategui_fc|atletico_avila_fc|2026-06-24",
-      "metrics": {
-        "adjusted_probability": 0.604204,
-        "books_count": 2,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 3.923,
-        "canonical_ev_pct": 6.944,
-        "confidence": 66.225,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 1,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 1.597,
-        "market_probability": 0.588235,
-        "model_probability": 0.604204,
-        "odds": 1.77,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": true,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 19.332,
-        "quality_reasons": [],
-        "quality_score": 75.169,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.564972,
-        "sources_count": 1,
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 7.626,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 7.626,
-          "xg_model_gap_pp": -7.626,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.680466,
-          "xg_probability_pct": 68.047,
-          "xg_source": "home_away",
-          "xg_total": 1.986
+          "xg_total": 2.65
         }
       },
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
+        "направление ставки конфликтует с xG"
       ],
       "selection": "Меньше",
       "tier": null
     },
     {
-      "away_team": "Aragua",
-      "away_team_ru": "Арагуа",
+      "away_team": "Westchester SC",
+      "away_team_ru": "Уестчестер",
       "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-24T20:00:00+00:00",
-      "commence_time_display": "24.06.2026 23:00 MSK",
+      "commence_time": "2026-06-25T01:00:00+00:00",
+      "commence_time_display": "25.06.2026 04:00 MSK",
       "family": "totals",
-      "home_team": "Caracas",
-      "home_team_ru": "Каракас",
-      "league_name": "Venezuela - Copa Venezuela, Group C",
-      "league_name_ru": "Венезуела - Копа Венезуела, Груп C",
-      "match_key": "soccer|caracas|aragua|2026-06-24",
+      "home_team": "Spokane Velocity FC",
+      "home_team_ru": "Спокане Велокити",
+      "league_name": "USA - USL, League One",
+      "league_name_ru": "США - USL, Лига 1",
+      "match_key": "soccer|spokane_velocity_fc|westchester_sc|2026-06-25",
       "metrics": {
-        "adjusted_probability": 0.576707,
+        "adjusted_probability": 0.431749,
         "books_count": 2,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 2.422,
-        "canonical_ev_pct": 4.384,
-        "confidence": 66.573,
+        "canonical_edge_pp": 2.191,
+        "canonical_ev_pct": 5.347,
+        "confidence": 67.006,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -299,10 +141,10 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.126,
-        "market_probability": 0.565451,
-        "model_probability": 0.576707,
-        "odds": 1.81,
+        "market_edge_pp": 0.981,
+        "market_probability": 0.421941,
+        "model_probability": 0.431749,
+        "odds": 2.44,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -311,179 +153,21 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 14.486,
+        "publication_score": 15.131,
         "quality_reasons": [],
-        "quality_score": 69.359,
+        "quality_score": 70.564,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.552486,
+        "selected_implied_probability": 0.409836,
         "sources_count": 2,
-        "xg_sanity": {
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
           "enabled": true,
-          "xg_abs_gap_pp": 10.246,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 10.246,
-          "xg_model_gap_pp": -10.246,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.679167,
-          "xg_probability_pct": 67.917,
-          "xg_source": "home_away",
-          "xg_total": 1.991
-        }
-      },
-      "ok": false,
-      "point": 2.5,
-      "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
-      ],
-      "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
-      ],
-      "selection": "Меньше",
-      "tier": null
-    },
-    {
-      "away_team": "Lara",
-      "away_team_ru": "Лара",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-24T20:00:00+00:00",
-      "commence_time_display": "24.06.2026 23:00 MSK",
-      "family": "totals",
-      "home_team": "Urena",
-      "home_team_ru": "Урена",
-      "league_name": "Venezuela - Copa Venezuela, Group D",
-      "league_name_ru": "Венезуела - Копа Венезуела, Груп D",
-      "match_key": "soccer|urena|lara|2026-06-24",
-      "metrics": {
-        "adjusted_probability": 0.600398,
-        "books_count": 2,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
+          "min_books": 1,
+          "mode": "single_book_contract",
+          "price_integrity_preserved_by_external_guard": true,
+          "single_book_b_tier_contract": true
         },
-        "canonical_edge_pp": 2.897,
-        "canonical_ev_pct": 5.07,
-        "confidence": 65.381,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 1,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 1.216,
-        "market_probability": 0.588235,
-        "model_probability": 0.600398,
-        "odds": 1.75,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": true,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 15.124,
-        "quality_reasons": [],
-        "quality_score": 70.004,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.571429,
-        "sources_count": 1,
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 10.451,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 10.451,
-          "xg_model_gap_pp": -10.451,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.704908,
-          "xg_probability_pct": 70.491,
-          "xg_source": "home_away",
-          "xg_total": 1.896
-        }
-      },
-      "ok": false,
-      "point": 2.5,
-      "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
-      ],
-      "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
-      ],
-      "selection": "Меньше",
-      "tier": null
-    },
-    {
-      "away_team": "FC Miami City",
-      "away_team_ru": "Миами Кити",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-24T20:00:00+00:00",
-      "commence_time_display": "24.06.2026 23:00 MSK",
-      "family": "totals",
-      "home_team": "Fort Lauderdale United FC II",
-      "home_team_ru": "Форт Лаудердале Унитед II",
-      "league_name": "USA - USL W League",
-      "league_name_ru": "США - USL W Лигуе",
-      "match_key": "soccer|fort_lauderdale_united_fc_ii|fc_miami_city|2026-06-24",
-      "metrics": {
-        "adjusted_probability": 0.559613,
-        "books_count": 1,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 5.456,
-        "canonical_ev_pct": 10.803,
-        "confidence": 70.662,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "bzzoiro",
-          "sstats",
-          "thesportsdb"
-        ],
-        "confirmation_sources_count": 4,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 2.256,
-        "market_probability": 0.537057,
-        "model_probability": 0.559613,
-        "odds": 1.98,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 27.837,
-        "quality_reasons": [],
-        "quality_score": 76.0,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.505051,
-        "sources_count": 4,
         "xg_sanity": {
           "enabled": false,
           "reason": "missing_xg",
@@ -495,122 +179,50 @@
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_confidence_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
       ],
       "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уверенность ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень C: publication score below min"
       ],
       "selection": "Меньше",
       "tier": null
     },
     {
-      "away_team": "Cobresal",
-      "away_team_ru": "Кобресал",
+      "away_team": "Av Alta FC",
+      "away_team_ru": "Ав Алта",
       "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-24T20:00:00+00:00",
-      "commence_time_display": "24.06.2026 23:00 MSK",
+      "commence_time": "2026-06-25T00:30:00+00:00",
+      "commence_time_display": "25.06.2026 03:30 MSK",
       "family": "totals",
-      "home_team": "Deportes La Serena",
-      "home_team_ru": "Депортес Ла Серена",
-      "league_name": "Chile - Copa Chile, Group C",
-      "league_name_ru": "Чили - Копа Чиле, Груп C",
-      "match_key": "soccer|deportes_la_serena|cobresal|2026-06-24",
+      "home_team": "Corpus Christi",
+      "home_team_ru": "Корпус Чристи",
+      "league_name": "USA - USL, League One",
+      "league_name_ru": "США - USL, Лига 1",
+      "match_key": "soccer|corpus_christi|av_alta_fc|2026-06-25",
       "metrics": {
-        "adjusted_probability": 0.441528,
-        "books_count": 3,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 2.486,
-        "canonical_ev_pct": 5.967,
-        "confidence": 67.014,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 1,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [
-          "odds_api_io"
-        ],
-        "market_edge_pp": 1.605,
-        "market_probability": 0.42548,
-        "model_probability": 0.46298,
-        "odds": 2.4,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 29.926,
-        "quality_reasons": [
-          "post_calibration_probability_guard"
-        ],
-        "quality_score": 66.368,
-        "quality_score_raw": 66.368,
-        "quality_score_source": "raw",
-        "selected_implied_probability": 0.416667,
-        "sources_count": 1,
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 22.062,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 22.062,
-          "xg_model_gap_pp": -22.062,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.662145,
-          "xg_probability_pct": 66.214,
-          "xg_source": "home_away",
-          "xg_total": 2.054
-        }
-      },
-      "ok": false,
-      "point": 2.5,
-      "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
-      ],
-      "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
-      ],
-      "selection": "Меньше",
-      "tier": null
-    },
-    {
-      "away_team": "Atl. El Vigia",
-      "away_team_ru": "Атл. Ел Вигиа",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-24T21:00:00+00:00",
-      "commence_time_display": "25.06.2026 00:00 MSK",
-      "family": "totals",
-      "home_team": "Zamora",
-      "home_team_ru": "Замора",
-      "league_name": "Venezuela - Copa Venezuela, Group B",
-      "league_name_ru": "Венезуела - Копа Венезуела, Груп B",
-      "match_key": "soccer|zamora|atl_el_vigia|2026-06-24",
-      "metrics": {
-        "adjusted_probability": 0.638089,
+        "adjusted_probability": 0.448263,
         "books_count": 2,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 1.889,
-        "canonical_ev_pct": 3.051,
-        "confidence": 70.773,
+        "canonical_edge_pp": 1.723,
+        "canonical_ev_pct": 3.997,
+        "confidence": 70.581,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -630,10 +242,10 @@
         "line_sources": [
           "odds_api_io"
         ],
-        "market_edge_pp": 1.445,
-        "market_probability": 0.623643,
-        "model_probability": 0.638089,
-        "odds": 1.615,
+        "market_edge_pp": 1.386,
+        "market_probability": 0.434407,
+        "model_probability": 0.448263,
+        "odds": 2.32,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -642,142 +254,85 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 75.824,
+        "publication_score": 76.578,
         "quality_reasons": [
           "no_bet_quality_score_guard"
         ],
-        "quality_score": 48.435,
-        "quality_score_raw": 48.435,
+        "quality_score": 54.35,
+        "quality_score_raw": 54.35,
         "quality_score_source": "raw",
-        "selected_implied_probability": 0.619195,
+        "selected_implied_probability": 0.431034,
         "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "min_books": 1,
+          "mode": "single_book_contract",
+          "price_integrity_preserved_by_external_guard": true,
+          "single_book_b_tier_contract": true
+        },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 2.492,
+          "xg_abs_gap_pp": 12.38,
           "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 2.492,
-          "xg_model_optimism_gap_pp": 2.492,
-          "xg_probability": 0.613167,
-          "xg_probability_pct": 61.317,
+          "xg_model_conservative_gap_pp": 12.38,
+          "xg_model_gap_pp": -12.38,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.572062,
+          "xg_probability_pct": 57.206,
           "xg_source": "home_away",
-          "xg_total": 3.167
+          "xg_total": 2.391
         }
       },
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min"
       ],
       "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C"
       ],
-      "selection": "Больше 2.5",
+      "selection": "Меньше 2.5",
       "tier": null
     },
     {
-      "away_team": "Cobresal",
-      "away_team_ru": "Кобресал",
+      "away_team": "Av Alta FC",
+      "away_team_ru": "Ав Алта",
       "candidate_source": "debug_candidates_before_quality",
-      "commence_time": "2026-06-24T20:00:00+00:00",
-      "commence_time_display": "24.06.2026 23:00 MSK",
+      "commence_time": "2026-06-25T00:30:00+00:00",
+      "commence_time_display": "25.06.2026 03:30 MSK",
       "family": "totals",
-      "home_team": "Deportes La Serena",
-      "home_team_ru": "Депортес Ла Серена",
-      "league_name": "Chile - Copa Chile, Group C",
-      "league_name_ru": "Чили - Копа Чиле, Груп C",
-      "match_key": "soccer|cobresal|deportes la serena|2026-06-24",
+      "home_team": "Corpus Christi",
+      "home_team_ru": "Корпус Чристи",
+      "league_name": "USA - USL, League One",
+      "league_name_ru": "США - USL, Лига 1",
+      "match_key": "soccer|av alta|corpus christi|2026-06-25",
       "metrics": {
-        "adjusted_probability": 0.441528,
-        "books_count": 3,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 2.486,
-        "canonical_ev_pct": 5.967,
-        "confidence": 67.014,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 1,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [
-          "odds_api_io"
-        ],
-        "market_edge_pp": 1.605,
-        "market_probability": 0.42548,
-        "model_probability": 0.46298,
-        "odds": 2.4,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 29.926,
-        "quality_reasons": [
-          "post_calibration_probability_guard"
-        ],
-        "quality_score": 66.368,
-        "quality_score_raw": 66.368,
-        "quality_score_source": "raw",
-        "selected_implied_probability": 0.416667,
-        "sources_count": 1,
-        "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_away_raw": null,
-          "xg_home_raw": null,
-          "xg_source": "invalid_or_missing"
-        }
-      },
-      "ok": false,
-      "point": 2.5,
-      "reject_reasons": [
-        "controlled_fallback_daily_limit_reached:5/5"
-      ],
-      "reject_reasons_ru": [
-        "controlled fallback daily limit reached:5/5"
-      ],
-      "selection": "Меньше",
-      "tier": null
-    },
-    {
-      "away_team": "Atl. El Vigia",
-      "away_team_ru": "Атл. Ел Вигиа",
-      "candidate_source": "debug_candidates_before_quality",
-      "commence_time": "2026-06-24T21:00:00+00:00",
-      "commence_time_display": "25.06.2026 00:00 MSK",
-      "family": "totals",
-      "home_team": "Zamora",
-      "home_team_ru": "Замора",
-      "league_name": "Venezuela - Copa Venezuela, Group B",
-      "league_name_ru": "Венезуела - Копа Венезуела, Груп B",
-      "match_key": "soccer|atl el vigia|zamora|2026-06-24",
-      "metrics": {
-        "adjusted_probability": 0.638089,
+        "adjusted_probability": 0.448263,
         "books_count": 2,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 1.889,
-        "canonical_ev_pct": 3.051,
-        "confidence": 70.773,
+        "canonical_edge_pp": 1.723,
+        "canonical_ev_pct": 3.997,
+        "confidence": 70.581,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -795,10 +350,10 @@
         "line_sources": [
           "odds_api_io"
         ],
-        "market_edge_pp": 1.445,
-        "market_probability": 0.623643,
-        "model_probability": 0.638089,
-        "odds": 1.615,
+        "market_edge_pp": 1.386,
+        "market_probability": 0.434407,
+        "model_probability": 0.448263,
+        "odds": 2.32,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -807,14 +362,14 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 75.824,
+        "publication_score": 76.578,
         "quality_reasons": [
           "no_bet_quality_score_guard"
         ],
-        "quality_score": 48.435,
-        "quality_score_raw": 48.435,
+        "quality_score": 54.35,
+        "quality_score_raw": 54.35,
         "quality_score_source": "raw",
-        "selected_implied_probability": 0.619195,
+        "selected_implied_probability": 0.431034,
         "sources_count": 0,
         "xg_sanity": {
           "enabled": false,
@@ -827,25 +382,21 @@
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "missing_sources",
-        "controlled_fallback_daily_limit_reached:5/5"
+        "missing_sources"
       ],
       "reject_reasons_ru": [
-        "нет подтверждения источниками",
-        "controlled fallback daily limit reached:5/5"
+        "нет подтверждения источниками"
       ],
-      "selection": "Больше 2.5",
+      "selection": "Меньше 2.5",
       "tier": null
     }
   ],
   "no_pick_report_sent": true,
   "pool_counts": {
-    "debug_candidates_before_quality": 2,
-    "debug_candidates_before_quality_duplicate_in_pool": 1,
-    "debug_candidates_before_quality_stale_or_outside_window": 22,
-    "latest_rescue_candidates": 8,
-    "latest_rescue_candidates_duplicate_in_pool": 1,
-    "latest_rescue_candidates_stale_or_outside_window": 1
+    "debug_candidates_before_quality": 1,
+    "debug_candidates_before_quality_stale_or_outside_window": 24,
+    "latest_rescue_candidates": 3,
+    "latest_rescue_candidates_duplicate_in_pool": 2
   },
   "published": false,
   "scan_policy": {
@@ -858,181 +409,24 @@
   },
   "shadow_ranking": {
     "blocked_by_daily_cap_and_other_guards": 0,
-    "blocked_only_by_daily_cap": 8,
-    "duplicates_removed": 2,
-    "reason_counts_without_daily_cap": {},
-    "top_would_publish_without_daily_cap": [
-      {
-        "away_team": "Cobresal",
-        "books_count": 2,
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-24T20:00:00+00:00",
-        "confidence": 70.857,
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 3,
-        "daily_cap_reasons": [
-          "controlled_fallback_daily_limit_reached:5/5"
-        ],
-        "dedupe_key": "2026-06-24|chile copa chile group c|deportes la serena|cobresal|totals|under|3.5",
-        "edge_pp": 6.819,
-        "ev_pct": 10.57,
-        "family": "totals",
-        "home_team": "Deportes La Serena",
-        "league_name": "Chile - Copa Chile, Group C",
-        "match_key": "soccer|deportes_la_serena|cobresal|2026-06-24",
-        "odds": 1.55,
-        "odds_sources_count": 1,
-        "other_reasons": [],
-        "point": 3.5,
-        "publication_score": 31.495,
-        "quality_score": 76.0,
-        "quality_score_source": "proxy",
-        "rank": 1,
-        "selection": "Меньше",
-        "shadow_score": 30.951,
-        "status_without_daily_cap": "would_publish_without_daily_cap",
-        "tier": null
-      },
-      {
-        "away_team": "FC Miami City",
-        "books_count": 1,
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-24T20:00:00+00:00",
-        "confidence": 70.662,
-        "confirmation_sources": [
-          "bzzoiro",
-          "sstats",
-          "thesportsdb"
-        ],
-        "confirmation_sources_count": 4,
-        "daily_cap_reasons": [
-          "controlled_fallback_daily_limit_reached:5/5"
-        ],
-        "dedupe_key": "2026-06-24|usa usl w league|fort lauderdale united fc ii|fc miami city|totals|under|2.5",
-        "edge_pp": 5.456,
-        "ev_pct": 10.803,
-        "family": "totals",
-        "home_team": "Fort Lauderdale United FC II",
-        "league_name": "USA - USL W League",
-        "match_key": "soccer|fort_lauderdale_united_fc_ii|fc_miami_city|2026-06-24",
-        "odds": 1.98,
-        "odds_sources_count": 1,
-        "other_reasons": [],
-        "point": 2.5,
-        "publication_score": 27.837,
-        "quality_score": 76.0,
-        "quality_score_source": "proxy",
-        "rank": 2,
-        "selection": "Меньше",
-        "shadow_score": 29.164,
-        "status_without_daily_cap": "would_publish_without_daily_cap",
-        "tier": null
-      },
-      {
-        "away_team": "Atletico Avila FC",
-        "books_count": 2,
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-24T20:00:00+00:00",
-        "confidence": 66.225,
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 1,
-        "daily_cap_reasons": [
-          "controlled_fallback_daily_limit_reached:5/5"
-        ],
-        "dedupe_key": "2026-06-24|venezuela copa venezuela group a|academia anzoategui fc|atletico avila fc|totals|under|2.5",
-        "edge_pp": 3.923,
-        "ev_pct": 6.944,
-        "family": "totals",
-        "home_team": "Academia Anzoategui FC",
-        "league_name": "Venezuela - Copa Venezuela, Group A",
-        "match_key": "soccer|academia_anzoategui_fc|atletico_avila_fc|2026-06-24",
-        "odds": 1.77,
-        "odds_sources_count": 1,
-        "other_reasons": [],
-        "point": 2.5,
-        "publication_score": 19.332,
-        "quality_score": 75.169,
-        "quality_score_source": "proxy",
-        "rank": 3,
-        "selection": "Меньше",
-        "shadow_score": 22.169,
-        "status_without_daily_cap": "would_publish_without_daily_cap",
-        "tier": null
-      },
-      {
-        "away_team": "Atl. El Vigia",
-        "books_count": 2,
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-24T21:00:00+00:00",
-        "confidence": 70.773,
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 1,
-        "daily_cap_reasons": [
-          "controlled_fallback_daily_limit_reached:5/5"
-        ],
-        "dedupe_key": "2026-06-24|venezuela copa venezuela group b|zamora|atl el vigia|totals|over|2.5",
-        "edge_pp": 1.889,
-        "ev_pct": 3.051,
-        "family": "totals",
-        "home_team": "Zamora",
-        "league_name": "Venezuela - Copa Venezuela, Group B",
-        "match_key": "soccer|zamora|atl_el_vigia|2026-06-24",
-        "odds": 1.615,
-        "odds_sources_count": 1,
-        "other_reasons": [],
-        "point": 2.5,
-        "publication_score": 75.824,
-        "quality_score": 48.435,
-        "quality_score_source": "raw",
-        "rank": 4,
-        "selection": "Больше 2.5",
-        "shadow_score": 21.698,
-        "status_without_daily_cap": "would_publish_without_daily_cap",
-        "tier": null
-      },
-      {
-        "away_team": "Cobresal",
-        "books_count": 3,
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-06-24T20:00:00+00:00",
-        "confidence": 67.014,
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 1,
-        "daily_cap_reasons": [
-          "controlled_fallback_daily_limit_reached:5/5"
-        ],
-        "dedupe_key": "2026-06-24|chile copa chile group c|deportes la serena|cobresal|totals|under|2.5",
-        "edge_pp": 2.486,
-        "ev_pct": 5.967,
-        "family": "totals",
-        "home_team": "Deportes La Serena",
-        "league_name": "Chile - Copa Chile, Group C",
-        "match_key": "soccer|deportes_la_serena|cobresal|2026-06-24",
-        "odds": 2.4,
-        "odds_sources_count": 1,
-        "other_reasons": [],
-        "point": 2.5,
-        "publication_score": 29.926,
-        "quality_score": 66.368,
-        "quality_score_source": "raw",
-        "rank": 5,
-        "selection": "Меньше",
-        "shadow_score": 20.426,
-        "status_without_daily_cap": "would_publish_without_daily_cap",
-        "tier": null
-      }
-    ]
+    "blocked_only_by_daily_cap": 0,
+    "duplicates_removed": 1,
+    "reason_counts_without_daily_cap": {
+      "missing_sources": 1,
+      "tier_a_odds_sources_below_min:1/2": 1,
+      "tier_a_proxy_quality_not_allowed": 1,
+      "tier_a_publication_score_below_min": 1,
+      "tier_b_canonical_edge_below_min": 1,
+      "tier_b_canonical_ev_below_min": 1,
+      "tier_b_confidence_below_min": 1,
+      "tier_b_publication_score_below_min": 1,
+      "tier_c_publication_score_below_min": 1,
+      "xg_direction_conflict": 1
+    },
+    "top_would_publish_without_daily_cap": []
   },
   "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3136,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782328221,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3143,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782342589,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
