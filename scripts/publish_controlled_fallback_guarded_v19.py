@@ -105,7 +105,13 @@ def main() -> int:
     run_preflight()
     from scripts.publish_controlled_fallback_guarded_v18 import main as v18_main
 
-    return int(v18_main() or 0)
+    code = int(v18_main() or 0)
+    try:
+        from scripts.sync_run_report_ledger_export import main as sync_run_ledger
+        sync_run_ledger()
+    except Exception:
+        pass
+    return code
 
 
 if __name__ == "__main__":
