@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib
+import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -173,3 +175,43 @@ def test_publish_contract_reports_line_sources_separately_for_b_tier(monkeypatch
     assert decision.report["odds_sources_count"] == 1
     assert decision.report["line_sources_count"] >= 2
     assert decision.report["context_sources_count"] == 1
+
+
+def test_context_index_bridge_replaces_market_only_context(tmp_path, monkeypatch):
+    from app.services import quality_stage_gate
+    import app.services.coverage_contract as coverage_contract
+
+    index = tmp_path / "latest-context-source-index.json"
+    index.write_text(
+        json.dumps({"by_match": {"soccer|brommapojkarna|vaxjo|2026-06-24": ["sstats", "clubelo"]}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(quality_stage_gate, "CONTEXT_INDEX", index)
+    monkeypatch.setenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BRIDGE_ENABLED", "true")
+    if getattr(coverage_contract, "_harizon_context_index_bridge_patch", False):
+        importlib.reload(coverage_contract)
+    quality_stage_gate.install()
+
+    item = candidate(
+        match_key="soccer|brommapojkarna|vaxjo|2026-06-24",
+        home_team="Vaxjo",
+        away_team="Brommapojkarna",
+        commence_time=datetime(2026, 6, 24, 17, 0, tzinfo=UTC),
+        source_summary={
+            "sources": ["odds_api_io"],
+            "books": ["Bet365", "Unibet"],
+            "context_sources": ["market"],
+            "context_source": "market_signal",
+        },
+        raw_bucket_offers=[
+            {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Under", "point": 2.5, "price": 2.2},
+            {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Under", "point": 2.5, "price": 2.1},
+        ],
+    )
+
+    decision = coverage_contract.evaluate_publish_candidate(item, Settings(_env_file=None, PUBLISH_MIN_ODDS_SOURCES=1, PUBLISH_MIN_CONTEXT_SOURCES=1, PUBLISH_MIN_BOOKS=2))
+
+    assert "sstats" in decision.report["context_sources"]
+    assert "clubelo" in decision.report["context_sources"]
+    assert "market" not in decision.report["context_sources"]
+    assert decision.report["context_sources_count"] == 2
