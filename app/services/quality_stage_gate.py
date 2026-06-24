@@ -66,7 +66,8 @@ def _bridge_candidate(candidate: Any) -> bool:
     return bool(
         summary.get('market_signal_derived')
         or summary.get('controlled_prefilter_rescue')
-        or any('controlled_prefilter_rescue' in str(item) for item in reasons)
+        or summary.get('controlled_rescue_append')
+        or any('controlled_prefilter_rescue' in str(item) or 'controlled_rescue' in str(item) for item in reasons)
     )
 
 
@@ -77,6 +78,24 @@ def _relief_allowed(candidate: Any) -> bool:
         and _num(getattr(candidate, 'ev_pct', None)) >= _num(os.getenv('QUALITY_STAGE_GATE_MIN_EV_PCT'), 2.0)
         and _num(getattr(candidate, 'edge_pct', None)) >= _num(os.getenv('QUALITY_STAGE_GATE_MIN_EDGE_PP'), 1.5)
         and int(_num(getattr(candidate, 'books_count', None), 0.0)) >= int(_num(os.getenv('QUALITY_STAGE_GATE_MIN_BOOKS'), 1.0))
+    )
+
+
+def _candidate_key(candidate: Any) -> tuple[Any, Any, Any, Any, Any]:
+    return (
+        getattr(candidate, 'match_key', None),
+        getattr(candidate, 'family', None),
+        getattr(candidate, 'selection_key', None),
+        getattr(candidate, 'point', None),
+        getattr(candidate, 'team_side', None),
+    )
+
+
+def _rank(candidate: Any) -> tuple[float, float, float]:
+    return (
+        _num(getattr(candidate, 'ev_pct', None), -999.0),
+        _num(getattr(candidate, 'edge_pct', None), -999.0),
+        _num(getattr(candidate, 'confidence', None), 0.0),
     )
 
 
@@ -138,7 +157,68 @@ def _install_context_index_bridge() -> None:
     coverage_contract._harizon_context_index_bridge_patch = True
 
 
+def _install_rescue_append_bridge() -> None:
+    if not _on('POST_INTEGRITY_RESCUE_APPEND_TO_EXISTING_CANDIDATES', True):
+        return
+    from app.services import model
+    from app.services import controlled_candidate_rescue
+
+    factory = getattr(model, 'CandidateFactory', None)
+    build_rescue = getattr(controlled_candidate_rescue, '_build_rescue', None)
+    if factory is None or not callable(build_rescue):
+        return
+    if getattr(factory, '_harizon_native_rescue_append_bridge', False):
+        return
+    original = getattr(factory, 'build_candidates', None)
+    if not callable(original):
+        return
+
+    def patched(self: Any, matches: list[Any], offers_by_match: dict[str, Any], contexts_by_match: dict[str, Any], market_signals_by_match: dict[str, dict[str, Any]] | None = None):
+        candidates, rejections, debug = original(self, matches, offers_by_match, contexts_by_match, market_signals_by_match)
+        if not offers_by_match:
+            return candidates, rejections, debug
+        if not isinstance(rejections, dict):
+            rejections = {}
+        try:
+            rescue, rescue_debug = build_rescue(self, matches, offers_by_match, contexts_by_match, rejections)
+        except Exception:
+            return candidates, rejections, debug
+        if not rescue:
+            return candidates, rejections, debug
+        limit = int(_num(os.getenv('POST_INTEGRITY_RESCUE_APPEND_LIMIT'), 24))
+        rescue = sorted(list(rescue), key=_rank, reverse=True)[:max(1, limit)]
+        seen = {_candidate_key(item) for item in candidates}
+        merged = list(candidates)
+        appended = 0
+        duplicate = 0
+        for item in rescue:
+            key = _candidate_key(item)
+            if key in seen:
+                duplicate += 1
+                continue
+            seen.add(key)
+            try:
+                item.reasons = list(getattr(item, 'reasons', []) or []) + ['native_rescue_append_bridge']
+                if isinstance(getattr(item, 'source_summary', None), dict):
+                    item.source_summary['native_rescue_append_bridge'] = True
+            except Exception:
+                pass
+            merged.append(item)
+            appended += 1
+        debug = dict(debug or {})
+        debug['native_rescue_append_bridge'] = {'built': len(rescue), 'appended': appended, 'duplicate': duplicate, 'input_candidates': len(candidates), 'output_candidates': len(merged)}
+        try:
+            rejections['native_rescue_append_bridge_appended'] = int(rejections.get('native_rescue_append_bridge_appended') or 0) + appended
+        except Exception:
+            pass
+        return merged, rejections, debug
+
+    factory.build_candidates = patched
+    factory._harizon_native_rescue_append_bridge = True
+
+
 def install() -> None:
     if _on('QUALITY_STAGE_GATE_MARKET_BRIDGE_RELIEF_ENABLED', True):
         _install_quality_stage_gate()
     _install_context_index_bridge()
+    _install_rescue_append_bridge()
