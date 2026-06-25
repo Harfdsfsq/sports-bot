@@ -25,12 +25,27 @@
     "notes": [
       "B-tier is not auto-publish; it still must pass guarded fallback final checks.",
       "Quarter totals remain blocked by publication point guard.",
-      "A-cover promotion may happen before the 2h publish window only to stage line-movement lifecycle candidates."
+      "A-cover promotion may happen before the 2h publish window only to stage line-movement lifecycle candidates.",
+      "Top bundle can publish up to 3 different matches only when each extra pick clears stricter EV/edge/confidence thresholds."
     ],
-    "public_publication_tier": "A-public plus controlled-B-public-fallback"
+    "public_publication_tier": "A-public plus controlled-B-public-fallback",
+    "top_bundle": {
+      "extra_pick_min_confidence": 67.0,
+      "extra_pick_min_edge_pp": 3.0,
+      "extra_pick_min_ev_pct": 7.0,
+      "max_picks_per_match": 1,
+      "max_picks_per_run": 3
+    }
   },
-  "created_at_utc": "2026-06-25T15:04:01.631650+00:00",
+  "created_at_utc": "2026-06-25T15:59:03.325456+00:00",
   "env": {
+    "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": "3",
+    "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE": "67.0",
+    "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP": "3.0",
+    "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT": "7.0",
+    "CONTROLLED_FALLBACK_EXTRA_PICK_STRICT": "true",
+    "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH": "1",
+    "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN": "3",
     "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
     "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
     "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
@@ -56,6 +71,7 @@
     "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": "false",
     "CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES": "true",
     "CONTROLLED_FALLBACK_TIER_B_WATCH_ONLY": "false",
+    "MAX_PICKS_PER_RUN": "3",
     "MIN_BOOKS_PUBLISH": "1",
     "MIN_CONTEXT_SOURCES_PUBLISH": "1",
     "MIN_SOURCES_PUBLISH": "1",
