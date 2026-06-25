@@ -8,6 +8,12 @@ from pathlib import Path
 
 from sitecustomize import *  # noqa: F401,F403
 
+# A-cover promotion runs immediately before controlled fallback.  It should not
+# erase B-cover rescue rows that were produced earlier in the same workflow; the
+# fallback loader already filters stale/outside-window rows before evaluation.
+os.environ.setdefault("PROMOTE_A_COVER_PRUNE_RESCUE_TO_PUBLISH_WINDOW", "false")
+os.environ.setdefault("PROMOTE_B_COVER_AFTER_A_PROMOTION_ENABLED", "true")
+
 
 def _truthy(value: str | None) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
