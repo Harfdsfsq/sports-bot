@@ -15,8 +15,9 @@ from pathlib import Path
 
 ROOT = Path('.').resolve()
 OUT_PATH = ROOT / '.data' / 'exports' / 'latest-publication-family-policy.json'
+PATCH_REPORT_PATH = ROOT / '.data' / 'exports' / 'latest-controlled-fallback-b-tier-evidence-patch.json'
 ALLOWED = 'totals,spreads'
-RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v13-public-total-line-b-tier-one-book'
+RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v14-fallback-b-tier-evidence-normalized'
 
 ENV_UPDATES = {
     'HARIZON_RUNTIME_POLICY_VERSION': RUNTIME_POLICY_VERSION,
@@ -84,6 +85,7 @@ ENV_UPDATES = {
     'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES': '1',
     'CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B': 'true',
     'CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'false',
+    'CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES': 'false',
@@ -93,6 +95,7 @@ ENV_UPDATES = {
     'CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES': '1',
     'CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS': '1',
+    'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES': '1',
@@ -125,9 +128,111 @@ def _append_github_env(values: dict[str, str]) -> None:
             print(f'{key}={values[key]}')
 
 
+def _patch_controlled_fallback_script() -> dict[str, object]:
+    """Keep the standalone fallback script aligned with the A/B contract.
+
+    `publish_controlled_fallback.py` is executed as a standalone script, so normal
+    runtime monkey-patches do not reach it.  This small, idempotent source patch is
+    applied before the workflow calls fallback.  It fixes two stale assumptions:
+    B-tier hard-coded 2-book minimums and missing confirmation aliases for context
+    sources already present in rescue rows.
+    """
+    path = ROOT / 'scripts' / 'publish_controlled_fallback.py'
+    report: dict[str, object] = {
+        'enabled': True,
+        'path': str(path),
+        'changed': False,
+        'replacements': [],
+        'status': 'ok',
+    }
+    try:
+        text = path.read_text(encoding='utf-8')
+    except Exception as exc:
+        report.update({'status': 'read_error', 'error': f'{type(exc).__name__}: {exc}'})
+        return report
+
+    replacements = [
+        (
+            '        "highlightly": "highlightly",\n',
+            '        "highlightly": "highlightly",\n'
+            '        "openligadb": "openligadb",\n'
+            '        "open_liga_db": "openligadb",\n'
+            '        "inventory_context": "inventory_context",\n'
+            '        "runtime_context": "runtime_context",\n',
+            'confirmation_aliases',
+        ),
+        (
+            '        for field in ("context_sources", "providers", "confirmation_sources"):\n'
+            '            for item in _source_values(source_summary.get(field)):\n'
+            '                src = normalize_confirmation_source(item)\n'
+            '                if src:\n'
+            '                    sources.add(src)\n\n'
+            '    sources.discard("odds_api_io")\n',
+            '        for field in ("context_sources", "providers", "confirmation_sources"):\n'
+            '            for item in _source_values(source_summary.get(field)):\n'
+            '                src = normalize_confirmation_source(item)\n'
+            '                if src:\n'
+            '                    sources.add(src)\n'
+            '        for nested_key in ("publish_coverage_contract", "publication_tier_contract"):\n'
+            '            nested = source_summary.get(nested_key)\n'
+            '            if isinstance(nested, dict):\n'
+            '                for field in ("context_sources", "confirmation_sources"):\n'
+            '                    for item in _source_values(nested.get(field)):\n'
+            '                        src = normalize_confirmation_source(item)\n'
+            '                        if src:\n'
+            '                            sources.add(src)\n'
+            '    diagnostics = candidate.get("diagnostics") if isinstance(candidate.get("diagnostics"), dict) else {}\n'
+            '    for nested_key in ("publish_coverage_contract", "publication_tier_contract"):\n'
+            '        nested = diagnostics.get(nested_key)\n'
+            '        if isinstance(nested, dict):\n'
+            '            for field in ("context_sources", "confirmation_sources"):\n'
+            '                for item in _source_values(nested.get(field)):\n'
+            '                    src = normalize_confirmation_source(item)\n'
+            '                    if src:\n'
+            '                        sources.add(src)\n\n'
+            '    sources.discard("odds_api_io")\n',
+            'nested_publish_coverage_context_sources',
+        ),
+        (
+            '    min_books = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", 2))\n',
+            '    min_books = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", 1))\n',
+            'tier_b_quorum_min_books',
+        ),
+        (
+            '    # HARIZON rules: A-tier is strict 2/2/2; B-tier is 1 odds/line source,\n'
+            '    # 2 bookmakers/price confirmations, and 1 context/confirmation.\n',
+            '    # HARIZON rules: A-tier is strict 2/2/2; B-tier is 1 odds/line source,\n'
+            '    # 1 bookmaker/price confirmation, and 1 context/confirmation.\n',
+            'tier_b_comment',
+        ),
+        (
+            '        min_books = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 2)))\n',
+            '        min_books = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 1)))\n',
+            'tier_b_min_books',
+        ),
+    ]
+
+    for old, new, label in replacements:
+        if old in text:
+            text = text.replace(old, new, 1)
+            report['changed'] = True
+            report['replacements'].append(label)  # type: ignore[index]
+        elif new in text:
+            report['replacements'].append(f'{label}:already_applied')  # type: ignore[index]
+        else:
+            report['replacements'].append(f'{label}:pattern_missing')  # type: ignore[index]
+
+    if report['changed']:
+        path.write_text(text, encoding='utf-8')
+    return report
+
+
 def main() -> int:
     _append_github_env(ENV_UPDATES)
+    fallback_patch = _patch_controlled_fallback_script()
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    PATCH_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    PATCH_REPORT_PATH.write_text(json.dumps(fallback_patch, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     payload = {
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
         'policy': 'publication_totals_spreads_only_with_public_total_line_contract',
@@ -135,6 +240,7 @@ def main() -> int:
         'allowed_publication_families': ['totals', 'spreads'],
         'blocked_publication_families': ['h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'],
         'env_updates': ENV_UPDATES,
+        'fallback_script_patch': fallback_patch,
         'notes': [
             'Only totals and spreads/handicaps may be published.',
             'Public totals must be whole or .5 lines; .25/.75 Asian totals are analysis-only.',
