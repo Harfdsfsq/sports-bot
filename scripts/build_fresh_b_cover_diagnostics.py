@@ -1,35 +1,201 @@
 from __future__ import annotations
 
+"""Build fresh B-cover diagnostics from current runtime artifacts.
+
+This is diagnostic-only. It does not publish picks and does not relax guards. The
+important fix is that Bzzoiro overlap offers are now treated as current offer
+rows, so the report no longer says B-cover has no current offer when Bzzoiro has
+fresh bridged prices.
+"""
+
 import json
 import math
 import re
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 ROOT = Path('.').resolve()
-OUT = ROOT / '.data' / 'exports' / 'latest-fresh-b-cover-diagnostics.json'
+EXPORT = ROOT / '.data' / 'exports'
+OUT = EXPORT / 'latest-fresh-b-cover-diagnostics.json'
 
 
-def load_json(path: Path, default: Any) -> Any:
+def load(path: Path, default: Any) -> Any:
     try:
         if path.exists() and path.stat().st_size > 0:
-            return json.loads(path.read_text(encoding='utf-8'))
+            return json.loads(path.read_text(encoding='utf-8', errors='replace'))
     except Exception:
         return default
     return default
 
 
-def write_json(path: Path, payload: Any) -> None:
+def dump(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+
+
+def rows(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if isinstance(payload, dict):
+        for key in ('rows', 'matches', 'items', 'data', 'candidates', 'evaluated_candidates', 'rescue_candidates', 'offers', 'snapshots', 'lines', 'selected_all'):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [x for x in value if isinstance(x, dict)]
+    return []
 
 
 def norm(value: Any) -> str:
     text = str(value or '').strip().lower().replace('ё', 'е')
     text = re.sub(r'[^a-z0-9а-я]+', ' ', text)
     return ' '.join(text.split())
+
+
+def as_int(value: Any) -> int:
+    try:
+        if isinstance(value, (list, tuple, set)):
+            return len({norm(x) for x in value if norm(x)})
+        if isinstance(value, dict):
+            return len(value)
+        return int(float(value or 0))
+    except Exception:
+        return 0
+
+
+def as_float(value: Any) -> float:
+    try:
+        f = float(str(value or 0).replace(',', '.'))
+        return f if math.isfinite(f) else 0.0
+    except Exception:
+        return 0.0
+
+
+def date_of(row: dict[str, Any]) -> str:
+    for key in ('date', 'kickoff_utc', 'commence_time', 'start_time', 'kickoff', 'match_key', 'canonical_match_id'):
+        m = re.search(r'20\d{2}-\d{2}-\d{2}', str(row.get(key) or ''))
+        if m:
+            return m.group(0)
+    return ''
+
+
+def parse_key_parts(raw_key: Any) -> tuple[str, str, str]:
+    raw = str(raw_key or '').strip()
+    parts = [p.strip() for p in raw.split('|') if p.strip()]
+    date = ''
+    for part in parts:
+        m = re.search(r'20\d{2}-\d{2}-\d{2}', part)
+        if m:
+            date = m.group(0)
+            break
+    text_parts = [p for p in parts if not re.search(r'20\d{2}-\d{2}-\d{2}', p) and norm(p) not in {'soccer', 'football', 'teams'}]
+    home = text_parts[0] if len(text_parts) >= 2 else ''
+    away = text_parts[1] if len(text_parts) >= 2 else ''
+    return date, home, away
+
+
+def team_pair(row: dict[str, Any]) -> tuple[str, str]:
+    home = row.get('home_team') or row.get('home') or row.get('home_name') or row.get('team_home')
+    away = row.get('away_team') or row.get('away') or row.get('away_name') or row.get('team_away')
+    if home and away:
+        return str(home), str(away)
+    _, kh, ka = parse_key_parts(row.get('match_key') or row.get('canonical_match_id') or row.get('event_key'))
+    return kh, ka
+
+
+def aliases(row: dict[str, Any]) -> set[str]:
+    out: set[str] = set()
+    raw = str(row.get('match_key') or row.get('canonical_match_id') or row.get('event_key') or '').strip()
+    if raw:
+        out.update({raw, norm(raw)})
+        kd, kh, ka = parse_key_parts(raw)
+    else:
+        kd, kh, ka = '', '', ''
+    date = date_of(row) or kd
+    home, away = team_pair(row)
+    home = home or kh
+    away = away or ka
+    hn, an = norm(home), norm(away)
+    if date and hn and an:
+        out.update({
+            f'{date}|{hn}|{an}',
+            f'teams:{date}|{hn}|{an}',
+            f'soccer|{hn}|{an}|{date}',
+            f'{date}|{hn[:18]}|{an[:18]}',
+        })
+    return {x for x in out if x and x.strip('|')}
+
+
+def nested_count(row: dict[str, Any], *names: str) -> int:
+    best = 0
+    for src in (row, row.get('metadata'), row.get('source_summary'), row.get('coverage')):
+        if not isinstance(src, dict):
+            continue
+        for name in names:
+            best = max(best, as_int(src.get(name)))
+    return best
+
+
+def book_count(row: dict[str, Any]) -> int:
+    best = nested_count(row, 'books_count', 'bookmakers_count', 'price_confirmation_sources_count', 'same_side_books_max')
+    best = max(best, nested_count(row, 'books', 'bookmakers', 'price_sources', 'price_confirmations'))
+    if best <= 0 and (row.get('bookmaker') or row.get('book') or row.get('odds') or row.get('price')):
+        best = 1
+    return best
+
+
+def context_count(row: dict[str, Any]) -> int:
+    best = nested_count(row, 'context_sources_count', 'confirmation_sources_count', 'context_count')
+    best = max(best, nested_count(row, 'context_sources', 'context_confirmations', 'confirmation_sources', 'providers'))
+    cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
+    if best <= 0 and (row.get('context') or row.get('has_context') or cov.get('context')):
+        best = 1
+    return best
+
+
+def source_count(row: dict[str, Any]) -> int:
+    best = nested_count(row, 'sources_count', 'odds_sources_count', 'independent_odds_sources_count')
+    best = max(best, nested_count(row, 'sources', 'odds_sources', 'independent_odds_sources'))
+    return best or int(bool(row.get('source') or row.get('provider') or row.get('bookmaker')))
+
+
+def kickoff_utc(row: dict[str, Any]) -> datetime | None:
+    for key in ('kickoff_utc', 'commence_time', 'start_time', 'kickoff'):
+        raw = row.get(key)
+        if not raw:
+            continue
+        text = str(raw).strip()
+        if re.fullmatch(r'20\d{2}-\d{2}-\d{2}', text):
+            continue
+        try:
+            return datetime.fromisoformat(text.replace('Z', '+00:00')).astimezone(timezone.utc)
+        except Exception:
+            continue
+    return None
+
+
+def is_active(row: dict[str, Any], now: datetime) -> bool:
+    kickoff = kickoff_utc(row)
+    return True if kickoff is None else kickoff >= now - timedelta(minutes=10)
+
+
+def family(row: dict[str, Any]) -> str:
+    raw = norm(row.get('family') or row.get('market_family') or row.get('market') or row.get('market_key') or row.get('sport_key'))
+    if any(x in raw for x in ('total', 'over under', 'goals')):
+        return 'totals'
+    if any(x in raw for x in ('spread', 'handicap', 'фора')):
+        return 'spreads'
+    return raw
+
+
+def selection(row: dict[str, Any]) -> str:
+    raw = norm(row.get('selection_key') or row.get('selection') or row.get('outcome') or row.get('name'))
+    market_name = str(row.get('market_name') or '').lower()
+    if '.over@' in market_name or any(x in raw for x in ('over', 'больше', 'тб')):
+        return 'over'
+    if '.under@' in market_name or any(x in raw for x in ('under', 'меньше', 'тм')):
+        return 'under'
+    return raw
 
 
 def point(value: Any) -> str:
@@ -42,288 +208,157 @@ def point(value: Any) -> str:
         return norm(value)
 
 
-def rows_from_payload(payload: Any) -> list[dict[str, Any]]:
-    if isinstance(payload, list):
-        return [x for x in payload if isinstance(x, dict)]
-    if not isinstance(payload, dict):
-        return []
-    for key in ('rows', 'matches', 'items', 'data', 'candidates', 'evaluated_candidates', 'rescue_candidates'):
-        val = payload.get(key)
-        if isinstance(val, list):
-            return [x for x in val if isinstance(x, dict)]
-    return []
+def offer_bucket(row: dict[str, Any]) -> tuple[str, str, str, str]:
+    return ('/'.join(sorted(aliases(row)))[:160], family(row), selection(row), point(row.get('point') or row.get('line') or row.get('handicap') or row.get('total')))
 
 
-def as_int(value: Any) -> int:
+def ensure_bzzoiro_bridge() -> None:
     try:
-        if isinstance(value, list):
-            return len(set(norm(v) for v in value if norm(v)))
-        if isinstance(value, dict):
-            return len(value)
-        return int(float(value or 0))
+        from scripts.bridge_bzzoiro_offer_overlap import main as bridge_main
+        bridge_main()
     except Exception:
-        return 0
+        pass
 
 
-def as_float(value: Any) -> float:
-    try:
-        if value in (None, ''):
-            return 0.0
-        f = float(str(value).replace(',', '.'))
-        return f if math.isfinite(f) else 0.0
-    except Exception:
-        return 0.0
-
-
-def nested_get(row: dict[str, Any], *keys: str) -> Any:
-    if not isinstance(row, dict):
-        return None
-    stack: list[Any] = [row]
-    seen: set[int] = set()
-    wanted = {k.replace('-', '_').replace(' ', '_').lower() for k in keys}
-    while stack:
-        cur = stack.pop(0)
-        mid = id(cur)
-        if mid in seen:
-            continue
-        seen.add(mid)
-        if isinstance(cur, list):
-            stack.extend(x for x in cur if isinstance(x, (dict, list)))
-            continue
-        if not isinstance(cur, dict):
-            continue
-        lowered = {str(k).replace('-', '_').replace(' ', '_').lower(): v for k, v in cur.items()}
-        for key in wanted:
-            v = lowered.get(key)
-            if v not in (None, ''):
-                return v
-        for key in ('source_summary', 'diagnostics', 'context', 'contexts', 'provider_context', 'features', 'metrics', 'xg', 'model_xg', 'expected_goals', 'prediction', 'raw_context', 'payload'):
-            v = lowered.get(key)
-            if isinstance(v, (dict, list)):
-                stack.append(v)
-    return None
-
-
-def books_count(row: dict[str, Any]) -> int:
-    ss = row.get('source_summary') if isinstance(row.get('source_summary'), dict) else {}
-    for key in ('books_count', 'bookmakers_count', 'price_confirmations', 'priced_books_count'):
-        n = as_int(row.get(key)) or as_int(ss.get(key))
-        if n:
-            return n
-    for key in ('books', 'bookmakers', 'priced_books'):
-        n = as_int(row.get(key) or ss.get(key))
-        if n:
-            return n
-    return 1 if (row.get('bookmaker') or ss.get('bookmaker')) else 0
-
-
-def context_count(row: dict[str, Any]) -> int:
-    ss = row.get('source_summary') if isinstance(row.get('source_summary'), dict) else {}
-    for key in ('context_sources_count', 'confirmation_sources_count', 'sources_count'):
-        n = as_int(row.get(key)) or as_int(ss.get(key))
-        if n:
-            return n
-    for key in ('context_sources', 'confirmation_sources', 'providers'):
-        n = as_int(row.get(key) or ss.get(key))
-        if n:
-            return n
-    return 1 if (row.get('context') or ss.get('context')) else 0
-
-
-def source_count(row: dict[str, Any]) -> int:
-    ss = row.get('source_summary') if isinstance(row.get('source_summary'), dict) else {}
-    for key in ('sources_count', 'odds_sources_count', 'independent_odds_sources_count', 'confirmation_sources_count'):
-        n = as_int(row.get(key)) or as_int(ss.get(key))
-        if n:
-            return n
-    for key in ('sources', 'odds_sources', 'independent_odds_sources', 'confirmation_sources'):
-        n = as_int(row.get(key) or ss.get(key))
-        if n:
-            return n
-    return 1 if (row.get('source') or ss.get('source') or row.get('bookmaker')) else 0
-
-
-def match_key(row: dict[str, Any]) -> str:
-    explicit = norm(row.get('canonical_match_id') or row.get('match_key') or row.get('event_key'))
-    if explicit:
-        return explicit
-    home = norm(row.get('home_team') or row.get('home'))
-    away = norm(row.get('away_team') or row.get('away'))
-    date = str(row.get('date') or row.get('commence_time') or row.get('kickoff') or row.get('start_time') or '')[:10]
-    return '|'.join(x for x in (home, away, date) if x)
-
-
-def offer_key(row: dict[str, Any]) -> tuple[str, str, str, str]:
-    family = norm(row.get('family') or row.get('market_family') or row.get('market'))
-    if family in {'total', 'totals goals', 'over under', 'over under 25', 'over under 35'}:
-        family = 'totals'
-    selection = norm(row.get('selection_key') or row.get('selection') or row.get('name') or row.get('outcome'))
-    if any(x in selection for x in ('under', 'меньше', 'тм')):
-        selection = 'under'
-    elif any(x in selection for x in ('over', 'больше', 'тб')):
-        selection = 'over'
-    return (match_key(row), family, selection, point(row.get('point') or row.get('line') or row.get('handicap') or row.get('total')))
-
-
-def collect_offer_rows() -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
+def collect_offers() -> tuple[list[dict[str, Any]], dict[str, int]]:
+    ensure_bzzoiro_bridge()
     paths = [
-        ROOT / '.data' / 'exports' / 'latest-odds-api-io-offer-snapshot.json',
-        ROOT / '.data' / 'exports' / 'latest-line-snapshots.json',
-        ROOT / '.data' / 'exports' / 'latest-consensus-lines.json',
+        EXPORT / 'latest-odds-api-io-offer-snapshot.json',
+        EXPORT / 'latest-line-snapshots.json',
+        EXPORT / 'latest-consensus-lines.json',
+        EXPORT / 'latest-bzzoiro-overlap-offers.json',
         ROOT / 'artifacts' / 'run-bot' / 'latest-odds-api-io-offer-snapshot.json',
         ROOT / 'artifacts' / 'run-bot' / 'latest-line-snapshots.json',
-        ROOT / 'artifacts' / 'run-bot' / 'latest-consensus-lines.json',
-        ROOT / 'artifacts' / 'run-bot' / 'exports' / 'latest-odds-api-io-offer-snapshot.json',
-        ROOT / 'artifacts' / 'run-bot' / 'exports' / 'latest-line-snapshots.json',
+        ROOT / 'artifacts' / 'run-bot' / 'latest-bzzoiro-overlap-offers.json',
     ]
+    out: list[dict[str, Any]] = []
+    counts: Counter[str] = Counter()
     seen: set[str] = set()
     for path in paths:
-        payload = load_json(path, None)
-        for row in rows_from_payload(payload):
+        accepted = 0
+        for row in rows(load(path, {})):
             row = dict(row)
-            row['_source_path'] = str(path)
-            mk = match_key(row)
-            if not mk:
+            if not aliases(row):
                 continue
-            sig = json.dumps([mk, row.get('bookmaker') or row.get('book'), row.get('market') or row.get('family'), row.get('selection') or row.get('outcome'), row.get('point') or row.get('line')], ensure_ascii=False, sort_keys=True)
+            sig = json.dumps([sorted(aliases(row))[:3], row.get('source') or row.get('provider'), row.get('bookmaker') or row.get('book'), family(row), selection(row), row.get('point') or row.get('line'), row.get('price') or row.get('odds')], ensure_ascii=False, sort_keys=True)
             if sig in seen:
                 continue
             seen.add(sig)
-            rows.append(row)
-    return rows
+            row['_source_path'] = str(path)
+            out.append(row)
+            accepted += 1
+        if accepted:
+            counts[str(path)] = accepted
+    return out, dict(counts)
+
+
+def inventory_rows() -> tuple[Path, list[dict[str, Any]]]:
+    candidates = [
+        EXPORT / 'latest-day-inventory-coverage-truth.json',
+        ROOT / '.data' / 'day_inventory' / 'latest.json',
+        ROOT / '.data' / 'day_inventory' / 'current.json',
+        ROOT / '.data' / 'cache' / 'day_inventory' / f'{datetime.now(timezone.utc).date().isoformat()}.json',
+    ]
+    for path in candidates:
+        rs = rows(load(path, {}))
+        if rs:
+            return path, rs
+    return candidates[0], []
 
 
 def collect_fallback_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    for key in ('evaluated_candidates', 'candidates', 'rows', 'reserve_candidates', 'items'):
-        val = report.get(key) if isinstance(report, dict) else None
-        if isinstance(val, list):
-            rows.extend(x for x in val if isinstance(x, dict))
-    # Some reports keep the useful rows under debug/pools.
-    pools = report.get('pools') if isinstance(report, dict) else None
-    if isinstance(pools, dict):
-        for val in pools.values():
-            if isinstance(val, list):
-                rows.extend(x for x in val if isinstance(x, dict))
-    # Dedupe by publication/match key.
     out: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for row in rows:
-        key = str(row.get('dedupe_key') or row.get('fingerprint') or offer_key(row))
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(row)
+    for key in ('evaluated_candidates', 'candidates', 'rows', 'reserve_candidates', 'items', 'selected_all'):
+        value = report.get(key) if isinstance(report, dict) else None
+        if isinstance(value, list):
+            out.extend(x for x in value if isinstance(x, dict))
     return out
 
 
-def reason_counter(report: dict[str, Any], rows: list[dict[str, Any]]) -> Counter:
-    counter: Counter = Counter()
-    for src_key in ('reject_reasons', 'reason_counts', 'reasons'):
-        val = report.get(src_key) if isinstance(report, dict) else None
-        if isinstance(val, dict):
-            for key, count in val.items():
-                counter[str(key)] += as_int(count) or 1
-    for row in rows:
+def reason_counts(report: dict[str, Any], fallback_rows: list[dict[str, Any]]) -> dict[str, int]:
+    counter: Counter[str] = Counter()
+    for key in ('reject_reasons', 'reason_counts', 'reasons'):
+        value = report.get(key) if isinstance(report, dict) else None
+        if isinstance(value, dict):
+            for reason, count in value.items():
+                counter[str(reason)] += as_int(count) or 1
+    for row in fallback_rows:
         for key in ('reasons', 'reject_reasons', 'hard_reject_reasons', 'failure_reasons'):
-            val = row.get(key)
-            if isinstance(val, list):
-                for reason in val:
-                    if str(reason).strip():
-                        counter[str(reason).strip()] += 1
-            elif isinstance(val, str) and val.strip():
-                counter[val.strip()] += 1
-        reason = row.get('reason') or row.get('reject_reason')
-        if reason:
-            counter[str(reason)] += 1
-    return counter
+            value = row.get(key)
+            if isinstance(value, list):
+                counter.update(str(x) for x in value if str(x).strip())
+            elif isinstance(value, str) and value.strip():
+                counter[value] += 1
+    return dict(counter)
 
 
-def row_has_xg(row: dict[str, Any]) -> bool:
-    home = nested_get(row, 'expected_home', 'home_xg', 'xg_home', 'home_expected_goals')
-    away = nested_get(row, 'expected_away', 'away_xg', 'xg_away', 'away_expected_goals')
-    total = nested_get(row, 'total_xg', 'xg_total', 'expected_total', 'expected_goals_total')
-    return (as_float(home) > 0 and as_float(away) > 0) or as_float(total) > 0
+def has_xg(row: dict[str, Any]) -> bool:
+    text = json.dumps(row, ensure_ascii=False).lower()
+    return any(k in text for k in ('expected_home', 'expected_away', 'home_xg', 'away_xg', 'total_xg', 'model_xg'))
 
 
 def main() -> int:
-    inv_paths = [
-        ROOT / '.data' / 'exports' / 'latest-day-inventory-coverage-truth.json',
-        ROOT / '.data' / 'cache' / 'day_inventory' / f'{datetime.now(timezone.utc).date().isoformat()}.json',
-        ROOT / '.data' / 'day_inventory' / 'latest.json',
-        ROOT / '.data' / 'day_inventory' / 'current.json',
-    ]
-    inv_path = inv_paths[0]
-    inv_rows: list[dict[str, Any]] = []
-    for path in inv_paths:
-        inv_rows = rows_from_payload(load_json(path, {}))
-        if inv_rows:
-            inv_path = path
-            break
+    now = datetime.now(timezone.utc)
+    inv_path, inv = inventory_rows()
+    b_rows = [row for row in inv if book_count(row) >= 1 and context_count(row) >= 1]
+    active_b_rows = [row for row in b_rows if is_active(row, now)]
+    offers, offer_source_counts = collect_offers()
 
-    b_rows = [r for r in inv_rows if books_count(r) >= 1 and context_count(r) >= 1]
-    offers = collect_offer_rows()
-    offers_by_match: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    offers_by_bucket: dict[tuple[str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    offer_aliases: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    bucket_rows: dict[tuple[str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for offer in offers:
-        mk = match_key(offer)
-        if not mk:
+        for alias in aliases(offer):
+            offer_aliases[alias].append(offer)
+        bucket_rows[offer_bucket(offer)].append(offer)
+
+    def with_offer(items: list[dict[str, Any]]) -> int:
+        return sum(1 for row in items if any(alias in offer_aliases for alias in aliases(row)))
+
+    total_buckets = 0
+    bzz_buckets = 0
+    bucket_book_hist: Counter[str] = Counter()
+    for bucket, bucket_items in bucket_rows.items():
+        fam = bucket[1]
+        if fam not in {'totals', 'spreads', 'teamtotals'}:
             continue
-        offers_by_match[mk].append(offer)
-        offers_by_bucket[offer_key(offer)].append(offer)
+        books = {norm(x.get('bookmaker') or x.get('book')) for x in bucket_items if norm(x.get('bookmaker') or x.get('book'))}
+        total_buckets += 1
+        bucket_book_hist[str(len(books))] += 1
+        bzz_buckets += int(any(norm(x.get('source') or x.get('provider')) == 'bzzoiro' for x in bucket_items))
 
-    no_match = 0
-    has_match = 0
-    for row in b_rows:
-        if match_key(row) in offers_by_match:
-            has_match += 1
-        else:
-            no_match += 1
-
-    current_total_buckets = 0
-    bucket_book_counts: Counter = Counter()
-    for key, bucket in offers_by_bucket.items():
-        if key[1] in {'totals', 'spreads', 'teamtotals'}:
-            books = {norm(x.get('bookmaker') or x.get('book')) for x in bucket if norm(x.get('bookmaker') or x.get('book'))}
-            current_total_buckets += 1
-            bucket_book_counts[str(len(books))] += 1
-
-    promotion = load_json(ROOT / '.data' / 'exports' / 'latest-b-cover-value-promotion.json', {})
-    report = load_json(ROOT / '.data' / 'exports' / 'latest-controlled-fallback-report.json', {})
-    fallback_rows = collect_fallback_rows(report)
-    fallback_reasons = reason_counter(report, fallback_rows)
-
-    single_source = sum(1 for row in fallback_rows if source_count(row) < 2)
-    missing_xg = sum(1 for row in fallback_rows if not row_has_xg(row))
-    low_edge = sum(1 for row in fallback_rows if as_float(row.get('canonical_edge_pp') or row.get('edge_pp') or row.get('edge')) < 5.0)
-    low_ev = sum(1 for row in fallback_rows if as_float(row.get('canonical_ev_pct') or row.get('ev_pct') or row.get('ev')) < 8.0)
-    low_conf = sum(1 for row in fallback_rows if as_float(row.get('confidence') or row.get('quality') or row.get('quality_score')) < 70.0)
-
+    promotion = load(EXPORT / 'latest-b-cover-value-promotion.json', {})
+    report = load(EXPORT / 'latest-controlled-fallback-report.json', {})
+    fb_rows = collect_fallback_rows(report if isinstance(report, dict) else {})
     payload = {
-        'created_at_utc': datetime.now(timezone.utc).isoformat(),
+        'created_at_utc': now.isoformat(),
         'inventory_path': str(inv_path),
-        'inventory_rows': len(inv_rows),
+        'inventory_rows': len(inv),
         'b_cover_rows': len(b_rows),
+        'active_b_cover_rows': len(active_b_rows),
         'offer_rows_seen': len(offers),
-        'b_cover_with_any_current_offer_match': has_match,
-        'b_cover_without_current_offer_match': no_match,
-        'current_market_buckets_totals_spreads': current_total_buckets,
-        'current_market_bucket_book_count_histogram': dict(bucket_book_counts),
+        'offer_source_counts': offer_source_counts,
+        'b_cover_with_any_current_offer_match': with_offer(b_rows),
+        'b_cover_without_current_offer_match': max(0, len(b_rows) - with_offer(b_rows)),
+        'active_b_cover_with_any_current_offer_match': with_offer(active_b_rows),
+        'active_b_cover_without_current_offer_match': max(0, len(active_b_rows) - with_offer(active_b_rows)),
+        'current_market_buckets_totals_spreads': total_buckets,
+        'current_market_bzzoiro_buckets_totals_spreads': bzz_buckets,
+        'current_market_bucket_book_count_histogram': dict(bucket_book_hist),
+        'bzzoiro_overlap_bridge': load(EXPORT / 'latest-bzzoiro-overlap-bridge.json', {}),
         'promotion_reason_counts': promotion.get('reason_counts') if isinstance(promotion, dict) else {},
         'promotion_promoted_count': promotion.get('promoted_count') if isinstance(promotion, dict) else None,
         'promotion_considered_b_cover_rows': promotion.get('considered_b_cover_rows') if isinstance(promotion, dict) else None,
-        'fallback_candidates_seen': report.get('candidates_seen') if isinstance(report, dict) else len(fallback_rows),
+        'fallback_candidates_seen': report.get('candidates_seen') if isinstance(report, dict) else len(fb_rows),
         'fallback_status': report.get('status') if isinstance(report, dict) else None,
-        'fallback_rows_seen': len(fallback_rows),
-        'fallback_reason_counts': dict(fallback_reasons),
-        'fallback_single_source_candidates': single_source,
-        'fallback_missing_xg_candidates': missing_xg,
-        'fallback_low_edge_candidates': low_edge,
-        'fallback_low_ev_candidates': low_ev,
-        'fallback_low_confidence_candidates': low_conf,
+        'fallback_rows_seen': len(fb_rows),
+        'fallback_reason_counts': reason_counts(report if isinstance(report, dict) else {}, fb_rows),
+        'fallback_single_source_candidates': sum(1 for row in fb_rows if source_count(row) < 2),
+        'fallback_missing_xg_candidates': sum(1 for row in fb_rows if not has_xg(row)),
+        'fallback_low_edge_candidates': sum(1 for row in fb_rows if as_float(row.get('canonical_edge_pp') or row.get('edge_pp') or row.get('edge')) < 5.0),
+        'fallback_low_ev_candidates': sum(1 for row in fb_rows if as_float(row.get('canonical_ev_pct') or row.get('ev_pct') or row.get('ev')) < 8.0),
+        'fallback_low_confidence_candidates': sum(1 for row in fb_rows if as_float(row.get('confidence') or row.get('quality') or row.get('quality_score')) < 70.0),
     }
-    write_json(OUT, payload)
+    dump(OUT, payload)
     print(json.dumps(payload, ensure_ascii=False))
     return 0
 

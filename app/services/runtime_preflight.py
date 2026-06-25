@@ -262,6 +262,7 @@ class RuntimePreflight:
         for module_path in (
             "app.services.api_runtime_enhancements",
             "app.services.market_integrity",
+            "app.services.quality_stage_gate",
             "app.providers.odds_api_io_startup_compat",
             "scripts.telegram_controlled_pick_safety",
         ):

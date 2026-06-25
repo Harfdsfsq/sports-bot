@@ -71,6 +71,14 @@ def _parse_int(value: str) -> int:
     return int(float(str(value).strip()))
 
 
+def _first_env_value(*names: str) -> str | None:
+    for name in names:
+        raw = os.getenv(name)
+        if raw is not None and str(raw).strip() != '':
+            return str(raw).strip()
+    return None
+
+
 def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
     value = getattr(settings, attr_name, None)
     if str(value or '').strip():
@@ -108,14 +116,92 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
         except Exception:
             continue
         object.__setattr__(settings, attr_name, value)
+
+    # HARIZON uses a narrow 2h publication window, but provider coverage needs a
+    # wider lookahead so odds/context are collected before the final pre-kickoff
+    # run. app.cli is only used for the main data/model pass; controlled fallback
+    # is published later by a separate guarded script that still reads
+    # CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS=2 and the daily cap.
+    data_window_raw = _first_env_value(
+        'HARIZON_DATA_COLLECTION_WINDOW_HOURS',
+        'DATA_COLLECTION_WINDOW_HOURS',
+        'RUNTIME_DATA_COLLECTION_WINDOW_HOURS',
+        'HARIZON_COVERAGE_UPLIFT_NEAR_WINDOW_HOURS',
+        'DAY_INVENTORY_NEAR_WINDOW_HOURS',
+    )
+    if data_window_raw:
+        try:
+            data_window_hours = max(int(float(data_window_raw)), int(getattr(settings, 'publish_window_hours', 0) or 0))
+        except Exception:
+            data_window_hours = 0
+        if data_window_hours > int(getattr(settings, 'publish_window_hours', 0) or 0):
+            object.__setattr__(settings, 'publish_window_hours', data_window_hours)
+            if _parse_bool(os.getenv('HARIZON_DISABLE_MAIN_PUBLICATION_FOR_DATA_WINDOW', 'true')):
+                object.__setattr__(settings, 'prediction_publication_enabled', False)
+            os.environ['HARIZON_EFFECTIVE_DATA_COLLECTION_WINDOW_HOURS'] = str(data_window_hours)
+            os.environ.setdefault('HARIZON_MAIN_PUBLICATION_DISABLED_FOR_DATA_WINDOW', 'true')
     return settings
+
+
+def _install_bzzoiro_v2_source_matrix(summary: dict[str, Any] | None = None) -> None:
+    if not _parse_bool(os.getenv('HARIZON_BZZOIRO_V2_SOURCE_MATRIX_BOOTSTRAP_ENABLED', 'true')):
+        return
+    try:
+        from app.services.bzzoiro_v2_source_matrix_runtime_patch import install
+        result = install()
+        if isinstance(summary, dict):
+            summary['bzzoiro_v2_source_matrix_install'] = result
+    except Exception as exc:
+        logging.getLogger(__name__).warning('bzzoiro v2 source matrix install failed: %s: %s', type(exc).__name__, exc)
+        if isinstance(summary, dict):
+            summary['bzzoiro_v2_source_matrix_install_error'] = f'{type(exc).__name__}: {exc}'
+        try:
+            out = Path('.data/exports/latest-bzzoiro-v2-source-matrix-install.json')
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps({'installed': False, 'error': f'{type(exc).__name__}: {exc}'}, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+        except Exception:
+            pass
+
+
+def _bridge_runtime_context_coverage(summary: dict[str, Any] | None) -> None:
+    if not _parse_bool(os.getenv('HARIZON_RUNTIME_CONTEXT_COVERAGE_BRIDGE_ENABLED', 'true')):
+        return
+    try:
+        from scripts.bridge_runtime_context_coverage import main as bridge_main
+        code = bridge_main()
+        if isinstance(summary, dict):
+            summary['runtime_context_coverage_bridge_exit_code'] = code
+    except Exception as exc:
+        logging.getLogger(__name__).warning('runtime context coverage bridge failed: %s: %s', type(exc).__name__, exc)
+        if isinstance(summary, dict):
+            summary['runtime_context_coverage_bridge_error'] = f'{type(exc).__name__}: {exc}'
+
+
+def _bridge_bzzoiro_offer_overlap(summary: dict[str, Any] | None) -> None:
+    if not _parse_bool(os.getenv('HARIZON_BZZOIRO_OFFER_OVERLAP_BRIDGE_ENABLED', 'true')):
+        return
+    try:
+        from scripts.bridge_bzzoiro_offer_overlap import main as bridge_main
+        code = bridge_main()
+        if isinstance(summary, dict):
+            summary['bzzoiro_offer_overlap_bridge_exit_code'] = code
+    except Exception as exc:
+        logging.getLogger(__name__).warning('bzzoiro offer overlap bridge failed: %s: %s', type(exc).__name__, exc)
+        if isinstance(summary, dict):
+            summary['bzzoiro_offer_overlap_bridge_error'] = f'{type(exc).__name__}: {exc}'
 
 
 async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'run-once':
+        install_summary: dict[str, Any] = {}
+        _install_bzzoiro_v2_source_matrix(install_summary)
         await asyncio.to_thread(RuntimePreflight(settings).run_before_prediction)
         runner = PredictionRunner(settings)
         summary = await runner.run_once()
+        if isinstance(summary, dict):
+            summary.update(install_summary)
+        _bridge_runtime_context_coverage(summary)
+        _bridge_bzzoiro_offer_overlap(summary)
         return 0, summary
     return 1, None
 

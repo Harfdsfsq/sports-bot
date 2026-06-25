@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib
+import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -72,7 +74,7 @@ def test_publish_contract_rejects_context_sources_as_price_confirmation(monkeypa
 
     assert not decision.passed
     assert decision.report["odds_sources_count"] == 0
-    assert "insufficient_odds_sources:0/2" in decision.reasons
+    assert "insufficient_odds_sources:0/1" in decision.reasons
 
 
 def test_publish_contract_accepts_two_price_and_two_context_sources(monkeypatch):
@@ -86,8 +88,12 @@ def test_publish_contract_accepts_two_price_and_two_context_sources(monkeypatch)
     assert decision.report["context_sources"] == ["football_data", "sstats"]
 
 
-def test_runner_publish_filter_blocks_single_source_candidate(monkeypatch):
+def test_runner_publish_filter_blocks_single_source_candidate_in_strict_a(monkeypatch):
     monkeypatch.setenv("PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE", "true")
+    monkeypatch.setenv("PUBLISH_COVERAGE_TIER_MODE", "strict_a")
+    monkeypatch.setenv("PUBLISH_MIN_ODDS_SOURCES", "2")
+    monkeypatch.setenv("PUBLISH_MIN_CONTEXT_SOURCES", "2")
+    monkeypatch.setenv("PUBLISH_MIN_BOOKS", "2")
     state_root = f".data/test-coverage-contract/{uuid4().hex}"
     monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", f"{state_root}/line_movement_state.json")
     monkeypatch.setenv("CANDIDATE_LIFECYCLE_STATE_PATH", f"{state_root}/candidate_lifecycle_state.json")
@@ -114,6 +120,36 @@ def test_runner_publish_filter_blocks_single_source_candidate(monkeypatch):
     assert "insufficient_odds_sources:1/2" in item.source_summary["publish_coverage_reasons"]
     assert "insufficient_context_sources:1/2" in item.source_summary["publish_coverage_reasons"]
     assert "insufficient_books:1/2" in item.source_summary["publish_coverage_reasons"]
+
+
+def test_b_tier_publish_contract_allows_one_book(monkeypatch):
+    monkeypatch.setenv("PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE", "true")
+    monkeypatch.setenv("PUBLISH_COVERAGE_TIER_MODE", "hybrid")
+    monkeypatch.setenv("PUBLISH_ALLOW_B_TIER", "true")
+    monkeypatch.setenv("PUBLISH_MIN_ODDS_SOURCES", "1")
+    monkeypatch.setenv("PUBLISH_MIN_CONTEXT_SOURCES", "1")
+    monkeypatch.setenv("PUBLISH_MIN_BOOKS", "1")
+    item = candidate(
+        books_count=1,
+        sources_count=1,
+        source_summary={
+            "sources": ["odds_api_io"],
+            "books": ["Bet365"],
+            "context_sources": ["sstats"],
+            "context_source": "sstats",
+        },
+        raw_bucket_offers=[
+            {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Over", "point": 2.5, "price": 1.91},
+        ],
+    )
+
+    decision = evaluate_publish_candidate(item, Settings(_env_file=None))
+
+    assert decision.passed, decision.reasons
+    assert decision.report["min_books"] == 1
+    assert decision.report["books_count"] == 1
+    assert decision.report["odds_sources_count"] == 1
+    assert decision.report["context_sources_count"] == 1
 
 
 def test_odds_api_accounts_are_one_source_by_default(monkeypatch):
@@ -151,8 +187,12 @@ def test_inventory_keeps_books_and_independent_odds_sources_separate(monkeypatch
     assert counts["matches_ready_for_publish"] == 0
 
 
-def test_publish_contract_reports_line_sources_separately_for_b_tier(monkeypatch):
+def test_publish_contract_reports_line_sources_separately_for_a_tier(monkeypatch):
     monkeypatch.setenv("PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE", "true")
+    monkeypatch.setenv("PUBLISH_COVERAGE_TIER_MODE", "strict_a")
+    monkeypatch.setenv("PUBLISH_MIN_ODDS_SOURCES", "2")
+    monkeypatch.setenv("PUBLISH_MIN_CONTEXT_SOURCES", "2")
+    monkeypatch.setenv("PUBLISH_MIN_BOOKS", "2")
     item = candidate(
         sources_count=1,
         books_count=2,
@@ -173,3 +213,80 @@ def test_publish_contract_reports_line_sources_separately_for_b_tier(monkeypatch
     assert decision.report["odds_sources_count"] == 1
     assert decision.report["line_sources_count"] >= 2
     assert decision.report["context_sources_count"] == 1
+
+
+def test_context_index_bridge_replaces_market_only_context(tmp_path, monkeypatch):
+    from app.services import quality_stage_gate
+    import app.services.coverage_contract as coverage_contract
+
+    index = tmp_path / "latest-context-source-index.json"
+    index.write_text(
+        json.dumps({"by_match": {"soccer|brommapojkarna|vaxjo|2026-06-24": ["sstats", "clubelo"]}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(quality_stage_gate, "CONTEXT_INDEX", index)
+    monkeypatch.setattr(coverage_contract, "CONTEXT_SOURCE_INDEX_PATH", index)
+    monkeypatch.setenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BRIDGE_ENABLED", "true")
+    if getattr(coverage_contract, "_harizon_context_index_bridge_patch", False):
+        importlib.reload(coverage_contract)
+    quality_stage_gate.install()
+
+    item = candidate(
+        match_key="soccer|brommapojkarna|vaxjo|2026-06-24",
+        home_team="Vaxjo",
+        away_team="Brommapojkarna",
+        commence_time=datetime(2026, 6, 24, 17, 0, tzinfo=UTC),
+        source_summary={
+            "sources": ["odds_api_io"],
+            "books": ["Bet365", "Unibet"],
+            "context_sources": ["market"],
+            "context_source": "market_signal",
+        },
+        raw_bucket_offers=[
+            {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Under", "point": 2.5, "price": 2.2},
+            {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Under", "point": 2.5, "price": 2.1},
+        ],
+    )
+
+    decision = coverage_contract.evaluate_publish_candidate(item, Settings(_env_file=None, PUBLISH_MIN_ODDS_SOURCES=1, PUBLISH_MIN_CONTEXT_SOURCES=1, PUBLISH_MIN_BOOKS=2))
+
+    assert "sstats" in decision.report["context_sources"]
+    assert "clubelo" in decision.report["context_sources"]
+    assert "market" not in decision.report["context_sources"]
+    assert decision.report["context_sources_count"] == 2
+
+
+def test_coverage_contract_resolves_context_index_without_runtime_patch(tmp_path, monkeypatch):
+    import app.services.coverage_contract as coverage_contract
+
+    index = tmp_path / "latest-context-source-index.json"
+    index.write_text(
+        json.dumps({"by_match": {"soccer|uni craiova|sabah masazir|2026-06-24": ["sstats", "clubelo"]}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(coverage_contract, "CONTEXT_SOURCE_INDEX_PATH", index)
+    monkeypatch.setenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BRIDGE_ENABLED", "true")
+
+    item = candidate(
+        match_key="soccer|sabah_masazir|uni_craiova|2026-06-24",
+        home_team="Sabah Masazir",
+        away_team="Uni Craiova",
+        commence_time=datetime(2026, 6, 24, 18, 0, tzinfo=UTC),
+        source_summary={
+            "sources": ["odds_api_io"],
+            "books": ["Bet365", "Unibet"],
+            "context_sources": ["market"],
+            "context_source": "market_signal",
+        },
+        raw_bucket_offers=[
+            {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Under", "point": 3.5, "price": 2.0},
+            {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Under", "point": 3.5, "price": 1.95},
+        ],
+    )
+
+    decision = coverage_contract.evaluate_publish_candidate(item, Settings(_env_file=None, PUBLISH_MIN_ODDS_SOURCES=1, PUBLISH_MIN_CONTEXT_SOURCES=1, PUBLISH_MIN_BOOKS=2))
+
+    assert decision.passed, decision.reasons
+    assert decision.report["context_sources"] == ["clubelo", "sstats"]
+    assert decision.report["context_sources_count"] == 2
+    assert "market" not in decision.report["context_sources"]

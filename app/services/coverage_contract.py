@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import importlib.util
+import json
 import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Iterable
 
 from app.services.publication_thresholds import (
@@ -32,7 +35,9 @@ CONTEXT_ONLY_SOURCES = {
     "weatherapi",
 }
 
-AGGREGATE_CONTEXT_SOURCES = {"ensemble", "market_signal", "unknown"}
+AGGREGATE_CONTEXT_SOURCES = {"ensemble", "market", "market_signal", "unknown"}
+CONTEXT_SOURCE_INDEX_PATH = Path(".data/exports/latest-context-source-index.json")
+_CONTEXT_SOURCE_INDEX_BUILD_ATTEMPTED = False
 
 ODDS_SOURCE_ALIASES = {
     "account1": "odds_api_io",
@@ -202,7 +207,6 @@ def _candidate_dict_views(candidate: Any) -> list[dict[str, Any]]:
         value = _get(candidate, attr, None)
         if isinstance(value, dict):
             views.extend(_iter_dicts(value, max_depth=3))
-    # Preserve order but remove duplicate dict identities.
     unique: list[dict[str, Any]] = []
     seen_ids: set[int] = set()
     for view in views:
@@ -226,7 +230,6 @@ def _split_sources(value: Any) -> set[str]:
         return found
     if isinstance(value, dict):
         for key, item_value in value.items():
-            # Some reports are {"odds_api_io": true}; others are {"sources": [...]}.  Keep both forms.
             if isinstance(item_value, (bool, int, float, str)) and str(key or "").strip():
                 found.add(str(key).strip())
             else:
@@ -264,6 +267,91 @@ def _declared_count(candidate: Any, keys: set[str]) -> tuple[int, list[str]]:
     return count, sorted(set(basis))
 
 
+def _context_key_part(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("_", " ")
+    text = re.sub(r"[^a-z0-9а-я]+", " ", text)
+    return " ".join(text.split())
+
+
+def _date_key(value: Any) -> str:
+    text = str(value or "")
+    match = re.search(r"(20\d{2}-\d{2}-\d{2})", text)
+    return match.group(1) if match else ""
+
+
+def _candidate_context_index_keys(candidate: Any) -> list[str]:
+    raw_key = str(_get(candidate, "match_key", "") or "")
+    keys: list[str] = []
+    if raw_key:
+        keys.append(raw_key)
+        keys.append(raw_key.replace("_", " "))
+    home = _context_key_part(_get(candidate, "home_team", ""))
+    away = _context_key_part(_get(candidate, "away_team", ""))
+    day = _date_key(_get(candidate, "commence_time", "")) or _date_key(raw_key)
+    if home and away and day:
+        keys.append(f"soccer|{home}|{away}|{day}")
+        keys.append(f"soccer|{away}|{home}|{day}")
+    return list(dict.fromkeys(key for key in keys if key))
+
+
+def _ensure_context_source_index() -> None:
+    global _CONTEXT_SOURCE_INDEX_BUILD_ATTEMPTED
+    if _CONTEXT_SOURCE_INDEX_BUILD_ATTEMPTED:
+        return
+    _CONTEXT_SOURCE_INDEX_BUILD_ATTEMPTED = True
+    if CONTEXT_SOURCE_INDEX_PATH.exists() and CONTEXT_SOURCE_INDEX_PATH.stat().st_size > 0:
+        return
+    if not _truthy(os.getenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BUILD_ON_DEMAND"), True):
+        return
+    try:
+        builder_path = Path("scripts/build_context_source_index.py")
+        if not builder_path.exists():
+            builder_path = Path(__file__).resolve().parents[2] / "scripts" / "build_context_source_index.py"
+        if not builder_path.exists():
+            return
+        spec = importlib.util.spec_from_file_location("harizon_context_source_index_builder", builder_path)
+        if spec is None or spec.loader is None:
+            return
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        main = getattr(module, "main", None)
+        if callable(main):
+            main()
+    except Exception:
+        return
+
+
+def _context_index_sources(candidate: Any) -> set[str]:
+    if not _truthy(os.getenv("PUBLISH_COVERAGE_CONTEXT_INDEX_BRIDGE_ENABLED"), True):
+        return set()
+    try:
+        if not CONTEXT_SOURCE_INDEX_PATH.exists() or CONTEXT_SOURCE_INDEX_PATH.stat().st_size <= 0:
+            _ensure_context_source_index()
+        if not CONTEXT_SOURCE_INDEX_PATH.exists() or CONTEXT_SOURCE_INDEX_PATH.stat().st_size <= 0:
+            return set()
+        payload = json.loads(CONTEXT_SOURCE_INDEX_PATH.read_text(encoding="utf-8"))
+        by_match = payload.get("by_match") if isinstance(payload, dict) else {}
+        if not isinstance(by_match, dict):
+            return set()
+    except Exception:
+        return set()
+    found: set[str] = set()
+    keys = _candidate_context_index_keys(candidate)
+    for key in keys:
+        value = by_match.get(key)
+        if isinstance(value, list):
+            found.update(str(item) for item in value if str(item).strip())
+    if found:
+        try:
+            summary = dict(_get(candidate, "source_summary", {}) or {})
+            summary["context_index_bridge_keys"] = keys
+            summary["context_index_bridge_sources"] = sorted(normalize_source(item) for item in found if normalize_source(item))
+            _set(candidate, "source_summary", summary)
+        except Exception:
+            pass
+    return found
+
+
 def odds_sources_for_candidate(candidate: Any, contract: CoverageContract | None = None) -> set[str]:
     contract = contract or CoverageContract()
     sources: set[str] = set()
@@ -293,6 +381,7 @@ def context_sources_for_candidate(candidate: Any) -> set[str]:
         context_source = view.get("context_source")
         if context_source:
             sources.add(str(context_source))
+    sources.update(_context_index_sources(candidate))
     normalized = {normalize_source(item) for item in sources}
     return {item for item in normalized if item and item not in AGGREGATE_CONTEXT_SOURCES}
 
@@ -423,7 +512,7 @@ def sync_candidate_publish_coverage(candidate: Any, settings: Any | None = None)
     """Normalize the final publish-coverage fields before any Telegram/fallback guard reads them.
 
     Older pipeline stages may leave stale values such as source_summary.odds_sources_count=1 while
-    raw offers or a nested publish_coverage_contract already prove 2+ sources.  This function makes
+    raw offers or a nested publish_coverage_contract already prove 2+ sources. This function makes
     the richest coverage report the single value of truth for the rest of the run.
     """
     decision = evaluate_publish_candidate(candidate, settings)
@@ -451,7 +540,6 @@ def sync_candidate_publish_coverage(candidate: Any, settings: Any | None = None)
     diagnostics["publish_coverage_contract"] = report
     _set(candidate, "diagnostics", diagnostics)
 
-    # CandidateBet has slots for these counters; dict rows use the same names.
     _set(candidate, "sources_count", max(_as_int(_get(candidate, "sources_count", 0), 0), int(report.get("odds_sources_count") or 0)))
     _set(candidate, "books_count", max(_as_int(_get(candidate, "books_count", 0), 0), int(report.get("books_count") or 0)))
     return decision
