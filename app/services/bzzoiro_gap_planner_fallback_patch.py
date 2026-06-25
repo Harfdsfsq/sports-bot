@@ -4,7 +4,7 @@ from __future__ import annotations
 
 The source-matrix patch originally looks for latest-progressive-coverage-plan.json.
 In current run-bot artifacts that file can be absent, which leaves Bzzoiro with
-zero extra gap targets.  This patch falls back to the live day inventory and sends
+zero extra gap targets. This patch falls back to the live day inventory and sends
 near-future matches that are one Bzzoiro odds source away from A-cover.
 """
 
@@ -136,7 +136,9 @@ def _inventory_rows() -> list[dict[str, Any]]:
 def _planner_rows() -> list[dict[str, Any]]:
     payload = _read_json(EXPORT / "latest-coverage-planner.json", {})
     rows = payload.get("matches") if isinstance(payload, dict) else None
-    return [dict(x) for x in rows if isinstance(rows, list) for x in rows if isinstance(x, dict)] if isinstance(rows, list) else []
+    if not isinstance(rows, list):
+        return []
+    return [dict(x) for x in rows if isinstance(x, dict)]
 
 
 def _is_gap_target(row: dict[str, Any]) -> bool:
@@ -146,12 +148,10 @@ def _is_gap_target(row: dict[str, Any]) -> bool:
     context_sources = _sources(row, "context_sources", "context_confirmations", "core_context_sources")
     has_bzz = "bzzoiro" in odds_sources or "bzzoiro_v2" in odds_sources
     odds_count = max(len(odds_sources), _count(row, "odds_sources_count", "independent_odds_sources_count", "line_sources_count", "core_odds_source_count", "odds_source_count"))
-    book_count = max(len(_sources(row, "books", "bookmakers")), _count(row, "books_count", "bookmaker_count", "bookmaker_count", "price_confirmation_sources_count", "bookmakers_count"))
+    book_count = max(len(_sources(row, "books", "bookmakers")), _count(row, "books_count", "bookmaker_count", "price_confirmation_sources_count", "bookmakers_count"))
     ctx_count = max(len(context_sources), _count(row, "context_sources_count", "confirmation_sources_count", "core_context_source_count", "context_source_count"))
-    # Best A-cover uplift target: already has price/context depth, missing Bzzoiro as second live odds source.
     if not has_bzz and odds_count < 2 and book_count >= 2 and ctx_count >= 1:
         return True
-    # Also let Bzzoiro try context for high-priority near-future rows that already have odds/book coverage.
     if not has_bzz and odds_count <= 1 and book_count >= 1 and _hours_to_kickoff(row) <= _to_float(os.getenv("BZZOIRO_V2_PLANNER_FALLBACK_MAX_HOURS"), 24.0):
         return True
     return False
@@ -160,15 +160,17 @@ def _is_gap_target(row: dict[str, Any]) -> bool:
 def _fallback_gap_rows() -> list[dict[str, Any]]:
     limit = max(1, _to_int(os.getenv("BZZOIRO_V2_PLANNER_FALLBACK_TARGET_LIMIT"), 180))
     rows = _inventory_rows()
+    source = "day_inventory"
     if not rows:
         rows = _planner_rows()
+        source = "coverage_planner"
     candidates = [row for row in rows if _is_gap_target(row)]
     candidates.sort(key=lambda r: (_hours_to_kickoff(r), -_count(r, "books_count", "bookmaker_count", "price_confirmation_sources_count")))
     out = candidates[:limit]
     _write_report({
         "status": "ok",
         "created_at_utc": datetime.now(UTC).isoformat(),
-        "source": "day_inventory" if rows else "none",
+        "source": source if rows else "none",
         "rows_seen": len(rows),
         "gap_candidates": len(candidates),
         "returned": len(out),
