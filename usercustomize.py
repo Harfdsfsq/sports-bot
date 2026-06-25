@@ -40,6 +40,12 @@ A_TIER_ONLY_ENV = {
 
 os.environ.update(A_TIER_ONLY_ENV)
 
+try:
+    from app.services.bzzoiro_gap_planner_fallback_patch import install as _install_bzz_gap_targets
+    _install_bzz_gap_targets()
+except Exception:
+    pass
+
 
 def _truthy(value: str | None) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
