@@ -15,7 +15,7 @@
     "doubleChance",
     "teamTotals"
   ],
-  "created_at_utc": "2026-06-25T09:53:58.340755+00:00",
+  "created_at_utc": "2026-06-25T11:18:04.380424+00:00",
   "env_updates": {
     "ANALYSIS_ALLOWED_MARKET_FAMILIES": "h2h,totals,spreads,btts,dnb,doubleChance,teamTotals",
     "BTTS_PUBLICATION_ENABLED": "false",
@@ -66,8 +66,8 @@
     "FORCE_PUBLISH_WHEN_EMPTY_ENABLED": "false",
     "H2H_PUBLICATION_ENABLED": "false",
     "HARIZON_ALLOWED_PUBLICATION_FAMILIES": "totals,spreads",
-    "HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION": "harizon-runtime-policy-v15-a-tier-only-b-watchlist",
-    "HARIZON_RUNTIME_POLICY_VERSION": "harizon-runtime-policy-v15-a-tier-only-b-watchlist",
+    "HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION": "harizon-runtime-policy-v16-a-tier-only-b-watchlist-acover-prep",
+    "HARIZON_RUNTIME_POLICY_VERSION": "harizon-runtime-policy-v16-a-tier-only-b-watchlist-acover-prep",
     "HISTORICAL_SEGMENT_RELIEF_ENABLED": "false",
     "MAIN_PUBLISH_ALLOWED_FAMILIES": "totals,spreads",
     "MARKET_DERIVED_ALLOW_FIRST_SNAPSHOT_CANDIDATES": "false",
@@ -85,6 +85,10 @@
     "NEWS_INJURY_SHORTLIST_LIMIT": "8",
     "ODDS_MOVEMENT_SNAPSHOTS_ENABLED": "true",
     "POST_INTEGRITY_RESCUE_ALLOWED_FAMILIES": "totals,spreads",
+    "PROMOTE_A_COVER_ACTIVE_WINDOW_HOURS": "24",
+    "PROMOTE_A_COVER_ONLY_PUBLISH_WINDOW": "false",
+    "PROMOTE_A_COVER_PREP_OUTSIDE_PUBLISH_WINDOW": "true",
+    "PROMOTE_A_COVER_VALUE_CANDIDATE_LIMIT": "18",
     "PROMOTE_B_COVER_FILTER_BY_TIME": "true",
     "PUBLICATION_ALLOWED_MARKET_FAMILIES": "totals,spreads",
     "PUBLISH_ALLOW_B_TIER": "false",
@@ -120,9 +124,30 @@
     "Only totals and spreads/handicaps may be published.",
     "A-tier publication requires 2 odds/line sources, 2 bookmaker prices and 2 context sources.",
     "B-tier is retained only for watchlist, diagnostics, lifecycle accumulation and promotion into A-tier.",
-    "B-tier candidate generation and gap reports stay enabled; Telegram publication is blocked."
+    "B-tier candidate generation and gap reports stay enabled; Telegram publication is blocked.",
+    "A-cover candidates may be prepared before the final publish window; final publish is still guarded by time, movement, value and quality."
   ],
   "policy": "publication_totals_spreads_only_a_tier_public_b_tier_watchlist",
   "public_publication_tier": "A-only",
-  "runtime_policy_version": "harizon-runtime-policy-v15-a-tier-only-b-watchlist"
+  "report_script_patch": {
+    "already_applied": [
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v12.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v9.py"
+    ],
+    "changed": [],
+    "enabled": true,
+    "missing": [
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v10.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v11.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v13.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v3.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v4.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v5.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v6.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v7.py",
+      "/home/runner/work/sports-bot/sports-bot/scripts/send_harizon_telegram_run_report_v8.py"
+    ],
+    "status": "ok"
+  },
+  "runtime_policy_version": "harizon-runtime-policy-v16-a-tier-only-b-watchlist-acover-prep"
 }
