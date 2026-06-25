@@ -39,6 +39,53 @@ def _truthy(value: str | None, default: bool = False) -> bool:
     return raw in {"1", "true", "yes", "on", "force"}
 
 
+_A_ONLY_OVERRIDE_KEYS = {
+    "HARIZON_PUBLICATION_TIER_MODE",
+    "HARIZON_A_TIER_ONLY",
+    "PUBLISH_ALLOW_B_TIER",
+    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B",
+    "CONTROLLED_FALLBACK_ALLOW_B_TIER",
+    "CONTROLLED_FALLBACK_TIER_B_ENABLED",
+    "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER",
+    "PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED",
+    "PROMOTE_B_COVER_AFTER_A_PROMOTION_ENABLED",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES",
+    "PUBLISH_TIER_B_MIN_BOOKS",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES",
+}
+
+_ORIGINAL_ENVIRON_UPDATE = type(os.environ).update
+
+
+def _looks_like_legacy_a_only_update(payload: Any) -> bool:
+    try:
+        items = dict(payload or {})
+    except Exception:
+        return False
+    return (
+        str(items.get("HARIZON_PUBLICATION_TIER_MODE") or "").lower() == "a_only"
+        and str(items.get("PUBLISH_ALLOW_B_TIER") or "").lower() == "false"
+        and str(items.get("PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED") or "").lower() == "false"
+    )
+
+
+def _environ_update_guarded(self: Any, other: Any = (), /, **kwargs: Any) -> None:
+    if _looks_like_legacy_a_only_update(other) and not _truthy(os.getenv("HARIZON_FORCE_A_TIER_ONLY")):
+        filtered = {k: v for k, v in dict(other or {}).items() if k not in _A_ONLY_OVERRIDE_KEYS}
+        _ORIGINAL_ENVIRON_UPDATE(self, filtered, **kwargs)
+        _ORIGINAL_ENVIRON_UPDATE(self, {"HARIZON_LEGACY_A_ONLY_STARTUP_OVERRIDE_BLOCKED": "true"})
+        return None
+    return _ORIGINAL_ENVIRON_UPDATE(self, other, **kwargs)
+
+
+type(os.environ).update = _environ_update_guarded
+
+
 def _runtime_timezone() -> ZoneInfo:
     for value in (os.getenv("APP_TIMEZONE"), os.getenv("TZ"), "Europe/Moscow"):
         try:
