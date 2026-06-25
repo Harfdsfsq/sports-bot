@@ -1,0 +1,22 @@
+from __future__ import annotations
+
+import json
+import runpy
+from pathlib import Path
+
+
+def test_ab_tier_contract_enables_controlled_b_publication(monkeypatch, tmp_path) -> None:
+    env_file = tmp_path / "github_env"
+    monkeypatch.setenv("GITHUB_ENV", str(env_file))
+    runpy.run_path("scripts/apply_ab_tier_bookmaker_contract.py", run_name="__main__")
+    exported = env_file.read_text(encoding="utf-8")
+    assert "PUBLISH_ALLOW_B_TIER=true" in exported
+    assert "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B=true" in exported
+    assert "CONTROLLED_FALLBACK_TIER_B_PUBLISH_ENABLED=true" in exported
+    assert "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS=2" in exported
+    assert "PROMOTE_A_COVER_ONLY_PUBLISH_WINDOW=false" in exported
+    payload = json.loads(Path(".data/exports/latest-ab-tier-bookmaker-contract-policy.json").read_text(encoding="utf-8"))
+    assert payload["contract"]["A"]["min_odds_sources"] == 2
+    assert payload["contract"]["B"]["mode"] == "controlled_public_fallback"
+    assert "value" in payload["contract"]["guards_unchanged"]
+    assert "line_movement" in payload["contract"]["guards_unchanged"]
