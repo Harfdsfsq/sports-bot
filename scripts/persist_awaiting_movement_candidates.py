@@ -7,11 +7,10 @@ plain reject. It should be stored as awaiting_next_run_movement_check, restored
 on the next run and then either published or rejected after the line/value check.
 
 The guarded fallback evaluates candidates after the line guard has already
-removed candidates whose first snapshot only needs the next cron recheck.  For
-that path, latest-controlled-fallback-report can have evaluated=0 even though
-latest-line-movement-guard-report dropped valid lifecycle candidates.  This
-script therefore also reconstructs awaiting rows from the line-guard dropped
-samples plus the full a-cover/b-cover promotion snapshots.
+removed first-snapshot candidates.  For that path, latest-controlled-fallback-
+report can have evaluated=0 even though latest-line-movement-guard-report
+contains valid lifecycle drops.  This script reconstructs awaiting rows from the
+line-guard dropped samples plus the full a-cover/b-cover promotion snapshots.
 """
 
 import json
@@ -34,6 +33,7 @@ AWAIT_REASONS = {
     "controlled_fallback_missing_line_recheck",
     "needs_next_cron_line_movement_recheck",
 }
+TEAM_SUFFIXES = {"fc", "sc", "cf", "afc", "if", "fk", "ac", "club", "football", "fotball"}
 
 
 def _load_json(path: Path, default: Any) -> Any:
@@ -63,10 +63,37 @@ def _parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def _norm(value: Any) -> str:
+def _fold_text(value: Any) -> str:
     text = str(value or "").strip().lower().replace("ё", "е")
+    text = text.replace("ı", "i").replace("İ", "i").replace("ü", "u").replace("ö", "o").replace("ğ", "g").replace("ş", "s").replace("ç", "c")
+    text = text.replace("_", " ")
     text = re.sub(r"[^a-z0-9а-я]+", " ", text)
-    return " ".join(text.split())
+    text = " ".join(text.split())
+    # Some upstream keys transliterate Türkiye as t_rkiye, losing the letter u.
+    text = text.replace("t rkiye", "turkiye")
+    return text
+
+
+def _norm(value: Any) -> str:
+    return _fold_text(value)
+
+
+def _compact(value: Any) -> str:
+    return re.sub(r"[^a-z0-9а-я]+", "", _fold_text(value))
+
+
+def _team_variants(value: Any) -> set[str]:
+    base = _fold_text(value)
+    if not base:
+        return set()
+    variants = {base, _compact(base)}
+    tokens = base.split()
+    if tokens and tokens[-1] in TEAM_SUFFIXES:
+        stripped = " ".join(tokens[:-1])
+        if stripped:
+            variants.add(stripped)
+            variants.add(_compact(stripped))
+    return {x for x in variants if x}
 
 
 def _point(value: Any) -> str:
@@ -100,20 +127,50 @@ def _selection_key(row: dict[str, Any]) -> str:
     return explicit or text
 
 
-def _match_aliases(row: dict[str, Any]) -> set[str]:
-    raw = str(row.get("match_key") or row.get("canonical_match_id") or row.get("event_key") or "").strip()
-    date = ""
-    for value in (row.get("commence_time"), row.get("kickoff"), row.get("kickoff_utc"), row.get("start_time"), raw):
+def _date_from_any(*values: Any) -> str:
+    for value in values:
         m = re.search(r"20\d{2}-\d{2}-\d{2}", str(value or ""))
         if m:
-            date = m.group(0)
-            break
-    home = _norm(row.get("home_team") or row.get("home"))
-    away = _norm(row.get("away_team") or row.get("away"))
-    out = {raw, _norm(raw)}
-    if date and home and away:
-        out.update({f"{date}|{home}|{away}", f"{date}|{away}|{home}", f"soccer|{home}|{away}|{date}", f"soccer|{away}|{home}|{date}"})
-    return {x for x in out if x and x.strip("|")}
+            return m.group(0)
+    return ""
+
+
+def _key_parts(raw: str) -> tuple[str, str, str] | None:
+    parts = [p for p in str(raw or "").split("|") if p]
+    if len(parts) >= 4 and parts[0].lower() == "soccer":
+        return parts[1], parts[2], parts[3]
+    if len(parts) >= 3 and re.match(r"20\d{2}-\d{2}-\d{2}", parts[0]):
+        return parts[1], parts[2], parts[0]
+    return None
+
+
+def _add_team_date_aliases(out: set[str], date: str, home: Any, away: Any) -> None:
+    if not date:
+        return
+    home_vars = _team_variants(home)
+    away_vars = _team_variants(away)
+    for h in home_vars:
+        for a in away_vars:
+            out.update({
+                f"{date}|{h}|{a}",
+                f"{date}|{a}|{h}",
+                f"soccer|{h}|{a}|{date}",
+                f"soccer|{a}|{h}|{date}",
+            })
+
+
+def _match_aliases(row: dict[str, Any]) -> set[str]:
+    raw = str(row.get("match_key") or row.get("canonical_match_id") or row.get("event_key") or "").strip()
+    out = {raw, _norm(raw), _compact(raw)}
+    date = _date_from_any(row.get("commence_time"), row.get("kickoff"), row.get("kickoff_utc"), row.get("start_time"), raw)
+    home = row.get("home_team") or row.get("home")
+    away = row.get("away_team") or row.get("away")
+    _add_team_date_aliases(out, date, home, away)
+    parts = _key_parts(raw)
+    if parts:
+        p_home, p_away, p_date = parts
+        _add_team_date_aliases(out, p_date or date, p_home, p_away)
+    return {x for x in out if x and str(x).strip("|")}
 
 
 def _sig(row: dict[str, Any]) -> str:
@@ -156,12 +213,28 @@ def _candidate_from_full_row(row: dict[str, Any], guard: dict[str, Any] | None =
     candidate["publication_lifecycle_status"] = "awaiting_next_run_movement_check"
     candidate["awaiting_reason"] = "needs_next_cron_line_movement_recheck"
     candidate["awaiting_created_at_utc"] = datetime.now(UTC).isoformat()
+    candidate["market_move"] = "awaiting_next_run"
+    candidate["forecast_market_movement"] = "awaiting_next_run"
+    source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    source_summary["publication_lifecycle_status"] = "awaiting_next_run"
+    source_summary["line_movement_lifecycle_status"] = "awaiting_next_run"
+    source_summary["market_move"] = "awaiting_next_run"
+    source_summary["market_movement"] = "awaiting_next_run"
+    candidate["source_summary"] = source_summary
     if guard:
         candidate["line_movement_guard"] = guard
         diagnostics = candidate.setdefault("diagnostics", {})
         if isinstance(diagnostics, dict):
             diagnostics["line_movement_guard"] = guard
-            diagnostics["line_movement_lifecycle_status"] = guard.get("line_movement_lifecycle_status")
+            diagnostics["line_movement_lifecycle_status"] = "awaiting_next_run"
+            diagnostics["market_move"] = "awaiting_next_run"
+            diagnostics["movement"] = {
+                "status": "awaiting_next_run",
+                "market_move": "awaiting_next_run",
+                "snapshot_count": 1,
+                "line_move_pct": guard.get("line_move_pct"),
+                "previous_snapshot_at_utc": guard.get("previous_snapshot_at_utc"),
+            }
     candidate["lifecycle_signature"] = _sig(candidate)
     return candidate
 
@@ -210,11 +283,13 @@ def _line_guard_awaiting_rows() -> tuple[list[dict[str, Any]], dict[str, int]]:
             if not any(reason in AWAIT_REASONS for reason in reasons):
                 continue
             stats["awaiting_dropped_seen"] += 1
-            aliases = _match_aliases(dropped)
             candidates: list[dict[str, Any]] = []
-            for alias in aliases:
-                candidates.extend(by_alias.get(alias, []))
-            # Prefer same selection and close price if there are several candidates on this match.
+            seen_ids: set[int] = set()
+            for alias in _match_aliases(dropped):
+                for cand in by_alias.get(alias, []):
+                    if id(cand) not in seen_ids:
+                        seen_ids.add(id(cand))
+                        candidates.append(cand)
             sel = _selection_key(dropped)
             price = _num(dropped.get("odds"), 0.0)
             best: dict[str, Any] | None = None
