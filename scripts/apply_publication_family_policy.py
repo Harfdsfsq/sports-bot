@@ -18,7 +18,7 @@ OUT_PATH = ROOT / '.data' / 'exports' / 'latest-publication-family-policy.json'
 PATCH_REPORT_PATH = ROOT / '.data' / 'exports' / 'latest-a-tier-only-publication-patch.json'
 ALLOWED = 'totals,spreads'
 B_WATCH_ONLY_SENTINEL = '__b_tier_watch_only_no_publication__'
-RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v15-a-tier-only-b-watchlist'
+RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v16-a-tier-only-b-watchlist-acover-prep'
 
 ENV_UPDATES = {
     'HARIZON_RUNTIME_POLICY_VERSION': RUNTIME_POLICY_VERSION,
@@ -48,6 +48,12 @@ ENV_UPDATES = {
     'CONTROLLED_FALLBACK_REQUIRE_PUBLIC_TOTAL_LINE': 'true',
     'CONTROLLED_FALLBACK_REQUIRE_TOTAL_POINT_FOR_PUBLICATION': 'true',
     'PROMOTE_B_COVER_FILTER_BY_TIME': 'true',
+    # Prepare A-cover candidates before the final 2h publication window.
+    # Final Telegram publication is still blocked by publish_window + line movement.
+    'PROMOTE_A_COVER_ONLY_PUBLISH_WINDOW': 'false',
+    'PROMOTE_A_COVER_PREP_OUTSIDE_PUBLISH_WINDOW': 'true',
+    'PROMOTE_A_COVER_ACTIVE_WINDOW_HOURS': '24',
+    'PROMOTE_A_COVER_VALUE_CANDIDATE_LIMIT': os.getenv('PROMOTE_A_COVER_VALUE_CANDIDATE_LIMIT') or '36',
     'ANALYSIS_ALLOWED_MARKET_FAMILIES': 'h2h,totals,spreads,btts,dnb,doubleChance,teamTotals',
     'ODDS_MOVEMENT_SNAPSHOTS_ENABLED': 'true',
     'NEWS_INJURY_SHORTLIST_ENABLED': 'true',
@@ -173,9 +179,61 @@ def _patch_controlled_fallback_script() -> dict[str, Any]:
     return report
 
 
+def _patch_report_scripts() -> dict[str, Any]:
+    """Make Telegram diagnostics say B-tier is watchlist-only.
+
+    Older report wrappers describe B-tier as an active publication contract even
+    after publication is disabled.  This source patch is diagnostic-only: it does
+    not publish, relax gates or change candidate selection.
+    """
+    report: dict[str, Any] = {
+        'enabled': True,
+        'changed': [],
+        'already_applied': [],
+        'missing': [],
+        'status': 'ok',
+    }
+    targets = sorted((ROOT / 'scripts').glob('send_harizon_telegram_run_report_v*.py'))
+    for path in targets:
+        try:
+            text = path.read_text(encoding='utf-8')
+        except Exception as exc:
+            report.setdefault('errors', []).append({'path': str(path), 'error': f'{type(exc).__name__}: {exc}'})
+            continue
+        original = text
+        replacements = [
+            (
+                "• Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/{max(1, _as_int(contract.get('b_tier_min_books') or 1))} book/{max(1, _as_int(contract.get('b_tier_min_context') or 1))} context.",
+                "• Active A/B contract: A=PUBLIC 2 odds/2 books/2 context; B=WATCHLIST-ONLY 1 odds/{max(1, _as_int(contract.get('b_tier_min_books') or 1))} book/{max(1, _as_int(contract.get('b_tier_min_context') or 1))} context; Telegram B-tier disabled.",
+            ),
+            (
+                "B-tier = 1+ линия/odds-source + {b_books}+ букмекер/ценовое подтверждение + {b_ctx}+ контекст + движение линии + value.",
+                "B-tier watchlist-only = 1+ линия/odds-source + {b_books}+ букмекер/ценовое подтверждение + {b_ctx}+ контекст + движение линии + value; в Telegram не публикуется.",
+            ),
+            (
+                "Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + {b_books} букмекер + {b_ctx} контекст;",
+                "Контракт публикации сейчас: A-tier = public 2 odds-source + 2 букмекера + 2 контекста; B-tier = watchlist-only 1 odds-source + {b_books} букмекер + {b_ctx} контекст;",
+            ),
+        ]
+        for old, new in replacements:
+            if old in text:
+                text = text.replace(old, new)
+        if 'B-tier = 1+ линия/odds-source' in text and 'B-tier watchlist-only' not in text:
+            text = text.replace('B-tier = 1+ линия/odds-source', 'B-tier watchlist-only = 1+ линия/odds-source')
+        if text != original:
+            path.write_text(text, encoding='utf-8')
+            report['changed'].append(str(path))
+        elif 'WATCHLIST-ONLY' in text or 'watchlist-only' in text:
+            report['already_applied'].append(str(path))
+        else:
+            report['missing'].append(str(path))
+    return report
+
+
 def main() -> int:
     _append_github_env(ENV_UPDATES)
     patch_report = _patch_controlled_fallback_script()
+    report_script_patch = _patch_report_scripts()
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     PATCH_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     PATCH_REPORT_PATH.write_text(json.dumps(patch_report, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
@@ -193,11 +251,13 @@ def main() -> int:
         },
         'env_updates': ENV_UPDATES,
         'fallback_script_patch': patch_report,
+        'report_script_patch': report_script_patch,
         'notes': [
             'Only totals and spreads/handicaps may be published.',
             'A-tier publication requires 2 odds/line sources, 2 bookmaker prices and 2 context sources.',
             'B-tier is retained only for watchlist, diagnostics, lifecycle accumulation and promotion into A-tier.',
             'B-tier candidate generation and gap reports stay enabled; Telegram publication is blocked.',
+            'A-cover candidates may be prepared before the final publish window; final publish is still guarded by time, movement, value and quality.',
         ],
     }
     OUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
