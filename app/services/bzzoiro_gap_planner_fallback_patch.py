@@ -3,14 +3,13 @@ from __future__ import annotations
 """Feed Bzzoiro v2 with real A-tier gap targets when progressive plan is absent.
 
 The source-matrix patch originally looks for latest-progressive-coverage-plan.json.
-In current run-bot artifacts that file can be absent, which leaves Bzzoiro with
-zero extra gap targets. This patch falls back to the live day inventory and sends
+When that file is absent, this patch falls back to live day inventory and sends
 near-future matches that are one Bzzoiro odds source away from A-cover.
 
-The patch also fixes the main practical gap found in run 28184369864: inventory
-rows and runtime Match objects often use different match_key formats.  We match
-gap rows to runtime matches by exact key and by conservative date|home|away
-aliases before appending Bzzoiro targets.
+It also matches inventory rows to runtime Match objects by conservative aliases
+(date|home|away) and applies the same alias logic to Bzzoiro relaxed event
+matching.  Without that, run 28185273795 appended alias targets but Bzzoiro still
+used exact match_key checks before relaxed matching.
 """
 
 import json
@@ -27,6 +26,13 @@ REPORT = EXPORT / "latest-bzzoiro-gap-planner-fallback-patch.json"
 _INSTALLED = False
 _ORIGINAL_GAP_ROWS = None
 _ORIGINAL_APPEND_GAP_TARGETS = None
+_ORIGINAL_MATRIX_MATCH_EVENT_PATCH = None
+
+
+def _truthy(value: Any, default: bool = False) -> bool:
+    if value in (None, ""):
+        return default
+    return str(value).strip().lower() in {"1", "true", "yes", "on", "force", "y"}
 
 
 def _to_int(value: Any, default: int = 0) -> int:
@@ -50,8 +56,7 @@ def _to_float(value: Any, default: float = 0.0) -> float:
 
 
 def _raise_env_int(name: str, minimum: int) -> None:
-    current = _to_int(os.getenv(name), 0)
-    if current < minimum:
+    if _to_int(os.getenv(name), 0) < minimum:
         os.environ[name] = str(minimum)
 
 
@@ -184,16 +189,12 @@ def _dt(row: dict[str, Any]) -> datetime | None:
 
 def _future(row: dict[str, Any]) -> bool:
     kickoff = _dt(row)
-    if kickoff is None:
-        return True
-    return (kickoff - datetime.now(UTC)).total_seconds() >= -240
+    return True if kickoff is None else (kickoff - datetime.now(UTC)).total_seconds() >= -240
 
 
 def _hours_to_kickoff(row: dict[str, Any]) -> float:
     kickoff = _dt(row)
-    if kickoff is None:
-        return 999.0
-    return (kickoff - datetime.now(UTC)).total_seconds() / 3600.0
+    return 999.0 if kickoff is None else (kickoff - datetime.now(UTC)).total_seconds() / 3600.0
 
 
 def _inventory_rows() -> list[dict[str, Any]]:
@@ -208,9 +209,7 @@ def _inventory_rows() -> list[dict[str, Any]]:
 def _planner_rows() -> list[dict[str, Any]]:
     payload = _read_json(EXPORT / "latest-coverage-planner.json", {})
     rows = payload.get("matches") if isinstance(payload, dict) else None
-    if not isinstance(rows, list):
-        return []
-    return [dict(x) for x in rows if isinstance(x, dict)]
+    return [dict(x) for x in rows if isinstance(x, dict)] if isinstance(rows, list) else []
 
 
 def _is_gap_target(row: dict[str, Any]) -> bool:
@@ -243,32 +242,39 @@ def _fallback_gap_rows() -> list[dict[str, Any]]:
     return out
 
 
-def _alias_append_gap_targets(base: list[Any], candidates: list[Any], *, limit: int) -> tuple[list[Any], dict[str, Any]]:
-    base = list(base or [])
-    candidates = list(candidates or [])
+def _gap_alias_index() -> tuple[list[dict[str, Any]], set[str], dict[str, list[dict[str, Any]]]]:
     try:
         from app.services import bzzoiro_v2_source_matrix_runtime_patch as matrix
-        gap_rows = [dict(x) for x in (matrix._gap_rows() or []) if isinstance(x, dict)]  # type: ignore[attr-defined]
+        rows = [dict(x) for x in (matrix._gap_rows() or []) if isinstance(x, dict)]  # type: ignore[attr-defined]
     except Exception:
-        gap_rows = _fallback_gap_rows()
+        rows = _fallback_gap_rows()
+    exact: set[str] = set()
     alias_to_rows: dict[str, list[dict[str, Any]]] = {}
-    exact_keys: set[str] = set()
-    for row in gap_rows:
+    for row in rows:
         key = str(row.get("match_key") or row.get("canonical_match_id") or "").strip()
         if key:
-            exact_keys.add(key)
+            exact.add(key)
         for alias in _row_aliases(row):
             alias_to_rows.setdefault(alias, []).append(row)
-    selected = list(base)
+    return rows, exact, alias_to_rows
+
+
+def _is_gap_match_alias(match: Any) -> bool:
+    key = str(getattr(match, "match_key", "") or "").strip()
+    _, exact, alias_to_rows = _gap_alias_index()
+    return bool(key in exact or any(alias in alias_to_rows for alias in _match_aliases(match)))
+
+
+def _alias_append_gap_targets(base: list[Any], candidates: list[Any], *, limit: int) -> tuple[list[Any], dict[str, Any]]:
+    rows, exact_keys, alias_to_rows = _gap_alias_index()
+    selected = list(base or [])
     seen = {getattr(m, "match_key", "") for m in selected if getattr(m, "match_key", "")}
     appended: list[Any] = []
     exact_hits = 0
     alias_hits = 0
-    for match in candidates:
+    for match in list(candidates or []):
         key = str(getattr(match, "match_key", "") or "").strip()
-        if not key or key in seen:
-            continue
-        if getattr(match, "sport_key", "") != "soccer":
+        if not key or key in seen or getattr(match, "sport_key", "") != "soccer":
             continue
         aliases = _match_aliases(match)
         is_exact = key in exact_keys
@@ -281,11 +287,99 @@ def _alias_append_gap_targets(base: list[Any], candidates: list[Any], *, limit: 
         alias_hits += int(not is_exact)
         if limit > 0 and len(selected) >= limit:
             break
-    return selected, {"gap_rows": len(gap_rows), "gap_aliases": len(alias_to_rows), "selected_before": len(base), "candidate_pool": len(candidates), "appended": len(appended), "exact_hits": exact_hits, "alias_hits": alias_hits, "selected_after": len(selected), "limit": limit, "sample": [getattr(m, "match_key", "") for m in appended[:25]], "policy": "alias_match_gap_targets"}
+    return selected, {"gap_rows": len(rows), "gap_aliases": len(alias_to_rows), "selected_before": len(base or []), "candidate_pool": len(candidates or []), "appended": len(appended), "exact_hits": exact_hits, "alias_hits": alias_hits, "selected_after": len(selected), "limit": limit, "sample": [getattr(m, "match_key", "") for m in appended[:25]], "policy": "alias_match_gap_targets"}
+
+
+def _alias_relaxed_match_event(self: Any, match: Any, events: list[dict[str, Any]]):  # type: ignore[no-untyped-def]
+    try:
+        from app.services import bzzoiro_v2_source_matrix_runtime_patch as matrix
+        original = getattr(matrix, "_ORIGINAL_V2_MATCH_EVENT", None)
+    except Exception:
+        original = None
+    if callable(original):
+        try:
+            event, quality, score, diag = original(self, match, events)
+            if event is not None or not _truthy(os.getenv("BZZOIRO_V2_GAP_RELAXED_MATCH_ENABLED"), True):
+                return event, quality, score, diag
+        except Exception:
+            diag = None
+    else:
+        diag = None
+    if not _is_gap_match_alias(match):
+        if callable(original):
+            return original(self, match, events)
+        return None, None, 0.0, diag
+    try:
+        from app.utils import score_event_match_variants, parse_datetime, leagues_related
+    except Exception:
+        if callable(original):
+            return original(self, match, events)
+        return None, None, 0.0, diag
+    best = None
+    best_quality = None
+    best_score = 0.0
+    best_diag = diag if isinstance(diag, dict) else None
+    for candidate in events or []:
+        if not isinstance(candidate, dict):
+            continue
+        try:
+            home_candidates, away_candidates = self._team_candidates(candidate)
+        except Exception:
+            home_candidates, away_candidates = [], []
+        if not home_candidates or not away_candidates:
+            continue
+        try:
+            start = parse_datetime(candidate.get("event_date") or candidate.get("start_time") or candidate.get("commence_time"))
+        except Exception:
+            continue
+        try:
+            league = self._league_name(candidate)
+        except Exception:
+            league = ""
+        try:
+            score, quality, _, _ = score_event_match_variants(
+                sport="soccer",
+                match_home=getattr(match, "home_team", ""),
+                match_away=getattr(match, "away_team", ""),
+                match_start=getattr(match, "commence_time", None),
+                match_league=getattr(match, "league_name", ""),
+                event_home_candidates=home_candidates,
+                event_away_candidates=away_candidates,
+                event_start=start,
+                event_league=league,
+                exact_tolerance_hours=_to_float(os.getenv("BZZOIRO_V2_GAP_EXACT_TOLERANCE_HOURS"), 8.0),
+                fuzzy_tolerance_hours=_to_float(os.getenv("BZZOIRO_V2_GAP_FUZZY_TOLERANCE_HOURS"), 30.0),
+            )
+        except Exception:
+            continue
+        if score > best_score:
+            best, best_quality, best_score = candidate, quality, score
+            best_diag = {"score": round(float(score or 0.0), 2), "quality": quality, "league": league, "home": home_candidates[:3], "away": away_candidates[:3], "start": getattr(start, "isoformat", lambda: "")(), "relaxed_gap_match": True, "alias_gap_match": True}
+    if best is None or best_quality is None:
+        return None, None, 0.0, best_diag
+    min_exact = _to_float(os.getenv("BZZOIRO_V2_GAP_MIN_EXACT_SCORE"), 58.0)
+    min_loose = _to_float(os.getenv("BZZOIRO_V2_GAP_MIN_LOOSE_SCORE"), 52.0)
+    min_fuzzy = _to_float(os.getenv("BZZOIRO_V2_GAP_MIN_FUZZY_SCORE"), 52.0)
+    min_score = min_fuzzy if best_quality == "fuzzy" else min_loose if best_quality == "loose" else min_exact
+    try:
+        event_league = self._league_name(best)
+        if best_quality == "fuzzy" and event_league and not leagues_related(getattr(match, "league_name", ""), event_league):
+            min_score += _to_float(os.getenv("BZZOIRO_V2_GAP_LEAGUE_MISMATCH_PENALTY"), 4.0)
+        if not event_league:
+            min_score += _to_float(os.getenv("BZZOIRO_V2_GAP_EMPTY_LEAGUE_PENALTY"), 2.0)
+    except Exception:
+        pass
+    if best_score < min_score:
+        if isinstance(best_diag, dict):
+            best_diag.update({"accepted": False, "rejection_reason": "alias_relaxed_low_score", "required_score": min_score})
+        return None, None, 0.0, best_diag
+    if isinstance(best_diag, dict):
+        best_diag.update({"accepted": True, "required_score": min_score})
+    return best, best_quality, best_score, best_diag
 
 
 def install() -> dict[str, Any]:
-    global _INSTALLED, _ORIGINAL_GAP_ROWS, _ORIGINAL_APPEND_GAP_TARGETS
+    global _INSTALLED, _ORIGINAL_GAP_ROWS, _ORIGINAL_APPEND_GAP_TARGETS, _ORIGINAL_MATRIX_MATCH_EVENT_PATCH
     if _INSTALLED:
         return {"status": "already_installed"}
     _raise_env_int("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT", _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT"), 220))
@@ -298,15 +392,15 @@ def install() -> dict[str, Any]:
         payload = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
         _write_report(payload)
         return payload
-    original = getattr(matrix, "_gap_rows", None)
-    _ORIGINAL_GAP_ROWS = original
+    _ORIGINAL_GAP_ROWS = getattr(matrix, "_gap_rows", None)
     _ORIGINAL_APPEND_GAP_TARGETS = getattr(matrix, "_append_gap_targets", None)
+    _ORIGINAL_MATRIX_MATCH_EVENT_PATCH = getattr(matrix, "_patched_v2_match_event", None)
 
     def gap_rows_with_inventory_fallback() -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-        if callable(original):
+        if callable(_ORIGINAL_GAP_ROWS):
             try:
-                rows = [dict(x) for x in (original() or []) if isinstance(x, dict)]
+                rows = [dict(x) for x in (_ORIGINAL_GAP_ROWS() or []) if isinstance(x, dict)]
             except Exception:
                 rows = []
         if rows:
@@ -314,9 +408,11 @@ def install() -> dict[str, Any]:
             return rows
         return _fallback_gap_rows()
 
+    _alias_relaxed_match_event._harizon_bzzoiro_v2_gap_relaxed_match = True  # type: ignore[attr-defined]
     matrix._gap_rows = gap_rows_with_inventory_fallback  # type: ignore[attr-defined]
     matrix._append_gap_targets = _alias_append_gap_targets  # type: ignore[attr-defined]
+    matrix._patched_v2_match_event = _alias_relaxed_match_event  # type: ignore[attr-defined]
     _INSTALLED = True
-    payload = {"status": "installed", "created_at_utc": datetime.now(UTC).isoformat(), "policy": "fallback Bzzoiro v2 gap targets from day inventory when progressive plan is missing; alias matching enabled", "target_limit": os.getenv("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT"), "comparison_limit": os.getenv("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT")}
+    payload = {"status": "installed", "created_at_utc": datetime.now(UTC).isoformat(), "policy": "fallback Bzzoiro v2 gap targets from day inventory; alias append and alias relaxed event matching enabled", "target_limit": os.getenv("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT"), "comparison_limit": os.getenv("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT")}
     _write_report(payload)
     return payload
