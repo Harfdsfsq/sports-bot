@@ -8,11 +8,37 @@ from pathlib import Path
 
 from sitecustomize import *  # noqa: F401,F403
 
-# A-cover promotion runs immediately before controlled fallback.  It should not
-# erase B-cover rescue rows that were produced earlier in the same workflow; the
-# fallback loader already filters stale/outside-window rows before evaluation.
-os.environ.setdefault("PROMOTE_A_COVER_PRUNE_RESCUE_TO_PUBLISH_WINDOW", "false")
-os.environ.setdefault("PROMOTE_B_COVER_AFTER_A_PROMOTION_ENABLED", "true")
+A_TIER_ONLY_ENV = {
+    "HARIZON_PUBLICATION_TIER_MODE": "a_only",
+    "HARIZON_A_TIER_ONLY": "true",
+    "PUBLISH_ALLOW_B_TIER": "false",
+    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "false",
+    "CONTROLLED_FALLBACK_ALLOW_B_TIER": "false",
+    "CONTROLLED_FALLBACK_TIER_B_ENABLED": "false",
+    "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "0",
+    "PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED": "false",
+    "PROMOTE_B_COVER_AFTER_A_PROMOTION_ENABLED": "false",
+    "PROMOTE_A_COVER_PRUNE_RESCUE_TO_PUBLISH_WINDOW": "true",
+    "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_TIER_A_MIN_BOOKS": "2",
+    "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES": "true",
+    "CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS": "2",
+    "CONTROLLED_FALLBACK_TIER_A_MIN_BOOKMAKERS": "2",
+    "CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "999",
+    "PUBLISH_TIER_B_MIN_BOOKS": "999",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "999",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "999",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "999",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS": "999",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "999",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "999",
+}
+
+os.environ.update(A_TIER_ONLY_ENV)
 
 
 def _truthy(value: str | None) -> bool:
