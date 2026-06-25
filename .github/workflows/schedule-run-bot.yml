@@ -1,0 +1,40 @@
+name: schedule-run-bot
+
+on:
+  schedule:
+    # Every 2 hours by Moscow time. The 21:00 UTC run is 00:00 MSK and starts the full day inventory cycle.
+    - cron: "0 1-23/2 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: schedule-run-bot
+  cancel-in-progress: false
+
+jobs:
+  dispatch-run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch run-bot
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const now = new Date();
+            const mskHour = new Intl.DateTimeFormat('en-GB', {
+              timeZone: 'Europe/Moscow',
+              hour: '2-digit',
+              hour12: false,
+            }).format(now);
+            const mode = mskHour === '00' ? 'inventory' : 'normal';
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'run-bot.yml',
+              ref: 'main',
+              inputs: { mode },
+            });
+            core.info(`Dispatched run-bot.yml with mode=${mode}, mskHour=${mskHour}`);
