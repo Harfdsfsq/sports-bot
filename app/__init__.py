@@ -32,6 +32,11 @@ def _run_bzzoiro_offer_bridge_after_cli() -> None:
         bridge_main()
     except Exception:
         pass
+    try:
+        from scripts.repair_bzzoiro_overlap_inventory_sources import main as repair_main
+        repair_main()
+    except Exception:
+        pass
 
 
 if _is_run_once():
