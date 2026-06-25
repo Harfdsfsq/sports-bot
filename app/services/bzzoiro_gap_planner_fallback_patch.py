@@ -43,6 +43,12 @@ def _to_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _raise_env_int(name: str, minimum: int) -> None:
+    current = _to_int(os.getenv(name), 0)
+    if current < minimum:
+        os.environ[name] = str(minimum)
+
+
 def _read_json(path: Path, default: Any) -> Any:
     try:
         if path.exists() and path.stat().st_size > 0:
@@ -195,10 +201,10 @@ def install() -> dict[str, Any]:
     global _INSTALLED, _ORIGINAL_GAP_ROWS
     if _INSTALLED:
         return {"status": "already_installed"}
-    os.environ.setdefault("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT", os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or "220")
-    os.environ.setdefault("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT", "220")
-    os.environ.setdefault("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT", "90")
-    os.environ.setdefault("BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS", os.getenv("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT") or "90")
+    _raise_env_int("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT", _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT"), 220))
+    _raise_env_int("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT", 220)
+    _raise_env_int("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT", 90)
+    _raise_env_int("BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS", _to_int(os.getenv("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT"), 90))
     try:
         from app.services import bzzoiro_v2_source_matrix_runtime_patch as matrix
     except Exception as exc:
@@ -222,6 +228,6 @@ def install() -> dict[str, Any]:
 
     matrix._gap_rows = gap_rows_with_inventory_fallback  # type: ignore[attr-defined]
     _INSTALLED = True
-    payload = {"status": "installed", "created_at_utc": datetime.now(UTC).isoformat(), "policy": "fallback Bzzoiro v2 gap targets from day inventory when progressive plan is missing"}
+    payload = {"status": "installed", "created_at_utc": datetime.now(UTC).isoformat(), "policy": "fallback Bzzoiro v2 gap targets from day inventory when progressive plan is missing", "target_limit": os.getenv("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT"), "comparison_limit": os.getenv("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT")}
     _write_report(payload)
     return payload
