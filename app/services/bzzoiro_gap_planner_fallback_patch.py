@@ -6,6 +6,11 @@ The source-matrix patch originally looks for latest-progressive-coverage-plan.js
 In current run-bot artifacts that file can be absent, which leaves Bzzoiro with
 zero extra gap targets. This patch falls back to the live day inventory and sends
 near-future matches that are one Bzzoiro odds source away from A-cover.
+
+The patch also fixes the main practical gap found in run 28184369864: inventory
+rows and runtime Match objects often use different match_key formats.  We match
+gap rows to runtime matches by exact key and by conservative date|home|away
+aliases before appending Bzzoiro targets.
 """
 
 import json
@@ -21,6 +26,7 @@ DAY_INV = ROOT / ".data" / "day_inventory"
 REPORT = EXPORT / "latest-bzzoiro-gap-planner-fallback-patch.json"
 _INSTALLED = False
 _ORIGINAL_GAP_ROWS = None
+_ORIGINAL_APPEND_GAP_TARGETS = None
 
 
 def _to_int(value: Any, default: int = 0) -> int:
@@ -64,6 +70,66 @@ def _write_report(payload: dict[str, Any]) -> None:
         REPORT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except Exception:
         pass
+
+
+def _norm(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("ё", "е")
+    text = re.sub(r"[^a-z0-9а-я]+", " ", text)
+    return " ".join(text.split())
+
+
+def _date_text(value: Any) -> str:
+    if value in (None, ""):
+        return ""
+    raw = str(value)
+    m = re.search(r"20\d{2}-\d{2}-\d{2}", raw)
+    if m:
+        return m.group(0)
+    try:
+        iso = value.isoformat()  # type: ignore[attr-defined]
+        m = re.search(r"20\d{2}-\d{2}-\d{2}", iso)
+        if m:
+            return m.group(0)
+    except Exception:
+        pass
+    return ""
+
+
+def _row_date(row: dict[str, Any]) -> str:
+    for key in ("date", "kickoff_utc", "commence_time", "start_time", "kickoff", "event_date", "match_key", "canonical_match_id"):
+        date = _date_text(row.get(key))
+        if date:
+            return date
+    return ""
+
+
+def _match_date(match: Any) -> str:
+    for attr in ("commence_time", "kickoff_utc", "start_time", "kickoff", "event_date", "match_key"):
+        date = _date_text(getattr(match, attr, None))
+        if date:
+            return date
+    return ""
+
+
+def _row_aliases(row: dict[str, Any]) -> set[str]:
+    out = {_norm(row.get("match_key")), _norm(row.get("canonical_match_id")), str(row.get("match_key") or "").strip(), str(row.get("canonical_match_id") or "").strip()}
+    date = _row_date(row)
+    home = _norm(row.get("home_team") or row.get("home") or row.get("home_name"))
+    away = _norm(row.get("away_team") or row.get("away") or row.get("away_name"))
+    if date and home and away:
+        out.update({f"{date}|{home}|{away}", f"{date}|{away}|{home}", f"soccer|{home}|{away}|{date}", f"soccer|{away}|{home}|{date}"})
+    return {x for x in out if x and x.strip("|")}
+
+
+def _match_aliases(match: Any) -> set[str]:
+    key = str(getattr(match, "match_key", "") or "").strip()
+    out = {key, _norm(key)}
+    date = _match_date(match)
+    home = _norm(getattr(match, "home_team", ""))
+    away = _norm(getattr(match, "away_team", ""))
+    if date and home and away:
+        out.update({f"{date}|{home}|{away}", f"{date}|{away}|{home}", f"soccer|{home}|{away}|{date}", f"soccer|{away}|{home}|{date}"})
+    return {x for x in out if x and x.strip("|")}
 
 
 def _sources(row: dict[str, Any], *keys: str) -> set[str]:
@@ -173,32 +239,53 @@ def _fallback_gap_rows() -> list[dict[str, Any]]:
     candidates = [row for row in rows if _is_gap_target(row)]
     candidates.sort(key=lambda r: (_hours_to_kickoff(r), -_count(r, "books_count", "bookmaker_count", "price_confirmation_sources_count")))
     out = candidates[:limit]
-    _write_report({
-        "status": "ok",
-        "created_at_utc": datetime.now(UTC).isoformat(),
-        "source": source if rows else "none",
-        "rows_seen": len(rows),
-        "gap_candidates": len(candidates),
-        "returned": len(out),
-        "limit": limit,
-        "sample": [
-            {
-                "match_key": row.get("match_key") or row.get("canonical_match_id"),
-                "home_team": row.get("home_team") or row.get("home"),
-                "away_team": row.get("away_team") or row.get("away"),
-                "kickoff_utc": row.get("kickoff_utc") or row.get("commence_time"),
-                "odds_sources": sorted(_sources(row, "odds_sources", "line_sources")),
-                "books_count": _count(row, "books_count", "price_confirmation_sources_count"),
-                "context_sources_count": _count(row, "context_sources_count", "confirmation_sources_count"),
-            }
-            for row in out[:20]
-        ],
-    })
+    _write_report({"status": "ok", "created_at_utc": datetime.now(UTC).isoformat(), "source": source if rows else "none", "rows_seen": len(rows), "gap_candidates": len(candidates), "returned": len(out), "limit": limit, "sample": [{"match_key": row.get("match_key") or row.get("canonical_match_id"), "home_team": row.get("home_team") or row.get("home"), "away_team": row.get("away_team") or row.get("away"), "kickoff_utc": row.get("kickoff_utc") or row.get("commence_time"), "odds_sources": sorted(_sources(row, "odds_sources", "line_sources")), "books_count": _count(row, "books_count", "price_confirmation_sources_count"), "context_sources_count": _count(row, "context_sources_count", "confirmation_sources_count")} for row in out[:20]]})
     return out
 
 
+def _alias_append_gap_targets(base: list[Any], candidates: list[Any], *, limit: int) -> tuple[list[Any], dict[str, Any]]:
+    base = list(base or [])
+    candidates = list(candidates or [])
+    try:
+        from app.services import bzzoiro_v2_source_matrix_runtime_patch as matrix
+        gap_rows = [dict(x) for x in (matrix._gap_rows() or []) if isinstance(x, dict)]  # type: ignore[attr-defined]
+    except Exception:
+        gap_rows = _fallback_gap_rows()
+    alias_to_rows: dict[str, list[dict[str, Any]]] = {}
+    exact_keys: set[str] = set()
+    for row in gap_rows:
+        key = str(row.get("match_key") or row.get("canonical_match_id") or "").strip()
+        if key:
+            exact_keys.add(key)
+        for alias in _row_aliases(row):
+            alias_to_rows.setdefault(alias, []).append(row)
+    selected = list(base)
+    seen = {getattr(m, "match_key", "") for m in selected if getattr(m, "match_key", "")}
+    appended: list[Any] = []
+    exact_hits = 0
+    alias_hits = 0
+    for match in candidates:
+        key = str(getattr(match, "match_key", "") or "").strip()
+        if not key or key in seen:
+            continue
+        if getattr(match, "sport_key", "") != "soccer":
+            continue
+        aliases = _match_aliases(match)
+        is_exact = key in exact_keys
+        if not is_exact and not any(alias in alias_to_rows for alias in aliases):
+            continue
+        selected.append(match)
+        appended.append(match)
+        seen.add(key)
+        exact_hits += int(is_exact)
+        alias_hits += int(not is_exact)
+        if limit > 0 and len(selected) >= limit:
+            break
+    return selected, {"gap_rows": len(gap_rows), "gap_aliases": len(alias_to_rows), "selected_before": len(base), "candidate_pool": len(candidates), "appended": len(appended), "exact_hits": exact_hits, "alias_hits": alias_hits, "selected_after": len(selected), "limit": limit, "sample": [getattr(m, "match_key", "") for m in appended[:25]], "policy": "alias_match_gap_targets"}
+
+
 def install() -> dict[str, Any]:
-    global _INSTALLED, _ORIGINAL_GAP_ROWS
+    global _INSTALLED, _ORIGINAL_GAP_ROWS, _ORIGINAL_APPEND_GAP_TARGETS
     if _INSTALLED:
         return {"status": "already_installed"}
     _raise_env_int("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT", _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT"), 220))
@@ -213,6 +300,7 @@ def install() -> dict[str, Any]:
         return payload
     original = getattr(matrix, "_gap_rows", None)
     _ORIGINAL_GAP_ROWS = original
+    _ORIGINAL_APPEND_GAP_TARGETS = getattr(matrix, "_append_gap_targets", None)
 
     def gap_rows_with_inventory_fallback() -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
@@ -227,7 +315,8 @@ def install() -> dict[str, Any]:
         return _fallback_gap_rows()
 
     matrix._gap_rows = gap_rows_with_inventory_fallback  # type: ignore[attr-defined]
+    matrix._append_gap_targets = _alias_append_gap_targets  # type: ignore[attr-defined]
     _INSTALLED = True
-    payload = {"status": "installed", "created_at_utc": datetime.now(UTC).isoformat(), "policy": "fallback Bzzoiro v2 gap targets from day inventory when progressive plan is missing", "target_limit": os.getenv("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT"), "comparison_limit": os.getenv("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT")}
+    payload = {"status": "installed", "created_at_utc": datetime.now(UTC).isoformat(), "policy": "fallback Bzzoiro v2 gap targets from day inventory when progressive plan is missing; alias matching enabled", "target_limit": os.getenv("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT"), "comparison_limit": os.getenv("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT")}
     _write_report(payload)
     return payload
