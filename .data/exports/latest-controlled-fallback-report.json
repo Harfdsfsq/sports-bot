@@ -1,41 +1,45 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier publication score is below min on many candidates."
     ],
     "quality_score_sources": {
-      "proxy": 1,
-      "raw_missing": 1
+      "proxy": 2,
+      "raw": 1,
+      "raw_missing": 5
     },
-    "tier_a_blocker_counts": {}
+    "tier_a_blocker_counts": {
+      "tier_a_canonical_edge_below_min": 1,
+      "tier_a_publication_score_below_min": 2,
+      "tier_a_quality_below_min": 3
+    }
   },
-  "candidates_seen": 2,
-  "created_at": "2026-06-26T05:13:38.921069+00:00",
-  "dry_run": false,
+  "candidates_seen": 8,
+  "created_at": "2026-06-26T07:14:54.134854+00:00",
   "enabled": true,
   "evaluated": [
     {
-      "away_team": "Arda Kardzhali",
-      "away_team_ru": "Арда Карджали",
+      "away_team": "Wil",
+      "away_team_ru": "Уил",
       "candidate_source": "a_cover_market_promotion",
-      "commence_time": "2026-06-26T07:00:00+00:00",
-      "commence_time_display": "26.06.2026 10:00 MSK",
+      "commence_time": "2026-06-26T08:30:00+00:00",
+      "commence_time_display": "26.06.2026 11:30 MSK",
       "family": "totals",
-      "home_team": "Botev Plovdiv",
-      "home_team_ru": "Ботев Пловдив",
+      "home_team": "Lustenau",
+      "home_team_ru": "Лустенау",
       "league_name": "International Clubs - Club Friendly Games",
       "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
-      "match_key": "soccer|botev_plovdiv|arda_kardzhali|2026-06-26",
+      "match_key": "soccer|lustenau|wil|2026-06-26",
       "metrics": {
-        "adjusted_probability": 0.502859,
-        "books_count": 130,
+        "adjusted_probability": 0.522893,
+        "books_count": 445,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 1.505,
-        "canonical_ev_pct": 3.086,
-        "confidence": 69.289,
+        "canonical_edge_pp": 1.528,
+        "canonical_ev_pct": 3.01,
+        "confidence": 70.754,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -47,17 +51,17 @@
         "confirmation_sources": [
           "sstats"
         ],
-        "confirmation_sources_count": 3,
+        "confirmation_sources_count": 5,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 0.903,
-        "market_probability": 0.493827,
-        "model_probability": 0.502859,
-        "odds": 2.05,
-        "odds_sources_count": 3,
+        "market_edge_pp": 1.007,
+        "market_probability": 0.512821,
+        "model_probability": 0.522893,
+        "odds": 1.97,
+        "odds_sources_count": 6,
         "proxy_single_source_thresholds": {
           "applies": false,
           "enabled": true,
@@ -65,59 +69,87 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 13.46,
+        "publication_score": 13.417,
         "quality_reasons": [],
         "quality_score": 0.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "raw_missing",
-        "selected_implied_probability": 0.487805,
-        "sources_count": 3,
+        "selected_implied_probability": 0.507614,
+        "sources_count": 5,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 445,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.95,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 6,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.97,
+          "selected_vs_median_deviation_pct": 1.026
+        },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 7.649,
-          "xg_direction_ok": false,
-          "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 7.649,
-          "xg_model_optimism_gap_pp": 7.649,
-          "xg_probability": 0.426367,
-          "xg_probability_pct": 42.637,
+          "xg_abs_gap_pp": 5.73,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 5.73,
+          "xg_model_gap_pp": -5.73,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.580193,
+          "xg_probability_pct": 58.019,
           "xg_source": "home_away",
-          "xg_total": 2.385
+          "xg_total": 2.36
         }
       },
       "ok": false,
-      "point": 2.5,
+      "point": 3.0,
       "reject_reasons": [
-        "xg_direction_conflict"
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min"
       ],
       "reject_reasons_ru": [
-        "направление ставки конфликтует с xG"
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min"
       ],
-      "selection": "Больше",
+      "selection": "Меньше",
       "tier": null
     },
     {
-      "away_team": "Arda Kardzhali",
-      "away_team_ru": "Арда Карджали",
+      "away_team": "Wil",
+      "away_team_ru": "Уил",
       "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-26T07:00:00+00:00",
-      "commence_time_display": "26.06.2026 10:00 MSK",
+      "commence_time": "2026-06-26T08:30:00+00:00",
+      "commence_time_display": "26.06.2026 11:30 MSK",
       "family": "totals",
-      "home_team": "Botev Plovdiv",
-      "home_team_ru": "Ботев Пловдив",
+      "home_team": "Lustenau",
+      "home_team_ru": "Лустенау",
       "league_name": "International Clubs - Club Friendly Games",
       "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
-      "match_key": "soccer|botev_plovdiv|arda_kardzhali|2026-06-26",
+      "match_key": "soccer|lustenau|wil|2026-06-26",
       "metrics": {
-        "adjusted_probability": 0.587887,
+        "adjusted_probability": 0.559377,
         "books_count": 3,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 6.157,
-        "canonical_ev_pct": 11.699,
-        "confidence": 73.164,
+        "canonical_edge_pp": 1.884,
+        "canonical_ev_pct": 3.485,
+        "confidence": 67.968,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -129,16 +161,16 @@
         "confirmation_sources": [
           "sstats"
         ],
-        "confirmation_sources_count": 3,
+        "confirmation_sources_count": 2,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 2.451,
-        "market_probability": 0.56338,
-        "model_probability": 0.587887,
-        "odds": 1.9,
+        "market_edge_pp": 0.993,
+        "market_probability": 0.549451,
+        "model_probability": 0.559377,
+        "odds": 1.85,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -147,53 +179,640 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 32.668,
+        "publication_score": 13.575,
         "quality_reasons": [],
-        "quality_score": 76.0,
+        "quality_score": 68.479,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.526316,
-        "sources_count": 3,
+        "selected_implied_probability": 0.540541,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 34.642,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 34.642,
+          "xg_model_optimism_gap_pp": 34.642,
+          "xg_probability": 0.212959,
+          "xg_probability_pct": 21.296,
+          "xg_source": "home_away",
+          "xg_total": 2.36
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG",
+        "модель слишком оптимистична относительно xG-ориентира"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Wil",
+      "away_team_ru": "Уил",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-26T08:30:00+00:00",
+      "commence_time_display": "26.06.2026 11:30 MSK",
+      "family": "totals",
+      "home_team": "Lustenau",
+      "home_team_ru": "Лустенау",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|lustenau|wil|2026-06-26",
+      "metrics": {
+        "adjusted_probability": 0.665427,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.027,
+        "canonical_ev_pct": 3.141,
+        "confidence": 70.814,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 4,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.311,
+        "market_probability": 0.652316,
+        "model_probability": 0.665427,
+        "odds": 1.55,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 14.565,
+        "quality_reasons": [],
+        "quality_score": 70.723,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.645161,
+        "sources_count": 4,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 24.562,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 24.562,
+          "xg_model_optimism_gap_pp": 24.562,
+          "xg_probability": 0.419807,
+          "xg_probability_pct": 41.981,
+          "xg_source": "home_away",
+          "xg_total": 2.36
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG",
+        "модель слишком оптимистична относительно xG-ориентира"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Wil",
+      "away_team_ru": "Уил",
+      "candidate_source": "a_cover_market_promotion",
+      "commence_time": "2026-06-26T08:30:00+00:00",
+      "commence_time_display": "26.06.2026 11:30 MSK",
+      "family": "totals",
+      "home_team": "Lustenau",
+      "home_team_ru": "Лустенау",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|lustenau|wil|2026-06-26",
+      "metrics": {
+        "adjusted_probability": 0.435618,
+        "books_count": 445,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.895,
+        "canonical_ev_pct": 4.548,
+        "confidence": 69.647,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 5,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.009,
+        "market_probability": 0.425532,
+        "model_probability": 0.435618,
+        "odds": 2.4,
+        "odds_sources_count": 6,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 14.721,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.416667,
+        "sources_count": 5,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 22.266,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 22.266,
+          "xg_model_optimism_gap_pp": 22.266,
+          "xg_probability": 0.212959,
+          "xg_probability_pct": 21.296,
+          "xg_source": "home_away",
+          "xg_total": 2.36
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG",
+        "модель слишком оптимистична относительно xG-ориентира"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Wil",
+      "away_team_ru": "Уил",
+      "candidate_source": "a_cover_market_promotion",
+      "commence_time": "2026-06-26T08:30:00+00:00",
+      "commence_time_display": "26.06.2026 11:30 MSK",
+      "family": "totals",
+      "home_team": "Lustenau",
+      "home_team_ru": "Лустенау",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|lustenau|wil|2026-06-26",
+      "metrics": {
+        "adjusted_probability": 0.650561,
+        "books_count": 157,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 4.08,
+        "canonical_ev_pct": 6.692,
+        "confidence": 67.611,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.765,
+        "market_probability": 0.632911,
+        "model_probability": 0.650561,
+        "odds": 1.64,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 20.457,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.609756,
+        "sources_count": 2,
         "tier_b_bookmaker_quorum": {
-          "books_count": 3,
+          "books_count": 157,
           "enabled": true,
           "max_deviation_pct": 8.0,
-          "median_price": 1.775,
+          "median_price": 1.57,
           "mode": "bookmaker_quorum",
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
+          "odds_sources_count": 2,
+          "priced_books_count": 2,
           "same_market_side_line_only": true,
-          "selected_price": 1.9,
-          "selected_vs_median_deviation_pct": 7.042
+          "selected_price": 1.64,
+          "selected_vs_median_deviation_pct": 4.459
         },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 1.425,
+          "xg_abs_gap_pp": 13.648,
           "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 1.425,
-          "xg_model_optimism_gap_pp": 1.425,
-          "xg_probability": 0.573633,
-          "xg_probability_pct": 57.363,
+          "xg_model_conservative_gap_pp": 13.648,
+          "xg_model_gap_pp": -13.648,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.787041,
+          "xg_probability_pct": 78.704,
           "xg_source": "home_away",
-          "xg_total": 2.385
+          "xg_total": 2.36
         }
       },
-      "ok": true,
-      "point": 2.5,
-      "reject_reasons": [],
-      "reject_reasons_ru": [],
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_b_quality_below_min",
+        "tier_c_quality_below_min"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "качество ниже минимума уровня B",
+        "качество ниже минимума уровня C"
+      ],
       "selection": "Меньше",
-      "tier": "уровень B"
+      "tier": null
+    },
+    {
+      "away_team": "Wil",
+      "away_team_ru": "Уил",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-06-26T08:30:00+00:00",
+      "commence_time_display": "26.06.2026 11:30 MSK",
+      "family": "totals",
+      "home_team": "Lustenau",
+      "home_team_ru": "Лустенау",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|lustenau|wil|2026-06-26",
+      "metrics": {
+        "adjusted_probability": 0.350023,
+        "books_count": 121,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.669,
+        "canonical_ev_pct": 5.007,
+        "confidence": 66.853,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.756,
+        "market_probability": 0.342466,
+        "model_probability": 0.350023,
+        "odds": 3.0,
+        "odds_sources_count": 2,
+        "price_integrity_guard": {
+          "details": {
+            "external_snapshot_match_rows": 150,
+            "external_snapshot_max_deviation_pct": 18.0,
+            "external_snapshot_max_implied_gap_pp": 12.0,
+            "external_snapshot_median_same_side_price": 2.375,
+            "external_snapshot_price_guard_mode": "odds_api_io_same_side_snapshot_median",
+            "external_snapshot_rows_total": 13336,
+            "external_snapshot_same_side_real_book_prices": [
+              2.375,
+              2.28,
+              2.64
+            ],
+            "external_snapshot_selected_price": 3.0,
+            "external_snapshot_selected_vs_median_deviation_pct": 26.316,
+            "external_snapshot_selected_vs_median_implied_gap_pp": 8.772,
+            "external_snapshot_side_rows": 3,
+            "external_snapshot_skipped_opposite_side": 39,
+            "external_snapshot_skipped_point_mismatch": 36,
+            "external_snapshot_skipped_unknown_side": 0,
+            "high_price_external_guard_confirmation_sources_count": 2,
+            "high_price_external_guard_external_snapshot_match_rows": 150,
+            "high_price_external_guard_external_snapshot_rows_total": 13336,
+            "high_price_external_guard_external_snapshot_side_rows": 3,
+            "high_price_external_guard_external_snapshot_skipped_opposite_side": 39,
+            "high_price_external_guard_external_snapshot_skipped_point_mismatch": 36,
+            "high_price_external_guard_external_snapshot_skipped_unknown_side": 0,
+            "high_price_external_guard_line_sources": [],
+            "high_price_external_guard_odds_sources_count": 2,
+            "high_price_external_guard_prices": [
+              2.375,
+              2.28,
+              2.64
+            ],
+            "market_probability": 0.342466,
+            "max_deviation_pct": 16.0,
+            "max_selected_vs_market_gap_pp": 10.0,
+            "median_same_side_price": 2.92,
+            "price_guard_mode": "identified_same_side_real_book_median",
+            "same_side_identified_offers_count": 2,
+            "same_side_identified_prices": [
+              3.0,
+              2.84
+            ],
+            "same_side_offers_count": 2,
+            "same_side_real_book_prices": [
+              3.0,
+              2.84
+            ],
+            "selected_implied_probability": 0.333333,
+            "selected_price": 3.0,
+            "selected_vs_market_gap_pp": 0.913,
+            "selected_vs_median_deviation_pct": 2.74,
+            "skipped_opposite_side": 0,
+            "skipped_point_mismatch": 0,
+            "skipped_unknown_side": 0
+          },
+          "enabled": true,
+          "reasons": [
+            "price_integrity:external_snapshot_bookmaker_median_outlier"
+          ]
+        },
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.696,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.333333,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 23.017,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 23.017,
+          "xg_model_gap_pp": -23.017,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.580193,
+          "xg_probability_pct": 58.019,
+          "xg_source": "home_away",
+          "xg_total": 2.36
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "price_integrity:external_snapshot_bookmaker_median_outlier"
+      ],
+      "reject_reasons_ru": [
+        "price integrity:external snapshot bookmaker median outlier"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Rydalmere Lions FC",
+      "away_team_ru": "Ридалмере Лионс",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-06-26T08:00:00+00:00",
+      "commence_time_display": "26.06.2026 11:00 MSK",
+      "family": "totals",
+      "home_team": "Blacktown Spartans",
+      "home_team_ru": "Блактоун Спартанс",
+      "league_name": "Australia - U20 NSW League One",
+      "league_name_ru": "Австралия - U20 NSW Лига 1",
+      "match_key": "soccer|blacktown_spartans|rydalmere_lions_fc|2026-06-26",
+      "metrics": {
+        "adjusted_probability": 0.665219,
+        "books_count": 32,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.419,
+        "canonical_ev_pct": 3.774,
+        "confidence": 66.298,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.162,
+        "market_probability": 0.653595,
+        "model_probability": 0.665219,
+        "odds": 1.56,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.779,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.641026,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 32,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.53,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 2,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 1.56,
+          "selected_vs_median_deviation_pct": 1.961
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "качество ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "качество ниже минимума уровня C",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Redlands United",
+      "away_team_ru": "Редландс Унитед",
+      "candidate_source": "debug_candidates_before_quality",
+      "commence_time": "2026-06-26T08:30:00+00:00",
+      "commence_time_display": "26.06.2026 11:30 MSK",
+      "family": "totals",
+      "home_team": "Holland Park Hawks",
+      "home_team_ru": "Холланд Парк Хаукс",
+      "league_name": "Australia - U23 Queensland Premier League 1",
+      "league_name_ru": "Австралия - U23 Квинсланд Премьер-лига 1",
+      "match_key": "soccer|holland park hawks|redlands united|2026-06-26",
+      "metrics": {
+        "adjusted_probability": 0.477868,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": -4.297,
+        "canonical_ev_pct": -8.249,
+        "confidence": 67.149,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": -2.744,
+        "market_probability": 0.505304,
+        "model_probability": 0.548578,
+        "odds": 1.92,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 17.683,
+        "quality_reasons": [
+          "bad_historical_segment_guard"
+        ],
+        "quality_score": 55.661,
+        "quality_score_raw": 55.661,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.520833,
+        "sources_count": 1,
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "canonical_negative_value"
+      ],
+      "reject_reasons_ru": [
+        "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
+      ],
+      "selection": "Больше",
+      "tier": null
     }
   ],
-  "message": "🔥 1 контролируемый прогноз на ближайшие 2 часа\n\n💼 Банк: 1000.00 | Открытый риск: 0.00 | Доступно: 1000.00\n\n⚠️ Режим: контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.\n\n1. Ботев Пловдив — Арда Карджали\n🎯 Ставка: Тотал — Меньше (2.5)\n💸 Коэффициент: 1.90\n📊 Скорректированная оценка: 58.8%\n📉 Рынок/консенсус: 56.3%\n✅ Уверенность: 73.2% | качество 76.0 (оценка резерва) | уровень B\n📚 Линии: 3 | odds sources: 1 | confirmation sources: 3\n🔎 Подтверждения: sstats | betfair_exchange / b_cover_market_promotion\n🧮 Контрольная ценность: запас +6.2 п.п. | EV +11.7%\n🏆 Турнир: Интернатионал Клубс - Клуб Фриендли Гамес\n🕒 Начало: 26.06.2026 10:00 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n📈 Ожидаемые голы: 1.33 : 1.06\n🔎 xG-проверка: ориентир 57.4% | разрыв +1.4 п.п.\n📝 Комментарий: ставка разрешена только после повторного пересчёта от выбранного коэффициента и проверки времени матча. Если матч уже начался или вышел за окно публикации, резервный публикователь такую ставку не отправляет.",
+  "no_pick_report_sent": true,
   "pool_counts": {
-    "debug_candidates_before_quality_stale_or_outside_window": 25,
-    "latest_rescue_candidates": 2,
-    "latest_rescue_candidates_stale_or_outside_window": 8
+    "debug_candidates_before_quality": 1,
+    "debug_candidates_before_quality_duplicate_in_pool": 1,
+    "debug_candidates_before_quality_stale_or_outside_window": 23,
+    "latest_rescue_candidates": 7,
+    "latest_rescue_candidates_duplicate_in_pool": 2,
+    "latest_rescue_candidates_stale_or_outside_window": 7
   },
-  "published": true,
+  "published": false,
   "scan_policy": {
     "max_picks_per_run": 3,
     "min_confirmation_sources": 1,
@@ -202,244 +821,29 @@
     "publish_window_hours": 2,
     "use_context_source_index": true
   },
-  "selected": {
-    "away_team": "Arda Kardzhali",
-    "away_team_ru": "Арда Карджали",
-    "bet_payload": {
-      "away_team": "Arda Kardzhali",
-      "commence_time": "2026-06-26T07:00:00+00:00",
-      "family": "totals",
-      "home_team": "Botev Plovdiv",
-      "kickoff": "2026-06-26T07:00:00+00:00",
-      "league_name": "International Clubs - Club Friendly Games",
-      "match_name": "Botev Plovdiv — Arda Kardzhali",
-      "odds": 1.9,
-      "selection": "Меньше",
-      "stake": 5.0,
-      "stake_amount": 5.0
-    },
-    "canonical_publication_key": "soccer|botev_plovdiv|arda_kardzhali|2026-06-26|totals|under|2.5|",
-    "commence_time": "2026-06-26T07:00:00+00:00",
-    "commence_time_display": "26.06.2026 10:00 MSK",
-    "dedupe_key": "6d927a2ea142b16d2c0a8e9ff425b7cf806f03e7",
-    "family": "totals",
-    "home_team": "Botev Plovdiv",
-    "home_team_ru": "Ботев Пловдив",
-    "kickoff": "2026-06-26T07:00:00+00:00",
-    "league_name": "International Clubs - Club Friendly Games",
-    "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
-    "market_family": "totals",
-    "match_key": "soccer|botev_plovdiv|arda_kardzhali|2026-06-26",
-    "match_name": "Botev Plovdiv — Arda Kardzhali",
-    "metrics": {
-      "adjusted_probability": 0.587887,
-      "books_count": 3,
-      "btts_sanity": {
-        "enabled": false,
-        "reason": "family_not_btts"
-      },
-      "canonical_edge_pp": 6.157,
-      "canonical_ev_pct": 11.699,
-      "confidence": 73.164,
-      "confirmation_meta": {
-        "weather_confirmation_relevant": false,
-        "weather_dropped_as_neutral": false,
-        "weather_neutral": true,
-        "weather_risk_flag": false,
-        "weather_supports_over": false,
-        "weather_supports_under": false
-      },
-      "confirmation_sources": [
-        "sstats"
-      ],
-      "confirmation_sources_count": 3,
-      "dnb_sanity": {
-        "enabled": false,
-        "reason": "family_not_dnb"
-      },
-      "line_sources": [],
-      "market_edge_pp": 2.451,
-      "market_probability": 0.56338,
-      "model_probability": 0.587887,
-      "odds": 1.9,
-      "odds_sources_count": 1,
-      "proxy_single_source_thresholds": {
-        "applies": false,
-        "enabled": true,
-        "min_confidence": 78.0,
-        "min_edge_pp": 8.0,
-        "min_ev_pct": 15.0
-      },
-      "publication_score": 32.668,
-      "quality_reasons": [],
-      "quality_score": 76.0,
-      "quality_score_raw": 0.0,
-      "quality_score_source": "proxy",
-      "selected_implied_probability": 0.526316,
-      "sources_count": 3,
-      "tier_b_bookmaker_quorum": {
-        "books_count": 3,
-        "enabled": true,
-        "max_deviation_pct": 8.0,
-        "median_price": 1.775,
-        "mode": "bookmaker_quorum",
-        "odds_sources_count": 1,
-        "priced_books_count": 3,
-        "same_market_side_line_only": true,
-        "selected_price": 1.9,
-        "selected_vs_median_deviation_pct": 7.042
-      },
-      "xg_sanity": {
-        "enabled": true,
-        "xg_abs_gap_pp": 1.425,
-        "xg_direction_ok": true,
-        "xg_model_conservative_gap_pp": 0.0,
-        "xg_model_gap_pp": 1.425,
-        "xg_model_optimism_gap_pp": 1.425,
-        "xg_probability": 0.573633,
-        "xg_probability_pct": 57.363,
-        "xg_source": "home_away",
-        "xg_total": 2.385
-      }
-    },
-    "odds": 1.9,
-    "point": 2.5,
-    "price": 1.9,
-    "publication_lifecycle_status": "telegram_sent",
-    "selected_odds": 1.9,
-    "selection": "Меньше",
-    "stake": 5.0,
-    "stake_amount": 5.0,
-    "status": "pending",
-    "telegram_sent": true,
-    "tier": "уровень B"
-  },
-  "selected_all": [
-    {
-      "away_team": "Arda Kardzhali",
-      "away_team_ru": "Арда Карджали",
-      "bet_payload": {
-        "away_team": "Arda Kardzhali",
-        "commence_time": "2026-06-26T07:00:00+00:00",
-        "family": "totals",
-        "home_team": "Botev Plovdiv",
-        "kickoff": "2026-06-26T07:00:00+00:00",
-        "league_name": "International Clubs - Club Friendly Games",
-        "match_name": "Botev Plovdiv — Arda Kardzhali",
-        "odds": 1.9,
-        "selection": "Меньше",
-        "stake": 5.0,
-        "stake_amount": 5.0
-      },
-      "canonical_publication_key": "soccer|botev_plovdiv|arda_kardzhali|2026-06-26|totals|under|2.5|",
-      "commence_time": "2026-06-26T07:00:00+00:00",
-      "commence_time_display": "26.06.2026 10:00 MSK",
-      "dedupe_key": "6d927a2ea142b16d2c0a8e9ff425b7cf806f03e7",
-      "family": "totals",
-      "home_team": "Botev Plovdiv",
-      "home_team_ru": "Ботев Пловдив",
-      "kickoff": "2026-06-26T07:00:00+00:00",
-      "league_name": "International Clubs - Club Friendly Games",
-      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
-      "market_family": "totals",
-      "match_key": "soccer|botev_plovdiv|arda_kardzhali|2026-06-26",
-      "match_name": "Botev Plovdiv — Arda Kardzhali",
-      "metrics": {
-        "adjusted_probability": 0.587887,
-        "books_count": 3,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 6.157,
-        "canonical_ev_pct": 11.699,
-        "confidence": 73.164,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 3,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 2.451,
-        "market_probability": 0.56338,
-        "model_probability": 0.587887,
-        "odds": 1.9,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 32.668,
-        "quality_reasons": [],
-        "quality_score": 76.0,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.526316,
-        "sources_count": 3,
-        "tier_b_bookmaker_quorum": {
-          "books_count": 3,
-          "enabled": true,
-          "max_deviation_pct": 8.0,
-          "median_price": 1.775,
-          "mode": "bookmaker_quorum",
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
-          "same_market_side_line_only": true,
-          "selected_price": 1.9,
-          "selected_vs_median_deviation_pct": 7.042
-        },
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 1.425,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 1.425,
-          "xg_model_optimism_gap_pp": 1.425,
-          "xg_probability": 0.573633,
-          "xg_probability_pct": 57.363,
-          "xg_source": "home_away",
-          "xg_total": 2.385
-        }
-      },
-      "odds": 1.9,
-      "point": 2.5,
-      "price": 1.9,
-      "publication_lifecycle_status": "telegram_sent",
-      "selected_odds": 1.9,
-      "selection": "Меньше",
-      "stake": 5.0,
-      "stake_amount": 5.0,
-      "status": "pending",
-      "telegram_sent": true,
-      "tier": "уровень B"
-    }
-  ],
-  "selected_count": 1,
   "shadow_ranking": {
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
     "duplicates_removed": 0,
     "reason_counts_without_daily_cap": {
-      "xg_direction_conflict": 1
+      "canonical_negative_value": 1,
+      "price_integrity:external_snapshot_bookmaker_median_outlier": 1,
+      "tier_a_canonical_edge_below_min": 1,
+      "tier_a_publication_score_below_min": 2,
+      "tier_a_quality_below_min": 3,
+      "tier_b_canonical_edge_below_min": 1,
+      "tier_b_publication_score_below_min": 2,
+      "tier_b_quality_below_min": 3,
+      "tier_c_canonical_edge_below_min": 1,
+      "tier_c_publication_score_below_min": 2,
+      "tier_c_quality_below_min": 3,
+      "xg_direction_conflict": 3,
+      "xg_probability_gap_hard_reject": 3
     },
     "top_would_publish_without_daily_cap": []
   },
-  "status": "published",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3225,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782450820,\"text\":\"\\ud83d\\udd25 1 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u043f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437 \\u043d\\u0430 \\u0431\\u043b\\u0438\\u0436\\u0430\\u0439\\u0448\\u0438\\u0435 2 \\u0447\\u0430\\u0441\\u0430\\n\\n\\ud83d\\udcbc \\u0411\\u0430\\u043d\\u043a: 1000.00 | \\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u044b\\u0439 \\u0440\\u0438\\u0441\\u043a: 0.00 | \\u0414\\u043e\\u0441\\u0442\\u0443\\u043f\\u043d\\u043e: 1000.00\\n\\n\\u26a0\\ufe0f \\u0420\\u0435\\u0436\\u0438\\u043c: \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432, \\u0443\\u0440\\u043e\\u0432\\u0435\\u043d\\u044c B. \\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u0",
+  "status": "no_viable_controlled_fallback",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3228,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782458101,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
@@ -447,5 +851,6 @@
     "manual_late_mode_enabled": false,
     "min_kickoff_lead_minutes": 30,
     "publish_window_hours": 2
-  }
+  },
+  "watchlist": []
 }
