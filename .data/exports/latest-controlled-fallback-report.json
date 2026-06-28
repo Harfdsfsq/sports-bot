@@ -1,18 +1,28 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+      "A-tier publication score is below min on many candidates.",
+      "Some candidates still have fewer than the A-tier confirmation/context minimum."
     ],
     "quality_score_sources": {
       "a_cover_evidence": 2,
-      "proxy": 7,
-      "raw": 2,
-      "raw_missing": 3
+      "proxy": 12,
+      "raw": 1,
+      "raw_missing": 5
     },
-    "tier_a_blocker_counts": {}
+    "tier_a_blocker_counts": {
+      "tier_a_canonical_edge_below_min": 2,
+      "tier_a_confirmation_sources_below_min:1/2": 3,
+      "tier_a_odds_sources_below_min:1/2": 7,
+      "tier_a_proxy_quality_not_allowed": 4,
+      "tier_a_publication_score_below_min": 7,
+      "tier_a_quality_below_min": 3
+    }
   },
-  "candidates_seen": 15,
-  "created_at": "2026-06-28T09:36:35.013493+00:00",
+  "candidates_seen": 22,
+  "created_at": "2026-06-28T09:59:54.426736+00:00",
+  "dry_run": false,
   "enabled": true,
   "evaluated": [
     {
@@ -29,7 +39,7 @@
       "match_key": "soccer|broendby|hvidovre|2026-06-28",
       "metrics": {
         "adjusted_probability": 0.551578,
-        "books_count": 314,
+        "books_count": 472,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
@@ -58,7 +68,7 @@
         "market_probability": 0.540541,
         "model_probability": 0.551578,
         "odds": 1.88,
-        "odds_sources_count": 3,
+        "odds_sources_count": 4,
         "proxy_single_source_thresholds": {
           "applies": false,
           "enabled": true,
@@ -90,13 +100,11 @@
       "point": 3.0,
       "reject_reasons": [
         "xg_direction_conflict",
-        "xg_probability_gap_hard_reject",
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "xg_probability_gap_hard_reject"
       ],
       "reject_reasons_ru": [
         "направление ставки конфликтует с xG",
-        "модель слишком оптимистична относительно xG-ориентира",
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "модель слишком оптимистична относительно xG-ориентира"
       ],
       "selection": "Больше",
       "tier": null
@@ -114,15 +122,15 @@
       "league_name_ru": "Чина - Чина Лигуе 1",
       "match_key": "soccer|suzhou_dongwu|ningbo_professional|2026-06-28",
       "metrics": {
-        "adjusted_probability": 0.56615,
+        "adjusted_probability": 0.483191,
         "books_count": 3,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 3.139,
-        "canonical_ev_pct": 5.87,
-        "confidence": 67.542,
+        "canonical_edge_pp": 2.023,
+        "canonical_ev_pct": 4.369,
+        "confidence": 66.866,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -140,10 +148,10 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.366,
-        "market_probability": 0.552486,
-        "model_probability": 0.56615,
-        "odds": 1.87,
+        "market_edge_pp": 0.926,
+        "market_probability": 0.473934,
+        "model_probability": 0.483191,
+        "odds": 2.16,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": true,
@@ -152,13 +160,25 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 17.729,
+        "publication_score": 13.77,
         "quality_reasons": [],
-        "quality_score": 73.522,
+        "quality_score": 68.824,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.534759,
+        "selected_implied_probability": 0.462963,
         "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.11,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 2.16,
+          "selected_vs_median_deviation_pct": 2.37
+        },
         "xg_sanity": {
           "enabled": false,
           "reason": "missing_xg",
@@ -170,12 +190,22 @@
       "ok": false,
       "point": 2.0,
       "reject_reasons": [
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
       ],
       "reject_reasons_ru": [
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "уровень B: publication score below min",
+        "уровень C: publication score below min"
       ],
-      "selection": "Больше",
+      "selection": "Меньше",
       "tier": null
     },
     {
@@ -236,6 +266,18 @@
         "quality_score_source": "proxy",
         "selected_implied_probability": 0.502513,
         "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.95,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.99,
+          "selected_vs_median_deviation_pct": 2.051
+        },
         "xg_sanity": {
           "enabled": true,
           "xg_abs_gap_pp": 12.465,
@@ -252,10 +294,18 @@
       "ok": false,
       "point": 3.0,
       "reject_reasons": [
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
       ],
       "reject_reasons_ru": [
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень B: publication score below min",
+        "уровень C: publication score below min"
       ],
       "selection": "Меньше",
       "tier": null
@@ -274,7 +324,7 @@
       "match_key": "soccer|broendby|hvidovre|2026-06-28",
       "metrics": {
         "adjusted_probability": 0.481062,
-        "books_count": 314,
+        "books_count": 472,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
@@ -303,7 +353,7 @@
         "market_probability": 0.461894,
         "model_probability": 0.481062,
         "odds": 2.31,
-        "odds_sources_count": 3,
+        "odds_sources_count": 4,
         "proxy_single_source_thresholds": {
           "applies": false,
           "enabled": true,
@@ -335,13 +385,11 @@
       "point": 3.5,
       "reject_reasons": [
         "xg_direction_conflict",
-        "xg_probability_gap_hard_reject",
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "xg_probability_gap_hard_reject"
       ],
       "reject_reasons_ru": [
         "направление ставки конфликтует с xG",
-        "модель слишком оптимистична относительно xG-ориентира",
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "модель слишком оптимистична относительно xG-ориентира"
       ],
       "selection": "Больше",
       "tier": null
@@ -389,7 +437,7 @@
         "market_probability": 0.544959,
         "model_probability": 0.554218,
         "odds": 1.87,
-        "odds_sources_count": 4,
+        "odds_sources_count": 5,
         "proxy_single_source_thresholds": {
           "applies": false,
           "enabled": true,
@@ -404,6 +452,18 @@
         "quality_score_source": "raw_missing",
         "selected_implied_probability": 0.534759,
         "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 155,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.8,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 5,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.87,
+          "selected_vs_median_deviation_pct": 3.889
+        },
         "xg_sanity": {
           "enabled": true,
           "xg_abs_gap_pp": 14.707,
@@ -420,10 +480,26 @@
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min"
       ],
       "reject_reasons_ru": [
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min"
       ],
       "selection": "Меньше",
       "tier": null
@@ -441,15 +517,15 @@
       "league_name_ru": "Чина - Чина Лигуе 1",
       "match_key": "soccer|suzhou_dongwu|ningbo_professional|2026-06-28",
       "metrics": {
-        "adjusted_probability": 0.502754,
-        "books_count": 3,
+        "adjusted_probability": 0.421657,
+        "books_count": 2,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 3.546,
-        "canonical_ev_pct": 7.589,
-        "confidence": 68.315,
+        "canonical_edge_pp": 2.005,
+        "canonical_ev_pct": 4.993,
+        "confidence": 65.347,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -467,10 +543,10 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.495,
-        "market_probability": 0.487805,
-        "model_probability": 0.502754,
-        "odds": 2.14,
+        "market_edge_pp": 0.843,
+        "market_probability": 0.413223,
+        "model_probability": 0.421657,
+        "odds": 2.49,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": true,
@@ -479,35 +555,35 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 20.521,
+        "publication_score": 13.251,
         "quality_reasons": [],
-        "quality_score": 76.0,
+        "quality_score": 68.17,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.46729,
+        "selected_implied_probability": 0.401606,
         "sources_count": 1,
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 5.947,
-          "xg_direction_ok": true,
+          "xg_abs_gap_pp": 13.436,
+          "xg_direction_ok": false,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 5.947,
-          "xg_model_optimism_gap_pp": 5.947,
-          "xg_probability": 0.443287,
-          "xg_probability_pct": 44.329,
+          "xg_model_gap_pp": 13.436,
+          "xg_model_optimism_gap_pp": 13.436,
+          "xg_probability": 0.287298,
+          "xg_probability_pct": 28.73,
           "xg_source": "home_away",
           "xg_total": 1.867
         }
       },
       "ok": false,
-      "point": 2.0,
+      "point": 2.5,
       "reject_reasons": [
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "направление ставки конфликтует с xG"
       ],
-      "selection": "Меньше",
+      "selection": "Больше",
       "tier": null
     },
     {
@@ -523,15 +599,15 @@
       "league_name_ru": "Чина - Чина Лигуе 2",
       "match_key": "soccer|beijing_it|taian_tiankuang|2026-06-28",
       "metrics": {
-        "adjusted_probability": 0.509069,
+        "adjusted_probability": 0.506585,
         "books_count": 3,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 5.035,
-        "canonical_ev_pct": 10.977,
-        "confidence": 69.84,
+        "canonical_edge_pp": 4.787,
+        "canonical_ev_pct": 10.436,
+        "confidence": 69.596,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -549,9 +625,9 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.887,
-        "market_probability": 0.490196,
-        "model_probability": 0.509069,
+        "market_edge_pp": 1.878,
+        "market_probability": 0.487805,
+        "model_probability": 0.506585,
         "odds": 2.18,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
@@ -561,7 +637,7 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 27.394,
+        "publication_score": 26.275,
         "quality_reasons": [],
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
@@ -570,11 +646,11 @@
         "sources_count": 1,
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 21.036,
+          "xg_abs_gap_pp": 20.788,
           "xg_direction_ok": false,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 21.036,
-          "xg_model_optimism_gap_pp": 21.036,
+          "xg_model_gap_pp": 20.788,
+          "xg_model_optimism_gap_pp": 20.788,
           "xg_probability": 0.29871,
           "xg_probability_pct": 29.871,
           "xg_source": "home_away",
@@ -585,13 +661,11 @@
       "point": 2.5,
       "reject_reasons": [
         "xg_direction_conflict",
-        "xg_probability_gap_hard_reject",
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "xg_probability_gap_hard_reject"
       ],
       "reject_reasons_ru": [
         "направление ставки конфликтует с xG",
-        "модель слишком оптимистична относительно xG-ориентира",
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "модель слишком оптимистична относительно xG-ориентира"
       ],
       "selection": "Больше",
       "tier": null
@@ -615,9 +689,9 @@
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 5.838,
-        "canonical_ev_pct": 10.333,
-        "confidence": 69.55,
+        "canonical_edge_pp": 6.469,
+        "canonical_ev_pct": 11.579,
+        "confidence": 70.111,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -638,7 +712,7 @@
         "market_edge_pp": 2.311,
         "market_probability": 0.60024,
         "model_probability": 0.623349,
-        "odds": 1.77,
+        "odds": 1.79,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": true,
@@ -647,13 +721,25 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 28.258,
+        "publication_score": 30.954,
         "quality_reasons": [],
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.564972,
+        "selected_implied_probability": 0.558659,
         "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.666,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.79,
+          "selected_vs_median_deviation_pct": 7.443
+        },
         "xg_sanity": {
           "enabled": true,
           "xg_abs_gap_pp": 8.841,
@@ -670,12 +756,647 @@
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "proxy_single_source_edge_below_min",
+        "proxy_single_source_ev_below_min",
+        "proxy_single_source_confidence_below_min"
       ],
       "reject_reasons_ru": [
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "proxy/single-source: value-запас ниже строгого минимума",
+        "proxy/single-source: EV ниже строгого минимума",
+        "proxy/single-source: уверенность ниже строгого минимума"
       ],
       "selection": "Меньше",
+      "tier": "уровень B"
+    },
+    {
+      "away_team": "Shanghai Shenhua",
+      "away_team_ru": "Шангхай Шенхуа",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T11:00:00+00:00",
+      "commence_time_display": "28.06.2026 14:00 MSK",
+      "family": "totals",
+      "home_team": "Dalian Yingbo FC",
+      "home_team_ru": "Далиан Иингбо",
+      "league_name": "China - Chinese Super League",
+      "league_name_ru": "Чина - Чинесе Супер Лигуе",
+      "match_key": "soccer|dalian_yingbo_fc|shanghai_shenhua|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.418248,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.825,
+        "canonical_ev_pct": 4.562,
+        "confidence": 66.653,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.841,
+        "market_probability": 0.409836,
+        "model_probability": 0.418248,
+        "odds": 2.5,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.496,
+        "quality_reasons": [],
+        "quality_score": 68.522,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.4,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.44,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.5,
+          "selected_vs_median_deviation_pct": 2.459
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Hvidovre",
+      "away_team_ru": "Хвидовре",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T11:00:00+00:00",
+      "commence_time_display": "28.06.2026 14:00 MSK",
+      "family": "totals",
+      "home_team": "Broendby",
+      "home_team_ru": "Броендби",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|broendby|hvidovre|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.418492,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 4.255,
+        "canonical_ev_pct": 11.319,
+        "confidence": 71.494,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.648,
+        "market_probability": 0.40201,
+        "model_probability": 0.418492,
+        "odds": 2.66,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 27.327,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.37594,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.6,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 2.66,
+          "selected_vs_median_deviation_pct": 2.308
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 22.938,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 22.938,
+          "xg_model_gap_pp": -22.938,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.647877,
+          "xg_probability_pct": 64.788,
+          "xg_source": "home_away",
+          "xg_total": 2.107
+        }
+      },
+      "ok": true,
+      "point": 2.5,
+      "reject_reasons": [],
+      "reject_reasons_ru": [],
+      "selection": "Меньше",
+      "tier": "уровень B"
+    },
+    {
+      "away_team": "Kongahalla",
+      "away_team_ru": "Конгахалла",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T11:00:00+00:00",
+      "commence_time_display": "28.06.2026 14:00 MSK",
+      "family": "totals",
+      "home_team": "Jonsereds",
+      "home_team_ru": "Джонсередс",
+      "league_name": "Sweden - Division 2, Vastra Gotaland",
+      "league_name_ru": "Суеден - Дивисион 2, Вастра Готаланд",
+      "match_key": "soccer|jonsereds|kongahalla|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.485659,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.618,
+        "canonical_ev_pct": 3.445,
+        "confidence": 64.65,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.719,
+        "market_probability": 0.478469,
+        "model_probability": 0.485659,
+        "odds": 2.13,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": true,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 10.697,
+        "quality_reasons": [],
+        "quality_score": 64.784,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.469484,
+        "sources_count": 1,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 32.835,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 32.835,
+          "xg_model_optimism_gap_pp": 32.835,
+          "xg_probability": 0.157312,
+          "xg_probability_pct": 15.731,
+          "xg_source": "home_away",
+          "xg_total": 2.079
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG",
+        "модель слишком оптимистична относительно xG-ориентира"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Eskilsminne",
+      "away_team_ru": "Ескилсминне",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T11:00:00+00:00",
+      "commence_time_display": "28.06.2026 14:00 MSK",
+      "family": "totals",
+      "home_team": "Olympic",
+      "home_team_ru": "Олимпик",
+      "league_name": "Sweden - Ettan, Sodra",
+      "league_name_ru": "Суеден - Еттан, Содра",
+      "match_key": "soccer|olympic|eskilsminne|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.474657,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.798,
+        "canonical_ev_pct": 8.696,
+        "confidence": 68.513,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.594,
+        "market_probability": 0.458716,
+        "model_probability": 0.474657,
+        "odds": 2.29,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 22.196,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.436681,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.18,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.29,
+          "selected_vs_median_deviation_pct": 5.046
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 19.479,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 19.479,
+          "xg_model_gap_pp": -19.479,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.66945,
+          "xg_probability_pct": 66.945,
+          "xg_source": "home_away",
+          "xg_total": 2.027
+        }
+      },
+      "ok": true,
+      "point": 3.0,
+      "reject_reasons": [],
+      "reject_reasons_ru": [],
+      "selection": "Меньше",
+      "tier": "уровень B"
+    },
+    {
+      "away_team": "Guangzhou Dandelion Alpha FC",
+      "away_team_ru": "Гуангжу Данделион Алфа",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T11:30:00+00:00",
+      "commence_time_display": "28.06.2026 14:30 MSK",
+      "family": "totals",
+      "home_team": "Jiangxi Lushan",
+      "home_team_ru": "Джиангкси Лушан",
+      "league_name": "China - China League 2, South",
+      "league_name_ru": "Чина - Чина Лигуе 2, Сут",
+      "match_key": "soccer|jiangxi_lushan|guangzhou_dandelion_alpha_fc|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.421437,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.461,
+        "canonical_ev_pct": 6.202,
+        "confidence": 67.391,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.076,
+        "market_probability": 0.410678,
+        "model_probability": 0.421437,
+        "odds": 2.52,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 16.655,
+        "quality_reasons": [],
+        "quality_score": 72.541,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.396825,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 13.61,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 13.61,
+          "xg_model_optimism_gap_pp": 13.61,
+          "xg_probability": 0.285332,
+          "xg_probability_pct": 28.533,
+          "xg_source": "home_away",
+          "xg_total": 1.859
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Chengdu Rongcheng B",
+      "away_team_ru": "Ченгду Ронгченг B",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T11:30:00+00:00",
+      "commence_time_display": "28.06.2026 14:30 MSK",
+      "family": "totals",
+      "home_team": "Shenzhen 2028 FC",
+      "home_team_ru": "Шенжен 2028",
+      "league_name": "China - China League 2, South",
+      "league_name_ru": "Чина - Чина Лигуе 2, Сут",
+      "match_key": "soccer|shenzhen_2028_fc|chengdu_rongcheng_b|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.51275,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.731,
+        "canonical_ev_pct": 5.627,
+        "confidence": 68.932,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.275,
+        "market_probability": 0.5,
+        "model_probability": 0.51275,
+        "odds": 2.06,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 17.733,
+        "quality_reasons": [],
+        "quality_score": 73.759,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.485437,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 19.974,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 19.974,
+          "xg_model_optimism_gap_pp": 19.974,
+          "xg_probability": 0.313012,
+          "xg_probability_pct": 31.301,
+          "xg_source": "home_away",
+          "xg_total": 1.962
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG",
+        "модель слишком оптимистична относительно xG-ориентира"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Hangzhou Linping Wuyue",
+      "away_team_ru": "Хангжу Линпинг Ууиуе",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T11:30:00+00:00",
+      "commence_time_display": "28.06.2026 14:30 MSK",
+      "family": "totals",
+      "home_team": "Wuhan Three Towns B",
+      "home_team_ru": "Уухан Три Тоунс B",
+      "league_name": "China - China League 2, South",
+      "league_name_ru": "Чина - Чина Лигуе 2, Сут",
+      "match_key": "soccer|wuhan_three_towns_b|hangzhou_linping_wuyue|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.414634,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.704,
+        "canonical_ev_pct": 6.976,
+        "confidence": 66.239,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.1,
+        "market_probability": 0.403633,
+        "model_probability": 0.414634,
+        "odds": 2.58,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": true,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 16.929,
+        "quality_reasons": [],
+        "quality_score": 72.894,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.387597,
+        "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.4775,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.58,
+          "selected_vs_median_deviation_pct": 4.137
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "уровень B: publication score below min",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Больше",
       "tier": null
     },
     {
@@ -745,184 +1466,12 @@
           "xg_source": "invalid_or_missing"
         }
       },
-      "ok": false,
+      "ok": true,
       "point": 2.5,
-      "reject_reasons": [
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
-      ],
-      "reject_reasons_ru": [
-        "controlled fallback reserved daily slot held until:4/5@18:00"
-      ],
+      "reject_reasons": [],
+      "reject_reasons_ru": [],
       "selection": "Больше",
-      "tier": null
-    },
-    {
-      "away_team": "Hvidovre",
-      "away_team_ru": "Хвидовре",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-28T11:00:00+00:00",
-      "commence_time_display": "28.06.2026 14:00 MSK",
-      "family": "totals",
-      "home_team": "Broendby",
-      "home_team_ru": "Броендби",
-      "league_name": "International Clubs - Club Friendly Games",
-      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
-      "match_key": "soccer|broendby|hvidovre|2026-06-28",
-      "metrics": {
-        "adjusted_probability": 0.418492,
-        "books_count": 3,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 4.255,
-        "canonical_ev_pct": 11.319,
-        "confidence": 71.494,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 2,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 1.648,
-        "market_probability": 0.40201,
-        "model_probability": 0.418492,
-        "odds": 2.66,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 27.327,
-        "quality_reasons": [],
-        "quality_score": 76.0,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.37594,
-        "sources_count": 2,
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 22.938,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 22.938,
-          "xg_model_gap_pp": -22.938,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.647877,
-          "xg_probability_pct": 64.788,
-          "xg_source": "home_away",
-          "xg_total": 2.107
-        }
-      },
-      "ok": false,
-      "point": 2.5,
-      "reject_reasons": [
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
-      ],
-      "reject_reasons_ru": [
-        "controlled fallback reserved daily slot held until:4/5@18:00"
-      ],
-      "selection": "Меньше",
-      "tier": null
-    },
-    {
-      "away_team": "Kongahalla",
-      "away_team_ru": "Конгахалла",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-28T11:00:00+00:00",
-      "commence_time_display": "28.06.2026 14:00 MSK",
-      "family": "totals",
-      "home_team": "Jonsereds",
-      "home_team_ru": "Джонсередс",
-      "league_name": "Sweden - Division 2, Vastra Gotaland",
-      "league_name_ru": "Суеден - Дивисион 2, Вастра Готаланд",
-      "match_key": "soccer|jonsereds|kongahalla|2026-06-28",
-      "metrics": {
-        "adjusted_probability": 0.485659,
-        "books_count": 2,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 1.618,
-        "canonical_ev_pct": 3.445,
-        "confidence": 64.65,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "sstats"
-        ],
-        "confirmation_sources_count": 1,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 0.719,
-        "market_probability": 0.478469,
-        "model_probability": 0.485659,
-        "odds": 2.13,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": true,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 10.697,
-        "quality_reasons": [],
-        "quality_score": 64.784,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.469484,
-        "sources_count": 1,
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 33.018,
-          "xg_direction_ok": false,
-          "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 33.018,
-          "xg_model_optimism_gap_pp": 33.018,
-          "xg_probability": 0.155481,
-          "xg_probability_pct": 15.548,
-          "xg_source": "home_away",
-          "xg_total": 2.069
-        }
-      },
-      "ok": false,
-      "point": 3.5,
-      "reject_reasons": [
-        "xg_direction_conflict",
-        "xg_probability_gap_hard_reject",
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
-      ],
-      "reject_reasons_ru": [
-        "направление ставки конфликтует с xG",
-        "модель слишком оптимистична относительно xG-ориентира",
-        "controlled fallback reserved daily slot held until:4/5@18:00"
-      ],
-      "selection": "Больше",
-      "tier": null
+      "tier": "уровень A"
     },
     {
       "away_team": "Shanghai Shenhua",
@@ -971,23 +1520,24 @@
         "odds_sources_count": 2,
         "price_integrity_guard": {
           "details": {
-            "external_snapshot_match_rows": 184,
+            "external_snapshot_match_rows": 181,
             "external_snapshot_max_deviation_pct": 18.0,
             "external_snapshot_max_implied_gap_pp": 12.0,
-            "external_snapshot_median_same_side_price": 2.16,
+            "external_snapshot_median_same_side_price": 1.98,
             "external_snapshot_price_guard_mode": "odds_api_io_same_side_snapshot_median",
-            "external_snapshot_rows_total": 18382,
+            "external_snapshot_rows_total": 17676,
             "external_snapshot_same_side_real_book_prices": [
-              2.4,
-              2.16,
-              2.12
+              1.925,
+              2.17,
+              2.0,
+              1.96
             ],
             "external_snapshot_selected_price": 2.62,
-            "external_snapshot_selected_vs_median_deviation_pct": 21.296,
-            "external_snapshot_selected_vs_median_implied_gap_pp": 8.128,
-            "external_snapshot_side_rows": 3,
-            "external_snapshot_skipped_opposite_side": 41,
-            "external_snapshot_skipped_point_mismatch": 38,
+            "external_snapshot_selected_vs_median_deviation_pct": 32.323,
+            "external_snapshot_selected_vs_median_implied_gap_pp": 12.337,
+            "external_snapshot_side_rows": 4,
+            "external_snapshot_skipped_opposite_side": 40,
+            "external_snapshot_skipped_point_mismatch": 36,
             "external_snapshot_skipped_unknown_side": 0,
             "market_probability": 0.392927,
             "max_selected_vs_market_gap_pp": 10.0,
@@ -1038,14 +1588,331 @@
       "ok": false,
       "point": 3.5,
       "reject_reasons": [
-        "price_integrity:external_snapshot_bookmaker_median_outlier",
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "price_integrity:external_snapshot_bookmaker_median_outlier"
       ],
       "reject_reasons_ru": [
-        "price integrity:external snapshot bookmaker median outlier",
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "price integrity:external snapshot bookmaker median outlier"
       ],
       "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Guangzhou Dandelion Alpha FC",
+      "away_team_ru": "Гуангжу Данделион Алфа",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-06-28T11:30:00+00:00",
+      "commence_time_display": "28.06.2026 14:30 MSK",
+      "family": "totals",
+      "home_team": "Jiangxi Lushan",
+      "home_team_ru": "Джиангкси Лушан",
+      "league_name": "China - China League 2, South",
+      "league_name_ru": "Чина - Чина Лигуе 2, Сут",
+      "match_key": "soccer|jiangxi_lushan|guangzhou_dandelion_alpha_fc|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.636444,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.916,
+        "canonical_ev_pct": 3.104,
+        "confidence": 65.997,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.968,
+        "market_probability": 0.626763,
+        "model_probability": 0.636444,
+        "odds": 1.62,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 12.001,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.617284,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.5955,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 1.62,
+          "selected_vs_median_deviation_pct": 1.536
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 7.822,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 7.822,
+          "xg_model_gap_pp": -7.822,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.714668,
+          "xg_probability_pct": 71.467,
+          "xg_source": "home_away",
+          "xg_total": 1.859
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: odds sources below min:1/2",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Chengdu Rongcheng B",
+      "away_team_ru": "Ченгду Ронгченг B",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-06-28T11:30:00+00:00",
+      "commence_time_display": "28.06.2026 14:30 MSK",
+      "family": "totals",
+      "home_team": "Shenzhen 2028 FC",
+      "home_team_ru": "Шенжен 2028",
+      "league_name": "China - China League 2, South",
+      "league_name_ru": "Чина - Чина Лигуе 2, Сут",
+      "match_key": "soccer|shenzhen_2028_fc|chengdu_rongcheng_b|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.569043,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.85,
+        "canonical_ev_pct": 5.273,
+        "confidence": 68.773,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.349,
+        "market_probability": 0.555556,
+        "model_probability": 0.569043,
+        "odds": 1.85,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 17.564,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.540541,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.8,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.85,
+          "selected_vs_median_deviation_pct": 2.778
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 11.794,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 11.794,
+          "xg_model_gap_pp": -11.794,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.686988,
+          "xg_probability_pct": 68.699,
+          "xg_source": "home_away",
+          "xg_total": 1.962
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_quality_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: odds sources below min:1/2",
+        "качество ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "качество ниже минимума уровня C",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Hangzhou Linping Wuyue",
+      "away_team_ru": "Хангжу Линпинг Ууиуе",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-06-28T11:30:00+00:00",
+      "commence_time_display": "28.06.2026 14:30 MSK",
+      "family": "totals",
+      "home_team": "Wuhan Three Towns B",
+      "home_team_ru": "Уухан Три Тоунс B",
+      "league_name": "China - China League 2, South",
+      "league_name_ru": "Чина - Чина Лигуе 2, Сут",
+      "match_key": "soccer|wuhan_three_towns_b|hangzhou_linping_wuyue|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.64972,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.079,
+        "canonical_ev_pct": 3.305,
+        "confidence": 64.587,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.931,
+        "market_probability": 0.64041,
+        "model_probability": 0.64972,
+        "odds": 1.59,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 11.459,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.628931,
+        "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.5615,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 1.59,
+          "selected_vs_median_deviation_pct": 1.825
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_quality_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "качество ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "качество ниже минимума уровня C",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
       "tier": null
     },
     {
@@ -1061,15 +1928,15 @@
       "league_name_ru": "Чина - Чинесе Супер Лигуе",
       "match_key": "soccer|dalian yingbo|shanghai shenhua|2026-06-28",
       "metrics": {
-        "adjusted_probability": 0.555431,
-        "books_count": 3,
+        "adjusted_probability": 0.460436,
+        "books_count": 4,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 0.898,
-        "canonical_ev_pct": 1.644,
-        "confidence": 74.559,
+        "canonical_edge_pp": -0.039,
+        "canonical_ev_pct": -0.085,
+        "confidence": 75.661,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -1090,10 +1957,10 @@
         "line_sources": [
           "odds_api_io"
         ],
-        "market_edge_pp": -1.328,
-        "market_probability": 0.568708,
-        "model_probability": 0.592951,
-        "odds": 1.83,
+        "market_edge_pp": -1.549,
+        "market_probability": 0.475931,
+        "model_probability": 0.496236,
+        "odds": 2.17,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -1102,14 +1969,14 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 80.727,
+        "publication_score": 82.34,
         "quality_reasons": [
-          "bad_historical_segment_guard"
+          "post_calibration_probability_guard"
         ],
-        "quality_score": 61.143,
-        "quality_score_raw": 61.143,
+        "quality_score": 50.404,
+        "quality_score_raw": 50.404,
         "quality_score_source": "raw",
-        "selected_implied_probability": 0.546448,
+        "selected_implied_probability": 0.460829,
         "sources_count": 2,
         "xg_sanity": {
           "enabled": false,
@@ -1122,12 +1989,12 @@
       "ok": false,
       "point": 3.5,
       "reject_reasons": [
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "canonical_negative_value"
       ],
       "reject_reasons_ru": [
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
       ],
-      "selection": "Меньше 3.5",
+      "selection": "Больше 3.5",
       "tier": null
     },
     {
@@ -1143,15 +2010,15 @@
       "league_name_ru": "Чина - Чина Лигуе 2",
       "match_key": "soccer|beijing it|taian tiankuang|2026-06-28",
       "metrics": {
-        "adjusted_probability": 0.523823,
+        "adjusted_probability": 0.524454,
         "books_count": 3,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": -1.094,
-        "canonical_ev_pct": -2.045,
-        "confidence": 72.269,
+        "canonical_edge_pp": -1.031,
+        "canonical_ev_pct": -1.927,
+        "confidence": 72.341,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -1171,9 +2038,9 @@
         "line_sources": [
           "odds_api_io"
         ],
-        "market_edge_pp": -2.035,
-        "market_probability": 0.544168,
-        "model_probability": 0.561343,
+        "market_edge_pp": -2.012,
+        "market_probability": 0.544575,
+        "model_probability": 0.561974,
         "odds": 1.87,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
@@ -1183,12 +2050,12 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 74.897,
+        "publication_score": 75.088,
         "quality_reasons": [
           "bad_historical_segment_guard"
         ],
-        "quality_score": 58.584,
-        "quality_score_raw": 58.584,
+        "quality_score": 58.6,
+        "quality_score_raw": 58.6,
         "quality_score_source": "raw",
         "selected_implied_probability": 0.534759,
         "sources_count": 1,
@@ -1203,38 +2070,265 @@
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "canonical_negative_value",
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
+        "canonical_negative_value"
       ],
       "reject_reasons_ru": [
-        "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
-        "controlled fallback reserved daily slot held until:4/5@18:00"
+        "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
       ],
       "selection": "Меньше 2.5",
       "tier": null
+    }
+  ],
+  "message": "🔥 3 топовых контролируемых прогноза на ближайшие 2 часа\n\n💼 Банк: 1000.00 | Открытый риск: 20.00 | Доступно: 980.00\n💰 Новый риск: 15.00 | Режим: top-bundle, только прошедшие финальные guard’ы\n\nОкно поиска: от 30 мин до 2 часа. Публикую 1 лучший прогноз или multi-прогноз, если несколько разных матчей отдельно проходят EV, время, дубли и market/xG sanity.\n\n1. Далиан Иингбо — Шангхай Шенхуа\n🎯 Ставка: Тотал — Больше (2.5)\n💸 Коэффициент: 1.69\n📊 Скорректированная оценка: 63.1%\n📉 Рынок/консенсус: 61.2%\n✅ Уверенность: 72.0% | качество 76.0 (модель) | уровень A\n📚 Линии: 355 | odds sources: 2 | confirmation sources: 2\n🔎 Подтверждения: bzzoiro, sstats | betfair_exchange / a_cover_market_promotion\n🧮 Контрольная ценность: запас +3.9 п.п. | EV +6.6%\n🏆 Турнир: Чина - Чинесе Супер Лигуе\n🕒 Начало: 28.06.2026 14:00 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n\n2. Броендби — Хвидовре\n🎯 Ставка: Тотал — Меньше (2.5)\n💸 Коэффициент: 2.66\n📊 Скорректированная оценка: 41.8%\n📉 Рынок/консенсус: 40.2%\n✅ Уверенность: 71.5% | качество 76.0 (оценка резерва) | уровень B\n📚 Линии: 3 | odds sources: 1 | confirmation sources: 2\n🔎 Подтверждения: sstats | betfair_exchange / b_cover_market_promotion\n🧮 Контрольная ценность: запас +4.3 п.п. | EV +11.3%\n🏆 Турнир: Интернатионал Клубс - Клуб Фриендли Гамес\n🕒 Начало: 28.06.2026 14:00 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n📈 Ожидаемые голы: 1.55 : 0.56\n🔎 xG-проверка: ориентир 64.8% | разрыв -22.9 п.п.\n\n3. Олимпик — Ескилсминне\n🎯 Ставка: Тотал — Меньше (3)\n💸 Коэффициент: 2.29\n📊 Скорректированная оценка: 47.5%\n📉 Рынок/консенсус: 45.9%\n✅ Уверенность: 68.5% | качество 76.0 (оценка резерва) | уровень B\n📚 Линии: 2 | odds sources: 1 | confirmation sources: 2\n🔎 Подтверждения: sstats | betfair_exchange / b_cover_market_promotion\n🧮 Контрольная ценность: запас +3.8 п.п. | EV +8.7%\n🏆 Турнир: Суеден - Еттан, Содра\n🕒 Начало: 28.06.2026 14:00 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n📈 Ожидаемые голы: 1.07 : 0.96\n🔎 xG-проверка: ориентир 66.9% | разрыв -19.5 п.п.\n\n📝 Комментарий: это не гарантия прибыли. Сумма снижена, потому что часть сигналов остаётся controlled reserve, а не clean quality-pass.",
+  "pool_counts": {
+    "debug_candidates_before_quality": 2,
+    "debug_candidates_before_quality_stale_or_outside_window": 23,
+    "latest_picks_stale_or_outside_window": 4,
+    "latest_rescue_candidates": 20,
+    "latest_rescue_candidates_duplicate_in_pool": 8,
+    "latest_rescue_candidates_stale_or_outside_window": 2
+  },
+  "published": true,
+  "scan_policy": {
+    "max_picks_per_run": 3,
+    "min_confirmation_sources": 1,
+    "min_kickoff_lead_minutes": 30,
+    "mode": "best_or_multi",
+    "publish_window_hours": 2,
+    "use_context_source_index": true
+  },
+  "selected": {
+    "away_team": "Shanghai Shenhua",
+    "away_team_ru": "Шангхай Шенхуа",
+    "bet_payload": {
+      "away_team": "Shanghai Shenhua",
+      "commence_time": "2026-06-28T11:00:00+00:00",
+      "family": "totals",
+      "home_team": "Dalian Yingbo FC",
+      "kickoff": "2026-06-28T11:00:00+00:00",
+      "league_name": "China - Chinese Super League",
+      "match_name": "Dalian Yingbo FC — Shanghai Shenhua",
+      "odds": 1.69,
+      "selection": "Больше",
+      "stake": 5.0,
+      "stake_amount": 5.0
     },
+    "canonical_publication_key": "soccer|dalian_yingbo_fc|shanghai_shenhua|2026-06-28|totals|over|2.5|",
+    "commence_time": "2026-06-28T11:00:00+00:00",
+    "commence_time_display": "28.06.2026 14:00 MSK",
+    "dedupe_key": "928537dff7d86baca728c8b44879d834f81babc5",
+    "family": "totals",
+    "home_team": "Dalian Yingbo FC",
+    "home_team_ru": "Далиан Иингбо",
+    "kickoff": "2026-06-28T11:00:00+00:00",
+    "league_name": "China - Chinese Super League",
+    "league_name_ru": "Чина - Чинесе Супер Лигуе",
+    "market_family": "totals",
+    "match_key": "soccer|dalian_yingbo_fc|shanghai_shenhua|2026-06-28",
+    "match_name": "Dalian Yingbo FC — Shanghai Shenhua",
+    "metrics": {
+      "adjusted_probability": 0.630888,
+      "books_count": 355,
+      "btts_sanity": {
+        "enabled": false,
+        "reason": "family_not_btts"
+      },
+      "canonical_edge_pp": 3.917,
+      "canonical_ev_pct": 6.62,
+      "confidence": 71.979,
+      "confirmation_meta": {
+        "weather_confirmation_relevant": false,
+        "weather_dropped_as_neutral": false,
+        "weather_neutral": true,
+        "weather_risk_flag": false,
+        "weather_supports_over": false,
+        "weather_supports_under": false
+      },
+      "confirmation_sources": [
+        "bzzoiro",
+        "sstats"
+      ],
+      "confirmation_sources_count": 2,
+      "dnb_sanity": {
+        "enabled": false,
+        "reason": "family_not_dnb"
+      },
+      "line_sources": [],
+      "market_edge_pp": 1.927,
+      "market_probability": 0.611621,
+      "model_probability": 0.630888,
+      "odds": 1.69,
+      "odds_sources_count": 2,
+      "proxy_single_source_thresholds": {
+        "applies": false,
+        "enabled": true,
+        "min_confidence": 78.0,
+        "min_edge_pp": 8.0,
+        "min_ev_pct": 15.0
+      },
+      "publication_score": 22.447,
+      "quality_reasons": [],
+      "quality_score": 76.0,
+      "quality_score_raw": 0.0,
+      "quality_score_source": "a_cover_evidence",
+      "selected_implied_probability": 0.591716,
+      "sources_count": 2,
+      "xg_sanity": {
+        "enabled": false,
+        "reason": "missing_xg",
+        "xg_away_raw": null,
+        "xg_home_raw": null,
+        "xg_source": "invalid_or_missing"
+      }
+    },
+    "odds": 1.69,
+    "point": 2.5,
+    "price": 1.69,
+    "publication_lifecycle_status": "telegram_sent",
+    "selected_odds": 1.69,
+    "selection": "Больше",
+    "stake": 5.0,
+    "stake_amount": 5.0,
+    "status": "pending",
+    "telegram_sent": true,
+    "tier": "уровень A"
+  },
+  "selected_all": [
     {
-      "away_team": "Eskilsminne",
-      "away_team_ru": "Ескилсминне",
-      "candidate_source": "debug_candidates_before_quality",
+      "away_team": "Shanghai Shenhua",
+      "away_team_ru": "Шангхай Шенхуа",
+      "bet_payload": {
+        "away_team": "Shanghai Shenhua",
+        "commence_time": "2026-06-28T11:00:00+00:00",
+        "family": "totals",
+        "home_team": "Dalian Yingbo FC",
+        "kickoff": "2026-06-28T11:00:00+00:00",
+        "league_name": "China - Chinese Super League",
+        "match_name": "Dalian Yingbo FC — Shanghai Shenhua",
+        "odds": 1.69,
+        "selection": "Больше",
+        "stake": 5.0,
+        "stake_amount": 5.0
+      },
+      "canonical_publication_key": "soccer|dalian_yingbo_fc|shanghai_shenhua|2026-06-28|totals|over|2.5|",
       "commence_time": "2026-06-28T11:00:00+00:00",
       "commence_time_display": "28.06.2026 14:00 MSK",
+      "dedupe_key": "928537dff7d86baca728c8b44879d834f81babc5",
       "family": "totals",
-      "home_team": "Olympic",
-      "home_team_ru": "Олимпик",
-      "league_name": "Sweden - Ettan, Sodra",
-      "league_name_ru": "Суеден - Еттан, Содра",
-      "match_key": "soccer|eskilsminne|olympic|2026-06-28",
+      "home_team": "Dalian Yingbo FC",
+      "home_team_ru": "Далиан Иингбо",
+      "kickoff": "2026-06-28T11:00:00+00:00",
+      "league_name": "China - Chinese Super League",
+      "league_name_ru": "Чина - Чинесе Супер Лигуе",
+      "market_family": "totals",
+      "match_key": "soccer|dalian_yingbo_fc|shanghai_shenhua|2026-06-28",
+      "match_name": "Dalian Yingbo FC — Shanghai Shenhua",
       "metrics": {
-        "adjusted_probability": 0.421447,
-        "books_count": 2,
+        "adjusted_probability": 0.630888,
+        "books_count": 355,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": -0.59,
-        "canonical_ev_pct": -1.381,
-        "confidence": 70.176,
+        "canonical_edge_pp": 3.917,
+        "canonical_ev_pct": 6.62,
+        "confidence": 71.979,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.927,
+        "market_probability": 0.611621,
+        "model_probability": 0.630888,
+        "odds": 1.69,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 22.447,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "a_cover_evidence",
+        "selected_implied_probability": 0.591716,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "odds": 1.69,
+      "point": 2.5,
+      "price": 1.69,
+      "publication_lifecycle_status": "telegram_sent",
+      "selected_odds": 1.69,
+      "selection": "Больше",
+      "stake": 5.0,
+      "stake_amount": 5.0,
+      "status": "pending",
+      "telegram_sent": true,
+      "tier": "уровень A"
+    },
+    {
+      "away_team": "Hvidovre",
+      "away_team_ru": "Хвидовре",
+      "bet_payload": {
+        "away_team": "Hvidovre",
+        "commence_time": "2026-06-28T11:00:00+00:00",
+        "family": "totals",
+        "home_team": "Broendby",
+        "kickoff": "2026-06-28T11:00:00+00:00",
+        "league_name": "International Clubs - Club Friendly Games",
+        "match_name": "Broendby — Hvidovre",
+        "odds": 2.66,
+        "selection": "Меньше",
+        "stake": 5.0,
+        "stake_amount": 5.0
+      },
+      "canonical_publication_key": "soccer|broendby|hvidovre|2026-06-28|totals|under|2.5|",
+      "commence_time": "2026-06-28T11:00:00+00:00",
+      "commence_time_display": "28.06.2026 14:00 MSK",
+      "dedupe_key": "cd5273bc5b368da4b640720ebe0114ffc55af378",
+      "family": "totals",
+      "home_team": "Broendby",
+      "home_team_ru": "Броендби",
+      "kickoff": "2026-06-28T11:00:00+00:00",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "market_family": "totals",
+      "match_key": "soccer|broendby|hvidovre|2026-06-28",
+      "match_name": "Broendby — Hvidovre",
+      "metrics": {
+        "adjusted_probability": 0.418492,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 4.255,
+        "canonical_ev_pct": 11.319,
+        "confidence": 71.494,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -1246,18 +2340,16 @@
         "confirmation_sources": [
           "sstats"
         ],
-        "confirmation_sources_count": 1,
+        "confirmation_sources_count": 2,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
-        "line_sources": [
-          "odds_api_io"
-        ],
-        "market_edge_pp": -1.514,
-        "market_probability": 0.436587,
-        "model_probability": 0.453667,
-        "odds": 2.34,
+        "line_sources": [],
+        "market_edge_pp": 1.648,
+        "market_probability": 0.40201,
+        "model_probability": 0.418492,
+        "odds": 2.66,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -1266,70 +2358,193 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 73.842,
-        "quality_reasons": [
-          "post_calibration_probability_guard"
-        ],
-        "quality_score": 53.338,
-        "quality_score_raw": 53.338,
-        "quality_score_source": "raw",
-        "selected_implied_probability": 0.42735,
-        "sources_count": 1,
+        "publication_score": 27.327,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.37594,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.6,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 2.66,
+          "selected_vs_median_deviation_pct": 2.308
+        },
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_away_raw": null,
-          "xg_home_raw": null,
-          "xg_source": "invalid_or_missing"
+          "enabled": true,
+          "xg_abs_gap_pp": 22.938,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 22.938,
+          "xg_model_gap_pp": -22.938,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.647877,
+          "xg_probability_pct": 64.788,
+          "xg_source": "home_away",
+          "xg_total": 2.107
         }
       },
-      "ok": false,
+      "odds": 2.66,
+      "point": 2.5,
+      "price": 2.66,
+      "publication_lifecycle_status": "telegram_sent",
+      "selected_odds": 2.66,
+      "selection": "Меньше",
+      "stake": 5.0,
+      "stake_amount": 5.0,
+      "status": "pending",
+      "telegram_sent": true,
+      "tier": "уровень B"
+    },
+    {
+      "away_team": "Eskilsminne",
+      "away_team_ru": "Ескилсминне",
+      "bet_payload": {
+        "away_team": "Eskilsminne",
+        "commence_time": "2026-06-28T11:00:00+00:00",
+        "family": "totals",
+        "home_team": "Olympic",
+        "kickoff": "2026-06-28T11:00:00+00:00",
+        "league_name": "Sweden - Ettan, Sodra",
+        "match_name": "Olympic — Eskilsminne",
+        "odds": 2.29,
+        "selection": "Меньше",
+        "stake": 5.0,
+        "stake_amount": 5.0
+      },
+      "canonical_publication_key": "soccer|olympic|eskilsminne|2026-06-28|totals|under|3|",
+      "commence_time": "2026-06-28T11:00:00+00:00",
+      "commence_time_display": "28.06.2026 14:00 MSK",
+      "dedupe_key": "6c16d9c764c119297f0f2d514d6f312b55adfdfe",
+      "family": "totals",
+      "home_team": "Olympic",
+      "home_team_ru": "Олимпик",
+      "kickoff": "2026-06-28T11:00:00+00:00",
+      "league_name": "Sweden - Ettan, Sodra",
+      "league_name_ru": "Суеден - Еттан, Содра",
+      "market_family": "totals",
+      "match_key": "soccer|olympic|eskilsminne|2026-06-28",
+      "match_name": "Olympic — Eskilsminne",
+      "metrics": {
+        "adjusted_probability": 0.474657,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.798,
+        "canonical_ev_pct": 8.696,
+        "confidence": 68.513,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.594,
+        "market_probability": 0.458716,
+        "model_probability": 0.474657,
+        "odds": 2.29,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 22.196,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.436681,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.18,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.29,
+          "selected_vs_median_deviation_pct": 5.046
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 19.479,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 19.479,
+          "xg_model_gap_pp": -19.479,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.66945,
+          "xg_probability_pct": 66.945,
+          "xg_source": "home_away",
+          "xg_total": 2.027
+        }
+      },
+      "odds": 2.29,
       "point": 3.0,
-      "reject_reasons": [
-        "canonical_negative_value",
-        "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00"
-      ],
-      "reject_reasons_ru": [
-        "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
-        "controlled fallback reserved daily slot held until:4/5@18:00"
-      ],
-      "selection": "Меньше 3",
-      "tier": null
+      "price": 2.29,
+      "publication_lifecycle_status": "telegram_sent",
+      "selected_odds": 2.29,
+      "selection": "Меньше",
+      "stake": 5.0,
+      "stake_amount": 5.0,
+      "status": "pending",
+      "telegram_sent": true,
+      "tier": "уровень B"
     }
   ],
-  "no_pick_report_sent": true,
-  "pool_counts": {
-    "debug_candidates_before_quality": 3,
-    "debug_candidates_before_quality_stale_or_outside_window": 22,
-    "latest_picks_stale_or_outside_window": 4,
-    "latest_rescue_candidates": 12,
-    "latest_rescue_candidates_duplicate_in_pool": 8,
-    "latest_rescue_candidates_stale_or_outside_window": 15
-  },
-  "published": false,
-  "scan_policy": {
-    "max_picks_per_run": 3,
-    "min_confirmation_sources": 1,
-    "min_kickoff_lead_minutes": 30,
-    "mode": "best_or_multi",
-    "publish_window_hours": 2,
-    "use_context_source_index": true
-  },
+  "selected_count": 3,
   "shadow_ranking": {
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
-    "duplicates_removed": 1,
+    "duplicates_removed": 2,
     "reason_counts_without_daily_cap": {
       "canonical_negative_value": 1,
-      "controlled_fallback_reserved_daily_slot_held_until:4/5@18:00": 14,
       "price_integrity:external_snapshot_bookmaker_median_outlier": 1,
-      "xg_direction_conflict": 4,
-      "xg_probability_gap_hard_reject": 4
+      "proxy_single_source_confidence_below_min": 1,
+      "proxy_single_source_edge_below_min": 1,
+      "proxy_single_source_ev_below_min": 1,
+      "tier_a_canonical_edge_below_min": 2,
+      "tier_a_confirmation_sources_below_min:1/2": 3,
+      "tier_a_odds_sources_below_min:1/2": 7,
+      "tier_a_proxy_quality_not_allowed": 4,
+      "tier_a_publication_score_below_min": 7,
+      "tier_a_quality_below_min": 3,
+      "tier_b_canonical_edge_below_min": 2,
+      "tier_b_publication_score_below_min": 7,
+      "tier_b_quality_below_min": 3,
+      "tier_c_canonical_edge_below_min": 2,
+      "tier_c_publication_score_below_min": 7,
+      "tier_c_quality_below_min": 3,
+      "xg_direction_conflict": 7,
+      "xg_probability_gap_hard_reject": 5
     },
     "top_would_publish_without_daily_cap": []
   },
-  "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3311,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782639409,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "status": "published",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3314,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782640824,\"text\":\"\\ud83d\\udd25 3 \\u0442\\u043e\\u043f\\u043e\\u0432\\u044b\\u0445 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0445 \\u043f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u0430 \\u043d\\u0430 \\u0431\\u043b\\u0438\\u0436\\u0430\\u0439\\u0448\\u0438\\u0435 2 \\u0447\\u0430\\u0441\\u0430\\n\\n\\ud83d\\udcbc \\u0411\\u0430\\u043d\\u043a: 1000.00 | \\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u044b\\u0439 \\u0440\\u0438\\u0441\\u043a: 20.00 | \\u0414\\u043e\\u0441\\u0442\\u0443\\u043f\\u043d\\u043e: 980.00\\n\\ud83d\\udcb0 \\u041d\\u043e\\u0432\\u044b\\u0439 \\u0440\\u0438\\u0441\\u043a: 15.00 | \\u0420\\u0435\\u0436\\u0438\\u043c: top-bundle, \\u0442\\u043e\\u043b\\u044c\\u043a\\u043e \\u043f\\u0440\\u043e\\u0448\\u0435\\u0434\\u0448\\u0438\\u0435 \\u0444\\u0438\\u043d\\u0430\\u043b",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
@@ -1337,6 +2552,5 @@
     "manual_late_mode_enabled": false,
     "min_kickoff_lead_minutes": 30,
     "publish_window_hours": 2
-  },
-  "watchlist": []
+  }
 }
