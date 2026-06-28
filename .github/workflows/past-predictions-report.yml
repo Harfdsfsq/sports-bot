@@ -103,9 +103,9 @@ jobs:
           EXTRA=""
           if [ "${{ inputs.force_send }}" = "true" ]; then EXTRA="$EXTRA --force"; fi
           if [ "${{ inputs.scope }}" = "all" ]; then
-            python scripts/send_past_predictions_report.py --all --send-telegram $EXTRA
+            python scripts/send_all_time_predictions_report.py --all --send-telegram $EXTRA
           else
-            python scripts/send_past_predictions_report.py --days "${{ inputs.days }}" --send-telegram $EXTRA
+            python scripts/send_all_time_predictions_report.py --days "${{ inputs.days }}" --send-telegram $EXTRA
           fi
           cat .data/exports/latest-past-predictions-report.txt || true
 
