@@ -14,6 +14,14 @@ def _is_run_once() -> bool:
     return 'run-once' in argv and ('app.cli' in argv or 'cli.py' in argv or '-m' in argv)
 
 
+def _is_report_only_run() -> bool:
+    return (
+        _enabled('DAILY_REPORT_ENABLED', 'false')
+        and not _enabled('PREDICTION_PUBLICATION_ENABLED', 'false')
+        and not _enabled('CONTROLLED_FALLBACK_ENABLED', 'false')
+    )
+
+
 def _sync_publication_ledger_before_cli() -> None:
     if not _enabled('HARIZON_PUBLICATION_LEDGER_BOOTSTRAP_SYNC_ENABLED'):
         return
@@ -30,6 +38,27 @@ def _sync_publication_ledger_after_cli() -> None:
     try:
         from scripts.sync_publication_ledger import main as sync_main
         sync_main()
+    except Exception:
+        pass
+
+
+def _send_past_predictions_report_after_cli() -> None:
+    if not _enabled('PAST_PREDICTIONS_REPORT_AUTOSEND_ENABLED'):
+        return
+    if not _is_report_only_run():
+        return
+    try:
+        from scripts import send_past_predictions_report
+        old_argv = list(sys.argv)
+        days = str(os.getenv('PAST_PREDICTIONS_REPORT_DAYS') or '3')
+        argv = ['send_past_predictions_report.py', '--days', days, '--send-telegram']
+        if _enabled('PAST_PREDICTIONS_REPORT_FORCE', 'false'):
+            argv.append('--force')
+        sys.argv = argv
+        try:
+            send_past_predictions_report.main()
+        finally:
+            sys.argv = old_argv
     except Exception:
         pass
 
@@ -64,3 +93,4 @@ if _is_run_once():
     _install_bzzoiro_v2_source_matrix()
     atexit.register(_run_bzzoiro_offer_bridge_after_cli)
     atexit.register(_sync_publication_ledger_after_cli)
+    atexit.register(_send_past_predictions_report_after_cli)
