@@ -6,6 +6,8 @@ def main() -> int:
         import scripts.publish_controlled_fallback_guarded_v18 as v18
         from scripts.patch_reserved_slot_expiring_candidate import install as install_reserved_slot_expiry_override
         from scripts.patch_daily_slot_bundle_cap import install as install_daily_slot_bundle_cap
+        from scripts.patch_daily_slot_semantic_ledger_count import install as install_semantic_ledger_daily_count
+        install_semantic_ledger_daily_count(v18)
         install_reserved_slot_expiry_override(v18)
         install_daily_slot_bundle_cap(v18)
     except Exception:
