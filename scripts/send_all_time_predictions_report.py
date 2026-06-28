@@ -262,10 +262,6 @@ def raw_rows() -> list[dict[str, Any]]:
 
 
 def business_key(row: dict[str, Any]) -> str:
-    # Intentionally excludes publication day/kickoff day.  This catches replayed
-    # imports where the same pick was restored under today's date.  The result and
-    # odds are included so a real future rematch with a different price/result is
-    # not collapsed accidentally.
     raw = "|".join([
         norm(home(row)),
         norm(away(row)),
@@ -287,8 +283,6 @@ def score(row: dict[str, Any]) -> tuple[int, int, float, int, int]:
     st = stake(row)
     settlement_size = len(json.dumps(row.get("settlement"), ensure_ascii=False, sort_keys=True)) if isinstance(row.get("settlement"), dict) else 0
     metrics_size = len(json.dumps(row.get("metrics"), ensure_ascii=False, sort_keys=True)) if isinstance(row.get("metrics"), dict) else 0
-    # Prefer older publication date when everything else is equal; replay imports
-    # usually get today's timestamp.
     dt = published_at(row) or datetime.max.replace(tzinfo=UTC)
     return (closed, has_tier, st, settlement_size + metrics_size, -int(dt.timestamp()) if dt.timestamp() > 0 else 0)
 
@@ -368,14 +362,31 @@ def xg(row: dict[str, Any]) -> str:
 
 def quality(row: dict[str, Any]) -> str:
     metrics = nested(row, "metrics")
-    text = str(first(row.get("quality_score_source"), row.get("quality_source"), metrics.get("quality_score_source"), nested(row, "source_summary").get("quality_source"), "") or "").lower()
+    text = str(first(row.get("quality_score_source"), row.get("quality_source"), metrics.get("quality_score_source"), nested(row, "source_summary").get("quality_source"), row.get("published_by"), "") or "").lower()
     if "a_cover" in text:
         return "a_cover_evidence"
+    if "controlled" in text or "fallback" in text or "reserve" in text:
+        return "controlled_fallback"
     if "proxy" in text:
         return "proxy"
     if "raw" in text:
         return "raw"
     return "unknown_quality"
+
+
+def review_reason(row: dict[str, Any]) -> str | None:
+    if status(row) != "pending":
+        return None
+    ko = kickoff(row)
+    if ko is None:
+        return "missing_kickoff"
+    if datetime.now(UTC) - ko > timedelta(hours=5):
+        return "needs_result_settlement"
+    return None
+
+
+def pending_live_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [r for r in rows if status(r) == "pending" and not review_reason(r)]
 
 
 def summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -384,6 +395,9 @@ def summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     losses = sum(1 for r in closed if status(r) in LOSSES)
     pushes = sum(1 for r in closed if status(r) in PUSHES)
     voids = sum(1 for r in closed if status(r) in VOIDS)
+    pending = [r for r in rows if status(r) == "pending"]
+    review = [r for r in rows if review_reason(r)]
+    live_pending = [r for r in pending if r not in review]
     staked = sum(stake(r) for r in closed if status(r) not in VOIDS)
     profit = sum(pnl(r) for r in closed)
     roi = profit / staked * 100 if staked else 0.0
@@ -392,7 +406,9 @@ def summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "total": len(rows),
         "closed": len(closed),
-        "pending": len([r for r in rows if status(r) == "pending"]),
+        "pending": len(pending),
+        "pending_live": len(live_pending),
+        "review": len(review),
         "wins": wins,
         "losses": losses,
         "pushes": pushes,
@@ -400,6 +416,7 @@ def summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "stake": round(staked, 2),
         "pnl": round(profit, 2),
         "roi_pct": round(roi, 2),
+        "bank_roi_pct_on_start_1000": round(profit / 1000.0 * 100.0, 2),
         "hit_rate_pct": round(hit, 2),
         "avg_odds": round(avg_odds, 3),
     }
@@ -438,17 +455,6 @@ def emoji(s: str) -> str:
     return "⏳"
 
 
-def review_reason(row: dict[str, Any]) -> str | None:
-    if status(row) != "pending":
-        return None
-    ko = kickoff(row)
-    if ko is None:
-        return "missing_kickoff"
-    if datetime.now(UTC) - ko > timedelta(hours=5):
-        return "needs_result_settlement"
-    return None
-
-
 def group_lines(title: str, groups: dict[str, dict[str, Any]]) -> list[str]:
     lines = [title]
     for key, s in groups.items():
@@ -459,12 +465,13 @@ def group_lines(title: str, groups: dict[str, dict[str, Any]]) -> list[str]:
 def render(rows: list[dict[str, Any]], meta: dict[str, Any], scope_text: str) -> str:
     s = summary(rows)
     review = [r for r in rows if review_reason(r)]
+    live_pending = pending_live_rows(rows)
     lines = [
         f"📊 HARIZON — отчёт по прошлым прогнозам {scope_text}",
         "",
-        f"Опубликовано: {s['total']} | закрыто: {s['closed']} | pending: {s['pending']} | review: {len(review)}",
+        f"Опубликовано: {s['total']} | закрыто: {s['closed']} | pending live: {len(live_pending)} | needs settlement: {len(review)}",
         f"Итог: {s['wins']}✅ / {s['losses']}❌ / {s['pushes']}➖ / {s['voids']}⚪",
-        f"P&L: {s['pnl']:+.2f} | ROI: {s['roi_pct']:+.2f}% | Hit rate: {s['hit_rate_pct']:.1f}% | avg odds {s['avg_odds']:.2f}",
+        f"P&L: {s['pnl']:+.2f} | ROI на оборот: {s['roi_pct']:+.2f}% | ROI банка от 1000: {s['bank_roi_pct_on_start_1000']:+.2f}% | Hit rate: {s['hit_rate_pct']:.1f}% | avg odds {s['avg_odds']:.2f}",
         f"Ledger: raw {meta['raw_rows']} / published rows {meta['published_rows_seen']} → unique {meta['unique']} | duplicates removed {meta['duplicates_removed']}",
         f"Период: {meta.get('first_day') or 'н/д'} — {meta.get('last_day') or 'н/д'}",
         "",
@@ -485,6 +492,11 @@ def render(rows: list[dict[str, Any]], meta: dict[str, Any], scope_text: str) ->
         settlement = nested(row, "settlement")
         score_text = f" | счёт {settlement.get('score') or row.get('score')}" if (settlement.get("score") or row.get("score")) else ""
         lines.append(f"{idx}. [{row.get('report_day')}] {match_title(row)} — {pick_text(row)} | {tier(row)} | {emoji(status(row))} {status(row)} | P&L {pnl(row):+.2f}{score_text}{metric}")
+    if live_pending:
+        lines.append("")
+        lines.append("🟢 Ещё открыты / ждут матча")
+        for row in live_pending[:12]:
+            lines.append(f"• {match_title(row)} — {pick_text(row)}")
     if review:
         lines.append("")
         lines.append("🟡 Нужно дозакрыть")
@@ -566,7 +578,7 @@ def main() -> int:
     else:
         skip_reason = "send_telegram_not_requested"
     payload = {
-        "policy_version": "all-time-predictions-report-v1-business-dedupe",
+        "policy_version": "all-time-predictions-report-v2-pending-split",
         "created_at_utc": datetime.now(UTC).isoformat(),
         "scope": key,
         "telegram_sent": sent,
@@ -577,14 +589,15 @@ def main() -> int:
         "by_tier": group(rows, tier),
         "by_xg": group(rows, xg),
         "by_quality": group(rows, quality),
+        "live_pending": pending_live_rows(rows),
         "review_queue": [r for r in rows if review_reason(r)],
         "rows": rows,
         "text": text,
     }
     write_json(OUT_JSON, payload)
-    write_json(SUMMARY, {k: payload[k] for k in ("policy_version", "created_at_utc", "scope", "meta", "summary", "by_tier", "by_xg", "by_quality")})
+    write_json(SUMMARY, {k: payload[k] for k in ("policy_version", "created_at_utc", "scope", "meta", "summary", "by_tier", "by_xg", "by_quality", "live_pending", "review_queue")})
     write_text(OUT_TXT, text)
-    print(json.dumps({"status": "ok", "scope": key, "rows": len(rows), "closed": payload["summary"]["closed"], "pending": payload["summary"]["pending"], "telegram_sent": sent, "skip_reason": skip_reason, "duplicates_removed": meta["duplicates_removed"]}, ensure_ascii=False, sort_keys=True))
+    print(json.dumps({"status": "ok", "scope": key, "rows": len(rows), "closed": payload["summary"]["closed"], "pending": payload["summary"]["pending"], "live_pending": payload["summary"]["pending_live"], "review": payload["summary"]["review"], "telegram_sent": sent, "skip_reason": skip_reason, "duplicates_removed": meta["duplicates_removed"]}, ensure_ascii=False, sort_keys=True))
     return 0
 
 
