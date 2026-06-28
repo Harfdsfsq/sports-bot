@@ -43,17 +43,18 @@ def _sync_publication_ledger_after_cli() -> None:
 
 
 def _send_past_predictions_report_after_cli() -> None:
-    if not _enabled('PAST_PREDICTIONS_REPORT_AUTOSEND_ENABLED'):
+    # Disabled by default.  The retrospective passability report is intended to
+    # be launched from its own manual GitHub Actions workflow, not from every
+    # daily/report-only run.  Set PAST_PREDICTIONS_REPORT_AUTOSEND_ENABLED=true
+    # only for an explicit temporary override.
+    if not _enabled('PAST_PREDICTIONS_REPORT_AUTOSEND_ENABLED', 'false'):
         return
     if not _is_report_only_run():
         return
     try:
         from scripts import send_past_predictions_report
         old_argv = list(sys.argv)
-        days = str(os.getenv('PAST_PREDICTIONS_REPORT_DAYS') or '3')
-        argv = ['send_past_predictions_report.py', '--days', days, '--send-telegram']
-        if _enabled('PAST_PREDICTIONS_REPORT_FORCE', 'false'):
-            argv.append('--force')
+        argv = ['send_past_predictions_report.py', '--all', '--send-telegram', '--force']
         sys.argv = argv
         try:
             send_past_predictions_report.main()
