@@ -21,9 +21,20 @@ on:
         required: false
         default: true
         type: boolean
+      backfill_actions_artifacts:
+        description: Backfill old published picks from available run-bot artifacts before reporting
+        required: false
+        default: true
+        type: boolean
+      backfill_lookback_days:
+        description: How many days of GitHub Actions artifacts to scan
+        required: false
+        default: '30'
+        type: string
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: past-predictions-report
@@ -33,6 +44,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
   TZ: Europe/Moscow
   APP_TIMEZONE: Europe/Moscow
+  GITHUB_TOKEN: ${{ github.token }}
   TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
   ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
@@ -82,7 +94,19 @@ jobs:
 
       - name: Prepare state folders
         shell: bash
-        run: mkdir -p .data .data/bets .data/exports .logs artifacts/past-predictions-report
+        run: mkdir -p .data .data/bets .data/exports .data/imports .logs artifacts/past-predictions-report
+
+      - name: Backfill ledger from Actions artifacts
+        if: ${{ inputs.backfill_actions_artifacts }}
+        shell: bash
+        env:
+          ACTIONS_BACKFILL_LOOKBACK_DAYS: ${{ inputs.backfill_lookback_days }}
+        run: |
+          python scripts/backfill_publication_ledger_from_actions.py \
+            --lookback-days "$ACTIONS_BACKFILL_LOOKBACK_DAYS" \
+            --max-runs 160 \
+            --artifact-filter run-bot,daily-report || true
+          cat .data/exports/latest-actions-artifact-publication-backfill.json || true
 
       - name: Sync ledger before settlement
         shell: bash
@@ -114,6 +138,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts/past-predictions-report
+          cp -f .data/exports/latest-actions-artifact-publication-backfill.json artifacts/past-predictions-report/latest-actions-artifact-publication-backfill.json 2>/dev/null || true
           cp -f .data/exports/latest-past-predictions-report.json artifacts/past-predictions-report/latest-past-predictions-report.json 2>/dev/null || true
           cp -f .data/exports/latest-past-predictions-report.txt artifacts/past-predictions-report/latest-past-predictions-report.txt 2>/dev/null || true
           cp -f .data/bets/performance-summary.json artifacts/past-predictions-report/performance-summary.json 2>/dev/null || true
