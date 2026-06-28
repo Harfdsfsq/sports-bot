@@ -10,12 +10,16 @@ ledger/state rows.
 """
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from scripts import send_all_time_predictions_report as report
 
-ROOT = Path(".").resolve()
 IMPORT_REPORT = ROOT / ".data" / "exports" / "latest-fallback-sent-index-ledger-import.json"
 
 
