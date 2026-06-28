@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-"""Send a Telegram retrospective report for recent HARIZON predictions.
+"""Send a manual Telegram retrospective report for HARIZON predictions.
 
-The report is deliberately ledger-first.  It reads the semantic publication
-ledger, mirrors state via sync_publication_ledger, deduplicates picks, and then
-summarizes closed/pending/review outcomes for the last N local publication days.
-It does not force-settle matches; unresolved old picks are surfaced as review
-items so we can see where provider matching still fails.
+This script is designed for an explicit GitHub Actions workflow_dispatch run.
+It reads the durable semantic ledger, deduplicates all historical picks, computes
+closed/pending/review stats, writes cumulative performance JSON, and sends a
+Telegram report on demand.  It does not run on a schedule by itself.
 """
 
 import argparse
 import hashlib
 import json
 import os
-import re
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -28,6 +26,7 @@ EXPORT = DATA / "exports"
 STATE_PATH = DATA / "state.json"
 OUT_JSON = EXPORT / "latest-past-predictions-report.json"
 OUT_TXT = EXPORT / "latest-past-predictions-report.txt"
+SUMMARY_JSON = BET_DIR / "performance-summary.json"
 SENT_PATH = DATA / "past-predictions-report-sent.json"
 
 CLOSED_STATUSES = {"won", "half_won", "lost", "half_lost", "push", "void", "cancelled", "refunded"}
@@ -237,18 +236,20 @@ def merge_rows(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def published_rows(days: int, tz: ZoneInfo) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def published_rows(days: int | None, tz: ZoneInfo, *, all_time: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     today = datetime.now(UTC).astimezone(tz).date()
-    allowed_days = {(today - timedelta(days=i)).isoformat() for i in range(max(1, days))}
+    allowed_days = None if all_time else {(today - timedelta(days=i)).isoformat() for i in range(max(1, int(days or 3)))}
     by_key: dict[str, dict[str, Any]] = {}
     total_seen = 0
     out_of_window = 0
+    days_seen: set[str] = set()
     for row in raw_rows():
         if not isinstance(row, dict) or not is_published(row):
             continue
         total_seen += 1
-        day = local_day_for(row, tz, prefer_publication=True) or local_day_for(row, tz, prefer_publication=False)
-        if day not in allowed_days:
+        day = local_day_for(row, tz, prefer_publication=True) or local_day_for(row, tz, prefer_publication=False) or "unknown"
+        days_seen.add(day)
+        if allowed_days is not None and day not in allowed_days:
             out_of_window += 1
             continue
         key = semantic_key(row)
@@ -257,7 +258,15 @@ def published_rows(days: int, tz: ZoneInfo) -> tuple[list[dict[str, Any]], dict[
         row["ledger_semantic_key"] = key
         by_key[key] = merge_rows(by_key[key], row) if key in by_key else row
     rows = sorted(by_key.values(), key=lambda r: (str(r.get("report_day") or ""), str(r.get("commence_time") or r.get("kickoff") or r.get("published_at_utc") or "")))
-    return rows, {"raw_seen": total_seen, "out_of_window": out_of_window, "unique": len(rows), "window_days": sorted(allowed_days)}
+    return rows, {
+        "raw_seen": total_seen,
+        "out_of_window": out_of_window,
+        "unique": len(rows),
+        "all_time": all_time,
+        "window_days": sorted(days_seen if all_time else (allowed_days or set())),
+        "first_day": min(days_seen) if days_seen else None,
+        "last_day": max(days_seen) if days_seen else None,
+    }
 
 
 def status_of(row: dict[str, Any]) -> str:
@@ -343,6 +352,7 @@ def calc_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     pnl = sum(pnl_of(r) for r in closed)
     roi = pnl / stake * 100.0 if stake > 0 else 0.0
     hit = wins / max(1, wins + losses) * 100.0 if wins + losses > 0 else 0.0
+    avg_odds = sum(odds_of(r) for r in closed if odds_of(r) > 0) / max(1, sum(1 for r in closed if odds_of(r) > 0))
     return {
         "total": len(rows),
         "closed": len(closed),
@@ -355,6 +365,7 @@ def calc_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "pnl": round(pnl, 2),
         "roi_pct": round(roi, 2),
         "hit_rate_pct": round(hit, 2),
+        "avg_odds": round(avg_odds, 3),
     }
 
 
@@ -409,17 +420,18 @@ def format_group_lines(title: str, groups: dict[str, dict[str, Any]]) -> list[st
     return lines
 
 
-def render(rows: list[dict[str, Any]], days: int, meta: dict[str, Any]) -> str:
+def render(rows: list[dict[str, Any]], days: int | None, meta: dict[str, Any]) -> str:
     now = datetime.now(UTC)
     summary = calc_summary(rows)
     review_rows = [r for r in rows if review_reason(r, now)]
+    scope = "за всё время" if meta.get("all_time") else f"за {days} дн."
     lines = [
-        f"📊 HARIZON — отчёт по прошлым прогнозам за {days} дн.",
+        f"📊 HARIZON — отчёт по прошлым прогнозам {scope}",
         "",
         f"Опубликовано: {summary['total']} | закрыто: {summary['closed']} | pending: {summary['pending']} | review: {len(review_rows)}",
         f"Итог: {summary['wins']}✅ / {summary['losses']}❌ / {summary['pushes']}➖ / {summary['voids']}⚪",
-        f"P&L: {summary['pnl']:+.2f} | ROI: {summary['roi_pct']:+.2f}% | Hit rate: {summary['hit_rate_pct']:.1f}%",
-        f"Ledger: raw {meta.get('raw_seen', 0)} → unique {meta.get('unique', 0)} | окно: {', '.join(meta.get('window_days', []))}",
+        f"P&L: {summary['pnl']:+.2f} | ROI: {summary['roi_pct']:+.2f}% | Hit rate: {summary['hit_rate_pct']:.1f}% | avg odds {summary['avg_odds']:.2f}",
+        f"Ledger: raw {meta.get('raw_seen', 0)} → unique {meta.get('unique', 0)} | период: {meta.get('first_day') or 'н/д'} — {meta.get('last_day') or 'н/д'}",
         "",
     ]
     lines.extend(format_group_lines("🏷️ По уровню", group_summary(rows, tier_of)))
@@ -428,8 +440,8 @@ def render(rows: list[dict[str, Any]], days: int, meta: dict[str, Any]) -> str:
     lines.append("")
     lines.extend(format_group_lines("📌 По качеству", group_summary(rows, quality_bucket)))
     lines.append("")
-    lines.append("🧾 Ставки")
-    for idx, row in enumerate(rows[:30], start=1):
+    lines.append("🧾 Последние/найденные ставки")
+    for idx, row in enumerate(rows[-35:], start=1):
         status = status_of(row)
         settlement = nested(row, "settlement")
         score = settlement.get("score") or row.get("score") or ""
@@ -444,15 +456,15 @@ def render(rows: list[dict[str, Any]], days: int, meta: dict[str, Any]) -> str:
             f"{idx}. [{day}] {match_title(row)} — {pick_text(row)} | {tier_of(row)} | "
             f"{outcome_emoji(status)} {status} | P&L {pnl_of(row):+.2f}{score_text}{metric_text}"
         )
-    if len(rows) > 30:
-        lines.append(f"… ещё {len(rows) - 30} ставок в JSON-отчёте.")
+    if len(rows) > 35:
+        lines.append(f"… всего {len(rows)} ставок; полный список в JSON artifact.")
     if review_rows:
         lines.append("")
         lines.append("🟡 Нужно дозакрыть")
-        for row in review_rows[:10]:
+        for row in review_rows[:12]:
             lines.append(f"• {match_title(row)} — {pick_text(row)} | причина: {review_reason(row, now)}")
     lines.append("")
-    lines.append("Вывод: использовать этот отчёт для настройки A/B-tier, xG/missing_xG, min EV/edge и фильтра лиг.")
+    lines.append("Отчёт запускается вручную. Статистика хранится в ledger и performance-summary.json.")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -520,17 +532,18 @@ def sync_ledger() -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--days", type=int, default=int(float(os.getenv("PAST_PREDICTIONS_REPORT_DAYS", "3") or 3)))
+    parser.add_argument("--all", action="store_true", help="Include every stored prediction from the durable ledger.")
     parser.add_argument("--send-telegram", action="store_true")
-    parser.add_argument("--force", action="store_true")
+    parser.add_argument("--force", action="store_true", help="Send even when the report digest is unchanged.")
     parser.add_argument("--send-empty", action="store_true")
     args = parser.parse_args()
 
     ledger_sync = sync_ledger()
     tz = app_tz()
-    rows, meta = published_rows(args.days, tz)
-    text = render(rows, args.days, meta) if rows or args.send_empty else ""
+    rows, meta = published_rows(args.days, tz, all_time=args.all)
+    text = render(rows, None if args.all else args.days, meta) if rows or args.send_empty else ""
     digest = hashlib.sha1(text.encode("utf-8")).hexdigest() if text else ""
-    window_key = f"last_{args.days}_days:{'-'.join(meta.get('window_days', []))}"
+    window_key = "all_time" if args.all else f"last_{args.days}_days:{'-'.join(meta.get('window_days', []))}"
     sent = False
     skip_reason = None
     if not text:
@@ -545,9 +558,10 @@ def main() -> int:
 
     summary = calc_summary(rows)
     payload = {
-        "policy_version": "past-predictions-report-v1",
+        "policy_version": "past-predictions-report-v2-all-time-manual",
         "created_at_utc": datetime.now(UTC).isoformat(),
-        "days": args.days,
+        "scope": "all_time" if args.all else f"last_{args.days}_days",
+        "days": None if args.all else args.days,
         "window_key": window_key,
         "telegram_sent": sent,
         "skip_reason": skip_reason,
@@ -562,8 +576,9 @@ def main() -> int:
         "text": text,
     }
     write_json(OUT_JSON, payload)
+    write_json(SUMMARY_JSON, {k: payload[k] for k in ("policy_version", "created_at_utc", "scope", "meta", "summary", "by_tier", "by_xg", "by_quality")})
     write_text(OUT_TXT, text)
-    print(json.dumps({"status": "ok", "rows": len(rows), "closed": summary["closed"], "pending": summary["pending"], "telegram_sent": sent, "skip_reason": skip_reason}, ensure_ascii=False, sort_keys=True))
+    print(json.dumps({"status": "ok", "scope": payload["scope"], "rows": len(rows), "closed": summary["closed"], "pending": summary["pending"], "telegram_sent": sent, "skip_reason": skip_reason}, ensure_ascii=False, sort_keys=True))
     return 0
 
 
