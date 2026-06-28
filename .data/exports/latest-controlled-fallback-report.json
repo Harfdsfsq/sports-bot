@@ -5,44 +5,46 @@
       "A-tier publication score is below min on many candidates."
     ],
     "quality_score_sources": {
-      "proxy": 3,
+      "proxy": 6,
+      "raw": 1,
       "raw_missing": 2
     },
     "tier_a_blocker_counts": {
-      "tier_a_books_below_min": 2,
+      "tier_a_books_below_min": 1,
       "tier_a_canonical_edge_below_min": 1,
-      "tier_a_odds_sources_below_min:1/2": 2,
-      "tier_a_proxy_quality_not_allowed": 2,
-      "tier_a_publication_score_below_min": 2,
+      "tier_a_odds_sources_below_min:1/2": 3,
+      "tier_a_proxy_quality_not_allowed": 3,
+      "tier_a_publication_score_below_min": 3,
       "tier_a_quality_below_min": 1
     }
   },
-  "candidates_seen": 5,
-  "created_at": "2026-06-28T01:18:21.600012+00:00",
+  "candidates_seen": 10,
+  "created_at": "2026-06-28T03:17:55.316706+00:00",
+  "dry_run": false,
   "enabled": true,
   "evaluated": [
     {
-      "away_team": "Argentina",
-      "away_team_ru": "Аргентина",
+      "away_team": "Moreton City Excelsior FC",
+      "away_team_ru": "Моретон Кити Екскелсиор",
       "candidate_source": "a_cover_market_promotion",
-      "commence_time": "2026-06-28T02:00:00+00:00",
-      "commence_time_display": "28.06.2026 05:00 MSK",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
       "family": "totals",
-      "home_team": "Jordan",
-      "home_team_ru": "Джордан",
-      "league_name": "FIFA World Cup",
-      "league_name_ru": "FIFA Уорлд Кубок",
-      "match_key": "soccer|jordan|argentina|2026-06-28",
+      "home_team": "Gold Coast",
+      "home_team_ru": "Голд Коаст",
+      "league_name": "Australia - Queensland NPL",
+      "league_name_ru": "Австралия - Квинсланд NPL",
+      "match_key": "soccer|gold_coast|moreton_city_excelsior_fc|2026-06-28",
       "metrics": {
-        "adjusted_probability": 0.431916,
-        "books_count": 227,
+        "adjusted_probability": 0.528574,
+        "books_count": 161,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 1.525,
-        "canonical_ev_pct": 3.66,
-        "confidence": 67.447,
+        "canonical_edge_pp": 2.352,
+        "canonical_ev_pct": 4.658,
+        "confidence": 67.896,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -53,7 +55,6 @@
         },
         "confirmation_sources": [
           "bzzoiro",
-          "football_data",
           "sstats"
         ],
         "confirmation_sources_count": 4,
@@ -62,10 +63,10 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 0.819,
-        "market_probability": 0.423729,
-        "model_probability": 0.431916,
-        "odds": 2.4,
+        "market_edge_pp": 1.178,
+        "market_probability": 0.516796,
+        "model_probability": 0.528574,
+        "odds": 1.98,
         "odds_sources_count": 4,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -74,61 +75,79 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 11.759,
+        "publication_score": 14.561,
         "quality_reasons": [],
         "quality_score": 0.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "raw_missing",
-        "selected_implied_probability": 0.416667,
+        "selected_implied_probability": 0.505051,
         "sources_count": 4,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 161,
+          "enabled": true,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 4,
+          "priced_books_count": 1,
+          "same_market_side_line_only": true
+        },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 18.949,
-          "xg_direction_ok": false,
+          "xg_abs_gap_pp": 5.66,
+          "xg_direction_ok": true,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 18.949,
-          "xg_model_optimism_gap_pp": 18.949,
-          "xg_probability": 0.242424,
-          "xg_probability_pct": 24.242,
+          "xg_model_gap_pp": 5.66,
+          "xg_model_optimism_gap_pp": 5.66,
+          "xg_probability": 0.471974,
+          "xg_probability_pct": 47.197,
           "xg_source": "home_away",
-          "xg_total": 2.5
+          "xg_total": 3.54
         }
       },
       "ok": false,
       "point": 3.5,
       "reject_reasons": [
-        "xg_direction_conflict",
-        "xg_probability_gap_hard_reject"
+        "tier_a_quality_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_bookmaker_quorum_prices_missing:1/2",
+        "tier_c_quality_below_min",
+        "tier_c_publication_score_below_min"
       ],
       "reject_reasons_ru": [
-        "направление ставки конфликтует с xG",
-        "модель слишком оптимистична относительно xG-ориентира"
+        "качество ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "качество ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: bookmaker quorum prices missing:1/2",
+        "качество ниже минимума уровня C",
+        "уровень C: publication score below min"
       ],
       "selection": "Больше",
       "tier": null
     },
     {
-      "away_team": "Real Monarchs",
-      "away_team_ru": "Рил Монарчс",
+      "away_team": "Moreton City Excelsior FC",
+      "away_team_ru": "Моретон Кити Екскелсиор",
       "candidate_source": "a_cover_market_promotion",
-      "commence_time": "2026-06-28T02:00:00+00:00",
-      "commence_time_display": "28.06.2026 05:00 MSK",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
       "family": "totals",
-      "home_team": "Ventura County FC",
-      "home_team_ru": "Вентура Кунти",
-      "league_name": "USA - MLS Next Pro",
-      "league_name_ru": "США - MLS Next Pro",
-      "match_key": "soccer|ventura_county_fc|real_monarchs|2026-06-28",
+      "home_team": "Gold Coast United",
+      "home_team_ru": "Голд Коаст Унитед",
+      "league_name": "NPL Queensland",
+      "league_name_ru": "NPL Квинсланд",
+      "match_key": "soccer|gold_coast_united|moreton_city_excelsior_fc|2026-06-28",
       "metrics": {
-        "adjusted_probability": 0.419272,
-        "books_count": 33,
+        "adjusted_probability": 0.524083,
+        "books_count": 174,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 1.927,
-        "canonical_ev_pct": 4.818,
-        "confidence": 68.268,
+        "canonical_edge_pp": 1.903,
+        "canonical_ev_pct": 3.768,
+        "confidence": 71.396,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -138,6 +157,7 @@
           "weather_supports_under": false
         },
         "confirmation_sources": [
+          "bzzoiro",
           "sstats"
         ],
         "confirmation_sources_count": 3,
@@ -146,10 +166,10 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 0.944,
-        "market_probability": 0.409836,
-        "model_probability": 0.419272,
-        "odds": 2.5,
+        "market_edge_pp": 1.126,
+        "market_probability": 0.512821,
+        "model_probability": 0.524083,
+        "odds": 1.98,
         "odds_sources_count": 3,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -158,40 +178,35 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 15.095,
+        "publication_score": 16.24,
         "quality_reasons": [],
         "quality_score": 0.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "raw_missing",
-        "selected_implied_probability": 0.4,
+        "selected_implied_probability": 0.505051,
         "sources_count": 3,
         "tier_b_bookmaker_quorum": {
-          "books_count": 33,
+          "books_count": 174,
           "enabled": true,
           "max_deviation_pct": 8.0,
-          "median_price": 2.44,
+          "median_price": 1.925,
           "mode": "bookmaker_quorum",
           "odds_sources_count": 3,
-          "priced_books_count": 2,
+          "priced_books_count": 4,
           "same_market_side_line_only": true,
-          "selected_price": 2.5,
-          "selected_vs_median_deviation_pct": 2.459
+          "selected_price": 1.98,
+          "selected_vs_median_deviation_pct": 2.857
         },
         "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 17.359,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 17.359,
-          "xg_model_gap_pp": -17.359,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.592859,
-          "xg_probability_pct": 59.286,
-          "xg_source": "home_away",
-          "xg_total": 2.312
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
         }
       },
       "ok": false,
-      "point": 2.5,
+      "point": 3.5,
       "reject_reasons": [
         "tier_a_quality_below_min",
         "tier_a_canonical_edge_below_min",
@@ -214,217 +229,31 @@
         "запас value ниже минимума уровня C",
         "уровень C: publication score below min"
       ],
-      "selection": "Меньше",
-      "tier": null
-    },
-    {
-      "away_team": "Austria",
-      "away_team_ru": "Аустриа",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-28T02:00:00+00:00",
-      "commence_time_display": "28.06.2026 05:00 MSK",
-      "family": "totals",
-      "home_team": "Algeria",
-      "home_team_ru": "Алгериа",
-      "league_name": "FIFA World Cup",
-      "league_name_ru": "FIFA Уорлд Кубок",
-      "match_key": "soccer|algeria|austria|2026-06-28",
-      "metrics": {
-        "adjusted_probability": 0.578615,
-        "books_count": 1,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 3.217,
-        "canonical_ev_pct": 5.887,
-        "confidence": 68.449,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "bzzoiro",
-          "football_data",
-          "sstats"
-        ],
-        "confirmation_sources_count": 4,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 1.523,
-        "market_probability": 0.56338,
-        "model_probability": 0.578615,
-        "odds": 1.83,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 17.703,
-        "quality_reasons": [],
-        "quality_score": 70.817,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.546448,
-        "sources_count": 4,
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 13.409,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 13.409,
-          "xg_model_gap_pp": -13.409,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.712703,
-          "xg_probability_pct": 71.27,
-          "xg_source": "home_away",
-          "xg_total": 2.5
-        }
-      },
-      "ok": false,
-      "point": 1.5,
-      "reject_reasons": [
-        "tier_a_books_below_min",
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_b_books_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_b_bookmaker_quorum_books_below_min:1/2",
-        "tier_b_bookmaker_quorum_books_below_min:1/2",
-        "tier_c_books_below_min",
-        "tier_c_publication_score_below_min"
-      ],
-      "reject_reasons_ru": [
-        "линий букмекеров меньше минимума уровня A",
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "линий букмекеров меньше минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень B: bookmaker quorum books below min:1/2",
-        "уровень B: bookmaker quorum books below min:1/2",
-        "линий букмекеров меньше минимума уровня C",
-        "уровень C: publication score below min"
-      ],
       "selection": "Больше",
       "tier": null
     },
     {
-      "away_team": "Argentina",
-      "away_team_ru": "Аргентина",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-28T02:00:00+00:00",
-      "commence_time_display": "28.06.2026 05:00 MSK",
+      "away_team": "Blacktown",
+      "away_team_ru": "Блактоун",
+      "candidate_source": "a_cover_market_promotion",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
       "family": "totals",
-      "home_team": "Jordan",
-      "home_team_ru": "Джордан",
-      "league_name": "FIFA World Cup",
-      "league_name_ru": "FIFA Уорлд Кубок",
-      "match_key": "soccer|jordan|argentina|2026-06-28",
+      "home_team": "Marconi",
+      "home_team_ru": "Маркони",
+      "league_name": "Australia - NSW NPL 1",
+      "league_name_ru": "Австралия - NSW NPL 1",
+      "match_key": "soccer|marconi|blacktown|2026-06-28",
       "metrics": {
-        "adjusted_probability": 0.661786,
-        "books_count": 1,
+        "adjusted_probability": 0.626438,
+        "books_count": 49,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 2.887,
-        "canonical_ev_pct": 4.562,
-        "confidence": 67.853,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "bzzoiro",
-          "football_data",
-          "sstats"
-        ],
-        "confirmation_sources_count": 4,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 1.454,
-        "market_probability": 0.647249,
-        "model_probability": 0.661786,
-        "odds": 1.58,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 15.521,
-        "quality_reasons": [],
-        "quality_score": 67.924,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.632911,
-        "sources_count": 4,
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 20.56,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 20.56,
-          "xg_model_optimism_gap_pp": 20.56,
-          "xg_probability": 0.456187,
-          "xg_probability_pct": 45.619,
-          "xg_source": "home_away",
-          "xg_total": 2.5
-        }
-      },
-      "ok": false,
-      "point": 2.5,
-      "reject_reasons": [
-        "xg_probability_gap_hard_reject"
-      ],
-      "reject_reasons_ru": [
-        "модель слишком оптимистична относительно xG-ориентира"
-      ],
-      "selection": "Больше",
-      "tier": null
-    },
-    {
-      "away_team": "Real Monarchs",
-      "away_team_ru": "Рил Монарчс",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-06-28T02:00:00+00:00",
-      "commence_time_display": "28.06.2026 05:00 MSK",
-      "family": "totals",
-      "home_team": "Ventura County FC",
-      "home_team_ru": "Вентура Кунти",
-      "league_name": "USA - MLS Next Pro",
-      "league_name_ru": "США - MLS Next Pro",
-      "match_key": "soccer|ventura_county_fc|real_monarchs|2026-06-28",
-      "metrics": {
-        "adjusted_probability": 0.571739,
-        "books_count": 1,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 4.542,
-        "canonical_ev_pct": 8.63,
-        "confidence": 68.184,
+        "canonical_edge_pp": 2.038,
+        "canonical_ev_pct": 3.362,
+        "confidence": 67.613,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -442,9 +271,93 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.925,
-        "market_probability": 0.552486,
-        "model_probability": 0.571739,
+        "market_edge_pp": 1.105,
+        "market_probability": 0.615385,
+        "model_probability": 0.626438,
+        "odds": 1.65,
+        "odds_sources_count": 3,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.642,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.606061,
+        "sources_count": 3,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 18.366,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 18.366,
+          "xg_model_optimism_gap_pp": 18.366,
+          "xg_probability": 0.44278,
+          "xg_probability_pct": 44.278,
+          "xg_source": "home_away",
+          "xg_total": 2.448
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG",
+        "модель слишком оптимистична относительно xG-ориентира"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "South East United FC",
+      "away_team_ru": "Сут Ист Унитед",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T04:30:00+00:00",
+      "commence_time_display": "28.06.2026 07:30 MSK",
+      "family": "totals",
+      "home_team": "Launceston",
+      "home_team_ru": "Лаункестон",
+      "league_name": "Australia - Tasmania NPL",
+      "league_name_ru": "Австралия - Тасманиа NPL",
+      "match_key": "soccer|launceston|south_east_united_fc|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.544291,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.798,
+        "canonical_ev_pct": 3.415,
+        "confidence": 67.937,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.953,
+        "market_probability": 0.534759,
+        "model_probability": 0.544291,
         "odds": 1.9,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
@@ -454,28 +367,324 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 23.51,
+        "publication_score": 13.322,
+        "quality_reasons": [],
+        "quality_score": 68.196,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.526316,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.87,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.9,
+          "selected_vs_median_deviation_pct": 1.604
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 4.5,
+      "reject_reasons": [
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Blacktown",
+      "away_team_ru": "Блактоун",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
+      "family": "totals",
+      "home_team": "Marconi",
+      "home_team_ru": "Маркони",
+      "league_name": "Australia - NSW NPL 1",
+      "league_name_ru": "Австралия - NSW NPL 1",
+      "match_key": "soccer|marconi|blacktown|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.475484,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.094,
+        "canonical_ev_pct": 4.606,
+        "confidence": 68.173,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.037,
+        "market_probability": 0.465116,
+        "model_probability": 0.475484,
+        "odds": 2.2,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 15.185,
+        "quality_reasons": [],
+        "quality_score": 70.545,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.454545,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.15,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.2,
+          "selected_vs_median_deviation_pct": 2.326
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 8.174,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 8.174,
+          "xg_model_gap_pp": -8.174,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.55722,
+          "xg_probability_pct": 55.722,
+          "xg_source": "home_away",
+          "xg_total": 2.448
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень B: publication score below min",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Weston",
+      "away_team_ru": "Уестон",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
+      "family": "totals",
+      "home_team": "Broadmeadow",
+      "home_team_ru": "Броадмидоу",
+      "league_name": "Australia - Northern NSW NPL",
+      "league_name_ru": "Австралия - Нортерн NSW NPL",
+      "match_key": "soccer|broadmeadow|weston|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.372735,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.375,
+        "canonical_ev_pct": 9.957,
+        "confidence": 69.081,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.399,
+        "market_probability": 0.358744,
+        "model_probability": 0.372735,
+        "odds": 2.95,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 22.801,
         "quality_reasons": [],
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.526316,
-        "sources_count": 3,
+        "selected_implied_probability": 0.338983,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.7875,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.95,
+          "selected_vs_median_deviation_pct": 5.83
+        },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 10.016,
+          "xg_abs_gap_pp": 20.667,
           "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 10.016,
-          "xg_model_gap_pp": -10.016,
+          "xg_model_conservative_gap_pp": 20.667,
+          "xg_model_gap_pp": -20.667,
           "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.671904,
-          "xg_probability_pct": 67.19,
+          "xg_probability": 0.579405,
+          "xg_probability_pct": 57.94,
           "xg_source": "home_away",
-          "xg_total": 2.312
+          "xg_total": 2.363
+        }
+      },
+      "ok": true,
+      "point": 2.5,
+      "reject_reasons": [],
+      "reject_reasons_ru": [],
+      "selection": "Меньше",
+      "tier": "уровень B"
+    },
+    {
+      "away_team": "Moreton City Excelsior FC",
+      "away_team_ru": "Моретон Кити Екскелсиор",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
+      "family": "totals",
+      "home_team": "Gold Coast",
+      "home_team_ru": "Голд Коаст",
+      "league_name": "Australia - Queensland NPL",
+      "league_name_ru": "Австралия - Квинсланд NPL",
+      "match_key": "soccer|gold_coast|moreton_city_excelsior_fc|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.560215,
+        "books_count": 1,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 5.516,
+        "canonical_ev_pct": 10.923,
+        "confidence": 70.715,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 4,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.258,
+        "market_probability": 0.537634,
+        "model_probability": 0.560215,
+        "odds": 1.98,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 28.094,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.505051,
+        "sources_count": 4,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 3.219,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 3.219,
+          "xg_model_optimism_gap_pp": 3.219,
+          "xg_probability": 0.528026,
+          "xg_probability_pct": 52.803,
+          "xg_source": "home_away",
+          "xg_total": 3.54
         }
       },
       "ok": false,
-      "point": 1.5,
+      "point": 3.5,
       "reject_reasons": [
         "tier_a_books_below_min",
         "tier_a_proxy_quality_not_allowed",
@@ -494,18 +703,270 @@
         "уровень B: bookmaker quorum books below min:1/2",
         "линий букмекеров меньше минимума уровня C"
       ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Moreton City Excelsior FC",
+      "away_team_ru": "Моретон Кити Екскелсиор",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
+      "family": "totals",
+      "home_team": "Gold Coast United",
+      "home_team_ru": "Голд Коаст Унитед",
+      "league_name": "NPL Queensland",
+      "league_name_ru": "NPL Квинсланд",
+      "match_key": "soccer|gold_coast_united|moreton_city_excelsior_fc|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.565135,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 6.008,
+        "canonical_ev_pct": 11.897,
+        "confidence": 75.054,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.459,
+        "market_probability": 0.540541,
+        "model_probability": 0.565135,
+        "odds": 1.98,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 33.798,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.505051,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 4,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.875,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 4,
+          "same_market_side_line_only": true,
+          "selected_price": 1.98,
+          "selected_vs_median_deviation_pct": 5.6
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": true,
+      "point": 3.5,
+      "reject_reasons": [],
+      "reject_reasons_ru": [],
+      "selection": "Меньше",
+      "tier": "уровень B"
+    },
+    {
+      "away_team": "Pocheon Citizen",
+      "away_team_ru": "Почеон Китизен",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
+      "family": "totals",
+      "home_team": "Gyeongju",
+      "home_team_ru": "Гиеонгджу",
+      "league_name": "Republic of Korea - K3 League",
+      "league_name_ru": "Републик оф Кори - K3 Лигуе",
+      "match_key": "soccer|gyeongju|pocheon_citizen|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.473277,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.283,
+        "canonical_ev_pct": 5.067,
+        "confidence": 66.88,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.031,
+        "market_probability": 0.462963,
+        "model_probability": 0.473277,
+        "odds": 2.22,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 14.993,
+        "quality_reasons": [],
+        "quality_score": 70.26,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.45045,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 3.179,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 3.179,
+          "xg_model_optimism_gap_pp": 3.179,
+          "xg_probability": 0.441484,
+          "xg_probability_pct": 44.148,
+          "xg_source": "home_away",
+          "xg_total": 2.443
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Moreton City Excelsior FC",
+      "away_team_ru": "Моретон Кити Екскелсиор",
+      "candidate_source": "debug_candidates_before_quality",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
+      "family": "totals",
+      "home_team": "Gold Coast United",
+      "home_team_ru": "Голд Коаст Унитед",
+      "league_name": "NPL Queensland",
+      "league_name_ru": "NPL Квинсланд",
+      "match_key": "soccer|gold coast united|moreton city excelsior|2026-06-28",
+      "metrics": {
+        "adjusted_probability": 0.470289,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": -4.253,
+        "canonical_ev_pct": -8.294,
+        "confidence": 67.211,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": -2.566,
+        "market_probability": 0.495953,
+        "model_probability": 0.54108,
+        "odds": 1.95,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 15.561,
+        "quality_reasons": [
+          "bad_historical_segment_guard"
+        ],
+        "quality_score": 49.709,
+        "quality_score_raw": 49.709,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.512821,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "canonical_negative_value"
+      ],
+      "reject_reasons_ru": [
+        "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
+      ],
       "selection": "Больше",
       "tier": null
     }
   ],
-  "no_pick_report_sent": true,
+  "message": "🔥 2 топовых контролируемых прогноза на ближайшие 2 часа\n\n💼 Банк: 1000.00 | Открытый риск: 0.00 | Доступно: 1000.00\n💰 Новый риск: 10.00 | Режим: top-bundle, только прошедшие финальные guard’ы\n\nОкно поиска: от 30 мин до 2 часа. Публикую 1 лучший прогноз или multi-прогноз, если несколько разных матчей отдельно проходят EV, время, дубли и market/xG sanity.\n\n1. Голд Коаст Унитед — Моретон Кити Екскелсиор\n🎯 Ставка: Тотал — Меньше (3.5)\n💸 Коэффициент: 1.98\n📊 Скорректированная оценка: 56.5%\n📉 Рынок/консенсус: 54.1%\n✅ Уверенность: 75.1% | качество 76.0 (оценка резерва) | уровень B\n📚 Линии: 4 | odds sources: 1 | confirmation sources: 3\n🔎 Подтверждения: bzzoiro, sstats | bzzoiro / b_cover_market_promotion\n🧮 Контрольная ценность: запас +6.0 п.п. | EV +11.9%\n🏆 Турнир: NPL Квинсланд\n🕒 Начало: 28.06.2026 08:00 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n\n2. Броадмидоу — Уестон\n🎯 Ставка: Тотал — Меньше (2.5)\n💸 Коэффициент: 2.95\n📊 Скорректированная оценка: 37.3%\n📉 Рынок/консенсус: 35.9%\n✅ Уверенность: 69.1% | качество 76.0 (оценка резерва) | уровень B\n📚 Линии: 2 | odds sources: 1 | confirmation sources: 2\n🔎 Подтверждения: sstats | unibet / b_cover_market_promotion\n🧮 Контрольная ценность: запас +3.4 п.п. | EV +10.0%\n🏆 Турнир: Австралия - Нортерн NSW NPL\n🕒 Начало: 28.06.2026 08:00 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n📈 Ожидаемые голы: 1.21 : 1.16\n🔎 xG-проверка: ориентир 57.9% | разрыв -20.7 п.п.\n\n📝 Комментарий: это не гарантия прибыли. Сумма снижена, потому что часть сигналов остаётся controlled reserve, а не clean quality-pass.",
   "pool_counts": {
-    "debug_candidates_before_quality_stale_or_outside_window": 25,
-    "latest_rescue_candidates": 5,
-    "latest_rescue_candidates_duplicate_in_pool": 1,
-    "latest_rescue_candidates_stale_or_outside_window": 5
+    "debug_candidates_before_quality": 1,
+    "debug_candidates_before_quality_duplicate_in_pool": 1,
+    "debug_candidates_before_quality_stale_or_outside_window": 23,
+    "latest_rescue_candidates": 9,
+    "latest_rescue_candidates_duplicate_in_pool": 3,
+    "latest_rescue_candidates_stale_or_outside_window": 1
   },
-  "published": false,
+  "published": true,
   "scan_policy": {
     "max_picks_per_run": 3,
     "min_confirmation_sources": 1,
@@ -514,33 +975,366 @@
     "publish_window_hours": 2,
     "use_context_source_index": true
   },
+  "selected": {
+    "away_team": "Moreton City Excelsior FC",
+    "away_team_ru": "Моретон Кити Екскелсиор",
+    "bet_payload": {
+      "away_team": "Moreton City Excelsior FC",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "family": "totals",
+      "home_team": "Gold Coast United",
+      "kickoff": "2026-06-28T05:00:00+00:00",
+      "league_name": "NPL Queensland",
+      "match_name": "Gold Coast United — Moreton City Excelsior FC",
+      "odds": 1.98,
+      "selection": "Меньше",
+      "stake": 5.0,
+      "stake_amount": 5.0
+    },
+    "canonical_publication_key": "soccer|gold_coast_united|moreton_city_excelsior_fc|2026-06-28|totals|under|3.5|",
+    "commence_time": "2026-06-28T05:00:00+00:00",
+    "commence_time_display": "28.06.2026 08:00 MSK",
+    "dedupe_key": "fdf4b0cee104148a16d63c3d76ed7750fcef609e",
+    "family": "totals",
+    "home_team": "Gold Coast United",
+    "home_team_ru": "Голд Коаст Унитед",
+    "kickoff": "2026-06-28T05:00:00+00:00",
+    "league_name": "NPL Queensland",
+    "league_name_ru": "NPL Квинсланд",
+    "market_family": "totals",
+    "match_key": "soccer|gold_coast_united|moreton_city_excelsior_fc|2026-06-28",
+    "match_name": "Gold Coast United — Moreton City Excelsior FC",
+    "metrics": {
+      "adjusted_probability": 0.565135,
+      "books_count": 4,
+      "btts_sanity": {
+        "enabled": false,
+        "reason": "family_not_btts"
+      },
+      "canonical_edge_pp": 6.008,
+      "canonical_ev_pct": 11.897,
+      "confidence": 75.054,
+      "confirmation_meta": {
+        "weather_confirmation_relevant": false,
+        "weather_dropped_as_neutral": false,
+        "weather_neutral": true,
+        "weather_risk_flag": false,
+        "weather_supports_over": false,
+        "weather_supports_under": false
+      },
+      "confirmation_sources": [
+        "bzzoiro",
+        "sstats"
+      ],
+      "confirmation_sources_count": 3,
+      "dnb_sanity": {
+        "enabled": false,
+        "reason": "family_not_dnb"
+      },
+      "line_sources": [],
+      "market_edge_pp": 2.459,
+      "market_probability": 0.540541,
+      "model_probability": 0.565135,
+      "odds": 1.98,
+      "odds_sources_count": 1,
+      "proxy_single_source_thresholds": {
+        "applies": false,
+        "enabled": true,
+        "min_confidence": 78.0,
+        "min_edge_pp": 8.0,
+        "min_ev_pct": 15.0
+      },
+      "publication_score": 33.798,
+      "quality_reasons": [],
+      "quality_score": 76.0,
+      "quality_score_raw": 0.0,
+      "quality_score_source": "proxy",
+      "selected_implied_probability": 0.505051,
+      "sources_count": 3,
+      "tier_b_bookmaker_quorum": {
+        "books_count": 4,
+        "enabled": true,
+        "max_deviation_pct": 8.0,
+        "median_price": 1.875,
+        "mode": "bookmaker_quorum",
+        "odds_sources_count": 1,
+        "priced_books_count": 4,
+        "same_market_side_line_only": true,
+        "selected_price": 1.98,
+        "selected_vs_median_deviation_pct": 5.6
+      },
+      "xg_sanity": {
+        "enabled": false,
+        "reason": "missing_xg",
+        "xg_away_raw": null,
+        "xg_home_raw": null,
+        "xg_source": "invalid_or_missing"
+      }
+    },
+    "odds": 1.98,
+    "point": 3.5,
+    "price": 1.98,
+    "publication_lifecycle_status": "telegram_sent",
+    "selected_odds": 1.98,
+    "selection": "Меньше",
+    "stake": 5.0,
+    "stake_amount": 5.0,
+    "status": "pending",
+    "telegram_sent": true,
+    "tier": "уровень B"
+  },
+  "selected_all": [
+    {
+      "away_team": "Moreton City Excelsior FC",
+      "away_team_ru": "Моретон Кити Екскелсиор",
+      "bet_payload": {
+        "away_team": "Moreton City Excelsior FC",
+        "commence_time": "2026-06-28T05:00:00+00:00",
+        "family": "totals",
+        "home_team": "Gold Coast United",
+        "kickoff": "2026-06-28T05:00:00+00:00",
+        "league_name": "NPL Queensland",
+        "match_name": "Gold Coast United — Moreton City Excelsior FC",
+        "odds": 1.98,
+        "selection": "Меньше",
+        "stake": 5.0,
+        "stake_amount": 5.0
+      },
+      "canonical_publication_key": "soccer|gold_coast_united|moreton_city_excelsior_fc|2026-06-28|totals|under|3.5|",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
+      "dedupe_key": "fdf4b0cee104148a16d63c3d76ed7750fcef609e",
+      "family": "totals",
+      "home_team": "Gold Coast United",
+      "home_team_ru": "Голд Коаст Унитед",
+      "kickoff": "2026-06-28T05:00:00+00:00",
+      "league_name": "NPL Queensland",
+      "league_name_ru": "NPL Квинсланд",
+      "market_family": "totals",
+      "match_key": "soccer|gold_coast_united|moreton_city_excelsior_fc|2026-06-28",
+      "match_name": "Gold Coast United — Moreton City Excelsior FC",
+      "metrics": {
+        "adjusted_probability": 0.565135,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 6.008,
+        "canonical_ev_pct": 11.897,
+        "confidence": 75.054,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.459,
+        "market_probability": 0.540541,
+        "model_probability": 0.565135,
+        "odds": 1.98,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 33.798,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.505051,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 4,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.875,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 4,
+          "same_market_side_line_only": true,
+          "selected_price": 1.98,
+          "selected_vs_median_deviation_pct": 5.6
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "odds": 1.98,
+      "point": 3.5,
+      "price": 1.98,
+      "publication_lifecycle_status": "telegram_sent",
+      "selected_odds": 1.98,
+      "selection": "Меньше",
+      "stake": 5.0,
+      "stake_amount": 5.0,
+      "status": "pending",
+      "telegram_sent": true,
+      "tier": "уровень B"
+    },
+    {
+      "away_team": "Weston",
+      "away_team_ru": "Уестон",
+      "bet_payload": {
+        "away_team": "Weston",
+        "commence_time": "2026-06-28T05:00:00+00:00",
+        "family": "totals",
+        "home_team": "Broadmeadow",
+        "kickoff": "2026-06-28T05:00:00+00:00",
+        "league_name": "Australia - Northern NSW NPL",
+        "match_name": "Broadmeadow — Weston",
+        "odds": 2.95,
+        "selection": "Меньше",
+        "stake": 5.0,
+        "stake_amount": 5.0
+      },
+      "canonical_publication_key": "soccer|broadmeadow|weston|2026-06-28|totals|under|2.5|",
+      "commence_time": "2026-06-28T05:00:00+00:00",
+      "commence_time_display": "28.06.2026 08:00 MSK",
+      "dedupe_key": "d0d842651c6cc06e910e797ff5335b7ca0fc4e19",
+      "family": "totals",
+      "home_team": "Broadmeadow",
+      "home_team_ru": "Броадмидоу",
+      "kickoff": "2026-06-28T05:00:00+00:00",
+      "league_name": "Australia - Northern NSW NPL",
+      "league_name_ru": "Австралия - Нортерн NSW NPL",
+      "market_family": "totals",
+      "match_key": "soccer|broadmeadow|weston|2026-06-28",
+      "match_name": "Broadmeadow — Weston",
+      "metrics": {
+        "adjusted_probability": 0.372735,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.375,
+        "canonical_ev_pct": 9.957,
+        "confidence": 69.081,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.399,
+        "market_probability": 0.358744,
+        "model_probability": 0.372735,
+        "odds": 2.95,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 22.801,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.338983,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.7875,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.95,
+          "selected_vs_median_deviation_pct": 5.83
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 20.667,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 20.667,
+          "xg_model_gap_pp": -20.667,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.579405,
+          "xg_probability_pct": 57.94,
+          "xg_source": "home_away",
+          "xg_total": 2.363
+        }
+      },
+      "odds": 2.95,
+      "point": 2.5,
+      "price": 2.95,
+      "publication_lifecycle_status": "telegram_sent",
+      "selected_odds": 2.95,
+      "selection": "Меньше",
+      "stake": 5.0,
+      "stake_amount": 5.0,
+      "status": "pending",
+      "telegram_sent": true,
+      "tier": "уровень B"
+    }
+  ],
+  "selected_count": 2,
   "shadow_ranking": {
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
-    "duplicates_removed": 0,
+    "duplicates_removed": 1,
     "reason_counts_without_daily_cap": {
-      "tier_a_books_below_min": 2,
+      "canonical_negative_value": 1,
+      "tier_a_books_below_min": 1,
       "tier_a_canonical_edge_below_min": 1,
-      "tier_a_odds_sources_below_min:1/2": 2,
-      "tier_a_proxy_quality_not_allowed": 2,
-      "tier_a_publication_score_below_min": 2,
+      "tier_a_odds_sources_below_min:1/2": 3,
+      "tier_a_proxy_quality_not_allowed": 3,
+      "tier_a_publication_score_below_min": 3,
       "tier_a_quality_below_min": 1,
-      "tier_b_bookmaker_quorum_books_below_min:1/2": 4,
-      "tier_b_books_below_min": 2,
+      "tier_b_bookmaker_quorum_books_below_min:1/2": 2,
+      "tier_b_bookmaker_quorum_prices_missing:1/2": 1,
+      "tier_b_books_below_min": 1,
       "tier_b_canonical_edge_below_min": 1,
-      "tier_b_publication_score_below_min": 2,
+      "tier_b_publication_score_below_min": 3,
       "tier_b_quality_below_min": 1,
-      "tier_c_books_below_min": 2,
+      "tier_c_books_below_min": 1,
       "tier_c_canonical_edge_below_min": 1,
-      "tier_c_publication_score_below_min": 2,
+      "tier_c_publication_score_below_min": 3,
       "tier_c_quality_below_min": 1,
-      "xg_direction_conflict": 1,
-      "xg_probability_gap_hard_reject": 2
+      "xg_direction_conflict": 2,
+      "xg_probability_gap_hard_reject": 1
     },
     "top_would_publish_without_daily_cap": []
   },
-  "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3296,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782609508,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "status": "published",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3299,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1782616688,\"text\":\"\\ud83d\\udd25 2 \\u0442\\u043e\\u043f\\u043e\\u0432\\u044b\\u0445 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0445 \\u043f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u0430 \\u043d\\u0430 \\u0431\\u043b\\u0438\\u0436\\u0430\\u0439\\u0448\\u0438\\u0435 2 \\u0447\\u0430\\u0441\\u0430\\n\\n\\ud83d\\udcbc \\u0411\\u0430\\u043d\\u043a: 1000.00 | \\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u044b\\u0439 \\u0440\\u0438\\u0441\\u043a: 0.00 | \\u0414\\u043e\\u0441\\u0442\\u0443\\u043f\\u043d\\u043e: 1000.00\\n\\ud83d\\udcb0 \\u041d\\u043e\\u0432\\u044b\\u0439 \\u0440\\u0438\\u0441\\u043a: 10.00 | \\u0420\\u0435\\u0436\\u0438\\u043c: top-bundle, \\u0442\\u043e\\u043b\\u044c\\u043a\\u043e \\u043f\\u0440\\u043e\\u0448\\u0435\\u0434\\u0448\\u0438\\u0435 \\u0444\\u0438\\u043d\\u0430\\u043b",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
@@ -548,6 +1342,5 @@
     "manual_late_mode_enabled": false,
     "min_kickoff_lead_minutes": 30,
     "publish_window_hours": 2
-  },
-  "watchlist": []
+  }
 }
