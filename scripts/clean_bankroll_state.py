@@ -16,10 +16,6 @@ PAST_REPORT = DATA / 'exports' / 'latest-past-predictions-report.json'
 PERFORMANCE_SUMMARY = DATA / 'bets' / 'performance-summary.json'
 
 CLOSED = {'won', 'half_won', 'lost', 'half_lost', 'push', 'void', 'cancelled', 'canceled', 'refunded'}
-WINS = {'won', 'half_won'}
-LOSSES = {'lost', 'half_lost'}
-PUSHES = {'push'}
-VOIDS = {'void', 'cancelled', 'canceled', 'refunded'}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -139,16 +135,16 @@ def pnl(row: dict[str, Any]) -> float:
     direct = first(settlement.get('pnl'), row.get('pnl'))
     if direct not in (None, ''):
         return as_float(direct)
-    s = row_status(row)
+    status = row_status(row)
     st = stake(row)
     od = odds(row)
-    if s == 'won':
+    if status == 'won':
         return st * max(0.0, od - 1.0)
-    if s == 'half_won':
+    if status == 'half_won':
         return st * max(0.0, od - 1.0) / 2.0
-    if s == 'lost':
+    if status == 'lost':
         return -st
-    if s == 'half_lost':
+    if status == 'half_lost':
         return -st / 2.0
     return 0.0
 
@@ -167,7 +163,7 @@ def business_key(row: dict[str, Any]) -> str:
     return hashlib.sha1(raw.encode('utf-8')).hexdigest()
 
 
-def kickoff_or_sent_at(row: dict[str, Any]) -> datetime | None:
+def event_time(row: dict[str, Any]) -> datetime | None:
     for name in ('commence_time', 'kickoff_utc', 'kickoff', 'start_time', 'sent_at', 'published_at_utc', 'published_at', 'created_at_utc', 'created_at'):
         dt = parse_dt(pick(row, name))
         if dt is not None:
@@ -202,12 +198,26 @@ def unique_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if current is None:
             by_key[key] = dict(row)
             continue
-        # Prefer settled/closed rows and rows with richer settlement/metrics data.
         cur_score = (1 if row_status(current) in CLOSED else 0, len(json.dumps(current, ensure_ascii=False)))
         new_score = (1 if row_status(row) in CLOSED else 0, len(json.dumps(row, ensure_ascii=False)))
         if new_score >= cur_score:
             by_key[key] = dict(row)
     return list(by_key.values())
+
+
+def is_live_open(row: dict[str, Any], now: datetime) -> bool:
+    if row_status(row) != 'pending':
+        return False
+    dt = parse_dt(pick(row, 'commence_time', 'kickoff_utc', 'kickoff', 'start_time'))
+    if dt is None:
+        dt = event_time(row)
+    # A bet is real open exposure only while the match has not clearly aged out.
+    # Old pending rows stay in the passability report as needs_result_settlement,
+    # but they should not keep reducing available bankroll for days.
+    stale_hours = int(float(os.getenv('BANKROLL_PENDING_STALE_HOURS', '6') or 6))
+    if dt is not None and dt < now - timedelta(hours=stale_hours):
+        return False
+    return stake(row) > 0
 
 
 def normalize_open(row: dict[str, Any], current_balance: float) -> dict[str, Any]:
@@ -256,6 +266,8 @@ def main() -> int:
 
     closed_rows = [r for r in rows if row_status(r) in CLOSED]
     pending_rows = [r for r in rows if row_status(r) == 'pending']
+    live_pending_rows = [r for r in pending_rows if is_live_open(r, now)]
+    stale_pending_rows = [r for r in pending_rows if r not in live_pending_rows]
 
     summary_pnl = first(report_summary.get('pnl') if isinstance(report_summary, dict) else None, perf_summary.get('pnl') if isinstance(perf_summary, dict) else None)
     if summary_pnl not in (None, '') and truthy(os.getenv('BANKROLL_USE_PERFORMANCE_SUMMARY_PNL'), True):
@@ -266,9 +278,8 @@ def main() -> int:
         closed_pnl = previous_closed_pnl
 
     current_balance = round(starting_balance + closed_pnl, 2) if truthy(os.getenv('BANKROLL_RECONCILE_FROM_CLOSED_PNL'), True) else previous_current
-    open_bets = [normalize_open(r, current_balance) for r in pending_rows]
-    # Keep only genuinely open recent/pending rows; old rows are still shown in the
-    # prediction report as review-needed, but they remain exposure until settlement.
+    open_bets = [normalize_open(r, current_balance) for r in live_pending_rows]
+    stale_unsettled_stake = round(sum(stake(r) or 5.0 for r in stale_pending_rows), 2)
     open_exposure = round(sum(stake(r) for r in open_bets), 2)
     available_balance = round(max(0.0, current_balance - open_exposure), 2)
     roi_pct = round((closed_pnl / max(1.0, starting_balance)) * 100.0, 2)
@@ -285,6 +296,8 @@ def main() -> int:
         'roi_pct': roi_pct,
         'reconciled_from_closed_pnl': True,
         'reconciled_from_report_source': source,
+        'stale_unsettled_count': len(stale_pending_rows),
+        'stale_unsettled_stake': stale_unsettled_stake,
         'previous_current_balance': previous_current,
         'previous_closed_pnl': previous_closed_pnl,
     })
@@ -300,6 +313,9 @@ def main() -> int:
         'unique_rows': len(rows),
         'closed_rows': len(closed_rows),
         'pending_rows': len(pending_rows),
+        'live_pending_rows': len(live_pending_rows),
+        'stale_pending_rows': len(stale_pending_rows),
+        'stale_unsettled_stake': stale_unsettled_stake,
         'open_bets': len(open_bets),
         'open_exposure': open_exposure,
         'available_balance': available_balance,
