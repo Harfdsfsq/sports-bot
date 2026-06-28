@@ -9,13 +9,17 @@ settlement/reporting.
 """
 
 import json
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from scripts import sync_publication_ledger as ledger
 
-ROOT = Path(".").resolve()
 DATA = ROOT / ".data"
 EXPORT = DATA / "exports"
 REPORT = EXPORT / "latest-fallback-sent-index-ledger-import.json"
@@ -50,14 +54,12 @@ def iter_index_rows(payload: Any) -> list[dict[str, Any]]:
     if not isinstance(payload, dict):
         return []
     rows: list[dict[str, Any]] = []
-    # Common shape: {hash: {home_team, away_team, ...}}
     values_are_rows = 0
     for value in payload.values():
         if isinstance(value, dict) and any(k in value for k in ("home_team", "away_team", "match_name", "canonical_publication_key")):
             values_are_rows += 1
     if values_are_rows:
         return [dict(x) for x in payload.values() if isinstance(x, dict)]
-    # Container shape fallback.
     for key in ("rows", "items", "bets", "picks", "sent", "published", "published_picks", "sent_picks"):
         value = payload.get(key)
         if isinstance(value, list):
