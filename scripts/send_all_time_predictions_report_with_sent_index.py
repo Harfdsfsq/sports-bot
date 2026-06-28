@@ -5,11 +5,12 @@ from __future__ import annotations
 send_all_time_predictions_report.py calls sync_publication_ledger at startup.
 That sync can overwrite a prior manual import because older sync versions do not
 read .data/fallback-sent-index.json directly.  This wrapper preserves the normal
-sync, then immediately imports the fallback sent-index before the report scans
-ledger/state rows.
+sync, immediately imports the fallback sent-index, and patches tier labels so
+Russian labels like 'уровень B' are grouped as B instead of '?'.
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,28 @@ def load_json(path: Path, default: Any) -> Any:
     return default
 
 
+def normalized_tier(row: dict[str, Any]) -> str:
+    values = [
+        row.get("tier"),
+        row.get("publication_tier"),
+        report.nested(row, "source_summary").get("tier"),
+    ]
+    for value in values:
+        text = str(value or "").strip().upper()
+        if text in {"A", "B", "C"}:
+            return text
+        # Covers labels such as 'уровень B', 'B-tier', 'tier_b'.
+        match = re.search(r"(?:^|[^A-Z])([ABC])(?:[^A-Z]|$)", text)
+        if match:
+            return match.group(1)
+    quality = report.quality(row)
+    if quality in {"raw", "a_cover_evidence"}:
+        return "A"
+    if quality == "controlled_fallback":
+        return "B"
+    return "?"
+
+
 def sync_ledger_then_import_sent_index() -> dict[str, Any]:
     base_sync = report.sync_ledger_original() if hasattr(report, "sync_ledger_original") else report._original_sync_ledger()
     import_payload: dict[str, Any]
@@ -52,6 +75,7 @@ def main() -> int:
         report._original_sync_ledger = report.sync_ledger  # type: ignore[attr-defined]
     report.sync_ledger_original = report._original_sync_ledger  # type: ignore[attr-defined]
     report.sync_ledger = sync_ledger_then_import_sent_index  # type: ignore[assignment]
+    report.tier = normalized_tier  # type: ignore[assignment]
     return int(report.main() or 0)
 
 
