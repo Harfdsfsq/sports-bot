@@ -79,6 +79,20 @@ def mark_sent(row: dict[str, Any], source: str) -> dict[str, Any]:
     out.setdefault("source", "fallback_sent_index_import")
     out.setdefault("published_by", "controlled_fallback")
     out.setdefault("ledger_source_file", source)
+
+    # Historical fallback rows often do not store publication tier/quality.
+    # Mark them explicitly so the performance report shows the segment instead
+    # of putting almost every recovered pick into '? / unknown_quality'.
+    out.setdefault("tier", out.get("publication_tier") or "B")
+    out.setdefault("publication_tier", out.get("tier") or "B")
+    out.setdefault("quality_source", out.get("quality_score_source") or "controlled_fallback")
+    out.setdefault("quality_score_source", out.get("quality_source") or "controlled_fallback")
+    summary = out.get("source_summary") if isinstance(out.get("source_summary"), dict) else {}
+    summary.setdefault("tier", out.get("tier") or "B")
+    summary.setdefault("quality_source", out.get("quality_source") or "controlled_fallback")
+    summary.setdefault("publication_mode", "controlled_fallback")
+    out["source_summary"] = summary
+
     sent_at = out.get("sent_at") or out.get("published_at") or out.get("published_at_utc")
     if sent_at:
         out.setdefault("published_at_utc", sent_at)
@@ -136,6 +150,7 @@ def main() -> int:
                 "odds": r.get("odds"),
                 "sent_at": r.get("sent_at"),
                 "tier": r.get("tier"),
+                "quality_source": r.get("quality_source"),
             }
             for r in rows[:15]
         ],
