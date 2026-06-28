@@ -102,10 +102,10 @@ jobs:
         env:
           ACTIONS_BACKFILL_LOOKBACK_DAYS: ${{ inputs.backfill_lookback_days }}
         run: |
-          python scripts/backfill_publication_ledger_from_actions.py \
+          python scripts/backfill_publication_ledger_from_actions_with_path.py \
             --lookback-days "$ACTIONS_BACKFILL_LOOKBACK_DAYS" \
             --max-runs 160 \
-            --artifact-filter run-bot,daily-report || true
+            --artifact-filter "" || true
           cat .data/exports/latest-actions-artifact-publication-backfill.json || true
 
       - name: Import fallback sent index
