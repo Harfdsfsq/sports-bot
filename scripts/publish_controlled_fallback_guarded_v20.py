@@ -2,7 +2,8 @@ from __future__ import annotations
 
 """Guarded fallback v20.
 
-Adds A-cover evidence-quality handling on top of v19 preflight/v18 guards.
+Adds A-cover evidence-quality handling on top of v19 preflight/v18 guards and
+persists Telegram-confirmed controlled fallback picks into the durable ledger.
 """
 
 import scripts.publish_controlled_fallback_guarded_v19 as v19
@@ -20,6 +21,11 @@ def main() -> int:
     try:
         from scripts.sync_run_report_ledger_export import main as sync_run_ledger
         sync_run_ledger()
+    except Exception:
+        pass
+    try:
+        from scripts.sync_publication_ledger import main as sync_publication_ledger
+        sync_publication_ledger()
     except Exception:
         pass
     return code
