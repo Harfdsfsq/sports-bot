@@ -14,6 +14,26 @@ def _is_run_once() -> bool:
     return 'run-once' in argv and ('app.cli' in argv or 'cli.py' in argv or '-m' in argv)
 
 
+def _sync_publication_ledger_before_cli() -> None:
+    if not _enabled('HARIZON_PUBLICATION_LEDGER_BOOTSTRAP_SYNC_ENABLED'):
+        return
+    try:
+        from scripts.sync_publication_ledger import sync_bets
+        sync_bets()
+    except Exception:
+        pass
+
+
+def _sync_publication_ledger_after_cli() -> None:
+    if not _enabled('HARIZON_PUBLICATION_LEDGER_BOOTSTRAP_SYNC_ENABLED'):
+        return
+    try:
+        from scripts.sync_publication_ledger import main as sync_main
+        sync_main()
+    except Exception:
+        pass
+
+
 def _install_bzzoiro_v2_source_matrix() -> None:
     if not _enabled('HARIZON_BZZOIRO_V2_SOURCE_MATRIX_BOOTSTRAP_ENABLED'):
         return
@@ -40,5 +60,7 @@ def _run_bzzoiro_offer_bridge_after_cli() -> None:
 
 
 if _is_run_once():
+    _sync_publication_ledger_before_cli()
     _install_bzzoiro_v2_source_matrix()
     atexit.register(_run_bzzoiro_offer_bridge_after_cli)
+    atexit.register(_sync_publication_ledger_after_cli)
