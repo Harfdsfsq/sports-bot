@@ -126,6 +126,12 @@ jobs:
         shell: bash
         run: python scripts/sync_publication_ledger.py --phase manual-past-report-after-settlement || true
 
+      - name: Fix pending settlements
+        shell: bash
+        run: |
+          python scripts/fix_pending_settlements_from_report.py || true
+          cat .data/exports/latest-pending-settlement-fixer.json || true
+
       - name: Build and send report
         shell: bash
         run: |
@@ -146,6 +152,7 @@ jobs:
           mkdir -p artifacts/past-predictions-report
           cp -f .data/exports/latest-actions-artifact-publication-backfill.json artifacts/past-predictions-report/latest-actions-artifact-publication-backfill.json 2>/dev/null || true
           cp -f .data/exports/latest-fallback-sent-index-ledger-import.json artifacts/past-predictions-report/latest-fallback-sent-index-ledger-import.json 2>/dev/null || true
+          cp -f .data/exports/latest-pending-settlement-fixer.json artifacts/past-predictions-report/latest-pending-settlement-fixer.json 2>/dev/null || true
           cp -f .data/exports/latest-past-predictions-report.json artifacts/past-predictions-report/latest-past-predictions-report.json 2>/dev/null || true
           cp -f .data/exports/latest-past-predictions-report.txt artifacts/past-predictions-report/latest-past-predictions-report.txt 2>/dev/null || true
           cp -f .data/bets/performance-summary.json artifacts/past-predictions-report/performance-summary.json 2>/dev/null || true
