@@ -69,6 +69,10 @@ def iter_index_rows(payload: Any) -> list[dict[str, Any]]:
     return rows
 
 
+def blank_or_unknown(value: Any) -> bool:
+    return str(value or "").strip().upper() in {"", "?", "UNKNOWN", "NONE", "NULL"}
+
+
 def mark_sent(row: dict[str, Any], source: str) -> dict[str, Any]:
     out = dict(row)
     out["telegram_sent"] = True
@@ -80,16 +84,19 @@ def mark_sent(row: dict[str, Any], source: str) -> dict[str, Any]:
     out.setdefault("published_by", "controlled_fallback")
     out.setdefault("ledger_source_file", source)
 
-    # Historical fallback rows often do not store publication tier/quality.
-    # Mark them explicitly so the performance report shows the segment instead
-    # of putting almost every recovered pick into '? / unknown_quality'.
-    out.setdefault("tier", out.get("publication_tier") or "B")
-    out.setdefault("publication_tier", out.get("tier") or "B")
-    out.setdefault("quality_source", out.get("quality_score_source") or "controlled_fallback")
-    out.setdefault("quality_score_source", out.get("quality_source") or "controlled_fallback")
+    if blank_or_unknown(out.get("tier")):
+        out["tier"] = out.get("publication_tier") if not blank_or_unknown(out.get("publication_tier")) else "B"
+    if blank_or_unknown(out.get("publication_tier")):
+        out["publication_tier"] = out.get("tier") if not blank_or_unknown(out.get("tier")) else "B"
+    if blank_or_unknown(out.get("quality_source")):
+        out["quality_source"] = out.get("quality_score_source") if not blank_or_unknown(out.get("quality_score_source")) else "controlled_fallback"
+    if blank_or_unknown(out.get("quality_score_source")):
+        out["quality_score_source"] = out.get("quality_source") if not blank_or_unknown(out.get("quality_source")) else "controlled_fallback"
     summary = out.get("source_summary") if isinstance(out.get("source_summary"), dict) else {}
-    summary.setdefault("tier", out.get("tier") or "B")
-    summary.setdefault("quality_source", out.get("quality_source") or "controlled_fallback")
+    if blank_or_unknown(summary.get("tier")):
+        summary["tier"] = out.get("tier") or "B"
+    if blank_or_unknown(summary.get("quality_source")):
+        summary["quality_source"] = out.get("quality_source") or "controlled_fallback"
     summary.setdefault("publication_mode", "controlled_fallback")
     out["source_summary"] = summary
 
