@@ -1,20 +1,35 @@
 from __future__ import annotations
 
-"""Optional user-level startup hook for legacy runtime extensions."""
+"""Optional user-level startup hook for runtime policy extensions."""
 
+import importlib.util
+import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from sitecustomize import *  # noqa: F401,F403
+
+ROOT = Path(__file__).resolve().parent
 
 A_TIER_ONLY_ENV = {
     "HARIZON_PUBLICATION_TIER_MODE": "a_only",
     "HARIZON_A_TIER_ONLY": "true",
     "PUBLISH_ALLOW_B_TIER": "false",
+    "PUBLISH_B_TIER_WATCH_ONLY": "true",
+    "PUBLISH_COVERAGE_TIER_MODE": "a_only_publish_b_watchlist",
+    "PUBLISH_MIN_BOOKS": "2",
+    "MIN_BOOKS_PUBLISH": "2",
+    "PUBLISH_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "2",
+    "MIN_SOURCES_PUBLISH": "2",
     "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "false",
     "CONTROLLED_FALLBACK_ALLOW_B_TIER": "false",
     "CONTROLLED_FALLBACK_TIER_B_ENABLED": "false",
+    "CONTROLLED_FALLBACK_TIER_B_WATCH_ONLY": "true",
+    "CONTROLLED_FALLBACK_TIER_B_PUBLISH_ENABLED": "false",
     "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "0",
     "PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED": "false",
     "PROMOTE_B_COVER_AFTER_A_PROMOTION_ENABLED": "false",
@@ -36,9 +51,114 @@ A_TIER_ONLY_ENV = {
     "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS": "999",
     "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "999",
     "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "999",
+    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "2",
+    "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "true",
+    "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN": "1",
+    "MAX_PICKS_PER_RUN": "1",
+    "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": "1",
 }
 
 os.environ.update(A_TIER_ONLY_ENV)
+
+_ORIGINAL_ENVIRON_UPDATE = type(os.environ).update
+
+
+def _update_then_reapply(self: Any, other: Any = (), /, **kwargs: Any) -> None:
+    result = _ORIGINAL_ENVIRON_UPDATE(self, other, **kwargs)
+    _ORIGINAL_ENVIRON_UPDATE(self, A_TIER_ONLY_ENV)
+    return result
+
+
+type(os.environ).update = _update_then_reapply
+
+
+def _write_policy_report(payload: dict[str, Any]) -> None:
+    try:
+        out = ROOT / ".data" / "exports" / "latest-a-only-usercustomize-policy.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _as_int(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ""):
+            return default
+        return int(float(str(value)))
+    except Exception:
+        return default
+
+
+def _patch_controlled_fallback(module: Any) -> None:
+    if getattr(module, "_harizon_usercustomize_a_only", False):
+        return
+    original_tier_reasons = getattr(module, "tier_reasons", None)
+    if not callable(original_tier_reasons):
+        return
+
+    def tier_reasons_a_only(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+        reasons = list(original_tier_reasons(tier, candidate, metrics) or [])
+        code = str(tier or "").replace("уровень", "").strip().upper()
+        if code == "B":
+            reasons.append("tier_b_watchlist_only_no_publication")
+        elif code == "A":
+            odds_sources = _as_int((metrics or {}).get("odds_sources_count"), 0)
+            confirmations = _as_int((metrics or {}).get("confirmation_sources_count"), _as_int((metrics or {}).get("sources_count"), 0))
+            books = _as_int((metrics or {}).get("books_count"), 0)
+            if odds_sources < 2:
+                reasons.append(f"tier_a_odds_sources_below_min:{odds_sources}/2")
+            if confirmations < 2:
+                reasons.append(f"tier_a_confirmation_sources_below_min:{confirmations}/2")
+            if books < 2:
+                reasons.append(f"tier_a_books_below_min:{books}/2")
+        return reasons
+
+    module.tier_reasons = tier_reasons_a_only
+    module._harizon_usercustomize_a_only = True
+    _write_policy_report({
+        "status": "installed",
+        "policy": "A-only public publication; B-tier watchlist-only",
+        "patched_module": str(getattr(module, "__name__", "")),
+        "env": A_TIER_ONLY_ENV,
+    })
+
+
+_original_spec_from_file_location = importlib.util.spec_from_file_location
+
+
+def _spec_from_file_location_a_only(name: str, location: Any, *args: Any, **kwargs: Any) -> Any:
+    spec = _original_spec_from_file_location(name, location, *args, **kwargs)
+    try:
+        path = Path(str(location)).resolve()
+    except Exception:
+        path = None
+    if spec is None or path is None or path.name != "publish_controlled_fallback.py":
+        return spec
+    loader = getattr(spec, "loader", None)
+    exec_module = getattr(loader, "exec_module", None)
+    if not callable(exec_module):
+        return spec
+
+    def exec_module_patched(module: Any) -> Any:
+        result = exec_module(module)
+        try:
+            _patch_controlled_fallback(module)
+        except Exception as exc:
+            _write_policy_report({"status": "error", "error": f"{type(exc).__name__}: {exc}"})
+        return result
+
+    loader.exec_module = exec_module_patched  # type: ignore[method-assign]
+    return spec
+
+
+importlib.util.spec_from_file_location = _spec_from_file_location_a_only
+_write_policy_report({"status": "loaded", "policy": "A-only public publication; B-tier watchlist-only", "env": A_TIER_ONLY_ENV})
 
 try:
     from app.services.bzzoiro_gap_planner_fallback_patch import install as _install_bzz_gap_targets
