@@ -1,22 +1,7 @@
 from __future__ import annotations
 
-"""Protect HARIZON day inventory from accidental shrink/rebuild.
-
-The production lifecycle requires the 00:00 MSK inventory to accumulate coverage
-for the full day instead of being replaced by a smaller publish-window subset.  A
-few runs showed 300 -> 131 -> 160 match shrink, which made later runs operate on
-an incomplete pool.  This script snapshots the largest valid inventory for the
-frozen target date and restores it when current/latest/today are overwritten by a
-smaller payload.
-
-Usage:
-  python scripts/guard_day_inventory_no_shrink.py snapshot
-  python scripts/guard_day_inventory_no_shrink.py repair
-"""
-
 import json
 import os
-import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,7 +15,7 @@ ARTIFACT_DIR = ROOT / "artifacts" / "run-bot"
 SNAPSHOT_DIR = ROOT / ".data" / "inventory_guard"
 SNAPSHOT_PATH = SNAPSHOT_DIR / "best-day-inventory.json"
 REPORT_PATH = EXPORT_DIR / "latest-day-inventory-no-shrink-guard.json"
-CONFLICT_MARKERS = ("<<<<<<<", "=======", ">>>>>>>")
+CONFLICT_MARKERS = ("<" * 7, "=" * 7, ">" * 7)
 
 
 def _target_date() -> str:
@@ -80,8 +65,6 @@ def _payload_date(payload: dict[str, Any] | None) -> str:
 def _score(payload: dict[str, Any], path: Path, target_date: str) -> tuple[int, int, int, int, str]:
     rows = _rows(payload)
     counts = payload.get("counts") if isinstance(payload.get("counts"), dict) else {}
-    # Prefer explicit match list size, then counts.matches_total.  Coverage counts
-    # only break ties, so a smaller current inventory cannot replace a larger one.
     total = len(rows) or int(float(counts.get("matches_total") or 0))
     with_odds = int(float(counts.get("matches_with_odds") or counts.get("matches_with_offers") or 0))
     with_context = int(float(counts.get("matches_with_context") or 0))
@@ -99,8 +82,9 @@ def _candidate_paths(target_date: str) -> list[Path]:
     paths.extend([
         EXPORT_DIR / "latest-day-inventory.json",
         EXPORT_DIR / "latest-day-inventory-summary.json",
+        EXPORT_DIR / "latest-day-inventory-cumulative-coverage.json",
+        EXPORT_DIR / "latest-day-inventory-coverage-truth.json",
     ])
-    # Keep order stable and unique.
     out: list[Path] = []
     seen: set[str] = set()
     for path in paths:
@@ -154,6 +138,18 @@ def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str) -> list[
     return changed
 
 
+def _expand_target_inventory_if_available() -> dict[str, Any]:
+    if str(os.getenv("DAY_INVENTORY_NO_SHRINK_RUN_TARGET_EXPAND", "true")).strip().lower() in {"0", "false", "no", "off"}:
+        return {"enabled": False, "reason": "disabled_by_env"}
+    try:
+        from scripts import expand_day_inventory_to_target
+        code = expand_day_inventory_to_target.main()
+        report = _load_json(EXPORT_DIR / "latest-day-inventory-target-expand.json") or {}
+        return {"enabled": True, "exit_code": code, "report": report}
+    except Exception as exc:
+        return {"enabled": True, "status": "error_ignored", "error": f"{type(exc).__name__}: {exc}"}
+
+
 def snapshot() -> dict[str, Any]:
     target_date = _target_date()
     best_path, best_payload, best_score = _best_payload(target_date)
@@ -175,6 +171,7 @@ def snapshot() -> dict[str, Any]:
 
 
 def repair() -> dict[str, Any]:
+    expand_report = _expand_target_inventory_if_available()
     target_date = _target_date()
     current_path, current_payload, current_score = _best_payload(target_date)
     snap_payload = _load_json(SNAPSHOT_PATH)
@@ -184,6 +181,7 @@ def repair() -> dict[str, Any]:
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "repair",
         "target_date": target_date,
+        "target_expand_repair": expand_report,
         "current_best_path": str(current_path) if current_path else "",
         "current_best_matches": current_rows,
         "snapshot_matches": snap_rows,
