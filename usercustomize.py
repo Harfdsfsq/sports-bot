@@ -190,6 +190,12 @@ importlib.util.spec_from_file_location = _spec_from_file_location_a_only
 _write_policy_report({"status": "loaded", "policy": "A-only public publication; B-tier watchlist-only", "env": A_TIER_ONLY_ENV})
 
 try:
+    from app.services.inventory_coverage_source_runtime_patch import install as _install_inventory_coverage_sources
+    _install_inventory_coverage_sources()
+except Exception:
+    pass
+
+try:
     from app.services.bzzoiro_gap_planner_fallback_patch import install as _install_bzz_gap_targets
     _install_bzz_gap_targets()
 except Exception:
