@@ -8,9 +8,11 @@ configured evidence sources more effectively.
 """
 
 import os
+from datetime import datetime, timezone
 from typing import Any
 
 _INSTALLED = False
+UTC = timezone.utc
 
 ENV_DEFAULTS = {
     "DAY_INVENTORY_EXTRA_FIXTURES_ENABLED": "true",
@@ -35,14 +37,14 @@ ENV_DEFAULTS = {
     "SPORTLOGIC_MATCH_LIMIT": "300",
     "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "150",
     "SPORTLOGIC_ODDS_MATCH_LIMIT": "150",
-    # Do not stop SportLogic after /games=0.  The provider already date-gates
-    # /odds?is_active=true rows before matching, so this can recover a second
-    # odds source without accepting stale fixtures.
     "SPORTLOGIC_SKIP_ACTIVE_ODDS_WHEN_NO_CURRENT_GAMES": "false",
     "SPORTLOGIC_ACTIVE_ODDS_ALLOW_WITHOUT_CURRENT_GAMES": "true",
     "SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED": "true",
     "SPORTLOGIC_TARGETED_GAME_DETAIL_LIMIT": "20",
     "SPORTLOGIC_ACTIVE_ODDS_GAME_DETAIL_LIMIT": "20",
+    "PROVIDER_DAY_DISCOVERY_INCLUDE_SPORTLOGIC_ACTIVE_ODDS": "true",
+    "PROVIDER_DAY_DISCOVERY_SPORTLOGIC_ACTIVE_ODDS_PAGES": "2",
+    "PROVIDER_DAY_DISCOVERY_BZZOIRO_ODDS_PAGES": "3",
     "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
     "BZZOIRO_ODDS_MATCH_LIMIT": "300",
     "BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT": "220",
@@ -71,6 +73,13 @@ def _int_env(name: str, default: int) -> int:
         return int(float(str(os.getenv(name) or default)))
     except Exception:
         return default
+
+
+def _truthy_env(name: str, default: bool = True) -> bool:
+    raw = str(os.getenv(name) or "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on", "force"}
 
 
 def _setattr_safe(obj: Any, name: str, value: Any) -> None:
@@ -104,6 +113,19 @@ def _first_float(row: dict[str, Any], keys: tuple[str, ...]) -> float | None:
     return None
 
 
+def _date_key(value: Any) -> str:
+    try:
+        text = str(value or "").strip()
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        dt = datetime.fromisoformat(text)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC).date().isoformat()
+    except Exception:
+        return ""
+
+
 def _patch_sstats() -> dict[str, Any]:
     try:
         from app.providers.sstats import SStatsContextProvider
@@ -133,6 +155,82 @@ def _patch_sstats() -> dict[str, Any]:
     return {"status": "patched", "target": "SStatsContextProvider.__init__/_extract_result"}
 
 
+def _patch_provider_day_discovery() -> dict[str, Any]:
+    try:
+        from scripts import provider_day_discovery_canonical_pool as pool
+    except Exception as exc:
+        return {"status": "import_error", "error": f"{type(exc).__name__}: {exc}"}
+    if getattr(pool, "_harizon_inventory_coverage_patch", False):
+        return {"status": "already_patched"}
+    original_extract_event = pool.extract_event
+    original_build_calls = pool.build_calls
+
+    def extract_event(row: Any, provider: str) -> dict[str, Any] | None:
+        if provider == "sportlogic" and isinstance(row, dict):
+            nested = None
+            for key in ("game", "fixture", "match", "event"):
+                value = row.get(key)
+                if isinstance(value, dict):
+                    nested = value
+                    break
+            if nested is not None:
+                event = original_extract_event(nested, provider)
+                if event is None:
+                    return None
+                # Active odds can include stale games. Keep only rows whose embedded
+                # fixture date matches the target day.
+                if _date_key(event.get("kickoff_utc")) != pool.target_date():
+                    return None
+                game_id = str(row.get("game_id") or row.get("gameId") or row.get("game") or "").strip()
+                if game_id and not isinstance(row.get("game"), str):
+                    event["source_id"] = game_id
+                return event
+        return original_extract_event(row, provider)
+
+    def build_calls() -> list[Any]:
+        calls = list(original_build_calls())
+        t = pool.target_date()
+        tm = pool.date_plus(t, 1)
+        existing = {str(getattr(call, "command", "")) for call in calls}
+        _, bzz = pool.first_env("BZZOIRO_API_KEY")
+        if bzz:
+            headers = {"Authorization": f"Token {bzz}"}
+            pages = max(1, min(pool.as_int(pool.env("PROVIDER_DAY_DISCOVERY_BZZOIRO_ODDS_PAGES"), 3), 8))
+            for market in ("1x2", "over_under_25", "over_under_15", "over_under_35", "btts"):
+                for page in range(1, pages):
+                    command = f"odds_best_{market}_offset_{page * 200}"
+                    if command in existing:
+                        continue
+                    calls.append(pool.CallSpec(
+                        "bzzoiro",
+                        command,
+                        "https://sports.bzzoiro.com/api/v2/odds/best/",
+                        "odds_secondary_discovery",
+                        {"market": market, "date_from": f"{t}T00:00:00Z", "date_to": f"{tm}T00:00:00Z", "limit": 200, "offset": page * 200},
+                        headers,
+                    ))
+        if _truthy_env("PROVIDER_DAY_DISCOVERY_INCLUDE_SPORTLOGIC_ACTIVE_ODDS", True):
+            _, sl = pool.first_env("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN")
+            if sl:
+                root = pool.env("SPORTLOGIC_BASE_URL", "https://api.sportlogic.io/api/v1").rstrip("/")
+                header_name = pool.env("SPORTLOGIC_HEADER_NAME", "X-API-Key") or "X-API-Key"
+                pages = max(1, min(pool.as_int(pool.env("PROVIDER_DAY_DISCOVERY_SPORTLOGIC_ACTIVE_ODDS_PAGES"), 2), 4))
+                for page in range(pages):
+                    command = f"active_odds_page_{page}"
+                    if command in existing:
+                        continue
+                    params = {"is_active": "true", "per_page": 100}
+                    if page:
+                        params["cursor"] = str(page)
+                    calls.append(pool.CallSpec("sportlogic", command, f"{root}/odds", "odds_secondary_discovery", params, {header_name: sl}))
+        return calls
+
+    pool.extract_event = extract_event
+    pool.build_calls = build_calls
+    pool._harizon_inventory_coverage_patch = True
+    return {"status": "patched", "target": "provider_day_discovery_canonical_pool"}
+
+
 def install() -> dict[str, Any]:
     global _INSTALLED
     for key, value in ENV_DEFAULTS.items():
@@ -144,4 +242,5 @@ def install() -> dict[str, Any]:
         "status": "installed",
         "env_applied": len(ENV_DEFAULTS),
         "sstats": _patch_sstats(),
+        "provider_day_discovery": _patch_provider_day_discovery(),
     }
