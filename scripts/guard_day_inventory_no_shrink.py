@@ -15,6 +15,7 @@ ARTIFACT_DIR = ROOT / "artifacts" / "run-bot"
 SNAPSHOT_DIR = ROOT / ".data" / "inventory_guard"
 SNAPSHOT_PATH = SNAPSHOT_DIR / "best-day-inventory.json"
 REPORT_PATH = EXPORT_DIR / "latest-day-inventory-no-shrink-guard.json"
+HIGHWATER_NAMES = ("best-day-inventory-highwater.json", "highwater.json", "largest.json")
 CONFLICT_MARKERS = ("<" * 7, "=" * 7, ">" * 7)
 
 
@@ -74,11 +75,22 @@ def _score(payload: dict[str, Any], path: Path, target_date: str) -> tuple[int, 
     return (date_ok, total, with_odds + with_context + ready, int(path.stat().st_mtime), str(path))
 
 
+def _highwater_paths(target_date: str) -> list[Path]:
+    return [
+        SNAPSHOT_PATH,
+        *(DAY_DIR / name for name in HIGHWATER_NAMES),
+        *(CACHE_DIR / name for name in HIGHWATER_NAMES),
+        DAY_DIR / f"{target_date}-highwater.json",
+        CACHE_DIR / f"{target_date}-highwater.json",
+    ]
+
+
 def _candidate_paths(target_date: str) -> list[Path]:
     names = [f"{target_date}.json", "current.json", "latest.json", "today.json"]
     paths: list[Path] = []
     for base in (DAY_DIR, CACHE_DIR, ARTIFACT_DIR / "day_inventory"):
         paths.extend(base / name for name in names)
+    paths.extend(_highwater_paths(target_date))
     paths.extend([
         EXPORT_DIR / "latest-day-inventory.json",
         EXPORT_DIR / "latest-day-inventory-summary.json",
@@ -119,6 +131,16 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _write_highwater(payload: dict[str, Any], target_date: str) -> list[str]:
+    payload = dict(payload)
+    payload["highwater_updated_at_utc"] = datetime.now(timezone.utc).isoformat()
+    changed: list[str] = []
+    for path in _highwater_paths(target_date):
+        _write_json(path, payload)
+        changed.append(str(path))
+    return changed
+
+
 def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str, *, force: bool = False) -> list[str]:
     DAY_DIR.mkdir(parents=True, exist_ok=True)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -156,6 +178,8 @@ def _expand_target_inventory_if_available() -> dict[str, Any]:
 def snapshot() -> dict[str, Any]:
     target_date = _target_date()
     best_path, best_payload, best_score = _best_payload(target_date)
+    date_payload = _load_json(DAY_DIR / f"{target_date}.json")
+    date_rows = len(_rows(date_payload))
     report: dict[str, Any] = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "snapshot",
@@ -163,12 +187,16 @@ def snapshot() -> dict[str, Any]:
         "status": "no_inventory_found",
         "best_path": str(best_path) if best_path else "",
         "best_matches": best_score[1],
+        "date_file_matches_before": date_rows,
+        "changed_paths": [],
+        "highwater_paths": [],
     }
     if best_payload is not None and best_score[1] > 0:
-        SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-        _write_json(SNAPSHOT_PATH, best_payload)
-        report["status"] = "snapshotted"
-        report["snapshot_path"] = str(SNAPSHOT_PATH)
+        report["highwater_paths"] = _write_highwater(best_payload, target_date)
+        report["status"] = "snapshotted_highwater"
+        if best_score[1] > date_rows:
+            report["changed_paths"] = _copy_payload_to_aliases(best_payload, target_date, force=True)
+            report["status"] = "highwater_snapshot_promoted"
     _write_json(REPORT_PATH, report)
     return report
 
@@ -177,8 +205,6 @@ def repair() -> dict[str, Any]:
     expand_report = _expand_target_inventory_if_available()
     target_date = _target_date()
     current_path, current_payload, current_score = _best_payload(target_date)
-    snap_payload = _load_json(SNAPSHOT_PATH)
-    snap_rows = len(_rows(snap_payload))
     current_rows = current_score[1]
     date_payload = _load_json(DAY_DIR / f"{target_date}.json")
     date_rows = len(_rows(date_payload))
@@ -191,28 +217,19 @@ def repair() -> dict[str, Any]:
         "current_best_path": str(current_path) if current_path else "",
         "current_best_matches": current_rows,
         "date_file_matches_before": date_rows,
-        "snapshot_matches": snap_rows,
         "status": "ok_no_repair_needed",
         "changed_paths": [],
+        "highwater_paths": [],
     }
     changed: list[str] = []
-    if snap_payload is not None and snap_rows > current_rows:
-        changed = _copy_payload_to_aliases(snap_payload, target_date, force=True)
-        report["status"] = "repaired_from_snapshot"
-        report["changed_paths"] = changed
-    elif current_payload is not None and current_rows > 0:
-        if current_rows >= snap_rows:
-            SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-            _write_json(SNAPSHOT_PATH, current_payload)
-            report["snapshot_matches"] = current_rows
+    if current_payload is not None and current_rows > 0:
+        report["highwater_paths"] = _write_highwater(current_payload, target_date)
         if current_rows > date_rows:
             changed = _copy_payload_to_aliases(current_payload, target_date, force=True)
             report["status"] = "promoted_current_high_watermark"
             report["changed_paths"] = changed
-        elif current_rows > snap_rows:
-            report["status"] = "snapshot_upgraded"
-    elif snap_payload is None or snap_rows <= 0:
-        report["status"] = "no_snapshot_available"
+    else:
+        report["status"] = "no_inventory_available"
 
     if changed:
         report["target_expand_after_promotion"] = _expand_target_inventory_if_available()
