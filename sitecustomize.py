@@ -16,6 +16,7 @@ import importlib
 import importlib.util
 import json
 import os
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +24,39 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent
+
+
+def _clean_stale_run_artifacts_once() -> None:
+    """Clean checked-out artifact files before the first Python step.
+
+    Runtime artifacts are committed for diagnostics, so a checkout can contain
+    old artifacts/run-bot files. If a new run does not recreate one of them,
+    report/fallback layers can accidentally read April-era files as current.
+    Day inventory persistence is in .data/day_inventory/.data/cache and is not
+    touched here.
+    """
+    if str(os.getenv("GITHUB_ACTIONS") or "").strip().lower() != "true":
+        return
+    if str(os.getenv("HARIZON_CLEAN_RUN_ARTIFACTS_ONCE") or "true").strip().lower() in {"0", "false", "no", "off"}:
+        return
+    artifact_dir = ROOT / "artifacts" / "run-bot"
+    sentinel = artifact_dir / ".fresh-run-artifacts-sentinel"
+    try:
+        if sentinel.exists():
+            return
+        if artifact_dir.exists():
+            shutil.rmtree(artifact_dir)
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        sentinel.write_text(json.dumps({"status": "cleaned", "created_at_utc": datetime.now(timezone.utc).isoformat()}) + "\n", encoding="utf-8")
+    except Exception:
+        try:
+            artifact_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+
+
+_clean_stale_run_artifacts_once()
+
 SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
