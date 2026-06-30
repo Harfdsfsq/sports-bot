@@ -43,7 +43,7 @@ ENV_DEFAULTS = {
     "SPORTLOGIC_TARGETED_GAME_DETAIL_LIMIT": "20",
     "SPORTLOGIC_ACTIVE_ODDS_GAME_DETAIL_LIMIT": "20",
     "PROVIDER_DAY_DISCOVERY_INCLUDE_SPORTLOGIC_ACTIVE_ODDS": "true",
-    "PROVIDER_DAY_DISCOVERY_SPORTLOGIC_ACTIVE_ODDS_PAGES": "2",
+    "PROVIDER_DAY_DISCOVERY_SPORTLOGIC_ACTIVE_ODDS_PAGES": "1",
     "PROVIDER_DAY_DISCOVERY_BZZOIRO_ODDS_PAGES": "3",
     "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
     "BZZOIRO_ODDS_MATCH_LIMIT": "300",
@@ -177,12 +177,10 @@ def _patch_provider_day_discovery() -> dict[str, Any]:
                 event = original_extract_event(nested, provider)
                 if event is None:
                     return None
-                # Active odds can include stale games. Keep only rows whose embedded
-                # fixture date matches the target day.
                 if _date_key(event.get("kickoff_utc")) != pool.target_date():
                     return None
-                game_id = str(row.get("game_id") or row.get("gameId") or row.get("game") or "").strip()
-                if game_id and not isinstance(row.get("game"), str):
+                game_id = str(row.get("game_id") or row.get("gameId") or row.get("fixture_id") or row.get("match_id") or "").strip()
+                if game_id:
                     event["source_id"] = game_id
                 return event
         return original_extract_event(row, provider)
@@ -214,15 +212,9 @@ def _patch_provider_day_discovery() -> dict[str, Any]:
             if sl:
                 root = pool.env("SPORTLOGIC_BASE_URL", "https://api.sportlogic.io/api/v1").rstrip("/")
                 header_name = pool.env("SPORTLOGIC_HEADER_NAME", "X-API-Key") or "X-API-Key"
-                pages = max(1, min(pool.as_int(pool.env("PROVIDER_DAY_DISCOVERY_SPORTLOGIC_ACTIVE_ODDS_PAGES"), 2), 4))
-                for page in range(pages):
-                    command = f"active_odds_page_{page}"
-                    if command in existing:
-                        continue
-                    params = {"is_active": "true", "per_page": 100}
-                    if page:
-                        params["cursor"] = str(page)
-                    calls.append(pool.CallSpec("sportlogic", command, f"{root}/odds", "odds_secondary_discovery", params, {header_name: sl}))
+                command = "active_odds_current_page"
+                if command not in existing:
+                    calls.append(pool.CallSpec("sportlogic", command, f"{root}/odds", "odds_secondary_discovery", {"is_active": "true", "per_page": 100}, {header_name: sl}))
         return calls
 
     pool.extract_event = extract_event
