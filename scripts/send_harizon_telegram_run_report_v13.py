@@ -85,6 +85,7 @@ def build_payload() -> dict[str, Any]:
     diag['a_cover_candidate_gap_report'] = _load_json(EXPORT_DIR / 'latest-a-cover-candidate-gap-report.json')
     diag['a_cover_value_promotion'] = _load_json(EXPORT_DIR / 'latest-a-cover-value-promotion.json')
     diag['controlled_fallback_prepublish_guard'] = _load_json(EXPORT_DIR / 'latest-controlled-fallback-prepublish-guard.json')
+    diag['day_inventory_cumulative_coverage'] = _load_json(EXPORT_DIR / 'latest-day-inventory-cumulative-coverage.json')
     return payload
 
 
@@ -95,6 +96,7 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
     promotion = diag.get('a_cover_value_promotion') if isinstance(diag.get('a_cover_value_promotion'), dict) else {}
     guard = diag.get('controlled_fallback_prepublish_guard') if isinstance(diag.get('controlled_fallback_prepublish_guard'), dict) else {}
     contract = diag.get('workflow_env_contract') if isinstance(diag.get('workflow_env_contract'), dict) else {}
+    cumulative = diag.get('day_inventory_cumulative_coverage') if isinstance(diag.get('day_inventory_cumulative_coverage'), dict) else {}
     lines: list[str] = []
     if guard or contract:
         daily_existing = guard.get('daily_existing') if isinstance(guard.get('daily_existing'), dict) else {}
@@ -124,6 +126,15 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
         lines.append(
             f"• A-cover candidate gap: active {_as_int(gap.get('active_future_a_cover_rows'))}; in-window {_as_int(gap.get('in_publish_window_a_cover_rows'))}; statuses {_top_counter_items(gap.get('status_counts'), 3)}; top reasons {_top_counter_items(gap.get('reason_counts'), 5)}."
         )
+    if cumulative:
+        selected = cumulative.get('inventory_selection') if isinstance(cumulative.get('inventory_selection'), dict) else {}
+        selected_rows = _as_int(selected.get('selected_rows')) or _as_int(cumulative.get('matches_total'))
+        date_rows = _as_int(selected.get('date_path_rows'))
+        if selected_rows:
+            suffix = ''
+            if date_rows and selected_rows > date_rows:
+                suffix = f'; защищено от shrink {date_rows}→{selected_rows}'
+            lines.append(f"• Inventory no-shrink source: selected {selected_rows} rows from {selected.get('selected_path') or cumulative.get('inventory_path')}{suffix}.")
     return lines
 
 
