@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -38,6 +39,13 @@ def fnum(v: Any) -> float | None:
         return f if math.isfinite(f) else None
     except Exception:
         return None
+
+
+def target_date() -> str:
+    explicit = str(os.getenv('DAY_INVENTORY_TARGET_DATE') or os.getenv('DAY_INVENTORY_CACHE_DATE') or '').strip()
+    if explicit:
+        return explicit[:10]
+    return datetime.now(timezone.utc).date().isoformat()
 
 
 def date_of(key: str, row: dict[str, Any]) -> str:
@@ -165,24 +173,49 @@ def ref_index() -> dict[str, set[str]]:
 
 def main() -> int:
     now = datetime.now(timezone.utc).isoformat()
+    day = target_date()
     out, source_counts = bzz_rows()
     idx = ref_index()
-    match_overlap = bucket_overlap = 0
+    match_overlap_rows = bucket_overlap_rows = 0
+    unique_offer_matches: set[str] = set()
+    unique_match_overlap: set[str] = set()
+    unique_bucket_overlap: set[str] = set()
+    target_date_rows = 0
+    target_date_matches: set[str] = set()
     for r in out:
-        als = aliases(r.get('date'), r.get('home_team'), r.get('away_team'), r.get('match_key'))
+        key = str(r.get('match_key') or '').strip()
+        if key:
+            unique_offer_matches.add(key)
+        if date_of(key, r) == day:
+            target_date_rows += 1
+            if key:
+                target_date_matches.add(key)
+        als = aliases(r.get('date'), r.get('home_team'), r.get('away_team'), key)
         b = bucket(r)
         has_match = any(a in idx for a in als)
         has_bucket = any(b in idx.get(a, set()) for a in als)
         r['overlap_match_alias_found'] = has_match
         r['overlap_same_bucket_found'] = has_bucket
         r['overlap_bucket_key'] = b
-        match_overlap += int(has_match)
-        bucket_overlap += int(has_bucket)
+        match_overlap_rows += int(has_match)
+        bucket_overlap_rows += int(has_bucket)
+        if has_match and key:
+            unique_match_overlap.add(key)
+        if has_bucket and key:
+            unique_bucket_overlap.add(key)
     report = {
-        'status': 'ok', 'created_at_utc': now, 'offers_path': str(OUT_OFFERS),
-        'bzzoiro_offer_rows': len(out), 'overlap_match_rows': match_overlap,
-        'overlap_same_bucket_rows': bucket_overlap, 'source_counts': dict(source_counts),
+        'status': 'ok', 'created_at_utc': now, 'target_date': day, 'offers_path': str(OUT_OFFERS),
+        'bzzoiro_offer_rows': len(out),
+        'bzzoiro_unique_offer_matches': len(unique_offer_matches),
+        'target_date_offer_rows': target_date_rows,
+        'target_date_unique_offer_matches': len(target_date_matches),
+        'overlap_match_rows': match_overlap_rows,
+        'overlap_same_bucket_rows': bucket_overlap_rows,
+        'unique_overlap_match_count': len(unique_match_overlap),
+        'unique_overlap_same_bucket_match_count': len(unique_bucket_overlap),
+        'source_counts': dict(source_counts),
         'odds_reference_aliases': len(idx),
+        'sample_unique_matches': sorted(unique_offer_matches)[:20],
     }
     dump(OUT_OFFERS, {'status': 'ok', 'created_at_utc': now, 'rows': out, 'meta': report})
     dump(OUT_REPORT, report)
