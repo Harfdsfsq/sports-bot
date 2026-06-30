@@ -26,6 +26,9 @@ ENV_DEFAULTS = {
     "DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES": "300",
     "DAY_INVENTORY_BZZOIRO_MAX_PAGES": "30",
     "DAY_INVENTORY_BZZOIRO_MAX_REQUESTS": "220",
+    "DAY_INVENTORY_SSTATS_LIMIT": "1000",
+    "DAY_INVENTORY_SSTATS_MAX_REQUESTS": "3",
+    "DAY_INVENTORY_SSTATS_WINDOW_DAYS": "0",
     "DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT": "300",
     "DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS": "36",
     "SPORTLOGIC_ENABLED": "true",
@@ -261,6 +264,14 @@ def _patch_provider_day_discovery() -> dict[str, Any]:
     return {"status": "patched", "target": "provider_day_discovery_canonical_pool"}
 
 
+def _install_sstats_fixture_source() -> dict[str, Any]:
+    try:
+        from app.services.day_inventory_sstats_fixture_source import install as install_sstats_fixture_source
+        return install_sstats_fixture_source()
+    except Exception as exc:
+        return {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+
+
 def install() -> dict[str, Any]:
     global _INSTALLED
     for key, value in ENV_DEFAULTS.items():
@@ -272,5 +283,6 @@ def install() -> dict[str, Any]:
         "status": "installed",
         "env_applied": len(ENV_DEFAULTS),
         "sstats": _patch_sstats(),
+        "sstats_fixture_source": _install_sstats_fixture_source(),
         "provider_day_discovery": _patch_provider_day_discovery(),
     }
