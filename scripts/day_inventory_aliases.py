@@ -8,6 +8,7 @@ pointed at the current local run date unless a workflow explicitly opts into
 rewriting them for a historical or future target.
 """
 
+import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,6 +45,39 @@ def current_alias_paths(root: Path) -> list[Path]:
     return [inv_dir / "latest.json", inv_dir / "current.json", inv_dir / "today.json"]
 
 
+def _truthy(value: object) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
+
+
+def _rows(payload: Any) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        return []
+    rows = payload.get("matches")
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def _load_json(path: Path) -> Any:
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            return json.loads(path.read_text(encoding="utf-8", errors="replace"))
+    except Exception:
+        pass
+    return None
+
+
+def _can_write_alias(path: Path, payload: Any) -> tuple[bool, str, int, int]:
+    if _truthy(os.getenv("DAY_INVENTORY_FORCE_ALIAS_SHRINK")):
+        return True, "forced", 0, 0
+    incoming_rows = len(_rows(payload))
+    existing_payload = _load_json(path)
+    existing_rows = len(_rows(existing_payload))
+    if existing_rows > 0 and incoming_rows < existing_rows:
+        return False, "prevented_alias_shrink", existing_rows, incoming_rows
+    return True, "ok", existing_rows, incoming_rows
+
+
 def write_current_aliases(
     root: Path,
     target_date: str,
@@ -58,10 +92,24 @@ def write_current_aliases(
             "current_date": current_local_date(),
         }
     paths = current_alias_paths(root)
+    written: list[str] = []
+    skipped: list[dict[str, Any]] = []
     for path in paths:
+        allowed, reason, existing_rows, incoming_rows = _can_write_alias(path, payload)
+        if not allowed:
+            skipped.append({
+                "path": str(path),
+                "reason": reason,
+                "existing_rows": existing_rows,
+                "incoming_rows": incoming_rows,
+            })
+            continue
         write_json(path, payload)
+        written.append(str(path))
+    status = "ok" if not skipped else ("partial_no_shrink" if written else "skipped_no_shrink")
     return {
-        "status": "ok",
+        "status": status,
         "target_date": target_date,
-        "paths": [str(path) for path in paths],
+        "paths": written,
+        "skipped": skipped,
     }
