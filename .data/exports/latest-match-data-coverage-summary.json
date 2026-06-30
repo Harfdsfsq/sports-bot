@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 4,
-      "rows_seen": 4,
+      "rows_kept": 18,
+      "rows_seen": 18,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 50,
-      "rows_seen": 73,
-      "rows_stale": 23
+      "rows_kept": 69,
+      "rows_seen": 85,
+      "rows_stale": 16
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,36 +26,36 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 28,
-      "rows_seen": 28,
+      "rows_kept": 37,
+      "rows_seen": 37,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 38,
+    "candidates_before_quality": 45,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 69,
-    "controlled_candidates_seen": 1,
+    "contexts_built": 67,
+    "controlled_candidates_seen": 8,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 37,
-    "matches_seen": 83,
-    "matches_with_offers": 50
+    "coverage_candidates_current_date": 45,
+    "matches_seen": 85,
+    "matches_with_offers": 54
   },
-  "created_at": "2026-06-30T09:07:00.652291+00:00",
+  "created_at": "2026-06-30T11:08:05.370411+00:00",
   "family_counts": {
-    "h2h": 2,
-    "totals": 35
+    "h2h": 1,
+    "totals": 44
   },
-  "matches_with_candidates": 31,
+  "matches_with_candidates": 33,
   "missing_data_flags": {
-    "confidence_below_micro_c": 32,
-    "edge_below_micro_c": 32,
-    "ev_below_micro_c": 32,
-    "single_book": 16,
+    "confidence_below_micro_c": 33,
+    "edge_below_micro_c": 33,
+    "ev_below_micro_c": 34,
+    "single_book": 17,
     "single_context_source": 13,
-    "single_odds_source": 14
+    "single_odds_source": 17
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 26,
+  "positive_near_miss_count": 28,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +78,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 45,
+      "events_matched": 50,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 912,
+      "offers_parsed": 1086,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -97,11 +97,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 38,
+      "events_matched": 39,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2904,
+      "offers_parsed": 4273,
       "provider": "account2",
       "rate_limited": false,
       "response_errors": 0,
@@ -150,8 +150,8 @@
     {
       "api_key_present": null,
       "budget_exhausted": true,
-      "contexts_built": 20,
-      "direct_event_contexts_built": 20,
+      "contexts_built": 21,
+      "direct_event_contexts_built": 21,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -178,7 +178,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 47,
+      "matches_built": 51,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -193,11 +193,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 91,
+      "events_fetched": 97,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 47,
+      "matches_built": 51,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -209,8 +209,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 67,
-      "direct_event_contexts_built": 67,
+      "contexts_built": 66,
+      "direct_event_contexts_built": 66,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -282,7 +282,7 @@
       "offers_parsed": null,
       "provider": "thesportsdb",
       "rate_limited": false,
-      "response_errors": 3,
+      "response_errors": 4,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -485,37 +485,231 @@
     "working": 10
   },
   "reject_reason_counts_from_rows": {
-    "post_calibration_probability_guard": 1
+    "post_calibration_probability_guard": 1,
+    "xg_direction_conflict": 1,
+    "xg_probability_gap_hard_reject": 1
   },
   "target_date": "2026-06-30",
   "top_near_miss": [
     {
-      "away_team": "Mtibwa Sugar FC",
+      "away_team": "Amstetten",
       "best_candidate": {
-        "adjusted_probability": 0.46324,
-        "books_count": 701,
-        "canonical_edge_pp": 4.219,
-        "canonical_ev_pct": 10.02,
-        "confidence": 67.609,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "adjusted_probability": 0.716438,
+        "books_count": 3,
+        "canonical_edge_pp": 7.541,
+        "canonical_ev_pct": 11.764,
+        "confidence": 77.694,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
         "family": "totals",
-        "odds": 2.375,
+        "odds": 1.56,
+        "odds_sources_count": 4,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 4
+      },
+      "best_confidence": 77.694,
+      "best_edge_pp": 7.541,
+      "best_ev_pct": 11.764,
+      "books_max": 3,
+      "candidate_count": 2,
+      "commence_time": "2026-06-30T15:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "FC Silon Taborsko",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|amstetten|silon taborsko|2026-06-30",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 4,
+      "origins": {
+        ".logs/debug-last-run.json": 1,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 4
+    },
+    {
+      "away_team": "Nyiregyhaza",
+      "best_candidate": {
+        "adjusted_probability": 0.514568,
+        "books_count": 1,
+        "canonical_edge_pp": 5.374,
+        "canonical_ev_pct": 11.661,
+        "confidence": 74.048,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 2.17,
+        "odds_sources_count": 5,
+        "origin": "rescue",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 5
+      },
+      "best_confidence": 74.048,
+      "best_edge_pp": 5.374,
+      "best_ev_pct": 11.661,
+      "books_max": 920,
+      "candidate_count": 2,
+      "commence_time": "2026-06-30T15:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Brno",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|brno|nyiregyhaza|2026-06-30",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_book": 1
+      },
+      "odds_sources_max": 5,
+      "origins": {
+        "a_cover_market_promotion": 1,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 5
+    },
+    {
+      "away_team": "Petrolul Ploiesti",
+      "best_candidate": {
+        "adjusted_probability": 0.571781,
+        "books_count": 168,
+        "canonical_edge_pp": 5.896,
+        "canonical_ev_pct": 11.497,
+        "confidence": 76.074,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 1.95,
         "odds_sources_count": 3,
         "origin": "a_cover_market_promotion",
-        "point": 2.5,
+        "point": 3.0,
         "reject_reasons": [],
         "selection": "Больше",
         "sources_count": 3
       },
+      "best_confidence": 76.628,
+      "best_edge_pp": 5.896,
+      "best_ev_pct": 11.497,
+      "books_max": 334,
+      "candidate_count": 4,
+      "commence_time": "2026-06-30T12:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 1,
+      "families": {
+        "totals": 4
+      },
+      "home_team": "Grudziadz",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|grudziadz|petrolul_ploiesti|2026-06-30",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 4,
+      "origins": {
+        "a_cover_market_promotion": 2,
+        "controlled": 1,
+        "rescue": 1
+      },
+      "reject_reasons": {
+        "xg_direction_conflict": 1,
+        "xg_probability_gap_hard_reject": 1
+      },
+      "sources_max": 4
+    },
+    {
+      "away_team": "Nyiregyhaza",
+      "best_candidate": {
+        "adjusted_probability": 0.513333,
+        "books_count": 1,
+        "canonical_edge_pp": 5.25,
+        "canonical_ev_pct": 11.393,
+        "confidence": 69.427,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.17,
+        "odds_sources_count": 3,
+        "origin": "rescue",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 3
+      },
+      "best_confidence": 69.427,
+      "best_edge_pp": 5.25,
+      "best_ev_pct": 11.393,
+      "books_max": 1,
+      "candidate_count": 1,
+      "commence_time": "2026-06-30T15:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Brno",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "2026-06-30|brno|nyiregyhaza",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_book": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
+      "away_team": "Mtibwa Sugar FC",
+      "best_candidate": {
+        "adjusted_probability": 0.46324,
+        "books_count": 2,
+        "canonical_edge_pp": 4.219,
+        "canonical_ev_pct": 10.02,
+        "confidence": 67.609,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.375,
+        "odds_sources_count": 1,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
       "best_confidence": 67.609,
       "best_edge_pp": 4.219,
       "best_ev_pct": 10.02,
-      "books_max": 701,
+      "books_max": 2,
       "candidate_count": 2,
       "commence_time": "2026-06-30T13:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
         "totals": 2
@@ -525,51 +719,52 @@
       "match_key": "soccer|namungo|mtibwa_sugar_fc|2026-06-30",
       "missing_flags": {
         "confidence_below_micro_c": 2,
-        "single_context_source": 1,
-        "single_odds_source": 1
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 2
       },
-      "odds_sources_max": 3,
+      "odds_sources_max": 1,
       "origins": {
-        "a_cover_market_promotion": 1,
+        "awaiting_movement_lifecycle": 1,
         "rescue": 1
       },
       "reject_reasons": {},
-      "sources_max": 3
+      "sources_max": 1
     },
     {
-      "away_team": "Redlands Utd",
+      "away_team": "HJK Helsinki",
       "best_candidate": {
-        "adjusted_probability": 0.554968,
+        "adjusted_probability": 0.600893,
         "books_count": 2,
-        "canonical_edge_pp": 4.476,
-        "canonical_ev_pct": 8.774,
-        "confidence": 68.548,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "canonical_edge_pp": 5.295,
+        "canonical_ev_pct": 9.663,
+        "confidence": 71.948,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
         "family": "totals",
-        "odds": 1.96,
+        "odds": 1.825,
         "odds_sources_count": 2,
         "origin": "rescue",
-        "point": 3.5,
+        "point": 4.5,
         "reject_reasons": [],
         "selection": "Меньше",
         "sources_count": 2
       },
-      "best_confidence": 68.548,
-      "best_edge_pp": 4.476,
-      "best_ev_pct": 8.774,
+      "best_confidence": 71.948,
+      "best_edge_pp": 5.295,
+      "best_ev_pct": 9.663,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-06-30T10:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "commence_time": "2026-06-30T16:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Lightning",
-      "league_name": "Australia - Queensland Premier League 1",
-      "match_key": "soccer|lightning|redlands_utd|2026-06-30",
+      "home_team": "Vantaa",
+      "league_name": "Finland - Suomen Cup, Women",
+      "match_key": "soccer|hjk helsinki|vantaa|2026-06-30",
       "missing_flags": {
         "confidence_below_micro_c": 1
       },
@@ -581,161 +776,77 @@
       "sources_max": 2
     },
     {
-      "away_team": "Mtibwa Sugar FC",
+      "away_team": "",
       "best_candidate": {
-        "adjusted_probability": 0.638979,
-        "books_count": 2,
-        "canonical_edge_pp": 5.074,
-        "canonical_ev_pct": 8.626,
-        "confidence": 66.982,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 1.7,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 66.982,
-      "best_edge_pp": 5.074,
-      "best_ev_pct": 8.626,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-06-30T13:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Namungo",
-      "league_name": "Tanzania - Premier League",
-      "match_key": "soccer|mtibwa sugar|namungo|2026-06-30",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "single_context_source": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "CA Atlas",
-      "best_candidate": {
-        "adjusted_probability": 0.643424,
-        "books_count": 1045,
-        "canonical_edge_pp": 4.819,
-        "canonical_ev_pct": 8.095,
-        "confidence": 74.243,
+        "adjusted_probability": 0.703706,
+        "books_count": 1,
+        "canonical_edge_pp": 5.854,
+        "canonical_ev_pct": 9.074,
+        "confidence": 72.883,
         "confirmation_sources_count": 4,
         "context_sources_count": 4,
         "family": "totals",
-        "odds": 1.68,
+        "odds": 1.55,
         "odds_sources_count": 4,
-        "origin": "a_cover_market_promotion",
-        "point": 1.5,
+        "origin": "rescue",
+        "point": 3.0,
         "reject_reasons": [],
         "selection": "Больше",
         "sources_count": 4
       },
-      "best_confidence": 74.243,
-      "best_edge_pp": 4.819,
-      "best_ev_pct": 8.095,
-      "books_max": 1045,
-      "candidate_count": 1,
-      "commence_time": "2026-06-30T18:00:00+00:00",
+      "best_confidence": 72.883,
+      "best_edge_pp": 5.854,
+      "best_ev_pct": 9.074,
+      "books_max": 1,
+      "candidate_count": 2,
+      "commence_time": "",
       "confirmation_sources_max": 4,
       "context_sources_max": 4,
       "controlled_count": 0,
       "families": {
-        "totals": 1
+        "totals": 2
       },
-      "home_team": "Central Ballester",
-      "league_name": "Argentinian Primera C",
-      "match_key": "soccer|central_ballester|ca_atlas|2026-06-30",
-      "missing_flags": {},
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|oberhausen|waalwijk|2026-06-30",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 2,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
       "odds_sources_max": 4,
       "origins": {
-        "a_cover_market_promotion": 1
+        ".logs/debug-last-run.json": 1,
+        "rescue": 1
       },
       "reject_reasons": {},
       "sources_max": 4
     },
     {
-      "away_team": "FK Zeleznicar Pancevo",
-      "best_candidate": {
-        "adjusted_probability": 0.459918,
-        "books_count": 2,
-        "canonical_edge_pp": 2.888,
-        "canonical_ev_pct": 6.701,
-        "confidence": 70.615,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 2.32,
-        "odds_sources_count": 2,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 70.615,
-      "best_edge_pp": 2.888,
-      "best_ev_pct": 6.701,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-06-30T15:30:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Wolfsberg",
-      "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "soccer|wolfsberg|zeleznicar pancevo|2026-06-30",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
-    },
-    {
       "away_team": "Daugavpils",
       "best_candidate": {
-        "adjusted_probability": 0.512769,
+        "adjusted_probability": 0.579473,
         "books_count": 4,
-        "canonical_edge_pp": 3.2,
-        "canonical_ev_pct": 6.656,
-        "confidence": 72.695,
+        "canonical_edge_pp": 4.184,
+        "canonical_ev_pct": 7.782,
+        "confidence": 73.202,
         "confirmation_sources_count": 3,
         "context_sources_count": 3,
         "family": "totals",
-        "odds": 2.08,
+        "odds": 1.86,
         "odds_sources_count": 3,
         "origin": "rescue",
         "point": 3.5,
         "reject_reasons": [],
-        "selection": "Больше",
+        "selection": "Меньше",
         "sources_count": 3
       },
-      "best_confidence": 72.695,
-      "best_edge_pp": 3.2,
-      "best_ev_pct": 6.656,
+      "best_confidence": 73.202,
+      "best_edge_pp": 4.184,
+      "best_ev_pct": 7.782,
       "books_max": 4,
       "candidate_count": 1,
       "commence_time": "2026-06-30T15:00:00+00:00",
@@ -750,7 +861,6 @@
       "match_key": "soccer|daugavpils|rfs|2026-06-30",
       "missing_flags": {
         "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
         "ev_below_micro_c": 1
       },
       "odds_sources_max": 3,
@@ -761,137 +871,44 @@
       "sources_max": 3
     },
     {
-      "away_team": "FK Zeleznicar Pancevo",
+      "away_team": "Radnik",
       "best_candidate": {
-        "adjusted_probability": 0.4588,
+        "adjusted_probability": 0.444935,
         "books_count": 2,
-        "canonical_edge_pp": 2.777,
-        "canonical_ev_pct": 6.442,
-        "confidence": 65.999,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 2.32,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 65.999,
-      "best_edge_pp": 2.777,
-      "best_ev_pct": 6.442,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-06-30T15:30:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Wolfsberg",
-      "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "2026-06-30|wolfsberg|zeleznicar pancevo",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_context_source": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Vaajakoski",
-      "best_candidate": {
-        "adjusted_probability": 0.496666,
-        "books_count": 2,
-        "canonical_edge_pp": 2.938,
-        "canonical_ev_pct": 6.287,
-        "confidence": 68.929,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.14,
-        "odds_sources_count": 3,
-        "origin": "rescue",
-        "point": 4.0,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 3
-      },
-      "best_confidence": 68.929,
-      "best_edge_pp": 2.938,
-      "best_ev_pct": 6.287,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-06-30T15:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "SJK Akatemia/2",
-      "league_name": "Finland - Kakkonen, Group C",
-      "match_key": "soccer|sjk akatemia 2|vaajakoski|2026-06-30",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
-    },
-    {
-      "away_team": "Oberhausen",
-      "best_candidate": {
-        "adjusted_probability": 0.372119,
-        "books_count": 2,
-        "canonical_edge_pp": 2.124,
-        "canonical_ev_pct": 6.054,
-        "confidence": 73.324,
+        "canonical_edge_pp": 3.171,
+        "canonical_ev_pct": 7.674,
+        "confidence": 74.053,
         "confirmation_sources_count": 4,
         "context_sources_count": 4,
         "family": "totals",
-        "odds": 2.85,
+        "odds": 2.42,
         "odds_sources_count": 4,
         "origin": "rescue",
-        "point": 4.5,
+        "point": 3.5,
         "reject_reasons": [],
         "selection": "Больше",
         "sources_count": 4
       },
-      "best_confidence": 73.324,
-      "best_edge_pp": 2.124,
-      "best_ev_pct": 6.054,
+      "best_confidence": 74.09,
+      "best_edge_pp": 3.171,
+      "best_ev_pct": 7.674,
       "books_max": 2,
       "candidate_count": 2,
-      "commence_time": "2026-06-30T12:00:00+00:00",
-      "confirmation_sources_max": 8,
-      "context_sources_max": 8,
+      "commence_time": "2026-06-30T16:30:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
       "controlled_count": 0,
       "families": {
         "totals": 2
       },
-      "home_team": "Waalwijk",
+      "home_team": "Levski Sofia",
       "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "soccer|oberhausen|waalwijk|2026-06-30",
+      "match_key": "soccer|levski sofia|radnik|2026-06-30",
       "missing_flags": {
-        "confidence_below_micro_c": 2,
         "edge_below_micro_c": 2,
         "ev_below_micro_c": 2,
+        "single_book": 1,
+        "single_context_source": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 4,
@@ -899,56 +916,52 @@
         ".logs/debug-last-run.json": 1,
         "rescue": 1
       },
-      "reject_reasons": {
-        "post_calibration_probability_guard": 1
-      },
+      "reject_reasons": {},
       "sources_max": 4
     },
     {
-      "away_team": "Vaajakoski",
+      "away_team": "St. Pauli",
       "best_candidate": {
-        "adjusted_probability": 0.495458,
-        "books_count": 2,
-        "canonical_edge_pp": 2.817,
-        "canonical_ev_pct": 6.028,
-        "confidence": 67.313,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
+        "adjusted_probability": 0.566632,
+        "books_count": 3,
+        "canonical_edge_pp": 4.032,
+        "canonical_ev_pct": 7.66,
+        "confidence": 74.347,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
         "family": "totals",
-        "odds": 2.14,
-        "odds_sources_count": 2,
+        "odds": 1.9,
+        "odds_sources_count": 3,
         "origin": "rescue",
-        "point": 4.0,
+        "point": 4.5,
         "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
+        "selection": "Больше",
+        "sources_count": 3
       },
-      "best_confidence": 67.313,
-      "best_edge_pp": 2.817,
-      "best_ev_pct": 6.028,
-      "books_max": 2,
+      "best_confidence": 74.347,
+      "best_edge_pp": 4.032,
+      "best_ev_pct": 7.66,
+      "books_max": 3,
       "candidate_count": 1,
-      "commence_time": "2026-06-30T15:30:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
+      "commence_time": "2026-06-30T16:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "SJK Akatemia/2",
-      "league_name": "Finland - Kakkonen, Group C",
-      "match_key": "2026-06-30|sjk akatemia 2|vaajakoski",
+      "home_team": "Altona",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|altona|saint pauli|2026-06-30",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
         "ev_below_micro_c": 1
       },
-      "odds_sources_max": 2,
+      "odds_sources_max": 3,
       "origins": {
         "rescue": 1
       },
       "reject_reasons": {},
-      "sources_max": 2
+      "sources_max": 3
     }
   ]
 }

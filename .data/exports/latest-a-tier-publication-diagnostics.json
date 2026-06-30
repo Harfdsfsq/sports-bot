@@ -1,16 +1,76 @@
 {
-  "created_at_utc": "2026-06-30T09:07:05.130663+00:00",
+  "created_at_utc": "2026-06-30T11:08:10.465304+00:00",
   "duplicates_removed": 0,
-  "evaluated_rows": 1,
+  "evaluated_rows": 8,
   "plain_explanation": [
-    "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+    "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+    "A-tier publication score is below min on many candidates.",
+    "Some candidates still have fewer than the A-tier confirmation/context minimum."
   ],
   "quality_score_sources": {
-    "proxy": 1
+    "a_cover_evidence": 2,
+    "proxy": 3,
+    "raw": 2,
+    "raw_missing": 1
   },
   "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
   "status": "ok",
-  "tier_a_blocker_counts": {},
-  "top_a_tier_blocked_samples": [],
-  "unique_evaluated_rows": 1
+  "tier_a_blocker_counts": {
+    "tier_a_confirmation_sources_below_min:1/2": 2,
+    "tier_a_odds_sources_below_min:1/2": 2,
+    "tier_a_proxy_quality_not_allowed": 1,
+    "tier_a_publication_score_below_min": 1
+  },
+  "top_a_tier_blocked_samples": [
+    {
+      "a_tier_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2"
+      ],
+      "away_team": "Mtibwa Sugar FC",
+      "books_count": 2,
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-06-30T13:00:00+00:00",
+      "confidence": 64.834,
+      "confirmation_sources": [
+        "sstats"
+      ],
+      "confirmation_sources_count": 1,
+      "daily_cap_reasons": [],
+      "dedupe_key": "2026-06-30|tanzania premier league|namungo|mtibwa sugar fc|totals|under|2.5",
+      "edge_pp": 2.215,
+      "ev_pct": 3.853,
+      "family": "totals",
+      "home_team": "Namungo",
+      "league_name": "Tanzania - Premier League",
+      "match_key": "soccer|namungo|mtibwa_sugar_fc|2026-06-30",
+      "odds": 1.74,
+      "odds_sources_count": 1,
+      "other_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_publication_score_below_min",
+        "tier_b_watchlist_only_no_publication",
+        "tier_c_publication_score_below_min"
+      ],
+      "point": 2.5,
+      "publication_score": 12.36,
+      "quality_score": 66.622,
+      "quality_score_source": "proxy",
+      "rank": 1,
+      "selection": "Меньше",
+      "shadow_score": -19.247,
+      "status_without_daily_cap": "blocked_by_other_guards",
+      "tier": null
+    }
+  ],
+  "unique_evaluated_rows": 8
 }
