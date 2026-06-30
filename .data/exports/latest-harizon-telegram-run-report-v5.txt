@@ -1,52 +1,52 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: market point:quarter totals not allowed
+• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 96/300 матчей (цель: 300 лучших, добор каждый run; shortfall 204; target-expand stage 71/300, shortfall 229; status partial_known_rows_only). Runtime rows processed: 76 (это не размер inventory).
-• 1+ линия: 88/96 (92%) | 1+ контекст: 61/96 (64%)
-• 2+ букмекера: 48/96 (50%)
-• Raw 2+ букмекера odds-api.io current snapshot: 20 | normalized cumulative inventory: 48.
-• Odds-api offer snapshot: rows 2932, matches 43, same-side 2+ books 19
-• 2+ independent odds-source: 0/96 (0%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 38/96 (40%)
-• Готово для модели: 54/96 (56%)
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 249/300, shortfall 51; status partial_known_rows_only). Runtime rows processed: 153 (это не размер inventory).
+• 1+ линия: 234/300 (78%) | 1+ контекст: 125/300 (42%)
+• 2+ букмекера: 102/300 (34%)
+• Raw 2+ букмекера odds-api.io current snapshot: 44 | normalized cumulative inventory: 102.
+• Odds-api offer snapshot: rows 6208, matches 81, same-side 2+ books 42
+• 2+ independent odds-source: 6/300 (2%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ контекста: 38/300 (13%)
+• Готово для модели: 123/300 (41%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 0 | main опубликовано: 0
+• A-tier strict-ready: 6 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/2+ bookmaker/1+ context coverage: 48 | fallback опубликовано: 0
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 102 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 0 матчей; B-cover: до 48 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 6 матчей; B-cover: до 102 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 6; pending 6; duplicates removed 19; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 14 | матчей без следующего регулярного run: 0
-• Line guard: увидел 0, оставил 0, снял 0
+• Pre-kickoff проверок: 33 | матчей без следующего регулярного run: 23
+• Line guard: увидел 1, оставил 0, отложил 1 до следующего cron
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 36/36
-• Quality прошло: 36 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 42/42
+• Quality прошло: 42 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 16; смэтчил матчей 76; offers 2932; 2+ букмекера 20; ошибок 0.
-• Bzzoiro: direct req 10, v2 req 10; v2 ctx 3; v2 odds 2; secondary offers 42; overlap odds-api.io 42; ошибок 0.
-• SStats: запросы 17; сырых строк 11718; контекстов 60; deep-enriched 25; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 30; смэтчил матчей 147; offers 6208; 2+ букмекера 44; ошибок 0.
+• Bzzoiro: direct req 25, v2 req 25; v2 ctx 9; v2 odds 5; secondary offers 299; overlap odds-api.io 297; ошибок 0.
+• SStats: запросы 17; сырых строк 11718; контекстов 112; deep-enriched 29; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 7; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag active_odds_stale_only_no_current_fixture.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• market point:quarter totals not allowed: 2 (50%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (25%)
-• quality bad historical segment guard: 1 (25%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (33%)
+• quality: вероятность после калибровки ниже порога: 1 (33%)
+• кандидат ждёт следующий cron для второго снимка линии: 1 (33%)
 
 🔎 Проверенные reserve-кандидаты
-1. Caxias do Sul — Anapolis | Больше 2.25 @1.96 | EV -5.1% | edge -2.6 п.п. | q 50.6
-   • причина: market point:quarter totals not allowed, отрицательная canonical value после пересчёта по выбранному коэффициенту, market point:quarter totals not allowed
+1. Caxias do Sul — Anapolis | Больше 2.5 @2.35 | EV -2.8% | edge -1.2 п.п. | q 50.2
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
    • xG sanity: missing (missing_xg)
 
 🧯 Диагностика новых стопоров
@@ -54,22 +54,22 @@
 • Run bot step: ok; legacy text status; started n/a; finished n/a.
 • Pytest: failed_non_blocking; original exit 2; non-blocking True.
 • Daily slot allocator: published today 0/3; reserved slots 0; release 18:00 local.
-• A-tier funnel: cover 0; active future 0; in publish window 0; raw/quality 36/36; active A-cover with raw 0; active without raw 0; A-cover in fallback 0; active in fallback 0; A-cover published 0.
-• A-cover candidate gap: active 0; in-window 0; statuses n/a; top reasons n/a.
-• Inventory no-shrink source: selected 96 rows from /home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory-today.json; refresh promoted_current_high_watermark.
+• A-tier funnel: cover 6; active future 6; in publish window 0; raw/quality 42/42; active A-cover with raw 0; active without raw 6; A-cover in fallback 0; active in fallback 0; A-cover published 0.
+• A-cover candidate gap: active 6; in-window 0; statuses active_a_cover_not_selected_by_candidate_layers 6; top reasons active_a_cover_not_selected_by_candidate_layers 6.
+• Inventory no-shrink source: selected 308 rows from /home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json; защищено от shrink 300→308; refresh promoted_current_high_watermark.
 • Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 0; top: нет clean-кандидатов после снятия daily cap.
-• Effective blockers without daily cap: market_point:quarter_totals_not_allowed 2; canonical_negative_value 1.
+• Effective blockers without daily cap: canonical_negative_value 1.
 • A-tier blockers: n/a; quality sources raw 1; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
-• Inventory target-expand stage: 71/300; shortfall 229; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 27; normalized 26→31; gap after 0.
-• Bzzoiro overlap bridge: offers 42; match-overlap 42; same-bucket overlap 42.
+• Inventory target-expand stage: 249/300; shortfall 51; status partial_known_rows_only.
+• Bookmaker mapping repair: raw 2+ 165; normalized 44→71; gap after 94.
+• Bzzoiro overlap bridge: offers 299; match-overlap 299; same-bucket overlap 297.
 
 📌 Что это значит
 • Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 28473592017
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/28473592017
-• Artifact: run-bot-28473592017
+• Run ID: 28476798252
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/28476798252
+• Artifact: run-bot-28476798252
 • workflow run-bot, attempt 1
