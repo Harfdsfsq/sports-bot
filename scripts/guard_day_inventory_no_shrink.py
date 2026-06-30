@@ -65,11 +65,19 @@ def _payload_date(payload: dict[str, Any] | None) -> str:
 
 def _score(payload: dict[str, Any], path: Path, target_date: str) -> tuple[int, int, int, int, str]:
     rows = _rows(payload)
-    counts = payload.get("counts") if isinstance(payload.get("counts"), dict) else {}
-    total = len(rows) or int(float(counts.get("matches_total") or 0))
-    with_odds = int(float(counts.get("matches_with_odds") or counts.get("matches_with_offers") or 0))
-    with_context = int(float(counts.get("matches_with_context") or 0))
-    ready = int(float(counts.get("matches_ready_for_model") or counts.get("ready_for_model") or 0))
+    # High-watermark promotion must be based on rows we can actually copy, not
+    # on summary counts from report-only artifacts. A report can say 103 while
+    # containing only 33 real match rows; copying it would silently shrink the
+    # inventory even though diagnostics show a larger count.
+    total = len(rows)
+    with_odds = 0
+    with_context = 0
+    ready = 0
+    for row in rows:
+        cov = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+        with_odds += int(bool(cov.get("odds") or cov.get("has_odds") or row.get("odds") or row.get("has_odds")))
+        with_context += int(bool(cov.get("context") or cov.get("has_context") or row.get("context") or row.get("has_context")))
+        ready += int(bool(cov.get("ready_for_model") or row.get("ready_for_model")))
     payload_date = _payload_date(payload)
     date_ok = 1 if not payload_date or payload_date == target_date else 0
     return (date_ok, total, with_odds + with_context + ready, int(path.stat().st_mtime), str(path))
@@ -116,7 +124,7 @@ def _best_payload(target_date: str) -> tuple[Path | None, dict[str, Any] | None,
     best_score = (0, 0, 0, 0, "")
     for path in _candidate_paths(target_date):
         payload = _load_json(path)
-        if payload is None:
+        if payload is None or not _rows(payload):
             continue
         score = _score(payload, path, target_date)
         if score > best_score:
@@ -132,6 +140,8 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _write_highwater(payload: dict[str, Any], target_date: str) -> list[str]:
+    if not _rows(payload):
+        return []
     payload = dict(payload)
     payload["highwater_updated_at_utc"] = datetime.now(timezone.utc).isoformat()
     changed: list[str] = []
@@ -145,6 +155,9 @@ def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str, *, force
     DAY_DIR.mkdir(parents=True, exist_ok=True)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     changed: list[str] = []
+    incoming_rows = len(_rows(payload))
+    if incoming_rows <= 0:
+        return changed
     for path in (
         DAY_DIR / f"{target_date}.json",
         DAY_DIR / "current.json",
@@ -156,7 +169,7 @@ def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str, *, force
         CACHE_DIR / "today.json",
     ):
         old = _load_json(path)
-        if not force and len(_rows(old)) >= len(_rows(payload)):
+        if not force and len(_rows(old)) >= incoming_rows:
             continue
         _write_json(path, payload)
         changed.append(str(path))
@@ -197,11 +210,16 @@ def snapshot() -> dict[str, Any]:
         if best_score[1] > date_rows:
             report["changed_paths"] = _copy_payload_to_aliases(best_payload, target_date, force=True)
             report["status"] = "highwater_snapshot_promoted"
+    report["date_file_matches_after"] = len(_rows(_load_json(DAY_DIR / f"{target_date}.json")))
     _write_json(REPORT_PATH, report)
     return report
 
 
 def repair() -> dict[str, Any]:
+    # Target-expand may run before selecting the high-watermark, because it can
+    # merge useful rows. It must NOT run after promotion: a later target-expand
+    # pass is allowed to collect fewer rows from transient artifacts and would
+    # overwrite the aliases we just restored.
     expand_report = _expand_target_inventory_if_available()
     target_date = _target_date()
     current_path, current_payload, current_score = _best_payload(target_date)
@@ -213,7 +231,7 @@ def repair() -> dict[str, Any]:
         "mode": "repair",
         "target_date": target_date,
         "target_expand_repair": expand_report,
-        "target_expand_after_promotion": {},
+        "target_expand_after_promotion": {"enabled": False, "reason": "disabled_to_prevent_post_promotion_shrink"},
         "current_best_path": str(current_path) if current_path else "",
         "current_best_matches": current_rows,
         "date_file_matches_before": date_rows,
@@ -231,10 +249,17 @@ def repair() -> dict[str, Any]:
     else:
         report["status"] = "no_inventory_available"
 
-    if changed:
-        report["target_expand_after_promotion"] = _expand_target_inventory_if_available()
-        post_payload = _load_json(DAY_DIR / f"{target_date}.json")
-        report["date_file_matches_after"] = len(_rows(post_payload))
+    post_payload = _load_json(DAY_DIR / f"{target_date}.json")
+    post_rows = len(_rows(post_payload))
+    if current_payload is not None and current_rows > post_rows:
+        # Last defensive write: aliases must end the step at least at the chosen
+        # high-watermark even if a prior helper rewrote them during repair.
+        extra = _copy_payload_to_aliases(current_payload, target_date, force=True)
+        changed.extend([path for path in extra if path not in changed])
+        report["changed_paths"] = changed
+        report["status"] = "promoted_current_high_watermark"
+        post_rows = len(_rows(_load_json(DAY_DIR / f"{target_date}.json")))
+    report["date_file_matches_after"] = post_rows
     _write_json(REPORT_PATH, report)
     return report
 
