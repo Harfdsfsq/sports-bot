@@ -8,6 +8,7 @@ configured evidence sources more effectively.
 """
 
 import os
+import sys
 from datetime import datetime, timezone
 from typing import Any
 
@@ -110,6 +111,14 @@ def _dig(row: dict[str, Any], dotted: str) -> Any:
             return None
         cur = cur.get(part)
     return cur
+
+
+def _first_present(row: dict[str, Any], keys: tuple[str, ...]) -> Any:
+    for key in keys:
+        value = _dig(row, key) if "." in key else row.get(key)
+        if value not in (None, ""):
+            return value
+    return None
 
 
 def _first_float(row: dict[str, Any], keys: tuple[str, ...]) -> float | None:
@@ -264,10 +273,76 @@ def _patch_provider_day_discovery() -> dict[str, Any]:
     return {"status": "patched", "target": "provider_day_discovery_canonical_pool"}
 
 
+def _patch_sstats_fixture_module(module: Any) -> None:
+    if getattr(module, "_harizon_inventory_coverage_runtime_patch", False):
+        return
+
+    def _is_day_inventory_process() -> bool:
+        argv = " ".join(str(part or "") for part in sys.argv).replace("\\", "/")
+        if _truthy_env("HARIZON_FORCE_SSTATS_FIXTURE_SOURCE", False):
+            return True
+        return any(token in argv for token in ("build_day_inventory.py", "app/cli.py", "app.cli", "run-once"))
+
+    def _extract_team(row: dict[str, Any], side: str) -> str:
+        if not isinstance(row, dict):
+            return ""
+        low = str(side or "").lower()
+        keys = (
+            ("HomeTeamName", "HomeTeam", "HomeName", "Home", "TeamHomeName", "homeTeamName", "homeTeam", "home_team", "home_team_name", "home")
+            if low == "home"
+            else ("AwayTeamName", "AwayTeam", "AwayName", "Away", "TeamAwayName", "awayTeamName", "awayTeam", "away_team", "away_team_name", "away")
+        )
+        value = _first_present(row, keys)
+        if isinstance(value, dict):
+            nested = _first_present(value, ("Name", "name", "Title", "title", "ShortName", "shortName", "short_name", "DisplayName", "displayName"))
+            return str(nested or "").strip()
+        return str(value or "").strip() if value is not None and not str(value).strip().startswith("{") else ""
+
+    def _extract_league(row: dict[str, Any]) -> str:
+        if not isinstance(row, dict):
+            return ""
+        value = _first_present(row, (
+            "LeagueName", "leagueName", "league_name", "League", "league",
+            "CompetitionName", "competitionName", "TournamentName", "tournamentName",
+            "season.league.name", "season.league.Name", "Season.League.Name", "competition.name",
+        ))
+        if isinstance(value, dict):
+            nested = _first_present(value, ("Name", "name", "Title", "title"))
+            return str(nested or "").strip()
+        return str(value or "").strip() if value is not None and not str(value).strip().startswith("{") else ""
+
+    def _extract_country(row: dict[str, Any]) -> str:
+        if not isinstance(row, dict):
+            return ""
+        value = _first_present(row, ("Country", "country", "CountryName", "countryName", "LeagueCountry", "league.country", "season.league.country"))
+        if isinstance(value, dict):
+            value = _first_present(value, ("Name", "name"))
+        return str(value or "").strip()
+
+    def _extract_start(row: dict[str, Any]) -> Any:
+        if not isinstance(row, dict):
+            return None
+        value = _first_present(row, ("Date", "date", "DateUtc", "dateUtc", "DateUTC", "dateUTC", "UtcDate", "utcDate", "StartTime", "startTime", "start_time", "Kickoff", "kickoff", "KickoffUtc", "kickoffUtc"))
+        if value in (None, ""):
+            return None
+        try:
+            return module.parse_datetime(str(value))
+        except Exception:
+            return None
+
+    module._is_day_inventory_process = _is_day_inventory_process
+    module._extract_team = _extract_team
+    module._extract_league = _extract_league
+    module._extract_country = _extract_country
+    module._extract_start = _extract_start
+    module._harizon_inventory_coverage_runtime_patch = True
+
+
 def _install_sstats_fixture_source() -> dict[str, Any]:
     try:
-        from app.services.day_inventory_sstats_fixture_source import install as install_sstats_fixture_source
-        return install_sstats_fixture_source()
+        from app.services import day_inventory_sstats_fixture_source as source_module
+        _patch_sstats_fixture_module(source_module)
+        return source_module.install()
     except Exception as exc:
         return {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
 
