@@ -102,6 +102,15 @@ def _refresh_inventory_coverage() -> dict[str, Any]:
     return status
 
 
+def _promote_a_cover_candidates() -> dict[str, Any]:
+    try:
+        from scripts.promote_a_cover_value_candidates import main as promote_main
+        code = promote_main()
+        return {'status': 'ok' if code == 0 else 'non_zero', 'code': code}
+    except Exception as exc:
+        return {'status': 'error', 'error': f'{type(exc).__name__}: {exc}'}
+
+
 def _rendered_candidate_counter(text: str) -> tuple[int, int] | None:
     match = re.search(r'Raw/candidates before quality:\s*(\d+)\s*/\s*(\d+)', text)
     if not match:
@@ -125,6 +134,7 @@ def _top_counter_items(value: Any, limit: int = 4) -> str:
 
 def build_payload() -> dict[str, Any]:
     refresh_status = _refresh_inventory_coverage()
+    promotion_status = _promote_a_cover_candidates()
     try:
         from scripts.build_a_tier_funnel_diagnostics import main as funnel_main
         funnel_main()
@@ -139,6 +149,7 @@ def build_payload() -> dict[str, Any]:
     payload['version'] = 'harizon-telegram-report-v13-a-tier-funnel'
     diag = payload.setdefault('diagnostics', {})
     diag['telegram_report_inventory_refresh'] = refresh_status
+    diag['telegram_report_a_cover_promotion_refresh'] = promotion_status
     diag['run_bot_step_status'] = _load_run_bot_status()
     diag['pytest_status'] = _load_json(EXPORT_DIR / 'latest-pytest-status.json')
     diag['a_tier_funnel_diagnostics'] = _load_json(EXPORT_DIR / 'latest-a-tier-funnel-diagnostics.json')
@@ -158,6 +169,7 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
     contract = diag.get('workflow_env_contract') if isinstance(diag.get('workflow_env_contract'), dict) else {}
     cumulative = diag.get('day_inventory_cumulative_coverage') if isinstance(diag.get('day_inventory_cumulative_coverage'), dict) else {}
     refresh = diag.get('telegram_report_inventory_refresh') if isinstance(diag.get('telegram_report_inventory_refresh'), dict) else {}
+    promotion_refresh = diag.get('telegram_report_a_cover_promotion_refresh') if isinstance(diag.get('telegram_report_a_cover_promotion_refresh'), dict) else {}
     run_status = diag.get('run_bot_step_status') if isinstance(diag.get('run_bot_step_status'), dict) else {}
     pytest_status = diag.get('pytest_status') if isinstance(diag.get('pytest_status'), dict) else {}
     lines: list[str] = []
@@ -175,6 +187,9 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
         code = pytest_status.get('original_exitstatus', pytest_status.get('exit_code'))
         nb = pytest_status.get('non_blocking_for_cron')
         lines.append(f'• Pytest: {status_text}; original exit {code}; non-blocking {bool(nb)}.')
+    lines.append('• Effective A/B contract: A=2 bookmaker/line confirmations + 2 context sources; second API odds-source is diagnostic. B=1 odds-source + 2 books + 1 context.')
+    if promotion_refresh:
+        lines.append(f"• Report-time A-cover promotion refresh: {promotion_refresh.get('status')}; code {promotion_refresh.get('code', 'n/a')}.")
     if guard or contract:
         daily_existing = guard.get('daily_existing') if isinstance(guard.get('daily_existing'), dict) else {}
         count = _as_int(daily_existing.get('count'))
