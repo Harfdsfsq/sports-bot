@@ -54,6 +54,7 @@ ENV_DEFAULTS = {
     "SSTATS_LOOKBACK_DAYS": "45",
     "SSTATS_RECENT_MATCHES": "8",
     "SSTATS_FORM_MIN_SAMPLE_PER_TEAM": "2",
+    "SSTATS_TEAM_KEY_MIN_SCORE": "0.78",
 }
 
 SSTATS_HOME_RESULT_KEYS = (
@@ -71,6 +72,13 @@ SSTATS_AWAY_RESULT_KEYS = (
 def _int_env(name: str, default: int) -> int:
     try:
         return int(float(str(os.getenv(name) or default)))
+    except Exception:
+        return default
+
+
+def _float_env(name: str, default: float) -> float:
+    try:
+        return float(str(os.getenv(name) or default).replace(",", "."))
     except Exception:
         return default
 
@@ -129,12 +137,14 @@ def _date_key(value: Any) -> str:
 def _patch_sstats() -> dict[str, Any]:
     try:
         from app.providers.sstats import SStatsContextProvider
+        from app.utils import canonicalize_team_name, team_similarity
     except Exception as exc:
         return {"status": "import_error", "error": f"{type(exc).__name__}: {exc}"}
     if getattr(SStatsContextProvider, "_harizon_inventory_coverage_patch", False):
         return {"status": "already_patched"}
     original_init = SStatsContextProvider.__init__
     original_extract_result = SStatsContextProvider._extract_result
+    original_resolve_team_key = SStatsContextProvider._resolve_team_key
 
     def __init__(self: Any, settings: Any) -> None:
         _setattr_safe(settings, "sstats_lookback_days", _int_env("SSTATS_LOOKBACK_DAYS", 45))
@@ -149,10 +159,38 @@ def _patch_sstats() -> dict[str, Any]:
             return value
         return _first_float(row, SSTATS_HOME_RESULT_KEYS if side == "home" else SSTATS_AWAY_RESULT_KEYS)
 
+    def _resolve_team_key(self: Any, team_name: str, canonical_keys: set[str], cache: dict[str, str | None]) -> str | None:
+        resolved = original_resolve_team_key(self, team_name, canonical_keys, cache)
+        if resolved:
+            return resolved
+        raw = str(team_name or "")
+        canonical = canonicalize_team_name(raw)
+        if not canonical:
+            cache[raw] = None
+            return None
+        threshold = max(0.70, min(0.90, _float_env("SSTATS_TEAM_KEY_MIN_SCORE", 0.78)))
+        raw_tokens = {token for token in canonical.split() if token}
+        best_key: str | None = None
+        best_score = 0.0
+        for key in canonical_keys:
+            score = team_similarity(canonical, key)
+            if score > best_score:
+                best_key = key
+                best_score = score
+        if best_key:
+            key_tokens = {token for token in str(best_key).split() if token}
+            shared = raw_tokens & key_tokens
+            if best_score >= 0.88 or (best_score >= threshold and bool(shared)):
+                cache[raw] = best_key
+                return best_key
+        cache[raw] = None
+        return None
+
     SStatsContextProvider.__init__ = __init__
     SStatsContextProvider._extract_result = staticmethod(_extract_result)
+    SStatsContextProvider._resolve_team_key = _resolve_team_key
     SStatsContextProvider._harizon_inventory_coverage_patch = True
-    return {"status": "patched", "target": "SStatsContextProvider.__init__/_extract_result"}
+    return {"status": "patched", "target": "SStatsContextProvider.__init__/_extract_result/_resolve_team_key"}
 
 
 def _patch_provider_day_discovery() -> dict[str, Any]:
