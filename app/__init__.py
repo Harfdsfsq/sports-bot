@@ -124,6 +124,93 @@ def _key(row: dict[str, Any]) -> str:
     return str(row.get('match_key') or row.get('canonical_match_id') or '').strip()
 
 
+def _title_from_key_part(value: Any) -> str:
+    return ' '.join(part.capitalize() for part in str(value or '').replace('_', ' ').split())
+
+
+def _identity_from_key(match_key: str) -> dict[str, str]:
+    parts = [p for p in str(match_key or '').split('|') if p]
+    date = ''
+    teams: list[str] = []
+    for part in parts:
+        if re.fullmatch(r'20\d{2}-\d{2}-\d{2}', part):
+            date = part
+        elif part.lower() not in {'soccer', 'football', 'teams'}:
+            teams.append(part)
+    return {
+        'home_team': _title_from_key_part(teams[0]) if len(teams) > 0 else '',
+        'away_team': _title_from_key_part(teams[1]) if len(teams) > 1 else '',
+        'date_local': date,
+        'kickoff_utc': f'{date}T12:00:00+00:00' if date else '',
+        'sport_key': 'soccer',
+    }
+
+
+def _identity_index() -> dict[str, dict[str, Any]]:
+    idx: dict[str, dict[str, Any]] = {}
+    for path in (
+        EXPORT_DIR / 'latest-coverage-planner.json',
+        EXPORT_DIR / 'latest-matches.json',
+        EXPORT_DIR / 'latest-day-inventory-coverage-truth.json',
+        EXPORT_DIR / 'latest-match-data-coverage-matches.json',
+    ):
+        for row in _rows(_load_json(path, {})):
+            key = _key(row)
+            if not key:
+                continue
+            dst = idx.setdefault(key, {})
+            for field in ('home_team', 'away_team', 'league_name', 'kickoff_utc', 'commence_time', 'kickoff_local', 'sport_key'):
+                value = row.get(field)
+                if value not in (None, '', [], {}) and not dst.get(field):
+                    dst[field] = value
+    return idx
+
+
+def _repair_day_inventory_identity() -> None:
+    if not _enabled('HARIZON_DAY_INVENTORY_IDENTITY_REPAIR_ENABLED'):
+        return
+    idx = _identity_index()
+    changed_total = 0
+    rows_seen = 0
+    for path in (DAY_DIR / 'today.json', DAY_DIR / 'current.json', DAY_DIR / 'latest.json'):
+        payload = _load_json(path, {})
+        if not isinstance(payload, dict) or not isinstance(payload.get('matches'), list):
+            continue
+        changed = 0
+        for row in payload.get('matches') or []:
+            if not isinstance(row, dict):
+                continue
+            key = _key(row)
+            if not key:
+                continue
+            rows_seen += 1
+            fallback = _identity_from_key(key)
+            src = idx.get(key, {})
+            before = json.dumps(row, ensure_ascii=False, sort_keys=True)
+            row.setdefault('match_key', key)
+            row.setdefault('canonical_match_id', key)
+            for field in ('home_team', 'away_team', 'league_name', 'kickoff_utc', 'commence_time', 'kickoff_local', 'sport_key'):
+                value = src.get(field) or fallback.get(field)
+                if value not in (None, '') and row.get(field) in (None, ''):
+                    row[field] = value
+            if row.get('date_local') in (None, '') and fallback.get('date_local'):
+                row['date_local'] = fallback['date_local']
+            if row.get('sport_key') in (None, ''):
+                row['sport_key'] = 'soccer'
+            changed += int(json.dumps(row, ensure_ascii=False, sort_keys=True) != before)
+        if changed:
+            payload['updated_at_utc'] = datetime.now(timezone.utc).isoformat()
+            _write_json(path, payload)
+        changed_total += changed
+    _write_json(EXPORT_DIR / 'latest-day-inventory-bootstrap-identity-repair.json', {
+        'status': 'ok',
+        'identity_index_rows': len(idx),
+        'rows_seen': rows_seen,
+        'rows_changed': changed_total,
+        'updated_at_utc': datetime.now(timezone.utc).isoformat(),
+    })
+
+
 def _odds_count(row: dict[str, Any]) -> int:
     values = _list(row.get('odds_sources')) + _list(row.get('line_sources'))
     cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
@@ -185,7 +272,12 @@ def _prime_bzzoiro_source_matrix_plan() -> None:
             key = _key(row)
             if not key or key in selected:
                 continue
-            selected[key] = dict(row)
+            prepared = dict(row)
+            fallback = _identity_from_key(key)
+            for field in ('home_team', 'away_team', 'kickoff_utc', 'sport_key'):
+                if prepared.get(field) in (None, '') and fallback.get(field):
+                    prepared[field] = fallback[field]
+            selected[key] = prepared
             added += 1
             if len(selected) >= limit:
                 break
@@ -248,6 +340,7 @@ def _send_past_predictions_report_after_cli() -> None:
 def _install_bzzoiro_v2_source_matrix() -> None:
     if not _enabled('HARIZON_BZZOIRO_V2_SOURCE_MATRIX_BOOTSTRAP_ENABLED'):
         return
+    _repair_day_inventory_identity()
     _prime_bzzoiro_source_matrix_plan()
     try:
         from app.services.bzzoiro_v2_source_matrix_runtime_patch import install
