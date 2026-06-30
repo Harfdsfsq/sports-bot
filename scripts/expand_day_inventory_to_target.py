@@ -2,12 +2,12 @@ from __future__ import annotations
 
 """Expand and preserve HARIZON day inventory up to the configured target.
 
-This script is intentionally API-free.  It prevents the daily inventory from
+This script is intentionally API-free. It prevents the daily inventory from
 being limited by the latest narrow runtime window by merging every already-known
 fixture row for the frozen day from cache/export artifacts back into
 .data/day_inventory/current.json/latest.json/today.json.
 
-It never invents publishable coverage.  It only restores/keeps fixture rows that
+It never invents publishable coverage. It only restores/keeps fixture rows that
 already exist somewhere in repository runtime artifacts, so odds/context guards
 remain untouched.
 """
@@ -16,9 +16,9 @@ import json
 import os
 import re
 from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
 ROOT = Path('.').resolve()
@@ -26,7 +26,7 @@ DAY_DIR = ROOT / '.data' / 'day_inventory'
 CACHE_DAY_DIR = ROOT / '.data' / 'cache' / 'day_inventory'
 EXPORT_DIR = ROOT / '.data' / 'exports'
 REPORT_PATH = EXPORT_DIR / 'latest-day-inventory-target-expand.json'
-
+HIGHWATER_NAMES = ('best-day-inventory-highwater.json', 'highwater.json', 'largest.json')
 CONFLICT_MARKERS = ('<<<<<<<', '=======', '>>>>>>>')
 
 
@@ -202,16 +202,27 @@ def rows_from_payload(payload: Any) -> list[dict[str, Any]]:
     return out
 
 
+def highwater_paths(day: str) -> list[Path]:
+    return [
+        *(DAY_DIR / name for name in HIGHWATER_NAMES),
+        *(CACHE_DAY_DIR / name for name in HIGHWATER_NAMES),
+        DAY_DIR / f'{day}-highwater.json',
+        CACHE_DAY_DIR / f'{day}-highwater.json',
+        ROOT / '.data' / 'inventory_guard' / 'best-day-inventory.json',
+    ]
+
+
 def candidate_paths(day: str) -> list[Path]:
     explicit = [
         DAY_DIR / f'{day}.json', DAY_DIR / 'current.json', DAY_DIR / 'latest.json', DAY_DIR / 'today.json',
         CACHE_DAY_DIR / f'{day}.json', CACHE_DAY_DIR / 'current.json', CACHE_DAY_DIR / 'latest.json', CACHE_DAY_DIR / 'today.json',
+        *highwater_paths(day),
         EXPORT_DIR / 'latest-day-inventory-cumulative-coverage.json',
         EXPORT_DIR / 'latest-day-inventory-coverage-truth.json',
         EXPORT_DIR / 'latest-run-summary.json',
         ROOT / '.logs' / 'debug-last-run.json',
     ]
-    # Shallow recursive scan of likely JSON artifacts.  This is deliberately
+    # Shallow recursive scan of likely JSON artifacts. This is deliberately
     # capped to avoid walking huge historical exports.
     for root in (DAY_DIR, CACHE_DAY_DIR, EXPORT_DIR, ROOT / 'artifacts' / 'run-bot'):
         if root.exists():
@@ -267,6 +278,8 @@ def best_existing_payload(day: str) -> dict[str, Any]:
         raw_rows = payload.get('matches') if isinstance(payload.get('matches'), list) else []
         rows = [r for r in raw_rows if isinstance(r, dict) and (not row_date(r) or row_date(r) == day)]
         count = len(rows)
+        # Only actual rows count for no-shrink. Summary-only artifacts may carry
+        # counts.matches_total, but they cannot be copied back into inventory.
         if count > best_count:
             best_count = count
             best = dict(payload)
@@ -277,20 +290,52 @@ def best_existing_payload(day: str) -> dict[str, Any]:
     return best
 
 
+def write_aliases(payload: dict[str, Any], day: str) -> list[str]:
+    changed: list[str] = []
+    DAY_DIR.mkdir(parents=True, exist_ok=True)
+    CACHE_DAY_DIR.mkdir(parents=True, exist_ok=True)
+    for path in (
+        DAY_DIR / f'{day}.json', DAY_DIR / 'current.json', DAY_DIR / 'latest.json', DAY_DIR / 'today.json',
+        CACHE_DAY_DIR / f'{day}.json', CACHE_DAY_DIR / 'today.json', CACHE_DAY_DIR / 'current.json', CACHE_DAY_DIR / 'latest.json',
+    ):
+        write_json(path, payload)
+        changed.append(str(path))
+    return changed
+
+
+def write_highwater(payload: dict[str, Any], day: str) -> list[str]:
+    if not isinstance(payload.get('matches'), list) or not payload['matches']:
+        return []
+    clone = dict(payload)
+    clone['highwater_updated_at_utc'] = datetime.now(UTC).isoformat()
+    changed: list[str] = []
+    for path in highwater_paths(day):
+        write_json(path, clone)
+        changed.append(str(path))
+    return changed
+
+
 def main() -> int:
     day = target_date()
     target = env_int('DAY_INVENTORY_TARGET_SIZE', env_int('DAY_INVENTORY_MAX_MATCHES', 300, 1), 1)
     rows, diagnostics = collect_rows(day)
-    payload = best_existing_payload(day)
-    before = len(payload.get('matches') if isinstance(payload.get('matches'), list) else [])
+    existing_payload = best_existing_payload(day)
+    existing_rows = existing_payload.get('matches') if isinstance(existing_payload.get('matches'), list) else []
+    before = len(existing_rows)
+
     # Keep all rows up to target; if fewer than target are known, do not invent rows.
-    selected = rows[:target] if target > 0 else rows
-    after = max(before, len(selected))
-    if len(selected) >= before:
+    selected_from_collected = rows[:target] if target > 0 else rows
+    if len(selected_from_collected) >= before:
+        selected = selected_from_collected
+        payload = dict(existing_payload)
         payload['matches'] = selected
     else:
-        # Never shrink: keep best existing payload if it is larger.
-        selected = payload.get('matches') if isinstance(payload.get('matches'), list) else selected
+        # Never shrink: keep best existing payload if current artifact scan found
+        # fewer actual rows than a persisted high-watermark or alias.
+        selected = existing_rows
+        payload = dict(existing_payload)
+        payload['matches'] = selected
+
     payload['date_local'] = day
     payload['target_matches'] = target
     counts = payload.setdefault('counts', {})
@@ -300,13 +345,12 @@ def main() -> int:
     counts['target_shortfall'] = max(0, target - len(selected))
     counts['target_expand_rows_collected'] = len(rows)
     counts['target_expand_existing_before'] = before
+    counts['target_expand_no_shrink_applied'] = len(selected_from_collected) < before
     payload['target_expand_updated_at_utc'] = datetime.now(UTC).isoformat()
     payload['target_expand_status'] = 'ok_target_met' if len(selected) >= target else 'partial_known_rows_only'
 
-    DAY_DIR.mkdir(parents=True, exist_ok=True)
-    CACHE_DAY_DIR.mkdir(parents=True, exist_ok=True)
-    for path in (DAY_DIR / f'{day}.json', DAY_DIR / 'current.json', DAY_DIR / 'latest.json', DAY_DIR / 'today.json', CACHE_DAY_DIR / f'{day}.json', CACHE_DAY_DIR / 'today.json', CACHE_DAY_DIR / 'current.json', CACHE_DAY_DIR / 'latest.json'):
-        write_json(path, payload)
+    changed_paths = write_aliases(payload, day)
+    highwater_paths_written = write_highwater(payload, day)
 
     report = {
         'created_at_utc': datetime.now(UTC).isoformat(),
@@ -314,10 +358,14 @@ def main() -> int:
         'target': target,
         'existing_before': before,
         'rows_collected': len(rows),
+        'selected_from_collected': len(selected_from_collected),
         'matches_after': len(selected),
         'target_shortfall': max(0, target - len(selected)),
         'target_timezone': str(app_time_zone()),
         'status': payload['target_expand_status'],
+        'no_shrink_applied': len(selected_from_collected) < before,
+        'changed_paths': changed_paths,
+        'highwater_paths': highwater_paths_written,
         **diagnostics,
     }
     write_json(REPORT_PATH, report)
