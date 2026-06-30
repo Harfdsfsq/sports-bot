@@ -112,6 +112,8 @@ def build_payload() -> dict[str, Any]:
     payload['version'] = 'harizon-telegram-report-v13-a-tier-funnel'
     diag = payload.setdefault('diagnostics', {})
     diag['telegram_report_inventory_refresh'] = refresh_status
+    diag['run_bot_step_status'] = _load_json(EXPORT_DIR / 'latest-run-bot-step-status.json')
+    diag['pytest_status'] = _load_json(EXPORT_DIR / 'latest-pytest-status.json')
     diag['a_tier_funnel_diagnostics'] = _load_json(EXPORT_DIR / 'latest-a-tier-funnel-diagnostics.json')
     diag['a_cover_candidate_gap_report'] = _load_json(EXPORT_DIR / 'latest-a-cover-candidate-gap-report.json')
     diag['a_cover_value_promotion'] = _load_json(EXPORT_DIR / 'latest-a-cover-value-promotion.json')
@@ -129,7 +131,21 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
     contract = diag.get('workflow_env_contract') if isinstance(diag.get('workflow_env_contract'), dict) else {}
     cumulative = diag.get('day_inventory_cumulative_coverage') if isinstance(diag.get('day_inventory_cumulative_coverage'), dict) else {}
     refresh = diag.get('telegram_report_inventory_refresh') if isinstance(diag.get('telegram_report_inventory_refresh'), dict) else {}
+    run_status = diag.get('run_bot_step_status') if isinstance(diag.get('run_bot_step_status'), dict) else {}
+    pytest_status = diag.get('pytest_status') if isinstance(diag.get('pytest_status'), dict) else {}
     lines: list[str] = []
+    if run_status:
+        status_text = str(run_status.get('status') or 'unknown')
+        code = run_status.get('exit_code')
+        suffix = f'; exit {code}' if code not in (None, '') else ''
+        lines.append(f'• Run bot step: {status_text}{suffix}; started {run_status.get("started_at_utc") or "n/a"}; finished {run_status.get("finished_at_utc") or "n/a"}.')
+    else:
+        lines.append('• Run bot step: no fresh step-status artifact — отчёт может быть post-failure, а не полноценный run.')
+    if pytest_status:
+        status_text = str(pytest_status.get('status') or 'unknown')
+        code = pytest_status.get('original_exitstatus', pytest_status.get('exit_code'))
+        nb = pytest_status.get('non_blocking_for_cron')
+        lines.append(f'• Pytest: {status_text}; original exit {code}; non-blocking {bool(nb)}.')
     if guard or contract:
         daily_existing = guard.get('daily_existing') if isinstance(guard.get('daily_existing'), dict) else {}
         count = _as_int(daily_existing.get('count'))
