@@ -2,13 +2,11 @@ from __future__ import annotations
 
 """Apply the HARIZON A/B public publication evidence contract.
 
-A-tier stays strict public: 2 odds/line sources, 2 bookmaker price confirmations
-and 2 context sources.  B-tier is a controlled public fallback tier: 1 odds/line
-source, 2 same-market bookmaker price confirmations and 1 context source.
-
-The script does not relax final publication guards.  Value, xG/market sanity,
-quality score, line movement, price integrity, duplicate, daily limit and publish
-window checks remain mandatory before Telegram publication.
+A-tier public = 2 bookmaker/line price confirmations and 2 context sources.
+A second API odds provider is useful diagnostics, but it is not the blocker when
+one odds provider already confirms the same market/side/line through 2+ books.
+B-tier remains a controlled fallback tier and still must pass value, xG, quality,
+line movement, price integrity, dedupe, daily limit and publish-window guards.
 """
 
 import json
@@ -29,7 +27,7 @@ CONTRACT_ENV = {
     'MIN_CONTEXT_SOURCES_PUBLISH': '1',
     'PUBLISH_MIN_ODDS_SOURCES': '1',
     'MIN_SOURCES_PUBLISH': '1',
-    'PUBLISH_TIER_A_MIN_ODDS_SOURCES': '2',
+    'PUBLISH_TIER_A_MIN_ODDS_SOURCES': '1',
     'PUBLISH_TIER_A_MIN_BOOKS': '2',
     'PUBLISH_TIER_A_MIN_CONTEXT_SOURCES': '2',
     'PUBLISH_TIER_B_MIN_ODDS_SOURCES': '1',
@@ -46,9 +44,11 @@ CONTRACT_ENV = {
     'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES': 'false',
-    'CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES': 'true',
-    'CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES': '2',
+    'CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES': 'false',
+    'CONTROLLED_FALLBACK_TIER_A_LINE_CONFIRMATION_MODE': 'bookmaker_or_provider',
+    'CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES': '1',
     'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS': '2',
+    'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKMAKERS': '2',
     'CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES': '2',
     'CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES': '2',
     'CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES': 'false',
@@ -60,8 +60,6 @@ CONTRACT_ENV = {
     'CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES': '1',
     'CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'true',
     'CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD': 'true',
-    # Let one run publish a small top bundle when several independent matches pass every final guard.
-    # select_top_picks still enforces absolute max=3, one pick per match, stake caps, and stricter EV/edge/confidence for extra picks.
     'CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN': '3',
     'MAX_PICKS_PER_RUN': '3',
     'CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN': '3',
@@ -70,9 +68,6 @@ CONTRACT_ENV = {
     'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT': '7.0',
     'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP': '3.0',
     'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE': '67.0',
-    # Materialize A-cover candidates before the final 2h publish window so the
-    # line-movement lifecycle can stage them for the next cron instead of finding
-    # them too late.
     'PROMOTE_A_COVER_ONLY_PUBLISH_WINDOW': 'false',
 }
 
@@ -97,7 +92,13 @@ def main() -> int:
         'status': 'applied',
         'contract': {
             'public_publication_tier': 'A-public plus controlled-B-public-fallback',
-            'A': {'min_odds_sources': 2, 'min_bookmakers': 2, 'min_context_sources': 2},
+            'A': {
+                'min_odds_sources': 1,
+                'min_bookmakers': 2,
+                'min_context_sources': 2,
+                'line_confirmation_mode': 'bookmaker_or_provider',
+                'two_api_odds_sources': 'diagnostic_not_blocking',
+            },
             'B': {
                 'mode': 'controlled_public_fallback',
                 'min_odds_sources': 1,
@@ -114,16 +115,17 @@ def main() -> int:
             },
             'guards_unchanged': ['value', 'xg', 'quality_score', 'line_movement', 'price_integrity', 'dedupe', 'daily_limit', 'publish_window'],
             'notes': [
+                'A-tier needs two same-market line/book confirmations and two context sources.',
+                'Two independent API odds providers remain a coverage diagnostic, not an A-tier hard blocker.',
                 'B-tier is not auto-publish; it still must pass guarded fallback final checks.',
                 'Quarter totals remain blocked by publication point guard.',
                 'A-cover promotion may happen before the 2h publish window only to stage line-movement lifecycle candidates.',
-                'Top bundle can publish up to 3 different matches only when each extra pick clears stricter EV/edge/confidence thresholds.',
             ],
         },
         'env': CONTRACT_ENV,
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-    print('Applied HARIZON hybrid A/B publication contract: A=2/2/2 public; B=1 odds/2 books/1 context controlled public fallback; top bundle max=3.')
+    print('Applied HARIZON A/B contract: A=2 books/lines + 2 contexts; two API odds providers diagnostic only; B=1 odds/2 books/1 context.')
     return 0
 
 
