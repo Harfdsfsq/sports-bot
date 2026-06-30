@@ -35,6 +35,14 @@ ENV_DEFAULTS = {
     "SPORTLOGIC_MATCH_LIMIT": "300",
     "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "150",
     "SPORTLOGIC_ODDS_MATCH_LIMIT": "150",
+    # Do not stop SportLogic after /games=0.  The provider already date-gates
+    # /odds?is_active=true rows before matching, so this can recover a second
+    # odds source without accepting stale fixtures.
+    "SPORTLOGIC_SKIP_ACTIVE_ODDS_WHEN_NO_CURRENT_GAMES": "false",
+    "SPORTLOGIC_ACTIVE_ODDS_ALLOW_WITHOUT_CURRENT_GAMES": "true",
+    "SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED": "true",
+    "SPORTLOGIC_TARGETED_GAME_DETAIL_LIMIT": "20",
+    "SPORTLOGIC_ACTIVE_ODDS_GAME_DETAIL_LIMIT": "20",
     "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
     "BZZOIRO_ODDS_MATCH_LIMIT": "300",
     "BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT": "220",
@@ -45,6 +53,17 @@ ENV_DEFAULTS = {
     "SSTATS_RECENT_MATCHES": "8",
     "SSTATS_FORM_MIN_SAMPLE_PER_TEAM": "2",
 }
+
+SSTATS_HOME_RESULT_KEYS = (
+    "homeResult", "homeFTResult", "HomeScore", "homeScore", "home_score",
+    "homeGoals", "home_goals", "HomeGoals", "fullTimeHome", "ftHome",
+    "score.home", "score.fullTime.home", "scores.home", "result.home",
+)
+SSTATS_AWAY_RESULT_KEYS = (
+    "awayResult", "awayFTResult", "AwayScore", "awayScore", "away_score",
+    "awayGoals", "away_goals", "AwayGoals", "fullTimeAway", "ftAway",
+    "score.away", "score.fullTime.away", "scores.away", "result.away",
+)
 
 
 def _int_env(name: str, default: int) -> int:
@@ -64,6 +83,27 @@ def _setattr_safe(obj: Any, name: str, value: Any) -> None:
             pass
 
 
+def _dig(row: dict[str, Any], dotted: str) -> Any:
+    cur: Any = row
+    for part in dotted.split("."):
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(part)
+    return cur
+
+
+def _first_float(row: dict[str, Any], keys: tuple[str, ...]) -> float | None:
+    for key in keys:
+        value = _dig(row, key) if "." in key else row.get(key)
+        if value in (None, ""):
+            continue
+        try:
+            return float(value)
+        except Exception:
+            continue
+    return None
+
+
 def _patch_sstats() -> dict[str, Any]:
     try:
         from app.providers.sstats import SStatsContextProvider
@@ -72,6 +112,7 @@ def _patch_sstats() -> dict[str, Any]:
     if getattr(SStatsContextProvider, "_harizon_inventory_coverage_patch", False):
         return {"status": "already_patched"}
     original_init = SStatsContextProvider.__init__
+    original_extract_result = SStatsContextProvider._extract_result
 
     def __init__(self: Any, settings: Any) -> None:
         _setattr_safe(settings, "sstats_lookback_days", _int_env("SSTATS_LOOKBACK_DAYS", 45))
@@ -80,9 +121,16 @@ def _patch_sstats() -> dict[str, Any]:
         _setattr_safe(settings, "sstats_request_chunk_days", _int_env("SSTATS_REQUEST_CHUNK_DAYS", 5))
         original_init(self, settings)
 
+    def _extract_result(row: dict[str, Any], side: str) -> float | None:
+        value = original_extract_result(row, side)
+        if value is not None:
+            return value
+        return _first_float(row, SSTATS_HOME_RESULT_KEYS if side == "home" else SSTATS_AWAY_RESULT_KEYS)
+
     SStatsContextProvider.__init__ = __init__
+    SStatsContextProvider._extract_result = staticmethod(_extract_result)
     SStatsContextProvider._harizon_inventory_coverage_patch = True
-    return {"status": "patched", "target": "SStatsContextProvider.__init__"}
+    return {"status": "patched", "target": "SStatsContextProvider.__init__/_extract_result"}
 
 
 def install() -> dict[str, Any]:
