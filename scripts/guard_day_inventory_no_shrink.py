@@ -84,6 +84,9 @@ def _candidate_paths(target_date: str) -> list[Path]:
         EXPORT_DIR / "latest-day-inventory-summary.json",
         EXPORT_DIR / "latest-day-inventory-cumulative-coverage.json",
         EXPORT_DIR / "latest-day-inventory-coverage-truth.json",
+        ARTIFACT_DIR / "day_inventory-latest.json",
+        ARTIFACT_DIR / "day_inventory-current.json",
+        ARTIFACT_DIR / "day_inventory-today.json",
     ])
     out: list[Path] = []
     seen: set[str] = set()
@@ -116,7 +119,7 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str) -> list[str]:
+def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str, *, force: bool = False) -> list[str]:
     DAY_DIR.mkdir(parents=True, exist_ok=True)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     changed: list[str] = []
@@ -131,7 +134,7 @@ def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str) -> list[
         CACHE_DIR / "today.json",
     ):
         old = _load_json(path)
-        if len(_rows(old)) >= len(_rows(payload)):
+        if not force and len(_rows(old)) >= len(_rows(payload)):
             continue
         _write_json(path, payload)
         changed.append(str(path))
@@ -177,6 +180,8 @@ def repair() -> dict[str, Any]:
     snap_payload = _load_json(SNAPSHOT_PATH)
     snap_rows = len(_rows(snap_payload))
     current_rows = current_score[1]
+    date_payload = _load_json(DAY_DIR / f"{target_date}.json")
+    date_rows = len(_rows(date_payload))
     report: dict[str, Any] = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "repair",
@@ -184,20 +189,28 @@ def repair() -> dict[str, Any]:
         "target_expand_repair": expand_report,
         "current_best_path": str(current_path) if current_path else "",
         "current_best_matches": current_rows,
+        "date_file_matches_before": date_rows,
         "snapshot_matches": snap_rows,
         "status": "ok_no_repair_needed",
         "changed_paths": [],
     }
-    if snap_payload is None or snap_rows <= 0:
-        report["status"] = "no_snapshot_available"
-    elif snap_rows > current_rows:
+    if snap_payload is not None and snap_rows > current_rows:
         changed = _copy_payload_to_aliases(snap_payload, target_date)
-        report["status"] = "repaired_shrunk_inventory"
+        report["status"] = "repaired_from_snapshot"
         report["changed_paths"] = changed
-    elif current_payload is not None and current_rows > snap_rows:
-        _write_json(SNAPSHOT_PATH, current_payload)
-        report["status"] = "snapshot_upgraded"
-        report["snapshot_matches"] = current_rows
+    elif current_payload is not None and current_rows > 0:
+        if current_rows >= snap_rows:
+            SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+            _write_json(SNAPSHOT_PATH, current_payload)
+            report["snapshot_matches"] = current_rows
+        if current_rows > date_rows:
+            changed = _copy_payload_to_aliases(current_payload, target_date, force=True)
+            report["status"] = "promoted_current_high_watermark"
+            report["changed_paths"] = changed
+        elif current_rows > snap_rows:
+            report["status"] = "snapshot_upgraded"
+    elif snap_payload is None or snap_rows <= 0:
+        report["status"] = "no_snapshot_available"
     _write_json(REPORT_PATH, report)
     return report
 
