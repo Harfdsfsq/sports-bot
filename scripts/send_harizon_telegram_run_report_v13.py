@@ -35,6 +35,33 @@ def _load_json(path: Path) -> dict[str, Any]:
     return {}
 
 
+def _load_run_bot_status() -> dict[str, Any]:
+    path = EXPORT_DIR / 'latest-run-bot-step-status.json'
+    payload = _load_json(path)
+    if payload:
+        return payload
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            text = path.read_text(encoding='utf-8', errors='replace').strip()
+            lower = text.lower()
+            if 'run bot ok' in lower:
+                status = 'ok'
+            elif 'failed' in lower or 'timed out' in lower:
+                status = 'failed_or_timed_out'
+            else:
+                status = 'text_status_unknown'
+            return {'status': status, 'raw_status_text': text, 'legacy_text_status_artifact': True}
+    except Exception:
+        pass
+    log_path = EXPORT_DIR / 'latest-run-bot.log'
+    try:
+        if log_path.exists() and log_path.stat().st_size > 0:
+            return {'status': 'log_exists_no_status_artifact', 'log_size_bytes': log_path.stat().st_size}
+    except Exception:
+        pass
+    return {}
+
+
 def _as_int(value: Any) -> int:
     try:
         if value in (None, ''):
@@ -112,7 +139,7 @@ def build_payload() -> dict[str, Any]:
     payload['version'] = 'harizon-telegram-report-v13-a-tier-funnel'
     diag = payload.setdefault('diagnostics', {})
     diag['telegram_report_inventory_refresh'] = refresh_status
-    diag['run_bot_step_status'] = _load_json(EXPORT_DIR / 'latest-run-bot-step-status.json')
+    diag['run_bot_step_status'] = _load_run_bot_status()
     diag['pytest_status'] = _load_json(EXPORT_DIR / 'latest-pytest-status.json')
     diag['a_tier_funnel_diagnostics'] = _load_json(EXPORT_DIR / 'latest-a-tier-funnel-diagnostics.json')
     diag['a_cover_candidate_gap_report'] = _load_json(EXPORT_DIR / 'latest-a-cover-candidate-gap-report.json')
@@ -138,6 +165,8 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
         status_text = str(run_status.get('status') or 'unknown')
         code = run_status.get('exit_code')
         suffix = f'; exit {code}' if code not in (None, '') else ''
+        if run_status.get('legacy_text_status_artifact'):
+            suffix += '; legacy text status'
         lines.append(f'• Run bot step: {status_text}{suffix}; started {run_status.get("started_at_utc") or "n/a"}; finished {run_status.get("finished_at_utc") or "n/a"}.')
     else:
         lines.append('• Run bot step: no fresh step-status artifact — отчёт может быть post-failure, а не полноценный run.')
