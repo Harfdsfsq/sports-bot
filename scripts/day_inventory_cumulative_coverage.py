@@ -15,11 +15,15 @@ ROOT = Path('.').resolve()
 UTC = timezone.utc
 OUT = ROOT / '.data' / 'exports' / 'latest-day-inventory-cumulative-coverage.json'
 LIVE_ODDS_SOURCES = {'odds_api_io', 'bzzoiro', 'sportlogic'}
+CONFLICT_MARKERS = ('<' * 7, '=' * 7, '>' * 7)
 
 
 def load_json(path: Path, default: Any) -> Any:
     try:
-        return json.loads(path.read_text(encoding='utf-8'))
+        text = path.read_text(encoding='utf-8', errors='replace')
+        if any(marker in text for marker in CONFLICT_MARKERS):
+            return default
+        return json.loads(text)
     except Exception:
         return default
 
@@ -84,13 +88,11 @@ def list_from_any(value: Any) -> list[str]:
     if isinstance(value, (list, tuple, set)):
         return [str(x).strip() for x in value if str(x).strip()]
     if isinstance(value, str) and value.strip():
-        import re
         return [v.strip() for v in re.split(r'[,|;/]+', value) if v.strip()]
     return []
 
 
 def norm_source(value: Any) -> str:
-    import re
     text = re.sub(r'[^a-z0-9]+', '_', str(value or '').strip().lower()).strip('_')
     aliases = {
         'oddsapiio': 'odds_api_io',
@@ -131,6 +133,98 @@ def context_source_count(row: dict[str, Any]) -> int:
 def bool_cov(row: dict[str, Any], key: str) -> bool:
     cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
     return bool(cov.get(key))
+
+
+def rows_from_inventory(payload: Any) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        return []
+    rows = payload.get('matches') if isinstance(payload.get('matches'), list) else []
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def inventory_date(payload: Any) -> str:
+    if not isinstance(payload, dict):
+        return ''
+    for key in ('date_local', 'target_date', 'date', 'inventory_date'):
+        value = str(payload.get(key) or '').strip()
+        if value:
+            return value[:10]
+    return ''
+
+
+def coverage_score(payload: dict[str, Any]) -> int:
+    total = 0
+    for row in rows_from_inventory(payload):
+        total += int(bool_cov(row, 'odds') or price_confirmation_count(row) > 0)
+        total += int(bool_cov(row, 'context') or context_source_count(row) > 0)
+        total += odds_source_count(row)
+        total += context_source_count(row)
+    return total
+
+
+def inventory_candidates(d: str) -> list[Path]:
+    names = [f'{d}.json', 'latest.json', 'current.json', 'today.json']
+    bases = [
+        ROOT / '.data' / 'day_inventory',
+        ROOT / '.data' / 'cache' / 'day_inventory',
+        ROOT / 'artifacts' / 'run-bot',
+    ]
+    paths: list[Path] = []
+    for base in bases:
+        paths.extend(base / name for name in names)
+    paths.extend([
+        ROOT / 'artifacts' / 'run-bot' / 'day_inventory-latest.json',
+        ROOT / 'artifacts' / 'run-bot' / 'day_inventory-current.json',
+        ROOT / 'artifacts' / 'run-bot' / 'day_inventory-today.json',
+    ])
+    out: list[Path] = []
+    seen: set[str] = set()
+    for path in paths:
+        key = str(path)
+        if key not in seen:
+            seen.add(key)
+            out.append(path)
+    return out
+
+
+def best_inventory(d: str) -> tuple[Path, dict[str, Any], dict[str, Any]]:
+    date_path = ROOT / '.data' / 'day_inventory' / f'{d}.json'
+    best_path = date_path
+    best_payload = load_json(date_path, {'matches': []})
+    best_score = (-1, -1, -1, '')
+    for path in inventory_candidates(d):
+        payload = load_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        rows = rows_from_inventory(payload)
+        if not rows:
+            continue
+        pdate = inventory_date(payload)
+        date_ok = 1 if not pdate or pdate == d else 0
+        score = (date_ok, len(rows), coverage_score(payload), str(path))
+        if score > best_score:
+            best_score = score
+            best_path = path
+            best_payload = payload
+    report = {
+        'selected_path': str(best_path),
+        'selected_rows': len(rows_from_inventory(best_payload)),
+        'date_path': str(date_path),
+        'date_path_rows': len(rows_from_inventory(load_json(date_path, {}))),
+        'score': list(best_score),
+    }
+    return date_path, best_payload, report
+
+
+def write_inventory_aliases(d: str, payload: dict[str, Any]) -> None:
+    payload['updated_at_utc'] = datetime.now(UTC).isoformat()
+    for path in [
+        ROOT / '.data' / 'day_inventory' / f'{d}.json',
+        ROOT / '.data' / 'day_inventory' / 'latest.json',
+        ROOT / '.data' / 'day_inventory' / 'current.json',
+        ROOT / '.data' / 'day_inventory' / 'today.json',
+    ]:
+        write_json(path, payload)
 
 
 def bucket(minutes: float) -> str:
@@ -182,16 +276,9 @@ def run_python_script(path: Path) -> dict[str, Any]:
 
 
 def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
-    # The workflow calls only this script after the bot run. Make this script
-    # self-contained so the cumulative audit cannot accidentally read stale
-    # source counters from the bootstrap inventory.
     steps: list[dict[str, Any]] = []
     steps.append(run_python_script(ROOT / 'scripts' / 'match_data_coverage_report.py'))
     steps.append(run_python_script(ROOT / 'scripts' / 'merge_run_coverage_into_day_inventory.py'))
-    # Repair per-match source counters after the run/fallback artifacts exist.
-    # This is intentionally after merge_run_coverage_into_day_inventory.py so
-    # cumulative coverage sees bookmaker-confirmed price depth and independent
-    # context confirmations instead of stale bootstrap counters.
     steps.append(run_python_script(ROOT / 'scripts' / 'repair_inventory_source_counts.py'))
     steps.append(run_python_script(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'))
     return steps
@@ -201,9 +288,8 @@ def main() -> int:
     pipeline_steps = ensure_latest_run_coverage_merged()
     now = datetime.now(UTC)
     d = target_date()
-    inv_path = ROOT / '.data' / 'day_inventory' / f'{d}.json'
-    inv = load_json(inv_path, {})
-    matches = inv.get('matches') if isinstance(inv.get('matches'), list) else []
+    inv_path, inv, inventory_selection = best_inventory(d)
+    matches = rows_from_inventory(inv)
     previous = inv.get('coverage_progress') if isinstance(inv.get('coverage_progress'), dict) else {}
     prev_buckets = previous.get('by_kickoff_window') if isinstance(previous.get('by_kickoff_window'), dict) else {}
     min_odds_sources = publish_min_odds_sources()
@@ -211,8 +297,6 @@ def main() -> int:
     current = {k: empty_bucket() for k in ('0_2h', '2_4h', '4_6h', '6_12h', '12h_plus', 'started')}
     samples_missing: list[dict[str, Any]] = []
     for row in matches:
-        if not isinstance(row, dict):
-            continue
         kickoff = parse_dt(row.get('kickoff_utc') or row.get('commence_time') or row.get('kickoff_local'))
         if kickoff is None:
             continue
@@ -254,6 +338,7 @@ def main() -> int:
     progress = {
         'updated_at_utc': now.isoformat(),
         'date_local': d,
+        'inventory_selection': inventory_selection,
         'min_odds_sources': min_odds_sources,
         'min_context_sources': min_context_sources,
         'coverage_pipeline_steps': pipeline_steps,
@@ -264,9 +349,8 @@ def main() -> int:
         'notes': [
             'current_by_kickoff_window is the live rolling window and can shrink when matches start.',
             'by_kickoff_window is the cumulative high watermark and should only grow during the local day.',
+            'This script selects the largest valid inventory alias before writing cumulative coverage, so a smaller date-file cannot shrink the day pool.',
             'ready_for_publish requires 2+ price confirmations, 2+ independent live odds providers, and 2+ context/confirmation sources by default.',
-            'Price confirmations can come from distinct bookmakers/lines, but they are not counted as independent odds providers.',
-            'Before calculating cumulative coverage this script rebuilds latest-match-data coverage, merges it into day inventory, and repairs source counters.',
         ],
     }
     inv['coverage_progress'] = progress
@@ -274,9 +358,8 @@ def main() -> int:
         inv['counts']['coverage_progress_updated_utc'] = now.isoformat()
         inv['counts']['publish_min_odds_sources'] = min_odds_sources
         inv['counts']['publish_min_context_sources'] = min_context_sources
-    inv['updated_at_utc'] = now.isoformat()
-    for path in [inv_path, ROOT / '.data' / 'day_inventory' / 'latest.json', ROOT / '.data' / 'day_inventory' / 'current.json', ROOT / '.data' / 'day_inventory' / 'today.json']:
-        write_json(path, inv)
+        inv['counts']['matches_total'] = max(as_int(inv['counts'].get('matches_total')), len(matches))
+    write_inventory_aliases(d, inv)
     report_status = 'ok' if matches else 'no_matches'
     if pipeline_errors:
         report_status = 'degraded' if matches else 'error'
@@ -286,6 +369,7 @@ def main() -> int:
         'pipeline_error_count': len(pipeline_errors),
         'pipeline_errors': pipeline_errors[:5],
         'inventory_path': str(inv_path),
+        'inventory_selection': inventory_selection,
         'updated_at_utc': now.isoformat(),
         'date_local': d,
         'matches_total': len(matches),
