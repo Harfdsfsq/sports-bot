@@ -1,21 +1,35 @@
 {
-  "last_body_preview": "",
+  "last_body_preview": "{\"success\":true,\"data\":[{\"id\":911156,\"game_id\":480,\"market_id\":1,\"market_key\":null,\"bookmaker_id\":1,\"option_name\":\"Home\",\"option_value\":null,\"odds\":\"1.25\",\"bookmaker\":{\"id\":1,\"api_football_id\":8,\"name\":\"Bet365\",\"is_active\":true,\"created_at\":\"2026-01-27T04:29:00.000000Z\",\"updated_at\":\"2026-01-27T04:29:00.000000Z\"},\"is_suspended\":false,\"locked\":false,\"previous_odds\":null,\"created_at\":\"2026-01-28T16:28:12.000000Z\",\"updated_at\":\"2026-01-28T16:28:12.000000Z\",\"game\":{\"id\":480,\"sport_id\":null,\"external_id\":null,\"league_id\":219,\"season\":2026,\"home_team_id\":948,\"away_team_id\":16347,\"home_team\":\"Coruripe\",\"away_team\":\"Alian\\u00e7a\",\"start_time\":\"2026-01-28T22:00:00.000000Z\",\"bet_start_time\":\"2026-01-25T22:00:00.000000Z\",\"bet_end_time\":\"2026-01-28T21:45:00.000000Z\",\"status\":\"match postponed\",\"status_",
   "preview": {
     "errors": [],
+    "query_variants_used": [
+      {
+        "params": {
+          "is_active": "true",
+          "per_page": 50
+        },
+        "rows": 50,
+        "scope": "active_odds_targeted_confirmation"
+      }
+    ],
     "sample_fixtures": [],
     "sample_odds": []
   },
   "stats": {
-    "active_odds_rows_seen": 0,
-    "active_odds_skipped_reason": "no_current_games_from_games_endpoint",
-    "active_odds_targeted_confirmation_skipped": true,
+    "active_odds_embedded_games_outside_requested_dates": 50,
+    "active_odds_game_ids_seen": 1,
+    "active_odds_rows_seen": 50,
+    "active_odds_rows_without_game_id": 0,
+    "active_odds_skipped_reason": null,
+    "active_odds_stale_embedded_game_ids_skipped": 1,
+    "active_odds_stale_only": true,
     "active_odds_targeted_matches": 0,
     "active_odds_targeted_offers_parsed": 0,
     "api_key_present": 2,
     "auth_error": 0,
     "budget_exhausted": 0,
     "contexts_built": 0,
-    "diagnosis": "sportlogic_no_current_games_probe_only",
+    "diagnosis": "active_odds_stale_only_no_current_fixture",
     "empty_odds_payloads": 0,
     "enabled": 2,
     "events_matched": 0,
@@ -80,6 +94,7 @@
       200,
       200,
       200,
+      200,
       200
     ],
     "line_keys_seen": [],
@@ -97,9 +112,13 @@
     "parse_reject_reasons": {},
     "price_keys_seen": [],
     "rate_limited": 0,
-    "requests": 6,
+    "requests": 7,
     "response_errors": 0,
     "rows_before_parse": 0,
-    "top_level_keys": []
+    "top_level_keys": [
+      "success",
+      "data",
+      "pagination"
+    ]
   }
 }
