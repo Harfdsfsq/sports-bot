@@ -46,6 +46,35 @@ def _as_int(value: Any) -> int:
         return 0
 
 
+def _refresh_inventory_coverage() -> dict[str, Any]:
+    status: dict[str, Any] = {'status': 'not_started'}
+    try:
+        from scripts.guard_day_inventory_no_shrink import repair as guard_repair
+        guard_report = guard_repair()
+        status['guard'] = guard_report if isinstance(guard_report, dict) else {'status': str(guard_report)}
+    except Exception as exc:
+        status['guard'] = {'status': 'error', 'error': f'{type(exc).__name__}: {exc}'}
+    try:
+        from scripts.day_inventory_cumulative_coverage import main as cumulative_main
+        code = cumulative_main()
+        status['cumulative'] = {'status': 'ok' if code == 0 else 'non_zero', 'code': code}
+    except Exception as exc:
+        status['cumulative'] = {'status': 'error', 'error': f'{type(exc).__name__}: {exc}'}
+    try:
+        from scripts.backfill_inventory_bookmaker_coverage import main as backfill_main
+        code = backfill_main()
+        status['bookmaker_backfill'] = {'status': 'ok' if code == 0 else 'non_zero', 'code': code}
+    except Exception as exc:
+        status['bookmaker_backfill'] = {'status': 'error', 'error': f'{type(exc).__name__}: {exc}'}
+    try:
+        out = EXPORT_DIR / 'latest-telegram-report-inventory-refresh.json'
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(status, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    except Exception:
+        pass
+    return status
+
+
 def _rendered_candidate_counter(text: str) -> tuple[int, int] | None:
     match = re.search(r'Raw/candidates before quality:\s*(\d+)\s*/\s*(\d+)', text)
     if not match:
@@ -68,6 +97,7 @@ def _top_counter_items(value: Any, limit: int = 4) -> str:
 
 
 def build_payload() -> dict[str, Any]:
+    refresh_status = _refresh_inventory_coverage()
     try:
         from scripts.build_a_tier_funnel_diagnostics import main as funnel_main
         funnel_main()
@@ -81,6 +111,7 @@ def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     payload['version'] = 'harizon-telegram-report-v13-a-tier-funnel'
     diag = payload.setdefault('diagnostics', {})
+    diag['telegram_report_inventory_refresh'] = refresh_status
     diag['a_tier_funnel_diagnostics'] = _load_json(EXPORT_DIR / 'latest-a-tier-funnel-diagnostics.json')
     diag['a_cover_candidate_gap_report'] = _load_json(EXPORT_DIR / 'latest-a-cover-candidate-gap-report.json')
     diag['a_cover_value_promotion'] = _load_json(EXPORT_DIR / 'latest-a-cover-value-promotion.json')
@@ -97,6 +128,7 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
     guard = diag.get('controlled_fallback_prepublish_guard') if isinstance(diag.get('controlled_fallback_prepublish_guard'), dict) else {}
     contract = diag.get('workflow_env_contract') if isinstance(diag.get('workflow_env_contract'), dict) else {}
     cumulative = diag.get('day_inventory_cumulative_coverage') if isinstance(diag.get('day_inventory_cumulative_coverage'), dict) else {}
+    refresh = diag.get('telegram_report_inventory_refresh') if isinstance(diag.get('telegram_report_inventory_refresh'), dict) else {}
     lines: list[str] = []
     if guard or contract:
         daily_existing = guard.get('daily_existing') if isinstance(guard.get('daily_existing'), dict) else {}
@@ -134,7 +166,10 @@ def _extra_lines(payload: dict[str, Any], base_text: str = '') -> list[str]:
             suffix = ''
             if date_rows and selected_rows > date_rows:
                 suffix = f'; защищено от shrink {date_rows}→{selected_rows}'
-            lines.append(f"• Inventory no-shrink source: selected {selected_rows} rows from {selected.get('selected_path') or cumulative.get('inventory_path')}{suffix}.")
+            refresh_guard = refresh.get('guard') if isinstance(refresh.get('guard'), dict) else {}
+            guard_status = str(refresh_guard.get('status') or '').strip()
+            guard_note = f'; refresh {guard_status}' if guard_status else ''
+            lines.append(f"• Inventory no-shrink source: selected {selected_rows} rows from {selected.get('selected_path') or cumulative.get('inventory_path')}{suffix}{guard_note}.")
     return lines
 
 
