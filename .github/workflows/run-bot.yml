@@ -2,23 +2,17 @@ name: run-bot
 
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: "Run mode"
-        required: true
-        default: "normal"
-
-permissions:
-  contents: write
+  schedule:
+    - cron: "*/15 * * * *"
 
 concurrency:
-  group: run-bot
+  group: run-bot-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
@@ -26,10 +20,10 @@ jobs:
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: production
-      RUN_MODE: ${{ github.event.inputs.mode || 'normal' }}
+      RUN_MODE: normal
       PUBLISH_DRY_RUN: "false"
       PUBLISH_ALLOW_B_TIER: "true"
-      PUBLISH_COVERAGE_TIER_MODE: "hybrid"
+      PUBLISH_COVERAGE_TIER_MODE: hybrid
       MIN_BOOKS_PUBLISH: "1"
       PUBLISH_MIN_BOOKS: "1"
       PUBLISH_TIER_A_MIN_BOOKS: "2"
@@ -43,16 +37,13 @@ jobs:
       RUN_REPORT_ENABLED: "false"
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
-      # Do not publish controlled fallback too early. Regular cron is every 2h,
-      # so a 20:00 MSK kickoff can be published at the 18:00 MSK run, not at 01:30.
       PUBLISH_WINDOW_HOURS: "2"
       CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS: "2"
       CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED: "3"
       CONTROLLED_FALLBACK_DAILY_MAX_B_TIER: "3"
-      CONTROLLED_FALLBACK_DAILY_LIMIT_TIMEZONE: "Europe/Moscow"
+      CONTROLLED_FALLBACK_DAILY_LIMIT_TIMEZONE: Europe/Moscow
       CONTROLLED_FALLBACK_DAILY_LIMIT_USE_PUBLISHED_AT: "true"
       MANUAL_CONTROLLED_PUBLISH_ENABLED: "true"
-
       DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE: "true"
       CORE_PROVIDER_INVENTORY_BRIDGE_ENABLED: "true"
       DAY_INVENTORY_TARGET_SIZE: "300"
@@ -78,12 +69,11 @@ jobs:
       DAY_INVENTORY_SSTATS_MAX_REQUESTS: "150"
       DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "0"
       DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "0"
-
       MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: "true"
-      PUBLICATION_ALLOWED_MARKET_FAMILIES: "totals,spreads"
-      HARIZON_ALLOWED_PUBLICATION_FAMILIES: "totals,spreads"
-      CONTROLLED_FALLBACK_ALLOWED_FAMILIES: "totals,spreads"
-      CONTROLLED_RESCUE_ALLOWED_FAMILIES: "totals,spreads"
+      PUBLICATION_ALLOWED_MARKET_FAMILIES: totals,spreads
+      HARIZON_ALLOWED_PUBLICATION_FAMILIES: totals,spreads
+      CONTROLLED_FALLBACK_ALLOWED_FAMILIES: totals,spreads
+      CONTROLLED_RESCUE_ALLOWED_FAMILIES: totals,spreads
       H2H_PUBLICATION_ENABLED: "false"
       BTTS_PUBLICATION_ENABLED: "false"
       DNB_PUBLICATION_ENABLED: "false"
@@ -98,85 +88,65 @@ jobs:
       CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES: "false"
       CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS: "2"
       CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES: "2"
+      CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES: "2"
       CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS: "1"
       CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES: "1"
-      CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD: "true"
-      CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM: "false"
-      CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES: "false"
-      CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM: "false"
-      CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "false"
-      CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES: "false"
-      CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: "70"
-      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
-      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: "false"
-      CONTROLLED_FALLBACK_REQUIRE_FINAL_CRON_RECHECK: "true"
-      CONTROLLED_FALLBACK_REQUIRE_LINE_RECHECK: "true"
-      CONTROLLED_FALLBACK_STRICT_MATCH_MARKET_DEDUPE: "false"
-      CONTROLLED_FALLBACK_MIN_TOTAL_XG_FOR_SANITY: "0.25"
-      CONTROLLED_FALLBACK_MIN_TEAM_XG_FOR_SANITY: "0.03"
-      PROMOTE_B_COVER_MIN_TOTAL_XG_FOR_SANITY: "0.25"
-      PROMOTE_B_COVER_MIN_TEAM_XG_FOR_SANITY: "0.03"
-      PROMOTE_A_COVER_VALUE_CANDIDATES_ENABLED: "true"
-      PROMOTE_A_COVER_ONLY_PUBLISH_WINDOW: "true"
-      PROMOTE_A_COVER_VALUE_CANDIDATE_LIMIT: "18"
-      CRON_EXPECTED_INTERVAL_MINUTES: "120"
-      LINE_MOVEMENT_CRON_INTERVAL_MINUTES: "120"
-      LINE_MOVEMENT_CRON_ANCHOR_MINUTE: "0"
-      LINE_MOVEMENT_MIN_LEAD_MINUTES: "15"
-      ODDS_MOVEMENT_SNAPSHOTS_ENABLED: "true"
-      NEWS_INJURY_SHORTLIST_ENABLED: "true"
-      NEWS_INJURY_SHORTLIST_LIMIT: "8"
-      BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: "true"
-      SSTATS_ROLLING_METRICS_ENABLED: "true"
-      SSTATS_HISTORICAL_ODDS_AS_LINES: "false"
-
-      PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
-      PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
-      PROVIDER_QUOTA_RUNS_PER_DAY: "12"
-      PROVIDER_QUOTA_SAFETY_FACTOR: "0.78"
-      PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: "25"
-      PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
-      PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
-      ALL_SOURCES_FREE_MAXIMIZE: "true"
-      PROVIDER_SMOKE_FAIL_ON_ERROR: "false"
-      PROVIDER_SMOKE_TIMEOUT_SECONDS: "10"
-      API_HEALTH_DURING_RUN_ENABLED: "true"
-
-      ODDS_API_IO_HOURLY_LIMIT: "100"
-      ODDS_API_IO_PER_RUN_MAX: "100"
-      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "50"
-      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "50"
-      ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "100"
-      ODDS_API_IO_MAX_REQUESTS_PER_RUN: "100"
-      ODDS_API_IO_REQUEST_BUDGET_GRANTED: "100"
-      ODDS_API_IO_REQUESTS_MAX_PER_RUN: "100"
-      ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "10"
-      ODDS_API_IO_MAX_PAGES_PER_SPORT: "10"
-      PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT: "5"
-      PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST: "10"
-      PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT: "100"
-      MAX_MATCHES_FOR_ODDS_FETCH: "300"
-
-      BZZOIRO_RATE_LIMIT_PER_MINUTE: "200"
-      BZZOIRO_PER_RUN_MAX: "200"
-      BZZOIRO_MAX_REQUESTS_PER_RUN: "200"
-      BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "200"
-      BZZOIRO_REQUESTS_MAX_PER_RUN: "200"
-      BZZOIRO_REQUEST_BUDGET_GRANTED: "200"
-      BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "80"
-      BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "40"
-      BZZOIRO_PREDICTIONS_MAX_PAGES: "10"
+      CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES: "1"
+      ODDS_SOURCE_INDEPENDENCE_ENABLED: "true"
+      BOOKMAKER_QUORUM_ENABLED: "true"
+      PUBLISH_REQUIRE_LINE_MOVEMENT: "true"
+      LINE_MOVEMENT_GUARD_ENABLED: "true"
+      LINE_MOVEMENT_MIN_SNAPSHOTS: "2"
+      LINE_MOVEMENT_MIN_MINUTES_BETWEEN_SNAPSHOTS: "8"
+      LINE_MOVEMENT_MAX_STALE_MINUTES: "360"
+      LINE_MOVEMENT_ALLOW_LAST_CHANCE_SINGLE_SNAPSHOT: "true"
+      LINE_MOVEMENT_LAST_CHANCE_MINUTES_TO_KICKOFF: "45"
+      BETFAIR_EXCHANGE_ENABLED: "false"
+      BETFAIR_MARKET_PROMOTION_ENABLED: "false"
+      ODDS_API_IO_ENABLED: "true"
+      ODDS_API_IO_SPORT: football
+      ODDS_API_IO_MARKETS: totals,spreads,h2h
+      ODDS_API_IO_REGIONS: eu,uk,us
+      ODDS_API_IO_ODDS_FORMAT: decimal
+      ODDS_API_IO_DATE_FORMAT: iso
+      ODDS_API_IO_MAX_EVENTS: "100"
+      ODDS_API_IO_MAX_ODDS_EVENTS_PER_RUN: "80"
+      ODDS_API_IO_MAX_BATCH_SIZE: "10"
+      ODDS_API_IO_REQUESTS_MAX_PER_RUN: "80"
+      ODDS_API_IO_PER_RUN_MAX: "80"
+      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "45"
+      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "35"
+      ODDS_API_IO_ACCOUNT_SOURCE_SPLIT_ENABLED: "true"
+      ODDS_API_IO_SOURCE_LABEL: odds_api_io
+      ODDS_API_IO_RELAXED_INVENTORY_MATCHING_ENABLED: "true"
+      ODDS_API_IO_RELAXED_EXACT_TOLERANCE_HOURS: "16"
+      ODDS_API_IO_RELAXED_FUZZY_TOLERANCE_HOURS: "16"
+      BZZOIRO_ENABLED: "true"
+      ENABLE_BZZOIRO: "true"
+      ENABLE_BZZOIRO_CONTEXT: "true"
+      BZZOIRO_CONTEXT_ENABLED: "true"
+      BZZOIRO_CONTEXT_MATCH_LIMIT: "220"
+      BZZOIRO_ODDS_MATCH_LIMIT: "220"
       BZZOIRO_MAX_PAGES: "20"
-      BZZOIRO_CONTEXT_MATCH_LIMIT: "300"
-      BZZOIRO_PRICE_BACKFILL_ENABLED: "true"
-      BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: "80"
-
-      SSTATS_RATE_LIMIT_PER_MINUTE: "150"
-      SSTATS_PER_RUN_MAX: "150"
-      SSTATS_MAX_REQUESTS_PER_RUN: "150"
-      SSTATS_REQUESTS_MAX_PER_RUN: "150"
-      SSTATS_REQUEST_BUDGET_GRANTED: "150"
-      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "150"
+      BZZOIRO_PAGE_SIZE: "30"
+      BZZOIRO_PREDICTIONS_MAX_PAGES: "12"
+      BZZOIRO_V2_ENRICHMENT_ENABLED: "true"
+      BZZOIRO_V2_MATCH_LIMIT: "120"
+      BZZOIRO_V2_EVENTS_ENABLED: "true"
+      BZZOIRO_V2_STATS_ENABLED: "true"
+      BZZOIRO_V2_METADATA_ENABLED: "true"
+      BZZOIRO_V2_LINEUPS_ENABLED: "true"
+      BZZOIRO_V2_ODDS_ENABLED: "true"
+      BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: "true"
+      BZZOIRO_ODDS_REKEY_ENABLED: "true"
+      BZZOIRO_ODDS_REKEY_MIN_SCORE: "60"
+      SSTATS_ENABLED: "true"
+      ENABLE_SSTATS: "true"
+      ENABLE_SSTATS_CONTEXT: "true"
+      SSTATS_CONTEXT_ENABLED: "true"
+      SSTATS_LOOKBACK_DAYS: "30"
+      SSTATS_RECENT_MATCHES: "6"
+      SSTATS_FORM_MIN_SAMPLE_PER_TEAM: "3"
       SSTATS_CONTEXT_MATCH_LIMIT: "300"
       SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: "40"
       SSTATS_DEEP_CONTEXT_MATCH_LIMIT: "80"
@@ -188,7 +158,6 @@ jobs:
       SSTATS_INJURIES_ENABLED: "false"
       SSTATS_GLICKO_ENABLED: "true"
       SSTATS_ODDS_RESCUE_ENABLED: "true"
-
       SPORTLOGIC_DAILY_LIMIT: "500"
       SPORTLOGIC_ENABLED: "false"
       ENABLE_SPORTLOGIC: "false"
@@ -203,7 +172,6 @@ jobs:
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "2"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "40"
       SPORTLOGIC_MATCH_MIN_SCORE: "48"
-
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -266,6 +234,7 @@ jobs:
         with:
           path: |
             .data/day_inventory
+            .data/cache/day_inventory
             .data/line_history
           key: run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
           restore-keys: |
@@ -338,33 +307,24 @@ jobs:
             status=$?
             echo "per-run API quota contract failed or timed out with status ${status}; continuing with previous env"
           fi
-          python -u scripts/apply_publication_family_policy.py || true
 
       - name: Apply coverage uplift runtime policy
         shell: bash
         run: |
           set -uo pipefail
           mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
-          echo "coverage uplift runtime policy start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 45s python -u scripts/apply_coverage_uplift_runtime_policy.py; then
-            echo "coverage uplift runtime policy applied"
-          else
-            status=$?
-            echo "coverage uplift runtime policy failed or timed out with status ${status}; continuing with previous env"
-          fi
-          cp .data/exports/latest-coverage-uplift-runtime-policy.json artifacts/run-bot/latest-coverage-uplift-runtime-policy.json 2>/dev/null || true
+          python -u scripts/apply_coverage_uplift_runtime_policy.py
 
       - name: Provider smoke
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
-          echo "provider smoke start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 90s python -u workflow/provider_smoke.py; then
-            echo "provider smoke completed"
+          mkdir -p .data/exports artifacts/run-bot
+          if timeout 90s python -u scripts/provider_smoke.py; then
+            echo "provider smoke ok"
           else
             status=$?
-            echo "provider smoke failed or timed out with status ${status}; continuing production run"
+            echo "provider smoke failed or timed out with status ${status}; continuing"
           fi
           cp .data/exports/latest-provider-smoke.json artifacts/run-bot/latest-provider-smoke.json 2>/dev/null || true
           cp .data/exports/latest-provider-smoke.md artifacts/run-bot/latest-provider-smoke.md 2>/dev/null || true
@@ -372,114 +332,95 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          set -uo pipefail
-          echo "unit tests start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 60s python -m pytest -q tests/test_market_integrity.py; then
-            echo "unit tests passed"
-          else
-            status=$?
-            echo "unit tests failed or timed out with status ${status}; continuing production run"
-          fi
+          pytest -q
 
       - name: Run bot
         shell: bash
+        env:
+          TELEGRAM_SEND_ENABLED: "false"
         run: |
-          set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
-          python -u scripts/apply_publication_family_policy.py || true
-          echo "runtime start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          python -u -m app.cli run-once 2>&1 | tee .data/exports/latest-run-bot.log
-          status=${PIPESTATUS[0]}
-          echo "runtime status ${status}"
-          status_text="failed"
-          if [ "${status}" -eq 0 ]; then
-            status_text="ok"
+          set -o pipefail
+          mkdir -p .data/exports artifacts/run-bot
+          if timeout 600s python -u -m app.cli run-once 2>&1 | tee .data/exports/latest-run-bot.log; then
+            echo "run bot ok" | tee .data/exports/latest-run-bot-step-status.json
+          else
+            status=$?
+            echo "run bot failed or timed out with status ${status}" | tee .data/exports/latest-run-bot-step-status.json
           fi
-          updated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          printf '%s\n' "{\"status\":${status},\"status_text\":\"${status_text}\",\"updated_at_utc\":\"${updated_at}\",\"workflow\":\"run-bot\",\"run_id\":\"${GITHUB_RUN_ID:-}\",\"note\":\"run-once status is recorded; workflow continues so diagnostics/report/artifacts can complete\"}" > .data/exports/latest-run-bot-step-status.json
-          echo "RUN_BOT_STATUS=${status}" >> "$GITHUB_ENV"
-          if [ "${status}" -ne 0 ]; then
-            printf '%s\n' "{\"status\":\"non_zero\",\"exit_code\":${status},\"updated_at_utc\":\"${updated_at}\",\"run_id\":\"${GITHUB_RUN_ID:-}\",\"message\":\"app.cli run-once returned non-zero; post-run diagnostics and Telegram report continue\"}" > .data/exports/latest-run-bot-error-status.json
-          fi
-          echo "runtime finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          python -u scripts/guard_day_inventory_no_shrink.py repair || true
-          python -u scripts/backfill_inventory_bookmaker_coverage.py || true
-          python -u scripts/build_b_cover_candidate_gap_report.py || true
-          find .data/exports -maxdepth 2 -type f -printf '%p\n' | sort || true
-          cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
           cp .data/exports/latest-run-bot-step-status.json artifacts/run-bot/latest-run-bot-step-status.json 2>/dev/null || true
-          cp .data/exports/latest-run-bot-error-status.json artifacts/run-bot/latest-run-bot-error-status.json 2>/dev/null || true
+          cp .data/exports/latest-run-summary.json artifacts/run-bot/latest-run-summary.json 2>/dev/null || true
+          cp .data/exports/latest-picks.json artifacts/run-bot/latest-picks.json 2>/dev/null || true
+          cp .data/exports/latest-picks.csv artifacts/run-bot/latest-picks.csv 2>/dev/null || true
+          cp .data/exports/latest-bets.json artifacts/run-bot/latest-bets.json 2>/dev/null || true
+          cp .data/exports/latest-matches.json artifacts/run-bot/latest-matches.json 2>/dev/null || true
+          cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
           cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
-          # Keep the job green after run-once non-zero; status is persisted above.
-          exit 0
+          cp .data/provider_quota_state.json artifacts/run-bot/provider_quota_state.json 2>/dev/null || true
+          cp .data/state.json artifacts/run-bot/state.json 2>/dev/null || true
+          mkdir -p artifacts/run-bot/line_history
+          cp .data/line_history/latest.json artifacts/run-bot/line_history/latest.json 2>/dev/null || true
+          cp .data/line_history/${DAY_INVENTORY_CACHE_DATE}.json artifacts/run-bot/line_history/${DAY_INVENTORY_CACHE_DATE}.json 2>/dev/null || true
+          cp .data/line_history/latest.json artifacts/run-bot/line_history-latest.json 2>/dev/null || true
+          cp .data/day_inventory/latest.json artifacts/run-bot/day_inventory-latest.json 2>/dev/null || true
+          cp .data/day_inventory/current.json artifacts/run-bot/day_inventory-current.json 2>/dev/null || true
+          cp .data/day_inventory/today.json artifacts/run-bot/day_inventory-today.json 2>/dev/null || true
+          mkdir -p artifacts/run-bot/day_inventory
+          cp .data/day_inventory/${DAY_INVENTORY_CACHE_DATE}.json artifacts/run-bot/day_inventory/${DAY_INVENTORY_CACHE_DATE}.json 2>/dev/null || true
+          cp .data/day_inventory/current.json artifacts/run-bot/day_inventory/current.json 2>/dev/null || true
+          cp .data/day_inventory/latest.json artifacts/run-bot/day_inventory/latest.json 2>/dev/null || true
+          cp .data/day_inventory/today.json artifacts/run-bot/day_inventory/today.json 2>/dev/null || true
 
       - name: Publish controlled fallback
         if: always()
         shell: bash
         run: |
           set -uo pipefail
-          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip controlled fallback: fresh run-bot log was not created"
-            exit 0
-          fi
-          python -u scripts/apply_publication_family_policy.py || true
-          python -u scripts/restore_awaiting_movement_candidates.py || true
-          python -u scripts/promote_a_cover_value_candidates.py || true
-          cp .data/exports/latest-a-cover-value-promotion.json artifacts/run-bot/latest-a-cover-value-promotion.json 2>/dev/null || true
-          python -u scripts/enrich_rescue_candidates_xg_confirmation.py || true
-          cp .data/exports/latest-rescue-xg-confirmation-enrichment.json artifacts/run-bot/latest-rescue-xg-confirmation-enrichment.json 2>/dev/null || true
-          python scripts/publish_controlled_fallback_guarded.py || python scripts/publish_controlled_fallback.py || true
-          python -u scripts/persist_awaiting_movement_candidates.py || true
-          python -u scripts/build_fresh_b_cover_diagnostics.py || true
-          cp .data/exports/latest-awaiting-movement-candidates.json artifacts/run-bot/latest-awaiting-movement-candidates.json 2>/dev/null || true
-          cp .data/exports/latest-awaiting-movement-restore.json artifacts/run-bot/latest-awaiting-movement-restore.json 2>/dev/null || true
-          cp .data/exports/latest-fresh-b-cover-diagnostics.json artifacts/run-bot/latest-fresh-b-cover-diagnostics.json 2>/dev/null || true
+          mkdir -p .data/exports artifacts/run-bot
+          python -u scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
+          cp .data/exports/latest-controlled-fallback-pick.json artifacts/run-bot/latest-controlled-fallback-pick.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
-          cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
-          python -u scripts/build_b_cover_candidate_gap_report.py || true
-          cp .data/exports/latest-b-cover-candidate-gap-report.json artifacts/run-bot/latest-b-cover-candidate-gap-report.json 2>/dev/null || true
-          cp .data/exports/latest-b-cover-candidate-gap-report.csv artifacts/run-bot/latest-b-cover-candidate-gap-report.csv 2>/dev/null || true
-          python -u scripts/build_fresh_b_cover_diagnostics.py || true
-          cp .data/exports/latest-fresh-b-cover-diagnostics.json artifacts/run-bot/latest-fresh-b-cover-diagnostics.json 2>/dev/null || true
+          cp .data/fallback-sent-index.json artifacts/run-bot/fallback-sent-index.json 2>/dev/null || true
 
       - name: Update cumulative day inventory coverage
         if: always()
         shell: bash
         run: |
           set -uo pipefail
-          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip cumulative day inventory coverage: fresh run-bot log was not created"
-            exit 0
-          fi
-          mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
-          python -u scripts/day_inventory_cumulative_coverage.py || true
+          mkdir -p .data/exports artifacts/run-bot
+          python -u scripts/accumulate_latest_matches_into_day_inventory.py || true
+          python -u scripts/merge_run_coverage_into_day_inventory.py || true
           python -u scripts/backfill_inventory_bookmaker_coverage.py || true
+          python -u scripts/day_inventory_cumulative_coverage.py || true
           python -u scripts/guard_day_inventory_no_shrink.py repair || true
-          python -u scripts/build_b_cover_candidate_gap_report.py || true
-          cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-accumulation.json artifacts/run-bot/latest-day-inventory-accumulation.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-coverage-merge.json artifacts/run-bot/latest-day-inventory-coverage-merge.json 2>/dev/null || true
           cp .data/exports/latest-inventory-bookmaker-backfill.json artifacts/run-bot/latest-inventory-bookmaker-backfill.json 2>/dev/null || true
-          cp .data/exports/latest-b-cover-candidate-gap-report.json artifacts/run-bot/latest-b-cover-candidate-gap-report.json 2>/dev/null || true
-          cp .data/exports/latest-b-cover-candidate-gap-report.csv artifacts/run-bot/latest-b-cover-candidate-gap-report.csv 2>/dev/null || true
-          cp .data/day_inventory/current.json artifacts/run-bot/day_inventory-current.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-no-shrink-guard.json artifacts/run-bot/latest-day-inventory-no-shrink-guard.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-target-expand.json artifacts/run-bot/latest-day-inventory-target-expand.json 2>/dev/null || true
           cp .data/day_inventory/latest.json artifacts/run-bot/day_inventory-latest.json 2>/dev/null || true
+          cp .data/day_inventory/current.json artifacts/run-bot/day_inventory-current.json 2>/dev/null || true
           cp .data/day_inventory/today.json artifacts/run-bot/day_inventory-today.json 2>/dev/null || true
-          cp .data/line_history/latest.json artifacts/run-bot/line_history-latest.json 2>/dev/null || true
+          mkdir -p artifacts/run-bot/day_inventory
+          cp .data/day_inventory/${DAY_INVENTORY_CACHE_DATE}.json artifacts/run-bot/day_inventory/${DAY_INVENTORY_CACHE_DATE}.json 2>/dev/null || true
+          cp .data/day_inventory/current.json artifacts/run-bot/day_inventory/current.json 2>/dev/null || true
+          cp .data/day_inventory/latest.json artifacts/run-bot/day_inventory/latest.json 2>/dev/null || true
+          cp .data/day_inventory/today.json artifacts/run-bot/day_inventory/today.json 2>/dev/null || true
+          cp .data/day_inventory/*highwater*.json artifacts/run-bot/day_inventory/ 2>/dev/null || true
+          cp .data/day_inventory/highwater.json artifacts/run-bot/day_inventory-highwater.json 2>/dev/null || true
+          cp .data/day_inventory/largest.json artifacts/run-bot/day_inventory-largest.json 2>/dev/null || true
+          cp .data/cache/day_inventory/*highwater*.json artifacts/run-bot/day_inventory/ 2>/dev/null || true
 
       - name: Normalize published pick payloads
         if: always()
         shell: bash
         run: |
           set -uo pipefail
-          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip payload normalization: fresh run-bot log was not created"
-            exit 0
-          fi
-          python scripts/normalize_published_pick_payloads.py || true
+          mkdir -p .data/exports artifacts/run-bot
+          python -u scripts/normalize_published_pick_payloads.py || true
           cp .data/exports/latest-normalized-publication-payloads.json artifacts/run-bot/latest-normalized-publication-payloads.json 2>/dev/null || true
 
       - name: Send HARIZON Telegram run report
@@ -487,19 +428,19 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip HARIZON report: fresh run-bot log was not created"
-            exit 0
-          fi
-          python scripts/send_harizon_telegram_run_report_v10.py || python scripts/send_harizon_telegram_run_report_v9.py || python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
-          cp .data/exports/latest-publication-status.json artifacts/run-bot/latest-publication-status.json 2>/dev/null || true
-          cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
+          mkdir -p .data/exports artifacts/run-bot
+          python -u scripts/send_harizon_telegram_run_report_v13.py || python -u scripts/send_harizon_telegram_run_report_v10.py || true
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
+          cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.json artifacts/run-bot/latest-harizon-telegram-run-report-v5.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.txt artifacts/run-bot/latest-harizon-telegram-run-report-v5.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v9.json artifacts/run-bot/latest-harizon-telegram-run-report-v9.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v9.txt artifacts/run-bot/latest-harizon-telegram-run-report-v9.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v10-status.json artifacts/run-bot/latest-harizon-telegram-run-report-v10-status.json 2>/dev/null || true
+          mkdir -p artifacts/run-bot/day_inventory
+          cp .data/day_inventory/*highwater*.json artifacts/run-bot/day_inventory/ 2>/dev/null || true
+          cp .data/day_inventory/highwater.json artifacts/run-bot/day_inventory-highwater.json 2>/dev/null || true
+          cp .data/day_inventory/largest.json artifacts/run-bot/day_inventory-largest.json 2>/dev/null || true
 
       - name: Commit runtime artifacts
         if: always()
@@ -515,6 +456,8 @@ jobs:
           git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json \
             .data/exports/latest-*.json .data/exports/latest-*.txt .data/exports/latest-*.csv \
             .data/day_inventory/current.json .data/day_inventory/latest.json .data/day_inventory/today.json .data/day_inventory/${DAY_INVENTORY_CACHE_DATE}.json \
+            .data/day_inventory/*highwater*.json .data/day_inventory/highwater.json .data/day_inventory/largest.json \
+            .data/cache/day_inventory/*highwater*.json .data/cache/day_inventory/highwater.json .data/cache/day_inventory/largest.json \
             .data/line_history/latest.json .data/line_history/${DAY_INVENTORY_CACHE_DATE}.json \
             .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
@@ -529,6 +472,7 @@ jobs:
         with:
           path: |
             .data/day_inventory
+            .data/cache/day_inventory
             .data/line_history
           key: run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
 
@@ -552,6 +496,12 @@ jobs:
             .data/day_inventory/current.json
             .data/day_inventory/latest.json
             .data/day_inventory/today.json
+            .data/day_inventory/*highwater*.json
+            .data/day_inventory/highwater.json
+            .data/day_inventory/largest.json
+            .data/cache/day_inventory/*highwater*.json
+            .data/cache/day_inventory/highwater.json
+            .data/cache/day_inventory/largest.json
             .data/line_history/latest.json
             .data/provider_quota_governor_state.json
             .data/provider_request_budget_state.json
