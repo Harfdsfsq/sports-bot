@@ -187,6 +187,7 @@ def repair() -> dict[str, Any]:
         "mode": "repair",
         "target_date": target_date,
         "target_expand_repair": expand_report,
+        "target_expand_after_promotion": {},
         "current_best_path": str(current_path) if current_path else "",
         "current_best_matches": current_rows,
         "date_file_matches_before": date_rows,
@@ -194,8 +195,9 @@ def repair() -> dict[str, Any]:
         "status": "ok_no_repair_needed",
         "changed_paths": [],
     }
+    changed: list[str] = []
     if snap_payload is not None and snap_rows > current_rows:
-        changed = _copy_payload_to_aliases(snap_payload, target_date)
+        changed = _copy_payload_to_aliases(snap_payload, target_date, force=True)
         report["status"] = "repaired_from_snapshot"
         report["changed_paths"] = changed
     elif current_payload is not None and current_rows > 0:
@@ -211,6 +213,11 @@ def repair() -> dict[str, Any]:
             report["status"] = "snapshot_upgraded"
     elif snap_payload is None or snap_rows <= 0:
         report["status"] = "no_snapshot_available"
+
+    if changed:
+        report["target_expand_after_promotion"] = _expand_target_inventory_if_available()
+        post_payload = _load_json(DAY_DIR / f"{target_date}.json")
+        report["date_file_matches_after"] = len(_rows(post_payload))
     _write_json(REPORT_PATH, report)
     return report
 
