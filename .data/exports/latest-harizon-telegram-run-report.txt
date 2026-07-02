@@ -1,13 +1,13 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: market point:quarter totals not allowed
+• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 257/300 матчей (цель: 300 лучших, добор каждый run; shortfall 43; target-expand stage 240/300, shortfall 60; status partial_known_rows_only). Runtime rows processed: 119 (это не размер inventory).
+• Инвентарь дня: собрано 257/300 матчей (цель: 300 лучших, добор каждый run; shortfall 43; target-expand stage 240/300, shortfall 60; status partial_known_rows_only). Runtime rows processed: 110 (это не размер inventory).
 • 1+ линия: 246/257 (96%) | 1+ контекст: 152/257 (59%)
 • 2+ букмекера: 128/257 (50%)
-• Raw 2+ букмекера odds-api.io current snapshot: 35 | normalized cumulative inventory: 128.
-• Odds-api offer snapshot: rows 4862, matches 68, same-side 2+ books 35
+• Raw 2+ букмекера odds-api.io current snapshot: 34 | normalized cumulative inventory: 128.
+• Odds-api offer snapshot: rows 4526, matches 62, same-side 2+ books 34
 • 2+ independent odds-source: 18/257 (7%) — A-tier strict metric; для B-tier не обязательный блок.
 • 2+ контекста: 91/257 (35%)
 • Готово для модели: 141/257 (55%)
@@ -24,40 +24,27 @@
 • Ledger: unique published 4; pending 4; duplicates removed 12; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 39 | матчей без следующего регулярного run: 34
+• Pre-kickoff проверок: 10 | матчей без следующего регулярного run: 10
 • Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 4/33
-• Quality прошло: 4 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Raw/candidates before quality: 1/30
+• Quality прошло: 1 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 22; смэтчил матчей 109; offers 4862; 2+ букмекера 35; ошибок 0.
-• Bzzoiro: direct req 69, v2 req 69; v2 ctx 21; v2 odds 15; secondary offers 859; overlap odds-api.io 855; ошибок 0.
-• SStats: запросы 19; сырых строк 14369; контекстов 79; deep-enriched 31; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 22; смэтчил матчей 109; offers 4526; 2+ букмекера 34; ошибок 0.
+• Bzzoiro: direct req 29, v2 req 29; v2 ctx 7; v2 odds 7; secondary offers 331; overlap odds-api.io 325; ошибок 0.
+• SStats: запросы 19; сырых строк 14369; контекстов 71; deep-enriched 31; team-form 0; direct 0; ошибок 0.
 • SportLogic: disabled_by_env; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• market point:quarter totals not allowed: 4 (27%)
-• quality bad historical segment guard: 4 (27%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 2 (13%)
-• price integrity:selected price vs bookmaker median outlier: 2 (13%)
-• price integrity:external snapshot bookmaker median outlier: 2 (13%)
-• price integrity:selected price vs market probability outlier: 1 (7%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
+• quality: вероятность после калибровки ниже порога: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. CODM Meknès — AS FAR Rabat | Больше 2.25 @1.93 | EV -4.2% | edge -2.2 п.п. | q 50.7
-   • причина: market point:quarter totals not allowed, отрицательная canonical value после пересчёта по выбранному коэффициенту, market point:quarter totals not allowed
-   • xG sanity: missing (missing_xg)
-2. FC Tallinna Wolves — Tabasalu | Больше 3 @1.85 | EV +25.2% | edge +13.6 п.п. | q 79.6
-   • причина: price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier, price integrity:selected price vs market probability outlier
-   • xG sanity: missing (missing_xg)
-3. Renaissance Zemamra — Rabat | Больше 2.25 @1.98 | EV +8.2% | edge +4.2 п.п. | q 58.4
-   • причина: market point:quarter totals not allowed, market point:quarter totals not allowed, price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier
-   • xG sanity: missing (missing_xg)
-4. US Yacoub Mansour — Hassani d'el-Jadida | Меньше 2.5 @1.83 | EV -2.4% | edge -1.3 п.п. | q 55.0
+1. Cove — Turriff | Больше 3.5 @2.12 | EV -4.0% | edge -1.9 п.п. | q 44.0
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
    • xG sanity: missing (missing_xg)
 
@@ -68,23 +55,23 @@
 • Effective A/B contract: A=2 bookmaker/line confirmations + 2 context sources; second API odds-source is diagnostic. B=1 odds-source + 2 books + 1 context.
 • Report-time A-cover promotion refresh: ok; code 0.
 • Daily slot allocator: published today 0/3; reserved slots 0; release 18:00 local.
-• A-tier funnel: cover 16; active future 14; in publish window 10; raw/quality 4/33; active A-cover with raw 0; active without raw 12; A-cover in fallback 2; active in fallback 2; A-cover published 0.
-• A-cover promotion: status ok; promoted 12; active 14; in-window 12; considered 12; rescue kept 0/0; dropped stale 0; top skips promotion_skip_odds_above_max 119; promotion_skip_odds_below_min 104; promotion_skip_edge_below_min 24; promotion_skip_price_outlier 20; promoted 12.
-• A-cover candidate gap: active 14; in-window 10; statuses active_a_cover_not_selected_by_candidate_layers 12; active_a_cover_seen_in_fallback 2; top reasons active_a_cover_not_selected_by_candidate_layers 12; canonical_negative_value 2; market_point:quarter_totals_not_allowed 2; quality_bad_historical_segment_guard 2.
+• A-tier funnel: cover 16; active future 4; in publish window 2; raw/quality 1/30; active A-cover with raw 0; active without raw 3; A-cover in fallback 0; active in fallback 0; A-cover published 0.
+• A-cover promotion: status ok; promoted 2; active 14; in-window 2; considered 2; rescue kept 0/0; dropped stale 0; top skips promotion_skip_outside_active_publish_window 12; promotion_skip_odds_above_max 5; promotion_skip_odds_below_min 4; promotion_skip_price_outlier 4; promoted 2.
+• A-cover candidate gap: active 4; in-window 2; statuses active_a_cover_not_selected_by_candidate_layers 4; top reasons active_a_cover_not_selected_by_candidate_layers 4.
 • Inventory no-shrink source: selected 257 rows from /home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json; refresh promoted_current_high_watermark.
 • Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 0; top: нет clean-кандидатов после снятия daily cap.
-• Effective blockers without daily cap: market_point:quarter_totals_not_allowed 4; canonical_negative_value 2; price_integrity:external_snapshot_bookmaker_median_outlier 2; price_integrity:selected_price_vs_bookmaker_median_outlier 2; price_integrity:selected_price_vs_market_probability_outlier 1.
-• A-tier blockers: n/a; quality sources raw 4; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
+• Effective blockers without daily cap: canonical_negative_value 1.
+• A-tier blockers: n/a; quality sources raw 1; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
 • Inventory target-expand stage: 240/300; shortfall 60; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 75; normalized 78→34; gap after 41.
-• Bzzoiro overlap bridge: offers 859; match-overlap 859; same-bucket overlap 855.
+• Bookmaker mapping repair: raw 2+ 37; normalized 78→12; gap after 25.
+• Bzzoiro overlap bridge: offers 331; match-overlap 331; same-bucket overlap 325.
 
 📌 Что это значит
 • Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 28601987688
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/28601987688
-• Artifact: run-bot-28601987688
+• Run ID: 28608516700
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/28608516700
+• Artifact: run-bot-28608516700
 • workflow run-bot, attempt 1
