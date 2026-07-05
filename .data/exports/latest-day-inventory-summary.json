@@ -1,36 +1,84 @@
 {
-  "all_source_match_counts": {
-    "odds_api_io": 43
+  "alias_update": {
+    "paths": [
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+    ],
+    "skipped": [],
+    "status": "ok",
+    "target_date": "2026-07-06"
   },
   "build_status": "ok",
   "counts": {
+    "bookmaker_backfill_mapping_gap_after": 46,
+    "bookmaker_backfill_normalized_2plus_after": 22,
+    "bookmaker_backfill_normalized_2plus_before": 28,
+    "bookmaker_backfill_raw_2plus_matches": 68,
+    "coverage_progress_updated_utc": "2026-07-05T21:22:54.208036+00:00",
+    "coverage_rows_seen_last_run": 24,
     "fixture_sources_seen": 1,
     "leagues_seen": 18,
     "matches_added": 43,
+    "matches_added_from_latest_run": 11,
     "matches_after_core_merge": 43,
-    "matches_after_top_cut": 43,
-    "matches_next_12h": 33,
-    "matches_next_12h_ready": 0,
-    "matches_next_6h": 33,
-    "matches_next_6h_ready": 0,
+    "matches_after_target_expand": 82,
+    "matches_after_top_cut": 120,
+    "matches_coverage_updated_last_run": 23,
+    "matches_missing_odds_source_2plus": 15,
+    "matches_next_12h": 71,
+    "matches_next_12h_ready": 57,
+    "matches_next_6h": 71,
+    "matches_next_6h_ready": 57,
     "matches_raw_before_merge": 43,
-    "matches_ready_for_model": 0,
-    "matches_ready_for_publish": 0,
-    "matches_total": 43,
+    "matches_ready_for_model": 77,
+    "matches_ready_for_publish": 36,
+    "matches_seen_latest_run": 55,
+    "matches_total": 120,
+    "matches_total_before_top_selection": 120,
+    "matches_total_high_watermark": 120,
     "matches_updated": 0,
-    "matches_with_2plus_core_fixture_sources": 0,
-    "matches_with_3_core_fixture_sources": 0,
-    "matches_with_context": 0,
-    "matches_with_form": 0,
+    "matches_updated_from_latest_run": 42,
+    "matches_with_2plus_context_sources": 66,
+    "matches_with_2plus_core_fixture_sources": 100,
+    "matches_with_2plus_odds_sources": 105,
+    "matches_with_2plus_price_confirmations": 55,
+    "matches_with_3_core_fixture_sources": 53,
+    "matches_with_context": 77,
+    "matches_with_form": 57,
     "matches_with_news": 0,
-    "matches_with_odds": 43,
+    "matches_with_odds": 116,
     "matches_with_weather": 0,
     "matches_with_xg": 0,
     "multi_source_fixture_matches": 0,
     "providers_seen": 1,
+    "publish_min_context_sources": 1,
+    "publish_min_odds_sources": 1,
+    "publish_min_price_confirmations": 1,
+    "runtime_matches_with_context_last_run": 47,
+    "runtime_matches_with_odds_last_run": 37,
+    "target_expand_existing_before": 43,
+    "target_expand_no_shrink_applied": false,
+    "target_expand_rows_collected": 82,
     "target_full": false,
     "target_matches": 300,
-    "target_shortfall": 257
+    "target_shortfall": 218
+  },
+  "coverage_truth_counts": {
+    "matches_a_tier_coverage_ready": 2,
+    "matches_b_tier_watch_only_not_a_tier": 46,
+    "matches_b_tier_watch_ready": 48,
+    "matches_missing_context_2plus": 100,
+    "matches_missing_odds_source_2plus": 117,
+    "matches_missing_price_2plus": 57,
+    "matches_ready_for_model": 77,
+    "matches_ready_for_publish": 2,
+    "matches_total": 120,
+    "matches_with_2plus_context_sources": 20,
+    "matches_with_2plus_odds_sources": 3,
+    "matches_with_2plus_price_confirmations": 63,
+    "matches_with_context": 77,
+    "matches_with_odds": 116
   },
   "date_local": "2026-07-06",
   "league_match_counts": {
@@ -128,14 +176,151 @@
         }
       }
     },
+    "coverage_repair": {
+      "evidence_matches": 82,
+      "rows_repaired": 36,
+      "updated_at_utc": "2026-07-05T21:22:19.091329+00:00"
+    },
+    "coverage_truth": {
+      "counts": {
+        "matches_a_tier_coverage_ready": 2,
+        "matches_b_tier_watch_only_not_a_tier": 46,
+        "matches_b_tier_watch_ready": 48,
+        "matches_missing_context_2plus": 100,
+        "matches_missing_odds_source_2plus": 117,
+        "matches_missing_price_2plus": 57,
+        "matches_ready_for_model": 77,
+        "matches_ready_for_publish": 2,
+        "matches_total": 120,
+        "matches_with_2plus_context_sources": 20,
+        "matches_with_2plus_odds_sources": 3,
+        "matches_with_2plus_price_confirmations": 63,
+        "matches_with_context": 77,
+        "matches_with_odds": 116
+      },
+      "csv": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.csv",
+      "json": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
+      "updated_at_utc": "2026-07-05T21:22:56.500635+00:00"
+    },
+    "fixture_expansion": {
+      "added": 3,
+      "providers": {
+        "allsportsapi": {
+          "body_preview": "{\"success\":1}",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 0
+        },
+        "football_data": {
+          "body_preview": "{\"filters\":{\"dateFrom\":\"2026-07-06\",\"dateTo\":\"2026-07-06\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":1,\"competitions\":\"WC\",\"first\":\"2026-07-06\",\"last\":\"2026-07-06\",\"played\":0},\"matches\":[{\"area\":{\"id\":2267,\"name\":\"World\",\"code\":\"INT\",\"flag\":null},\"competition\":{\"id\":2000,\"name\":\"FIFA World Cup\",\"code\":\"WC\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/wm26.png\"},\"season\":{\"id\":2398,\"startDate\":\"2026-06-11\",\"endDate\":\"2026-07-19\",\"currentMatchday\":3,\"winner\":null},\"id\":537378,\"utcDat",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 1
+        },
+        "thesportsdb": {
+          "body_preview": "{\"events\":[{\"idEvent\":\"2397545\",\"idAPIfootball\":\"1493891\",\"strTimestamp\":\"2026-07-06T03:00:00\",\"strEvent\":\"AV Alta FC vs Charlotte Independence\",\"strEventAlternate\":\"Charlotte Independence @ AV Alta FC\",\"strFilename\":\"American USL League One 2026-07-06 AV Alta FC vs Charlotte Independence\",\"strSport\":\"Soccer\",\"idLeague\":\"5076\",\"strLeague\":\"American USL League One\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/wupe6s1625336127.png\",\"strSeason\":\"2026\",\"strDescriptio",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 3
+        }
+      },
+      "rows_fetched": 4,
+      "updated": 1,
+      "updated_at_utc": "2026-07-05T21:18:49.908864+00:00"
+    },
+    "latest_coverage_merge": {
+      "coverage_rows_seen": 24,
+      "matches_updated": 23,
+      "runtime_counts": {
+        "matches_ready_for_model": 47,
+        "matches_seen": 55,
+        "matches_with_context": 47,
+        "matches_with_odds": 37
+      },
+      "source_stats_seen": [
+        "allsportsapi",
+        "api_football",
+        "bookies_api",
+        "bookies_bootstrap",
+        "bzzoiro",
+        "bzzoiro_odds",
+        "espn",
+        "football_data",
+        "futrixmetrics",
+        "gnews",
+        "market_monitor",
+        "match_bootstrap",
+        "newsapi",
+        "odds_api_io",
+        "odds_api_io_bootstrap",
+        "oddspapi",
+        "openfootball",
+        "openligadb",
+        "self_history",
+        "sportlogic",
+        "sportlogic_context",
+        "sstats",
+        "thesportsdb",
+        "weather"
+      ],
+      "updated_at_utc": "2026-07-05T21:22:56.293442+00:00"
+    },
+    "latest_match_accumulation": {
+      "added": 11,
+      "latest_rows_seen": 55,
+      "rejected": 2,
+      "updated": 42,
+      "updated_at_utc": "2026-07-05T21:22:18.938641+00:00"
+    },
     "mode": "core_fixture_discovery_top300",
+    "priority_and_refresh_plan": {
+      "active_rows": 94,
+      "final_pre_kickoff_checks": 40,
+      "low_quality_rows_filtered_from_priority": 23,
+      "needs_odds_refresh": 4,
+      "no_more_regular_run_before_kickoff": 34,
+      "updated_at_utc": "2026-07-05T21:22:17.707706+00:00"
+    },
     "providers": [
       "odds_api_io",
       "bzzoiro",
       "sstats",
       "sportlogic"
-    ]
+    ],
+    "refresh_plan_count_repair": {
+      "active_matches": 116,
+      "final_pre_kickoff_checks": 40,
+      "matches_missing_odds_coverage": 4,
+      "matches_needing_odds_refresh": 50,
+      "matches_stale_odds_refresh": 46,
+      "no_more_regular_run_before_kickoff": 34,
+      "updated_at_utc": "2026-07-05T21:22:17.707706+00:00"
+    },
+    "runtime_context_coverage_bridge": {
+      "alias_matched_rows": 2,
+      "consensus_rows": 2870,
+      "context_rows": 57,
+      "exact_matched_rows": 55,
+      "line_rows": 3553,
+      "rows_updated": 57,
+      "runtime_alias_entries": 174,
+      "runtime_alias_links": 112,
+      "runtime_matches": 55,
+      "serving_rows": 55,
+      "updated_at_utc": "2026-07-05T21:22:18.580494+00:00"
+    },
+    "source_count_repair": {
+      "evidence_matches": 51,
+      "matches_before_top_cut": 120,
+      "matches_dropped_after_top_cut": 0,
+      "matches_kept": 120,
+      "min_context_sources": 1,
+      "min_price_confirmations": 1,
+      "rows_repaired": 120,
+      "target_size": 300,
+      "updated_at_utc": "2026-07-05T21:22:56.406102+00:00"
+    }
   },
   "timezone": "Europe/Moscow",
-  "updated_at_utc": "2026-07-05T21:02:32.838101+00:00"
+  "updated_at_utc": "2026-07-05T21:22:56.500635+00:00"
 }
