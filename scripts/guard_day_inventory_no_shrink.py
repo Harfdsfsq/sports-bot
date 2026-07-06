@@ -65,10 +65,6 @@ def _payload_date(payload: dict[str, Any] | None) -> str:
 
 def _score(payload: dict[str, Any], path: Path, target_date: str) -> tuple[int, int, int, int, str]:
     rows = _rows(payload)
-    # High-watermark promotion must be based on rows we can actually copy, not
-    # on summary counts from report-only artifacts. A report can say 103 while
-    # containing only 33 real match rows; copying it would silently shrink the
-    # inventory even though diagnostics show a larger count.
     total = len(rows)
     with_odds = 0
     with_context = 0
@@ -176,20 +172,34 @@ def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str, *, force
     return changed
 
 
+def _dedupe_inventory_if_available() -> dict[str, Any]:
+    if str(os.getenv("DAY_INVENTORY_SEMANTIC_DEDUPE_ENABLED", "true")).strip().lower() in {"0", "false", "no", "off"}:
+        return {"enabled": False, "reason": "disabled_by_env"}
+    try:
+        from scripts import deduplicate_day_inventory_semantic
+        code = int(deduplicate_day_inventory_semantic.main() or 0)
+        report = _load_json(EXPORT_DIR / "latest-day-inventory-semantic-dedupe.json") or {}
+        return {"enabled": True, "exit_code": code, "report": report}
+    except Exception as exc:
+        return {"enabled": True, "status": "error_ignored", "error": f"{type(exc).__name__}: {exc}"}
+
+
 def _expand_target_inventory_if_available() -> dict[str, Any]:
     if str(os.getenv("DAY_INVENTORY_NO_SHRINK_RUN_TARGET_EXPAND", "true")).strip().lower() in {"0", "false", "no", "off"}:
         return {"enabled": False, "reason": "disabled_by_env"}
     try:
         from scripts import expand_day_inventory_to_target
         code = expand_day_inventory_to_target.main()
+        dedupe = _dedupe_inventory_if_available()
         report = _load_json(EXPORT_DIR / "latest-day-inventory-target-expand.json") or {}
-        return {"enabled": True, "exit_code": code, "report": report}
+        return {"enabled": True, "exit_code": code, "report": report, "semantic_dedupe": dedupe}
     except Exception as exc:
         return {"enabled": True, "status": "error_ignored", "error": f"{type(exc).__name__}: {exc}"}
 
 
 def snapshot() -> dict[str, Any]:
     target_date = _target_date()
+    dedupe_report = _dedupe_inventory_if_available()
     best_path, best_payload, best_score = _best_payload(target_date)
     date_payload = _load_json(DAY_DIR / f"{target_date}.json")
     date_rows = len(_rows(date_payload))
@@ -197,6 +207,7 @@ def snapshot() -> dict[str, Any]:
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "snapshot",
         "target_date": target_date,
+        "semantic_dedupe": dedupe_report,
         "status": "no_inventory_found",
         "best_path": str(best_path) if best_path else "",
         "best_matches": best_score[1],
@@ -216,10 +227,6 @@ def snapshot() -> dict[str, Any]:
 
 
 def repair() -> dict[str, Any]:
-    # Target-expand may run before selecting the high-watermark, because it can
-    # merge useful rows. It must NOT run after promotion: a later target-expand
-    # pass is allowed to collect fewer rows from transient artifacts and would
-    # overwrite the aliases we just restored.
     expand_report = _expand_target_inventory_if_available()
     target_date = _target_date()
     current_path, current_payload, current_score = _best_payload(target_date)
@@ -252,8 +259,6 @@ def repair() -> dict[str, Any]:
     post_payload = _load_json(DAY_DIR / f"{target_date}.json")
     post_rows = len(_rows(post_payload))
     if current_payload is not None and current_rows > post_rows:
-        # Last defensive write: aliases must end the step at least at the chosen
-        # high-watermark even if a prior helper rewrote them during repair.
         extra = _copy_payload_to_aliases(current_payload, target_date, force=True)
         changed.extend([path for path in extra if path not in changed])
         report["changed_paths"] = changed
