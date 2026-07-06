@@ -32,6 +32,16 @@ def main() -> int:
         sync_publication_ledger()
     except Exception:
         pass
+    try:
+        from scripts.sync_controlled_fallback_selected_to_ledger import main as sync_selected_fallback
+        sync_selected_fallback()
+    except Exception:
+        pass
+    try:
+        from scripts.sync_run_report_ledger_export import main as sync_run_ledger
+        sync_run_ledger()
+    except Exception:
+        pass
     return code
 
 
