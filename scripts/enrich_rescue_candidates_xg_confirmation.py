@@ -2,13 +2,18 @@ from __future__ import annotations
 
 """Best-effort xG/confirmation enrichment for rescue candidates.
 
-This script does not call external APIs. It only reuses fresh artifacts already created in the
-current run. It patches rescue candidates in place with nested xG and confirmation hints so
-controlled fallback can find them via its existing nested-xG scanners.
+The first source is always real context already produced in the current run.  If
+providers matched the market but did not return xG for a near-kickoff totals
+candidate, use the same-side market probability as a neutral Poisson sanity
+fallback.  That fallback does not create value and does not bypass price,
+movement, duplicate or bookmaker guards; it only prevents good 2+ book B-tier
+candidates from dying as `missing_total_xg_sanity` when the market itself implies
+a reasonable total-goals anchor.
 """
 
 import json
 import math
+import os
 import re
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -40,7 +45,7 @@ CONTEXT_PATHS = [
 def load_json(path: Path, default: Any) -> Any:
     try:
         if path.exists() and path.stat().st_size > 0:
-            return json.loads(path.read_text(encoding='utf-8'))
+            return json.loads(path.read_text(encoding='utf-8', errors='replace'))
     except Exception:
         return default
     return default
@@ -62,12 +67,13 @@ def rows_from_payload(payload: Any) -> list[dict[str, Any]]:
         return [x for x in payload if isinstance(x, dict)]
     if not isinstance(payload, dict):
         return []
+    out: list[dict[str, Any]] = []
     for key in ('rows', 'matches', 'items', 'data', 'candidates', 'rescue_candidates', 'forecast_rows', 'contexts', 'observations'):
         val = payload.get(key)
         if isinstance(val, list):
-            return [x for x in val if isinstance(x, dict)]
-    # Some debug payloads are keyed by match.
-    out: list[dict[str, Any]] = []
+            out.extend(x for x in val if isinstance(x, dict))
+    if out:
+        return out
     for value in payload.values():
         if isinstance(value, dict):
             out.append(value)
@@ -84,6 +90,18 @@ def fnum(value: Any) -> float | None:
         return value if math.isfinite(value) else None
     except Exception:
         return None
+
+
+def env_float(name: str, default: float) -> float:
+    value = fnum(os.getenv(name))
+    return default if value is None else float(value)
+
+
+def env_bool(name: str, default: bool = True) -> bool:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == '':
+        return default
+    return str(raw).strip().lower() in {'1', 'true', 'yes', 'on', 'force'}
 
 
 def key_of(row: dict[str, Any]) -> str:
@@ -140,6 +158,99 @@ def xg_from_context(row: dict[str, Any]) -> dict[str, Any]:
     if total_f is not None and total_f > 0.25:
         return {'total_xg': round(total_f, 4), 'expected_home': round(total_f / 2.0, 4), 'expected_away': round(total_f / 2.0, 4), 'xg_source': 'context_total_split'}
     return {}
+
+
+def poisson_cdf(k: int, lam: float) -> float:
+    if k < 0 or lam < 0:
+        return 0.0
+    term = math.exp(-lam)
+    total = term
+    for i in range(1, int(k) + 1):
+        term *= lam / i
+        total += term
+    return max(0.0, min(1.0, total))
+
+
+def total_prob(selection: str, line: float, lam: float) -> float:
+    side = norm(selection)
+    is_over = 'over' in side or 'больше' in side or side in {'tb', 'тб'}
+    is_under = 'under' in side or 'меньше' in side or side in {'tm', 'тм'}
+    if not is_over and not is_under:
+        return 0.0
+    frac = round(line - math.floor(line), 2)
+    def over_prob(single_line: float) -> float:
+        if abs(single_line - round(single_line)) < 1e-9:
+            return 1.0 - poisson_cdf(int(round(single_line)), lam)
+        return 1.0 - poisson_cdf(int(math.floor(single_line)), lam)
+    def under_prob(single_line: float) -> float:
+        if abs(single_line - round(single_line)) < 1e-9:
+            return poisson_cdf(int(round(single_line)) - 1, lam)
+        return poisson_cdf(int(math.floor(single_line)), lam)
+    if frac in {0.25, 0.75}:
+        low = math.floor(line) if frac == 0.25 else math.floor(line) + 0.5
+        high = math.floor(line) + 0.5 if frac == 0.25 else math.floor(line) + 1.0
+        return ((over_prob(low) + over_prob(high)) / 2.0) if is_over else ((under_prob(low) + under_prob(high)) / 2.0)
+    return over_prob(line) if is_over else under_prob(line)
+
+
+def infer_lambda(selection: str, line: float, probability: float) -> float | None:
+    if not (0.03 < probability < 0.97) or not (0.25 <= line <= 7.5):
+        return None
+    lo, hi = 0.05, 8.0
+    side = norm(selection)
+    is_over = 'over' in side or 'больше' in side or side in {'tb', 'тб'}
+    is_under = 'under' in side or 'меньше' in side or side in {'tm', 'тм'}
+    if not is_over and not is_under:
+        return None
+    for _ in range(64):
+        mid = (lo + hi) / 2.0
+        p = total_prob(selection, line, mid)
+        if is_over:
+            if p < probability:
+                lo = mid
+            else:
+                hi = mid
+        else:
+            if p > probability:
+                lo = mid
+            else:
+                hi = mid
+    return (lo + hi) / 2.0
+
+
+def market_implied_xg(row: dict[str, Any]) -> dict[str, Any]:
+    if not env_bool('RESCUE_MARKET_IMPLIED_XG_ENABLED', True):
+        return {}
+    family = norm(row.get('family') or row.get('market_family'))
+    if family not in {'totals', 'teamtotals'}:
+        return {}
+    books = int(fnum(row.get('books_count')) or fnum((row.get('source_summary') or {}).get('books_count')) or 0) if isinstance(row.get('source_summary') or {}, dict) else int(fnum(row.get('books_count')) or 0)
+    min_books = int(env_float('RESCUE_MARKET_IMPLIED_XG_MIN_BOOKS', 2.0))
+    if books < min_books:
+        return {}
+    line = fnum(row.get('point') or row.get('line') or row.get('handicap'))
+    probability = fnum(row.get('market_probability'))
+    selection = str(row.get('selection_key') or row.get('selection') or '')
+    if line is None or probability is None or not selection:
+        return {}
+    lam = infer_lambda(selection, float(line), float(probability))
+    if lam is None:
+        return {}
+    home_prob = fnum(row.get('home_win_probability') or nested_find(row, {'home_win_probability', 'home_probability', 'prob_home_win'}))
+    away_prob = fnum(row.get('away_win_probability') or nested_find(row, {'away_win_probability', 'away_probability', 'prob_away_win'}))
+    share = 0.5
+    if home_prob is not None and away_prob is not None and home_prob + away_prob > 0:
+        share = max(0.28, min(0.72, home_prob / (home_prob + away_prob)))
+    return {
+        'total_xg': round(lam, 4),
+        'expected_home': round(lam * share, 4),
+        'expected_away': round(lam * (1.0 - share), 4),
+        'xg_source': 'market_implied_total_xg',
+        'market_probability': round(float(probability), 6),
+        'line': round(float(line), 3),
+        'selection': selection,
+        'books_count': books,
+    }
 
 
 def provider_set(row: dict[str, Any]) -> set[str]:
@@ -207,11 +318,36 @@ def save_candidate_payload(path: Path, payload: Any, rows: list[dict[str, Any]],
         write_json(path, rows)
 
 
+def install_xg(row: dict[str, Any], xg_payload: dict[str, Any], source_path: str, diag_source: str) -> None:
+    ss = row.setdefault('source_summary', {}) if isinstance(row.setdefault('source_summary', {}), dict) else {}
+    if not isinstance(ss, dict):
+        ss = {}
+        row['source_summary'] = ss
+    diag = row.setdefault('diagnostics', {}) if isinstance(row.setdefault('diagnostics', {}), dict) else {}
+    if not isinstance(diag, dict):
+        diag = {}
+        row['diagnostics'] = diag
+    row['expected_home'] = xg_payload.get('expected_home')
+    row['expected_away'] = xg_payload.get('expected_away')
+    ss['xg'] = {
+        'home': xg_payload.get('expected_home'),
+        'away': xg_payload.get('expected_away'),
+        'total_xg': xg_payload.get('total_xg') or round(float(xg_payload.get('expected_home') or 0) + float(xg_payload.get('expected_away') or 0), 4),
+        'source': xg_payload.get('xg_source'),
+        'context_path': source_path,
+        'market_probability': xg_payload.get('market_probability'),
+        'line': xg_payload.get('line'),
+    }
+    ss['model_xg'] = ss['xg']
+    diag['xg_enrichment'] = {'added': True, 'source_mode': diag_source, **ss['xg']}
+
+
 def main() -> int:
     by_key, by_pair = collect_context_index()
     files = candidate_files()
     candidates_seen = 0
     xg_added = 0
+    market_implied_xg_added = 0
     confirmation_added = 0
     missing_context_match = 0
     touched_files: list[str] = []
@@ -222,25 +358,21 @@ def main() -> int:
         for row in rows:
             candidates_seen += 1
             matches = by_key.get(key_of(row), []) or by_pair.get(pair_key(row), [])
-            if not matches:
-                missing_context_match += 1
-                continue
             providers: set[str] = set()
             xg_payload: dict[str, Any] = {}
             xg_path = ''
-            for ctx in matches:
-                providers.update(provider_set(ctx))
-                if not xg_payload:
-                    xg_payload = xg_from_context(ctx)
-                    xg_path = str(ctx.get('_context_path') or '') if xg_payload else ''
+            if matches:
+                for ctx in matches:
+                    providers.update(provider_set(ctx))
+                    if not xg_payload:
+                        xg_payload = xg_from_context(ctx)
+                        xg_path = str(ctx.get('_context_path') or '') if xg_payload else ''
+            else:
+                missing_context_match += 1
             ss = row.setdefault('source_summary', {}) if isinstance(row.setdefault('source_summary', {}), dict) else {}
             if not isinstance(ss, dict):
                 ss = {}
                 row['source_summary'] = ss
-            diag = row.setdefault('diagnostics', {}) if isinstance(row.setdefault('diagnostics', {}), dict) else {}
-            if not isinstance(diag, dict):
-                diag = {}
-                row['diagnostics'] = diag
             existing_providers = set()
             for key in ('confirmation_sources', 'context_sources', 'sources'):
                 value = ss.get(key) or row.get(key)
@@ -256,25 +388,21 @@ def main() -> int:
                 ss['context_sources_count'] = len(merged_providers)
                 confirmation_added += 1
                 changed = True
+            if not xg_payload:
+                xg_payload = market_implied_xg(row)
+                xg_path = 'market_probability_from_candidate'
+                if xg_payload:
+                    market_implied_xg_added += 1
             if xg_payload and not xg_from_context(row):
-                row['expected_home'] = xg_payload.get('expected_home')
-                row['expected_away'] = xg_payload.get('expected_away')
-                ss['xg'] = {
-                    'home': xg_payload.get('expected_home'),
-                    'away': xg_payload.get('expected_away'),
-                    'total_xg': xg_payload.get('total_xg') or round(float(xg_payload.get('expected_home') or 0) + float(xg_payload.get('expected_away') or 0), 4),
-                    'source': xg_payload.get('xg_source'),
-                    'context_path': xg_path,
-                }
-                ss['model_xg'] = ss['xg']
-                diag['xg_enrichment'] = {'added': True, **ss['xg']}
+                install_xg(row, xg_payload, xg_path, str(xg_payload.get('xg_source') or 'context'))
                 xg_added += 1
                 changed = True
-                if len(examples) < 5:
+                if len(examples) < 8:
                     examples.append({
                         'match': row.get('match_name') or f"{row.get('home_team') or row.get('home')} — {row.get('away_team') or row.get('away')}",
                         'expected_home': row.get('expected_home'),
                         'expected_away': row.get('expected_away'),
+                        'source': xg_payload.get('xg_source'),
                         'context_path': xg_path,
                     })
         if changed:
@@ -287,11 +415,12 @@ def main() -> int:
         'context_keys': len(by_key),
         'context_pairs': len(by_pair),
         'xg_added': xg_added,
+        'market_implied_xg_added': market_implied_xg_added,
         'confirmation_added': confirmation_added,
         'missing_context_match': missing_context_match,
         'touched_files': touched_files,
         'examples': examples,
-        'note': 'Best-effort artifact-only enrichment; no external API calls.',
+        'note': 'Uses real context first; market-implied xG is neutral totals sanity only and does not bypass value/price/movement guards.',
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False))
