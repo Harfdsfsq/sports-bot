@@ -13,6 +13,38 @@ def _sanitize() -> None:
         pass
 
 
+def _refresh_inventory_truth() -> None:
+    """Make the Telegram report read the final 300-row inventory state.
+
+    Some workflow steps repair/restore the high-watermark inventory after the
+    earlier coverage-truth report has already been built.  Rebuild target-expand,
+    no-shrink and coverage-truth here so the visible report does not say 247/300
+    while .data/day_inventory/latest.json already contains 300 rows.
+    """
+    steps = (
+        ("scripts.expand_day_inventory_to_target", "main"),
+        ("scripts.guard_day_inventory_no_shrink", "main"),
+        ("scripts.backfill_inventory_bookmaker_coverage", "main"),
+        ("scripts.bridge_runtime_context_coverage", "main"),
+        ("scripts.build_day_inventory_coverage_truth", "main"),
+        ("scripts.day_inventory_cumulative_coverage", "main"),
+    )
+    for module_name, fn_name in steps:
+        try:
+            module = __import__(module_name, fromlist=[fn_name])
+            fn = getattr(module, fn_name, None)
+            if callable(fn):
+                if module_name.endswith("guard_day_inventory_no_shrink"):
+                    try:
+                        fn("repair")
+                    except TypeError:
+                        fn()
+                else:
+                    fn()
+        except Exception:
+            pass
+
+
 def _load_v12():
     target = Path(__file__).with_name("send_harizon_" + "telegram_run_report_v12.py")
     spec = importlib.util.spec_from_file_location("harizon_report_v12_loaded", target)
@@ -63,6 +95,7 @@ def _install_report_patch(mod) -> None:
 
 if __name__ == "__main__":
     _sanitize()
+    _refresh_inventory_truth()
     module = _load_v12()
     _install_report_patch(module)
     raise SystemExit(module.v9.v8.v7.v5.main())
