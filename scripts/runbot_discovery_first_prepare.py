@@ -3,8 +3,9 @@ from __future__ import annotations
 """Discovery-first runtime preparation for run-bot.
 
 The production run must start from a broad, fresh daily inventory.  This version
-rebuilds below target, semantically collapses duplicate match rows, then targets
-SStats and Bzzoiro enrichment at the actual inventory gaps before prediction.
+keeps the active inventory semantically aligned before each expensive provider
+pass so SStats/Bzzoiro spend their budgets on the same 300 real matches that the
+publication and final report will later evaluate.
 """
 
 import asyncio
@@ -21,6 +22,8 @@ UTC = timezone.utc
 OUT_DIR = Path(".data/exports")
 JSON_OUT = OUT_DIR / "runbot-discovery-first-prepare.json"
 TXT_OUT = OUT_DIR / "runbot-discovery-first-prepare.txt"
+LATEST_JSON_OUT = OUT_DIR / "latest-runbot-discovery-first-prepare.json"
+LATEST_TXT_OUT = OUT_DIR / "latest-runbot-discovery-first-prepare.txt"
 
 
 def env(name: str, default: str = "") -> str:
@@ -78,6 +81,8 @@ def summarize_result(result: Any) -> dict[str, Any]:
         "matched_existing", "appended", "matched_rows_seen", "applied", "crosswalk_matched",
         "request_count", "enriched_matches", "matrix_matches", "targets_selected", "contexts_matched",
         "rows_touched", "duplicate_rows_removed", "semantic_unique_matches", "semantic_duplicate_rows",
+        "pool_keys", "targets_with_pool_id", "event_ids_hydrated", "contexts_added", "odds_hints_added",
+        "matches_after", "rows_collected", "selected_from_collected", "target_shortfall",
     ):
         if key in result:
             out[key] = result.get(key)
@@ -185,8 +190,11 @@ def main() -> int:
     if not truthy("RUNBOT_DISCOVERY_FIRST_PREPARE_ENABLED", True):
         payload = {"created_at_utc": datetime.now(UTC).isoformat(), "status": "disabled", "duration_seconds": 0, "steps": []}
         write(JSON_OUT, payload)
-        TXT_OUT.write_text(render(payload), encoding="utf-8")
-        print(render(payload))
+        write(LATEST_JSON_OUT, payload)
+        text = render(payload)
+        TXT_OUT.write_text(text, encoding="utf-8")
+        LATEST_TXT_OUT.write_text(text, encoding="utf-8")
+        print(text)
         return 0
 
     from scripts import apply_provider_day_discovery_to_inventory
@@ -195,21 +203,26 @@ def main() -> int:
     from scripts import build_inventory_provider_gap_audit
     from scripts import deduplicate_day_inventory_semantic
     from scripts import enrich_inventory_bzzoiro_v2_targets
+    from scripts import expand_day_inventory_to_target
     from scripts import provider_day_discovery_canonical_pool_v2
     from scripts import sstats_crosswalk_probe_v2
 
     steps: list[dict[str, Any]] = []
     steps.append(run_step_sync("build_base_inventory_if_needed", build_base_inventory_if_needed))
     steps.append(run_step_sync("semantic_inventory_dedupe_pre", deduplicate_day_inventory_semantic.main))
+    steps.append(run_step_sync("target_expand_pre_discovery", expand_day_inventory_to_target.main))
     steps.append(run_step_async("pre_merge_sstats_crosswalk_v2", sstats_crosswalk_probe_v2.run))
     steps.append(run_step_async("provider_day_discovery_canonical_pool_v2", provider_day_discovery_canonical_pool_v2.run))
     steps.append(run_step_async("merge_discovery_pool_into_inventory", apply_provider_day_discovery_to_inventory.run))
     steps.append(run_step_sync("semantic_inventory_dedupe_post_merge", deduplicate_day_inventory_semantic.main))
+    steps.append(run_step_sync("target_expand_before_provider_gap_enrichment", expand_day_inventory_to_target.main))
     steps.append(run_step_async("post_merge_sstats_crosswalk_v2", sstats_crosswalk_probe_v2.run))
     steps.append(run_step_async("apply_sstats_crosswalk_ids_to_inventory", apply_sstats_crosswalk_to_inventory.run))
     steps.append(run_step_async("apply_sstats_deep_inventory_enrichment_v4", apply_sstats_deep_inventory_enrichment_v4.run))
+    steps.append(run_step_sync("target_expand_after_sstats", expand_day_inventory_to_target.main))
     steps.append(run_step_sync("target_bzzoiro_v2_inventory_gaps", enrich_inventory_bzzoiro_v2_targets.main))
     steps.append(run_step_sync("semantic_inventory_dedupe_post_context", deduplicate_day_inventory_semantic.main))
+    steps.append(run_step_sync("target_expand_post_context", expand_day_inventory_to_target.main))
     steps.append(run_step_sync("build_source_aware_coverage_matrix", build_source_aware_matrix))
     steps.append(run_step_sync("inventory_provider_gap_audit", build_inventory_provider_gap_audit.main))
 
@@ -227,10 +240,13 @@ def main() -> int:
         "ready_for_model": totals.get("ready_for_model"),
         "ready_for_publish": totals.get("ready_for_publish"),
     }
-    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "runbot_discovery_first_prepare_v3_target_full_inventory_gaps", "status": "ok", "duration_seconds": round(time.perf_counter() - started, 2), "steps": steps, "final": final}
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "runbot_discovery_first_prepare_v4_semantic_300_before_provider_gaps", "status": "ok", "duration_seconds": round(time.perf_counter() - started, 2), "steps": steps, "final": final}
     write(JSON_OUT, payload)
-    TXT_OUT.write_text(render(payload), encoding="utf-8")
-    print(render(payload))
+    write(LATEST_JSON_OUT, payload)
+    text = render(payload)
+    TXT_OUT.write_text(text, encoding="utf-8")
+    LATEST_TXT_OUT.write_text(text, encoding="utf-8")
+    print(text)
     return 0
 
 
