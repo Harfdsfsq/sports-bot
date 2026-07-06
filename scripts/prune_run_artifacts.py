@@ -1,14 +1,6 @@
 from __future__ import annotations
 
-"""Compact HARIZON runtime artifacts before GitHub upload.
-
-The bot already persists day inventory/line history through cache and commits a
-small set of state files.  The GitHub artifact should be a review/debug bundle,
-not a full copy of every cache/export tree.  Previous runs produced artifacts
-above 1 GB because the workflow uploaded both artifacts/run-bot/** and the full
-.data/** trees.  This script removes heavy duplicated payloads and keeps latest
-reports that are needed for debugging by Run ID.
-"""
+"""Compact HARIZON runtime artifacts before GitHub upload."""
 
 import json
 import os
@@ -38,10 +30,18 @@ KEEP_EXPORT_NAMES = {
     "latest-publication-status.json",
     "latest-normalized-publication-payloads.json",
     "latest-day-inventory-target-expand.json",
+    "latest-day-inventory-semantic-dedupe.json",
     "latest-day-inventory-coverage-truth.json",
     "latest-day-inventory-coverage-truth.csv",
     "latest-day-inventory-cumulative-coverage.json",
     "latest-inventory-bookmaker-backfill.json",
+    "latest-inventory-provider-gap-audit.json",
+    "latest-bzzoiro-v2-inventory-target-enrichment.json",
+    "latest-bzzoiro-pool-id-inventory-enrichment.json",
+    "latest-sstats-deep-inventory-enrichment.json",
+    "latest-sstats-crosswalk.json",
+    "latest-runbot-discovery-first-prepare.json",
+    "latest-runbot-discovery-first-prepare.txt",
     "latest-b-cover-candidate-gap-report.json",
     "latest-b-cover-candidate-gap-report.csv",
     "latest-b-cover-value-promotion.json",
@@ -50,6 +50,7 @@ KEEP_EXPORT_NAMES = {
     "latest-provider-smoke.json",
     "latest-provider-smoke.md",
     "latest-artifact-prune-status.json",
+    "latest-all-inventory-json-alias-repair.json",
     "latest-ab-tier-bookmaker-contract-policy.json",
 }
 
@@ -112,29 +113,37 @@ def _prune_json_folder(folder: Path, keep_names: set[str], removed: list[dict[st
         if child.name in keep_names:
             continue
         if child.is_dir():
-            # Date folders, cache folders and nested copies are the main artifact bloat.
             _remove(child, removed)
         elif child.is_file():
-            # Keep only compact latest reports. Remove snapshots/jsonl/heavy dated files.
             if child.name.startswith("latest-") and child.suffix.lower() in {".json", ".txt", ".csv", ".md", ".log"}:
                 continue
             _remove(child, removed)
 
 
+def _repair_inventory_aliases() -> dict[str, Any]:
+    try:
+        from scripts.repair_all_inventory_json_aliases import main as repair_main
+        code = int(repair_main() or 0)
+        path = EXPORT / "latest-all-inventory-json-alias-repair.json"
+        if path.exists():
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                payload.setdefault("exit_code", code)
+                return payload
+        return {"status": "ok", "exit_code": code}
+    except Exception as exc:
+        return {"status": "error_ignored", "error": f"{type(exc).__name__}: {exc}"}
+
+
 def main() -> int:
     started = datetime.now(timezone.utc).isoformat()
+    repair_report = _repair_inventory_aliases()
     before = _size(ART) + _size(EXPORT)
     removed: list[dict[str, Any]] = []
 
-    # Drop duplicated heavy copies under artifacts/run-bot.  The workflow should not
-    # copy these folders anymore, but older runs / partial retries may leave them
-    # around.  Removing the whole folder and rebuilding a compact bundle is safer
-    # than pruning nested date/cache trees one by one.
     for rel in ("cache", "exports", "day_inventory", "line_history"):
         _remove(ART / rel, removed)
 
-    # Also prune heavy export files in the source export folder before upload.
-    # Keep only compact latest reports; remove dated folders, snapshots and jsonl.
     for parent in (EXPORT,):
         _prune_json_folder(parent, KEEP_EXPORT_NAMES, removed)
         if parent.exists():
@@ -142,7 +151,6 @@ def main() -> int:
                 for f in parent.glob(pattern):
                     _remove(f, removed)
 
-    # Keep only current/latest/today/date inventory and line history files in artifact copy.
     cache_date = os.getenv("DAY_INVENTORY_CACHE_DATE") or os.getenv("DAY_INVENTORY_TARGET_DATE") or ""
     keep_day_files = {"current.json", "latest.json", "today.json"}
     if cache_date:
@@ -153,7 +161,6 @@ def main() -> int:
                 if f.name not in keep_day_files:
                     _remove(f, removed)
 
-    # Rebuild a compact review bundle in artifacts/run-bot.
     ART.mkdir(parents=True, exist_ok=True)
     for name in KEEP_EXPORT_NAMES:
         _copy_file(EXPORT / name, ART / name)
@@ -175,9 +182,10 @@ def main() -> int:
         "bytes_removed_estimate": max(0, before - after),
         "removed_count": len(removed),
         "removed_sample": removed[:120],
+        "inventory_alias_repair": repair_report,
         "keep_export_names": sorted(KEEP_EXPORT_NAMES),
         "notes": [
-            "Prunes upload payload only; it does not remove persistent runtime state before cache/save.",
+            "Repairs conflict-marked inventory JSON aliases before artifact upload.",
             "Run artifacts are compact latest reports plus selected day_inventory/line_history/state files.",
         ],
     }
