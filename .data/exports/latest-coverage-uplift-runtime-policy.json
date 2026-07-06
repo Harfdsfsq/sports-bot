@@ -1,29 +1,25 @@
 {
-  "created_at_utc": "2026-07-06T09:56:33.073353+00:00",
-  "env_written_count": 113,
+  "created_at_utc": "2026-07-06T11:51:24.001029+00:00",
+  "env_written_count": 106,
   "notes": [
-    "Only data coverage/enrichment limits are raised; publication window, daily cap, xG, value and price guards stay strict.",
-    "Odds-api.io request cap remains conservative; uplift is mostly target/pages/backfill driven.",
-    "SportLogic is forced off because recent runs showed enabled=True with zero useful fixtures/offers."
+    "SportLogic remains enabled with a tiny per-run budget instead of being force-disabled.",
+    "Bzzoiro v2 odds/stats/metadata/prediction fetch flags are explicit.",
+    "SStats team-form fallback now allows two recent rows per team.",
+    "Publication gates are unchanged."
   ],
   "phase": "live_refresh",
-  "secrets_present": {
+  "providers_enabled": {
     "bzzoiro": true,
-    "odds_api_io_key": true,
-    "odds_api_io_key_2": true,
+    "odds_api_io": true,
+    "sportlogic": true,
     "sstats": true
   },
   "status": "installed",
   "targets": {
-    "bzzoiro_context_match_limit": 280,
-    "bzzoiro_v2_match_limit": 180,
-    "context_backfill_limit": 300,
+    "bzzoiro_v2_limit": 180,
+    "context_limit": 280,
     "inventory": 300,
-    "near_window_hours": 24,
-    "odds_api_io_target_matches": 300,
-    "sportlogic": "disabled_by_env_zero_yield",
-    "sstats_context_match_limit": 280,
-    "sstats_deep_context_limit": 160
+    "sportlogic_budget": 4
   },
-  "version": "v18-lines-context-uplift"
+  "version": "v19-sportlogic-enabled-coverage-uplift"
 }
