@@ -6,7 +6,9 @@ The manual all-time report showed that recovered controlled-fallback picks can
 produce volume while adding little or negative P&L.  This script reads the latest
 performance summary and, when the controlled_fallback segment is mature enough
 and negative, exports stricter fallback thresholds both into os.environ for the
-current Python process and into GITHUB_ENV for later workflow steps.
+current Python process and into GITHUB_ENV for later workflow steps.  It also
+runs the rescue-candidate sanitizer before the guarded publisher imports the
+fallback engine, so malformed promotion payloads cannot reach final guards.
 """
 
 import json
@@ -61,9 +63,6 @@ def env_bool(name: str, default: bool) -> bool:
 
 
 def apply_env(values: dict[str, Any]) -> None:
-    # Needed when called from publish_controlled_fallback_guarded.py: the base
-    # publisher is imported in the same Python process, so GITHUB_ENV alone would
-    # be too late.
     for key, value in values.items():
         os.environ[str(key)] = str(value)
     github_env = os.getenv("GITHUB_ENV")
@@ -74,7 +73,22 @@ def apply_env(values: dict[str, Any]) -> None:
             fh.write(f"{key}={value}\n")
 
 
+def run_rescue_candidate_sanitizer() -> dict[str, Any]:
+    try:
+        from scripts import sanitize_rescue_candidate_payloads
+
+        code = int(sanitize_rescue_candidate_payloads.main() or 0)
+        payload = load_json(ROOT / ".data" / "exports" / "latest-rescue-candidate-sanitizer.json", {})
+        if isinstance(payload, dict):
+            payload.setdefault("exit_code", code)
+            return payload
+        return {"status": "ok" if code == 0 else "non_zero", "exit_code": code}
+    except Exception as exc:
+        return {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+
+
 def main() -> int:
+    sanitizer = run_rescue_candidate_sanitizer()
     enabled = env_bool("CONTROLLED_FALLBACK_PERFORMANCE_POLICY_ENABLED", True)
     payload = load_json(SUMMARY, {})
     by_quality = payload.get("by_quality") if isinstance(payload, dict) else {}
@@ -90,9 +104,6 @@ def main() -> int:
 
     env_updates: dict[str, Any] = {}
     if applies:
-        # Keep fallback available, but only when the value is materially stronger
-        # than the weak historical segment. These envs are already consumed by
-        # publish_controlled_fallback.py final/tier guards.
         env_updates = {
             "CONTROLLED_FALLBACK_PERFORMANCE_COOLDOWN_ACTIVE": "true",
             "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": os.getenv("CONTROLLED_FALLBACK_PERF_FINAL_MIN_EDGE_PP", "3.2"),
@@ -115,15 +126,8 @@ def main() -> int:
         "enabled": enabled,
         "applies": applies,
         "reason": "controlled_fallback_segment_negative" if applies else "not_triggered",
-        "segment": {
-            "total": total,
-            "closed": closed,
-            "pnl": round(pnl, 2),
-            "roi_pct": round(roi, 3),
-            "min_closed": min_closed,
-            "min_total": min_total,
-            "negative": negative,
-        },
+        "rescue_candidate_sanitizer": sanitizer,
+        "segment": {"total": total, "closed": closed, "pnl": round(pnl, 2), "roi_pct": round(roi, 3), "min_closed": min_closed, "min_total": min_total, "negative": negative},
         "env_updates": env_updates,
     }
     write_json(EXPORT, report)
