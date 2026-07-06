@@ -5,11 +5,13 @@ from __future__ import annotations
 Uses cached `latest-sstats-crosswalk.json` as the SStats fixture-discovery source
 so provider-smoke does not spend extra SStats requests and hit 429. v2 also
 persists the full canonical pool, not only the sample, so discovery-first can be
-merged into day_inventory completely.
+merged into day_inventory completely.  The provider date range follows the run
+horizon so the 300-match production target is not capped by one calendar day.
 """
 
 import asyncio
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,7 +24,9 @@ from scripts import provider_day_discovery_canonical_pool as v1
 UTC = timezone.utc
 OUT_DIR = Path(".data/exports")
 JSON_OUT = OUT_DIR / "provider-day-discovery-canonical-pool.json"
+LATEST_JSON_OUT = OUT_DIR / "latest-provider-day-discovery-canonical-pool.json"
 TXT_OUT = OUT_DIR / "provider-day-discovery-canonical-pool.txt"
+LATEST_TXT_OUT = OUT_DIR / "latest-provider-day-discovery-canonical-pool.txt"
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -31,6 +35,14 @@ def load(path: Path) -> dict[str, Any]:
         return value if isinstance(value, dict) else {}
     except Exception:
         return {}
+
+
+def horizon_days() -> int:
+    raw = os.getenv("DAY_INVENTORY_HORIZON_DAYS") or os.getenv("DAY_INVENTORY_TARGET_HORIZON_DAYS") or os.getenv("RUN_DAYS_AHEAD") or "2"
+    try:
+        return max(1, min(int(float(raw)), 4))
+    except Exception:
+        return 2
 
 
 def crosswalk_events() -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -79,12 +91,25 @@ def crosswalk_events() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     }
 
 
+def build_specs_for_horizon() -> list[v1.CallSpec]:
+    days = horizon_days()
+    original_date_plus = v1.date_plus
+    try:
+        def date_plus_horizon(date_text: str, step_days: int) -> str:
+            return original_date_plus(date_text, days if int(step_days or 0) == 1 else step_days)
+        v1.date_plus = date_plus_horizon  # type: ignore[assignment]
+        return [spec for spec in v1.build_calls() if spec.provider != "sstats"]
+    finally:
+        v1.date_plus = original_date_plus  # type: ignore[assignment]
+
+
 async def run() -> dict[str, Any]:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    days = horizon_days()
     max_seconds = float(v1.env("PROVIDER_DAY_DISCOVERY_MAX_SECONDS", "140"))
     timeout = float(v1.env("PROVIDER_DAY_DISCOVERY_TIMEOUT_SECONDS", "18"))
     concurrency = max(1, v1.as_int(v1.env("PROVIDER_DAY_DISCOVERY_CONCURRENCY"), 5))
-    specs = [spec for spec in v1.build_calls() if spec.provider != "sstats"]
+    specs = build_specs_for_horizon()
     sem = asyncio.Semaphore(concurrency)
     started = time.perf_counter()
     async with httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=min(6.0, timeout)), follow_redirects=True) as client:
@@ -102,9 +127,10 @@ async def run() -> dict[str, Any]:
     canonical = sorted(canonical, key=lambda item: (str(item.get("kickoff_utc") or ""), -len(item.get("providers") or [])))
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
-        "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool",
+        "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon",
         "status": "ok",
         "target_date": v1.target_date(),
+        "horizon_days": days,
         "duration_seconds": round(time.perf_counter() - started, 2),
         "summary": v1.summarize(results, canonical),
         "results_summary": [{k: val for k, val in result.items() if k != "events"} for result in results],
@@ -112,13 +138,17 @@ async def run() -> dict[str, Any]:
         "canonical_matches_sample": canonical[:80],
         "targeted_enrichment_plan": v1.enrichment_plan(canonical),
         "notes": [
-            "v2 does not call SStats discovery endpoints when latest-sstats-crosswalk.json exists; it reuses cached gameIds from the earlier crosswalk step.",
-            "The full canonical_matches list is persisted so inventory merge can use the entire discovery-first pool, not only the txt/sample slice.",
+            "SStats discovery is reused from latest-sstats-crosswalk.json to avoid extra quota.",
+            "The full canonical_matches list is persisted for inventory merge.",
+            "Provider calls use the configured two-day run horizon when RUN_DAYS_AHEAD/DAY_INVENTORY_HORIZON_DAYS is 2.",
         ],
     }
-    JSON_OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    TXT_OUT.write_text(v1.render(payload), encoding="utf-8")
-    print(v1.render(payload))
+    rendered = v1.render(payload)
+    for path in (JSON_OUT, LATEST_JSON_OUT):
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    for path in (TXT_OUT, LATEST_TXT_OUT):
+        path.write_text(rendered, encoding="utf-8")
+    print(rendered)
     return payload
 
 
