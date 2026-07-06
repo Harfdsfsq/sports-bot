@@ -1,19 +1,128 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+      "A-tier publication score is below min on many candidates."
     ],
-    "quality_score_sources": {},
-    "tier_a_blocker_counts": {}
+    "quality_score_sources": {
+      "proxy": 1
+    },
+    "tier_a_blocker_counts": {
+      "tier_a_proxy_quality_not_allowed": 1,
+      "tier_a_publication_score_below_min": 1
+    }
   },
-  "candidates_seen": 0,
-  "created_at": "2026-07-06T12:43:26.977694+00:00",
+  "candidates_seen": 1,
+  "created_at": "2026-07-06T13:04:05.316041+00:00",
   "enabled": true,
-  "evaluated": [],
+  "evaluated": [
+    {
+      "away_team": "Basaksehir",
+      "away_team_ru": "Басаксехир",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-06T15:00:00+00:00",
+      "commence_time_display": "06.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Cracovia Krakow",
+      "home_team_ru": "Краковиа Кракоу",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|cracovia_krakow|basaksehir|2026-07-06",
+      "metrics": {
+        "adjusted_probability": 0.539569,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.936,
+        "canonical_ev_pct": 5.756,
+        "confidence": 73.19,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": true,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 4,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.463,
+        "market_probability": 0.524934,
+        "model_probability": 0.539569,
+        "odds": 1.96,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 18.192,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.510204,
+        "sources_count": 4,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.905,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 1.96,
+          "selected_vs_median_deviation_pct": 2.887
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 3.302,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 3.302,
+          "xg_model_gap_pp": -3.302,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.572585,
+          "xg_probability_pct": 57.259,
+          "xg_source": "home_away",
+          "xg_total": 2.389
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень B: publication score below min",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    }
+  ],
   "no_pick_report_sent": true,
   "pool_counts": {
     "debug_candidates_before_quality_stale_or_outside_window": 2,
-    "latest_picks_stale_or_outside_window": 4
+    "latest_picks_stale_or_outside_window": 4,
+    "latest_rescue_candidates": 1,
+    "latest_rescue_candidates_duplicate_in_pool": 1
   },
   "published": false,
   "scan_policy": {
@@ -28,11 +137,16 @@
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
     "duplicates_removed": 0,
-    "reason_counts_without_daily_cap": {},
+    "reason_counts_without_daily_cap": {
+      "tier_a_proxy_quality_not_allowed": 1,
+      "tier_a_publication_score_below_min": 1,
+      "tier_b_publication_score_below_min": 1,
+      "tier_c_publication_score_below_min": 1
+    },
     "top_would_publish_without_daily_cap": []
   },
   "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3714,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1783341807,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3717,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1783343046,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,

@@ -1,14 +1,61 @@
 {
-  "created_at_utc": "2026-07-06T12:44:10.252995+00:00",
+  "created_at_utc": "2026-07-06T13:05:00.376089+00:00",
   "duplicates_removed": 0,
-  "evaluated_rows": 0,
+  "evaluated_rows": 1,
   "plain_explanation": [
-    "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+    "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+    "A-tier publication score is below min on many candidates."
   ],
-  "quality_score_sources": {},
+  "quality_score_sources": {
+    "proxy": 1
+  },
   "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
   "status": "ok",
-  "tier_a_blocker_counts": {},
-  "top_a_tier_blocked_samples": [],
-  "unique_evaluated_rows": 0
+  "tier_a_blocker_counts": {
+    "tier_a_proxy_quality_not_allowed": 1,
+    "tier_a_publication_score_below_min": 1
+  },
+  "top_a_tier_blocked_samples": [
+    {
+      "a_tier_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed"
+      ],
+      "away_team": "Basaksehir",
+      "books_count": 2,
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-06T15:00:00+00:00",
+      "confidence": 73.19,
+      "confirmation_sources": [
+        "sstats"
+      ],
+      "confirmation_sources_count": 4,
+      "daily_cap_reasons": [],
+      "dedupe_key": "2026-07-06|international clubs club friendly games|cracovia krakow|basaksehir|totals|under|3",
+      "edge_pp": 2.936,
+      "ev_pct": 5.756,
+      "family": "totals",
+      "home_team": "Cracovia Krakow",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|cracovia_krakow|basaksehir|2026-07-06",
+      "odds": 1.96,
+      "odds_sources_count": 1,
+      "other_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_b_publication_score_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "point": 3.0,
+      "publication_score": 18.192,
+      "quality_score": 76.0,
+      "quality_score_source": "proxy",
+      "rank": 1,
+      "selection": "Меньше",
+      "shadow_score": 5.239,
+      "status_without_daily_cap": "blocked_by_other_guards",
+      "tier": null
+    }
+  ],
+  "unique_evaluated_rows": 1
 }

@@ -1,11 +1,10 @@
 {
-  "created_at_utc": "2026-07-06T12:39:20.822095+00:00",
-  "env_written_count": 106,
+  "created_at_utc": "2026-07-06T12:58:11.798990+00:00",
+  "env_written_count": 110,
   "notes": [
+    "Inventory expansion uses the two-day run horizon, not only one local calendar day.",
     "SportLogic remains enabled with a tiny per-run budget instead of being force-disabled.",
-    "Bzzoiro v2 odds/stats/metadata/prediction fetch flags are explicit.",
-    "SStats team-form fallback now allows two recent rows per team.",
-    "Publication gates are unchanged."
+    "Borderline value candidates are no longer rejected for rounding noise, but still require positive EV/edge and line lifecycle."
   ],
   "phase": "live_refresh",
   "providers_enabled": {
@@ -18,8 +17,11 @@
   "targets": {
     "bzzoiro_v2_limit": 180,
     "context_limit": 280,
+    "horizon_days": 2,
     "inventory": 300,
+    "line_edge_floor": "1.45",
+    "line_ev_floor": "2.85",
     "sportlogic_budget": 4
   },
-  "version": "v19-sportlogic-enabled-coverage-uplift"
+  "version": "v20-two-day-horizon-borderline-value-tolerance"
 }
