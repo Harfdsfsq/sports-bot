@@ -109,7 +109,20 @@ def _priced_books_count(metrics: dict[str, Any]) -> int:
         parsed = _as_int(value, 0)
         if parsed > 0:
             return parsed
-    return _as_int(metrics.get('books_count'), 0)
+    raw = _as_int(metrics.get('books_count'), 0)
+    if raw > 20:
+        # A-cover/promoted rows can carry raw offer/hint counts in books_count
+        # (for example 210), while the actual independently useful evidence is
+        # the line/source/confirmation count.  Use that as display fallback only;
+        # true quorum checks still require explicit priced_books_count when set.
+        fallback = max(
+            _as_int(metrics.get('confirmation_sources_count'), 0),
+            _as_int(metrics.get('odds_sources_count'), 0),
+            _as_int(metrics.get('sources_count'), 0),
+            2,
+        )
+        return min(raw, fallback)
+    return raw
 
 
 def _clamp_display_books(metrics: dict[str, Any]) -> None:
@@ -240,32 +253,30 @@ def main() -> int:
 
     module = _load_original()
     _patch_module(module)
-    _write_report(
-        {
-            "created_at_utc": datetime.now(timezone.utc).isoformat(),
-            "status": "installed",
-            "wrapper": "publish_controlled_fallback_bookmaker",
-            "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
-            "original_script": str(ORIGINAL),
-            "price_integrity_preserved": True,
-            "display_books_clamped_to_priced_quorum": True,
-        }
-    )
+    _write_report({
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "installed",
+        "wrapper": "publish_controlled_fallback_bookmaker",
+        "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
+        "original_script": str(ORIGINAL),
+        "price_integrity_preserved": True,
+        "display_books_clamped_to_priced_quorum": True,
+        "raw_offer_count_display_clamp_enabled": True,
+    })
     try:
         code = int(module.main() or 0)
     finally:
         audit = _run_retro_price_audit_after_publish()
-        _write_report(
-            {
-                "created_at_utc": datetime.now(timezone.utc).isoformat(),
-                "status": "completed",
-                "wrapper": "publish_controlled_fallback_bookmaker",
-                "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
-                "price_integrity_preserved": True,
-                "display_books_clamped_to_priced_quorum": True,
-                "retro_price_audit": audit,
-            }
-        )
+        _write_report({
+            "created_at_utc": datetime.now(timezone.utc).isoformat(),
+            "status": "completed",
+            "wrapper": "publish_controlled_fallback_bookmaker",
+            "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
+            "price_integrity_preserved": True,
+            "display_books_clamped_to_priced_quorum": True,
+            "raw_offer_count_display_clamp_enabled": True,
+            "retro_price_audit": audit,
+        })
     return code
 
 
