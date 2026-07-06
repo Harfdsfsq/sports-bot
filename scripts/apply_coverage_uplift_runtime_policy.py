@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Runtime coverage uplift for HARIZON.
 
-This script writes only data-collection settings to GitHub Actions env. It must
-not relax publication/value/line-movement guards.  v19 fixes the v18 regression
-where SportLogic was force-disabled after the workflow enabled it.
+This script writes data-collection settings and safe runtime tolerances to GitHub
+Actions env. It does not bypass publication guards: final candidates still need
+valid odds, bookmaker confirmation, context, line lifecycle and positive value.
 """
 
 import json
@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(".").resolve()
 EXPORT_PATH = ROOT / ".data" / "exports" / "latest-coverage-uplift-runtime-policy.json"
 GITHUB_ENV = os.getenv("GITHUB_ENV")
-VERSION = "v19-sportlogic-enabled-coverage-uplift"
+VERSION = "v20-two-day-horizon-borderline-value-tolerance"
 
 
 def truthy(value: object, default: bool = False) -> bool:
@@ -119,13 +119,17 @@ def main() -> int:
         "DAY_INVENTORY_FORCE_TOP_300": "true",
         "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true",
         "DAY_INVENTORY_USE_FOR_RUN": "true",
+        "DAY_INVENTORY_HORIZON_DAYS": "2",
+        "DAY_INVENTORY_TARGET_HORIZON_DAYS": "2",
+        "RUN_DAYS_AHEAD": "2",
         "DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED": "true",
         "DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT": "300",
         "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
         "CONTEXT_ENRICHMENT_MATCH_LIMIT": str(context_limit),
         "PREMIUM_CONTEXT_SHORTLIST_LIMIT": str(premium_limit),
         "MAX_MATCHES_FOR_ODDS_FETCH": "300",
-        "RUN_DAYS_AHEAD": "1",
+        "LINE_MOVEMENT_MIN_CURRENT_EV_PCT": os.getenv("LINE_MOVEMENT_MIN_CURRENT_EV_PCT") or "2.85",
+        "LINE_MOVEMENT_MIN_CURRENT_EDGE_PP": os.getenv("LINE_MOVEMENT_MIN_CURRENT_EDGE_PP") or "1.45",
         "DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES": "300",
         "DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES": "300",
         "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "24",
@@ -200,12 +204,11 @@ def main() -> int:
         "phase": run_phase,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "providers_enabled": {"odds_api_io": has_odds_1, "sstats": has_sstats, "bzzoiro": has_bzz, "sportlogic": has_sportlogic},
-        "targets": {"inventory": 300, "context_limit": context_limit, "bzzoiro_v2_limit": premium_limit, "sportlogic_budget": sportlogic_budget if has_sportlogic else 0},
+        "targets": {"inventory": 300, "horizon_days": 2, "context_limit": context_limit, "bzzoiro_v2_limit": premium_limit, "sportlogic_budget": sportlogic_budget if has_sportlogic else 0, "line_ev_floor": env["LINE_MOVEMENT_MIN_CURRENT_EV_PCT"], "line_edge_floor": env["LINE_MOVEMENT_MIN_CURRENT_EDGE_PP"]},
         "notes": [
+            "Inventory expansion uses the two-day run horizon, not only one local calendar day.",
             "SportLogic remains enabled with a tiny per-run budget instead of being force-disabled.",
-            "Bzzoiro v2 odds/stats/metadata/prediction fetch flags are explicit.",
-            "SStats team-form fallback now allows two recent rows per team.",
-            "Publication gates are unchanged.",
+            "Borderline value candidates are no longer rejected for rounding noise, but still require positive EV/edge and line lifecycle.",
         ],
         "env_written_count": len(env),
     })
