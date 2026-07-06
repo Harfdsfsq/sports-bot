@@ -2,23 +2,12 @@ from __future__ import annotations
 
 """Discovery-first runtime preparation for run-bot.
 
-This is the production-facing version of the provider-smoke repair stack. It
-prepares the day inventory before `app.cli run-once` so the model starts from a
-canonical 300-match pool with provider source_ids and primary-provider context.
-
-Pipeline:
-1. Build base day inventory if needed.
-2. Build pre-merge SStats crosswalk for cached SStats discovery.
-3. Build provider-day canonical discovery pool from odds-api.io/Bzzoiro/SStats
-   and supplemental fixture providers.
-4. Merge the full canonical pool into day_inventory.
-5. Rebuild SStats crosswalk on the merged inventory.
-6. Apply SStats ids to inventory rows.
-7. Apply actual SStats deep enrichment.
-8. Build source-aware coverage matrix for diagnostics.
-
-The script is fail-soft by default: it should improve the run when providers are
-healthy, but it should not block `run-once` if one repair layer fails.
+The production run must start from a broad, fresh daily inventory.  The old
+prepare step skipped the base rebuild whenever any inventory file existed, so a
+stale 120-150 row cache could survive all day and the 300-match target was never
+attempted again.  This version rebuilds whenever the current inventory is below
+the configured target, then merges the full provider-day canonical pool and
+re-applies SStats/Bzzoiro coverage before prediction.
 """
 
 import asyncio
@@ -30,15 +19,6 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
-
-from scripts import apply_provider_day_discovery_to_inventory
-from scripts import apply_sstats_crosswalk_to_inventory
-from scripts import apply_sstats_deep_inventory_enrichment_v4
-from scripts import provider_day_discovery_canonical_pool_v2
-from scripts import provider_smoke_coverage_matrix as base_matrix
-from scripts import provider_smoke_coverage_matrix_v3
-from scripts.provider_smoke_coverage_matrix_v5 import _ORIG_SOURCE_COUNT, _patched_source_count
-from scripts import sstats_crosswalk_probe_v2
 
 UTC = timezone.utc
 OUT_DIR = Path(".data/exports")
@@ -57,9 +37,17 @@ def truthy(name: str, default: bool = True) -> bool:
     return raw in {"1", "true", "yes", "on", "force"}
 
 
+def env_int(name: str, default: int) -> int:
+    try:
+        raw = env(name)
+        return int(float(raw)) if raw else default
+    except Exception:
+        return default
+
+
 def load(path: Path) -> dict[str, Any]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = json.loads(path.read_text(encoding="utf-8", errors="replace"))
         return value if isinstance(value, dict) else {}
     except Exception:
         return {}
@@ -71,12 +59,39 @@ def write(path: Path, payload: Any) -> None:
 
 
 def inventory_matches() -> int:
-    for path in (Path(".data/day_inventory/latest.json"), Path(".data/day_inventory/current.json"), Path(".data/day_inventory/today.json")):
+    best = 0
+    for path in (
+        Path(".data/day_inventory/latest.json"),
+        Path(".data/day_inventory/current.json"),
+        Path(".data/day_inventory/today.json"),
+        Path(".data/day_inventory") / f"{env('DAY_INVENTORY_TARGET_DATE')}.json",
+    ):
         payload = load(path)
         rows = payload.get("matches") if isinstance(payload.get("matches"), list) else []
-        if rows:
-            return len(rows)
-    return 0
+        best = max(best, len(rows))
+    return best
+
+
+def summarize_result(result: Any) -> dict[str, Any]:
+    if not isinstance(result, dict):
+        return {"type": type(result).__name__}
+    out: dict[str, Any] = {}
+    for key in (
+        "mode", "status", "inventory_matches", "inventory_matches_after", "canonical_rows_seen",
+        "matched_existing", "appended", "matched_rows_seen", "applied", "crosswalk_matched",
+        "request_count", "enriched_matches", "matrix_matches",
+    ):
+        if key in result:
+            out[key] = result.get(key)
+    summary = result.get("summary") if isinstance(result.get("summary"), dict) else {}
+    for key in ("canonical_matches", "canonical_with_2plus_primary_sources", "canonical_with_all_3_primary_sources", "matched", "match_rate_pct"):
+        if key in summary:
+            out[key] = summary.get(key)
+    totals = result.get("totals") if isinstance(result.get("totals"), dict) else {}
+    for key in ("matches", "fixture_2plus_sources", "odds_2plus_sources", "context_2plus_sources", "ready_for_model", "ready_for_publish"):
+        if key in totals:
+            out[key] = totals.get(key)
+    return out
 
 
 def run_step_sync(name: str, fn: Callable[[], Any], *, required: bool = False) -> dict[str, Any]:
@@ -85,62 +100,64 @@ def run_step_sync(name: str, fn: Callable[[], Any], *, required: bool = False) -
         result = fn()
         return {"name": name, "status": "ok", "duration_seconds": round(time.perf_counter() - started, 2), "result_summary": summarize_result(result)}
     except Exception as exc:
-        status = "error_required" if required else "error_ignored"
         if required:
             raise
         print(f"runbot discovery-first prepare step failed: {name}: {type(exc).__name__}: {exc}", flush=True)
-        return {"name": name, "status": status, "duration_seconds": round(time.perf_counter() - started, 2), "error": f"{type(exc).__name__}: {exc}"}
+        return {"name": name, "status": "error_ignored", "duration_seconds": round(time.perf_counter() - started, 2), "error": f"{type(exc).__name__}: {exc}"}
 
 
 def run_step_async(name: str, fn: Callable[[], Any], *, required: bool = False) -> dict[str, Any]:
     return run_step_sync(name, lambda: asyncio.run(fn()), required=required)
 
 
-def summarize_result(result: Any) -> dict[str, Any]:
-    if isinstance(result, dict):
-        out: dict[str, Any] = {}
-        for key in ("mode", "status", "inventory_matches", "inventory_matches_after", "canonical_rows_seen", "matched_existing", "appended", "matched_rows_seen", "applied", "crosswalk_matched", "request_count", "enriched_matches", "matrix_matches"):
-            if key in result:
-                out[key] = result.get(key)
-        summary = result.get("summary") if isinstance(result.get("summary"), dict) else None
-        if summary:
-            for key in ("canonical_matches", "canonical_with_2plus_primary_sources", "canonical_with_all_3_primary_sources", "matched", "match_rate_pct"):
-                if key in summary:
-                    out[key] = summary.get(key)
-        totals = result.get("totals") if isinstance(result.get("totals"), dict) else None
-        if totals:
-            for key in ("matches", "fixture_2plus_sources", "odds_2plus_sources", "context_2plus_sources", "ready_for_model", "ready_for_publish"):
-                if key in totals:
-                    out[key] = totals.get(key)
-        return out
-    return {"type": type(result).__name__}
+def _run_script(path: str) -> Any:
+    old_argv = sys.argv[:]
+    try:
+        sys.argv = [path]
+        return runpy.run_path(path, run_name="__main__")
+    finally:
+        sys.argv = old_argv
 
 
 def build_base_inventory_if_needed() -> dict[str, Any]:
     before = inventory_matches()
+    target = env_int("DAY_INVENTORY_TARGET_SIZE", env_int("DAY_INVENTORY_MAX_MATCHES", 300))
     force = truthy("RUNBOT_DISCOVERY_FIRST_FORCE_BUILD_INVENTORY", False)
-    if before > 0 and not force:
-        return {"status": "skipped_existing_inventory", "before_matches": before}
-    old_argv = sys.argv[:]
-    try:
-        sys.argv = ["build_day_inventory.py"]
-        runpy.run_path("scripts/build_day_inventory.py", run_name="__main__")
-    finally:
-        sys.argv = old_argv
-    return {"status": "built", "before_matches": before, "after_matches": inventory_matches()}
+    min_rebuild = max(1, env_int("RUNBOT_DISCOVERY_FIRST_MIN_INVENTORY_ROWS", min(260, target)))
+    if before >= min_rebuild and not force:
+        return {"status": "skipped_sufficient_inventory", "before_matches": before, "min_rebuild": min_rebuild, "target": target}
+
+    steps: list[dict[str, Any]] = []
+    for path in ("scripts/build_day_inventory_core_v3.py", "scripts/build_day_inventory.py"):
+        started = time.perf_counter()
+        try:
+            _run_script(path)
+            status = "ok"
+            error = ""
+        except SystemExit as exc:
+            status = "ok" if int(exc.code or 0) == 0 else "non_zero"
+            error = "" if status == "ok" else f"SystemExit:{exc.code}"
+        except Exception as exc:
+            status = "error_ignored"
+            error = f"{type(exc).__name__}: {exc}"
+        after_step = inventory_matches()
+        steps.append({"script": path, "status": status, "after_matches": after_step, "duration_seconds": round(time.perf_counter() - started, 2), "error": error})
+        if after_step >= min_rebuild:
+            break
+    return {"status": "rebuilt_below_target", "before_matches": before, "after_matches": inventory_matches(), "target": target, "min_rebuild": min_rebuild, "force": force, "steps": steps}
 
 
 def build_source_aware_matrix() -> dict[str, Any]:
+    from scripts import provider_smoke_coverage_matrix as base_matrix
+    from scripts import provider_smoke_coverage_matrix_v3
+    from scripts.provider_smoke_coverage_matrix_v5 import _ORIG_SOURCE_COUNT, _patched_source_count
+
     base_matrix._source_count = _patched_source_count
     try:
         provider_smoke_coverage_matrix_v3.main()
     finally:
         base_matrix._source_count = _ORIG_SOURCE_COUNT
     return load(Path(".data/exports/provider-smoke-coverage-matrix.json"))
-
-
-async def async_noop() -> dict[str, str]:
-    return {"status": "noop"}
 
 
 def render(payload: dict[str, Any]) -> str:
@@ -174,6 +191,12 @@ def main() -> int:
         print(render(payload))
         return 0
 
+    from scripts import apply_provider_day_discovery_to_inventory
+    from scripts import apply_sstats_crosswalk_to_inventory
+    from scripts import apply_sstats_deep_inventory_enrichment_v4
+    from scripts import provider_day_discovery_canonical_pool_v2
+    from scripts import sstats_crosswalk_probe_v2
+
     steps: list[dict[str, Any]] = []
     steps.append(run_step_sync("build_base_inventory_if_needed", build_base_inventory_if_needed))
     steps.append(run_step_async("pre_merge_sstats_crosswalk_v2", sstats_crosswalk_probe_v2.run))
@@ -195,7 +218,7 @@ def main() -> int:
         "ready_for_model": totals.get("ready_for_model"),
         "ready_for_publish": totals.get("ready_for_publish"),
     }
-    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "runbot_discovery_first_prepare_v1", "status": "ok", "duration_seconds": round(time.perf_counter() - started, 2), "steps": steps, "final": final}
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "runbot_discovery_first_prepare_v2_rebuild_below_target", "status": "ok", "duration_seconds": round(time.perf_counter() - started, 2), "steps": steps, "final": final}
     write(JSON_OUT, payload)
     TXT_OUT.write_text(render(payload), encoding="utf-8")
     print(render(payload))
