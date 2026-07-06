@@ -1,18 +1,15 @@
 from __future__ import annotations
 
-"""Guarded fallback v20.
-
-Adds A-cover evidence-quality handling on top of v19 preflight/v18 guards,
-persists Telegram-confirmed controlled fallback picks into the durable ledger,
-and patches total-xG direction sanity so probability-supported totals are not
-rejected by a raw total-xG-vs-line heuristic alone.
-"""
-
 import scripts.publish_controlled_fallback_guarded_v19 as v19
 
 
 def main() -> int:
     v19.run_preflight()
+    try:
+        from scripts.apply_fallback_price_floor import main as apply_price_floor
+        apply_price_floor()
+    except Exception:
+        pass
     import scripts.publish_controlled_fallback_guarded_v18 as v18
     from scripts.patch_controlled_fallback_duplicate_matching import install as install_duplicate_matcher
     from scripts.patch_a_cover_evidence_quality import install as install_a_cover_evidence_quality
