@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 26,
-      "rows_seen": 26,
+      "rows_kept": 34,
+      "rows_seen": 34,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 154,
-      "rows_seen": 267,
-      "rows_stale": 113
+      "rows_kept": 179,
+      "rows_seen": 295,
+      "rows_stale": 116
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,37 +26,37 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 19,
-      "rows_seen": 19,
+      "rows_kept": 21,
+      "rows_seen": 21,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 31,
+    "candidates_before_quality": 35,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 35,
-    "controlled_candidates_seen": 13,
-    "controlled_published": false,
-    "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 82,
-    "matches_seen": 42,
-    "matches_with_offers": 36
+    "contexts_built": 37,
+    "controlled_candidates_seen": 15,
+    "controlled_published": true,
+    "controlled_status": "published",
+    "coverage_candidates_current_date": 87,
+    "matches_seen": 44,
+    "matches_with_offers": 38
   },
-  "created_at": "2026-07-06T17:19:58.523619+00:00",
+  "created_at": "2026-07-06T17:38:25.492018+00:00",
   "family_counts": {
     "h2h": 2,
-    "spreads": 57,
-    "totals": 23
+    "spreads": 56,
+    "totals": 29
   },
-  "matches_with_candidates": 28,
+  "matches_with_candidates": 29,
   "missing_data_flags": {
-    "confidence_below_micro_c": 81,
-    "edge_below_micro_c": 78,
-    "ev_below_micro_c": 77,
-    "single_book": 69,
-    "single_context_source": 67,
-    "single_odds_source": 68
+    "confidence_below_micro_c": 86,
+    "edge_below_micro_c": 84,
+    "ev_below_micro_c": 83,
+    "single_book": 72,
+    "single_context_source": 70,
+    "single_odds_source": 71
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -70,7 +70,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 9,
+  "positive_near_miss_count": 11,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -79,11 +79,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 31,
+      "events_matched": 33,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 697,
+      "offers_parsed": 776,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -98,11 +98,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 28,
+      "events_matched": 30,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2883,
+      "offers_parsed": 3083,
       "provider": "account2",
       "rate_limited": false,
       "response_errors": 0,
@@ -113,8 +113,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": null,
-      "contexts_built": 9,
-      "direct_event_contexts_built": 9,
+      "contexts_built": 10,
+      "direct_event_contexts_built": 10,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -126,7 +126,7 @@
       "offers_parsed": null,
       "provider": "bzzoiro",
       "rate_limited": null,
-      "response_errors": 3,
+      "response_errors": 4,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -142,7 +142,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 924,
+      "offers_parsed": 992,
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": 0,
@@ -179,7 +179,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 73,
+      "matches_built": 75,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -194,11 +194,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 200,
+      "events_fetched": 207,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 73,
+      "matches_built": 75,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -210,8 +210,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 34,
-      "direct_event_contexts_built": 34,
+      "contexts_built": 35,
+      "direct_event_contexts_built": 35,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -492,65 +492,68 @@
     "working": 10
   },
   "reject_reason_counts_from_rows": {
-    "post_calibration_probability_guard": 2
+    "bad_historical_segment_guard": 1,
+    "post_calibration_probability_guard": 3
   },
   "target_date": "2026-07-06",
   "top_near_miss": [
     {
-      "away_team": "Mercedes",
+      "away_team": "Deportes Recoleta",
       "best_candidate": {
-        "adjusted_probability": 0.439368,
-        "books_count": 3,
-        "canonical_edge_pp": 4.874,
-        "canonical_ev_pct": 12.478,
-        "confidence": 73.515,
+        "adjusted_probability": 0.437833,
+        "books_count": 160,
+        "canonical_edge_pp": 3.943,
+        "canonical_ev_pct": 9.896,
+        "confidence": 72.053,
         "confirmation_sources_count": 4,
         "context_sources_count": 4,
         "family": "totals",
-        "odds": 2.56,
-        "odds_sources_count": 3,
-        "origin": "rescue",
-        "point": 2.5,
+        "odds": 2.51,
+        "odds_sources_count": 4,
+        "origin": "a_cover_market_promotion",
+        "point": 3.0,
         "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 3
+        "selection": "Меньше",
+        "sources_count": 4
       },
-      "best_confidence": 73.515,
-      "best_edge_pp": 4.874,
-      "best_ev_pct": 12.478,
-      "books_max": 134,
-      "candidate_count": 3,
-      "commence_time": "2026-07-06T18:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
+      "best_confidence": 72.053,
+      "best_edge_pp": 3.943,
+      "best_ev_pct": 9.896,
+      "books_max": 160,
+      "candidate_count": 2,
+      "commence_time": "2026-07-06T23:30:00+00:00",
+      "confirmation_sources_max": 7,
+      "context_sources_max": 7,
       "controlled_count": 0,
       "families": {
-        "totals": 3
+        "totals": 2
       },
-      "home_team": "Centro Espanol",
-      "league_name": "Argentina - Primera C",
-      "match_key": "soccer|centro_espanol|mercedes|2026-07-06",
+      "home_team": "Colo-Colo",
+      "league_name": "Chile - Copa Chile, Group E",
+      "match_key": "soccer|colo_colo|deportes_recoleta|2026-07-06",
       "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 1,
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 2,
         "ev_below_micro_c": 1
       },
-      "odds_sources_max": 3,
+      "odds_sources_max": 4,
       "origins": {
-        "a_cover_market_promotion": 1,
-        "rescue": 2
+        ".logs/debug-last-run.json": 1,
+        "a_cover_market_promotion": 1
       },
-      "reject_reasons": {},
-      "sources_max": 3
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
+      },
+      "sources_max": 4
     },
     {
       "away_team": "Spain",
       "best_candidate": {
-        "adjusted_probability": 0.541299,
+        "adjusted_probability": 0.528951,
         "books_count": 1,
-        "canonical_edge_pp": 5.821,
-        "canonical_ev_pct": 12.049,
-        "confidence": 71.222,
+        "canonical_edge_pp": 4.586,
+        "canonical_ev_pct": 9.493,
+        "confidence": 70.072,
         "confirmation_sources_count": 5,
         "context_sources_count": 5,
         "family": "totals",
@@ -562,26 +565,26 @@
         "selection": "Меньше",
         "sources_count": 4
       },
-      "best_confidence": 71.222,
-      "best_edge_pp": 5.821,
-      "best_ev_pct": 12.049,
-      "books_max": 223,
-      "candidate_count": 5,
+      "best_confidence": 70.072,
+      "best_edge_pp": 4.586,
+      "best_ev_pct": 9.493,
+      "books_max": 1,
+      "candidate_count": 4,
       "commence_time": "2026-07-06T19:00:00+00:00",
       "confirmation_sources_max": 5,
       "context_sources_max": 5,
       "controlled_count": 0,
       "families": {
         "h2h": 2,
-        "totals": 3
+        "totals": 2
       },
       "home_team": "Portugal",
       "league_name": "",
       "match_key": "soccer|portugal|spain|2026-07-06",
       "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 4,
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 3,
         "single_book": 4,
         "single_context_source": 2,
         "single_odds_source": 2
@@ -589,134 +592,38 @@
       "odds_sources_max": 4,
       "origins": {
         ".logs/debug-last-run.json": 2,
-        "a_cover_market_promotion": 1,
         "rescue": 2
       },
       "reject_reasons": {},
       "sources_max": 4
     },
     {
-      "away_team": "Deportes Recoleta",
-      "best_candidate": {
-        "adjusted_probability": 0.589831,
-        "books_count": 160,
-        "canonical_edge_pp": 6.073,
-        "canonical_ev_pct": 11.478,
-        "confidence": 72.765,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.89,
-        "odds_sources_count": 4,
-        "origin": "a_cover_market_promotion",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 4
-      },
-      "best_confidence": 72.765,
-      "best_edge_pp": 6.073,
-      "best_ev_pct": 11.478,
-      "books_max": 160,
-      "candidate_count": 1,
-      "commence_time": "2026-07-06T23:30:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Colo-Colo",
-      "league_name": "Chile - Copa Chile, Group E",
-      "match_key": "soccer|colo_colo|deportes_recoleta|2026-07-06",
-      "missing_flags": {
-        "confidence_below_micro_c": 1
-      },
-      "odds_sources_max": 4,
-      "origins": {
-        "a_cover_market_promotion": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 4
-    },
-    {
-      "away_team": "Yupanqui",
-      "best_candidate": {
-        "adjusted_probability": 0.395156,
-        "books_count": 3,
-        "canonical_edge_pp": 3.284,
-        "canonical_ev_pct": 9.063,
-        "confidence": 70.478,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.76,
-        "odds_sources_count": 2,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 2
-      },
-      "best_confidence": 70.478,
-      "best_edge_pp": 3.284,
-      "best_ev_pct": 9.063,
-      "books_max": 3,
-      "candidate_count": 4,
-      "commence_time": "2026-07-06T18:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 1
-      },
-      "home_team": "Barracas",
-      "league_name": "Argentina - Primera C",
-      "match_key": "soccer|barracas|yupanqui|2026-07-06",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 3,
-        "single_book": 3,
-        "single_context_source": 3,
-        "single_odds_source": 3
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        ".logs/debug-last-run.json": 3,
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
-    },
-    {
       "away_team": "Rhyl 1879",
       "best_candidate": {
-        "adjusted_probability": 0.59662,
+        "adjusted_probability": 0.537641,
         "books_count": 2,
-        "canonical_edge_pp": 3.482,
-        "canonical_ev_pct": 6.198,
-        "confidence": 67.389,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "canonical_edge_pp": 4.259,
+        "canonical_ev_pct": 8.604,
+        "confidence": 71.472,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
         "family": "totals",
-        "odds": 1.78,
-        "odds_sources_count": 2,
+        "odds": 2.02,
+        "odds_sources_count": 4,
         "origin": "rescue",
         "point": 3.5,
         "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
+        "selection": "Больше",
+        "sources_count": 4
       },
-      "best_confidence": 69.754,
-      "best_edge_pp": 3.482,
-      "best_ev_pct": 6.198,
+      "best_confidence": 71.472,
+      "best_edge_pp": 4.259,
+      "best_ev_pct": 8.604,
       "books_max": 2,
       "candidate_count": 2,
       "commence_time": "2026-07-06T18:30:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
       "controlled_count": 0,
       "families": {
         "totals": 2
@@ -725,75 +632,78 @@
       "league_name": "International Clubs - Club Friendly Games",
       "match_key": "soccer|colwyn_bay|rhyl_1879|2026-07-06",
       "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "edge_below_micro_c": 2,
-        "ev_below_micro_c": 2
+        "confidence_below_micro_c": 2
+      },
+      "odds_sources_max": 5,
+      "origins": {
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 5
+    },
+    {
+      "away_team": "Figueirense",
+      "best_candidate": {
+        "adjusted_probability": 0.434702,
+        "books_count": 148,
+        "canonical_edge_pp": 2.487,
+        "canonical_ev_pct": 6.067,
+        "confidence": 72.13,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 2.44,
+        "odds_sources_count": 4,
+        "origin": "a_cover_market_promotion",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 4
+      },
+      "best_confidence": 72.31,
+      "best_edge_pp": 2.487,
+      "best_ev_pct": 6.067,
+      "books_max": 148,
+      "candidate_count": 5,
+      "commence_time": "2026-07-06T22:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 2
+      },
+      "home_team": "Brusque",
+      "league_name": "Brazil - Brasileiro Serie C",
+      "match_key": "soccer|brusque|figueirense|2026-07-06",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 5,
+        "single_book": 4,
+        "single_context_source": 4,
+        "single_odds_source": 4
       },
       "odds_sources_max": 4,
       "origins": {
-        "rescue": 2
+        ".logs/debug-last-run.json": 4,
+        "a_cover_market_promotion": 1
       },
       "reject_reasons": {},
       "sources_max": 4
     },
     {
-      "away_team": "Temuco",
+      "away_team": "Mercedes",
       "best_candidate": {
-        "adjusted_probability": 0.530132,
-        "books_count": 140,
-        "canonical_edge_pp": 3.013,
-        "canonical_ev_pct": 6.026,
-        "confidence": 72.412,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.0,
-        "odds_sources_count": 3,
-        "origin": "a_cover_market_promotion",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 3
-      },
-      "best_confidence": 72.412,
-      "best_edge_pp": 3.013,
-      "best_ev_pct": 6.026,
-      "books_max": 140,
-      "candidate_count": 1,
-      "commence_time": "2026-07-06T23:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "D. Concepcion",
-      "league_name": "Chile - Copa Chile, Group H",
-      "match_key": "soccer|d_concepcion|temuco|2026-07-06",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        "a_cover_market_promotion": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
-    },
-    {
-      "away_team": "Cerro Largo",
-      "best_candidate": {
-        "adjusted_probability": 0.423723,
-        "books_count": 2,
-        "canonical_edge_pp": 2.212,
-        "canonical_ev_pct": 5.507,
-        "confidence": 71.578,
+        "adjusted_probability": 0.670817,
+        "books_count": 3,
+        "canonical_edge_pp": 3.791,
+        "canonical_ev_pct": 5.989,
+        "confidence": 73.595,
         "confirmation_sources_count": 4,
         "context_sources_count": 4,
         "family": "totals",
-        "odds": 2.49,
+        "odds": 1.58,
         "odds_sources_count": 3,
         "origin": "rescue",
         "point": 2.5,
@@ -801,14 +711,63 @@
         "selection": "Меньше",
         "sources_count": 3
       },
-      "best_confidence": 71.578,
-      "best_edge_pp": 2.212,
-      "best_ev_pct": 5.507,
+      "best_confidence": 74.136,
+      "best_edge_pp": 3.791,
+      "best_ev_pct": 5.989,
+      "books_max": 3,
+      "candidate_count": 3,
+      "commence_time": "2026-07-06T18:00:00+00:00",
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 0,
+      "families": {
+        "totals": 3
+      },
+      "home_team": "Centro Espanol",
+      "league_name": "Argentina - Primera C",
+      "match_key": "soccer|centro_espanol|mercedes|2026-07-06",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 3
+      },
+      "odds_sources_max": 4,
+      "origins": {
+        ".logs/debug-last-run.json": 1,
+        "rescue": 2
+      },
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 4
+    },
+    {
+      "away_team": "Cerro Largo",
+      "best_candidate": {
+        "adjusted_probability": 0.424756,
+        "books_count": 2,
+        "canonical_edge_pp": 2.315,
+        "canonical_ev_pct": 5.764,
+        "confidence": 73.194,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
+        "family": "totals",
+        "odds": 2.49,
+        "odds_sources_count": 6,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 6
+      },
+      "best_confidence": 73.194,
+      "best_edge_pp": 2.315,
+      "best_ev_pct": 5.764,
       "books_max": 2,
       "candidate_count": 2,
       "commence_time": "2026-07-06T18:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
       "controlled_count": 0,
       "families": {
         "totals": 2
@@ -821,40 +780,40 @@
         "edge_below_micro_c": 2,
         "ev_below_micro_c": 2
       },
-      "odds_sources_max": 3,
+      "odds_sources_max": 6,
       "origins": {
         "rescue": 2
       },
       "reject_reasons": {},
-      "sources_max": 3
+      "sources_max": 6
     },
     {
       "away_team": "Club Oriental",
       "best_candidate": {
-        "adjusted_probability": 0.51345,
+        "adjusted_probability": 0.543148,
         "books_count": 2,
-        "canonical_edge_pp": 1.84,
-        "canonical_ev_pct": 3.717,
-        "confidence": 70.773,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
+        "canonical_edge_pp": 2.768,
+        "canonical_ev_pct": 5.371,
+        "confidence": 73.017,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
         "family": "totals",
-        "odds": 2.02,
-        "odds_sources_count": 3,
+        "odds": 1.94,
+        "odds_sources_count": 6,
         "origin": "rescue",
         "point": 2.5,
         "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 3
+        "selection": "Больше",
+        "sources_count": 6
       },
-      "best_confidence": 70.773,
-      "best_edge_pp": 1.84,
-      "best_ev_pct": 3.717,
+      "best_confidence": 73.017,
+      "best_edge_pp": 2.768,
+      "best_ev_pct": 5.371,
       "books_max": 2,
       "candidate_count": 1,
       "commence_time": "2026-07-06T18:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
       "controlled_count": 0,
       "families": {
         "totals": 1
@@ -867,66 +826,155 @@
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1
       },
+      "odds_sources_max": 6,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 6
+    },
+    {
+      "away_team": "Yupanqui",
+      "best_candidate": {
+        "adjusted_probability": 0.380794,
+        "books_count": 3,
+        "canonical_edge_pp": 1.848,
+        "canonical_ev_pct": 5.099,
+        "confidence": 73.195,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 2.76,
+        "odds_sources_count": 3,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 3
+      },
+      "best_confidence": 73.195,
+      "best_edge_pp": 1.848,
+      "best_ev_pct": 5.099,
+      "books_max": 3,
+      "candidate_count": 4,
+      "commence_time": "2026-07-06T18:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 1
+      },
+      "home_team": "Barracas",
+      "league_name": "Argentina - Primera C",
+      "match_key": "soccer|barracas|yupanqui|2026-07-06",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 3
+      },
       "odds_sources_max": 3,
       "origins": {
+        ".logs/debug-last-run.json": 3,
         "rescue": 1
       },
       "reject_reasons": {},
       "sources_max": 3
     },
     {
-      "away_team": "",
+      "away_team": "Temuco",
       "best_candidate": {
-        "adjusted_probability": 0.315646,
-        "books_count": 3,
-        "canonical_edge_pp": -1.381,
-        "canonical_ev_pct": 0.375,
-        "confidence": 66.117,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
+        "adjusted_probability": 0.524094,
+        "books_count": 140,
+        "canonical_edge_pp": 2.409,
+        "canonical_ev_pct": 4.819,
+        "confidence": 73.368,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
         "family": "totals",
-        "odds": 3.18,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
+        "odds": 2.0,
+        "odds_sources_count": 5,
+        "origin": "a_cover_market_promotion",
         "point": 2.5,
-        "reject_reasons": [
-          "post_calibration_probability_guard"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 5
       },
-      "best_confidence": 74.07,
-      "best_edge_pp": -1.381,
-      "best_ev_pct": 0.375,
-      "books_max": 3,
-      "candidate_count": 4,
-      "commence_time": "",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
+      "best_confidence": 73.368,
+      "best_edge_pp": 2.409,
+      "best_ev_pct": 4.819,
+      "books_max": 140,
+      "candidate_count": 1,
+      "commence_time": "2026-07-06T23:30:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
       "controlled_count": 0,
       "families": {
-        "spreads": 1,
-        "totals": 3
+        "totals": 1
       },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|colo colo|deportes recoleta|2026-07-06",
+      "home_team": "D. Concepcion",
+      "league_name": "Chile - Copa Chile, Group H",
+      "match_key": "soccer|d_concepcion|temuco|2026-07-06",
       "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 4,
-        "single_book": 3,
-        "single_context_source": 3,
-        "single_odds_source": 4
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 5,
       "origins": {
-        ".logs/debug-last-run.json": 4
+        "a_cover_market_promotion": 1
       },
-      "reject_reasons": {
-        "post_calibration_probability_guard": 2
+      "reject_reasons": {},
+      "sources_max": 5
+    },
+    {
+      "away_team": "Capiata",
+      "best_candidate": {
+        "adjusted_probability": 0.45521,
+        "books_count": 252,
+        "canonical_edge_pp": 2.043,
+        "canonical_ev_pct": 4.698,
+        "confidence": 69.714,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 2.3,
+        "odds_sources_count": 4,
+        "origin": "a_cover_market_promotion",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 4
       },
-      "sources_max": 1
+      "best_confidence": 69.714,
+      "best_edge_pp": 2.043,
+      "best_ev_pct": 4.698,
+      "books_max": 252,
+      "candidate_count": 1,
+      "commence_time": "2026-07-06T22:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Club Dr Benjamin Aceval",
+      "league_name": "Paraguay - Division Intermedia",
+      "match_key": "soccer|club_dr_benjamin_aceval|capiata|2026-07-06",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 4,
+      "origins": {
+        "a_cover_market_promotion": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 4
     }
   ]
 }
