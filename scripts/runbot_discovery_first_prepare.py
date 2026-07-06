@@ -2,12 +2,9 @@ from __future__ import annotations
 
 """Discovery-first runtime preparation for run-bot.
 
-The production run must start from a broad, fresh daily inventory.  The old
-prepare step skipped the base rebuild whenever any inventory file existed, so a
-stale 120-150 row cache could survive all day and the 300-match target was never
-attempted again.  This version rebuilds whenever the current inventory is below
-the configured target, then merges the full provider-day canonical pool and
-re-applies SStats/Bzzoiro coverage before prediction.
+The production run must start from a broad, fresh daily inventory.  This version
+rebuilds below target, semantically collapses duplicate match rows, then targets
+SStats and Bzzoiro enrichment at the actual inventory gaps before prediction.
 """
 
 import asyncio
@@ -79,7 +76,8 @@ def summarize_result(result: Any) -> dict[str, Any]:
     for key in (
         "mode", "status", "inventory_matches", "inventory_matches_after", "canonical_rows_seen",
         "matched_existing", "appended", "matched_rows_seen", "applied", "crosswalk_matched",
-        "request_count", "enriched_matches", "matrix_matches",
+        "request_count", "enriched_matches", "matrix_matches", "targets_selected", "contexts_matched",
+        "rows_touched", "duplicate_rows_removed", "semantic_unique_matches", "semantic_duplicate_rows",
     ):
         if key in result:
             out[key] = result.get(key)
@@ -194,23 +192,34 @@ def main() -> int:
     from scripts import apply_provider_day_discovery_to_inventory
     from scripts import apply_sstats_crosswalk_to_inventory
     from scripts import apply_sstats_deep_inventory_enrichment_v4
+    from scripts import build_inventory_provider_gap_audit
+    from scripts import deduplicate_day_inventory_semantic
+    from scripts import enrich_inventory_bzzoiro_v2_targets
     from scripts import provider_day_discovery_canonical_pool_v2
     from scripts import sstats_crosswalk_probe_v2
 
     steps: list[dict[str, Any]] = []
     steps.append(run_step_sync("build_base_inventory_if_needed", build_base_inventory_if_needed))
+    steps.append(run_step_sync("semantic_inventory_dedupe_pre", deduplicate_day_inventory_semantic.main))
     steps.append(run_step_async("pre_merge_sstats_crosswalk_v2", sstats_crosswalk_probe_v2.run))
     steps.append(run_step_async("provider_day_discovery_canonical_pool_v2", provider_day_discovery_canonical_pool_v2.run))
     steps.append(run_step_async("merge_discovery_pool_into_inventory", apply_provider_day_discovery_to_inventory.run))
+    steps.append(run_step_sync("semantic_inventory_dedupe_post_merge", deduplicate_day_inventory_semantic.main))
     steps.append(run_step_async("post_merge_sstats_crosswalk_v2", sstats_crosswalk_probe_v2.run))
     steps.append(run_step_async("apply_sstats_crosswalk_ids_to_inventory", apply_sstats_crosswalk_to_inventory.run))
     steps.append(run_step_async("apply_sstats_deep_inventory_enrichment_v4", apply_sstats_deep_inventory_enrichment_v4.run))
+    steps.append(run_step_sync("target_bzzoiro_v2_inventory_gaps", enrich_inventory_bzzoiro_v2_targets.main))
+    steps.append(run_step_sync("semantic_inventory_dedupe_post_context", deduplicate_day_inventory_semantic.main))
     steps.append(run_step_sync("build_source_aware_coverage_matrix", build_source_aware_matrix))
+    steps.append(run_step_sync("inventory_provider_gap_audit", build_inventory_provider_gap_audit.main))
 
     matrix = load(Path(".data/exports/provider-smoke-coverage-matrix.json"))
     totals = matrix.get("totals") if isinstance(matrix.get("totals"), dict) else {}
+    audit = load(Path(".data/exports/latest-inventory-provider-gap-audit.json"))
     final = {
         "inventory_matches": inventory_matches(),
+        "semantic_unique_matches": audit.get("semantic_unique_matches"),
+        "semantic_duplicate_rows": audit.get("semantic_duplicate_rows"),
         "matrix_matches": matrix.get("matrix_matches"),
         "fixture_2plus_sources": totals.get("fixture_2plus_sources"),
         "odds_2plus_sources": totals.get("odds_2plus_sources"),
@@ -218,7 +227,7 @@ def main() -> int:
         "ready_for_model": totals.get("ready_for_model"),
         "ready_for_publish": totals.get("ready_for_publish"),
     }
-    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "runbot_discovery_first_prepare_v2_rebuild_below_target", "status": "ok", "duration_seconds": round(time.perf_counter() - started, 2), "steps": steps, "final": final}
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "runbot_discovery_first_prepare_v3_target_full_inventory_gaps", "status": "ok", "duration_seconds": round(time.perf_counter() - started, 2), "steps": steps, "final": final}
     write(JSON_OUT, payload)
     TXT_OUT.write_text(render(payload), encoding="utf-8")
     print(render(payload))
