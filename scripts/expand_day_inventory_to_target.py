@@ -2,10 +2,11 @@ from __future__ import annotations
 
 """Expand and preserve HARIZON inventory up to the configured target.
 
-The expander must select 300 real matches, not 300 provider aliases.  Rows from
+The expander must select 300 real matches, not 300 provider aliases. Rows from
 odds-api, SStats and Bzzoiro often carry different match_key/canonical ids for
 the same fixture, so de-duplication is done by local date + normalized home/away
-before falling back to provider ids.
+before falling back to provider ids. Runtime artifact aliases are also rewritten
+so later no-shrink repair cannot restore stale pre-dedupe copies.
 """
 
 import json
@@ -20,13 +21,12 @@ UTC = timezone.utc
 ROOT = Path(".").resolve()
 DAY_DIR = ROOT / ".data" / "day_inventory"
 CACHE_DAY_DIR = ROOT / ".data" / "cache" / "day_inventory"
+ARTIFACT_DAY_DIR = ROOT / "artifacts" / "run-bot" / "day_inventory"
 EXPORT_DIR = ROOT / ".data" / "exports"
 REPORT_PATH = EXPORT_DIR / "latest-day-inventory-target-expand.json"
 HIGHWATER_NAMES = ("best-day-inventory-highwater.json", "highwater.json", "largest.json")
 CONFLICT_MARKERS = ("<<<<<<<", "=======", ">>>>>>>")
-GENERIC_TEAM_TOKENS = {
-    "fc", "sc", "cf", "fk", "ac", "cd", "club", "de", "la", "the", "w", "women", "u19", "u20", "u21", "ii", "2",
-}
+GENERIC_TEAM_TOKENS = {"fc", "sc", "cf", "fk", "ac", "cd", "club", "de", "la", "the", "w", "women", "u19", "u20", "u21", "ii", "2"}
 
 
 def env_int(name: str, default: int, minimum: int = 0) -> int:
@@ -81,8 +81,7 @@ def write_json(path: Path, payload: Any) -> None:
 def norm(value: Any) -> str:
     text = str(value or "").strip().lower().replace("ё", "е").replace("´", "'")
     text = re.sub(r"[^a-z0-9а-я]+", " ", text)
-    parts = [p for p in text.split() if p not in GENERIC_TEAM_TOKENS]
-    return " ".join(parts)
+    return " ".join(p for p in text.split() if p not in GENERIC_TEAM_TOKENS)
 
 
 def parse_dt(value: Any) -> datetime | None:
@@ -125,11 +124,7 @@ def row_date(row: dict[str, Any]) -> str:
 
 
 def team_value(row: dict[str, Any], side: str) -> str:
-    keys = (
-        ("home_team", "home", "home_name", "team_home", "match_home")
-        if side == "home"
-        else ("away_team", "away", "away_name", "team_away", "match_away")
-    )
+    keys = ("home_team", "home", "home_name", "team_home", "match_home") if side == "home" else ("away_team", "away", "away_name", "team_away", "match_away")
     for key in keys:
         value = str(row.get(key) or "").strip()
         if value:
@@ -267,9 +262,6 @@ def candidate_paths(day: str) -> list[Path]:
         EXPORT_DIR / "latest-run-summary.json",
         ROOT / ".logs" / "debug-last-run.json",
     ]
-    # Do not mine artifacts/run-bot here. Those files are pre/post-step copies and
-    # can contain stale pre-dedupe aliases; using them caused 300 real rows to be
-    # replaced by 349 duplicated artifact rows in run 28825039801.
     for root in (DAY_DIR, CACHE_DAY_DIR, EXPORT_DIR):
         if root.exists():
             explicit.extend(sorted(root.glob("*.json"))[:300])
@@ -339,6 +331,7 @@ def write_aliases(payload: dict[str, Any], day: str) -> list[str]:
     for path in (
         DAY_DIR / f"{day}.json", DAY_DIR / "current.json", DAY_DIR / "latest.json", DAY_DIR / "today.json",
         CACHE_DAY_DIR / f"{day}.json", CACHE_DAY_DIR / "today.json", CACHE_DAY_DIR / "current.json", CACHE_DAY_DIR / "latest.json",
+        ARTIFACT_DAY_DIR / f"{day}.json", ARTIFACT_DAY_DIR / "current.json", ARTIFACT_DAY_DIR / "latest.json", ARTIFACT_DAY_DIR / "today.json",
     ):
         write_json(path, payload)
         changed.append(str(path))
@@ -384,6 +377,7 @@ def main() -> int:
     counts["target_expand_no_shrink_applied"] = len(selected_from_collected) < before
     counts["target_expand_horizon_days"] = days
     counts["target_expand_semantic_keys"] = True
+    counts["target_expand_artifact_aliases_written"] = True
     payload["date_local"] = day
     payload["inventory_horizon_days"] = days
     payload["target_matches"] = target
@@ -393,7 +387,7 @@ def main() -> int:
     highwater_paths_written = write_highwater(payload, day)
     report = {
         "created_at_utc": datetime.now(UTC).isoformat(),
-        "mode": "horizon_inventory_expand_v3_semantic_keys",
+        "mode": "horizon_inventory_expand_v4_semantic_artifact_aliases",
         "target_date": day,
         "horizon_days": days,
         "target": target,
@@ -406,6 +400,7 @@ def main() -> int:
         "status": payload["target_expand_status"],
         "no_shrink_applied": len(selected_from_collected) < before,
         "semantic_dedupe_key": "date_home_away_first",
+        "artifact_aliases_written": True,
         "changed_paths": changed_paths,
         "highwater_paths": highwater_paths_written,
         **diagnostics,
