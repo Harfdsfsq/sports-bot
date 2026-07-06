@@ -2,13 +2,16 @@ from __future__ import annotations
 
 """Runtime performance-aware policy for controlled fallback publication.
 
-The manual all-time report showed that recovered controlled-fallback picks can
-produce volume while adding little or negative P&L.  This script reads the latest
-performance summary and, when the controlled_fallback segment is mature enough
-and negative, exports stricter fallback thresholds both into os.environ for the
-current Python process and into GITHUB_ENV for later workflow steps.  It also
-runs the rescue-candidate sanitizer before the guarded publisher imports the
-fallback engine, so malformed promotion payloads cannot reach final guards.
+The policy keeps the public guards intact, but separates two cases:
+
+* baseline production scoring for clean B-tier reserve candidates; and
+* stricter cooldown thresholds when the controlled_fallback historical segment is
+  mature and negative.
+
+The latest artifact showed a candidate with 2 books, 4 confirmations, clean xG,
+EV +5.8%, edge +2.9pp and q 76 blocked only by the generic publication-score
+floor 20.0.  That is too high for B-tier reserve review, so the baseline B/C
+floor is set to 18 unless a performance cooldown intentionally overrides it.
 """
 
 import json
@@ -87,6 +90,18 @@ def run_rescue_candidate_sanitizer() -> dict[str, Any]:
         return {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
 
 
+def baseline_env_updates() -> dict[str, Any]:
+    return {
+        "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": os.getenv("CONTROLLED_FALLBACK_BASE_TIER_B_MIN_PUBLICATION_SCORE", "18.0"),
+        "CONTROLLED_FALLBACK_TIER_C_MIN_PUBLICATION_SCORE": os.getenv("CONTROLLED_FALLBACK_BASE_TIER_C_MIN_PUBLICATION_SCORE", "18.0"),
+        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": os.getenv("CONTROLLED_FALLBACK_BASE_FINAL_MIN_EDGE_PP", os.getenv("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", "1.8")),
+        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": os.getenv("CONTROLLED_FALLBACK_BASE_FINAL_MIN_EV_PCT", os.getenv("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", "4.0")),
+        "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": "true",
+        "CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
+        "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": os.getenv("CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES", "false"),
+    }
+
+
 def main() -> int:
     sanitizer = run_rescue_candidate_sanitizer()
     enabled = env_bool("CONTROLLED_FALLBACK_PERFORMANCE_POLICY_ENABLED", True)
@@ -102,14 +117,15 @@ def main() -> int:
     negative = pnl < as_float(os.getenv("CONTROLLED_FALLBACK_PERFORMANCE_POLICY_MAX_PNL", 0.0)) or roi < as_float(os.getenv("CONTROLLED_FALLBACK_PERFORMANCE_POLICY_MAX_ROI_PCT", 0.0))
     applies = bool(enabled and closed >= min_closed and total >= min_total and negative)
 
-    env_updates: dict[str, Any] = {}
+    env_updates: dict[str, Any] = baseline_env_updates()
     if applies:
-        env_updates = {
+        env_updates.update({
             "CONTROLLED_FALLBACK_PERFORMANCE_COOLDOWN_ACTIVE": "true",
             "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": os.getenv("CONTROLLED_FALLBACK_PERF_FINAL_MIN_EDGE_PP", "3.2"),
             "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": os.getenv("CONTROLLED_FALLBACK_PERF_FINAL_MIN_EV_PCT", "7.0"),
             "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": os.getenv("CONTROLLED_FALLBACK_PERF_TIER_B_MIN_EDGE_PP", "3.5"),
             "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": os.getenv("CONTROLLED_FALLBACK_PERF_TIER_B_MIN_EV_PCT", "7.5"),
+            "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": os.getenv("CONTROLLED_FALLBACK_PERF_TIER_B_MIN_PUBLICATION_SCORE", "22.0"),
             "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": os.getenv("CONTROLLED_FALLBACK_PERF_TIER_B_MIN_CONFIRMATION_SOURCES", "2"),
             "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP": os.getenv("CONTROLLED_FALLBACK_PERF_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", "5.0"),
             "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT": os.getenv("CONTROLLED_FALLBACK_PERF_PROXY_SINGLE_SOURCE_MIN_EV_PCT", "10.0"),
@@ -117,15 +133,15 @@ def main() -> int:
             "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": "true",
             "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": "true",
             "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": os.getenv("CONTROLLED_FALLBACK_PERF_MIN_CONFIRMATION_SOURCES", "2"),
-        }
-        apply_env(env_updates)
+        })
+    apply_env(env_updates)
 
     report = {
         "status": "ok",
         "created_at_utc": datetime.now(UTC).isoformat(),
         "enabled": enabled,
         "applies": applies,
-        "reason": "controlled_fallback_segment_negative" if applies else "not_triggered",
+        "reason": "controlled_fallback_segment_negative" if applies else "baseline_b_tier_score_floor_applied",
         "rescue_candidate_sanitizer": sanitizer,
         "segment": {"total": total, "closed": closed, "pnl": round(pnl, 2), "roi_pct": round(roi, 3), "min_closed": min_closed, "min_total": min_total, "negative": negative},
         "env_updates": env_updates,
