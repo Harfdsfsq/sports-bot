@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Runtime coverage uplift for HARIZON.
 
-This script writes data-collection settings and safe runtime tolerances to GitHub
-Actions env. It does not bypass publication guards: final candidates still need
-valid odds, bookmaker confirmation, context, line lifecycle and positive value.
+This writes data-collection settings to GitHub Actions env.  It is intentionally
+about coverage only: final candidates still need valid odds, bookmaker quorum,
+context, line lifecycle, positive value and Telegram safety guards.
 """
 
 import json
@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(".").resolve()
 EXPORT_PATH = ROOT / ".data" / "exports" / "latest-coverage-uplift-runtime-policy.json"
 GITHUB_ENV = os.getenv("GITHUB_ENV")
-VERSION = "v20-two-day-horizon-borderline-value-tolerance"
+VERSION = "v21-full-inventory-targeted-coverage"
 
 
 def truthy(value: object, default: bool = False) -> bool:
@@ -83,18 +83,25 @@ def main() -> int:
         report({"status": "disabled_by_env", "version": VERSION, "phase": run_phase, "created_at_utc": datetime.now(timezone.utc).isoformat()})
         return 0
 
+    # All phases now target the whole 300-row inventory.  Earlier live runs only
+    # handed Bzzoiro about 36 runner-window matches and kept SStats deep at 40,
+    # which left most inventory rows unexplained.  These are per-run ceilings; the
+    # provider budget/HTTP guards still stop on 429/5xx.
     if run_phase == "full_inventory":
-        odds_total, odds_account, sstats_budget, bzz_budget = 100, 50, 150, 200
-        context_limit, premium_limit, sportlogic_budget = 300, 220, 6
-        bzz_pages, bzz_page_size = 24, 30
+        odds_total, odds_account, sstats_budget, bzz_budget = 100, 50, 150, 260
+        context_limit, premium_limit, sportlogic_budget = 300, 300, 8
+        bzz_pages, bzz_page_size = 30, 40
+        sstats_deep_budget = 140
     elif run_phase == "morning_backfill":
-        odds_total, odds_account, sstats_budget, bzz_budget = 100, 50, 140, 180
-        context_limit, premium_limit, sportlogic_budget = 300, 200, 5
-        bzz_pages, bzz_page_size = 22, 30
+        odds_total, odds_account, sstats_budget, bzz_budget = 100, 50, 150, 240
+        context_limit, premium_limit, sportlogic_budget = 300, 300, 7
+        bzz_pages, bzz_page_size = 28, 40
+        sstats_deep_budget = 130
     else:
-        odds_total, odds_account, sstats_budget, bzz_budget = 100, 50, 120, 140
-        context_limit, premium_limit, sportlogic_budget = 280, 180, 4
-        bzz_pages, bzz_page_size = 18, 25
+        odds_total, odds_account, sstats_budget, bzz_budget = 100, 50, 150, 220
+        context_limit, premium_limit, sportlogic_budget = 300, 300, 6
+        bzz_pages, bzz_page_size = 26, 40
+        sstats_deep_budget = 120
 
     has_odds_1 = present("ODDS_API_IO_KEY")
     has_odds_2 = present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2", "ODDS_API_IO_ACC2_KEY", "ODDS_API_IO_SECONDARY_KEY")
@@ -119,6 +126,7 @@ def main() -> int:
         "DAY_INVENTORY_FORCE_TOP_300": "true",
         "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true",
         "DAY_INVENTORY_USE_FOR_RUN": "true",
+        "DAY_INVENTORY_SEMANTIC_DEDUPE_ENABLED": "true",
         "DAY_INVENTORY_HORIZON_DAYS": "2",
         "DAY_INVENTORY_TARGET_HORIZON_DAYS": "2",
         "RUN_DAYS_AHEAD": "2",
@@ -132,14 +140,16 @@ def main() -> int:
         "LINE_MOVEMENT_MIN_CURRENT_EDGE_PP": os.getenv("LINE_MOVEMENT_MIN_CURRENT_EDGE_PP") or "1.45",
         "DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES": "300",
         "DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES": "300",
+        "ODDS_API_IO_MAX_EVENTS": "100",
+        "ODDS_API_IO_MAX_ODDS_EVENTS_PER_RUN": "100",
         "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "24",
         "ODDS_API_IO_MAX_PAGES_PER_SPORT": "24",
         "ODDS_API_IO_PAGE_LIMIT": "100",
         "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": str(odds_account if has_odds_1 else 0),
         "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": str(odds_account if has_odds_2 else 0),
-        "PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT": "6",
+        "PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT": "8",
         "PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST": "12",
-        "PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT": "160",
+        "PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT": "220",
         "ODDS_API_IO_RELAXED_INVENTORY_MATCHING_ENABLED": "true",
         "ODDS_API_IO_RELAXED_EXACT_TOLERANCE_HOURS": "16",
         "ODDS_API_IO_RELAXED_FUZZY_TOLERANCE_HOURS": "16",
@@ -156,6 +166,10 @@ def main() -> int:
         "SSTATS_GAME_DETAIL_ENABLED": "true" if has_sstats else "false",
         "SSTATS_LAST_GAMES_STATS_ENABLED": "true" if has_sstats else "false",
         "SSTATS_GLICKO_ENABLED": "true" if has_sstats else "false",
+        "SSTATS_DEEP_DETAIL_LIMIT_PER_RUN": str(sstats_deep_budget if has_sstats else 0),
+        "SSTATS_DEEP_CONTEXT_MATCH_LIMIT": str(premium_limit if has_sstats else 0),
+        "SSTATS_DEEP_REQUESTS_MAX_PER_RUN": str(sstats_deep_budget if has_sstats else 0),
+        "SSTATS_DEEP_MAX_REQUESTS_PER_RUN": str(sstats_deep_budget if has_sstats else 0),
         "DAY_INVENTORY_SSTATS_MAX_REQUESTS": str(sstats_budget if has_sstats else 0),
         "BZZOIRO_ENABLED": "true" if has_bzz else "false",
         "ENABLE_BZZOIRO": "true" if has_bzz else "false",
@@ -167,11 +181,17 @@ def main() -> int:
         "BZZOIRO_PAGE_SIZE": str(bzz_page_size),
         "BZZOIRO_V2_ENRICHMENT_ENABLED": "true" if has_bzz else "false",
         "BZZOIRO_V2_MATCH_LIMIT": str(premium_limit if has_bzz else 0),
+        "BZZOIRO_V2_SOURCE_MATRIX_TARGETS_ENABLED": "true" if has_bzz else "false",
+        "BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT": str(premium_limit if has_bzz else 0),
+        "BZZOIRO_CONTEXT_GAP_MATCH_LIMIT": str(premium_limit if has_bzz else 0),
         "BZZOIRO_V2_ODDS_ENABLED": "true" if has_bzz else "false",
         "BZZOIRO_V2_FETCH_EVENT_ODDS": "true" if has_bzz else "false",
         "BZZOIRO_V2_FETCH_EVENT_STATS": "true" if has_bzz else "false",
         "BZZOIRO_V2_FETCH_EVENT_METADATA": "true" if has_bzz else "false",
         "BZZOIRO_V2_FETCH_EVENT_PREDICTION": "true" if has_bzz else "false",
+        "BZZOIRO_V2_FETCH_ODDS_COMPARISON": "true" if has_bzz else "false",
+        "BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT": "120" if has_bzz else "0",
+        "BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS": "120" if has_bzz else "0",
         "BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE": "true" if has_bzz else "false",
         "BZZOIRO_ODDS_REKEY_ENABLED": "true" if has_bzz else "false",
         "BZZOIRO_PRICE_BACKFILL_ENABLED": "true" if has_bzz else "false",
@@ -181,15 +201,15 @@ def main() -> int:
         "SPORTLOGIC_ENABLED": "true" if has_sportlogic else "false",
         "ENABLE_SPORTLOGIC": "true" if has_sportlogic else "false",
         "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true" if has_sportlogic else "false",
-        "SPORTLOGIC_MATCH_LIMIT": "40" if has_sportlogic else "0",
-        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "40" if has_sportlogic else "0",
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": "12" if has_sportlogic else "0",
-        "DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT": "40" if has_sportlogic else "0",
+        "SPORTLOGIC_MATCH_LIMIT": "80" if has_sportlogic else "0",
+        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "80" if has_sportlogic else "0",
+        "SPORTLOGIC_ODDS_MATCH_LIMIT": "24" if has_sportlogic else "0",
+        "DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT": "80" if has_sportlogic else "0",
         "DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS": str(sportlogic_budget if has_sportlogic else 0),
         "SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED": "true" if has_sportlogic else "false",
         "SPORTLOGIC_ACTIVE_ODDS_ALLOW_WITHOUT_CURRENT_GAMES": "true" if has_sportlogic else "false",
         "SPORTLOGIC_SKIP_ACTIVE_ODDS_WHEN_NO_CURRENT_GAMES": "false" if has_sportlogic else "true",
-        "SPORTLOGIC_TARGETED_GAME_DETAIL_LIMIT": "2" if has_sportlogic else "0",
+        "SPORTLOGIC_TARGETED_GAME_DETAIL_LIMIT": "4" if has_sportlogic else "0",
         "SPORTLOGIC_MATCH_MIN_SCORE": "48",
     }
     put_limit(env, "ODDS_API_IO", odds_total if has_odds_1 else 0)
@@ -203,12 +223,12 @@ def main() -> int:
         "version": VERSION,
         "phase": run_phase,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "providers_enabled": {"odds_api_io": has_odds_1, "sstats": has_sstats, "bzzoiro": has_bzz, "sportlogic": has_sportlogic},
-        "targets": {"inventory": 300, "horizon_days": 2, "context_limit": context_limit, "bzzoiro_v2_limit": premium_limit, "sportlogic_budget": sportlogic_budget if has_sportlogic else 0, "line_ev_floor": env["LINE_MOVEMENT_MIN_CURRENT_EV_PCT"], "line_edge_floor": env["LINE_MOVEMENT_MIN_CURRENT_EDGE_PP"]},
+        "providers_enabled": {"odds_api_io": has_odds_1, "odds_api_io_2": has_odds_2, "sstats": has_sstats, "bzzoiro": has_bzz, "sportlogic": has_sportlogic},
+        "targets": {"inventory": 300, "horizon_days": 2, "context_limit": context_limit, "sstats_deep_budget": sstats_deep_budget, "bzzoiro_v2_limit": premium_limit, "bzzoiro_comparison_limit": env["BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT"], "sportlogic_budget": sportlogic_budget if has_sportlogic else 0, "line_ev_floor": env["LINE_MOVEMENT_MIN_CURRENT_EV_PCT"], "line_edge_floor": env["LINE_MOVEMENT_MIN_CURRENT_EDGE_PP"]},
         "notes": [
-            "Inventory expansion uses the two-day run horizon, not only one local calendar day.",
-            "SportLogic remains enabled with a tiny per-run budget instead of being force-disabled.",
-            "Borderline value candidates are no longer rejected for rounding noise, but still require positive EV/edge and line lifecycle.",
+            "All phases target the full semantic 300-row inventory instead of only the 2h runner window.",
+            "SStats deep limits are now explicit; workflow defaults cannot silently hold them at 40.",
+            "Bzzoiro v2 source-matrix and odds-comparison target limits are raised to 300/120.",
         ],
         "env_written_count": len(env),
     })
