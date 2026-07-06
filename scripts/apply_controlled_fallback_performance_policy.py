@@ -8,10 +8,11 @@ The policy keeps the public guards intact, but separates two cases:
 * stricter cooldown thresholds when the controlled_fallback historical segment is
   mature and negative.
 
-The latest artifact showed a candidate with 2 books, 4 confirmations, clean xG,
-EV +5.8%, edge +2.9pp and q 76 blocked only by the generic publication-score
-floor 20.0.  That is too high for B-tier reserve review, so the baseline B/C
-floor is set to 18 unless a performance cooldown intentionally overrides it.
+The latest artifacts showed clean B-tier reserve candidates with 2 books,
+2+ confirmations, positive EV/edge and xG support being blocked by the generic
+publication-score/final-value floors.  The baseline B-tier floor is therefore
+kept explicit and modest, while a mature negative fallback segment can still
+raise all thresholds through the cooldown branch.
 """
 
 import json
@@ -92,10 +93,10 @@ def run_rescue_candidate_sanitizer() -> dict[str, Any]:
 
 def baseline_env_updates() -> dict[str, Any]:
     return {
-        "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": os.getenv("CONTROLLED_FALLBACK_BASE_TIER_B_MIN_PUBLICATION_SCORE", "18.0"),
+        "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": os.getenv("CONTROLLED_FALLBACK_BASE_TIER_B_MIN_PUBLICATION_SCORE", "16.0"),
         "CONTROLLED_FALLBACK_TIER_C_MIN_PUBLICATION_SCORE": os.getenv("CONTROLLED_FALLBACK_BASE_TIER_C_MIN_PUBLICATION_SCORE", "18.0"),
-        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": os.getenv("CONTROLLED_FALLBACK_BASE_FINAL_MIN_EDGE_PP", os.getenv("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", "1.8")),
-        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": os.getenv("CONTROLLED_FALLBACK_BASE_FINAL_MIN_EV_PCT", os.getenv("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", "4.0")),
+        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": os.getenv("CONTROLLED_FALLBACK_BASE_FINAL_MIN_EDGE_PP", "1.8"),
+        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": os.getenv("CONTROLLED_FALLBACK_BASE_FINAL_MIN_EV_PCT", "4.0"),
         "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": os.getenv("CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES", "false"),
