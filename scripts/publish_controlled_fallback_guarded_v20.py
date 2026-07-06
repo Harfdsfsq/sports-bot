@@ -14,10 +14,12 @@ def main() -> int:
     from scripts.patch_controlled_fallback_duplicate_matching import install as install_duplicate_matcher
     from scripts.patch_a_cover_evidence_quality import install as install_a_cover_evidence_quality
     from scripts.patch_xg_sanity_probability_support import install as install_xg_probability_support
+    from scripts.patch_reference_price_guard import install as install_reference_price_guard
 
     install_duplicate_matcher(v18)
     install_a_cover_evidence_quality(v18.base)
     install_xg_probability_support(v18.base)
+    install_reference_price_guard(v18.base)
     code = int(v18.main() or 0)
     try:
         from scripts.sync_run_report_ledger_export import main as sync_run_ledger
