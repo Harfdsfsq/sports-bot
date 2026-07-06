@@ -36,7 +36,7 @@ def _refresh_inventory_truth() -> None:
             if callable(fn):
                 if module_name.endswith("guard_day_inventory_no_shrink"):
                     try:
-                        fn("repair")
+                        fn(["repair"])
                     except TypeError:
                         fn()
                 else:
