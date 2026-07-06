@@ -115,15 +115,30 @@ def aliases_for_payload(day: str) -> list[Path]:
     return [DAY_DIR / f'{day}.json', DAY_DIR / 'current.json', DAY_DIR / 'latest.json', DAY_DIR / 'today.json']
 
 
+def load_inventory(day: str) -> dict[str, Any]:
+    return load(DAY_DIR / f'{day}.json', {}) or load(DAY_DIR / 'latest.json', {})
+
+
+async def run_pool_id_prefill() -> dict[str, Any]:
+    if not truthy(os.getenv('BZZOIRO_POOL_ID_INVENTORY_ENRICHMENT_ENABLED'), True):
+        return {'status': 'disabled'}
+    try:
+        from scripts.enrich_inventory_bzzoiro_pool_ids import run as pool_run
+        result = await pool_run()
+        return result if isinstance(result, dict) else {'status': 'ok', 'result_type': type(result).__name__}
+    except Exception as exc:
+        return {'status': 'error_ignored', 'error': f'{type(exc).__name__}: {exc}'}
+
+
 async def run() -> dict[str, Any]:
     if not truthy(os.getenv('BZZOIRO_V2_INVENTORY_TARGET_ENRICHMENT_ENABLED'), True):
         return {'status': 'disabled'}
     day = str(os.getenv('DAY_INVENTORY_TARGET_DATE') or os.getenv('DAY_INVENTORY_CACHE_DATE') or datetime.now(UTC).date().isoformat())[:10]
-    inv_path = DAY_DIR / f'{day}.json'
-    payload = load(inv_path, {}) or load(DAY_DIR / 'latest.json', {})
+    pool_prefill = await run_pool_id_prefill()
+    payload = load_inventory(day)
     rows = payload.get('matches') if isinstance(payload.get('matches'), list) else []
     if not rows:
-        return {'status': 'no_inventory'}
+        return {'status': 'no_inventory', 'pool_id_prefill': pool_prefill}
     limit = max(1, as_int(os.getenv('BZZOIRO_V2_INVENTORY_TARGET_LIMIT'), 220))
     match_map: dict[str, int] = {}
     targets: list[Match] = []
@@ -140,7 +155,7 @@ async def run() -> dict[str, Any]:
         if len(targets) >= limit:
             break
     if not targets:
-        return {'status': 'no_targets', 'inventory_rows': len(rows)}
+        return {'status': 'no_targets', 'inventory_rows': len(rows), 'pool_id_prefill': pool_prefill}
     provider = BzzoiroContextProvider(Settings())
     contexts, stats, preview = await provider.fetch_context(targets)
     contexts = dict(contexts or {})
@@ -179,7 +194,7 @@ async def run() -> dict[str, Any]:
     payload['bzzoiro_v2_inventory_target_updated_at_utc'] = datetime.now(UTC).isoformat()
     for path in aliases_for_payload(day):
         write(path, payload)
-    report = {'status': 'ok', 'created_at_utc': datetime.now(UTC).isoformat(), 'inventory_rows': len(rows), 'target_limit': limit, 'targets_selected': len(targets), 'contexts_matched': len(contexts), 'rows_touched': touched, 'stats': stats, 'preview': preview, 'examples': examples}
+    report = {'status': 'ok', 'created_at_utc': datetime.now(UTC).isoformat(), 'inventory_rows': len(rows), 'target_limit': limit, 'targets_selected': len(targets), 'contexts_matched': len(contexts), 'rows_touched': touched, 'pool_id_prefill': pool_prefill, 'stats': stats, 'preview': preview, 'examples': examples}
     write(OUT, report)
     return report
 
