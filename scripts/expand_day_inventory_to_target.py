@@ -2,12 +2,10 @@ from __future__ import annotations
 
 """Expand and preserve HARIZON inventory up to the configured target.
 
-Production run-bot evaluates the configured run horizon, not only the calendar
-rows whose local date equals DAY_INVENTORY_TARGET_DATE.  The previous expander
-filtered strictly to one day, so the inventory often stopped around 150 fixtures
-while tomorrow/next-window rows were already present in provider artifacts.  This
-version keeps the same no-invention policy but accepts known rows from the next
-DAY_INVENTORY_HORIZON_DAYS/RUN_DAYS_AHEAD days and writes the usual aliases.
+The expander must select 300 real matches, not 300 provider aliases.  Rows from
+odds-api, SStats and Bzzoiro often carry different match_key/canonical ids for
+the same fixture, so de-duplication is done by local date + normalized home/away
+before falling back to provider ids.
 """
 
 import json
@@ -26,6 +24,9 @@ EXPORT_DIR = ROOT / ".data" / "exports"
 REPORT_PATH = EXPORT_DIR / "latest-day-inventory-target-expand.json"
 HIGHWATER_NAMES = ("best-day-inventory-highwater.json", "highwater.json", "largest.json")
 CONFLICT_MARKERS = ("<<<<<<<", "=======", ">>>>>>>")
+GENERIC_TEAM_TOKENS = {
+    "fc", "sc", "cf", "fk", "ac", "cd", "club", "de", "la", "the", "w", "women", "u19", "u20", "u21", "ii", "2",
+}
 
 
 def env_int(name: str, default: int, minimum: int = 0) -> int:
@@ -78,9 +79,10 @@ def write_json(path: Path, payload: Any) -> None:
 
 
 def norm(value: Any) -> str:
-    text = str(value or "").strip().lower().replace("ё", "е")
+    text = str(value or "").strip().lower().replace("ё", "е").replace("´", "'")
     text = re.sub(r"[^a-z0-9а-я]+", " ", text)
-    return " ".join(text.split())
+    parts = [p for p in text.split() if p not in GENERIC_TEAM_TOKENS]
+    return " ".join(parts)
 
 
 def parse_dt(value: Any) -> datetime | None:
@@ -106,7 +108,7 @@ def local_date_from_dt(dt: datetime) -> str:
 
 
 def row_date(row: dict[str, Any]) -> str:
-    for key in ("kickoff_utc", "commence_time", "start_time", "kickoff", "date"):
+    for key in ("kickoff_utc", "commence_time", "start_time", "kickoff", "event_date", "date"):
         value = row.get(key)
         if not value:
             continue
@@ -115,10 +117,23 @@ def row_date(row: dict[str, Any]) -> str:
         dt = parse_dt(value)
         if dt:
             return local_date_from_dt(dt)
-    for key in ("match_key", "canonical_match_id", "event_key"):
+    for key in ("match_key", "canonical_match_id", "canonical_match_key", "event_key"):
         match = re.search(r"(20\d{2}-\d{2}-\d{2})", str(row.get(key) or ""))
         if match:
             return match.group(1)
+    return ""
+
+
+def team_value(row: dict[str, Any], side: str) -> str:
+    keys = (
+        ("home_team", "home", "home_name", "team_home", "match_home")
+        if side == "home"
+        else ("away_team", "away", "away_name", "team_away", "match_away")
+    )
+    for key in keys:
+        value = str(row.get(key) or "").strip()
+        if value:
+            return value
     return ""
 
 
@@ -135,14 +150,28 @@ def in_horizon(row: dict[str, Any], start_day: str, days: int) -> bool:
 
 
 def row_key(row: dict[str, Any]) -> str:
+    day = row_date(row)
+    home = norm(team_value(row, "home"))
+    away = norm(team_value(row, "away"))
+    if day and home and away:
+        return f"{day}|{home}|{away}"
+    raw = str(row.get("canonical_match_key") or "").strip()
+    if raw and "|" in raw:
+        parts = raw.split("|")
+        if len(parts) >= 3:
+            return f"{parts[0][:10]}|{norm(parts[1])}|{norm(parts[2])}"
     for key in ("canonical_match_id", "match_key", "event_key", "id"):
         value = str(row.get(key) or "").strip()
         if value:
             return norm(value)
-    home = norm(row.get("home_team") or row.get("home") or row.get("home_name") or row.get("team_home"))
-    away = norm(row.get("away_team") or row.get("away") or row.get("away_name") or row.get("team_away"))
     league = norm(row.get("league_name") or row.get("league") or row.get("competition"))
-    return "|".join(x for x in (row_date(row), league, home, away) if x)
+    return "|".join(x for x in (day, league, home, away) if x)
+
+
+def richness_value(value: Any) -> int:
+    if isinstance(value, (list, tuple, set, dict)):
+        return min(10, len(value))
+    return 1 if value not in (None, "", False) else 0
 
 
 def kickoff_sort_key(row: dict[str, Any]) -> tuple[int, int, str, str]:
@@ -152,14 +181,9 @@ def kickoff_sort_key(row: dict[str, Any]) -> tuple[int, int, str, str]:
     md = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
     richness = 0
     for container in (row, cov, md):
-        if not isinstance(container, dict):
-            continue
-        for key in ("odds_sources", "context_sources", "books", "price_confirmations"):
-            value = container.get(key)
-            if isinstance(value, (list, tuple, set, dict)):
-                richness += min(10, len(value))
-            elif value not in (None, "", False):
-                richness += 1
+        if isinstance(container, dict):
+            for key in ("odds_sources", "context_sources", "books", "bookmakers", "price_confirmations"):
+                richness += richness_value(container.get(key))
     return (ts, -richness, norm(row.get("league_name") or row.get("league")), row_key(row))
 
 
@@ -175,11 +199,7 @@ def score_row(row: dict[str, Any]) -> int:
         if container.get("context") or container.get("has_context") or container.get("with_context"):
             score += 20
         for key in ("books", "bookmakers", "price_confirmations", "odds_sources", "context_sources"):
-            value = container.get(key)
-            if isinstance(value, (list, tuple, set, dict)):
-                score += min(10, len(value))
-            elif value not in (None, "", False):
-                score += 1
+            score += richness_value(container.get(key))
     for key in ("home_team", "away_team", "commence_time", "kickoff_utc", "league_name"):
         if row.get(key):
             score += 1
@@ -202,6 +222,7 @@ def merge_row(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
                 if sig not in seen:
                     base[key].append(item)
                     seen.add(sig)
+    base["semantic_match_key"] = row_key(base)
     return base
 
 
@@ -246,7 +267,10 @@ def candidate_paths(day: str) -> list[Path]:
         EXPORT_DIR / "latest-run-summary.json",
         ROOT / ".logs" / "debug-last-run.json",
     ]
-    for root in (DAY_DIR, CACHE_DAY_DIR, EXPORT_DIR, ROOT / "artifacts" / "run-bot"):
+    # Do not mine artifacts/run-bot here. Those files are pre/post-step copies and
+    # can contain stale pre-dedupe aliases; using them caused 300 real rows to be
+    # replaced by 349 duplicated artifact rows in run 28825039801.
+    for root in (DAY_DIR, CACHE_DAY_DIR, EXPORT_DIR):
         if root.exists():
             explicit.extend(sorted(root.glob("*.json"))[:300])
             explicit.extend(sorted(root.glob("*/*.json"))[:300])
@@ -277,7 +301,9 @@ def collect_rows(day: str, days: int) -> tuple[list[dict[str, Any]], dict[str, A
             key = row_key(row)
             if not key:
                 continue
-            by_key[key] = merge_row(by_key[key], row) if key in by_key else dict(row)
+            clone = dict(row)
+            clone.setdefault("semantic_match_key", key)
+            by_key[key] = merge_row(by_key[key], clone) if key in by_key else clone
             accepted += 1
         if accepted:
             source_counts[str(path)] = accepted
@@ -292,11 +318,16 @@ def best_existing_payload(day: str, days: int) -> dict[str, Any]:
         if not isinstance(payload, dict):
             continue
         raw_rows = payload.get("matches") if isinstance(payload.get("matches"), list) else []
-        rows = [r for r in raw_rows if isinstance(r, dict) and in_horizon(r, day, days)]
-        if len(rows) > best_count:
-            best_count = len(rows)
+        by_key: dict[str, dict[str, Any]] = {}
+        for row in raw_rows:
+            if isinstance(row, dict) and in_horizon(row, day, days):
+                key = row_key(row)
+                if key:
+                    by_key[key] = merge_row(by_key[key], row) if key in by_key else dict(row)
+        if len(by_key) > best_count:
+            best_count = len(by_key)
             best = dict(payload)
-            best["matches"] = rows
+            best["matches"] = sorted(by_key.values(), key=kickoff_sort_key)
     if not isinstance(best.get("counts"), dict):
         best["counts"] = {}
     best["date_local"] = day
@@ -352,6 +383,7 @@ def main() -> int:
     counts["target_expand_existing_before"] = before
     counts["target_expand_no_shrink_applied"] = len(selected_from_collected) < before
     counts["target_expand_horizon_days"] = days
+    counts["target_expand_semantic_keys"] = True
     payload["date_local"] = day
     payload["inventory_horizon_days"] = days
     payload["target_matches"] = target
@@ -361,7 +393,7 @@ def main() -> int:
     highwater_paths_written = write_highwater(payload, day)
     report = {
         "created_at_utc": datetime.now(UTC).isoformat(),
-        "mode": "horizon_inventory_expand_v2",
+        "mode": "horizon_inventory_expand_v3_semantic_keys",
         "target_date": day,
         "horizon_days": days,
         "target": target,
@@ -373,6 +405,7 @@ def main() -> int:
         "target_timezone": str(app_time_zone()),
         "status": payload["target_expand_status"],
         "no_shrink_applied": len(selected_from_collected) < before,
+        "semantic_dedupe_key": "date_home_away_first",
         "changed_paths": changed_paths,
         "highwater_paths": highwater_paths_written,
         **diagnostics,
