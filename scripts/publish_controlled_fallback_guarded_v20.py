@@ -6,6 +6,11 @@ import scripts.publish_controlled_fallback_guarded_v19 as v19
 def main() -> int:
     v19.run_preflight()
     try:
+        from scripts.restore_awaiting_movement_candidates import main as restore_awaiting
+        restore_awaiting()
+    except Exception:
+        pass
+    try:
         from scripts.apply_fallback_price_floor import main as apply_price_floor
         apply_price_floor()
     except Exception:
