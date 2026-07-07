@@ -23,7 +23,7 @@ def rows(payload: Any) -> list[dict[str, Any]]:
         return [x for x in payload if isinstance(x, dict)]
     if isinstance(payload, dict):
         out: list[dict[str, Any]] = []
-        for key in ('items', 'rows', 'candidates', 'rejected', 'dropped', 'kept', 'delayed', 'events'):
+        for key in ('items', 'rows', 'candidates', 'rejected', 'dropped', 'kept', 'delayed', 'events', 'sample'):
             value = payload.get(key)
             if isinstance(value, list):
                 out.extend(x for x in value if isinstance(x, dict))
@@ -35,30 +35,37 @@ def v(row: dict[str, Any], *keys: str) -> Any:
     for key in keys:
         if row.get(key) not in (None, ''):
             return row.get(key)
-    m = row.get('metrics') if isinstance(row.get('metrics'), dict) else {}
-    for key in keys:
-        if m.get(key) not in (None, ''):
-            return m.get(key)
+    for box in ('metrics', 'line_movement_guard', 'diagnostics'):
+        m = row.get(box) if isinstance(row.get(box), dict) else {}
+        for key in keys:
+            if m.get(key) not in (None, ''):
+                return m.get(key)
     return None
 
 
+def card(row: dict[str, Any], source: str) -> dict[str, Any]:
+    return {
+        'source': source,
+        'home_team': v(row, 'home_team', 'home'),
+        'away_team': v(row, 'away_team', 'away'),
+        'selection': v(row, 'selection', 'selection_key'),
+        'point': v(row, 'point', 'line'),
+        'status': v(row, 'status', 'line_movement_lifecycle_status', 'market_move'),
+        'reason': v(row, 'reason', 'reject_reason', 'drop_reason', 'awaiting_reason'),
+        'snapshots': v(row, 'snapshot_count', 'snapshots'),
+        'edge_pp': v(row, 'edge_pp', 'canonical_edge_pp', 'current_edge_pp'),
+        'ev_pct': v(row, 'ev_pct', 'canonical_ev_pct', 'current_ev_pct'),
+        'next_run_available': v(row, 'next_run_available', 'has_next_run', 'has_next_regular_run_before_kickoff'),
+        'no_more_run_before_kickoff': v(row, 'no_more_regular_run_before_kickoff', 'no_more_cron_before_kickoff'),
+    }
+
+
 def main() -> int:
-    source = load(EXPORT / 'latest-line-movement-guard-report.json', {})
     cards = []
-    for row in rows(source):
-        cards.append({
-            'home_team': v(row, 'home_team', 'home'),
-            'away_team': v(row, 'away_team', 'away'),
-            'selection': v(row, 'selection', 'selection_key'),
-            'point': v(row, 'point', 'line'),
-            'status': v(row, 'status', 'line_movement_lifecycle_status'),
-            'reason': v(row, 'reason', 'reject_reason', 'drop_reason'),
-            'snapshots': v(row, 'snapshot_count', 'snapshots'),
-            'edge_pp': v(row, 'edge_pp', 'canonical_edge_pp'),
-            'ev_pct': v(row, 'ev_pct', 'canonical_ev_pct'),
-            'next_run_available': v(row, 'next_run_available', 'has_next_run'),
-            'no_more_run_before_kickoff': v(row, 'no_more_regular_run_before_kickoff', 'no_more_cron_before_kickoff'),
-        })
+    for row in rows(load(EXPORT / 'latest-line-movement-guard-report.json', {})):
+        cards.append(card(row, 'line_guard_report'))
+    for row in rows(load(EXPORT / 'latest-awaiting-movement-candidates.json', {})):
+        cards.append(card(row, 'awaiting_movement'))
     payload = {'status': 'ok', 'cards_count': len(cards), 'cards': cards[:120]}
     for path in (OUT, ART):
         path.parent.mkdir(parents=True, exist_ok=True)
