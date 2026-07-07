@@ -60,8 +60,41 @@ def _point(value: Any) -> str:
         return _norm(value)
 
 
+def _date_from_any(*values: Any) -> str:
+    for value in values:
+        match = re.search(r"20\d{2}-\d{2}-\d{2}", str(value or ""))
+        if match:
+            return match.group(0)
+    return ""
+
+
+def _key_parts(raw: str) -> tuple[str, str, str] | None:
+    parts = [part for part in str(raw or "").split("|") if part]
+    if len(parts) >= 4 and parts[0].lower() == "soccer":
+        return parts[1], parts[2], parts[3]
+    if len(parts) >= 3 and re.match(r"20\d{2}-\d{2}-\d{2}", parts[0]):
+        return parts[1], parts[2], parts[0]
+    return None
+
+
+def _match_key(row: dict[str, Any]) -> str:
+    raw = str(row.get("match_key") or row.get("canonical_match_id") or row.get("event_key") or "")
+    date = _date_from_any(row.get("commence_time"), row.get("kickoff"), row.get("start_time"), raw)
+    home = row.get("home_team") or row.get("home")
+    away = row.get("away_team") or row.get("away")
+    parts = _key_parts(raw)
+    if parts:
+        p_home, p_away, p_date = parts
+        home = home or p_home
+        away = away or p_away
+        date = date or p_date
+    if home and away and date:
+        return f"{date}|{_norm(home)}|{_norm(away)}"
+    return _norm(raw)
+
+
 def _sig(row: dict[str, Any]) -> str:
-    match = _norm(row.get("match_key") or row.get("canonical_match_id") or row.get("event_key"))
+    match = _match_key(row)
     if not match:
         match = f"{_norm(row.get('home_team') or row.get('home'))}|{_norm(row.get('away_team') or row.get('away'))}|{str(row.get('commence_time') or row.get('kickoff') or '')[:10]}"
     selection = _norm(row.get("selection_key") or row.get("selection"))
@@ -84,7 +117,6 @@ def _extract_rows(payload: Any) -> list[dict[str, Any]]:
 
 
 def _write_rescue(rows: list[dict[str, Any]]) -> None:
-    # Preserve the list shape when possible because the fallback reader accepts it.
     _write_json(RESCUE, rows)
 
 
