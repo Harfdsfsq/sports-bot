@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-"""Use semantic publication ledger as daily-limit source of truth.
+"""Use actual semantic Telegram sends as daily-limit source of truth.
 
-Older fallback state can overcount after a multi-pick top bundle because
-fallback-sent-index stores every sent row while the durable ledger deduplicates by
-match/market/selection/point/kickoff.  If the semantic ledger exists, daily limit
-checks should use it first; otherwise the fallback keeps the original legacy
-counter as a backup.
+The publication ledger can contain old rows that were re-normalized during a sync
+and received a fresh ``published_at`` timestamp.  Counting those rows made the
+fallback cap report values such as 7/5 even though only two controlled fallback
+picks were actually sent during the current Moscow day.  Daily cap checks should
+therefore count real send timestamps first (sent_at / telegram_sent_at /
+published_at_utc from fresh reports) and dedupe by match-market-selection-line,
+not by fingerprint/prediction_id.
 """
 
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -22,7 +25,7 @@ EXPORT_DIR = ROOT / ".data" / "exports"
 def _load_json(path: Path, default: Any) -> Any:
     try:
         if path.exists() and path.stat().st_size > 0:
-            return json.loads(path.read_text(encoding="utf-8"))
+            return json.loads(path.read_text(encoding="utf-8", errors="replace"))
     except Exception:
         pass
     return default
@@ -33,7 +36,7 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     try:
         if not path.exists():
             return rows
-        for line in path.read_text(encoding="utf-8").splitlines():
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             line = line.strip()
             if not line:
                 continue
@@ -50,9 +53,11 @@ def _iter_rows(payload: Any) -> list[dict[str, Any]]:
         return [x for x in payload if isinstance(x, dict)]
     if isinstance(payload, dict):
         rows: list[dict[str, Any]] = []
-        for key in ("rows", "bets", "items", "pending", "published", "selected_all"):
+        for key in ("rows", "bets", "items", "pending", "published", "selected", "selected_all", "telegram_picks", "sent_picks"):
             value = payload.get(key)
-            if isinstance(value, list):
+            if isinstance(value, dict):
+                rows.append(value)
+            elif isinstance(value, list):
                 rows.extend([x for x in value if isinstance(x, dict)])
         return rows
     return []
@@ -73,46 +78,95 @@ def _parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def _row_local_day(row: dict[str, Any], tz: Any) -> str | None:
-    # Prefer publication time.  Ledger rows mostly use *_utc keys, which the
-    # legacy counter did not read, causing fallback-sent-index overcounts to win.
-    for key in (
-        "published_at_utc", "published_at", "sent_at", "telegram_sent_at_utc", "telegram_sent_at",
-        "created_at_utc", "created_at", "updated_at_utc",
-        "commence_time", "kickoff_utc", "kickoff", "start_time",
-    ):
+def _norm(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("ё", "е")
+    text = re.sub(r"[^a-z0-9а-я]+", " ", text)
+    return " ".join(text.split())
+
+
+def _point(value: Any) -> str:
+    try:
+        if value in (None, ""):
+            return ""
+        f = float(str(value).replace(",", "."))
+        return str(int(f)) if f.is_integer() else f"{f:g}"
+    except Exception:
+        return _norm(value)
+
+
+def _selection(row: dict[str, Any]) -> str:
+    explicit = _norm(row.get("selection_key"))
+    if explicit in {"under", "over", "home", "away", "draw"}:
+        return explicit
+    text = _norm(row.get("selection"))
+    if any(x in text for x in ("under", "menshe", "меньше", "тм", "tm")):
+        return "under"
+    if any(x in text for x in ("over", "bolshe", "больше", "тб", "tb")):
+        return "over"
+    return explicit or text
+
+
+def _date_from_row(row: dict[str, Any]) -> str:
+    for key in ("commence_time", "commence_time_utc", "kickoff_utc", "kickoff", "start_time"):
         dt = _parse_dt(row.get(key))
         if dt is not None:
-            return dt.astimezone(tz).date().isoformat()
-    payload = row.get("bet_payload") if isinstance(row.get("bet_payload"), dict) else {}
-    for key in ("published_at_utc", "published_at", "sent_at", "created_at_utc", "created_at", "commence_time", "kickoff"):
-        dt = _parse_dt(payload.get(key))
-        if dt is not None:
-            return dt.astimezone(tz).date().isoformat()
-    return None
+            return dt.date().isoformat()
+        m = re.search(r"(20\d{2}-\d{2}-\d{2})", str(row.get(key) or ""))
+        if m:
+            return m.group(1)
+    for key in ("canonical_publication_key", "canonical_match_id", "match_key", "ledger_semantic_key_raw"):
+        m = re.search(r"(20\d{2}-\d{2}-\d{2})", str(row.get(key) or ""))
+        if m:
+            return m.group(1)
+    return ""
 
 
 def _semantic_key(v18: Any, row: dict[str, Any]) -> str:
-    for key in ("ledger_semantic_key", "canonical_publication_key", "dedupe_key", "fingerprint", "prediction_id"):
-        value = str(row.get(key) or "").strip()
-        if value:
-            return value
+    payload = row.get("bet_payload") if isinstance(row.get("bet_payload"), dict) else {}
+    match_key = _norm(row.get("canonical_match_id") or row.get("match_key") or payload.get("match_key"))
+    home = _norm(row.get("home_team") or row.get("home") or payload.get("home_team") or payload.get("home"))
+    away = _norm(row.get("away_team") or row.get("away") or payload.get("away_team") or payload.get("away"))
+    family = _norm(row.get("family") or row.get("market_family") or payload.get("family") or payload.get("market_family") or "totals")
+    selection = _selection(row) or _selection(payload)
+    point = _point(row.get("point") or row.get("line") or row.get("handicap") or payload.get("point") or payload.get("line"))
+    day = _date_from_row(row)
+    parts = [match_key or f"{day}|{home}|{away}", family, selection, point]
+    key = "|".join(parts)
+    if key.strip("|"):
+        return key
     try:
         sig = v18._candidate_signature(row)  # type: ignore[attr-defined]
-        key = "|".join([
-            sig.get("match_key") or f"{sig.get('home')}--{sig.get('away')}",
-            sig.get("family"),
-            sig.get("selection"),
-            sig.get("point"),
-        ])
-        if key.strip("|"):
-            return key
+        return "|".join([sig.get("match_key") or f"{sig.get('home')}--{sig.get('away')}", sig.get("family"), sig.get("selection"), sig.get("point")])
     except Exception:
-        pass
-    return json.dumps(row, ensure_ascii=False, sort_keys=True)[:500]
+        return json.dumps(row, ensure_ascii=False, sort_keys=True)[:500]
+
+
+def _actual_send_dt(row: dict[str, Any]) -> datetime | None:
+    # sent_at and telegram_sent_at are actual Telegram publication stamps.  A
+    # plain published_at in legacy ledgers can be a sync timestamp, so use it only
+    # when the row itself looks like a fresh controlled-fallback/telegram import.
+    for key in ("sent_at", "telegram_sent_at_utc", "telegram_sent_at", "published_at_utc"):
+        dt = _parse_dt(row.get(key))
+        if dt is not None:
+            return dt
+    source = _norm(row.get("source") or row.get("ledger_source_file") or row.get("publication_lifecycle_status"))
+    if any(token in source for token in ("telegram", "controlled fallback", "latest controlled fallback report", "fallback sent index")):
+        dt = _parse_dt(row.get("published_at"))
+        if dt is not None:
+            return dt
+    payload = row.get("bet_payload") if isinstance(row.get("bet_payload"), dict) else {}
+    for key in ("sent_at", "telegram_sent_at_utc", "telegram_sent_at", "published_at_utc"):
+        dt = _parse_dt(payload.get(key))
+        if dt is not None:
+            return dt
+    return None
 
 
 def _is_published(v18: Any, row: dict[str, Any]) -> bool:
+    # For daily cap, require an actual send timestamp.  This prevents old pending
+    # ledger rows from being counted after a ledger-sync rewrite.
+    if _actual_send_dt(row) is None:
+        return False
     try:
         if v18._is_published_pick_row(row):  # type: ignore[attr-defined]
             return True
@@ -121,24 +175,27 @@ def _is_published(v18: Any, row: dict[str, Any]) -> bool:
     status = str(row.get("status") or row.get("publication_lifecycle_status") or "").strip().lower()
     if status in {"pending", "published", "telegram_sent", "sent", "won", "lost", "push", "void", "half_won", "half_lost"}:
         return True
-    return bool(row.get("telegram_sent") or row.get("published") or row.get("published_at_utc") or row.get("published_at") or row.get("sent_at"))
+    return bool(row.get("telegram_sent") or row.get("published") or row.get("sent_at") or row.get("telegram_sent_at_utc"))
 
 
 def _ledger_rows() -> list[tuple[str, dict[str, Any]]]:
     out: list[tuple[str, dict[str, Any]]] = []
     for path in (
+        ROOT / ".data" / "fallback-sent-index.json",
+        ROOT / ".data" / "published-candidate-index.json",
+        ROOT / ".data" / "state.json",
         BET_DIR / "published_bets.jsonl",
         BET_DIR / "pending_bets.json",
         EXPORT_DIR / "latest-picks.json",
         EXPORT_DIR / "latest-pending-bets.json",
         EXPORT_DIR / "latest-controlled-fallback-report.json",
     ):
-        payload: Any
-        if path.suffix == ".jsonl":
-            payload = _load_jsonl(path)
+        payload: Any = _load_jsonl(path) if path.suffix == ".jsonl" else _load_json(path, [])
+        if isinstance(payload, dict) and path.name in {"fallback-sent-index.json", "published-candidate-index.json"}:
+            iterable = [x for x in payload.values() if isinstance(x, dict)]
         else:
-            payload = _load_json(path, [])
-        for row in _iter_rows(payload):
+            iterable = _iter_rows(payload)
+        for row in iterable:
             out.append((str(path), row))
     return out
 
@@ -148,12 +205,17 @@ def _semantic_ledger_count(v18: Any) -> dict[str, Any]:
     today = datetime.now(UTC).astimezone(tz).date().isoformat()
     seen: set[str] = set()
     samples: list[dict[str, Any]] = []
+    skipped_no_actual_send = 0
     source_rows = 0
     for source_path, row in _ledger_rows():
         source_rows += 1
-        if not _is_published(v18, row):
+        send_dt = _actual_send_dt(row)
+        if send_dt is None:
+            skipped_no_actual_send += 1
             continue
-        if _row_local_day(row, tz) != today:
+        if send_dt.astimezone(tz).date().isoformat() != today:
+            continue
+        if not _is_published(v18, row):
             continue
         key = _semantic_key(v18, row)
         if key in seen:
@@ -167,15 +229,16 @@ def _semantic_ledger_count(v18: Any) -> dict[str, Any]:
                 "away_team": row.get("away_team") or row.get("away"),
                 "selection": row.get("selection"),
                 "point": row.get("point"),
-                "published_at": row.get("published_at_utc") or row.get("published_at") or row.get("sent_at") or row.get("created_at_utc") or row.get("created_at"),
-                "commence_time": row.get("commence_time") or row.get("kickoff") or row.get("start_time"),
+                "sent_at": send_dt.isoformat(),
+                "commence_time": row.get("commence_time") or row.get("kickoff") or row.get("start_time") or row.get("commence_time_utc"),
             })
     return {
         "date": today,
         "count": len(seen),
         "samples": samples,
-        "source": "semantic_publication_ledger",
+        "source": "actual_semantic_send_index",
         "source_rows": source_rows,
+        "skipped_no_actual_send": skipped_no_actual_send,
     }
 
 
@@ -188,22 +251,18 @@ def install(v18: Any) -> None:
 
     def daily_existing_fallback_count_semantic() -> dict[str, Any]:
         semantic = _semantic_ledger_count(v18)
-        # If the ledger has rows for today, trust the semantic ledger over legacy
-        # fallback-sent-index/state counts.  If it is empty, fall back to legacy.
-        if semantic.get("count", 0) > 0 or semantic.get("source_rows", 0) > 0:
-            try:
-                legacy = original()
-            except Exception:
-                legacy = None
-            if isinstance(legacy, dict):
-                semantic["legacy_count"] = legacy.get("count")
-                semantic["legacy_samples"] = legacy.get("samples", [])[:5]
-            try:
-                v18._GUARD_EVENTS.append({"guard": "controlled_fallback_daily_limit_semantic_ledger_count", **semantic})
-            except Exception:
-                pass
-            return semantic
-        return original()
+        try:
+            legacy = original()
+        except Exception:
+            legacy = None
+        if isinstance(legacy, dict):
+            semantic["legacy_count"] = legacy.get("count")
+            semantic["legacy_samples"] = legacy.get("samples", [])[:5]
+        try:
+            v18._GUARD_EVENTS.append({"guard": "controlled_fallback_daily_limit_actual_semantic_send_count", **semantic})
+        except Exception:
+            pass
+        return semantic
 
     v18._daily_existing_fallback_count = daily_existing_fallback_count_semantic
     v18._daily_slot_semantic_ledger_count_patch_installed = True
