@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-07T15:05:03.366255+00:00
+UTC: 2026-07-07T15:59:16.372924+00:00
 target_date: 2026-07-07
-canonical_matches: 315
-2+ provider sources: 121
-2+ primary sources: 119
+canonical_matches: 314
+2+ provider sources: 123
+2+ primary sources: 121
 all 3 primary sources: 12
 
 ## Provider fixture discovery
@@ -11,24 +11,24 @@ all 3 primary sources: 12
 - bzzoiro: commands=10 ok=8 rows=165 event_like=165 unique=29 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=1 rows=2 event_like=2 unique=2 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=558 event_like=558 unique=279 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=550 event_like=550 unique=275 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=164 event_like=140 unique=140 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=170 event_like=145 unique=145 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 194, "2": 108, "4": 2, "3": 11}
-- primary providers: {"1": 196, "2": 107, "3": 12}
+- all providers: {"1": 191, "2": 110, "4": 2, "3": 11}
+- primary providers: {"1": 193, "2": 109, "3": 12}
 
 ## Top canonical matches
 - 2026-07-06T21:00:00+00:00 | Miramar — Atenas | providers=sstats ids={"sstats": "1561325"}
 - 2026-07-06T21:00:00+00:00 | Lansing City — Flint City Bucks | providers=sstats ids={"sstats": "1525241"}
 - 2026-07-06T21:00:00+00:00 | Concórdia U20 — Joinville U20 | providers=sstats ids={"sstats": "1539831"}
 - 2026-07-06T21:30:00+00:00 | Universidad Catolica — Mushuc Runa SC | providers=sstats ids={"sstats": "1519391"}
-- 2026-07-06T22:00:00+00:00 | Vila Nova — São Bernardo | providers=sstats ids={"sstats": "1520759"}
-- 2026-07-06T22:00:00+00:00 | Benjamín Aceval — Deportivo Capiata | providers=sstats ids={"sstats": "1567832"}
-- 2026-07-06T22:00:00+00:00 | Brusque — Figueirense | providers=sstats ids={"sstats": "1526877"}
 - 2026-07-06T22:00:00+00:00 | Botafogo SP — Avai | providers=sstats ids={"sstats": "1520751"}
+- 2026-07-06T22:00:00+00:00 | Vila Nova — São Bernardo | providers=sstats ids={"sstats": "1520759"}
+- 2026-07-06T22:00:00+00:00 | Brusque — Figueirense | providers=sstats ids={"sstats": "1526877"}
+- 2026-07-06T22:00:00+00:00 | Benjamín Aceval — Deportivo Capiata | providers=sstats ids={"sstats": "1567832"}
 - 2026-07-06T22:00:00+00:00 | Lorain County Leviathan — Erie Sports Center | providers=sstats ids={"sstats": "1525260"}
 - 2026-07-06T23:00:00+00:00 | Black Rock — Seacoast United Phantoms | providers=sstats ids={"sstats": "1525259"}
 - 2026-07-06T23:00:00+00:00 | Kings Hammer Columbus — Dayton Dutch Lions | providers=sstats ids={"sstats": "1524540"}
@@ -48,9 +48,9 @@ all 3 primary sources: 12
 - 2026-07-07T10:00:00+00:00 | Hwacheon KSPO W — Suwon FMC W | providers=sstats ids={"sstats": "1533718"}
 - 2026-07-07T10:00:00+00:00 | The Cove — Modbury Jets | providers=sstats ids={"sstats": "1527320"}
 - 2026-07-07T12:00:00+00:00 | Hannover 96 — Phönix Lübeck | providers=sstats ids={"sstats": "1554758"}
-- 2026-07-07T14:00:00+00:00 | Spain U19 — Sweden U19 | providers=odds_api_io,sstats ids={"odds_api_io": "72581896", "sstats": "1578548"}
-- 2026-07-07T14:00:00+00:00 | Grodzisk Mazowiecki — Trencin | providers=odds_api_io,sstats ids={"odds_api_io": "72502576", "sstats": "1550527"}
 - 2026-07-07T14:00:00+00:00 | Obolon'-Brovar — Lokomotiv Kyiv | providers=sstats ids={"sstats": "1567561"}
+- 2026-07-07T14:00:00+00:00 | Pogoń Grod. Mazowiecki — AS Trencin | providers=sstats ids={"sstats": "1550527"}
+- 2026-07-07T14:00:00+00:00 | Spain U19 W — Sweden U19 W | providers=sstats ids={"sstats": "1578548"}
 
 ## Targeted enrichment plan sample
 - Miramar — Atenas | primary=1 providers=sstats
@@ -69,11 +69,11 @@ all 3 primary sources: 12
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Vila Nova — São Bernardo | primary=1 providers=sstats
+- Botafogo SP — Avai | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Benjamín Aceval — Deportivo Capiata | primary=1 providers=sstats
+- Vila Nova — São Bernardo | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -81,7 +81,7 @@ all 3 primary sources: 12
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Botafogo SP — Avai | primary=1 providers=sstats
+- Benjamín Aceval — Deportivo Capiata | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
