@@ -39,8 +39,12 @@ def _env_float(name: str, default: float) -> float:
     return _float(os.getenv(name), default)
 
 
+def _family(candidate: dict[str, Any]) -> str:
+    return str(candidate.get('family') or candidate.get('market_family') or '').strip().lower()
+
+
 def _is_a_cover_promotion(candidate: dict[str, Any]) -> bool:
-    if str(candidate.get('_candidate_source') or '').strip().lower() == 'a_cover_market_promotion':
+    if str(candidate.get('_candidate_source') or candidate.get('candidate_source') or '').strip().lower() == 'a_cover_market_promotion':
         return True
     summary = candidate.get('source_summary') if isinstance(candidate.get('source_summary'), dict) else {}
     if str(summary.get('selected_source') or '').strip().lower() == 'a_cover_market_promotion':
@@ -51,11 +55,45 @@ def _is_a_cover_promotion(candidate: dict[str, Any]) -> bool:
     return any('a_cover_market_promotion' in str(reason).lower() for reason in (candidate.get('reasons') or []))
 
 
+def _is_awaiting_movement(candidate: dict[str, Any]) -> bool:
+    source = str(candidate.get('_candidate_source') or candidate.get('candidate_source') or '').strip().lower()
+    if source == 'awaiting_movement_lifecycle':
+        return True
+    return str(candidate.get('publication_lifecycle_status') or '').strip().lower() == 'awaiting_next_run_movement_check'
+
+
 def _has_strict_a_evidence(metrics: dict[str, Any]) -> bool:
     return (
         _int(metrics.get('odds_sources_count')) >= 2
         and _int(metrics.get('books_count')) >= 2
         and _int(metrics.get('confirmation_sources_count') or metrics.get('sources_count')) >= 2
+    )
+
+
+def _has_b_evidence(metrics: dict[str, Any]) -> bool:
+    return (
+        _int(metrics.get('odds_sources_count')) >= 1
+        and _int(metrics.get('books_count')) >= 2
+        and _int(metrics.get('confirmation_sources_count') or metrics.get('sources_count')) >= 1
+    )
+
+
+def _xg_ok_for_restored_totals(candidate: dict[str, Any], metrics: dict[str, Any]) -> bool:
+    if _family(candidate) not in {'totals', 'teamtotals'}:
+        return True
+    xg = metrics.get('xg_sanity') if isinstance(metrics.get('xg_sanity'), dict) else {}
+    return bool(xg.get('enabled')) and bool(xg.get('xg_direction_ok', True))
+
+
+def _restored_proxy_allowed(candidate: dict[str, Any], metrics: dict[str, Any]) -> bool:
+    if not _is_awaiting_movement(candidate) or not _has_b_evidence(metrics):
+        return False
+    if not _xg_ok_for_restored_totals(candidate, metrics):
+        return False
+    return (
+        _float(metrics.get('canonical_ev_pct')) >= _env_float('CONTROLLED_FALLBACK_RESTORED_PROXY_MIN_EV_PCT', 3.0)
+        and _float(metrics.get('canonical_edge_pp')) >= _env_float('CONTROLLED_FALLBACK_RESTORED_PROXY_MIN_EDGE_PP', 1.8)
+        and _float(metrics.get('confidence')) >= _env_float('CONTROLLED_FALLBACK_RESTORED_PROXY_MIN_CONFIDENCE', 60.0)
     )
 
 
@@ -77,8 +115,25 @@ def install(base_module: Any) -> dict[str, Any]:
         return {'status': 'skipped', 'reason': 'quality_proxy_score_missing'}
 
     def quality_proxy_score_a_cover(candidate: dict[str, Any], metrics: dict[str, Any], raw_quality: float) -> tuple[float, str]:
-        score, source = original_quality_proxy(candidate, metrics, raw_quality)
+        proxy_candidate = candidate
+        if raw_quality <= 0 and _restored_proxy_allowed(candidate, metrics):
+            proxy_candidate = dict(candidate)
+            proxy_candidate['_candidate_source'] = 'latest_rescue_candidates'
+        score, source = original_quality_proxy(proxy_candidate, metrics, raw_quality)
         if raw_quality > 0:
+            return score, source
+        if _restored_proxy_allowed(candidate, metrics) and source == 'proxy':
+            try:
+                diag = candidate.setdefault('diagnostics', {})
+                if isinstance(diag, dict):
+                    diag['restored_movement_proxy_quality'] = {
+                        'enabled': True,
+                        'created_at_utc': datetime.now(timezone.utc).isoformat(),
+                        'quality_score': round(_float(score), 3),
+                        'source': 'proxy',
+                    }
+            except Exception:
+                pass
             return score, source
         if not _strong_enough_for_a_evidence(candidate, metrics):
             return score, source
@@ -106,10 +161,12 @@ def install(base_module: Any) -> dict[str, Any]:
     payload = {
         'status': 'installed',
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
-        'policy': 'A-cover promotion can use a_cover_evidence quality only with 2 odds, 2 books, 2 context and strict EV/edge/confidence.',
+        'policy': 'A-cover evidence remains strict; restored movement lifecycle rows may use guarded proxy quality only after B evidence plus totals xG direction support.',
         'min_ev_pct': _env_float('CONTROLLED_FALLBACK_A_COVER_EVIDENCE_MIN_EV_PCT', 6.0),
         'min_edge_pp': _env_float('CONTROLLED_FALLBACK_A_COVER_EVIDENCE_MIN_EDGE_PP', 3.0),
         'min_confidence': _env_float('CONTROLLED_FALLBACK_A_COVER_EVIDENCE_MIN_CONFIDENCE', 68.0),
+        'restored_proxy_min_ev_pct': _env_float('CONTROLLED_FALLBACK_RESTORED_PROXY_MIN_EV_PCT', 3.0),
+        'restored_proxy_min_edge_pp': _env_float('CONTROLLED_FALLBACK_RESTORED_PROXY_MIN_EDGE_PP', 1.8),
     }
     try:
         OUT.parent.mkdir(parents=True, exist_ok=True)
