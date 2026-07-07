@@ -1,15 +1,14 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: кандидаты ждут следующий cron для второго снимка линии (1)
+• Главная причина: кандидаты ждут следующий cron для второго снимка линии (5)
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 107 (это не размер inventory).
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 36 (это не размер inventory).
 • 1+ линия: 300/300 (100%) | 1+ контекст: 300/300 (100%)
 • 2+ букмекера: 300/300 (100%)
-• Raw 2+ букмекера odds-api.io current snapshot: 38 | normalized cumulative inventory: 300.
-• Odds-api offer snapshot: rows 4043, matches 60, same-side 2+ books 27
+• Odds-api offer snapshot: rows 4584, matches 60, same-side 2+ books 34
 • 2+ independent odds-source: 278/300 (93%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 299/300 (100%)
+• 2+ контекста: 300/300 (100%)
 • Готово для модели: 300/300 (100%)
 
 🏷️ A/B-tier публикация
@@ -21,27 +20,27 @@
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
-• Ledger: unique published 10; pending 10; duplicates removed 32; policy semantic match market selection point kickoff.
+• Ledger: unique published 10; pending 10; duplicates removed 42; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
-• Line guard: увидел 34, оставил 5, отложил 1, снял 12
+• Line guard: увидел 34, оставил 6, отложил 5, снял 7
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/27
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 4/5
+• Quality прошло: 4 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 20; смэтчил матчей 99; offers 4043; 2+ букмекера 38; ошибок 0.
-• Bzzoiro: direct req 76, v2 req 76; v2 ctx 19; v2 odds 14; secondary offers 926; overlap odds-api.io 921; ошибок 8.
-• SStats: запросы 24; сырых строк 18694; контекстов 75; deep-enriched 60; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 4; смэтчил матчей 36; offers 881; 2+ букмекера 0; ошибок 0.
+• Bzzoiro: direct req 11, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 919; overlap odds-api.io 914; ошибок 0.
+• SStats: запросы 31; сырых строк 26487; контекстов 30; deep-enriched 61; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled; запросы 6; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag active_odds_stale_only_no_current_fixture.
 • Комбинации источников линий: odds_api_io: 29, bzzoiro+odds_api_io: 5, bzzoiro: 3
 
 🚫 Почему не опубликовано
-• line movement guard снял кандидата: 12 (92%)
-• кандидат ждёт следующий cron для второго снимка линии: 1 (8%)
+• line movement guard снял кандидата: 7 (58%)
+• кандидат ждёт следующий cron для второго снимка линии: 5 (42%)
 
 🔎 Проверенные reserve-кандидаты
 • Нет проверенных reserve-кандидатов в свежем fallback report.
@@ -51,18 +50,18 @@
 • Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 0; top: нет clean-кандидатов после снятия daily cap.
 • A-tier blockers: n/a; quality sources n/a; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
 • Inventory target-expand stage: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 348; normalized 264→167; gap after 181.
-• Bzzoiro overlap bridge: offers 926; match-overlap 926; same-bucket overlap 921.
-• Fresh B-cover diagnostic: rows 287; with current offer 106; without current offer 181; active 262; active with offer 106; fresh buckets 5347; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 24; top skips promotion_skip_odds_below_min 172; promotion_skip_odds_above_max 148; promotion_skip_duplicate_candidate 33; promotion_skip_edge_below_min 29; promotion_skip_price_outlier 19.
-• Rescue xG/confirmation enrichment: candidates 18; xG added 0; confirmation added 17; missing context match 0.
+• Bookmaker mapping repair: raw 2+ 322; normalized 265→291; gap after 31.
+• Bzzoiro overlap bridge: offers 919; match-overlap 919; same-bucket overlap 914.
+• Fresh B-cover diagnostic: rows 300; with current offer 103; without current offer 197; active 266; active with offer 103; fresh buckets 5800; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 24; top skips promotion_skip_odds_below_min 161; promotion_skip_odds_above_max 159; promotion_skip_price_outlier 33; promotion_skip_duplicate_candidate 24; promotion_skip_edge_below_min 21.
+• Rescue xG/confirmation enrichment: candidates 28; xG added 18; confirmation added 13; missing context match 8.
 
 📌 Что это значит
 • Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 28838356904
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/28838356904
-• Artifact: run-bot-28838356904
+• Run ID: 28842755002
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/28842755002
+• Artifact: run-bot-28842755002
 • workflow run-bot, attempt 1
