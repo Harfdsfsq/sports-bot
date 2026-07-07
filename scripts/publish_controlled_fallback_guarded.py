@@ -15,6 +15,8 @@ def main() -> int:
         from scripts.patch_display_line_count_safe import install as install_display_line_count_safe
         from scripts.patch_same_match_total_conflict_guard import install as install_same_match_total_conflict_guard
         from scripts.patch_fallback_current_run_only import install as install_fallback_current_run_only
+        from scripts.patch_tier_a_strict_policy import install as install_tier_a_strict_policy
+        install_tier_a_strict_policy(v18.base)
         install_semantic_ledger_daily_count(v18)
         install_reserved_slot_expiry_override(v18)
         install_daily_slot_bundle_cap(v18)
