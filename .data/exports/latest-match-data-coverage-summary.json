@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 22,
-      "rows_seen": 22,
+      "rows_kept": 0,
+      "rows_seen": 0,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 434,
-      "rows_stale": 434
+      "rows_kept": 238,
+      "rows_seen": 353,
+      "rows_stale": 115
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,32 +26,37 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 13,
-      "rows_seen": 13,
+      "rows_kept": 38,
+      "rows_seen": 38,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 5,
+    "candidates_before_quality": 32,
     "candidates_publishable": 0,
-    "candidates_raw": 4,
-    "contexts_built": 30,
-    "controlled_candidates_seen": 8,
-    "controlled_published": true,
-    "controlled_status": "published",
-    "coverage_candidates_current_date": 10,
-    "matches_seen": 36,
-    "matches_with_offers": 29
+    "candidates_raw": 0,
+    "contexts_built": 48,
+    "controlled_candidates_seen": null,
+    "controlled_published": false,
+    "controlled_status": "skipped_existing_pick",
+    "coverage_candidates_current_date": 135,
+    "matches_seen": 79,
+    "matches_with_offers": 48
   },
-  "created_at": "2026-07-07T16:13:31.339728+00:00",
+  "created_at": "2026-07-07T17:18:06.105004+00:00",
   "family_counts": {
-    "totals": 10
+    "h2h": 4,
+    "spreads": 78,
+    "totals": 53
   },
-  "matches_with_candidates": 8,
+  "matches_with_candidates": 48,
   "missing_data_flags": {
-    "confidence_below_micro_c": 6,
-    "edge_below_micro_c": 5,
-    "ev_below_micro_c": 4
+    "confidence_below_micro_c": 118,
+    "edge_below_micro_c": 125,
+    "ev_below_micro_c": 122,
+    "single_book": 96,
+    "single_context_source": 99,
+    "single_odds_source": 101
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -65,60 +70,22 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 8,
+  "positive_near_miss_count": 21,
   "provider_gap_summary": [
     {
       "api_key_present": true,
       "budget_exhausted": null,
-      "contexts_built": 8,
-      "direct_event_contexts_built": 8,
-      "enabled": true,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
       "events_fetched": null,
-      "events_matched": null,
+      "events_matched": 41,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": null,
-      "provider": "bzzoiro",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "working",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": 1,
-      "direct_event_contexts_built": 1,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "espn",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "working",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": 2,
-      "direct_event_contexts_built": 2,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "football_data",
-      "rate_limited": null,
+      "offers_parsed": 1040,
+      "provider": "account1",
+      "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
@@ -129,12 +96,90 @@
       "budget_exhausted": null,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 37,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 3207,
+      "provider": "account2",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": 12,
+      "direct_event_contexts_built": 12,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "bzzoiro",
+      "rate_limited": null,
+      "response_errors": 9,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 21,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 2887,
+      "provider": "bzzoiro_odds",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 86,
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "football_data",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": 142,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -145,15 +190,15 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": null,
+      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 100,
+      "events_fetched": 298,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 86,
+      "matches_built": 142,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -164,9 +209,9 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": 30,
-      "direct_event_contexts_built": 30,
+      "budget_exhausted": false,
+      "contexts_built": 47,
+      "direct_event_contexts_built": 47,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -185,9 +230,9 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": 24,
-      "direct_event_contexts_built": 24,
+      "budget_exhausted": false,
+      "contexts_built": 8,
+      "direct_event_contexts_built": 8,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -195,7 +240,7 @@
       "gap_flags": [],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "weather_overlay",
+      "provider": "stats",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -204,27 +249,69 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": null,
+      "budget_exhausted": false,
+      "contexts_built": 8,
+      "direct_event_contexts_built": 8,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": true,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "budget_exhausted",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "clubelo",
+      "rate_limited": null,
+      "response_errors": 3,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
-      "fixtures_fetched": 1,
+      "fixtures_fetched": 0,
       "gap_flags": [
-        "low_overlap_or_matching_failed"
+        "no_useful_rows"
       ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "allsportsapi",
-      "rate_limited": null,
+      "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
-      "status_category": "low_overlap_or_matching_issue",
+      "status_category": "no_data",
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
+      "api_key_present": null,
       "budget_exhausted": null,
       "contexts_built": 0,
       "direct_event_contexts_built": 0,
@@ -233,54 +320,34 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "espn",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": true,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "budget_exhausted",
         "no_useful_rows"
       ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "futrixmetrics",
       "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "gnews",
-      "rate_limited": false,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "newsapi",
-      "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
@@ -309,7 +376,7 @@
     },
     {
       "api_key_present": null,
-      "budget_exhausted": null,
+      "budget_exhausted": false,
       "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -342,27 +409,6 @@
       ],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "scorebat",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
       "provider": "self_history",
       "rate_limited": null,
       "response_errors": null,
@@ -371,29 +417,30 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": null,
+      "api_key_present": true,
+      "budget_exhausted": false,
       "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
-      "fixtures_fetched": null,
+      "fixtures_fetched": 0,
       "gap_flags": [
-        "no_useful_rows"
+        "no_useful_rows",
+        "parser_or_payload_shape_issue"
       ],
-      "matches_built": null,
+      "matches_built": 0,
       "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": null,
+      "provider": "sportlogic",
+      "rate_limited": false,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
     },
     {
       "api_key_present": null,
-      "budget_exhausted": null,
+      "budget_exhausted": false,
       "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -406,67 +453,46 @@
       "matches_built": null,
       "offers_parsed": null,
       "provider": "thesportsdb",
-      "rate_limited": null,
+      "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": false,
+      "events_fetched": null,
+      "events_matched": 0,
+      "fixtures_fetched": 0,
+      "gap_flags": [
+        "disabled_by_config"
+      ],
+      "matches_built": 0,
+      "offers_parsed": 0,
+      "provider": "sportlogic_context",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "disabled_by_config",
+      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
-    "low_overlap_or_matching_issue": 1,
-    "no_data": 9,
-    "working": 7
+    "broken_or_unavailable": 1,
+    "disabled_by_config": 1,
+    "no_data": 8,
+    "working": 10
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "bad_historical_segment_guard": 1,
+    "post_calibration_probability_guard": 4
+  },
   "target_date": "2026-07-07",
   "top_near_miss": [
-    {
-      "away_team": "Celtic",
-      "best_candidate": {
-        "adjusted_probability": 0.48785,
-        "books_count": 2,
-        "canonical_edge_pp": 5.495,
-        "canonical_ev_pct": 12.693,
-        "confidence": 73.312,
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
-        "family": "totals",
-        "odds": 2.31,
-        "odds_sources_count": 5,
-        "origin": "rescue",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 5
-      },
-      "best_confidence": 74.842,
-      "best_edge_pp": 5.495,
-      "best_ev_pct": 12.693,
-      "books_max": 137,
-      "candidate_count": 3,
-      "commence_time": "2026-07-07T17:00:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
-      "controlled_count": 0,
-      "families": {
-        "totals": 3
-      },
-      "home_team": "Shelbourne",
-      "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "soccer|shelbourne|celtic|2026-07-07",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1
-      },
-      "odds_sources_max": 7,
-      "origins": {
-        "awaiting_movement_lifecycle": 2,
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 7
-    },
     {
       "away_team": "Austria U19",
       "best_candidate": {
@@ -480,49 +506,52 @@
         "family": "totals",
         "odds": 1.75,
         "odds_sources_count": 4,
-        "origin": "rescue",
+        "origin": "awaiting_movement_lifecycle",
         "point": 3.5,
         "reject_reasons": [],
         "selection": "Меньше",
         "sources_count": 4
       },
-      "best_confidence": 73.194,
+      "best_confidence": 73.433,
       "best_edge_pp": 7.103,
       "best_ev_pct": 12.431,
-      "books_max": 2,
-      "candidate_count": 1,
+      "books_max": 299,
+      "candidate_count": 2,
       "commence_time": "2026-07-07T18:00:00+00:00",
       "confirmation_sources_max": 5,
       "context_sources_max": 5,
       "controlled_count": 0,
       "families": {
-        "totals": 1
+        "totals": 2
       },
       "home_team": "Germany U19",
       "league_name": "International Youth - U19 UEFA European Championship, Women, KO stage",
       "match_key": "soccer|germany_u19|austria_u19|2026-07-07",
       "missing_flags": {
-        "confidence_below_micro_c": 1
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
       },
-      "odds_sources_max": 4,
+      "odds_sources_max": 6,
       "origins": {
-        "rescue": 1
+        "a_cover_market_promotion": 1,
+        "awaiting_movement_lifecycle": 1
       },
       "reject_reasons": {},
-      "sources_max": 4
+      "sources_max": 6
     },
     {
-      "away_team": "Bate Borisov",
+      "away_team": "ETO Gyor",
       "best_candidate": {
-        "adjusted_probability": 0.600573,
-        "books_count": 158,
-        "canonical_edge_pp": 6.003,
-        "canonical_ev_pct": 11.106,
-        "confidence": 79.198,
+        "adjusted_probability": 0.487442,
+        "books_count": 337,
+        "canonical_edge_pp": 5.266,
+        "canonical_ev_pct": 12.112,
+        "confidence": 79.65,
         "confirmation_sources_count": 7,
         "context_sources_count": 7,
         "family": "totals",
-        "odds": 1.85,
+        "odds": 2.3,
         "odds_sources_count": 7,
         "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
@@ -530,37 +559,85 @@
         "selection": "Меньше",
         "sources_count": 7
       },
-      "best_confidence": 79.198,
-      "best_edge_pp": 6.003,
-      "best_ev_pct": 11.106,
-      "books_max": 158,
-      "candidate_count": 1,
-      "commence_time": "2026-07-07T18:00:00+00:00",
+      "best_confidence": 80.131,
+      "best_edge_pp": 5.266,
+      "best_ev_pct": 12.112,
+      "books_max": 667,
+      "candidate_count": 3,
+      "commence_time": "2026-07-07T19:00:00+00:00",
       "confirmation_sources_max": 7,
       "context_sources_max": 7,
       "controlled_count": 0,
       "families": {
-        "totals": 1
+        "totals": 3
       },
-      "home_team": "Af Elbasani",
-      "league_name": "International Clubs - UEFA Conference League, Qualification",
-      "match_key": "soccer|af_elbasani|bate_borisov|2026-07-07",
+      "home_team": "Vikingur Reykjavik",
+      "league_name": "International Clubs - UEFA Champions League, Qualification",
+      "match_key": "soccer|vikingur_reykjavik|eto_gyor|2026-07-07",
       "missing_flags": {},
       "odds_sources_max": 7,
       "origins": {
-        "awaiting_movement_lifecycle": 1
+        "awaiting_movement_lifecycle": 3
       },
       "reject_reasons": {},
       "sources_max": 7
     },
     {
-      "away_team": "La Fiorita",
+      "away_team": "Bate Borisov",
       "best_candidate": {
-        "adjusted_probability": 0.496281,
+        "adjusted_probability": 0.512469,
         "books_count": 4,
-        "canonical_edge_pp": 4.174,
-        "canonical_ev_pct": 9.182,
-        "confidence": 75.332,
+        "canonical_edge_pp": 5.164,
+        "canonical_ev_pct": 11.206,
+        "confidence": 79.243,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
+        "family": "totals",
+        "odds": 2.17,
+        "odds_sources_count": 6,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 6
+      },
+      "best_confidence": 79.243,
+      "best_edge_pp": 5.164,
+      "best_ev_pct": 11.206,
+      "books_max": 158,
+      "candidate_count": 2,
+      "commence_time": "",
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Af Elbasani",
+      "league_name": "International Clubs - UEFA Conference League, Qualification",
+      "match_key": "soccer|af_elbasani|bate_borisov|2026-07-07",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 6,
+      "origins": {
+        ".logs/debug-last-run.json": 1,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 6
+    },
+    {
+      "away_team": "Coleraine",
+      "best_candidate": {
+        "adjusted_probability": 0.504096,
+        "books_count": 3,
+        "canonical_edge_pp": 4.955,
+        "canonical_ev_pct": 10.901,
+        "confidence": 77.306,
         "confirmation_sources_count": 6,
         "context_sources_count": 6,
         "family": "totals",
@@ -572,155 +649,21 @@
         "selection": "Меньше",
         "sources_count": 5
       },
-      "best_confidence": 75.332,
-      "best_edge_pp": 4.174,
-      "best_ev_pct": 9.182,
-      "books_max": 4,
-      "candidate_count": 1,
-      "commence_time": "2026-07-07T17:15:00+00:00",
-      "confirmation_sources_max": 6,
-      "context_sources_max": 6,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Una Strassen",
-      "league_name": "International Clubs - UEFA Conference League, Qualification",
-      "match_key": "soccer|una_strassen|la_fiorita|2026-07-07",
-      "missing_flags": {},
-      "odds_sources_max": 5,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 5
-    },
-    {
-      "away_team": "Colombia",
-      "best_candidate": {
-        "adjusted_probability": 0.435321,
-        "books_count": 536,
-        "canonical_edge_pp": 2.21,
-        "canonical_ev_pct": 5.348,
-        "confidence": 68.206,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
-        "family": "totals",
-        "odds": 2.42,
-        "odds_sources_count": 7,
-        "origin": "a_cover_market_promotion",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 7
-      },
-      "best_confidence": 68.206,
-      "best_edge_pp": 2.21,
-      "best_ev_pct": 5.348,
-      "books_max": 536,
-      "candidate_count": 1,
-      "commence_time": "2026-07-07T20:00:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Switzerland",
-      "league_name": "International - FIFA World Cup",
-      "match_key": "soccer|switzerland|colombia|2026-07-07",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 7,
-      "origins": {
-        "a_cover_market_promotion": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 7
-    },
-    {
-      "away_team": "La Luz FC Reserves",
-      "best_candidate": {
-        "adjusted_probability": 0.588876,
-        "books_count": 121,
-        "canonical_edge_pp": 2.708,
-        "canonical_ev_pct": 4.82,
-        "confidence": 69.769,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
-        "family": "totals",
-        "odds": 1.78,
-        "odds_sources_count": 6,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 6
-      },
-      "best_confidence": 69.769,
-      "best_edge_pp": 2.708,
-      "best_ev_pct": 4.82,
-      "books_max": 121,
-      "candidate_count": 1,
-      "commence_time": "2026-07-07T18:00:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Albion",
-      "league_name": "Uruguay - Tercera Division, Reserves",
-      "match_key": "soccer|albion|la_luz_fc_reserves|2026-07-07",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 6,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 6
-    },
-    {
-      "away_team": "Airdrieonians",
-      "best_candidate": {
-        "adjusted_probability": 0.541948,
-        "books_count": 73,
-        "canonical_edge_pp": 2.247,
-        "canonical_ev_pct": 4.325,
-        "confidence": 69.546,
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
-        "family": "totals",
-        "odds": 1.925,
-        "odds_sources_count": 5,
-        "origin": "a_cover_market_promotion",
-        "point": 3.0,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 5
-      },
-      "best_confidence": 69.546,
-      "best_edge_pp": 2.247,
-      "best_ev_pct": 4.325,
-      "books_max": 73,
-      "candidate_count": 1,
+      "best_confidence": 77.306,
+      "best_edge_pp": 4.955,
+      "best_ev_pct": 10.901,
+      "books_max": 3,
+      "candidate_count": 2,
       "commence_time": "2026-07-07T18:30:00+00:00",
       "confirmation_sources_max": 6,
       "context_sources_max": 6,
       "controlled_count": 0,
       "families": {
-        "totals": 1
+        "totals": 2
       },
-      "home_team": "Falkirk",
+      "home_team": "Limavady Utd.",
       "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "soccer|falkirk|airdrieonians|2026-07-07",
+      "match_key": "soccer|limavady_utd|coleraine|2026-07-07",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
@@ -728,56 +671,286 @@
       },
       "odds_sources_max": 5,
       "origins": {
-        "a_cover_market_promotion": 1
+        "rescue": 2
       },
       "reject_reasons": {},
       "sources_max": 5
     },
     {
-      "away_team": "Dornbirn",
+      "away_team": "Egypt",
       "best_candidate": {
-        "adjusted_probability": 0.514709,
-        "books_count": 2,
-        "canonical_edge_pp": 1.966,
-        "canonical_ev_pct": 3.971,
-        "confidence": 69.387,
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
+        "adjusted_probability": 0.0,
+        "books_count": 210,
+        "canonical_edge_pp": 0.0,
+        "canonical_ev_pct": 10.612,
+        "confidence": 0.0,
+        "confirmation_sources_count": 0,
+        "context_sources_count": 0,
         "family": "totals",
-        "odds": 2.02,
-        "odds_sources_count": 5,
-        "origin": "rescue",
-        "point": 4.0,
+        "odds": 2.07,
+        "odds_sources_count": 0,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
         "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 5
+        "selection": "Меньше",
+        "sources_count": 0
       },
-      "best_confidence": 69.387,
-      "best_edge_pp": 1.966,
-      "best_ev_pct": 3.971,
-      "books_max": 2,
+      "best_confidence": 0.0,
+      "best_edge_pp": 0.0,
+      "best_ev_pct": 10.612,
+      "books_max": 210,
       "candidate_count": 1,
-      "commence_time": "2026-07-07T16:30:00+00:00",
-      "confirmation_sources_max": 6,
-      "context_sources_max": 6,
+      "commence_time": "",
+      "confirmation_sources_max": 0,
+      "context_sources_max": 0,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Bregenz",
-      "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "soccer|bregenz|dornbirn|2026-07-07",
+      "home_team": "Argentina",
+      "league_name": "World Cup 2026",
+      "match_key": "soccer|argentina|egypt|2026-07-07",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
+        "single_context_source": 1,
+        "single_odds_source": 1
       },
-      "odds_sources_max": 5,
+      "odds_sources_max": 0,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 0
+    },
+    {
+      "away_team": "Leamington",
+      "best_candidate": {
+        "adjusted_probability": 0.603348,
+        "books_count": 2,
+        "canonical_edge_pp": 5.69,
+        "canonical_ev_pct": 10.413,
+        "confidence": 75.286,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 1.83,
+        "odds_sources_count": 4,
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 4
+      },
+      "best_confidence": 75.286,
+      "best_edge_pp": 5.69,
+      "best_ev_pct": 10.413,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-07-07T18:30:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Sutton",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|sutton|leamington|2026-07-07",
+      "missing_flags": {},
+      "odds_sources_max": 4,
       "origins": {
         "rescue": 1
       },
       "reject_reasons": {},
+      "sources_max": 4
+    },
+    {
+      "away_team": "FC Prishtina Bern",
+      "best_candidate": {
+        "adjusted_probability": 0.378909,
+        "books_count": 2,
+        "canonical_edge_pp": 3.408,
+        "canonical_ev_pct": 9.884,
+        "confidence": 75.048,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
+        "family": "totals",
+        "odds": 2.9,
+        "odds_sources_count": 5,
+        "origin": "rescue",
+        "point": 4.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 5
+      },
+      "best_confidence": 76.842,
+      "best_edge_pp": 3.408,
+      "best_ev_pct": 9.884,
+      "books_max": 160,
+      "candidate_count": 3,
+      "commence_time": "2026-07-07T17:45:00+00:00",
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 0,
+      "families": {
+        "totals": 3
+      },
+      "home_team": "Bulle",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|bulle|fc_prishtina_bern|2026-07-07",
+      "missing_flags": {
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 5,
+      "origins": {
+        "a_cover_market_promotion": 1,
+        "rescue": 2
+      },
+      "reject_reasons": {},
       "sources_max": 5
+    },
+    {
+      "away_team": "Bristol Rovers",
+      "best_candidate": {
+        "adjusted_probability": 0.53163,
+        "books_count": 4,
+        "canonical_edge_pp": 4.619,
+        "canonical_ev_pct": 9.516,
+        "confidence": 78.482,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 2.06,
+        "odds_sources_count": 4,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 4
+      },
+      "best_confidence": 78.482,
+      "best_edge_pp": 4.619,
+      "best_ev_pct": 9.516,
+      "books_max": 4,
+      "candidate_count": 2,
+      "commence_time": "2026-07-07T18:15:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Weston-super-Mare",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|weston_super_mare|bristol_rovers|2026-07-07",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 4,
+      "origins": {
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 4
+    },
+    {
+      "away_team": "Celtic",
+      "best_candidate": {
+        "adjusted_probability": 0.0,
+        "books_count": 137,
+        "canonical_edge_pp": 0.0,
+        "canonical_ev_pct": 9.426,
+        "confidence": 0.0,
+        "confirmation_sources_count": 0,
+        "context_sources_count": 0,
+        "family": "totals",
+        "odds": 3.05,
+        "odds_sources_count": 0,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 0
+      },
+      "best_confidence": 72.7,
+      "best_edge_pp": 0.0,
+      "best_ev_pct": 9.426,
+      "books_max": 137,
+      "candidate_count": 3,
+      "commence_time": "2026-07-07T17:00:00+00:00",
+      "confirmation_sources_max": 9,
+      "context_sources_max": 9,
+      "controlled_count": 0,
+      "families": {
+        "totals": 3
+      },
+      "home_team": "Shelbourne",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|shelbourne|celtic|2026-07-07",
+      "missing_flags": {
+        "confidence_below_micro_c": 3,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 2,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 7,
+      "origins": {
+        ".logs/debug-last-run.json": 3
+      },
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1,
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 7
+    },
+    {
+      "away_team": "Bissen",
+      "best_candidate": {
+        "adjusted_probability": 0.567338,
+        "books_count": 314,
+        "canonical_edge_pp": 3.824,
+        "canonical_ev_pct": 7.227,
+        "confidence": 78.252,
+        "confirmation_sources_count": 7,
+        "context_sources_count": 7,
+        "family": "totals",
+        "odds": 1.89,
+        "odds_sources_count": 7,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 7
+      },
+      "best_confidence": 78.252,
+      "best_edge_pp": 3.824,
+      "best_ev_pct": 7.227,
+      "books_max": 314,
+      "candidate_count": 1,
+      "commence_time": "2026-07-07T18:45:00+00:00",
+      "confirmation_sources_max": 7,
+      "context_sources_max": 7,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Klaksvik",
+      "league_name": "International Clubs - UEFA Champions League, Qualification",
+      "match_key": "soccer|klaksvik|bissen|2026-07-07",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 7,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 7
     }
   ]
 }
