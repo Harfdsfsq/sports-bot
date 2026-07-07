@@ -6,9 +6,8 @@ The publication ledger can contain old rows that were re-normalized during a syn
 and received a fresh ``published_at`` timestamp.  Counting those rows made the
 fallback cap report values such as 7/5 even though only two controlled fallback
 picks were actually sent during the current Moscow day.  Daily cap checks should
-therefore count real send timestamps first (sent_at / telegram_sent_at /
-published_at_utc from fresh reports) and dedupe by match-market-selection-line,
-not by fingerprint/prediction_id.
+therefore count real send timestamps first (sent_at / telegram_sent_at) and
+dedupe by match-market-selection-line, not by fingerprint/prediction_id.
 """
 
 import json
@@ -142,10 +141,9 @@ def _semantic_key(v18: Any, row: dict[str, Any]) -> str:
 
 
 def _actual_send_dt(row: dict[str, Any]) -> datetime | None:
-    # sent_at and telegram_sent_at are actual Telegram publication stamps.  A
-    # plain published_at in legacy ledgers can be a sync timestamp, so use it only
-    # when the row itself looks like a fresh controlled-fallback/telegram import.
-    for key in ("sent_at", "telegram_sent_at_utc", "telegram_sent_at", "published_at_utc"):
+    # Only true send stamps count for the daily cap.  A plain published_at_utc in
+    # state/latest-bets can be created by ledger sync and is not an actual send.
+    for key in ("sent_at", "telegram_sent_at_utc", "telegram_sent_at"):
         dt = _parse_dt(row.get(key))
         if dt is not None:
             return dt
@@ -155,7 +153,7 @@ def _actual_send_dt(row: dict[str, Any]) -> datetime | None:
         if dt is not None:
             return dt
     payload = row.get("bet_payload") if isinstance(row.get("bet_payload"), dict) else {}
-    for key in ("sent_at", "telegram_sent_at_utc", "telegram_sent_at", "published_at_utc"):
+    for key in ("sent_at", "telegram_sent_at_utc", "telegram_sent_at"):
         dt = _parse_dt(payload.get(key))
         if dt is not None:
             return dt
