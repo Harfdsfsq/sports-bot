@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-08T01:04:28.186529+00:00
+UTC: 2026-07-08T03:04:29.196965+00:00
 target_date: 2026-07-08
-canonical_matches: 295
-2+ provider sources: 142
-2+ primary sources: 142
+canonical_matches: 294
+2+ provider sources: 140
+2+ primary sources: 140
 all 3 primary sources: 12
 
 ## Provider fixture discovery
@@ -11,14 +11,14 @@ all 3 primary sources: 12
 - bzzoiro: commands=10 ok=8 rows=121 event_like=121 unique=20 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=1 rows=1 event_like=1 unique=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=556 event_like=556 unique=278 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=548 event_like=548 unique=274 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=154 event_like=153 unique=153 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=155 event_like=154 unique=154 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 153, "2": 127, "3": 14, "4": 1}
-- primary providers: {"1": 153, "2": 130, "3": 12}
+- all providers: {"1": 154, "2": 125, "3": 14, "4": 1}
+- primary providers: {"1": 154, "2": 128, "3": 12}
 
 ## Top canonical matches
 - 2026-07-07T22:00:00+00:00 | West Virginia Alliance — Louisville City II | providers=sstats ids={"sstats": "1525264"}
@@ -31,13 +31,12 @@ all 3 primary sources: 12
 - 2026-07-07T23:00:00+00:00 | Vermont Green — Connecticut Rush | providers=sstats ids={"sstats": "1525274"}
 - 2026-07-07T23:00:00+00:00 | Akron City — Pittsburgh Riverhounds 2 | providers=sstats ids={"sstats": "1525266"}
 - 2026-07-07T23:45:00+00:00 | Hudson Valley Hammers — FC Motown II | providers=sstats ids={"sstats": "1525276"}
-- 2026-07-08T00:00:00+00:00 | Aucas — Guayaquil City | providers=odds_api_io,sstats ids={"odds_api_io": "72499632", "sstats": "1519384"}
-- 2026-07-08T00:00:00+00:00 | Texoma FC — Denton Diablos | providers=odds_api_io,sstats ids={"odds_api_io": "72136078", "sstats": "1525272"}
+- 2026-07-08T00:00:00+00:00 | Aucas — Guayaquil City FC | providers=sstats ids={"sstats": "1519384"}
+- 2026-07-08T00:00:00+00:00 | Texoma — Denton Diablos | providers=sstats ids={"sstats": "1525272"}
 - 2026-07-08T00:00:00+00:00 | Springfield — Des Moines Menace | providers=sstats ids={"sstats": "1525269"}
 - 2026-07-08T00:00:00+00:00 | Sunflower State — Peoria | providers=sstats ids={"sstats": "1525270"}
-- 2026-07-08T01:00:00+00:00 | Whitecaps — Ventura County FC | providers=odds_api_io,sstats ids={"odds_api_io": "68156834", "sstats": "1513206"}
+- 2026-07-08T01:00:00+00:00 | Vancouver Whitecaps II — Ventura County | providers=sstats ids={"sstats": "1513206"}
 - 2026-07-08T01:00:00+00:00 | Real Colorado Foxes — Albion Colorado | providers=sstats ids={"sstats": "1525422"}
-- 2026-07-08T01:30:00+00:00 | Colorado Storm — Atletico Union | providers=odds_api_io ids={"odds_api_io": "72136074"}
 - 2026-07-08T02:00:00+00:00 | Tacoma Stars — Midlakes United | providers=odds_api_io,sstats ids={"odds_api_io": "72136080", "sstats": "1525271"}
 - 2026-07-08T02:00:00+00:00 | San Jose Earthquakes — Kansas City II | providers=odds_api_io ids={"odds_api_io": "72130092"}
 - 2026-07-08T08:00:00+00:00 | Shanxi Chongde Ronghai — Dalian Kewei | providers=odds_api_io,sstats ids={"odds_api_io": "72046992", "sstats": "1532759"}
@@ -51,6 +50,7 @@ all 3 primary sources: 12
 - 2026-07-08T09:00:00+00:00 | Budapest Honved — Soroksar | providers=odds_api_io,sstats ids={"odds_api_io": "72324854", "sstats": "1560547"}
 - 2026-07-08T09:00:00+00:00 | Tychy — BKS Sparta Katowice | providers=odds_api_io,sstats ids={"odds_api_io": "72597972", "sstats": "1554794"}
 - 2026-07-08T09:00:00+00:00 | Skalica — Zlate Moravce | providers=odds_api_io ids={"odds_api_io": "72553308"}
+- 2026-07-08T09:00:00+00:00 | Szentlorinc — Kozarmisleny | providers=odds_api_io ids={"odds_api_io": "72324900"}
 
 ## Targeted enrichment plan sample
 - West Virginia Alliance — Louisville City II | primary=1 providers=sstats
@@ -93,13 +93,13 @@ all 3 primary sources: 12
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Aucas — Guayaquil City | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Aucas — Guayaquil City FC | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Texoma FC — Denton Diablos | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Texoma — Denton Diablos | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Springfield — Des Moines Menace | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
@@ -109,16 +109,12 @@ all 3 primary sources: 12
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Whitecaps — Ventura County FC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Real Colorado Foxes — Albion Colorado | primary=1 providers=sstats
+- Vancouver Whitecaps II — Ventura County | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Colorado Storm — Atletico Union | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Real Colorado Foxes — Albion Colorado | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Tacoma Stars — Midlakes United | primary=2 providers=odds_api_io,sstats
@@ -132,4 +128,8 @@ all 3 primary sources: 12
 - Shanxi Chongde Ronghai — Dalian Kewei | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Kahibah FC Reserve — Maitland FC Reserve | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
