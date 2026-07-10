@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-09T23:05:05.481825+00:00
+UTC: 2026-07-10T01:05:04.742956+00:00
 target_date: 2026-07-10
-canonical_matches: 319
-2+ provider sources: 116
-2+ primary sources: 115
+canonical_matches: 320
+2+ provider sources: 114
+2+ primary sources: 113
 all 3 primary sources: 5
 
 ## Provider fixture discovery
@@ -17,8 +17,8 @@ all 3 primary sources: 5
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 203, "2": 108, "3": 7, "4": 1}
-- primary providers: {"1": 204, "2": 110, "3": 5}
+- all providers: {"1": 206, "2": 106, "3": 7, "4": 1}
+- primary providers: {"1": 207, "2": 108, "3": 5}
 
 ## Top canonical matches
 - 2026-07-09T22:00:00+00:00 | Dayton Dutch Lions — West Virginia Alliance | providers=sstats ids={"sstats": "1525314"}
@@ -26,9 +26,8 @@ all 3 primary sources: 5
 - 2026-07-09T23:00:00+00:00 | Midwest United — Union Macomb | providers=sstats ids={"sstats": "1525119"}
 - 2026-07-09T23:00:00+00:00 | New England FC — Blackwatch Rush | providers=sstats ids={"sstats": "1525315"}
 - 2026-07-10T00:00:00+00:00 | CA Nacional Potosi — Club Aurora | providers=odds_api_io,sstats ids={"odds_api_io": "72332792", "sstats": "1538365"}
-- 2026-07-10T01:00:00+00:00 | Real Colorado — Flatirons FC | providers=odds_api_io,sstats ids={"odds_api_io": "72136160", "sstats": "1525425"}
-- 2026-07-10T01:00:00+00:00 | Colorado Rapids — FC Juarez | providers=odds_api_io,sstats ids={"odds_api_io": "72348552", "sstats": "1560556"}
-- 2026-07-10T01:00:00+00:00 | Club Santos Laguna — America de Cali | providers=odds_api_io ids={"odds_api_io": "72691442"}
+- 2026-07-10T01:00:00+00:00 | Colorado Rapids — FC Juarez | providers=sstats ids={"sstats": "1560556"}
+- 2026-07-10T01:00:00+00:00 | Real Colorado Foxes — Flatirons Rush | providers=sstats ids={"sstats": "1525425"}
 - 2026-07-10T07:30:00+00:00 | POFC Botev Vratsa — FC Arda Kardzhali | providers=odds_api_io ids={"odds_api_io": "72469982"}
 - 2026-07-10T07:30:00+00:00 | FK Septemvri Sofia — PFC Ludogorets 1945 Razgrad | providers=odds_api_io ids={"odds_api_io": "72474800"}
 - 2026-07-10T08:00:00+00:00 | Macarthur Rams FC U20 — Bankstown City FC U20 | providers=odds_api_io,sstats ids={"odds_api_io": "67691720", "sstats": "1517809"}
@@ -51,6 +50,7 @@ all 3 primary sources: 5
 - 2026-07-10T09:45:00+00:00 | Dandenong City SC — South Melbourne FC | providers=odds_api_io,sstats ids={"odds_api_io": "68160268", "sstats": "1521975"}
 - 2026-07-10T09:45:00+00:00 | Eastern Lions SC — Werribee City FC | providers=odds_api_io,sstats ids={"odds_api_io": "68161794", "sstats": "1541321"}
 - 2026-07-10T10:00:00+00:00 | Birmingham City — Huddersfield Town | providers=odds_api_io,sstats ids={"odds_api_io": "72185774", "sstats": "1554825"}
+- 2026-07-10T10:00:00+00:00 | Almaz Antey Youth — FK Spartak Moscow | providers=odds_api_io,sstats ids={"odds_api_io": "68849598", "sstats": "1519218"}
 
 ## Targeted enrichment plan sample
 - Dayton Dutch Lions — West Virginia Alliance | primary=1 providers=sstats
@@ -73,16 +73,12 @@ all 3 primary sources: 5
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Real Colorado — Flatirons FC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Colorado Rapids — FC Juarez | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Colorado Rapids — FC Juarez | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Real Colorado Foxes — Flatirons Rush | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Club Santos Laguna — America de Cali | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - POFC Botev Vratsa — FC Arda Kardzhali | primary=1 providers=odds_api_io
@@ -130,6 +126,10 @@ all 3 primary sources: 5
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - FC Zlin — MFk Dukla Banska Bystrica | primary=2 providers=odds_api_io,sstats
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Wieczysta Krakow — Ruch Chorzow | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
