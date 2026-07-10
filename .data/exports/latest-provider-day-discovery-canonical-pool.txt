@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-10T13:04:48.360612+00:00
+UTC: 2026-07-10T15:04:46.617358+00:00
 target_date: 2026-07-10
-canonical_matches: 337
-2+ provider sources: 82
-2+ primary sources: 81
-all 3 primary sources: 2
+canonical_matches: 347
+2+ provider sources: 83
+2+ primary sources: 82
+all 3 primary sources: 1
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
@@ -13,12 +13,12 @@ all 3 primary sources: 2
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=193 event_like=120 unique=120 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=210 event_like=131 unique=131 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 255, "2": 77, "3": 4, "4": 1}
-- primary providers: {"1": 256, "2": 79, "3": 2}
+- all providers: {"1": 264, "2": 79, "3": 3, "4": 1}
+- primary providers: {"1": 265, "2": 81, "3": 1}
 
 ## Top canonical matches
 - 2026-07-09T22:00:00+00:00 | Dayton Dutch Lions — West Virginia Alliance | providers=sstats ids={"sstats": "1525314"}
@@ -26,9 +26,11 @@ all 3 primary sources: 2
 - 2026-07-09T23:00:00+00:00 | Midwest United — Union Macomb | providers=sstats ids={"sstats": "1525119"}
 - 2026-07-09T23:00:00+00:00 | New England FC — Blackwatch Rush | providers=sstats ids={"sstats": "1525315"}
 - 2026-07-10T00:00:00+00:00 | Nacional Potosí — Aurora | providers=sstats ids={"sstats": "1538365"}
+- 2026-07-10T01:00:00+00:00 | Santos Laguna — America de Cali | providers=sstats ids={"sstats": "1584752"}
 - 2026-07-10T01:00:00+00:00 | Colorado Rapids — FC Juarez | providers=sstats ids={"sstats": "1560556"}
 - 2026-07-10T01:00:00+00:00 | Real Colorado Foxes — Flatirons Rush | providers=sstats ids={"sstats": "1525425"}
 - 2026-07-10T07:30:00+00:00 | Botev Vratsa — Arda Kardzhali | providers=sstats ids={"sstats": "1548796"}
+- 2026-07-10T08:00:00+00:00 | Petrolul Ploiesti — ASA Targu Mures | providers=sstats ids={"sstats": "1584757"}
 - 2026-07-10T08:00:00+00:00 | Wolfsberger AC — Başakşehir | providers=sstats ids={"sstats": "1554823"}
 - 2026-07-10T08:30:00+00:00 | Wolfsberger AC — Metalist 1925 Kharkiv | providers=sstats ids={"sstats": "1560557"}
 - 2026-07-10T09:00:00+00:00 | Wieczysta Kraków — Ruch Chorzów | providers=sstats ids={"sstats": "1554886"}
@@ -49,8 +51,6 @@ all 3 primary sources: 2
 - 2026-07-10T10:15:00+00:00 | Glenorchy Knights — Kingborough Lions | providers=sstats ids={"sstats": "1529269"}
 - 2026-07-10T10:15:00+00:00 | Launceston United — Riverside | providers=sstats ids={"sstats": "1529270"}
 - 2026-07-10T10:30:00+00:00 | Langwarrin — Melbourne Victory II | providers=sstats ids={"sstats": "1522140"}
-- 2026-07-10T10:30:00+00:00 | Brunswick Juventus FC — Western United II | providers=sstats ids={"sstats": "1522210"}
-- 2026-07-10T10:30:00+00:00 | Northcote City — Melbourne Knights | providers=sstats ids={"sstats": "1522139"}
 
 ## Targeted enrichment plan sample
 - Dayton Dutch Lions — West Virginia Alliance | primary=1 providers=sstats
@@ -73,6 +73,10 @@ all 3 primary sources: 2
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Santos Laguna — America de Cali | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Colorado Rapids — FC Juarez | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
@@ -82,6 +86,10 @@ all 3 primary sources: 2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Botev Vratsa — Arda Kardzhali | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Petrolul Ploiesti — ASA Targu Mures | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -122,14 +130,6 @@ all 3 primary sources: 2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Eastern Lions — Werribee City | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Macarthur Rams — Bankstown City Lions | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Seoul W — Suwon FMC W | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
