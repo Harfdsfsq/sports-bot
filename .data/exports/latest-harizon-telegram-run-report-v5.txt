@@ -1,35 +1,35 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: направление ставки конфликтует с xG
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 438/300; status ok_target_met). Runtime rows processed: 36 (это не размер inventory).
-• 1+ линия: 300/300 (100%) | 1+ контекст: 170/300 (57%)
-• 2+ букмекера: 197/300 (66%)
-• Odds-api offer snapshot: rows 14624, matches 178, same-side 2+ books 126
-• 2+ independent odds-source: 15/300 (5%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 19/300 (6%)
-• Готово для модели: 170/300 (57%)
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 700/300; status ok_target_met). Runtime rows processed: 36 (это не размер inventory).
+• 1+ линия: 288/300 (96%) | 1+ контекст: 30/300 (10%)
+• 2+ букмекера: 51/300 (17%)
+• Odds-api offer snapshot: rows 12480, matches 148, same-side 2+ books 93
+• 2+ independent odds-source: 2/300 (1%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ контекста: 0/300 (0%)
+• Готово для модели: 19/300 (6%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 15 | main опубликовано: 0
+• A-tier strict-ready: 0 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/2+ bookmaker/1+ context coverage: 170 | fallback опубликовано: 0
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 30 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 15 матчей; B-cover: до 170 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 0 матчей; B-cover: до 30 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
-• Ledger: unique published 36; pending 10; duplicates removed 121; policy semantic match market selection point kickoff.
+• Ledger: unique published 36; pending 10; duplicates removed 119; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
-• Line guard: увидел 53, оставил 4, отложил 7, снял 26
+• Line guard: увидел 16, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 4/5
 • Quality прошло: 4 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
 • odds-api.io: events req 0, odds req 4; смэтчил матчей 36; offers 881; 2+ букмекера 0; ошибок 0.
@@ -39,33 +39,28 @@
 • Комбинации источников линий: odds_api_io: 29, bzzoiro+odds_api_io: 5, bzzoiro: 3
 
 🚫 Почему не опубликовано
-• line movement guard снял кандидата: 26 (74%)
-• кандидат ждёт следующий cron для второго снимка линии: 7 (20%)
-• направление ставки конфликтует с xG: 1 (3%)
-• модель слишком оптимистична относительно xG-ориентира: 1 (3%)
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. Sydney Olympic FC — Wollongong Wolves FC | Больше @1.85 | EV +3.7% | edge +2.0 п.п. | q 0.0
-   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 🧯 Диагностика новых стопоров
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/2 book/1 context.
 • Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 0; top: нет clean-кандидатов после снятия daily cap.
-• Effective blockers without daily cap: xg_direction_conflict 1; xg_probability_gap_hard_reject 1.
-• A-tier blockers: n/a; quality sources raw_missing 1; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
-• Inventory target-expand stage: 438/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 970; normalized 114→108; gap after 862.
+• A-tier blockers: n/a; quality sources n/a; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
+• Inventory target-expand stage: 700/300; shortfall 0; status ok_target_met.
+• Bookmaker mapping repair: raw 2+ 306; normalized 152→82; gap after 224.
 • Bzzoiro overlap bridge: offers 0; match-overlap 0; same-bucket overlap 0.
-• Fresh B-cover diagnostic: rows 170; with current offer 66; without current offer 104; active 137; active with offer 53; fresh buckets 14639; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 24; top skips promotion_skip_odds_below_min 177; promotion_skip_odds_above_max 152; promotion_skip_edge_below_min 86; promotion_skip_no_offer_bucket 36; promotion_skip_price_outlier 30.
-• Rescue xG/confirmation enrichment: candidates 73; xG added 13; confirmation added 0; missing context match 71.
+• Fresh B-cover diagnostic: rows 19; with current offer 3; without current offer 16; active 13; active with offer 3; fresh buckets 13345; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 0; top skips promotion_skip_no_offer_bucket 184; promotion_skip_duplicate_candidate 19; promotion_skip_edge_below_min 3.
+• Rescue xG/confirmation enrichment: candidates 36; xG added 0; confirmation added 0; missing context match 34.
 
 📌 Что это значит
 • Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 29140521955
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/29140521955
-• Artifact: run-bot-29140521955
+• Run ID: 29160827496
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/29160827496
+• Artifact: run-bot-29160827496
 • workflow run-bot, attempt 1
