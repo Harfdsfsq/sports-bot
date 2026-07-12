@@ -27,20 +27,31 @@ def _display_count(metrics: dict[str, Any]) -> int:
     )
 
 
+def _view(metrics: dict[str, Any]) -> dict[str, Any]:
+    view = dict(metrics)
+    raw = _num(view.get("books_count"), 0)
+    shown = _display_count(view)
+    if raw > 20 and shown > 0:
+        view["raw_books_count_before_display_clamp"] = raw
+        view["display_books_count"] = shown
+        view["books_count"] = shown
+    return view
+
+
 def install(base: Any) -> None:
-    original = getattr(base, "pick_block", None)
-    if not callable(original) or getattr(base, "_display_line_count_safe_installed", False):
+    if getattr(base, "_display_line_count_safe_installed", False):
         return
 
-    def wrapped(index: int, candidate: dict[str, Any], metrics: dict[str, Any], tier: str, stake: float) -> str:
-        view = dict(metrics)
-        raw = _num(view.get("books_count"), 0)
-        shown = _display_count(view)
-        if raw > 20 and shown > 0:
-            view["raw_books_count_before_display_clamp"] = raw
-            view["display_books_count"] = shown
-            view["books_count"] = shown
-        return original(index, candidate, view, tier, stake)
+    original_pick_block = getattr(base, "pick_block", None)
+    if callable(original_pick_block):
+        def wrapped_pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], tier: str, stake: float) -> str:
+            return original_pick_block(index, candidate, _view(metrics), tier, stake)
+        base.pick_block = wrapped_pick_block
 
-    base.pick_block = wrapped
+    original_build_message = getattr(base, "build_message", None)
+    if callable(original_build_message):
+        def wrapped_build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str, bankroll: dict[str, Any]) -> str:
+            return original_build_message(candidate, _view(metrics), tier, bankroll)
+        base.build_message = wrapped_build_message
+
     base._display_line_count_safe_installed = True
