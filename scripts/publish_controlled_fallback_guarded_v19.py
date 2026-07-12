@@ -124,7 +124,7 @@ def run_preflight() -> dict[str, Any]:
         _run_step("promote_a_cover_value_candidates", _module_main("scripts.promote_a_cover_value_candidates")),
         _run_step("normalize_rescue_candidate_keys", _module_main("scripts.normalize_rescue_candidate_keys")),
         _run_step("enrich_rescue_candidates_xg_confirmation", _module_main("scripts.enrich_rescue_candidates_xg_confirmation")),
-        _run_step("update_day_inventory_priority_and_line_state", _module_main("scripts.update_day_inventory_priority_and_line_state")),
+        _run_step("update_day_inventory_priority_and_line_state_safe_clock", _module_main("scripts.update_day_inventory_priority_and_line_state_safe_clock")),
         _run_step("build_a_cover_candidate_gap_report", _module_main("scripts.build_a_cover_candidate_gap_report")),
     ]
     payload = {
@@ -145,13 +145,7 @@ def main() -> int:
     from scripts.patch_controlled_fallback_duplicate_matching import install as install_duplicate_matcher
 
     install_duplicate_matcher(v18)
-    code = int(v18.main() or 0)
-    try:
-        from scripts.sync_run_report_ledger_export import main as sync_run_ledger
-        sync_run_ledger()
-    except Exception:
-        pass
-    return code
+    return int(v18.main() or 0)
 
 
 if __name__ == "__main__":
