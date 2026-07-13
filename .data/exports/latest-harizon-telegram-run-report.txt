@@ -1,83 +1,81 @@
 🧾 HARIZON — понятный отчёт по запуску
-✅ прогноз опубликован
-• Главная причина: опубликовано fallback-пайплайном
+🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
+• Главная причина: controlled fallback daily limit reached:5/5
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 59 (это не размер inventory).
-• 1+ линия: 298/300 (99%) | 1+ контекст: 294/300 (98%)
-• 2+ букмекера: 293/300 (98%)
-• Raw 2+ букмекера odds-api.io current snapshot: 37 | normalized cumulative inventory: 293.
-• Odds-api offer snapshot: rows 5310, matches 44, same-side 2+ books 36
-• 2+ independent odds-source: 259/300 (86%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 285/300 (95%)
-• Готово для модели: 293/300 (98%)
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 306/300; status ok_target_met). Runtime rows processed: 53 (это не размер inventory).
+• 1+ линия: 300/300 (100%) | 1+ контекст: 287/300 (96%)
+• 2+ букмекера: 286/300 (95%)
+• Raw 2+ букмекера odds-api.io current snapshot: 34 | normalized cumulative inventory: 286.
+• Odds-api offer snapshot: rows 4879, matches 42, same-side 2+ books 33
+• 2+ independent odds-source: 254/300 (85%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ контекста: 277/300 (92%)
+• Готово для модели: 287/300 (96%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 259 | main опубликовано: 0
+• A-tier strict-ready: 254 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/2+ bookmaker/1+ context coverage: 293 | fallback опубликовано: 1
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 286 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 259 матчей; B-cover: до 293 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 254 матчей; B-cover: до 286 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
-• Ledger: unique published 56; pending 28; duplicates removed 225; policy semantic match market selection point kickoff.
+• Ledger: unique published 58; pending 30; duplicates removed 232; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 14 | матчей без следующего регулярного run: 14
-• Line guard: увидел 55, оставил 14, отложил 2, снял 23
+• Pre-kickoff проверок: 26 | матчей без следующего регулярного run: 26
+• Line guard: увидел 59, оставил 25, снял 18
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 37/41
-• Quality прошло: 37 | publishable: 0 | опубликовано: 1
-• Controlled fallback: seen 13 | evaluated 13 | published 1
+• Raw/candidates before quality: 34/38
+• Quality прошло: 34 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 29 | evaluated 29 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 12; смэтчил матчей 55; offers 5310; 2+ букмекера 37; ошибок 0.
-• Bzzoiro: direct req 32, v2 req 32; v2 ctx 7; v2 odds 6; secondary offers 562; overlap odds-api.io 551; ошибок 0.
-• SStats: запросы 22; сырых строк 16706; контекстов 38; deep-enriched 53; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 12; смэтчил матчей 51; offers 4879; 2+ букмекера 34; ошибок 0.
+• Bzzoiro: direct req 42, v2 req 42; v2 ctx 9; v2 odds 8; secondary offers 463; overlap odds-api.io 454; ошибок 0.
+• SStats: запросы 22; сырых строк 16706; контекстов 32; deep-enriched 54; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled; запросы 6; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag active_odds_stale_only_no_current_fixture.
 • Комбинации источников линий: odds_api_io: 29, bzzoiro+odds_api_io: 5, bzzoiro: 3
 
 🚫 Почему не опубликовано
-• line movement guard снял кандидата: 23 (49%)
-• направление ставки конфликтует с xG: 6 (13%)
-• модель слишком оптимистична относительно xG-ориентира: 4 (9%)
-• price integrity:external snapshot bookmaker median outlier: 3 (6%)
-• odds below global min: 2 (4%)
-• price integrity:selected price vs bookmaker median outlier: 2 (4%)
-• missing total xg sanity: 2 (4%)
-• кандидат ждёт следующий cron для второго снимка линии: 2 (4%)
-• Диагностика legacy odds-source: 1 — не заменяет обязательные 2+ odds-source
+• controlled fallback daily limit reached:5/5: 29 (38%)
+• line movement guard снял кандидата: 18 (24%)
+• направление ставки конфликтует с xG: 12 (16%)
+• модель слишком оптимистична относительно xG-ориентира: 6 (8%)
+• odds below global min: 5 (7%)
+• price integrity:selected price vs bookmaker median outlier: 4 (5%)
+• price integrity:external snapshot bookmaker median outlier: 2 (3%)
 
 🔎 Проверенные reserve-кандидаты
-1. SK Sigma Olomouc — Shabab Al Ahli Dubai | Больше @1.98 | EV +6.6% | edge +3.3 п.п. | q 76.0
-   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-2. SK Sigma Olomouc — Shabab Al Ahli Dubai | Больше @1.61 | EV +9.4% | edge +5.8 п.п. | q 76.0
-   • причина: odds below global min, направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-3. FC Epitsentr Kamianets-Podilskyi — NK Lokomotiva Zagreb | Меньше @2.78 | EV +11.8% | edge +4.2 п.п. | q 76.0
-   • причина: направление ставки конфликтует с xG
-   • proxy single-source: fact edge 4.2pp / EV 11.8% / conf 68.4; min edge 8.0pp / EV 15.0% / conf 78.0
-4. SK Sigma Olomouc — Shabab Al Ahli Dubai | Меньше @2.58 | EV +12.4% | edge +4.8 п.п. | q 76.0
+1. CA Fenix Pilar — CS Barracas | Больше @1.65 | EV +4.9% | edge +3.0 п.п. | q 0.0
+   • причина: odds below global min, controlled fallback daily limit reached:5/5
+2. Claypole — Leones de Rosario | Больше @2.00 | EV +4.0% | edge +2.0 п.п. | q 0.0
+   • причина: модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
+3. CA Banfield — Belgrano de Cordoba | Больше @2.78 | EV +5.7% | edge +2.1 п.п. | q 0.0
+   • причина: направление ставки конфликтует с xG, controlled fallback daily limit reached:5/5
+4. EC XV de Novembro Piracicaba SP U20 — Desportivo Brasil SP U20 | Больше @2.05 | EV +3.1% | edge +1.5 п.п. | q 0.0
+   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
 
 🧯 Диагностика новых стопоров
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/2 book/1 context.
-• Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 3; top: нет clean-кандидатов после снятия daily cap.
-• Effective blockers without daily cap: xg_direction_conflict 5; xg_probability_gap_hard_reject 3; odds_below_global_min 2; missing_total_xg_sanity 1; price_integrity:external_snapshot_bookmaker_median_outlier 1.
-• A-tier blockers: tier_a_canonical_edge_below_min 1; tier_a_odds_sources_below_min:1/2 1; tier_a_proxy_quality_not_allowed 1; tier_a_publication_score_below_min 1; quality sources proxy 5; raw 3; a_cover_evidence 1.
-• Inventory target-expand stage: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 274; normalized 287→290; gap after 0.
-• Bzzoiro overlap bridge: offers 562; match-overlap 562; same-bucket overlap 551.
-• Fresh B-cover diagnostic: rows 287; with current offer 71; without current offer 216; active 234; active with offer 71; fresh buckets 7557; single-source candidates 1; missing xG candidates 1.
-• Fresh promotion: promoted 24; top skips promotion_skip_odds_below_min 398; promotion_skip_odds_above_max 369; promotion_skip_duplicate_candidate 45; promotion_skip_edge_below_min 43; promotion_skip_price_outlier 25.
-• Rescue xG/confirmation enrichment: candidates 95; xG added 6; confirmation added 38; missing context match 56.
+• Shadow ranking after daily cap: clean 7; daily+other 16; duplicates removed 6; top: Racing Club — Union de Santa Fe Меньше 3.5 3.5 EV +13.1% edge +6.8pp; CA Quilmes Reserve — CA Central Cordoba SE Reserve Меньше 2.5 2.5 EV +8.9% edge +4.6pp; CA San Lorenzo de Almagro — San Luis FC Больше 2.5 2.5 EV +9.5% edge +4.2pp.
+• Effective blockers without daily cap: xg_direction_conflict 9; xg_probability_gap_hard_reject 6; odds_below_global_min 5; price_integrity:selected_price_vs_bookmaker_median_outlier 2; price_integrity:external_snapshot_bookmaker_median_outlier 1.
+• A-tier blockers: n/a; quality sources raw_missing 8; raw 7; a_cover_evidence 4; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
+• Inventory target-expand stage: 306/300; shortfall 0; status ok_target_met.
+• Bookmaker mapping repair: raw 2+ 222; normalized 287→283; gap after 0.
+• Bzzoiro overlap bridge: offers 463; match-overlap 463; same-bucket overlap 454.
+• Fresh B-cover diagnostic: rows 281; with current offer 60; without current offer 221; active 214; active with offer 60; fresh buckets 6739; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 24; top skips promotion_skip_odds_below_min 279; promotion_skip_odds_above_max 277; promotion_skip_no_offer_bucket 221; promotion_skip_duplicate_candidate 42; promotion_skip_edge_below_min 31.
+• Rescue xG/confirmation enrichment: candidates 101; xG added 9; confirmation added 40; missing context match 58.
 
 📌 Что это значит
-• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
+• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 29260409729
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/29260409729
-• Artifact: run-bot-29260409729
+• Run ID: 29268747230
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/29268747230
+• Artifact: run-bot-29268747230
 • workflow run-bot, attempt 1
