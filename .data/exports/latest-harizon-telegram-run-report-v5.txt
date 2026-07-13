@@ -3,13 +3,13 @@
 • Главная причина: controlled fallback daily limit reached:5/5
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 306/300; status ok_target_met). Runtime rows processed: 53 (это не размер inventory).
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 307/300; status ok_target_met). Runtime rows processed: 62 (это не размер inventory).
 • 1+ линия: 300/300 (100%) | 1+ контекст: 287/300 (96%)
 • 2+ букмекера: 286/300 (95%)
-• Raw 2+ букмекера odds-api.io current snapshot: 34 | normalized cumulative inventory: 286.
-• Odds-api offer snapshot: rows 4879, matches 42, same-side 2+ books 33
+• Raw 2+ букмекера odds-api.io current snapshot: 50 | normalized cumulative inventory: 286.
+• Odds-api offer snapshot: rows 6404, matches 57, same-side 2+ books 48
 • 2+ independent odds-source: 254/300 (85%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 277/300 (92%)
+• 2+ контекста: 276/300 (92%)
 • Готово для модели: 287/300 (96%)
 
 🏷️ A/B-tier публикация
@@ -21,61 +21,61 @@
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
-• Ledger: unique published 58; pending 30; duplicates removed 232; policy semantic match market selection point kickoff.
+• Ledger: unique published 58; pending 30; duplicates removed 233; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 26 | матчей без следующего регулярного run: 26
-• Line guard: увидел 59, оставил 25, снял 18
+• Pre-kickoff проверок: 5 | матчей без следующего регулярного run: 4
+• Line guard: увидел 32, оставил 4, отложил 1, снял 11
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 34/38
-• Quality прошло: 34 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 29 | evaluated 29 | published 0
+• Raw/candidates before quality: 36/40
+• Quality прошло: 36 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 6 | evaluated 6 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 12; смэтчил матчей 51; offers 4879; 2+ букмекера 34; ошибок 0.
-• Bzzoiro: direct req 42, v2 req 42; v2 ctx 9; v2 odds 8; secondary offers 463; overlap odds-api.io 454; ошибок 0.
-• SStats: запросы 22; сырых строк 16706; контекстов 32; deep-enriched 54; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 14; смэтчил матчей 62; offers 6404; 2+ букмекера 50; ошибок 0.
+• Bzzoiro: direct req 68, v2 req 68; v2 ctx 15; v2 odds 13; secondary offers 778; overlap odds-api.io 765; ошибок 0.
+• SStats: запросы 22; сырых строк 16705; контекстов 46; deep-enriched 55; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled; запросы 6; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag active_odds_stale_only_no_current_fixture.
 • Комбинации источников линий: odds_api_io: 29, bzzoiro+odds_api_io: 5, bzzoiro: 3
 
 🚫 Почему не опубликовано
-• controlled fallback daily limit reached:5/5: 29 (38%)
-• line movement guard снял кандидата: 18 (24%)
-• направление ставки конфликтует с xG: 12 (16%)
-• модель слишком оптимистична относительно xG-ориентира: 6 (8%)
-• odds below global min: 5 (7%)
-• price integrity:selected price vs bookmaker median outlier: 4 (5%)
-• price integrity:external snapshot bookmaker median outlier: 2 (3%)
+• line movement guard снял кандидата: 11 (42%)
+• controlled fallback daily limit reached:5/5: 6 (23%)
+• market point:quarter totals not allowed: 4 (15%)
+• модель слишком оптимистична относительно xG-ориентира: 2 (8%)
+• odds below global min: 1 (4%)
+• направление ставки конфликтует с xG: 1 (4%)
+• кандидат ждёт следующий cron для второго снимка линии: 1 (4%)
 
 🔎 Проверенные reserve-кандидаты
-1. CA Fenix Pilar — CS Barracas | Больше @1.65 | EV +4.9% | edge +3.0 п.п. | q 0.0
-   • причина: odds below global min, controlled fallback daily limit reached:5/5
-2. Claypole — Leones de Rosario | Больше @2.00 | EV +4.0% | edge +2.0 п.п. | q 0.0
-   • причина: модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
-3. CA Banfield — Belgrano de Cordoba | Больше @2.78 | EV +5.7% | edge +2.1 п.п. | q 0.0
-   • причина: направление ставки конфликтует с xG, controlled fallback daily limit reached:5/5
-4. EC XV de Novembro Piracicaba SP U20 — Desportivo Brasil SP U20 | Больше @2.05 | EV +3.1% | edge +1.5 п.п. | q 0.0
+1. Independiente Campo Grande — Tacuary Asuncion | Больше @1.69 | EV +8.9% | edge +5.3 п.п. | q 76.0
+   • причина: odds below global min, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
+2. IF Vestri — Fylkir Reykjavik | Больше 3.25 @1.98 | EV +9.6% | edge +4.9 п.п. | q 71.3
+   • причина: market point:quarter totals not allowed, market point:quarter totals not allowed, controlled fallback daily limit reached:5/5
+3. Independiente Campo Grande — Tacuary Asuncion | Больше @2.20 | EV +5.8% | edge +2.6 п.п. | q 0.0
    • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:5/5
+4. IF Vestri — Fylkir Reykjavik | Меньше @2.01 | EV +6.3% | edge +3.1 п.п. | q 76.0
+   • причина: controlled fallback daily limit reached:5/5
 
 🧯 Диагностика новых стопоров
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/2 book/1 context.
-• Shadow ranking after daily cap: clean 7; daily+other 16; duplicates removed 6; top: Racing Club — Union de Santa Fe Меньше 3.5 3.5 EV +13.1% edge +6.8pp; CA Quilmes Reserve — CA Central Cordoba SE Reserve Меньше 2.5 2.5 EV +8.9% edge +4.6pp; CA San Lorenzo de Almagro — San Luis FC Больше 2.5 2.5 EV +9.5% edge +4.2pp.
-• Effective blockers without daily cap: xg_direction_conflict 9; xg_probability_gap_hard_reject 6; odds_below_global_min 5; price_integrity:selected_price_vs_bookmaker_median_outlier 2; price_integrity:external_snapshot_bookmaker_median_outlier 1.
-• A-tier blockers: n/a; quality sources raw_missing 8; raw 7; a_cover_evidence 4; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
-• Inventory target-expand stage: 306/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 222; normalized 287→283; gap after 0.
-• Bzzoiro overlap bridge: offers 463; match-overlap 463; same-bucket overlap 454.
-• Fresh B-cover diagnostic: rows 281; with current offer 60; without current offer 221; active 214; active with offer 60; fresh buckets 6739; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 24; top skips promotion_skip_odds_below_min 279; promotion_skip_odds_above_max 277; promotion_skip_no_offer_bucket 221; promotion_skip_duplicate_candidate 42; promotion_skip_edge_below_min 31.
-• Rescue xG/confirmation enrichment: candidates 101; xG added 9; confirmation added 40; missing context match 58.
+• Shadow ranking after daily cap: clean 2; daily+other 2; duplicates removed 2; top: Independiente Campo Grande — Tacuary Asuncion Больше 2.5 2.5 EV +7.9% edge +3.5pp; IF Vestri — Fylkir Reykjavik Меньше 3.0 EV +6.3% edge +3.1pp.
+• Effective blockers without daily cap: market_point:quarter_totals_not_allowed 2; odds_below_global_min 1; xg_probability_gap_hard_reject 1.
+• A-tier blockers: n/a; quality sources raw 2; a_cover_evidence 1; proxy 1; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
+• Inventory target-expand stage: 307/300; shortfall 0; status ok_target_met.
+• Bookmaker mapping repair: raw 2+ 108; normalized 287→283; gap after 0.
+• Bzzoiro overlap bridge: offers 778; match-overlap 778; same-bucket overlap 765.
+• Fresh B-cover diagnostic: rows 287; with current offer 61; without current offer 226; active 188; active with offer 61; fresh buckets 8991; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 24; top skips promotion_skip_no_offer_bucket 226; promotion_skip_odds_above_max 124; promotion_skip_odds_below_min 119; promotion_skip_duplicate_candidate 28; promotion_skip_price_outlier 14.
+• Rescue xG/confirmation enrichment: candidates 74; xG added 1; confirmation added 15; missing context match 58.
 
 📌 Что это значит
 • Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 29268747230
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/29268747230
-• Artifact: run-bot-29268747230
+• Run ID: 29276793891
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/29276793891
+• Artifact: run-bot-29276793891
 • workflow run-bot, attempt 1
