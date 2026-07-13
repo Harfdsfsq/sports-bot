@@ -1,17 +1,80 @@
 {
-  "created_at_utc": "2026-07-13T11:16:19.188248+00:00",
-  "duplicates_removed": 0,
-  "evaluated_rows": 2,
+  "created_at_utc": "2026-07-13T13:17:51.681698+00:00",
+  "duplicates_removed": 1,
+  "evaluated_rows": 5,
   "plain_explanation": [
-    "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+    "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+    "A-tier publication score is below min on many candidates.",
+    "Some candidates still have fewer than the A-tier confirmation/context minimum."
   ],
   "quality_score_sources": {
+    "a_cover_evidence": 2,
     "proxy": 1,
-    "raw_missing": 1
+    "raw": 1
   },
   "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
   "status": "ok",
-  "tier_a_blocker_counts": {},
-  "top_a_tier_blocked_samples": [],
-  "unique_evaluated_rows": 2
+  "tier_a_blocker_counts": {
+    "tier_a_books_below_min": 1,
+    "tier_a_canonical_edge_below_min": 1,
+    "tier_a_confirmation_sources_below_min:1/2": 1,
+    "tier_a_odds_sources_below_min:1/2": 1,
+    "tier_a_proxy_quality_not_allowed": 1,
+    "tier_a_publication_score_below_min": 1,
+    "tier_a_quality_below_min": 1
+  },
+  "top_a_tier_blocked_samples": [
+    {
+      "a_tier_reasons": [
+        "tier_a_books_below_min",
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2"
+      ],
+      "away_team": "Torpedo Moscow",
+      "books_count": 1,
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-13T14:00:00+00:00",
+      "confidence": 62.792,
+      "confirmation_sources": [],
+      "confirmation_sources_count": 1,
+      "daily_cap_reasons": [],
+      "dedupe_key": "2026-07-13|russia 1 liga|fk ural yekaterinburg|torpedo moscow|totals|under|2",
+      "edge_pp": 1.594,
+      "ev_pct": 3.315,
+      "family": "totals",
+      "home_team": "FK Ural Yekaterinburg",
+      "league_name": "Russia - 1. Liga",
+      "match_key": "soccer|fk_ural_yekaterinburg|torpedo_moscow|2026-07-13",
+      "odds": 2.08,
+      "odds_sources_count": 1,
+      "other_reasons": [
+        "tier_a_books_below_min",
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_books_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_bookmaker_quorum_books_below_min:1/2"
+      ],
+      "point": 2.0,
+      "publication_score": 9.3,
+      "quality_score": 59.331,
+      "quality_score_source": "proxy",
+      "rank": 1,
+      "selection": "Меньше",
+      "shadow_score": -66.374,
+      "status_without_daily_cap": "blocked_by_other_guards",
+      "tier": null
+    }
+  ],
+  "unique_evaluated_rows": 4
 }

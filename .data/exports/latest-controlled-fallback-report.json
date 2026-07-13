@@ -1,41 +1,51 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+      "A-tier publication score is below min on many candidates.",
+      "Some candidates still have fewer than the A-tier confirmation/context minimum."
     ],
     "quality_score_sources": {
+      "a_cover_evidence": 2,
       "proxy": 1,
-      "raw_missing": 1
+      "raw": 1
     },
-    "tier_a_blocker_counts": {}
+    "tier_a_blocker_counts": {
+      "tier_a_books_below_min": 1,
+      "tier_a_canonical_edge_below_min": 1,
+      "tier_a_confirmation_sources_below_min:1/2": 1,
+      "tier_a_odds_sources_below_min:1/2": 1,
+      "tier_a_proxy_quality_not_allowed": 1,
+      "tier_a_publication_score_below_min": 1,
+      "tier_a_quality_below_min": 1
+    }
   },
-  "candidates_seen": 2,
-  "created_at": "2026-07-13T11:13:20.580997+00:00",
-  "dry_run": false,
+  "candidates_seen": 5,
+  "created_at": "2026-07-13T13:13:52.725646+00:00",
   "enabled": true,
   "evaluated": [
     {
-      "away_team": "Racing Beirut",
-      "away_team_ru": "Ракинг Бейрут",
+      "away_team": "Social Atletico Television",
+      "away_team_ru": "Сокиал Атлетико Телевисион",
       "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-07-13T13:00:00+00:00",
-      "commence_time_display": "13.07.2026 16:00 MSK",
+      "commence_time": "2026-07-13T14:00:00+00:00",
+      "commence_time_display": "13.07.2026 17:00 MSK",
       "family": "totals",
-      "home_team": "Reyady Abaseya",
-      "home_team_ru": "Рейади Абасейа",
-      "league_name": "Lebanon - Premier League, Relegation round",
-      "league_name_ru": "Лебанон - Премьер-лига, Релегатион рунд",
-      "match_key": "soccer|reyady_abaseya|racing_beirut|2026-07-13",
+      "home_team": "CA River Plate (ARG)",
+      "home_team_ru": "Ривер Плате (ARG)",
+      "league_name": "Argentina - Primera Division A, Women, Apertura",
+      "league_name_ru": "Аргентина - Примера Дивисион A, Уомен, Апертура",
+      "match_key": "soccer|ca_river_plate_arg|social_atletico_television|2026-07-13",
       "metrics": {
-        "adjusted_probability": 0.474535,
-        "books_count": 2,
+        "adjusted_probability": 0.469479,
+        "books_count": 3,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 2.811,
-        "canonical_ev_pct": 6.296,
-        "confidence": 73.433,
+        "canonical_edge_pp": 4.395,
+        "canonical_ev_pct": 10.327,
+        "confidence": 74.904,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -48,16 +58,18 @@
           "bzzoiro",
           "sstats"
         ],
-        "confirmation_sources_count": 9,
+        "confirmation_sources_count": 2,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
-        "line_sources": [],
-        "market_edge_pp": 1.371,
-        "market_probability": 0.460829,
-        "model_probability": 0.474535,
-        "odds": 2.24,
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 3.301,
+        "market_probability": 0.436465,
+        "model_probability": 0.454479,
+        "odds": 2.35,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -66,67 +78,166 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 18.562,
+        "publication_score": 87.945,
         "quality_reasons": [],
-        "quality_score": 76.0,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.446429,
-        "sources_count": 9,
-        "tier_b_bookmaker_quorum": {
-          "books_count": 2,
-          "enabled": true,
-          "max_deviation_pct": 8.0,
-          "median_price": 2.17,
-          "mode": "bookmaker_quorum",
-          "odds_sources_count": 1,
-          "priced_books_count": 2,
-          "same_market_side_line_only": true,
-          "selected_price": 2.24,
-          "selected_vs_median_deviation_pct": 3.226
-        },
+        "quality_score": 64.932,
+        "quality_score_raw": 64.932,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.425532,
+        "sources_count": 2,
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 20.214,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 20.214,
-          "xg_model_gap_pp": -20.214,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.676676,
-          "xg_probability_pct": 67.668,
+          "xg_abs_gap_pp": 6.075,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 6.075,
+          "xg_model_optimism_gap_pp": 6.075,
+          "xg_probability": 0.408729,
+          "xg_probability_pct": 40.873,
           "xg_source": "home_away",
-          "xg_total": 2.0
+          "xg_total": 2.318
         }
       },
-      "ok": true,
+      "ok": false,
       "point": 2.5,
-      "reject_reasons": [],
-      "reject_reasons_ru": [],
-      "selection": "Меньше",
-      "tier": "уровень B"
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Больше 2.5",
+      "tier": null
     },
     {
-      "away_team": "Racing Beirut",
-      "away_team_ru": "Ракинг Бейрут",
-      "candidate_source": "awaiting_movement_lifecycle",
-      "commence_time": "2026-07-13T13:00:00+00:00",
-      "commence_time_display": "13.07.2026 16:00 MSK",
+      "away_team": "Torpedo Moscow",
+      "away_team_ru": "Торпедо Москоу",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-13T14:00:00+00:00",
+      "commence_time_display": "13.07.2026 17:00 MSK",
       "family": "totals",
-      "home_team": "Reyady Abaseya",
-      "home_team_ru": "Рейади Абасейа",
-      "league_name": "Lebanon - Premier League, Relegation round",
-      "league_name_ru": "Лебанон - Премьер-лига, Релегатион рунд",
-      "match_key": "soccer|racing beirut|reyady abaseya|2026-07-13",
+      "home_team": "FK Ural Yekaterinburg",
+      "home_team_ru": "Урал Иекатеринбург",
+      "league_name": "Russia - 1. Liga",
+      "league_name_ru": "Руссиа - 1. Лига",
+      "match_key": "soccer|fk_ural_yekaterinburg|torpedo_moscow|2026-07-13",
       "metrics": {
-        "adjusted_probability": 0.627069,
-        "books_count": 135,
+        "adjusted_probability": 0.496708,
+        "books_count": 1,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 2.466,
-        "canonical_ev_pct": 4.093,
-        "confidence": 72.442,
+        "canonical_edge_pp": 1.594,
+        "canonical_ev_pct": 3.315,
+        "confidence": 62.792,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.651,
+        "market_probability": 0.490196,
+        "model_probability": 0.496708,
+        "odds": 2.08,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": true,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 9.3,
+        "quality_reasons": [],
+        "quality_score": 59.331,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.480769,
+        "sources_count": 1,
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 2.0,
+      "reject_reasons": [
+        "tier_a_books_below_min",
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_b_books_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_bookmaker_quorum_books_below_min:1/2",
+        "tier_b_bookmaker_quorum_books_below_min:1/2",
+        "tier_c_books_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "линий букмекеров меньше минимума уровня A",
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "линий букмекеров меньше минимума уровня B",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: bookmaker quorum books below min:1/2",
+        "уровень B: bookmaker quorum books below min:1/2",
+        "линий букмекеров меньше минимума уровня C",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Social Atletico Television",
+      "away_team_ru": "Сокиал Атлетико Телевисион",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-13T14:00:00+00:00",
+      "commence_time_display": "13.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "CA River Plate (ARG)",
+      "home_team_ru": "Ривер Плате (ARG)",
+      "league_name": "Argentina - Primera Division A, Women, Apertura",
+      "league_name_ru": "Аргентина - Примера Дивисион A, Уомен, Апертура",
+      "match_key": "soccer|ca river plate arg|social atletico television|2026-07-13",
+      "metrics": {
+        "adjusted_probability": 0.65375,
+        "books_count": 139,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 7.235,
+        "canonical_ev_pct": 12.445,
+        "confidence": 78.0,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -139,17 +250,17 @@
           "bzzoiro",
           "sstats"
         ],
-        "confirmation_sources_count": 8,
+        "confirmation_sources_count": 7,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.357,
-        "market_probability": 0.613497,
-        "model_probability": 0.627069,
-        "odds": 1.66,
-        "odds_sources_count": 8,
+        "market_edge_pp": 2.875,
+        "market_probability": 0.625,
+        "model_probability": 0.65375,
+        "odds": 1.72,
+        "odds_sources_count": 6,
         "proxy_single_source_thresholds": {
           "applies": false,
           "enabled": true,
@@ -157,50 +268,223 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 15.339,
+        "publication_score": 35.683,
         "quality_reasons": [],
-        "quality_score": 0.0,
+        "quality_score": 76.0,
         "quality_score_raw": 0.0,
-        "quality_score_source": "raw_missing",
-        "selected_implied_probability": 0.60241,
-        "sources_count": 8,
+        "quality_score_source": "a_cover_evidence",
+        "selected_implied_probability": 0.581395,
+        "sources_count": 7,
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 30.375,
-          "xg_direction_ok": false,
+          "xg_abs_gap_pp": 6.248,
+          "xg_direction_ok": true,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 30.375,
-          "xg_model_optimism_gap_pp": 30.375,
-          "xg_probability": 0.323324,
-          "xg_probability_pct": 32.332,
+          "xg_model_gap_pp": 6.248,
+          "xg_model_optimism_gap_pp": 6.248,
+          "xg_probability": 0.591271,
+          "xg_probability_pct": 59.127,
           "xg_source": "home_away",
-          "xg_total": 2.0
+          "xg_total": 2.318
         }
       },
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "odds_below_global_min",
-        "xg_direction_conflict",
-        "xg_probability_gap_hard_reject"
+        "odds_below_global_min"
       ],
       "reject_reasons_ru": [
-        "коэффициент ниже общего минимума",
-        "направление ставки конфликтует с xG",
-        "модель слишком оптимистична относительно xG-ориентира"
+        "коэффициент ниже общего минимума"
       ],
-      "selection": "Больше",
+      "selection": "Меньше",
       "tier": null
+    },
+    {
+      "away_team": "Social Atletico Television",
+      "away_team_ru": "Сокиал Атлетико Телевисион",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-13T14:00:00+00:00",
+      "commence_time_display": "13.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "CA River Plate (ARG)",
+      "home_team_ru": "Ривер Плате (ARG)",
+      "league_name": "Argentina - Primera Division A, Women, Apertura",
+      "league_name_ru": "Аргентина - Примера Дивисион A, Уомен, Апертура",
+      "match_key": "soccer|ca river plate arg|social atletico television|2026-07-13",
+      "metrics": {
+        "adjusted_probability": 0.358775,
+        "books_count": 278,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.091,
+        "canonical_ev_pct": 9.426,
+        "confidence": 74.842,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 10,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.395,
+        "market_probability": 0.344828,
+        "model_probability": 0.358775,
+        "odds": 3.05,
+        "odds_sources_count": 10,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 22.722,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "a_cover_evidence",
+        "selected_implied_probability": 0.327869,
+        "sources_count": 10,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 3.205,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 3.205,
+          "xg_model_optimism_gap_pp": 3.205,
+          "xg_probability": 0.326725,
+          "xg_probability_pct": 32.672,
+          "xg_source": "home_away",
+          "xg_total": 2.318
+        }
+      },
+      "ok": false,
+      "point": 1.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Social Atletico Television",
+      "away_team_ru": "Сокиал Атлетико Телевисион",
+      "candidate_source": "debug_candidates_before_quality",
+      "commence_time": "2026-07-13T14:00:00+00:00",
+      "commence_time_display": "13.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "CA River Plate (ARG)",
+      "home_team_ru": "Ривер Плате (ARG)",
+      "league_name": "Argentina - Primera Division A, Women, Apertura",
+      "league_name_ru": "Аргентина - Примера Дивисион A, Уомен, Апертура",
+      "match_key": "soccer|ca river plate arg|social atletico television|2026-07-13",
+      "metrics": {
+        "adjusted_probability": 0.469479,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 4.395,
+        "canonical_ev_pct": 10.327,
+        "confidence": 74.904,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 3.301,
+        "market_probability": 0.436465,
+        "model_probability": 0.454479,
+        "odds": 2.35,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 87.945,
+        "quality_reasons": [],
+        "quality_score": 64.932,
+        "quality_score_raw": 64.932,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.425532,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.25,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 2.35,
+          "selected_vs_median_deviation_pct": 4.444
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "missing_total_xg_sanity"
+      ],
+      "reject_reasons_ru": [
+        "missing total xg sanity"
+      ],
+      "selection": "Больше 2.5",
+      "tier": "уровень B"
     }
   ],
-  "message": "🔥 1 контролируемый прогноз на ближайшие 2 часа\n\n💼 Банк: 1041.10 | Открытый риск: 5.00 | Доступно: 1036.10\n\n⚠️ Режим: контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.\n\n1. Рейади Абасейа — Ракинг Бейрут\n🎯 Ставка: Тотал — Меньше (2.5)\n💸 Коэффициент: 2.24\n📊 Скорректированная оценка: 47.5%\n📉 Рынок/консенсус: 46.1%\n✅ Уверенность: 73.4% | качество 76.0 (оценка резерва) | уровень B\n📚 Линии: 2 | odds sources: 1 | confirmation sources: 9\n🔎 Подтверждения: bzzoiro, sstats | betfair_exchange / b_cover_market_promotion\n🧮 Контрольная ценность: запас +2.8 п.п. | EV +6.3%\n🏆 Турнир: Лебанон - Премьер-лига, Релегатион рунд\n🕒 Начало: 13.07.2026 16:00 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n📈 Ожидаемые голы: 1.00 : 1.00\n🔎 xG-проверка: ориентир 67.7% | разрыв -20.2 п.п.\n📝 Комментарий: ставка разрешена только после повторного пересчёта от выбранного коэффициента и проверки времени матча. Если матч уже начался или вышел за окно публикации, резервный публикователь такую ставку не отправляет.",
+  "no_pick_report_sent": true,
   "pool_counts": {
-    "debug_candidates_before_quality_stale_or_outside_window": 25,
-    "latest_picks_stale_or_outside_window": 54,
-    "latest_rescue_candidates": 2,
-    "latest_rescue_candidates_stale_or_outside_window": 14
+    "debug_candidates_before_quality": 1,
+    "debug_candidates_before_quality_duplicate_in_pool": 1,
+    "debug_candidates_before_quality_stale_or_outside_window": 23,
+    "latest_picks_stale_or_outside_window": 56,
+    "latest_rescue_candidates": 4,
+    "latest_rescue_candidates_stale_or_outside_window": 11
   },
-  "published": true,
+  "published": false,
   "scan_policy": {
     "max_picks_per_run": 3,
     "min_confirmation_sources": 1,
@@ -209,248 +493,34 @@
     "publish_window_hours": 2,
     "use_context_source_index": true
   },
-  "selected": {
-    "away_team": "Racing Beirut",
-    "away_team_ru": "Ракинг Бейрут",
-    "bet_payload": {
-      "away_team": "Racing Beirut",
-      "commence_time": "2026-07-13T13:00:00+00:00",
-      "family": "totals",
-      "home_team": "Reyady Abaseya",
-      "kickoff": "2026-07-13T13:00:00+00:00",
-      "league_name": "Lebanon - Premier League, Relegation round",
-      "match_name": "Reyady Abaseya — Racing Beirut",
-      "odds": 2.24,
-      "selection": "Меньше",
-      "stake": 5.0,
-      "stake_amount": 5.0
-    },
-    "canonical_publication_key": "soccer|reyady_abaseya|racing_beirut|2026-07-13|totals|under|2.5|",
-    "commence_time": "2026-07-13T13:00:00+00:00",
-    "commence_time_display": "13.07.2026 16:00 MSK",
-    "dedupe_key": "405499698f9b4f396fda6a4f641129b22134400f",
-    "family": "totals",
-    "home_team": "Reyady Abaseya",
-    "home_team_ru": "Рейади Абасейа",
-    "kickoff": "2026-07-13T13:00:00+00:00",
-    "league_name": "Lebanon - Premier League, Relegation round",
-    "league_name_ru": "Лебанон - Премьер-лига, Релегатион рунд",
-    "market_family": "totals",
-    "match_key": "soccer|reyady_abaseya|racing_beirut|2026-07-13",
-    "match_name": "Reyady Abaseya — Racing Beirut",
-    "metrics": {
-      "adjusted_probability": 0.474535,
-      "books_count": 2,
-      "btts_sanity": {
-        "enabled": false,
-        "reason": "family_not_btts"
-      },
-      "canonical_edge_pp": 2.811,
-      "canonical_ev_pct": 6.296,
-      "confidence": 73.433,
-      "confirmation_meta": {
-        "weather_confirmation_relevant": false,
-        "weather_dropped_as_neutral": false,
-        "weather_neutral": true,
-        "weather_risk_flag": false,
-        "weather_supports_over": false,
-        "weather_supports_under": false
-      },
-      "confirmation_sources": [
-        "bzzoiro",
-        "sstats"
-      ],
-      "confirmation_sources_count": 9,
-      "dnb_sanity": {
-        "enabled": false,
-        "reason": "family_not_dnb"
-      },
-      "line_sources": [],
-      "market_edge_pp": 1.371,
-      "market_probability": 0.460829,
-      "model_probability": 0.474535,
-      "odds": 2.24,
-      "odds_sources_count": 1,
-      "proxy_single_source_thresholds": {
-        "applies": false,
-        "enabled": true,
-        "min_confidence": 78.0,
-        "min_edge_pp": 8.0,
-        "min_ev_pct": 15.0
-      },
-      "publication_score": 18.562,
-      "quality_reasons": [],
-      "quality_score": 76.0,
-      "quality_score_raw": 0.0,
-      "quality_score_source": "proxy",
-      "selected_implied_probability": 0.446429,
-      "sources_count": 9,
-      "tier_b_bookmaker_quorum": {
-        "books_count": 2,
-        "enabled": true,
-        "max_deviation_pct": 8.0,
-        "median_price": 2.17,
-        "mode": "bookmaker_quorum",
-        "odds_sources_count": 1,
-        "priced_books_count": 2,
-        "same_market_side_line_only": true,
-        "selected_price": 2.24,
-        "selected_vs_median_deviation_pct": 3.226
-      },
-      "xg_sanity": {
-        "enabled": true,
-        "xg_abs_gap_pp": 20.214,
-        "xg_direction_ok": true,
-        "xg_model_conservative_gap_pp": 20.214,
-        "xg_model_gap_pp": -20.214,
-        "xg_model_optimism_gap_pp": 0.0,
-        "xg_probability": 0.676676,
-        "xg_probability_pct": 67.668,
-        "xg_source": "home_away",
-        "xg_total": 2.0
-      }
-    },
-    "odds": 2.24,
-    "point": 2.5,
-    "price": 2.24,
-    "publication_lifecycle_status": "telegram_sent",
-    "selected_odds": 2.24,
-    "selection": "Меньше",
-    "stake": 5.0,
-    "stake_amount": 5.0,
-    "status": "pending",
-    "telegram_sent": true,
-    "tier": "уровень B"
-  },
-  "selected_all": [
-    {
-      "away_team": "Racing Beirut",
-      "away_team_ru": "Ракинг Бейрут",
-      "bet_payload": {
-        "away_team": "Racing Beirut",
-        "commence_time": "2026-07-13T13:00:00+00:00",
-        "family": "totals",
-        "home_team": "Reyady Abaseya",
-        "kickoff": "2026-07-13T13:00:00+00:00",
-        "league_name": "Lebanon - Premier League, Relegation round",
-        "match_name": "Reyady Abaseya — Racing Beirut",
-        "odds": 2.24,
-        "selection": "Меньше",
-        "stake": 5.0,
-        "stake_amount": 5.0
-      },
-      "canonical_publication_key": "soccer|reyady_abaseya|racing_beirut|2026-07-13|totals|under|2.5|",
-      "commence_time": "2026-07-13T13:00:00+00:00",
-      "commence_time_display": "13.07.2026 16:00 MSK",
-      "dedupe_key": "405499698f9b4f396fda6a4f641129b22134400f",
-      "family": "totals",
-      "home_team": "Reyady Abaseya",
-      "home_team_ru": "Рейади Абасейа",
-      "kickoff": "2026-07-13T13:00:00+00:00",
-      "league_name": "Lebanon - Premier League, Relegation round",
-      "league_name_ru": "Лебанон - Премьер-лига, Релегатион рунд",
-      "market_family": "totals",
-      "match_key": "soccer|reyady_abaseya|racing_beirut|2026-07-13",
-      "match_name": "Reyady Abaseya — Racing Beirut",
-      "metrics": {
-        "adjusted_probability": 0.474535,
-        "books_count": 2,
-        "btts_sanity": {
-          "enabled": false,
-          "reason": "family_not_btts"
-        },
-        "canonical_edge_pp": 2.811,
-        "canonical_ev_pct": 6.296,
-        "confidence": 73.433,
-        "confirmation_meta": {
-          "weather_confirmation_relevant": false,
-          "weather_dropped_as_neutral": false,
-          "weather_neutral": true,
-          "weather_risk_flag": false,
-          "weather_supports_over": false,
-          "weather_supports_under": false
-        },
-        "confirmation_sources": [
-          "bzzoiro",
-          "sstats"
-        ],
-        "confirmation_sources_count": 9,
-        "dnb_sanity": {
-          "enabled": false,
-          "reason": "family_not_dnb"
-        },
-        "line_sources": [],
-        "market_edge_pp": 1.371,
-        "market_probability": 0.460829,
-        "model_probability": 0.474535,
-        "odds": 2.24,
-        "odds_sources_count": 1,
-        "proxy_single_source_thresholds": {
-          "applies": false,
-          "enabled": true,
-          "min_confidence": 78.0,
-          "min_edge_pp": 8.0,
-          "min_ev_pct": 15.0
-        },
-        "publication_score": 18.562,
-        "quality_reasons": [],
-        "quality_score": 76.0,
-        "quality_score_raw": 0.0,
-        "quality_score_source": "proxy",
-        "selected_implied_probability": 0.446429,
-        "sources_count": 9,
-        "tier_b_bookmaker_quorum": {
-          "books_count": 2,
-          "enabled": true,
-          "max_deviation_pct": 8.0,
-          "median_price": 2.17,
-          "mode": "bookmaker_quorum",
-          "odds_sources_count": 1,
-          "priced_books_count": 2,
-          "same_market_side_line_only": true,
-          "selected_price": 2.24,
-          "selected_vs_median_deviation_pct": 3.226
-        },
-        "xg_sanity": {
-          "enabled": true,
-          "xg_abs_gap_pp": 20.214,
-          "xg_direction_ok": true,
-          "xg_model_conservative_gap_pp": 20.214,
-          "xg_model_gap_pp": -20.214,
-          "xg_model_optimism_gap_pp": 0.0,
-          "xg_probability": 0.676676,
-          "xg_probability_pct": 67.668,
-          "xg_source": "home_away",
-          "xg_total": 2.0
-        }
-      },
-      "odds": 2.24,
-      "point": 2.5,
-      "price": 2.24,
-      "publication_lifecycle_status": "telegram_sent",
-      "selected_odds": 2.24,
-      "selection": "Меньше",
-      "stake": 5.0,
-      "stake_amount": 5.0,
-      "status": "pending",
-      "telegram_sent": true,
-      "tier": "уровень B"
-    }
-  ],
-  "selected_count": 1,
   "shadow_ranking": {
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
-    "duplicates_removed": 0,
+    "duplicates_removed": 1,
     "reason_counts_without_daily_cap": {
       "odds_below_global_min": 1,
-      "xg_direction_conflict": 1,
-      "xg_probability_gap_hard_reject": 1
+      "tier_a_books_below_min": 1,
+      "tier_a_canonical_edge_below_min": 1,
+      "tier_a_confirmation_sources_below_min:1/2": 1,
+      "tier_a_odds_sources_below_min:1/2": 1,
+      "tier_a_proxy_quality_not_allowed": 1,
+      "tier_a_publication_score_below_min": 1,
+      "tier_a_quality_below_min": 1,
+      "tier_b_bookmaker_quorum_books_below_min:1/2": 2,
+      "tier_b_books_below_min": 1,
+      "tier_b_canonical_edge_below_min": 1,
+      "tier_b_publication_score_below_min": 1,
+      "tier_b_quality_below_min": 1,
+      "tier_c_books_below_min": 1,
+      "tier_c_canonical_edge_below_min": 1,
+      "tier_c_publication_score_below_min": 1,
+      "tier_c_quality_below_min": 1,
+      "xg_direction_conflict": 2
     },
     "top_would_publish_without_daily_cap": []
   },
-  "status": "published",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3995,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1783941201,\"text\":\"\\ud83d\\udd25 1 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u043f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437 \\u043d\\u0430 \\u0431\\u043b\\u0438\\u0436\\u0430\\u0439\\u0448\\u0438\\u0435 2 \\u0447\\u0430\\u0441\\u0430\\n\\n\\ud83d\\udcbc \\u0411\\u0430\\u043d\\u043a: 1041.10 | \\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u044b\\u0439 \\u0440\\u0438\\u0441\\u043a: 5.00 | \\u0414\\u043e\\u0441\\u0442\\u0443\\u043f\\u043d\\u043e: 1036.10\\n\\n\\u26a0\\ufe0f \\u0420\\u0435\\u0436\\u0438\\u043c: \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432, \\u0443\\u0440\\u043e\\u0432\\u0435\\u043d\\u044c B. \\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u0",
+  "status": "no_viable_controlled_fallback",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":3998,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1783948436,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
@@ -458,5 +528,6 @@
     "manual_late_mode_enabled": false,
     "min_kickoff_lead_minutes": 20,
     "publish_window_hours": 2
-  }
+  },
+  "watchlist": []
 }
