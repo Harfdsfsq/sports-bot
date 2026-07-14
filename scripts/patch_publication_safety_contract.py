@@ -7,6 +7,8 @@ and a lot of unsettled rows.  This patch keeps the bot productive while stopping
 weak reserve candidates from becoming real Telegram picks:
 
 * proxy/default 1.00:1.00 xG is a hard reject for every tier;
+* Telegram fallback now requires 2+ independent line/odds sources and 2+ context
+  confirmations when HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM=true;
 * B-tier proxy/promotion rows need hard context/xG evidence;
 * reserve/youth/friendly-style rows are not allowed through B-tier;
 * all decisions are written to a small diagnostic artifact.
@@ -41,6 +43,8 @@ LOW_QUALITY_TEXT_RE = re.compile(
 HARD_CONTEXT_TOKENS = (
     'bzzoiro_stats',
     'bzzoiro_prediction',
+    'bzzoiro_odds_comparison',
+    'odds_comparison',
     'event_stats',
     'event_prediction',
     'sstats_xg',
@@ -67,6 +71,15 @@ def _f(value: Any, default: float = 0.0) -> float:
         if value in (None, ''):
             return default
         return float(str(value).replace(',', '.'))
+    except Exception:
+        return default
+
+
+def _i(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ''):
+            return default
+        return int(float(str(value).replace(',', '.')))
     except Exception:
         return default
 
@@ -104,8 +117,6 @@ def _has_hard_context(candidate: dict[str, Any], metrics: dict[str, Any]) -> boo
         return True
     xg = _xg_payload(metrics)
     if bool(xg.get('enabled')) and not _is_proxy_default_xg(metrics):
-        # A non-default xG sanity payload is acceptable only if it is not the
-        # placeholder blocked above. This still leaves value/edge/line guards in place.
         total = _f(xg.get('xg_total'), -1.0)
         xg_prob = _f(xg.get('xg_probability'), 0.0)
         return total > 0 and (abs(total - 2.0) > 1e-6 or xg_prob > 0)
@@ -122,6 +133,23 @@ def _looks_weak_quality(candidate: dict[str, Any], metrics: dict[str, Any]) -> b
 def _low_quality_competition(candidate: dict[str, Any]) -> bool:
     text = ' '.join(str(candidate.get(key) or '') for key in ('league_name', 'league', 'home_team', 'away_team', 'home', 'away', 'competition', 'tournament'))
     return bool(LOW_QUALITY_TEXT_RE.search(text))
+
+
+def _odds_sources(metrics: dict[str, Any]) -> int:
+    return max(
+        _i(metrics.get('odds_sources_count')),
+        _i(metrics.get('line_sources_count')),
+        _i(metrics.get('price_sources_count')),
+        _i(metrics.get('sources_count')),
+    )
+
+
+def _context_sources(metrics: dict[str, Any]) -> int:
+    return max(
+        _i(metrics.get('context_sources_count')),
+        _i(metrics.get('confirmation_sources_count')),
+        _i(metrics.get('sources_count')),
+    )
 
 
 def _write_report(payload: dict[str, Any]) -> None:
@@ -147,6 +175,13 @@ def install(base: Any) -> None:
     def wrapped(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
         reasons = list(old(tier, candidate, metrics) or [])
         t = str(tier or '').strip().upper()
+        if _truthy('HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM', True) or _truthy('CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS', True):
+            odds = _odds_sources(metrics)
+            ctx = _context_sources(metrics)
+            if odds < 2:
+                add(f'tier_{t.lower()}_two_plus_odds_sources_required:{odds}/2', reasons)
+            if ctx < 2:
+                add(f'tier_{t.lower()}_two_plus_context_sources_required:{ctx}/2', reasons)
         if _truthy('CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS', True) and _is_proxy_default_xg(metrics):
             add(f'tier_{t.lower()}_proxy_default_xg_placeholder', reasons)
         if t == 'B' and _truthy('CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT', True):
@@ -162,8 +197,10 @@ def install(base: Any) -> None:
     _write_report({
         'status': 'installed',
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
-        'policy': 'micro-stake pilot: publish only strict A/B with hard context; proxy/default xG and low-quality B-tier rows are blocked',
+        'policy': 'pilot: publish only strict candidates with 2+ line sources and 2+ context sources; proxy/default xG and low-quality B-tier rows are blocked',
         'env': {
+            'HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM': str(os.getenv('HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM') or 'true'),
+            'CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS': str(os.getenv('CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS') or 'true'),
             'CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS': str(os.getenv('CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS') or 'true'),
             'CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT': str(os.getenv('CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT') or 'true'),
             'CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS': str(os.getenv('CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS') or 'true'),
