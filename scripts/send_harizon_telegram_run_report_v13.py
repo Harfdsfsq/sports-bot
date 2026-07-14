@@ -18,18 +18,22 @@ def _sanitize() -> None:
 
 
 def _refresh_inventory_truth() -> None:
-    """Make the Telegram report read the final 300-row inventory state.
+    """Make the Telegram report read the final repaired inventory state.
 
     Some workflow steps repair/restore the high-watermark inventory after the
     earlier coverage-truth report has already been built.  Rebuild target-expand,
-    no-shrink and coverage-truth here so the visible report does not say 247/300
-    while .data/day_inventory/latest.json already contains 300 rows.
+    fill midnight shortfalls, remove blank rows and then rebuild coverage-truth so
+    the visible report does not show partial/empty rows when the repair pass can
+    still restore real matches.
     """
     steps = (
         ("scripts.expand_day_inventory_to_target", "main"),
+        ("scripts.extend_day_inventory_for_target_shortfall", "main"),
+        ("scripts.repair_day_inventory_blank_rows", "main"),
         ("scripts.guard_day_inventory_no_shrink", "main"),
         ("scripts.backfill_inventory_bookmaker_coverage", "main"),
         ("scripts.bridge_runtime_context_coverage", "main"),
+        ("scripts.repair_day_inventory_blank_rows", "main"),
         ("scripts.build_day_inventory_coverage_truth", "main"),
         ("scripts.day_inventory_cumulative_coverage", "main"),
     )
