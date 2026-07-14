@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 
+_MODEL_QUALITY_SOURCES = {"", "model", "raw", "raw_model", "model_quality", "quality_model"}
+
+
 def _num(value: Any, default: int = 0) -> int:
     try:
         if value in (None, ""):
@@ -35,6 +38,10 @@ def _view(metrics: dict[str, Any]) -> dict[str, Any]:
         view["raw_books_count_before_display_clamp"] = raw
         view["display_books_count"] = shown
         view["books_count"] = shown
+    source = str(view.get("quality_score_source") or "").strip().lower()
+    if source and source not in _MODEL_QUALITY_SOURCES:
+        view["raw_quality_score_source_before_display_label"] = source
+        view["quality_score_source"] = "proxy"
     return view
 
 
