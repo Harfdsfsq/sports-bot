@@ -2,11 +2,17 @@ from __future__ import annotations
 
 """Restore awaiting movement candidates into the rescue pool before fallback.
 
-This makes candidates saved on a previous run visible to the controlled fallback
-review after their next line snapshot has been collected.
+Awaiting rows can be discovered many hours before kick-off.  The fallback pool is
+only allowed to publish inside the configured window, so restoring every 24h row
+creates noisy ``latest_rescue_candidates_stale_or_outside_window`` counters and
+can make the report say candidates were lost even though they are simply too far
+away.  Keep the lifecycle state intact, but only write rows into
+``latest-rescue-candidates.json`` when they are inside the active fallback scan
+window.
 """
 
 import json
+import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -44,6 +50,14 @@ def _parse_dt(value: Any) -> datetime | None:
         return dt.astimezone(UTC)
     except Exception:
         return None
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        raw = os.getenv(name)
+        return int(float(str(raw).strip())) if raw not in (None, "") else default
+    except Exception:
+        return default
 
 
 def _norm(value: Any) -> str:
@@ -120,28 +134,61 @@ def _write_rescue(rows: list[dict[str, Any]]) -> None:
     _write_json(RESCUE, rows)
 
 
+def _fallback_window(now: datetime) -> tuple[datetime, datetime]:
+    min_lead = max(0, _env_int("MIN_KICKOFF_LEAD_MINUTES", 20))
+    # Keep a small buffer so a row needed by this run is not lost due to seconds.
+    earliest = now + timedelta(minutes=max(0, min_lead - 2))
+    hours = max(1, _env_int("PUBLISH_WINDOW_HOURS", _env_int("CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS", 2)))
+    latest = now + timedelta(hours=hours, minutes=_env_int("RESTORE_AWAITING_MOVEMENT_WINDOW_BUFFER_MINUTES", 10))
+    return earliest, latest
+
+
 def main() -> int:
     now = datetime.now(UTC)
+    earliest, latest = _fallback_window(now)
     state = _load_json(STATE, {})
     awaiting = state.get("awaiting_movement_candidates") if isinstance(state, dict) else []
     if not isinstance(awaiting, list):
         awaiting = []
     existing_payload = _load_json(RESCUE, [])
     rescue_rows = _extract_rows(existing_payload)
-    by_sig = {_sig(row): row for row in rescue_rows if isinstance(row, dict)}
+    # Drop previously restored awaiting rows that have now moved outside the live
+    # fallback window; keep non-awaiting rescue rows untouched.
+    by_sig = {
+        _sig(row): row for row in rescue_rows
+        if isinstance(row, dict) and row.get("_candidate_source") != "awaiting_movement_lifecycle"
+    }
 
     restored = 0
-    skipped = {"expired": 0, "too_far": 0, "bad_row": 0}
+    skipped = {"expired": 0, "too_far_24h": 0, "outside_fallback_window": 0, "unknown_kickoff": 0, "bad_row": 0}
+    future_watchlist: list[dict[str, Any]] = []
     for row in awaiting:
         if not isinstance(row, dict):
             skipped["bad_row"] += 1
             continue
         kickoff = _parse_dt(row.get("commence_time") or row.get("kickoff") or row.get("start_time"))
-        if kickoff is not None and kickoff < now:
+        if kickoff is None:
+            skipped["unknown_kickoff"] += 1
+            continue
+        if kickoff < now:
             skipped["expired"] += 1
             continue
-        if kickoff is not None and kickoff > now + timedelta(hours=24):
-            skipped["too_far"] += 1
+        if kickoff > now + timedelta(hours=24):
+            skipped["too_far_24h"] += 1
+            continue
+        if not (earliest <= kickoff <= latest):
+            skipped["outside_fallback_window"] += 1
+            if len(future_watchlist) < 20:
+                future_watchlist.append({
+                    "match_key": row.get("match_key") or row.get("canonical_match_id"),
+                    "home_team": row.get("home_team") or row.get("home"),
+                    "away_team": row.get("away_team") or row.get("away"),
+                    "commence_time": kickoff.isoformat(),
+                    "minutes_to_kickoff": round((kickoff - now).total_seconds() / 60.0, 2),
+                    "selection": row.get("selection"),
+                    "point": row.get("point"),
+                    "reason": "outside_active_fallback_window",
+                })
             continue
         item = dict(row)
         item["_candidate_source"] = "awaiting_movement_lifecycle"
@@ -156,15 +203,17 @@ def main() -> int:
     payload = {
         "status": "ok",
         "created_at_utc": now.isoformat(),
+        "window": {"earliest_utc": earliest.isoformat(), "latest_utc": latest.isoformat()},
         "awaiting_seen": len(awaiting),
         "existing_rescue_rows": len(rescue_rows),
         "restored": restored,
         "rescue_rows_after": len(merged),
         "skipped": skipped,
+        "future_watchlist_sample": future_watchlist,
         "sample": [x for x in merged if x.get("_candidate_source") == "awaiting_movement_lifecycle"][:10],
     }
     _write_json(OUT, payload)
-    print(json.dumps({"status": "ok", "restored": restored, "rescue_rows_after": len(merged)}, ensure_ascii=False, sort_keys=True))
+    print(json.dumps({"status": "ok", "restored": restored, "rescue_rows_after": len(merged), "skipped": skipped}, ensure_ascii=False, sort_keys=True))
     return 0
 
 
