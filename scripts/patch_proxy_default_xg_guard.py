@@ -55,13 +55,17 @@ def _is_default_1_1(metrics: dict[str, Any], candidate: dict[str, Any]) -> bool:
     return total is not None and abs(total - 2.0) < 1e-6
 
 
+def _is_placeholder(metrics: dict[str, Any]) -> bool:
+    return str(metrics.get('reason') or '').strip().lower() == 'proxy_default_1_1_xg_placeholder'
+
+
 def install(base: Any) -> None:
-    original = getattr(base, 'xg_sanity_metrics', None)
-    if not callable(original) or getattr(base, '_proxy_default_xg_guard_installed', False):
+    original_xg = getattr(base, 'xg_sanity_metrics', None)
+    if not callable(original_xg) or getattr(base, '_proxy_default_xg_guard_installed', False):
         return
 
-    def wrapped(candidate: dict[str, Any], adjusted_probability: float) -> dict[str, Any]:
-        metrics = dict(original(candidate, adjusted_probability) or {})
+    def wrapped_xg(candidate: dict[str, Any], adjusted_probability: float) -> dict[str, Any]:
+        metrics = dict(original_xg(candidate, adjusted_probability) or {})
         if str(os.getenv('CONTROLLED_FALLBACK_REJECT_PROXY_DEFAULT_XG') or 'true').strip().lower() not in {'1', 'true', 'yes', 'on', 'force'}:
             return metrics
         if not metrics.get('enabled'):
@@ -82,5 +86,16 @@ def install(base: Any) -> None:
             })
         return metrics
 
-    base.xg_sanity_metrics = wrapped
+    base.xg_sanity_metrics = wrapped_xg
+
+    original_tier_reasons = getattr(base, 'tier_reasons', None)
+    if callable(original_tier_reasons):
+        def wrapped_tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+            reasons = list(original_tier_reasons(tier, candidate, metrics) or [])
+            xg = metrics.get('xg_sanity') if isinstance(metrics.get('xg_sanity'), dict) else {}
+            if _is_placeholder(xg):
+                reasons.append(f"tier_{str(tier or '').lower()}_proxy_default_xg_placeholder")
+            return reasons
+        base.tier_reasons = wrapped_tier_reasons
+
     base._proxy_default_xg_guard_installed = True
