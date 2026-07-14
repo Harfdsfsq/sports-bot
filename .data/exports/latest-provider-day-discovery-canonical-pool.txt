@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-14T01:05:00.424931+00:00
+UTC: 2026-07-14T03:05:19.273923+00:00
 target_date: 2026-07-14
-canonical_matches: 317
-2+ provider sources: 132
-2+ primary sources: 132
+canonical_matches: 320
+2+ provider sources: 134
+2+ primary sources: 133
 all 3 primary sources: 8
 
 ## Provider fixture discovery
@@ -13,12 +13,12 @@ all 3 primary sources: 8
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=137 event_like=129 unique=129 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=140 event_like=132 unique=132 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 185, "3": 11, "2": 120, "4": 1}
-- primary providers: {"1": 185, "2": 124, "3": 8}
+- all providers: {"1": 186, "2": 123, "3": 10, "4": 1}
+- primary providers: {"1": 187, "2": 125, "3": 8}
 
 ## Top canonical matches
 - 2026-07-13T21:30:00+00:00 | 9 de Julio Rafaela — Defensores de Belgrano VR | providers=sstats ids={"sstats": "1530452"}
@@ -30,8 +30,8 @@ all 3 primary sources: 8
 - 2026-07-13T23:00:00+00:00 | America-RN — Trem | providers=sstats ids={"sstats": "1567810"}
 - 2026-07-13T23:30:00+00:00 | Ceara — Athletic Club | providers=sstats ids={"sstats": "1520763"}
 - 2026-07-13T23:30:00+00:00 | Figueirense — Volta Redonda | providers=sstats ids={"sstats": "1526888"}
-- 2026-07-14T00:00:00+00:00 | CA Atlanta — CA Colegiales | providers=odds_api_io,sstats,thesportsdb ids={"odds_api_io": "72327790", "thesportsdb": "2404903", "sstats": "1498633"}
-- 2026-07-14T01:30:00+00:00 | Cavalry FC — Vancouver Whitecaps FC | providers=odds_api_io,sstats ids={"odds_api_io": "71492552", "sstats": "1544686"}
+- 2026-07-14T00:00:00+00:00 | Atlanta — Colegiales | providers=sstats,thesportsdb ids={"thesportsdb": "2404903", "sstats": "1498633"}
+- 2026-07-14T01:30:00+00:00 | Cavalry FC — Vancouver Whitecaps | providers=sstats ids={"sstats": "1544686"}
 - 2026-07-14T08:15:00+00:00 | Boroondara-Carey Eagles U20 — Preston Lions FC U20 | providers=odds_api_io ids={"odds_api_io": "72419728"}
 - 2026-07-14T09:00:00+00:00 | OFK Dynamo Malzenice — Besiktas Istanbul | providers=odds_api_io,sstats ids={"odds_api_io": "72545884", "sstats": "1567619"}
 - 2026-07-14T09:00:00+00:00 | FC Andorra — Millwall FC | providers=odds_api_io,sstats ids={"odds_api_io": "72269926", "sstats": "1554929"}
@@ -89,13 +89,13 @@ all 3 primary sources: 8
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- CA Atlanta — CA Colegiales | primary=2 providers=odds_api_io,sstats,thesportsdb
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Atlanta — Colegiales | primary=1 providers=sstats,thesportsdb
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Cavalry FC — Vancouver Whitecaps FC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Cavalry FC — Vancouver Whitecaps | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Boroondara-Carey Eagles U20 — Preston Lions FC U20 | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups

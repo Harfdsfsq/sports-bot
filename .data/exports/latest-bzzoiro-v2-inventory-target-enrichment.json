@@ -1,14 +1,31 @@
 {
-  "contexts_matched": 0,
-  "created_at_utc": "2026-07-14T01:08:12.147955+00:00",
-  "examples": [],
-  "inventory_rows": 353,
+  "contexts_matched": 1,
+  "created_at_utc": "2026-07-14T03:08:49.329595+00:00",
+  "examples": [
+    {
+      "away": "Ironbound SC",
+      "context_sources": [
+        "sstats",
+        "bzzoiro"
+      ],
+      "expected_away": 1.37,
+      "expected_home": 0.83,
+      "home": "New England FC",
+      "match_key": "soccer|ironbound|new england|2026-07-15",
+      "odds_sources": [
+        "odds_api_io",
+        "sstats",
+        "bzzoiro"
+      ]
+    }
+  ],
+  "inventory_rows": 358,
   "pool_id_prefill": {
     "contexts_added": 0,
-    "created_at_utc": "2026-07-14T01:08:01.538735+00:00",
+    "created_at_utc": "2026-07-14T03:08:32.111636+00:00",
     "event_ids_hydrated": 0,
     "examples": [],
-    "inventory_rows": 353,
+    "inventory_rows": 358,
     "odds_hints_added": 0,
     "pool_keys": 34,
     "rows_touched": 0,
@@ -28,17 +45,17 @@
   "preview": {
     "bzzoiro_v2_source_matrix_patch": {
       "hints_sidecar": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json",
-      "hints_sidecar_matches": 0,
-      "matched": 0,
+      "hints_sidecar_matches": 1,
+      "matched": 1,
       "odds_comparison_attachment": {
-        "attached": 0,
-        "attempted": 0,
+        "attached": 1,
+        "attempted": 1,
         "enabled": true,
         "errors": 0,
         "limit": 120,
         "max_requests": 120
       },
-      "provider_odds_hints": 0,
+      "provider_odds_hints": 134,
       "sample_targets": [
         "soccer|always ready|cdt real oruro|2026-07-14",
         "soccer|appalachian|lvu rush|2026-07-14",
@@ -48,12 +65,28 @@
         "soccer|comunicaciones|villa dalmine|2026-07-14",
         "soccer|cs limpeno|general caballero jlm|2026-07-14",
         "soccer|csd macara|mushuc runa|2026-07-14",
+        "soccer|delfin|manta|2026-07-15",
+        "soccer|ironbound|new england|2026-07-15",
         "soccer|merlo|real pilar|2026-07-14"
       ],
-      "target_matches": 9,
-      "unmatched": 9
+      "target_matches": 11,
+      "unmatched": 10
     },
-    "matched_examples": [],
+    "matched_examples": [
+      {
+        "confidence": 64.4416,
+        "event_away": "Argentina",
+        "event_home": "England",
+        "event_id": 8388,
+        "event_score": 60.48,
+        "expected_away": 1.37,
+        "expected_home": 0.83,
+        "match_away": "Ironbound SC",
+        "match_home": "New England FC",
+        "match_key": "soccer|ironbound|new england|2026-07-15",
+        "quality": "fuzzy"
+      }
+    ],
     "sample_events": [
       {
         "attendance": null,
@@ -255,6 +288,13 @@
         "match_key": "soccer|fagiano okayama|sv wehen wiesbaden|2026-07-14"
       },
       {
+        "away": "FC Bihor Oradea",
+        "best_event": null,
+        "home": "NK Bistrica Slovenska Bistrica",
+        "league": "International Clubs - Club Friendly Games",
+        "match_key": "soccer|bihor oradea|nk bistrica slovenska bistrica|2026-07-14"
+      },
+      {
         "away": "MFK Ruzomberok",
         "best_event": null,
         "home": "Fortuna Dusseldorf",
@@ -262,71 +302,74 @@
         "match_key": "soccer|fortuna dusseldorf|mfk ruzomberok|2026-07-14"
       },
       {
-        "away": "Tamworth FC",
+        "away": "Vanloese IF",
         "best_event": null,
-        "home": "Port Vale",
+        "home": "HIK Hellerup",
         "league": "International Clubs - Club Friendly Games",
-        "match_key": "soccer|port vale|tamworth|2026-07-14"
-      },
-      {
-        "away": "FK Naftagas Elemir",
-        "best_event": null,
-        "home": "FK Macva Sabac",
-        "league": "International Clubs - Club Friendly Games",
-        "match_key": "soccer|macva sabac|naftagas elemir|2026-07-14"
+        "match_key": "soccer|hik hellerup|vanloese if|2026-07-14"
       }
     ]
   },
-  "rows_touched": 0,
+  "rows_touched": 1,
   "stats": {
     "api_key_present": true,
     "api_version": "v2",
     "base_url": "https://sports.bzzoiro.com/api/v2",
     "bzzoiro_v2_source_matrix_patch": true,
     "context_limit_enforced": false,
-    "contexts_built": 0,
+    "contexts_built": 1,
     "enabled": true,
-    "event_matches": 0,
-    "event_metadata_fetched": 0,
-    "event_odds_fetched": 0,
-    "event_prediction_fetched": 0,
+    "event_matches": 1,
+    "event_metadata_fetched": 1,
+    "event_odds_fetched": 1,
+    "event_prediction_fetched": 1,
     "event_rejected_league_mismatch": 0,
     "event_rejected_low_score": 0,
-    "event_rejected_no_quality": 126,
-    "event_stats_fetched": 0,
+    "event_rejected_no_quality": 130,
+    "event_stats_fetched": 1,
     "events_fetched": 21,
     "http_statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
       200
     ],
-    "last_body_preview": "{\"count\":21,\"next\":null,\"previous\":null,\"results\":[{\"id\":207697,\"league_id\":57,\"season_id\":1435,\"home_team_id\":2227,\"home_team\":\"SC Jacksonville\",\"away_team_id\":2226,\"away_team\":\"Pittsburgh Riverhounds\",\"home_coach_id\":1622,\"away_coach_id\":1621,\"referee_id\":null,\"venue_id\":1342,\"event_date\":\"2026-07-15T23:30:00+00:00\",\"status\":\"notstarted\",\"replaced_by\":null,\"round_number\":1,\"round_name\":\"\",\"group_name\":null,\"period\":\"\",\"current_minute\":null,\"home_score\":null,\"away_score\":null,\"home_score_ht\":null,\"away_score_ht\":null,\"penalty_shootout\":null,\"extra_time_score\":null,\"is_local_derby\":false,\"is_neutral_ground\":false,\"travel_distance_km\":null,\"weather\":{\"code\":null,\"description\":null,\"wind_speed\":null,\"temperature_c\":null},\"pitch_condition\":null,\"attendance\":null,\"live_websocket\":false,\"websocket_plus\":true,\"highlights\":[],\"head_to_head\":{\"total_matches\":1,\"home_wins\":0,\"draws\":0,\"away_wins\":1,\"home_goals\":2,\"away_goals\":3,\"avg_total_goals\":5.0,\"home_win_rate\":0.0,\"away_win_rate\":1.0,\"recent_matches\":[{\"away\":\"SC Jacksonville\",\"date\":\"2026-03-28T23:00:00+00:00\",\"home\":\"Pittsburgh Riverhounds\",\"score\":\"3-2\"}]}},{\"id\":207695,\"league_id\":57,\"season_id\":1435,\"home_team_id\":2221,\"home_team\"",
+    "last_body_preview": "{\"event_id\":8388,\"event_date\":\"2026-07-15T19:00:00Z\",\"league_id\":27,\"league_name\":\"World Cup 2026\",\"home_team_id\":493,\"home_team\":\"England\",\"away_team_id\":489,\"away_team\":\"Argentina\",\"bookmakers_count\":15,\"total_odds\":487,\"markets\":{\"double_chance\":{\"1X\":{\"outcome\":\"1X\",\"line\":null,\"outcome_name\":\"England or Draw\",\"best_odds\":1.42,\"best_bookmaker_slug\":\"betano\",\"best_bookmaker_name\":\"Betano\",\"bookmakers\":{\"1xbet\":{\"decimal_odds\":1.419,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-07-13T14:01:35Z\"},\"betano\":{\"decimal_odds\":1.42,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-07-14T02:03:11Z\"},\"pinnacle\":{\"decimal_odds\":1.411,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-07-14T02:03:10Z\"},\"interwetten\":{\"decimal_odds\":1.4,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-07-13T14:01:36Z\"},\"unibet\":{\"decimal_odds\":1.4,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-07-13T14:01:36Z\"},\"novibet\":{\"decimal_odds\":1.35,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-07-14T02:03:11Z\"},\"bwin\":{\"decimal_odds\":1.36,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-07-14T02:03:11Z\"},\"sportingbet\":{\"decimal_odds\":1.36,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-07-14T02:03:11Z\"},\"betway\":{\"decimal_odds\":1.375,\"movement\":\"DRIFTING\",\"updated",
     "last_error": null,
-    "last_url": "https://sports.bzzoiro.com/api/v2/events/",
+    "last_url": "https://sports.bzzoiro.com/api/v2/events/8388/odds/comparison/",
     "matched_exact": 0,
-    "matched_fuzzy": 0,
+    "matched_fuzzy": 1,
     "matched_loose": 0,
     "odds_comparison_attachment": {
-      "attached": 0,
-      "attempted": 0,
+      "attached": 1,
+      "attempted": 1,
       "enabled": true,
       "errors": 0,
       "limit": 120,
       "max_requests": 120
     },
     "payload_shapes": [
-      "dict:count,next,previous,results"
+      "dict:count,next,previous,results",
+      "dict:event_id,odds",
+      "dict:average_positions,event_id,momentum,shotmap,stats,xg_per_minute",
+      "dict:ai_preview,event_id,funfacts,jerseys",
+      "dict:created_at,event,id,markets,model,recommendations",
+      "dict:away_team,away_team_id,event_date,event_id,home_team,home_team_id,league_id,league_name"
     ],
-    "provider_odds_hinted_contexts": 0,
-    "provider_odds_hints": 0,
+    "provider_odds_hinted_contexts": 1,
+    "provider_odds_hints": 134,
     "provider_version": "bzzoiro-v2-clean-2026-04-29",
     "request_limit_removed": true,
-    "requests": 1,
+    "requests": 6,
     "response_errors": 0,
     "retry_attempts": 0,
-    "source_matrix_gap_matched": 0,
-    "source_matrix_gap_targets": 9,
-    "source_matrix_gap_unmatched": 9
+    "source_matrix_gap_matched": 1,
+    "source_matrix_gap_targets": 11,
+    "source_matrix_gap_unmatched": 10
   },
   "status": "ok",
   "target_limit": 220,
-  "targets_selected": 126
+  "targets_selected": 131
 }
