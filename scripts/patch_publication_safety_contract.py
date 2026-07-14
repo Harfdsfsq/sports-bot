@@ -7,9 +7,11 @@ and a lot of unsettled rows.  This patch keeps the bot productive while stopping
 weak reserve candidates from becoming real Telegram picks:
 
 * proxy/default 1.00:1.00 xG is a hard reject for every tier;
+* market-implied xG may replace a fake placeholder for diagnostics, but it is not
+  accepted as hard xG confirmation for Telegram publication;
 * Telegram fallback now requires 2+ independent line/odds sources and 2+ context
   confirmations when HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM=true;
-* B-tier proxy/promotion rows need hard context/xG evidence;
+* B-tier proxy/promotion rows need hard context evidence;
 * reserve/youth/friendly-style rows are not allowed through B-tier;
 * all decisions are written to a small diagnostic artifact.
 
@@ -58,6 +60,25 @@ HARD_CONTEXT_TOKENS = (
     'xg_live',
 )
 
+HARD_XG_TOKENS = (
+    'bzzoiro_stats',
+    'sstats_xg',
+    'pre_match_home_xg',
+    'pre_match_away_xg',
+    'actual_home_xg',
+    'actual_away_xg',
+    'context_home_away',
+    'context_total_split',
+    'xg_live',
+)
+
+MARKET_IMPLIED_XG_TOKENS = (
+    'market_implied_total_xg',
+    'market_probability_from_candidate',
+    'market_implied_replaces_proxy_placeholder',
+    'proxy_default_xg_replaced',
+)
+
 
 def _truthy(name: str, default: bool = True) -> bool:
     raw = os.getenv(name)
@@ -101,6 +122,10 @@ def _quality_source(candidate: dict[str, Any], metrics: dict[str, Any]) -> str:
     return ' '.join(parts)
 
 
+def _payload_text(candidate: dict[str, Any], metrics: dict[str, Any]) -> str:
+    return json.dumps({'candidate': candidate, 'metrics': metrics}, ensure_ascii=False, sort_keys=True).lower()
+
+
 def _xg_payload(metrics: dict[str, Any]) -> dict[str, Any]:
     return metrics.get('xg_sanity') if isinstance(metrics.get('xg_sanity'), dict) else {}
 
@@ -111,10 +136,26 @@ def _is_proxy_default_xg(metrics: dict[str, Any]) -> bool:
     return bool(xg.get('proxy_default_xg_guard')) or 'proxy_default_1_1_xg_placeholder' in reason
 
 
+def _has_hard_xg(candidate: dict[str, Any], metrics: dict[str, Any]) -> bool:
+    text = _payload_text(candidate, metrics)
+    return any(token in text for token in HARD_XG_TOKENS)
+
+
+def _is_market_implied_xg(candidate: dict[str, Any], metrics: dict[str, Any]) -> bool:
+    text = _payload_text(candidate, metrics)
+    if any(token in text for token in MARKET_IMPLIED_XG_TOKENS):
+        return True
+    xg = _xg_payload(metrics)
+    return str(xg.get('xg_source') or xg.get('source') or '').strip().lower() == 'market_implied_total_xg'
+
+
 def _has_hard_context(candidate: dict[str, Any], metrics: dict[str, Any]) -> bool:
-    text = json.dumps({'candidate': candidate, 'metrics': metrics}, ensure_ascii=False, sort_keys=True).lower()
+    text = _payload_text(candidate, metrics)
     if any(token in text for token in HARD_CONTEXT_TOKENS):
         return True
+    # Market-implied xG is a market sanity anchor, not provider context.
+    if _is_market_implied_xg(candidate, metrics):
+        return False
     xg = _xg_payload(metrics)
     if bool(xg.get('enabled')) and not _is_proxy_default_xg(metrics):
         total = _f(xg.get('xg_total'), -1.0)
@@ -184,6 +225,8 @@ def install(base: Any) -> None:
                 add(f'tier_{t.lower()}_two_plus_context_sources_required:{ctx}/2', reasons)
         if _truthy('CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS', True) and _is_proxy_default_xg(metrics):
             add(f'tier_{t.lower()}_proxy_default_xg_placeholder', reasons)
+        if _truthy('CONTROLLED_FALLBACK_BLOCK_MARKET_IMPLIED_XG_AS_HARD', True) and _is_market_implied_xg(candidate, metrics) and not _has_hard_xg(candidate, metrics):
+            add(f'tier_{t.lower()}_market_implied_xg_not_hard_confirmation', reasons)
         if t == 'B' and _truthy('CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT', True):
             if _looks_weak_quality(candidate, metrics) and not _has_hard_context(candidate, metrics):
                 add('tier_b_hard_context_required_for_proxy_quality', reasons)
@@ -197,11 +240,12 @@ def install(base: Any) -> None:
     _write_report({
         'status': 'installed',
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
-        'policy': 'pilot: publish only strict candidates with 2+ line sources and 2+ context sources; proxy/default xG and low-quality B-tier rows are blocked',
+        'policy': 'pilot: publish only strict candidates with 2+ line sources and 2+ context sources; proxy/default xG and market-implied-only xG are not hard publication confirmation',
         'env': {
             'HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM': str(os.getenv('HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM') or 'true'),
             'CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS': str(os.getenv('CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS') or 'true'),
             'CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS': str(os.getenv('CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS') or 'true'),
+            'CONTROLLED_FALLBACK_BLOCK_MARKET_IMPLIED_XG_AS_HARD': str(os.getenv('CONTROLLED_FALLBACK_BLOCK_MARKET_IMPLIED_XG_AS_HARD') or 'true'),
             'CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT': str(os.getenv('CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT') or 'true'),
             'CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS': str(os.getenv('CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS') or 'true'),
         },
