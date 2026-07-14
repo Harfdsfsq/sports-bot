@@ -56,6 +56,11 @@ def main() -> int:
         sync_run_ledger()
     except Exception:
         pass
+    try:
+        from scripts.build_two_plus_coverage_report import main as two_plus_report
+        two_plus_report()
+    except Exception:
+        pass
     return code
 
 
