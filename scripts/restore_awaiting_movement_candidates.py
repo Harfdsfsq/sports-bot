@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-"""Restore awaiting movement candidates into the rescue pool before fallback.
+"""Restore awaiting movement candidates into the live rescue pool before fallback.
 
-Awaiting rows can be discovered many hours before kick-off.  The fallback pool is
-only allowed to publish inside the configured window, so restoring every 24h row
-creates noisy ``latest_rescue_candidates_stale_or_outside_window`` counters and
-can make the report say candidates were lost even though they are simply too far
-away.  Keep the lifecycle state intact, but only write rows into
-``latest-rescue-candidates.json`` when they are inside the active fallback scan
-window.
+The lifecycle state can contain matches many hours before kick-off.  The fallback
+publisher, however, is only allowed to evaluate candidates inside the active
+publication window.  Keeping far-future or expired rows in ``latest-rescue-
+candidates.json`` only creates noisy ``latest_rescue_candidates_stale_or_outside
+_window`` counters and can hide the fact that no live candidate exists.
+
+This script keeps the lifecycle state intact but rewrites the live rescue pool to
+contain only candidates inside the configured fallback scan window.  Rows outside
+the window are reported in diagnostics, not carried forward as live candidates.
 """
 
 import json
@@ -136,11 +138,37 @@ def _write_rescue(rows: list[dict[str, Any]]) -> None:
 
 def _fallback_window(now: datetime) -> tuple[datetime, datetime]:
     min_lead = max(0, _env_int("MIN_KICKOFF_LEAD_MINUTES", 20))
-    # Keep a small buffer so a row needed by this run is not lost due to seconds.
     earliest = now + timedelta(minutes=max(0, min_lead - 2))
     hours = max(1, _env_int("PUBLISH_WINDOW_HOURS", _env_int("CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS", 2)))
     latest = now + timedelta(hours=hours, minutes=_env_int("RESTORE_AWAITING_MOVEMENT_WINDOW_BUFFER_MINUTES", 10))
     return earliest, latest
+
+
+def _row_window_status(row: dict[str, Any], now: datetime, earliest: datetime, latest: datetime) -> tuple[str, datetime | None]:
+    kickoff = _parse_dt(row.get("commence_time") or row.get("kickoff") or row.get("start_time"))
+    if kickoff is None:
+        return "unknown_kickoff", None
+    if kickoff < now:
+        return "expired", kickoff
+    if kickoff > now + timedelta(hours=24):
+        return "too_far_24h", kickoff
+    if not (earliest <= kickoff <= latest):
+        return "outside_fallback_window", kickoff
+    return "in_window", kickoff
+
+
+def _watch(row: dict[str, Any], kickoff: datetime | None, now: datetime, reason: str) -> dict[str, Any]:
+    return {
+        "match_key": row.get("match_key") or row.get("canonical_match_id"),
+        "home_team": row.get("home_team") or row.get("home"),
+        "away_team": row.get("away_team") or row.get("away"),
+        "commence_time": kickoff.isoformat() if kickoff else row.get("commence_time") or row.get("kickoff"),
+        "minutes_to_kickoff": round((kickoff - now).total_seconds() / 60.0, 2) if kickoff else None,
+        "selection": row.get("selection"),
+        "point": row.get("point"),
+        "candidate_source": row.get("_candidate_source") or row.get("candidate_source"),
+        "reason": reason,
+    }
 
 
 def main() -> int:
@@ -152,43 +180,42 @@ def main() -> int:
         awaiting = []
     existing_payload = _load_json(RESCUE, [])
     rescue_rows = _extract_rows(existing_payload)
-    # Drop previously restored awaiting rows that have now moved outside the live
-    # fallback window; keep non-awaiting rescue rows untouched.
-    by_sig = {
-        _sig(row): row for row in rescue_rows
-        if isinstance(row, dict) and row.get("_candidate_source") != "awaiting_movement_lifecycle"
-    }
 
+    by_sig: dict[str, dict[str, Any]] = {}
     restored = 0
-    skipped = {"expired": 0, "too_far_24h": 0, "outside_fallback_window": 0, "unknown_kickoff": 0, "bad_row": 0}
+    skipped = {
+        "existing_expired": 0,
+        "existing_outside_fallback_window": 0,
+        "existing_too_far_24h": 0,
+        "existing_unknown_kickoff": 0,
+        "awaiting_expired": 0,
+        "awaiting_outside_fallback_window": 0,
+        "awaiting_too_far_24h": 0,
+        "awaiting_unknown_kickoff": 0,
+        "bad_row": 0,
+    }
     future_watchlist: list[dict[str, Any]] = []
+
+    for row in rescue_rows:
+        if not isinstance(row, dict):
+            continue
+        status, kickoff = _row_window_status(row, now, earliest, latest)
+        if status != "in_window":
+            skipped[f"existing_{status}"] = skipped.get(f"existing_{status}", 0) + 1
+            if len(future_watchlist) < 20:
+                future_watchlist.append(_watch(row, kickoff, now, status))
+            continue
+        by_sig[_sig(row)] = row
+
     for row in awaiting:
         if not isinstance(row, dict):
             skipped["bad_row"] += 1
             continue
-        kickoff = _parse_dt(row.get("commence_time") or row.get("kickoff") or row.get("start_time"))
-        if kickoff is None:
-            skipped["unknown_kickoff"] += 1
-            continue
-        if kickoff < now:
-            skipped["expired"] += 1
-            continue
-        if kickoff > now + timedelta(hours=24):
-            skipped["too_far_24h"] += 1
-            continue
-        if not (earliest <= kickoff <= latest):
-            skipped["outside_fallback_window"] += 1
+        status, kickoff = _row_window_status(row, now, earliest, latest)
+        if status != "in_window":
+            skipped[f"awaiting_{status}"] = skipped.get(f"awaiting_{status}", 0) + 1
             if len(future_watchlist) < 20:
-                future_watchlist.append({
-                    "match_key": row.get("match_key") or row.get("canonical_match_id"),
-                    "home_team": row.get("home_team") or row.get("home"),
-                    "away_team": row.get("away_team") or row.get("away"),
-                    "commence_time": kickoff.isoformat(),
-                    "minutes_to_kickoff": round((kickoff - now).total_seconds() / 60.0, 2),
-                    "selection": row.get("selection"),
-                    "point": row.get("point"),
-                    "reason": "outside_active_fallback_window",
-                })
+                future_watchlist.append(_watch(row, kickoff, now, status))
             continue
         item = dict(row)
         item["_candidate_source"] = "awaiting_movement_lifecycle"
