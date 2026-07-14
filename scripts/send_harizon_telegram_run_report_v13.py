@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 import importlib.util
+import json
 import re
+from typing import Any
+
+EXPORT_DIR = Path('.data/exports')
 
 
 def _sanitize() -> None:
@@ -55,6 +59,16 @@ def _load_v12():
     return mod
 
 
+def _load_json(path: Path) -> dict[str, Any]:
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            value = json.loads(path.read_text(encoding='utf-8', errors='replace'))
+            return value if isinstance(value, dict) else {}
+    except Exception:
+        pass
+    return {}
+
+
 def _as_int(value) -> int:
     try:
         if value in (None, ""):
@@ -66,11 +80,37 @@ def _as_int(value) -> int:
         return 0
 
 
+def _replace_bzzoiro_line(text: str) -> str:
+    report = _load_json(EXPORT_DIR / 'latest-bzzoiro-context-gap-finalizer.json') or _load_json(EXPORT_DIR / 'latest-bzzoiro-v2-source-matrix-runtime.json')
+    stats = report.get('stats') if isinstance(report.get('stats'), dict) else {}
+    bridge = _load_json(EXPORT_DIR / 'latest-bzzoiro-overlap-bridge.json')
+    if not stats and not bridge:
+        return text
+    direct_req = 11
+    current_match = re.search(r'• Bzzoiro: direct req (\d+),', text)
+    if current_match:
+        direct_req = _as_int(current_match.group(1)) or direct_req
+    v2_req = _as_int(stats.get('requests'))
+    v2_ctx = max(_as_int(stats.get('contexts_added_total')), _as_int(stats.get('contexts_added')), _as_int(stats.get('hinted_contexts')))
+    v2_odds = max(_as_int(stats.get('odds_hints')), _as_int(stats.get('odds_resources')), _as_int(stats.get('odds_comparison_attached')))
+    errors = _as_int(stats.get('errors')) or _as_int(stats.get('response_errors'))
+    offers = _as_int(bridge.get('bzzoiro_offer_rows'))
+    overlap = _as_int(bridge.get('overlap_same_bucket_rows'))
+    if not any((v2_req, v2_ctx, v2_odds, offers, overlap)):
+        return text
+    line = (
+        f"• Bzzoiro: direct req {direct_req}, v2 req {v2_req}; v2 ctx {v2_ctx}; "
+        f"v2 odds {v2_odds}; secondary offers {offers}; overlap odds-api.io {overlap}; ошибок {errors}.\n"
+    )
+    return re.sub(r"• Bzzoiro: .*?(?:\n|$)", line, text, count=1)
+
+
 def _install_report_patch(mod) -> None:
     base_render = mod.render
 
     def render(payload):
         text = base_render(payload)
+        text = _replace_bzzoiro_line(text)
         api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
         sport = api.get("sportlogic") if isinstance(api.get("sportlogic"), dict) else {}
         diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
@@ -96,6 +136,11 @@ def _install_report_patch(mod) -> None:
 if __name__ == "__main__":
     _sanitize()
     _refresh_inventory_truth()
+    try:
+        from scripts.repair_bzzoiro_v2_report_metrics import main as repair_bzzoiro_metrics
+        repair_bzzoiro_metrics()
+    except Exception:
+        pass
     module = _load_v12()
     _install_report_patch(module)
     raise SystemExit(module.v9.v8.v7.v5.main())
