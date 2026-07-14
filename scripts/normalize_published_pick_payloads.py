@@ -199,10 +199,12 @@ def walk_and_normalize(value: Any) -> tuple[Any, int, int]:
 
 def run_post_quality_reports(report: dict[str, Any]) -> None:
     for name in (
+        "repair_bzzoiro_v2_report_metrics",
         "sync_prediction_calibration_ledger",
         "build_line_decision_cards",
         "build_live_source_quorum_report",
         "build_publication_readiness_report",
+        "build_two_plus_coverage_report",
     ):
         try:
             module = __import__(f"scripts.{name}", fromlist=["main"])
