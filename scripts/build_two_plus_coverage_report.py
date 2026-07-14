@@ -56,10 +56,39 @@ def metric(row: dict[str, Any], *keys: str) -> int:
     return 0
 
 
+def _rows(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if isinstance(payload, dict):
+        value = payload.get('rows') or payload.get('matches') or payload.get('items')
+        if isinstance(value, list):
+            return [x for x in value if isinstance(x, dict)]
+    return []
+
+
+def _count_rows(rows: list[dict[str, Any]], *keys: str) -> int:
+    total = 0
+    for row in rows:
+        value = metric(row, *keys)
+        if value >= 2:
+            total += 1
+    return total
+
+
+def _count_value(counts: dict[str, Any], row_values: list[int], *keys: str) -> int:
+    for key in keys:
+        value = counts.get(key)
+        if value not in (None, ''):
+            return num(value)
+    return max(row_values or [0])
+
+
 def main() -> int:
     truth = load(EXPORT / 'latest-day-inventory-coverage-truth.json', {})
     diag = load(EXPORT / 'latest-fresh-b-cover-diagnostics.json', {})
     fallback = load(EXPORT / 'latest-controlled-fallback-report.json', {})
+    bzz = load(EXPORT / 'latest-bzzoiro-context-gap-finalizer.json', {})
+    expander = load(EXPORT / 'latest-bzzoiro-v2-gap-plan-expander.json', {})
     rows = candidates(fallback)
     candidate_gaps: list[dict[str, Any]] = []
     for row in rows[:100]:
@@ -75,10 +104,28 @@ def main() -> int:
                 'context_sources_count': ctx,
                 'reasons': row.get('reasons') or row.get('reject_reasons'),
             })
-    counts = truth.get('counts') if isinstance(truth.get('counts'), dict) else truth
-    total = num(counts.get('matches_total') or counts.get('total') or counts.get('inventory_rows') or 300, 300) if isinstance(counts, dict) else 300
-    odds_2plus = num((counts or {}).get('odds_2plus_sources') or (counts or {}).get('two_plus_independent_odds_source') or (counts or {}).get('with_2plus_odds_sources')) if isinstance(counts, dict) else 0
-    ctx_2plus = num((counts or {}).get('context_2plus_sources') or (counts or {}).get('two_plus_contexts') or (counts or {}).get('with_2plus_context_sources')) if isinstance(counts, dict) else 0
+    counts = truth.get('counts') if isinstance(truth.get('counts'), dict) else (truth if isinstance(truth, dict) else {})
+    inv_rows = _rows(truth)
+    row_odds_2plus = _count_rows(inv_rows, 'odds_sources_count', 'odds_source_count', 'independent_odds_sources_count')
+    row_ctx_2plus = _count_rows(inv_rows, 'context_sources_count', 'context_source_count', 'confirmation_sources_count')
+    total = num(counts.get('matches_total') or counts.get('total') or counts.get('inventory_rows') or len(inv_rows) or 300, 300) if isinstance(counts, dict) else (len(inv_rows) or 300)
+    odds_2plus = _count_value(
+        counts if isinstance(counts, dict) else {},
+        [row_odds_2plus],
+        'matches_with_2plus_odds_sources',
+        'odds_2plus_sources',
+        'two_plus_independent_odds_source',
+        'with_2plus_odds_sources',
+    )
+    ctx_2plus = _count_value(
+        counts if isinstance(counts, dict) else {},
+        [row_ctx_2plus],
+        'matches_with_2plus_context_sources',
+        'context_2plus_sources',
+        'two_plus_contexts',
+        'with_2plus_context_sources',
+    )
+    bzz_stats = bzz.get('stats') if isinstance(bzz.get('stats'), dict) else {}
     payload = {
         'status': 'ok',
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
@@ -89,11 +136,23 @@ def main() -> int:
             'context_2plus_sources': ctx_2plus,
             'odds_2plus_gap': max(0, total - odds_2plus),
             'context_2plus_gap': max(0, total - ctx_2plus),
+            'row_recount_odds_2plus_sources': row_odds_2plus,
+            'row_recount_context_2plus_sources': row_ctx_2plus,
+        },
+        'bzzoiro_v2': {
+            'requests': bzz_stats.get('requests'),
+            'events_fetched': bzz_stats.get('events_fetched') or bzz_stats.get('v2_events_fetched'),
+            'contexts_added': bzz_stats.get('contexts_added_total') or bzz_stats.get('contexts_added'),
+            'odds_hints': bzz_stats.get('odds_hints'),
+            'odds_comparison_attempted': bzz_stats.get('odds_comparison_attempted'),
+            'odds_comparison_attached': bzz_stats.get('odds_comparison_attached'),
+            'gap_expander_added': expander.get('added') if isinstance(expander, dict) else None,
+            'gap_expander_output_matches': expander.get('output_matches') if isinstance(expander, dict) else None,
         },
         'fresh_b_cover': {
             'rows': diag.get('b_cover_rows') or diag.get('rows'),
-            'with_current_offer': diag.get('with_current_offer') or diag.get('active_with_offer'),
-            'fresh_buckets': diag.get('fresh_buckets'),
+            'with_current_offer': diag.get('b_cover_with_any_current_offer_match') or diag.get('active_b_cover_with_any_current_offer_match') or diag.get('with_current_offer') or diag.get('active_with_offer'),
+            'fresh_buckets': diag.get('current_market_buckets_totals_spreads') or diag.get('fresh_buckets'),
         } if isinstance(diag, dict) else {},
         'fallback_candidate_gap_count': len(candidate_gaps),
         'fallback_candidate_gap_sample': candidate_gaps[:20],
