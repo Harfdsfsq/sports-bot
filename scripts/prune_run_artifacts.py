@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-"""Compact HARIZON runtime artifacts before GitHub upload."""
+"""Compact HARIZON runtime artifacts before GitHub upload.
+
+The workflow can be close to its job timeout after a heavy provider run.  Pruning
+must therefore be bounded and fast; it should never be the reason the artifact is
+not uploaded.  In the default fast mode we skip recursive size accounting and the
+optional inventory-alias repair, because those can be expensive and the actual
+runtime artifacts have already been committed earlier in the job.
+"""
 
 import json
 import os
@@ -13,6 +20,7 @@ ROOT = Path(".").resolve()
 EXPORT = ROOT / ".data" / "exports"
 ART = ROOT / "artifacts" / "run-bot"
 STATUS = EXPORT / "latest-artifact-prune-status.json"
+FAST_PRUNE = str(os.getenv("HARIZON_FAST_ARTIFACT_PRUNE") or "true").strip().lower() in {"1", "true", "yes", "on", "force"}
 
 KEEP_EXPORT_NAMES = {
     "latest-run-bot.log",
@@ -30,6 +38,8 @@ KEEP_EXPORT_NAMES = {
     "latest-publication-status.json",
     "latest-normalized-publication-payloads.json",
     "latest-day-inventory-target-expand.json",
+    "latest-day-inventory-shortfall-extend.json",
+    "latest-day-inventory-blank-row-repair.json",
     "latest-day-inventory-semantic-dedupe.json",
     "latest-day-inventory-coverage-truth.json",
     "latest-day-inventory-coverage-truth.csv",
@@ -66,6 +76,8 @@ KEEP_STATE_NAMES = {
 
 
 def _size(path: Path) -> int:
+    if FAST_PRUNE:
+        return 0
     if not path.exists():
         return 0
     if path.is_file():
@@ -121,6 +133,8 @@ def _prune_json_folder(folder: Path, keep_names: set[str], removed: list[dict[st
 
 
 def _repair_inventory_aliases() -> dict[str, Any]:
+    if FAST_PRUNE:
+        return {"status": "skipped_fast_prune", "reason": "avoid job timeout before upload-artifact"}
     try:
         from scripts.repair_all_inventory_json_aliases import main as repair_main
         code = int(repair_main() or 0)
@@ -177,6 +191,7 @@ def main() -> int:
         "status": "ok",
         "started_at_utc": started,
         "finished_at_utc": datetime.now(timezone.utc).isoformat(),
+        "fast_prune": FAST_PRUNE,
         "bytes_before": before,
         "bytes_after": after,
         "bytes_removed_estimate": max(0, before - after),
@@ -185,13 +200,13 @@ def main() -> int:
         "inventory_alias_repair": repair_report,
         "keep_export_names": sorted(KEEP_EXPORT_NAMES),
         "notes": [
-            "Repairs conflict-marked inventory JSON aliases before artifact upload.",
+            "Fast prune avoids recursive size accounting/alias repair so upload-artifact still runs before job timeout.",
             "Run artifacts are compact latest reports plus selected day_inventory/line_history/state files.",
         ],
     }
     STATUS.parent.mkdir(parents=True, exist_ok=True)
     STATUS.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({k: payload[k] for k in ("status", "bytes_before", "bytes_after", "bytes_removed_estimate", "removed_count")}, ensure_ascii=False, sort_keys=True))
+    print(json.dumps({k: payload[k] for k in ("status", "fast_prune", "removed_count")}, ensure_ascii=False, sort_keys=True))
     return 0
 
 
