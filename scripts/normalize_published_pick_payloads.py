@@ -202,6 +202,7 @@ def run_post_quality_reports(report: dict[str, Any]) -> None:
         "sync_prediction_calibration_ledger",
         "build_line_decision_cards",
         "build_live_source_quorum_report",
+        "build_publication_readiness_report",
     ):
         try:
             module = __import__(f"scripts.{name}", fromlist=["main"])
