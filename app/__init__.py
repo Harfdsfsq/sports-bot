@@ -341,6 +341,11 @@ def _install_bzzoiro_v2_source_matrix() -> None:
         install()
     except Exception:
         pass
+    try:
+        from app.services.bzzoiro_v2_gap_plan_expander_patch import install as install_gap_plan_expander
+        install_gap_plan_expander()
+    except Exception:
+        pass
 
 
 def _run_bzzoiro_offer_bridge_after_cli() -> None:
