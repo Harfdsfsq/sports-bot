@@ -24,11 +24,13 @@ def main() -> int:
     from scripts.patch_same_match_total_conflict_guard import install as install_same_match_total_conflict_guard
     from scripts.patch_current_bankroll_source import install as install_current_bankroll_source
     from scripts.patch_proxy_default_xg_guard import install as install_proxy_default_xg_guard
+    from scripts.patch_publication_safety_contract import install as install_publication_safety_contract
 
     install_duplicate_matcher(v18)
     install_a_cover_evidence_quality(v18.base)
     install_xg_probability_support(v18.base)
     install_proxy_default_xg_guard(v18.base)
+    install_publication_safety_contract(v18.base)
     install_reference_price_guard(v18.base)
     install_display_line_count_safe(v18.base)
     install_same_match_total_conflict_guard(v18.base)
