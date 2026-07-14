@@ -80,6 +80,30 @@ def _as_int(value) -> int:
         return 0
 
 
+def _replace_two_plus_contract_text(text: str) -> str:
+    text = re.sub(
+        r'B-tier 1\+ line/\d+\+ bookmaker/\d+\+ context coverage:',
+        'B-tier 2+ line/2+ bookmaker/2+ context coverage:',
+        text,
+    )
+    text = re.sub(
+        r'B-tier = 1\+ линия/odds-source \+ \d+\+? букмекер/ценовое подтверждение \+ \d+\+? контекст \+ движение линии \+ value\.',
+        'B-tier = 2+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 2+ контекст + движение линии + value.',
+        text,
+    )
+    text = re.sub(
+        r'Контракт публикации сейчас: A-tier = 2 odds-source \+ 2 букмекера \+ 2 контекста; B-tier = 1 odds-source \+ \d+ букмекер \+ \d+ контекст;',
+        'Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 2 odds-source + 2 букмекера + 2 контекста;',
+        text,
+    )
+    text = re.sub(
+        r'• Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/\d+ book/\d+ context\.',
+        '• Active A/B contract: A=2 odds/2 books/2 context; B=2 odds/2 book/2 context.',
+        text,
+    )
+    return text
+
+
 def _replace_bzzoiro_line(text: str) -> str:
     report = _load_json(EXPORT_DIR / 'latest-bzzoiro-context-gap-finalizer.json') or _load_json(EXPORT_DIR / 'latest-bzzoiro-v2-source-matrix-runtime.json')
     stats = report.get('stats') if isinstance(report.get('stats'), dict) else {}
@@ -110,6 +134,7 @@ def _install_report_patch(mod) -> None:
 
     def render(payload):
         text = base_render(payload)
+        text = _replace_two_plus_contract_text(text)
         text = _replace_bzzoiro_line(text)
         api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
         sport = api.get("sportlogic") if isinstance(api.get("sportlogic"), dict) else {}
