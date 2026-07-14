@@ -124,6 +124,7 @@ def run_preflight() -> dict[str, Any]:
         _run_step("promote_a_cover_value_candidates", _module_main("scripts.promote_a_cover_value_candidates")),
         _run_step("normalize_rescue_candidate_keys", _module_main("scripts.normalize_rescue_candidate_keys")),
         _run_step("enrich_rescue_candidates_xg_confirmation", _module_main("scripts.enrich_rescue_candidates_xg_confirmation")),
+        _run_step("replace_rescue_proxy_placeholder_xg", _module_main("scripts.replace_rescue_proxy_placeholder_xg")),
         _run_step("update_day_inventory_priority_and_line_state_safe_clock", _module_main("scripts.update_day_inventory_priority_and_line_state_safe_clock")),
         _run_step("build_a_cover_candidate_gap_report", _module_main("scripts.build_a_cover_candidate_gap_report")),
     ]
@@ -137,16 +138,3 @@ def run_preflight() -> dict[str, Any]:
     }
     _write_json(OUT, payload)
     return payload
-
-
-def main() -> int:
-    run_preflight()
-    import scripts.publish_controlled_fallback_guarded_v18 as v18
-    from scripts.patch_controlled_fallback_duplicate_matching import install as install_duplicate_matcher
-
-    install_duplicate_matcher(v18)
-    return int(v18.main() or 0)
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
