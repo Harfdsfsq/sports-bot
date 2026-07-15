@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-15T03:04:49.244515+00:00
+UTC: 2026-07-15T05:05:31.852542+00:00
 target_date: 2026-07-15
 canonical_matches: 278
-2+ provider sources: 156
-2+ primary sources: 156
+2+ provider sources: 163
+2+ primary sources: 163
 all 3 primary sources: 17
 
 ## Provider fixture discovery
@@ -13,12 +13,12 @@ all 3 primary sources: 17
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=498 event_like=498 unique=249 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=171 event_like=160 unique=160 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=178 event_like=167 unique=167 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 122, "2": 138, "3": 15, "4": 3}
-- primary providers: {"1": 122, "2": 139, "3": 17}
+- all providers: {"1": 115, "2": 145, "3": 15, "4": 3}
+- primary providers: {"1": 115, "2": 146, "3": 17}
 
 ## Top canonical matches
 - 2026-07-14T21:30:00+00:00 | Macara — Mushuc Runa SC | providers=sstats ids={"sstats": "1519404"}
@@ -35,6 +35,7 @@ all 3 primary sources: 17
 - 2026-07-15T08:30:00+00:00 | Schwarz-Weiss Bregenz — Austria Lustenau | providers=odds_api_io,sstats ids={"odds_api_io": "72716134", "sstats": "1589263"}
 - 2026-07-15T08:30:00+00:00 | Bicskei Tc — III Keruleti Tve | providers=odds_api_io ids={"odds_api_io": "72724192"}
 - 2026-07-15T08:30:00+00:00 | Kaizer Chiefs — Al-Kholood | providers=odds_api_io ids={"odds_api_io": "72738406"}
+- 2026-07-15T09:00:00+00:00 | RAAL La Louviere — Royal Excelsior Virton | providers=odds_api_io,sstats ids={"odds_api_io": "72444746", "sstats": "1554964"}
 - 2026-07-15T09:00:00+00:00 | Fortuna Dusseldorf — MFK Ruzomberok | providers=odds_api_io ids={"odds_api_io": "72399178"}
 - 2026-07-15T09:00:00+00:00 | Oud-Heverlee Leuven — Lommel SK | providers=odds_api_io ids={"odds_api_io": "72444932"}
 - 2026-07-15T09:00:00+00:00 | RFK Graficar Beograd — FK Metalac Gornji Milanovac | providers=odds_api_io ids={"odds_api_io": "72782044"}
@@ -50,7 +51,6 @@ all 3 primary sources: 17
 - 2026-07-15T10:00:00+00:00 | Hwaseong FC — Yangpyeong FC | providers=odds_api_io,sstats ids={"odds_api_io": "72576482", "sstats": "1581359"}
 - 2026-07-15T10:00:00+00:00 | Yongin FC — Dangjin Citizen | providers=odds_api_io,sstats ids={"odds_api_io": "72576486", "sstats": "1581364"}
 - 2026-07-15T10:00:00+00:00 | Suwon FC — Pyeongchang United | providers=odds_api_io,sstats ids={"odds_api_io": "72576488", "sstats": "1581362"}
-- 2026-07-15T10:00:00+00:00 | Changwon FC — Gimhae FC | providers=odds_api_io,sstats ids={"odds_api_io": "72576492", "sstats": "1581356"}
 
 ## Targeted enrichment plan sample
 - Macara — Mushuc Runa SC | primary=1 providers=sstats
@@ -109,6 +109,10 @@ all 3 primary sources: 17
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- RAAL La Louviere — Royal Excelsior Virton | primary=2 providers=odds_api_io,sstats
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Fortuna Dusseldorf — MFK Ruzomberok | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
@@ -128,8 +132,4 @@ all 3 primary sources: 17
 - White City FK Beograd — North Sunshine Eagles FC | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Bidhannagar Msa — East BengaL FC Reserves | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
