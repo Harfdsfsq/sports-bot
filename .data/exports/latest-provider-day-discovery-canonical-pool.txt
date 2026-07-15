@@ -1,7 +1,7 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-15T01:04:39.812074+00:00
+UTC: 2026-07-15T03:04:49.244515+00:00
 target_date: 2026-07-15
-canonical_matches: 275
+canonical_matches: 278
 2+ provider sources: 156
 2+ primary sources: 156
 all 3 primary sources: 17
@@ -11,14 +11,14 @@ all 3 primary sources: 17
 - bzzoiro: commands=10 ok=8 rows=227 event_like=227 unique=43 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=1 rows=1 event_like=1 unique=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=494 event_like=494 unique=247 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=498 event_like=498 unique=249 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=170 event_like=159 unique=159 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=171 event_like=160 unique=160 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 119, "2": 138, "3": 15, "4": 3}
-- primary providers: {"1": 119, "2": 139, "3": 17}
+- all providers: {"1": 122, "2": 138, "3": 15, "4": 3}
+- primary providers: {"1": 122, "2": 139, "3": 17}
 
 ## Top canonical matches
 - 2026-07-14T21:30:00+00:00 | Macara — Mushuc Runa SC | providers=sstats ids={"sstats": "1519404"}
@@ -27,8 +27,7 @@ all 3 primary sources: 17
 - 2026-07-14T22:00:00+00:00 | Deportivo Merlo — Real Pilar | providers=sstats ids={"sstats": "1499522"}
 - 2026-07-14T22:00:00+00:00 | Real Oruro — Always Ready | providers=sstats ids={"sstats": "1538383"}
 - 2026-07-14T23:00:00+00:00 | Asheville City — Virginia Beach City | providers=sstats ids={"sstats": "1586078"}
-- 2026-07-15T00:00:00+00:00 | Manta FC — Delfin SC | providers=odds_api_io,sstats ids={"odds_api_io": "68687734", "sstats": "1519405"}
-- 2026-07-15T00:00:00+00:00 | Blooming Santa Cruz — GV Club Deportivo San Jose de Oruro | providers=odds_api_io ids={"odds_api_io": "72332922"}
+- 2026-07-15T00:00:00+00:00 | Manta FC — Delfin SC | providers=sstats ids={"sstats": "1519405"}
 - 2026-07-15T00:30:00+00:00 | New England FC — Ironbound | providers=sstats ids={"sstats": "1586079"}
 - 2026-07-15T08:00:00+00:00 | Kahibah FC Reserve — Maitland FC Reserve | providers=odds_api_io,sstats ids={"odds_api_io": "72780686", "sstats": "1523779"}
 - 2026-07-15T08:00:00+00:00 | Csa Steaua Bucuresti — CS Tunari | providers=odds_api_io,sstats ids={"odds_api_io": "72812674", "sstats": "1584854"}
@@ -51,6 +50,7 @@ all 3 primary sources: 17
 - 2026-07-15T10:00:00+00:00 | Hwaseong FC — Yangpyeong FC | providers=odds_api_io,sstats ids={"odds_api_io": "72576482", "sstats": "1581359"}
 - 2026-07-15T10:00:00+00:00 | Yongin FC — Dangjin Citizen | providers=odds_api_io,sstats ids={"odds_api_io": "72576486", "sstats": "1581364"}
 - 2026-07-15T10:00:00+00:00 | Suwon FC — Pyeongchang United | providers=odds_api_io,sstats ids={"odds_api_io": "72576488", "sstats": "1581362"}
+- 2026-07-15T10:00:00+00:00 | Changwon FC — Gimhae FC | providers=odds_api_io,sstats ids={"odds_api_io": "72576492", "sstats": "1581356"}
 
 ## Targeted enrichment plan sample
 - Macara — Mushuc Runa SC | primary=1 providers=sstats
@@ -77,12 +77,8 @@ all 3 primary sources: 17
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Manta FC — Delfin SC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Manta FC — Delfin SC | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Blooming Santa Cruz — GV Club Deportivo San Jose de Oruro | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - New England FC — Ironbound | primary=1 providers=sstats
@@ -132,4 +128,8 @@ all 3 primary sources: 17
 - White City FK Beograd — North Sunshine Eagles FC | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Bidhannagar Msa — East BengaL FC Reserves | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
