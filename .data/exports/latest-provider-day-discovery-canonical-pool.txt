@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-16T09:05:05.595169+00:00
+UTC: 2026-07-16T11:05:19.639991+00:00
 target_date: 2026-07-16
-canonical_matches: 368
-2+ provider sources: 174
-2+ primary sources: 170
-all 3 primary sources: 24
+canonical_matches: 369
+2+ provider sources: 176
+2+ primary sources: 172
+all 3 primary sources: 23
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
@@ -13,12 +13,12 @@ all 3 primary sources: 24
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=189 event_like=184 unique=184 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=191 event_like=186 unique=186 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 194, "2": 150, "3": 22, "5": 2}
-- primary providers: {"1": 198, "2": 146, "3": 24}
+- all providers: {"1": 193, "2": 153, "3": 21, "5": 2}
+- primary providers: {"1": 197, "2": 149, "3": 23}
 
 ## Top canonical matches
 - 2026-07-15T22:00:00+00:00 | Real Potosí — San Antonio Bulo Bulo | providers=sstats ids={"sstats": "1538388"}
@@ -40,17 +40,17 @@ all 3 primary sources: 24
 - 2026-07-16T00:30:00+00:00 | Barcelona SC — Guayaquil City FC | providers=sstats ids={"sstats": "1519401"}
 - 2026-07-16T00:30:00+00:00 | Houston Dynamo — America de Cali | providers=sstats ids={"sstats": "1548853"}
 - 2026-07-16T01:30:00+00:00 | Real Salt Lake — Burnley | providers=sstats ids={"sstats": "1550568"}
-- 2026-07-16T08:30:00+00:00 | NK Varazdin — NK Kustosija Zagreb | providers=odds_api_io ids={"odds_api_io": "72850154"}
 - 2026-07-16T09:30:00+00:00 | Bss Sporting Club — George Telegraph FC | providers=odds_api_io ids={"odds_api_io": "72777656"}
 - 2026-07-16T09:30:00+00:00 | Patha Chakra — United Kolkata SC | providers=odds_api_io ids={"odds_api_io": "72777658"}
 - 2026-07-16T09:30:00+00:00 | Railway FC — Kalighat MS | providers=odds_api_io ids={"odds_api_io": "72777660"}
 - 2026-07-16T09:30:00+00:00 | Kidderpore SC — Mohun Bagan SG Reserves | providers=odds_api_io ids={"odds_api_io": "72777662"}
 - 2026-07-16T09:45:00+00:00 | Fulham United FC — Cumberland United | providers=odds_api_io,sstats ids={"odds_api_io": "68051706", "sstats": "1527336"}
-- 2026-07-16T10:00:00+00:00 | GKS Katowice — RKS Rakow Czestochowa | providers=odds_api_io ids={"odds_api_io": "72534108"}
+- 2026-07-16T10:00:00+00:00 | GKS Katowice — Raków Częstochowa | providers=sstats ids={"sstats": "1554975"}
 - 2026-07-16T12:00:00+00:00 | FC Copenhagen — Viborg FF | providers=odds_api_io,sstats ids={"odds_api_io": "72827746", "sstats": "1560620"}
 - 2026-07-16T12:00:00+00:00 | FK Arys — FK Turan | providers=odds_api_io,sstats ids={"odds_api_io": "69854746", "sstats": "1534793"}
 - 2026-07-16T12:00:00+00:00 | Botyr Ekibastuz — Shakhtar Karagandy | providers=odds_api_io,sstats ids={"odds_api_io": "69854750", "sstats": "1534794"}
 - 2026-07-16T12:00:00+00:00 | FK Taraz — Aktobe Reserve | providers=odds_api_io,sstats ids={"odds_api_io": "69854756", "sstats": "1534798"}
+- 2026-07-16T12:00:00+00:00 | Amed Sportif Faaliyetler — FC Dinamo Batumi | providers=odds_api_io ids={"odds_api_io": "72900124"}
 
 ## Targeted enrichment plan sample
 - Real Potosí — San Antonio Bulo Bulo | primary=1 providers=sstats
@@ -129,7 +129,7 @@ all 3 primary sources: 24
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- NK Varazdin — NK Kustosija Zagreb | primary=1 providers=odds_api_io
+- Bss Sporting Club — George Telegraph FC | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping

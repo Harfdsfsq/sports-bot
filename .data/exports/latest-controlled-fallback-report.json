@@ -1,39 +1,132 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+      "A-tier publication score is below min on many candidates.",
+      "Some candidates still have fewer than the A-tier confirmation/context minimum."
     ],
     "quality_score_sources": {
-      "proxy": 2
+      "proxy": 6
     },
-    "tier_a_blocker_counts": {}
+    "tier_a_blocker_counts": {
+      "tier_a_confirmation_sources_below_min": 2,
+      "tier_a_confirmation_sources_below_min:1/2": 2,
+      "tier_a_market_implied_xg_not_hard_confirmation": 3,
+      "tier_a_odds_sources_below_min:1/2": 3,
+      "tier_a_proxy_quality_not_allowed": 3,
+      "tier_a_publication_score_below_min": 1,
+      "tier_a_two_plus_context_sources_required:1/2": 2,
+      "tier_a_two_plus_odds_sources_required:1/2": 2
+    }
   },
-  "candidates_seen": 2,
-  "created_at": "2026-07-16T09:14:06.578038+00:00",
+  "candidates_seen": 6,
+  "created_at": "2026-07-16T11:14:20.440851+00:00",
   "enabled": true,
   "evaluated": [
     {
-      "away_team": "Cumberland United",
-      "away_team_ru": "Кумберланд Унитед",
+      "away_team": "Istanbul Basaksehir",
+      "away_team_ru": "Истанбул Басаксехир",
       "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-07-16T09:45:00+00:00",
-      "commence_time_display": "16.07.2026 12:45 MSK",
+      "commence_time": "2026-07-16T12:00:00+00:00",
+      "commence_time_display": "16.07.2026 15:00 MSK",
       "family": "totals",
-      "home_team": "Fulham United FC",
-      "home_team_ru": "Фулхам Унитед",
-      "league_name": "Australia - South Australia State League 1",
-      "league_name_ru": "Австралия - Сут Аустралиа Стате Лигуе 1",
-      "match_key": "soccer|fulham_united_fc|cumberland_united|2026-07-16",
+      "home_team": "Puskas Akademia FC Felcsut",
+      "home_team_ru": "Пускас Академиа Фелксут",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|puskas_akademia_fc_felcsut|istanbul_basaksehir|2026-07-16",
       "metrics": {
-        "adjusted_probability": 0.423303,
-        "books_count": 2,
+        "adjusted_probability": 0.679907,
+        "books_count": 3,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 2.33,
-        "canonical_ev_pct": 5.826,
-        "confidence": 71.722,
+        "canonical_edge_pp": 5.879,
+        "canonical_ev_pct": 9.465,
+        "confidence": 75.159,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.631,
+        "market_probability": 0.653595,
+        "model_probability": 0.679907,
+        "odds": 1.61,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 29.543,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.621118,
+        "sources_count": 3,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 2.633,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 2.633,
+          "xg_model_optimism_gap_pp": 2.633,
+          "xg_probability": 0.653577,
+          "xg_probability_pct": 65.358,
+          "xg_source": "home_away",
+          "xg_total": 3.366
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "odds_below_global_min"
+      ],
+      "reject_reasons_ru": [
+        "коэффициент ниже общего минимума"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Viborg FF",
+      "away_team_ru": "Виборг FF",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-16T12:00:00+00:00",
+      "commence_time_display": "16.07.2026 15:00 MSK",
+      "family": "totals",
+      "home_team": "FC Copenhagen",
+      "home_team_ru": "Копенхаген",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|fc_copenhagen|viborg_ff|2026-07-16",
+      "metrics": {
+        "adjusted_probability": 0.550482,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.138,
+        "canonical_ev_pct": 4.041,
+        "confidence": 66.719,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -45,16 +138,146 @@
         "confirmation_sources": [
           "sstats"
         ],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.994,
+        "market_probability": 0.540541,
+        "model_probability": 0.550482,
+        "odds": 1.89,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": true,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.624,
+        "quality_reasons": [],
+        "quality_score": 68.484,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.529101,
+        "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.85,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.89,
+          "selected_vs_median_deviation_pct": 2.162
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 0.996,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 0.996,
+          "xg_model_optimism_gap_pp": 0.996,
+          "xg_probability": 0.540522,
+          "xg_probability_pct": 54.052,
+          "xg_source": "home_away",
+          "xg_total": 3.482
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_two_plus_odds_sources_required:1/2",
+        "tier_a_two_plus_context_sources_required:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_publication_score_below_min",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_confirmation_sources_below_min:1/2",
+        "tier_b_two_plus_odds_sources_required:1/2",
+        "tier_b_two_plus_context_sources_required:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_b_low_quality_competition_requires_a_tier",
+        "tier_c_publication_score_below_min",
+        "tier_c_two_plus_odds_sources_required:1/2",
+        "tier_c_two_plus_context_sources_required:1/2",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "уровень A: two plus odds sources required:1/2",
+        "уровень A: two plus context sources required:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: publication score below min",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: confirmation sources below min:1/2",
+        "уровень B: two plus odds sources required:1/2",
+        "уровень B: two plus context sources required:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень B: low quality competition requires a tier",
+        "уровень C: publication score below min",
+        "уровень C: two plus odds sources required:1/2",
+        "уровень C: two plus context sources required:1/2",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "AD Vilankulo",
+      "away_team_ru": "AD Виланкуло",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-16T12:45:00+00:00",
+      "commence_time_display": "16.07.2026 15:45 MSK",
+      "family": "totals",
+      "home_team": "CD Maxaquene",
+      "home_team_ru": "Максаквене",
+      "league_name": "Mozambique - Mocambola",
+      "league_name_ru": "Мозамбикве - Мокамбола",
+      "match_key": "soccer|cd_maxaquene|ad_vilankulo|2026-07-16",
+      "metrics": {
+        "adjusted_probability": 0.48922,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.26,
+        "canonical_ev_pct": 7.139,
+        "confidence": 72.313,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro"
+        ],
         "confirmation_sources_count": 3,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.093,
-        "market_probability": 0.412371,
-        "model_probability": 0.423303,
-        "odds": 2.5,
+        "market_edge_pp": 1.472,
+        "market_probability": 0.474496,
+        "model_probability": 0.48922,
+        "odds": 2.19,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -63,24 +286,130 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 17.06,
+        "publication_score": 20.43,
         "quality_reasons": [],
-        "quality_score": 75.331,
+        "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.4,
+        "selected_implied_probability": 0.456621,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.1075,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.19,
+          "selected_vs_median_deviation_pct": 3.915
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.47,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.47,
+          "xg_model_optimism_gap_pp": 1.47,
+          "xg_probability": 0.474519,
+          "xg_probability_pct": 47.452,
+          "xg_source": "home_away",
+          "xg_total": 2.572
+        }
+      },
+      "ok": false,
+      "point": 2.0,
+      "reject_reasons": [
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Istanbul Basaksehir",
+      "away_team_ru": "Истанбул Басаксехир",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-16T12:00:00+00:00",
+      "commence_time_display": "16.07.2026 15:00 MSK",
+      "family": "totals",
+      "home_team": "Puskas Akademia FC Felcsut",
+      "home_team_ru": "Пускас Академиа Фелксут",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|puskas_akademia_fc_felcsut|istanbul_basaksehir|2026-07-16",
+      "metrics": {
+        "adjusted_probability": 0.420766,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.981,
+        "canonical_ev_pct": 10.451,
+        "confidence": 75.603,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.754,
+        "market_probability": 0.403226,
+        "model_probability": 0.420766,
+        "odds": 2.625,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 26.882,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.380952,
         "sources_count": 3,
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 1.091,
+          "xg_abs_gap_pp": 1.752,
           "xg_direction_ok": false,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 1.091,
-          "xg_model_optimism_gap_pp": 1.091,
-          "xg_probability": 0.41239,
-          "xg_probability_pct": 41.239,
+          "xg_model_gap_pp": 1.752,
+          "xg_model_optimism_gap_pp": 1.752,
+          "xg_probability": 0.403245,
+          "xg_probability_pct": 40.324,
           "xg_source": "home_away",
-          "xg_total": 3.049
+          "xg_total": 3.09
         }
       },
       "ok": false,
@@ -95,27 +424,27 @@
       "tier": null
     },
     {
-      "away_team": "Cumberland United",
-      "away_team_ru": "Кумберланд Унитед",
+      "away_team": "Viborg FF",
+      "away_team_ru": "Виборг FF",
       "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-07-16T09:45:00+00:00",
-      "commence_time_display": "16.07.2026 12:45 MSK",
+      "commence_time": "2026-07-16T12:00:00+00:00",
+      "commence_time_display": "16.07.2026 15:00 MSK",
       "family": "totals",
-      "home_team": "Fulham United FC",
-      "home_team_ru": "Фулхам Унитед",
-      "league_name": "Australia - South Australia State League 1",
-      "league_name_ru": "Австралия - Сут Аустралиа Стате Лигуе 1",
-      "match_key": "soccer|fulham_united_fc|cumberland_united|2026-07-16",
+      "home_team": "FC Copenhagen",
+      "home_team_ru": "Копенхаген",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|fc_copenhagen|viborg_ff|2026-07-16",
       "metrics": {
-        "adjusted_probability": 0.693592,
-        "books_count": 2,
+        "adjusted_probability": 0.527157,
+        "books_count": 3,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 5.705,
-        "canonical_ev_pct": 8.963,
-        "confidence": 73.133,
+        "canonical_edge_pp": 5.322,
+        "canonical_ev_pct": 11.23,
+        "confidence": 69.954,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -127,16 +456,140 @@
         "confirmation_sources": [
           "sstats"
         ],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.954,
+        "market_probability": 0.507614,
+        "model_probability": 0.527157,
+        "odds": 2.11,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": true,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 28.259,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.473934,
+        "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.97,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 2.11,
+          "selected_vs_median_deviation_pct": 7.107
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.956,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.956,
+          "xg_model_optimism_gap_pp": 1.956,
+          "xg_probability": 0.507599,
+          "xg_probability_pct": 50.76,
+          "xg_source": "home_away",
+          "xg_total": 3.708
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_two_plus_odds_sources_required:1/2",
+        "tier_a_two_plus_context_sources_required:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_confirmation_sources_below_min:1/2",
+        "tier_b_two_plus_odds_sources_required:1/2",
+        "tier_b_two_plus_context_sources_required:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_b_low_quality_competition_requires_a_tier",
+        "tier_c_two_plus_odds_sources_required:1/2",
+        "tier_c_two_plus_context_sources_required:1/2",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "уровень A: two plus odds sources required:1/2",
+        "уровень A: two plus context sources required:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: confirmation sources below min:1/2",
+        "уровень B: two plus odds sources required:1/2",
+        "уровень B: two plus context sources required:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень B: low quality competition requires a tier",
+        "уровень C: two plus odds sources required:1/2",
+        "уровень C: two plus context sources required:1/2",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "AD Vilankulo",
+      "away_team_ru": "AD Виланкуло",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-16T12:45:00+00:00",
+      "commence_time_display": "16.07.2026 15:45 MSK",
+      "family": "totals",
+      "home_team": "CD Maxaquene",
+      "home_team_ru": "Максаквене",
+      "league_name": "Mozambique - Mocambola",
+      "league_name_ru": "Мозамбикве - Мокамбола",
+      "match_key": "soccer|cd_maxaquene|ad_vilankulo|2026-07-16",
+      "metrics": {
+        "adjusted_probability": 0.372963,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.513,
+        "canonical_ev_pct": 10.397,
+        "confidence": 73.779,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro"
+        ],
         "confirmation_sources_count": 3,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 2.492,
-        "market_probability": 0.668673,
-        "model_probability": 0.693592,
-        "odds": 1.571,
+        "market_edge_pp": 1.486,
+        "market_probability": 0.358102,
+        "model_probability": 0.372963,
+        "odds": 2.96,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -145,33 +598,33 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 27.419,
+        "publication_score": 24.682,
         "quality_reasons": [],
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.636537,
+        "selected_implied_probability": 0.337838,
         "sources_count": 3,
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 2.492,
-          "xg_direction_ok": true,
+          "xg_abs_gap_pp": 1.488,
+          "xg_direction_ok": false,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 2.492,
-          "xg_model_optimism_gap_pp": 2.492,
-          "xg_probability": 0.668671,
-          "xg_probability_pct": 66.867,
+          "xg_model_gap_pp": 1.488,
+          "xg_model_optimism_gap_pp": 1.488,
+          "xg_probability": 0.358085,
+          "xg_probability_pct": 35.809,
           "xg_source": "home_away",
-          "xg_total": 3.444
+          "xg_total": 2.129
         }
       },
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "odds_below_global_min"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "коэффициент ниже общего минимума"
+        "направление ставки конфликтует с xG"
       ],
       "selection": "Больше",
       "tier": null
@@ -181,7 +634,7 @@
   "pool_counts": {
     "debug_candidates_before_quality_stale_or_outside_window": 5,
     "latest_picks_stale_or_outside_window": 63,
-    "latest_rescue_candidates": 2
+    "latest_rescue_candidates": 6
   },
   "published": false,
   "scan_policy": {
@@ -198,12 +651,31 @@
     "duplicates_removed": 0,
     "reason_counts_without_daily_cap": {
       "odds_below_global_min": 1,
-      "xg_direction_conflict": 1
+      "tier_a_confirmation_sources_below_min:1/2": 2,
+      "tier_a_market_implied_xg_not_hard_confirmation": 3,
+      "tier_a_odds_sources_below_min:1/2": 3,
+      "tier_a_proxy_quality_not_allowed": 3,
+      "tier_a_publication_score_below_min": 1,
+      "tier_a_two_plus_context_sources_required:1/2": 2,
+      "tier_a_two_plus_odds_sources_required:1/2": 2,
+      "tier_b_confirmation_sources_below_min:1/2": 2,
+      "tier_b_hard_context_required_for_proxy_quality": 3,
+      "tier_b_low_quality_competition_requires_a_tier": 2,
+      "tier_b_market_implied_xg_not_hard_confirmation": 3,
+      "tier_b_odds_sources_below_min:1/2": 3,
+      "tier_b_publication_score_below_min": 1,
+      "tier_b_two_plus_context_sources_required:1/2": 2,
+      "tier_b_two_plus_odds_sources_required:1/2": 2,
+      "tier_c_market_implied_xg_not_hard_confirmation": 3,
+      "tier_c_publication_score_below_min": 1,
+      "tier_c_two_plus_context_sources_required:1/2": 2,
+      "tier_c_two_plus_odds_sources_required:1/2": 2,
+      "xg_direction_conflict": 2
     },
     "top_would_publish_without_daily_cap": []
   },
   "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4119,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1784193250,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4122,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1784200469,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
