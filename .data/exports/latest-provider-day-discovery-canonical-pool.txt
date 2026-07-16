@@ -1,14 +1,14 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-15T23:04:56.382660+00:00
+UTC: 2026-07-16T01:05:20.067646+00:00
 target_date: 2026-07-16
-canonical_matches: 360
-2+ provider sources: 185
-2+ primary sources: 182
+canonical_matches: 361
+2+ provider sources: 184
+2+ primary sources: 181
 all 3 primary sources: 25
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=405 event_like=405 unique=85 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=400 event_like=400 unique=85 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=1 rows=5 event_like=5 unique=5 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
@@ -17,8 +17,8 @@ all 3 primary sources: 25
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 175, "3": 24, "2": 159, "5": 2}
-- primary providers: {"1": 178, "2": 157, "3": 25}
+- all providers: {"1": 177, "3": 24, "2": 158, "5": 2}
+- primary providers: {"1": 180, "2": 156, "3": 25}
 
 ## Top canonical matches
 - 2026-07-15T22:00:00+00:00 | Real Potosí — San Antonio Bulo Bulo | providers=sstats ids={"sstats": "1538388"}
@@ -39,7 +39,7 @@ all 3 primary sources: 25
 - 2026-07-16T00:00:00+00:00 | The Strongest — Oriente Petrolero | providers=odds_api_io,sstats ids={"odds_api_io": "72332930", "sstats": "1538386"}
 - 2026-07-16T00:00:00+00:00 | Red Bull Bragantino SP U20 — CA Paranaense PR U20 | providers=odds_api_io ids={"odds_api_io": "72552714"}
 - 2026-07-16T00:30:00+00:00 | Barcelona SC — Guayaquil City FC | providers=odds_api_io,sstats ids={"odds_api_io": "68687724", "sstats": "1519401"}
-- 2026-07-16T00:30:00+00:00 | Houston Dynamo — America de Cali | providers=odds_api_io,sstats ids={"odds_api_io": "72850744", "sstats": "1548853"}
+- 2026-07-16T00:30:00+00:00 | Houston Dynamo — America de Cali | providers=sstats ids={"sstats": "1548853"}
 - 2026-07-16T01:30:00+00:00 | Real Salt Lake — Burnley FC | providers=odds_api_io,sstats ids={"odds_api_io": "71968596", "sstats": "1550568"}
 - 2026-07-16T08:30:00+00:00 | NK Varazdin — NK Kustosija Zagreb | providers=odds_api_io ids={"odds_api_io": "72850154"}
 - 2026-07-16T09:30:00+00:00 | Bss Sporting Club — George Telegraph FC | providers=odds_api_io ids={"odds_api_io": "72777656"}
@@ -126,9 +126,9 @@ all 3 primary sources: 25
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Houston Dynamo — America de Cali | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Houston Dynamo — America de Cali | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Real Salt Lake — Burnley FC | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
