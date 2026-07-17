@@ -1,14 +1,14 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-17T11:05:57.312968+00:00
+UTC: 2026-07-17T12:26:57.584569+00:00
 target_date: 2026-07-17
-canonical_matches: 645
-2+ provider sources: 184
-2+ primary sources: 183
-all 3 primary sources: 41
+canonical_matches: 656
+2+ provider sources: 172
+2+ primary sources: 171
+all 3 primary sources: 39
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=20 ok=10 rows=1154 event_like=1154 unique=409 statuses={"OK": 10, "EMPTY": 10}
+- bzzoiro: commands=20 ok=10 rows=1125 event_like=1125 unique=409 statuses={"OK": 10, "EMPTY": 10}
 - football_data: commands=1 ok=1 rows=4 event_like=4 unique=4 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
@@ -17,8 +17,8 @@ all 3 primary sources: 41
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 461, "2": 140, "3": 41, "4": 3}
-- primary providers: {"1": 462, "2": 142, "3": 41}
+- all providers: {"1": 484, "2": 130, "3": 39, "4": 3}
+- primary providers: {"1": 485, "2": 132, "3": 39}
 
 ## Top canonical matches
 - 2026-07-16T21:30:00+00:00 | Aucas — Independiente del Valle | providers=sstats ids={"sstats": "1519400"}
@@ -38,6 +38,7 @@ all 3 primary sources: 41
 - 2026-07-17T01:15:00+00:00 | Laredo Heat — Texoma | providers=sstats ids={"sstats": "1586138"}
 - 2026-07-17T02:30:00+00:00 | Seattle Sounders FC — Portland Timbers | providers=bzzoiro,sstats ids={"bzzoiro": "5136", "sstats": "1490328"}
 - 2026-07-17T03:10:00+00:00 | Club Tijuana — Tigres UANL | providers=bzzoiro,sstats ids={"bzzoiro": "211499", "sstats": "1550895"}
+- 2026-07-17T07:30:00+00:00 | Sydney FC U20 — Manly Utd U20 | providers=sstats ids={"sstats": "1517597"}
 - 2026-07-17T08:00:00+00:00 | FC Ryukyu — Urawa Red Diamonds | providers=bzzoiro,sstats ids={"bzzoiro": "218911", "sstats": "1591871"}
 - 2026-07-17T08:00:00+00:00 | HŠK Zrinjski Mostar — HŠK Posušje | providers=bzzoiro ids={"bzzoiro": "218910"}
 - 2026-07-17T08:00:00+00:00 | Ural U20 — Dinamo Moskva U19 | providers=sstats ids={"sstats": "1519099"}
@@ -46,11 +47,10 @@ all 3 primary sources: 41
 - 2026-07-17T09:00:00+00:00 | Kyoto Sanga FC — Shonan Bellmare | providers=bzzoiro,sstats ids={"bzzoiro": "218915", "sstats": "1591872"}
 - 2026-07-17T09:00:00+00:00 | Stockport County — Bristol City | providers=bzzoiro,sstats ids={"bzzoiro": "218914", "sstats": "1562927"}
 - 2026-07-17T09:00:00+00:00 | Almaz Antey U19 — Dynamo Makhachkala U19 | providers=sstats ids={"sstats": "1519219"}
-- 2026-07-17T09:30:00+00:00 | Sydney FC Youth — Manly United FC | providers=odds_api_io,sstats ids={"odds_api_io": "67690998", "sstats": "1517597"}
-- 2026-07-17T09:30:00+00:00 | Campbelltown City SC — Adelaide Comets FC | providers=odds_api_io,sstats ids={"odds_api_io": "68048952", "sstats": "1527102"}
-- 2026-07-17T09:30:00+00:00 | Green Gully SC — Dandenong Thunder | providers=odds_api_io,sstats ids={"odds_api_io": "68160280", "sstats": "1521980"}
-- 2026-07-17T09:30:00+00:00 | Bentleigh Greens — Dandenong City SC | providers=odds_api_io,sstats ids={"odds_api_io": "68160282", "sstats": "1521981"}
-- 2026-07-17T09:30:00+00:00 | Box Hill United FC — Altona City SC | providers=odds_api_io,sstats ids={"odds_api_io": "68161806", "sstats": "1541365"}
+- 2026-07-17T09:30:00+00:00 | FC Alverca — C.F. Os Belenenses | providers=bzzoiro,sstats ids={"bzzoiro": "218916", "sstats": "1583331"}
+- 2026-07-17T09:30:00+00:00 | CS Marítimo — Leixões SC | providers=bzzoiro,sstats ids={"bzzoiro": "218917", "sstats": "1589271"}
+- 2026-07-17T09:30:00+00:00 | Green Gully — Dandenong Thunder | providers=sstats ids={"sstats": "1521980"}
+- 2026-07-17T09:30:00+00:00 | Box Hill — Altona City | providers=sstats ids={"sstats": "1541365"}
 
 ## Targeted enrichment plan sample
 - Aucas — Independiente del Valle | primary=1 providers=sstats
@@ -121,15 +121,15 @@ all 3 primary sources: 41
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Sydney FC U20 — Manly Utd U20 | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - FC Ryukyu — Urawa Red Diamonds | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - HŠK Zrinjski Mostar — HŠK Posušje | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Ural U20 — Dinamo Moskva U19 | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping

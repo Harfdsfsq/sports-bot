@@ -1,33 +1,33 @@
 {
-  "budget_limited": false,
+  "budget_limited": true,
   "budget_seconds": 240.0,
-  "created_at_utc": "2026-07-17T11:31:33.290265+00:00",
-  "duration_seconds": 5.32,
+  "created_at_utc": "2026-07-17T12:29:00.588414+00:00",
+  "duration_seconds": 200.89,
   "final": {
-    "context_2plus_sources": 156,
-    "fixture_2plus_sources": 288,
-    "inventory_matches": 613,
+    "context_2plus_sources": 165,
+    "fixture_2plus_sources": 289,
+    "inventory_matches": 692,
     "matrix_matches": 300,
-    "odds_2plus_sources": 155,
-    "ready_for_model": 199,
-    "ready_for_publish": 140,
+    "odds_2plus_sources": 189,
+    "ready_for_model": 202,
+    "ready_for_publish": 150,
     "semantic_duplicate_rows": 1,
-    "semantic_unique_matches": 612
+    "semantic_unique_matches": 691
   },
-  "mode": "runbot_discovery_first_prepare_v5_incremental_reuse",
+  "mode": "runbot_discovery_first_prepare_v5_full_bounded",
   "previous_full_prepare": {
-    "age_minutes": 21.64,
-    "created_at_utc": "2026-07-17T11:09:49.688514+00:00",
-    "mode": "runbot_discovery_first_prepare_v4_semantic_300_before_provider_gaps",
+    "age_minutes": 54.11,
+    "created_at_utc": "2026-07-17T11:31:33.290265+00:00",
+    "mode": "runbot_discovery_first_prepare_v5_incremental_reuse",
     "refresh_interval_minutes": 360,
-    "reusable": true,
+    "reusable": false,
     "status": "ok",
     "target_date": "2026-07-17"
   },
-  "status": "ok",
+  "status": "ok_budget_limited",
   "steps": [
     {
-      "duration_seconds": 0.25,
+      "duration_seconds": 0.2,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
         "status": "skipped_sufficient_inventory"
@@ -35,7 +35,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.66,
+      "duration_seconds": 0.54,
       "name": "semantic_inventory_dedupe_pre",
       "result_summary": {
         "type": "int"
@@ -50,47 +50,81 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 76.96,
       "name": "provider_day_discovery_canonical_pool_v2",
-      "reason": "fresh_same_day_full_prepare_reused",
-      "result_summary": {},
-      "status": "skipped"
-    },
-    {
-      "duration_seconds": 0.0,
-      "name": "merge_discovery_pool_into_inventory",
-      "reason": "fresh_same_day_full_prepare_reused",
-      "result_summary": {},
-      "status": "skipped"
-    },
-    {
-      "duration_seconds": 1.81,
-      "name": "apply_cached_sstats_crosswalk_ids",
       "result_summary": {
-        "applied": 186,
-        "inventory_matches": 613,
-        "matched_rows_seen": 186,
+        "canonical_matches": 656,
+        "canonical_with_2plus_primary_sources": 171,
+        "canonical_with_all_3_primary_sources": 39,
+        "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon",
+        "status": "ok"
+      },
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 40.62,
+      "name": "merge_discovery_pool_into_inventory",
+      "result_summary": {
+        "appended": 79,
+        "canonical_rows_seen": 656,
+        "inventory_matches_after": 692,
+        "matched_existing": 577,
+        "mode": "provider_day_discovery_inventory_merge_v2_full_pool",
+        "status": "ok"
+      },
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 0.55,
+      "name": "semantic_inventory_dedupe_post_merge",
+      "result_summary": {
+        "type": "int"
+      },
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 28.1,
+      "name": "post_merge_sstats_crosswalk_v2",
+      "result_summary": {
+        "match_rate_pct": 61.33,
+        "matched": 184,
+        "mode": "sstats_crosswalk_probe_v2_full_matched"
+      },
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 0.56,
+      "name": "apply_sstats_crosswalk_ids_to_inventory",
+      "result_summary": {
+        "applied": 184,
+        "inventory_matches": 692,
+        "matched_rows_seen": 184,
         "mode": "sstats_crosswalk_inventory_apply_v1",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 51.39,
       "name": "apply_sstats_deep_inventory_enrichment_v4",
-      "reason": "incremental_mode_cached_context_reuse",
-      "result_summary": {},
-      "status": "skipped"
+      "result_summary": {
+        "crosswalk_matched": 184,
+        "enriched_matches": 31,
+        "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority",
+        "request_count": 80,
+        "status": "ok"
+      },
+      "status": "ok"
     },
     {
       "duration_seconds": 0.0,
       "name": "target_bzzoiro_v2_inventory_gaps",
-      "reason": "incremental_mode_runner_provider_refresh",
+      "reason": "discovery_budget_reserve",
       "result_summary": {},
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.67,
+      "duration_seconds": 0.55,
       "name": "semantic_inventory_dedupe_final",
       "result_summary": {
         "type": "int"
@@ -100,27 +134,27 @@
     {
       "duration_seconds": 0.0,
       "name": "target_expand_final",
-      "reason": "inventory_already_at_or_above_target:613/300",
+      "reason": "inventory_already_at_or_above_target:692/300",
       "result_summary": {},
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.13,
+      "duration_seconds": 0.11,
       "name": "build_source_aware_coverage_matrix",
       "result_summary": {
-        "context_2plus_sources": 156,
-        "fixture_2plus_sources": 288,
+        "context_2plus_sources": 165,
+        "fixture_2plus_sources": 289,
         "matches": 300,
         "matrix_matches": 300,
-        "odds_2plus_sources": 155,
-        "ready_for_model": 199,
-        "ready_for_publish": 140,
+        "odds_2plus_sources": 189,
+        "ready_for_model": 202,
+        "ready_for_publish": 150,
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.31,
+      "duration_seconds": 0.27,
       "name": "inventory_provider_gap_audit",
       "result_summary": {
         "type": "int"
