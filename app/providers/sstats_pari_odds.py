@@ -1,8 +1,9 @@
-from __future__ import annotations
-
 """Independent prematch odds source backed by SStats Pari endpoints."""
 
+from __future__ import annotations
+
 import asyncio
+import contextlib
 import json
 import os
 from collections import defaultdict
@@ -11,11 +12,16 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-
 from app.config import Settings
 from app.providers.sstats_pari_parser import (
-    event_id, extract_list, extract_odds, league_name, parse_dt, parse_offers,
-    team_name, total_count,
+    event_id,
+    extract_list,
+    extract_odds,
+    league_name,
+    parse_dt,
+    parse_offers,
+    team_name,
+    total_count,
 )
 from app.schemas import Match, Offer
 from app.utils import canonicalize_team_name, score_event_match
@@ -194,10 +200,8 @@ class SStatsPariOddsProvider:
 
     @staticmethod
     def _export(stats: dict[str, Any], preview: dict[str, Any]) -> None:
-        try:
+        with contextlib.suppress(Exception):
             _write(EXPORT, {"created_at_utc": datetime.now(UTC).isoformat(), "stats": stats, "preview": preview, "publication_contract_relaxed": False})
-        except Exception:
-            pass
 
 
 __all__ = ["SStatsPariOddsProvider"]
