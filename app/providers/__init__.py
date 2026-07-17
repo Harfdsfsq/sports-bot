@@ -13,6 +13,18 @@ try:
 except Exception:
     pass
 
+# odds-api.io can return roughly one thousand events. Install the indexed
+# prefilter before the provider runs so exact/loose matches keep their original
+# scorer while expensive fuzzy scoring only sees a small kickoff/token shortlist.
+try:
+    from app.providers import (
+        odds_api_io_fast_match_patch as _odds_api_io_fast_match_patch,
+    )
+
+    _odds_api_io_fast_match_patch.install()
+except Exception:
+    pass
+
 try:
     from app.providers import (
         bzzoiro_v2_date_window_patch as _bzzoiro_v2_date_window_patch,
