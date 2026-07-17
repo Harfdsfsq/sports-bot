@@ -23,6 +23,31 @@ def _provider_name(runner: Any, provider: Any) -> str:
         return canonical_source(module.rsplit(".", 1)[-1])
 
 
+def _near_kickoff(matches: list[Any], hours: float = 4.0) -> list[Any]:
+    now = datetime.now(UTC)
+    result = []
+    for match in matches:
+        kickoff = getattr(match, "commence_time", None)
+        if not isinstance(kickoff, datetime):
+            continue
+        if kickoff.tzinfo is None:
+            kickoff = kickoff.replace(tzinfo=UTC)
+        delta = (kickoff.astimezone(UTC) - now).total_seconds() / 3600.0
+        if -0.25 <= delta <= hours:
+            result.append(match)
+    return result
+
+
+def _merge_match_scope(planned: list[Any], near: list[Any]) -> list[Any]:
+    out, seen = [], set()
+    for match in list(planned or []) + list(near or []):
+        key = str(getattr(match, "match_key", ""))
+        if key and key not in seen:
+            seen.add(key)
+            out.append(match)
+    return out
+
+
 async def _fetch(self: Any, provider: Any | None, method_name: str, *args: Any, empty_data: Any):
     assert callable(_ORIGINAL_FETCH)
     if provider is None:
@@ -33,7 +58,14 @@ async def _fetch(self: Any, provider: Any | None, method_name: str, *args: Any, 
     before = after = None
     if call_args and isinstance(call_args[0], list):
         before = len(call_args[0])
-        call_args[0] = filter_matches(name, method_name, call_args[0])
+        planned = list(filter_matches(name, method_name, call_args[0]) or [])
+        role = "offers" if "offer" in method_name.lower() else "context"
+        refresh_provider = (
+            role == "offers" and name in {"odds_api_io", "sstats_pari", "sportlogic"}
+        ) or (
+            role == "context" and name in {"sstats", "clubelo"}
+        )
+        call_args[0] = _merge_match_scope(planned, _near_kickoff(original_matches) if refresh_provider else [])
         after = len(call_args[0])
         if after == 0:
             return cached or empty_data, {"enabled": True, "planned_skip": True, "cache_reused": len(cached), "provider": name, "method": method_name, "matches_before_plan": before, "matches_after_plan": 0}, {"planned_skip": True, "cache_reused": len(cached)}
@@ -97,4 +129,4 @@ def install(prediction_runner: Any, runner_module: Any, evidence_module: Any) ->
     prediction_runner.run_once = _run
     runner_module.build_context_bundles = _build
     evidence_module.build_context_bundles = _build
-    return {"final_provider_deadlines": True, "actual_context_source_identity": True, "ledger_after_each_provider": True, "cached_evidence_reused": True}
+    return {"final_provider_deadlines": True, "actual_context_source_identity": True, "ledger_after_each_provider": True, "cached_evidence_reused": True, "near_kickoff_refresh_hours": 4}
