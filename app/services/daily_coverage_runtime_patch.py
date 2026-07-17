@@ -29,6 +29,8 @@ def install() -> dict[str, Any]:
         from app.services.daily_coverage_runtime_boundary import install as install_boundary
         from app.services.daily_coverage_runtime_providers import install as install_providers
         from app.services.runner import PredictionRunner
+        from app.services.strict_coverage_metrics import install as install_strict_metrics
+        strict_result = install_strict_metrics()
         provider_result = install_providers(PredictionRunner, CoveragePlanner)
         boundary_result = install_boundary(PredictionRunner, runner_module, evidence)
     except Exception as exc:
@@ -38,8 +40,8 @@ def install() -> dict[str, Any]:
     _INSTALLED = True
     payload = {
         "status": "installed", "created_at_utc": datetime.now(UTC).isoformat(),
-        "providers": provider_result, "boundary": boundary_result,
-        "publication_contract_relaxed": False,
+        "strict_metrics": strict_result, "providers": provider_result,
+        "boundary": boundary_result, "publication_contract_relaxed": False,
     }
     _write(payload)
     return payload
