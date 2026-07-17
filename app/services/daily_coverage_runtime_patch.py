@@ -36,7 +36,9 @@ def install() -> dict[str, Any]:
             install as install_providers,
         )
         from app.services.runner import PredictionRunner
-        from app.services.strict_coverage_metrics import install as install_strict_metrics
+        from app.services.strict_coverage_metrics import (
+            install as install_strict_metrics,
+        )
 
         strict_result = install_strict_metrics()
         provider_result = install_providers(PredictionRunner, CoveragePlanner)
