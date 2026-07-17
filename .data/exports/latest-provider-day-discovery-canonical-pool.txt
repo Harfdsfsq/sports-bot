@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-17T05:05:54.023729+00:00
+UTC: 2026-07-17T07:06:16.343965+00:00
 target_date: 2026-07-17
-canonical_matches: 633
-2+ provider sources: 196
-2+ primary sources: 195
-all 3 primary sources: 58
+canonical_matches: 635
+2+ provider sources: 199
+2+ primary sources: 198
+all 3 primary sources: 48
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
@@ -13,12 +13,12 @@ all 3 primary sources: 58
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=191 event_like=188 unique=188 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=185 event_like=182 unique=182 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 437, "2": 138, "3": 55, "5": 3}
-- primary providers: {"1": 438, "2": 137, "3": 58}
+- all providers: {"1": 436, "2": 148, "3": 48, "4": 3}
+- primary providers: {"1": 437, "2": 150, "3": 48}
 
 ## Top canonical matches
 - 2026-07-16T21:30:00+00:00 | Aucas — Independiente del Valle | providers=sstats ids={"sstats": "1519400"}
@@ -37,14 +37,14 @@ all 3 primary sources: 58
 - 2026-07-17T01:00:00+00:00 | Club Necaxa — Atlante FC | providers=bzzoiro,sstats ids={"bzzoiro": "211498", "sstats": "1550894"}
 - 2026-07-17T01:15:00+00:00 | Laredo Heat — Texoma | providers=sstats ids={"sstats": "1586138"}
 - 2026-07-17T02:30:00+00:00 | Seattle Sounders FC — Portland Timbers | providers=bzzoiro,sstats ids={"bzzoiro": "5136", "sstats": "1490328"}
-- 2026-07-17T03:10:00+00:00 | Club Tijuana de Caliente — Tigres UANL | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "72055032", "bzzoiro": "211499", "sstats": "1550895"}
+- 2026-07-17T03:10:00+00:00 | Club Tijuana — Tigres UANL | providers=bzzoiro,sstats ids={"bzzoiro": "211499", "sstats": "1550895"}
 - 2026-07-17T07:15:00+00:00 | Ferrymead Bays — Coastal Spirit FC | providers=odds_api_io ids={"odds_api_io": "69463324"}
 - 2026-07-17T07:30:00+00:00 | Sydney FC U20 — Manly United FC U20 | providers=odds_api_io,sstats ids={"odds_api_io": "67690998", "sstats": "1517597"}
 - 2026-07-17T08:00:00+00:00 | Prospect United U20 — Macarthur Rams FC U20 | providers=odds_api_io,sstats ids={"odds_api_io": "67691736", "sstats": "1517904"}
 - 2026-07-17T08:00:00+00:00 | Hurstville FC U20 — Dulwich Hill U20 | providers=odds_api_io,sstats ids={"odds_api_io": "67691738", "sstats": "1517903"}
 - 2026-07-17T08:00:00+00:00 | Ural Ekaterinburg — Dinamo Moscow | providers=odds_api_io,sstats ids={"odds_api_io": "68849628", "sstats": "1519099"}
+- 2026-07-17T08:00:00+00:00 | FC Ryukyu — Urawa Red Diamonds | providers=bzzoiro,sstats ids={"bzzoiro": "218911", "sstats": "1591871"}
 - 2026-07-17T08:00:00+00:00 | HŠK Zrinjski Mostar — HŠK Posušje | providers=bzzoiro ids={"bzzoiro": "218910"}
-- 2026-07-17T08:00:00+00:00 | FC Ryukyu — Urawa Red Diamonds | providers=bzzoiro ids={"bzzoiro": "218911"}
 - 2026-07-17T08:15:00+00:00 | Northcote City FC U23 — Manningham United Blues FC U23 | providers=odds_api_io,sstats ids={"odds_api_io": "68160662", "sstats": "1522144"}
 - 2026-07-17T08:15:00+00:00 | Melbourne Knights FC U23 — Brunswick City SC U23 | providers=odds_api_io,sstats ids={"odds_api_io": "68160674", "sstats": "1522148"}
 - 2026-07-17T08:30:00+00:00 | CD Leganes — Albacete Balompie | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "72637072", "bzzoiro": "218912", "sstats": "1583333"}
@@ -117,8 +117,7 @@ all 3 primary sources: 58
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Club Tijuana de Caliente — Tigres UANL | primary=3 providers=bzzoiro,odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Club Tijuana — Tigres UANL | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
