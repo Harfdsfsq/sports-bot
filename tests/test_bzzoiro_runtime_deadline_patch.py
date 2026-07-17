@@ -32,4 +32,4 @@ def test_runtime_policy_uses_low_yield_safe_caps() -> None:
     assert policy["BZZOIRO_RUNTIME_HARD_SECONDS"] == "75"
     assert policy["BZZOIRO_RUNTIME_DETAIL_MATCH_LIMIT"] == "24"
     assert policy["BZZOIRO_RUNTIME_COMPARISON_MATCH_LIMIT"] == "12"
-    assert policy["BZZOIRO_V2_FETCH_EVENT_PREDICTION"] if "BZZOIRO_V2_FETCH_EVENT_PREDICTION" in policy else "false"
+    assert policy["BZZOIRO_RUNTIME_HTTP_TIMEOUT_SECONDS"] == "5"
