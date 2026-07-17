@@ -1,19 +1,27 @@
 {
-  "created_at_utc": "2026-07-14T21:14:26.843878+00:00",
-  "env_written_count": 133,
+  "created_at_utc": "2026-07-17T08:50:38.349220+00:00",
+  "env_written_count": 137,
   "notes": [
-    "Runtime budgets are raised for core coverage providers.",
-    "Publication still requires two exact odds sources and two context sources.",
-    "SportLogic is capped per run to stay under 500/day across 12 scheduled runs."
+    "Each configured odds-api.io account keeps its own 100/hour budget.",
+    "All 300 matches may be accumulated; provider detail calls remain quota-governed.",
+    "SportLogic regular and inventory budgets stay below the 500/day free-plan ceiling.",
+    "No one-source or B-tier publication relaxation is applied."
   ],
+  "policy_version": "v3-autonomous-300-strict-a",
   "requested_limits": {
-    "bzzoiro_per_minute": 200,
-    "odds_api_io_account1_per_run": 50,
-    "odds_api_io_account2_per_run": 50,
-    "odds_api_io_per_hour_total": 100,
+    "bzzoiro_per_run": 200,
+    "odds_api_io_account1_per_run": 100,
+    "odds_api_io_account2_per_run": 100,
+    "odds_api_io_per_hour_total": 200,
+    "sportlogic_inventory_reserve": 80,
     "sportlogic_per_day": 500,
-    "sportlogic_per_run": 40,
+    "sportlogic_regular_per_run": 30,
     "sstats_per_minute": 150
   },
-  "status": "installed"
+  "status": "installed",
+  "strict_publication": {
+    "min_bookmakers": 2,
+    "min_core_context_sources": 2,
+    "min_exact_odds_sources": 2
+  }
 }
