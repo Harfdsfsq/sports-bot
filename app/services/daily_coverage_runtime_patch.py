@@ -29,6 +29,11 @@ def install() -> dict[str, Any]:
         from app.services import evidence
         from app.services import runner as runner_module
         from app.services.coverage_planner import CoveragePlanner
+        from app.services.daily_coverage_freshness_patch import (
+            install as install_freshness,
+        )
+
+        freshness_result = install_freshness()
         from app.services.daily_coverage_runtime_boundary import (
             install as install_boundary,
         )
@@ -52,6 +57,7 @@ def install() -> dict[str, Any]:
         "status": "installed",
         "created_at_utc": datetime.now(UTC).isoformat(),
         "strict_metrics": strict_result,
+        "freshness": freshness_result,
         "providers": provider_result,
         "boundary": boundary_result,
         "publication_contract_relaxed": False,
