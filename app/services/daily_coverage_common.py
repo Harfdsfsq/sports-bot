@@ -14,6 +14,7 @@ EXPORT_DIR = DATA_DIR / "exports"
 PLAN_PATH = EXPORT_DIR / "latest-daily-coverage-plan.json"
 LEDGER_PATH = EXPORT_DIR / "latest-daily-coverage-ledger.json"
 REPORT_PATH = EXPORT_DIR / "latest-daily-coverage-report.json"
+EVIDENCE_PATH = EXPORT_DIR / "latest-daily-coverage-evidence.json"
 TARGET_MATCHES = 300
 PHASE_TARGETS = (150, 250, 300)
 MIN_ODDS_SOURCES = 2
@@ -170,3 +171,7 @@ def ledger_path(date_key: str) -> Path:
 
 def state_path(date_key: str) -> Path:
     return DAY_DIR / f"daily-coverage-state-{date_key}.json"
+
+
+def evidence_path(date_key: str) -> Path:
+    return DAY_DIR / f"daily-coverage-evidence-{date_key}.json"
