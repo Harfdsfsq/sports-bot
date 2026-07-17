@@ -17,6 +17,7 @@ def _init(self: Any, settings: Any) -> None:
     dynamic: dict[str, str] = {}
     try:
         from app.providers.sstats_pari_odds import SStatsPariOddsProvider
+
         for slot in ("oddspapi", "allsportsapi", "bookies_api"):
             if getattr(self, slot, None) is None:
                 setattr(self, slot, SStatsPariOddsProvider(settings))
@@ -26,6 +27,7 @@ def _init(self: Any, settings: Any) -> None:
         dynamic["sstats_pari_error"] = f"{type(exc).__name__}: {exc}"
     try:
         from app.providers.clubelo import ClubEloContextProvider
+
         for slot in ("futrixmetrics", "gnews", "newsapi", "openfootball"):
             if getattr(self, slot, None) is None:
                 setattr(self, slot, ClubEloContextProvider(settings))
@@ -37,7 +39,14 @@ def _init(self: Any, settings: Any) -> None:
     self._harizon_dynamic_provider_slots = dynamic
 
 
-def _select(self: Any, matches: list[Any], provider_name: str, *, fallback_matches: list[Any] | None = None, offers_by_match: dict[str, list[Any]] | None = None) -> list[Any]:
+def _select(
+    self: Any,
+    matches: list[Any],
+    provider_name: str,
+    *,
+    fallback_matches: list[Any] | None = None,
+    offers_by_match: dict[str, list[Any]] | None = None,
+) -> list[Any]:
     assert callable(_ORIGINAL_SELECT)
     dynamic = getattr(self, "_harizon_dynamic_provider_slots", {}) or {}
     actual = canonical_source(dynamic.get(provider_name) or provider_name)
@@ -50,11 +59,22 @@ def _select(self: Any, matches: list[Any], provider_name: str, *, fallback_match
                 seen.add(key)
                 deduped.append(match)
         return list(filter_matches(actual, "fetch_context", deduped) or [])
-    selected = _ORIGINAL_SELECT(self, matches, provider_name, fallback_matches=fallback_matches, offers_by_match=offers_by_match)
+    selected = _ORIGINAL_SELECT(
+        self,
+        matches,
+        provider_name,
+        fallback_matches=fallback_matches,
+        offers_by_match=offers_by_match,
+    )
     return list(filter_matches(actual, "fetch_context", list(selected or [])) or [])
 
 
-def _provider_targets(self: Any, provider_key: str, targets: list[Any], offers_by_match: dict[str, list[Any]] | None = None) -> list[Any]:
+def _provider_targets(
+    self: Any,
+    provider_key: str,
+    targets: list[Any],
+    offers_by_match: dict[str, list[Any]] | None = None,
+) -> list[Any]:
     assert callable(_ORIGINAL_PROVIDER_TARGETS)
     slot = str(os.getenv("HARIZON_CLUBELO_RUNNER_SLOT") or "").strip().lower()
     if slot and str(provider_key or "").strip().lower() == slot:
@@ -70,4 +90,7 @@ def install(prediction_runner: Any, coverage_planner: Any) -> dict[str, Any]:
     prediction_runner.__init__ = _init
     prediction_runner._select_provider_context_matches = _select
     coverage_planner.provider_targets = _provider_targets
-    return {"dynamic_odds_provider": "sstats_pari", "dynamic_context_provider": "clubelo"}
+    return {
+        "dynamic_odds_provider": "sstats_pari",
+        "dynamic_context_provider": "clubelo",
+    }
