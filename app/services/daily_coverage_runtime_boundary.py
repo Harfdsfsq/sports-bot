@@ -5,7 +5,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.services.daily_coverage_common import canonical_source
-from app.services.daily_coverage_ledger import finalize_daily_coverage, record_provider_result
+from app.services.daily_coverage_ledger import (
+    cached_provider_data, finalize_daily_coverage, merge_provider_data, record_provider_result,
+)
 from app.services.daily_coverage_plan import filter_matches, provider_timeout
 
 _ORIGINAL_FETCH = None
@@ -26,13 +28,15 @@ async def _fetch(self: Any, provider: Any | None, method_name: str, *args: Any, 
     if provider is None:
         return await _ORIGINAL_FETCH(self, provider, method_name, *args, empty_data=empty_data)
     name, call_args = _provider_name(self, provider), list(args)
+    original_matches = list(call_args[0]) if call_args and isinstance(call_args[0], list) else []
+    cached = cached_provider_data(name, method_name, original_matches) if original_matches else {}
     before = after = None
     if call_args and isinstance(call_args[0], list):
         before = len(call_args[0])
         call_args[0] = filter_matches(name, method_name, call_args[0])
         after = len(call_args[0])
         if after == 0:
-            return empty_data, {"enabled": True, "planned_skip": True, "provider": name, "method": method_name, "matches_before_plan": before, "matches_after_plan": 0}, {"planned_skip": True}
+            return cached or empty_data, {"enabled": True, "planned_skip": True, "cache_reused": len(cached), "provider": name, "method": method_name, "matches_before_plan": before, "matches_after_plan": 0}, {"planned_skip": True, "cache_reused": len(cached)}
     timeout = provider_timeout(name)
     started = datetime.now(UTC)
     try:
@@ -47,9 +51,10 @@ async def _fetch(self: Any, provider: Any | None, method_name: str, *args: Any, 
             "matches_before_plan": before, "matches_after_plan": after,
             "publication_contract_relaxed": False,
         }
-        return empty_data, stats, {"deadline_exhausted": True}
+        return cached or empty_data, stats, {"deadline_exhausted": True, "cache_reused": len(cached)}
+    data = merge_provider_data(cached, data, method_name)
     stats = stats if isinstance(stats, dict) else {}
-    stats.update({"daily_coverage_provider": name, "matches_before_plan": before, "matches_after_plan": after, "daily_coverage_deadline_seconds": timeout})
+    stats.update({"daily_coverage_provider": name, "matches_before_plan": before, "matches_after_plan": after, "daily_coverage_deadline_seconds": timeout, "daily_coverage_cache_reused": len(cached)})
     try:
         record_provider_result(name, method_name, data, stats)
     except Exception:
@@ -92,4 +97,4 @@ def install(prediction_runner: Any, runner_module: Any, evidence_module: Any) ->
     prediction_runner.run_once = _run
     runner_module.build_context_bundles = _build
     evidence_module.build_context_bundles = _build
-    return {"final_provider_deadlines": True, "actual_context_source_identity": True, "ledger_after_each_provider": True}
+    return {"final_provider_deadlines": True, "actual_context_source_identity": True, "ledger_after_each_provider": True, "cached_evidence_reused": True}
