@@ -54,6 +54,16 @@ def _deadline_seconds() -> float:
     return max(20.0, min(value, 90.0))
 
 
+def _budget_snapshot() -> dict[str, Any]:
+    try:
+        from app.services import bzzoiro_runtime_budget_patch
+
+        value = bzzoiro_runtime_budget_patch.snapshot()
+        return value if isinstance(value, dict) else {}
+    except Exception:
+        return {}
+
+
 def install() -> dict[str, Any]:
     for key, value in POLICY.items():
         os.environ[key] = value
@@ -91,6 +101,7 @@ def install() -> dict[str, Any]:
                     "created_at_utc": datetime.now(UTC).isoformat(),
                     "deadline_seconds": deadline,
                     "elapsed_seconds": round(elapsed, 3),
+                    "hard_budget": _budget_snapshot(),
                     "policy": POLICY,
                     "publication_contract_relaxed": False,
                 }
@@ -98,14 +109,17 @@ def install() -> dict[str, Any]:
             return result
         except TimeoutError:
             elapsed = (datetime.now(UTC) - started).total_seconds()
+            hard_budget = _budget_snapshot()
+            requests = int(hard_budget.get("requests_claimed") or 0)
             stats = {
                 "enabled": bool(getattr(self, "api_key", None)),
                 "api_key_present": bool(getattr(self, "api_key", None)),
-                "requests": 0,
+                "requests": requests,
                 "response_errors": 0,
                 "contexts_built": 0,
                 "budget_exhausted": True,
                 "hard_budget_stop_reason": "provider_coroutine_deadline_exhausted",
+                "hard_budget": hard_budget,
                 "provider_deadline_seconds": deadline,
                 "provider_deadline_elapsed_seconds": round(elapsed, 3),
                 "publication_contract_relaxed": False,
@@ -117,6 +131,7 @@ def install() -> dict[str, Any]:
                     "created_at_utc": datetime.now(UTC).isoformat(),
                     "deadline_seconds": deadline,
                     "elapsed_seconds": round(elapsed, 3),
+                    "hard_budget": hard_budget,
                     "policy": POLICY,
                     "publication_contract_relaxed": False,
                 }
