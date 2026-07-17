@@ -201,6 +201,15 @@ try:
 except Exception:
     pass
 
+# The run-bot workflow commits only flat .data/exports/latest-* files and its
+# fast prune removes subdirectories/JSONL. Install the persistence redirect at
+# interpreter startup, before RuntimePreflight imports the autonomous runtime.
+try:
+    from app.services.autonomous_accumulation_persistence import install as _install_autonomous_persistence
+    _install_autonomous_persistence()
+except Exception:
+    pass
+
 
 def _truthy(value: str | None) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}

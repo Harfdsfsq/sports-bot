@@ -21,7 +21,7 @@ def _refresh_inventory_truth() -> None:
     """Make the Telegram report read the final repaired inventory state.
 
     Some workflow steps repair/restore the high-watermark inventory after the
-    earlier coverage-truth report has already been built.  Rebuild target-expand,
+    earlier coverage-truth report has already been built. Rebuild target-expand,
     fill midnight shortfalls, remove blank rows and then rebuild coverage-truth so
     the visible report does not show partial/empty rows when the repair pass can
     still restore real matches.
@@ -63,14 +63,18 @@ def _load_v12():
     return mod
 
 
-def _load_json(path: Path) -> dict[str, Any]:
+def _load_any(path: Path) -> Any:
     try:
         if path.exists() and path.stat().st_size > 0:
-            value = json.loads(path.read_text(encoding='utf-8', errors='replace'))
-            return value if isinstance(value, dict) else {}
+            return json.loads(path.read_text(encoding='utf-8', errors='replace'))
     except Exception:
         pass
-    return {}
+    return None
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    value = _load_any(path)
+    return value if isinstance(value, dict) else {}
 
 
 def _as_int(value) -> int:
@@ -82,6 +86,22 @@ def _as_int(value) -> int:
         return int(float(str(value).replace(",", ".")))
     except Exception:
         return 0
+
+
+def _strict_coverage_counts() -> dict[str, int]:
+    truth = _load_json(EXPORT_DIR / 'latest-day-inventory-coverage-truth.json')
+    counts = truth.get('counts') if isinstance(truth.get('counts'), dict) else {}
+    a_ready = _as_int(counts.get('matches_a_tier_coverage_ready'))
+    b_ready = _as_int(counts.get('matches_b_tier_watch_ready'))
+    if not b_ready:
+        b_ready = a_ready
+    return {
+        'a_ready': a_ready,
+        'b_ready': b_ready,
+        'odds_2plus': _as_int(counts.get('matches_with_2plus_odds_sources')),
+        'books_2plus': _as_int(counts.get('matches_with_2plus_price_confirmations')),
+        'contexts_2plus': _as_int(counts.get('matches_with_2plus_context_sources')),
+    }
 
 
 def _replace_two_plus_contract_text(text: str) -> str:
@@ -105,6 +125,33 @@ def _replace_two_plus_contract_text(text: str) -> str:
         '• Active A/B contract: A=2 odds/2 books/2 context; B=2 odds/2 book/2 context.',
         text,
     )
+
+    # v12 calculated the visible B-cover number from bookmaker confirmations only.
+    # Under the authoritative strict contract that can overstate readiness badly
+    # (for example 156 instead of the true 13). Replace the displayed metrics with
+    # the intersection calculated by build_day_inventory_coverage_truth.py.
+    strict = _strict_coverage_counts()
+    if any(strict.values()):
+        text = re.sub(
+            r'(• A-tier strict-ready:)\s*\d+',
+            rf'\1 {strict["a_ready"]}',
+            text,
+        )
+        text = re.sub(
+            r'(• B-tier 2\+ line/2\+ bookmaker/2\+ context coverage:)\s*\d+',
+            rf'\1 {strict["b_ready"]}',
+            text,
+        )
+        text = re.sub(
+            r'• A-cover 2\+ odds-source ∩ 2\+ букмекера ∩ 2\+ контекста: до \d+ матчей; B-cover: до \d+ матчей\.',
+            f'• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: {strict["a_ready"]} матчей; '
+            f'B-cover strict intersection: {strict["b_ready"]} матчей.',
+            text,
+        )
+        text = text.replace(
+            '• 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.',
+            '• 2+ independent odds-source обязателен и для A, и для B в текущем strict accumulation contract.',
+        )
     return text
 
 
@@ -133,6 +180,38 @@ def _replace_bzzoiro_line(text: str) -> str:
     return re.sub(r"• Bzzoiro: .*?(?:\n|$)", line, text, count=1)
 
 
+def _autonomous_section() -> str:
+    coverage = _load_json(EXPORT_DIR / 'latest-autonomous-coverage-matrix.json')
+    latest = _load_json(EXPORT_DIR / 'latest-autonomous-accumulation-report.json')
+    ledger = _load_any(EXPORT_DIR / 'latest-autonomous-prediction-ledger.json')
+    summary = coverage.get('summary') if isinstance(coverage.get('summary'), dict) else {}
+    if not summary and not latest:
+        return ''
+    rows = len(ledger) if isinstance(ledger, list) else 0
+    total = _as_int(summary.get('matches_total'))
+    full = _as_int(summary.get('matches_full_2plus_coverage'))
+    exact = _as_int(summary.get('matches_with_2plus_exact_odds_sources'))
+    contexts = _as_int(summary.get('matches_with_2plus_core_contexts'))
+    public_safe = _as_int(latest.get('public_safe'))
+    shadow = _as_int(latest.get('shadow_blocked'))
+    return (
+        "\n🧠 Автономное накопление\n"
+        f"• Матрица L3 (2+ exact odds + 2+ books + 2+ core context): {full}/{total}; "
+        f"2+ exact odds {exact}; 2+ core context {contexts}.\n"
+        f"• Prediction ledger: {rows} строк; public-safe в текущем run {public_safe}; shadow-blocked {shadow}.\n"
+    )
+
+
+def _insert_autonomous_section(text: str) -> str:
+    section = _autonomous_section()
+    if not section or '🧠 Автономное накопление' in text:
+        return text
+    marker = '\n🔗 GitHub Actions'
+    if marker in text:
+        return text.replace(marker, section + marker, 1)
+    return text.rstrip() + section + '\n'
+
+
 def _install_report_patch(mod) -> None:
     base_render = mod.render
 
@@ -140,6 +219,7 @@ def _install_report_patch(mod) -> None:
         text = base_render(payload)
         text = _replace_two_plus_contract_text(text)
         text = _replace_bzzoiro_line(text)
+        text = _insert_autonomous_section(text)
         api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
         sport = api.get("sportlogic") if isinstance(api.get("sportlogic"), dict) else {}
         diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
