@@ -1,14 +1,14 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-17T01:04:58.914552+00:00
+UTC: 2026-07-17T03:05:07.767881+00:00
 target_date: 2026-07-17
-canonical_matches: 365
-2+ provider sources: 185
-2+ primary sources: 184
-all 3 primary sources: 24
+canonical_matches: 369
+2+ provider sources: 182
+2+ primary sources: 181
+all 3 primary sources: 23
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=587 event_like=587 unique=94 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=582 event_like=582 unique=94 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=1 rows=4 event_like=4 unique=4 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
@@ -17,8 +17,8 @@ all 3 primary sources: 24
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 180, "2": 161, "3": 21, "5": 3}
-- primary providers: {"1": 181, "2": 160, "3": 24}
+- all providers: {"1": 187, "2": 159, "3": 20, "5": 3}
+- primary providers: {"1": 188, "2": 158, "3": 23}
 
 ## Top canonical matches
 - 2026-07-16T21:30:00+00:00 | Aucas — Independiente del Valle | providers=sstats ids={"sstats": "1519400"}
@@ -27,15 +27,15 @@ all 3 primary sources: 24
 - 2026-07-16T22:30:00+00:00 | Botafogo — Santos | providers=sstats ids={"sstats": "1492291"}
 - 2026-07-16T22:30:00+00:00 | Vitoria — Vasco DA Gama | providers=sstats ids={"sstats": "1492299"}
 - 2026-07-16T23:30:00+00:00 | CF Montreal — Toronto FC | providers=sstats ids={"sstats": "1490325"}
-- 2026-07-17T00:00:00+00:00 | Orense SC — CS Emelec | providers=odds_api_io,sstats ids={"odds_api_io": "72338818", "sstats": "1519406"}
 - 2026-07-17T00:00:00+00:00 | Forge — Pacific FC | providers=sstats ids={"sstats": "1517309"}
+- 2026-07-17T00:00:00+00:00 | Orense SC — Emelec | providers=sstats ids={"sstats": "1519406"}
 - 2026-07-17T00:00:00+00:00 | Santo Domingo — Deportivo Cuenca Juniors | providers=sstats ids={"sstats": "1526575"}
-- 2026-07-17T00:30:00+00:00 | Saint Louis City SC — Sporting Kansas City | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "66299240", "bzzoiro": "5135", "sstats": "1490327"}
+- 2026-07-17T00:30:00+00:00 | St.Louis City — Sporting Kansas City | providers=bzzoiro,sstats ids={"bzzoiro": "5135", "sstats": "1490327"}
 - 2026-07-17T00:30:00+00:00 | Chicago Fire — Vancouver Whitecaps | providers=bzzoiro,sstats ids={"bzzoiro": "5134", "sstats": "1490326"}
 - 2026-07-17T00:30:00+00:00 | Peoria — Sueno | providers=sstats ids={"sstats": "1589339"}
-- 2026-07-17T00:45:00+00:00 | CA Sarmiento Junin — Boca Juniors | providers=odds_api_io,sstats ids={"odds_api_io": "72078908", "sstats": "1540103"}
+- 2026-07-17T00:45:00+00:00 | Sarmiento Junin — Boca Juniors | providers=sstats ids={"sstats": "1540103"}
 - 2026-07-17T01:00:00+00:00 | Club Necaxa — Atlante FC | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "72055030", "bzzoiro": "211498", "sstats": "1550894"}
-- 2026-07-17T01:15:00+00:00 | Laredo Heat SC — Texoma FC | providers=odds_api_io,sstats ids={"odds_api_io": "72797262", "sstats": "1586138"}
+- 2026-07-17T01:15:00+00:00 | Laredo Heat — Texoma | providers=sstats ids={"sstats": "1586138"}
 - 2026-07-17T02:30:00+00:00 | Seattle Sounders — Portland Timbers | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "66299242", "bzzoiro": "5136", "sstats": "1490328"}
 - 2026-07-17T03:10:00+00:00 | Club Tijuana de Caliente — Tigres UANL | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "72055032", "bzzoiro": "211499", "sstats": "1550895"}
 - 2026-07-17T07:15:00+00:00 | Ferrymead Bays — Coastal Spirit FC | providers=odds_api_io ids={"odds_api_io": "69463324"}
@@ -77,11 +77,11 @@ all 3 primary sources: 24
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Orense SC — CS Emelec | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Forge — Pacific FC | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Orense SC — Emelec | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -89,8 +89,7 @@ all 3 primary sources: 24
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Saint Louis City SC — Sporting Kansas City | primary=3 providers=bzzoiro,odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- St.Louis City — Sporting Kansas City | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -102,18 +101,18 @@ all 3 primary sources: 24
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- CA Sarmiento Junin — Boca Juniors | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Sarmiento Junin — Boca Juniors | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Club Necaxa — Atlante FC | primary=3 providers=bzzoiro,odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Laredo Heat SC — Texoma FC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Laredo Heat — Texoma | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Seattle Sounders — Portland Timbers | primary=3 providers=bzzoiro,odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
