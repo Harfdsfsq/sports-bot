@@ -129,17 +129,16 @@ def _append_bounded_json(path: Path, rows: Iterable[dict[str, Any]]) -> None:
     if not incoming:
         return
 
-    existing = _load_rows(path)
-    ordered: list[dict[str, Any]] = []
-    positions: dict[str, int] = {}
-    for row in [*existing, *incoming]:
+    # Dict insertion order gives us a compact LRU-like ledger.  Reinsert an
+    # updated key at the end so retention trims the oldest untouched row rather
+    # than a candidate that was just refreshed by the current run.
+    keyed: dict[str, dict[str, Any]] = {}
+    for row in [*_load_rows(path), *incoming]:
         key = _row_key(row)
-        if key in positions:
-            # Keep the latest/richest representation of the same run/candidate.
-            ordered[positions[key]] = row
-        else:
-            positions[key] = len(ordered)
-            ordered.append(row)
+        if key in keyed:
+            del keyed[key]
+        keyed[key] = row
+    ordered = list(keyed.values())
 
     limit = _limit_for(path)
     if len(ordered) > limit:
