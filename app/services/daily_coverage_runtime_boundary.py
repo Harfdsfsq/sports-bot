@@ -5,7 +5,7 @@ import contextlib
 from datetime import UTC, datetime
 from typing import Any
 
-from app.services.daily_coverage_common import canonical_source
+from app.services.daily_coverage_common import canonical_source, parse_dt
 from app.services.daily_coverage_ledger import (
     cached_provider_data,
     finalize_daily_coverage,
@@ -17,6 +17,7 @@ from app.services.daily_coverage_plan import filter_matches, provider_timeout
 _ORIGINAL_FETCH = None
 _ORIGINAL_BUILD = None
 _ORIGINAL_RUN = None
+_ORIGINAL_BUILD_LINES = None
 
 
 def _provider_name(runner: Any, provider: Any) -> str:
@@ -130,7 +131,8 @@ async def _fetch(
             stats,
             {"deadline_exhausted": True, "cache_reused": len(cached)},
         )
-    data = merge_provider_data(cached, data, method_name)
+    fresh_data = data
+    data = merge_provider_data(cached, fresh_data, method_name)
     stats = stats if isinstance(stats, dict) else {}
     stats.update(
         {
@@ -142,7 +144,7 @@ async def _fetch(
         }
     )
     with contextlib.suppress(Exception):
-        record_provider_result(name, method_name, data, stats)
+        record_provider_result(name, method_name, fresh_data, stats)
     return data, stats, preview
 
 
@@ -162,6 +164,21 @@ def _build(
     return _ORIGINAL_BUILD(remapped, merged_contexts, observed_at)
 
 
+def _build_lines(offers_by_match: dict[str, list[Any]], observed_at: datetime):
+    assert callable(_ORIGINAL_BUILD_LINES)
+    rows = _ORIGINAL_BUILD_LINES(offers_by_match, observed_at)
+    for row in rows:
+        metadata = dict(getattr(row, "metadata", {}) or {})
+        fetched_at = parse_dt(
+            metadata.get("fetched_at_utc")
+            or metadata.get("observed_at_utc")
+            or metadata.get("updated_at_utc")
+        )
+        if fetched_at is not None:
+            row.observed_at = fetched_at
+    return rows
+
+
 async def _run(self: Any):
     assert callable(_ORIGINAL_RUN)
     summary = None
@@ -177,18 +194,22 @@ async def _run(self: Any):
 def install(
     prediction_runner: Any, runner_module: Any, evidence_module: Any
 ) -> dict[str, Any]:
-    global _ORIGINAL_FETCH, _ORIGINAL_BUILD, _ORIGINAL_RUN
+    global _ORIGINAL_FETCH, _ORIGINAL_BUILD, _ORIGINAL_RUN, _ORIGINAL_BUILD_LINES
     _ORIGINAL_FETCH = prediction_runner._fetch_provider
     _ORIGINAL_BUILD = runner_module.build_context_bundles
+    _ORIGINAL_BUILD_LINES = runner_module.build_line_snapshots
     _ORIGINAL_RUN = prediction_runner.run_once
     prediction_runner._fetch_provider = _fetch
     prediction_runner.run_once = _run
     runner_module.build_context_bundles = _build
     evidence_module.build_context_bundles = _build
+    runner_module.build_line_snapshots = _build_lines
+    evidence_module.build_line_snapshots = _build_lines
     return {
         "final_provider_deadlines": True,
         "actual_context_source_identity": True,
         "ledger_after_each_provider": True,
         "cached_evidence_reused": True,
         "near_kickoff_refresh_hours": 4,
+        "cached_line_observation_time_preserved": True,
     }
