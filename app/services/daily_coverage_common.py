@@ -39,8 +39,43 @@ ALIASES = {
     "club_elo": "clubelo",
 }
 NON_CONTEXT = {
-    "", "unknown", "day_inventory", "provider_day_discovery_canonical_pool",
-    "providerdaydiscoverycanonicalpool", "merged", "self_history", "fixture", "inventory",
+    "",
+    "unknown",
+    "day_inventory",
+    "provider_day_discovery_canonical_pool",
+    "providerdaydiscoverycanonicalpool",
+    "merged",
+    "self_history",
+    "fixture",
+    "inventory",
+}
+ODDS_SOURCE_ALLOWLIST = {
+    "odds_api_io",
+    "sstats_pari",
+    "sportlogic",
+    "bzzoiro",
+    "bookies_api",
+    "oddspapi",
+    "allsportsapi",
+    "sharpapi",
+    "rapidapi_odds",
+    "bookies_bootstrap",
+}
+CONTEXT_SOURCE_ALLOWLIST = {
+    "sstats",
+    "bzzoiro",
+    "clubelo",
+    "sportlogic",
+    "football_data",
+    "thesportsdb",
+    "api_football",
+    "futrixmetrics",
+    "espn",
+    "openligadb",
+    "openfootball",
+    "newsapi",
+    "gnews",
+    "weather",
 }
 PROVIDER_TIMEOUTS = {
     "odds_api_io": 95.0,
@@ -115,19 +150,33 @@ def canonical_source(value: Any) -> str:
     raw = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
     while "__" in raw:
         raw = raw.replace("__", "_")
+    if raw.startswith("odds_api_io") or raw.startswith("oddsapiio"):
+        return "odds_api_io"
+    if raw.startswith("sstats_pari") or raw in {"pari", "pari_ru"}:
+        return "sstats_pari"
+    if raw.startswith("bzzoiro") or raw.startswith("bsd_sports"):
+        return "bzzoiro"
+    if raw.startswith("sportlogic") or raw.startswith("sport_logic"):
+        return "sportlogic"
+    if raw.startswith("clubelo") or raw.startswith("club_elo"):
+        return "clubelo"
     return ALIASES.get(raw, raw)
 
 
 def independent_sources(values: Any, *, role: str) -> list[str]:
-    raw_values = [values] if isinstance(values, str) else list(values or []) if isinstance(values, (list, tuple, set)) else []
+    if isinstance(values, str):
+        raw_values = [values]
+    elif isinstance(values, (list, tuple, set)):
+        raw_values = list(values or [])
+    else:
+        raw_values = []
+    allowlist = ODDS_SOURCE_ALLOWLIST if role == "odds" else CONTEXT_SOURCE_ALLOWLIST
     out: set[str] = set()
     for item in raw_values:
         source = canonical_source(item)
         if role == "context" and source in NON_CONTEXT:
             continue
-        if role == "odds" and source in {"", "unknown", "bookmaker", "market"}:
-            continue
-        if source:
+        if source in allowlist:
             out.add(source)
     return sorted(out)
 
