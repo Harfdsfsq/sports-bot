@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Final runner-level wall clock for the Bzzoiro context provider.
 
 Provider methods are wrapped by several compatibility modules.  A deadline attached
@@ -7,9 +5,16 @@ to ``BzzoiroContextProvider.fetch_context`` can therefore be replaced later in t
 startup sequence.  ``PredictionRunner._fetch_provider`` is the final call boundary
 used by the production runner, so enforcing the deadline here cannot be bypassed by
 later provider-method wrappers.
+
+This installer is also the post-discovery bootstrap point for the cumulative daily
+coverage orchestrator.  app.cli calls it immediately before PredictionRunner is
+instantiated, after the day inventory exists and after legacy provider wrappers.
 """
 
+from __future__ import annotations
+
 import asyncio
+import contextlib
 import json
 import os
 import time
@@ -79,6 +84,31 @@ def _hard_budget_snapshot() -> dict[str, Any]:
         return {}
 
 
+def _install_daily_coverage() -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    try:
+        from app.services.daily_coverage_plan import prepare_daily_coverage
+
+        plan = prepare_daily_coverage()
+        result["plan"] = {
+            "status": plan.get("status"),
+            "run_index": plan.get("run_index"),
+            "phase_cumulative_target": plan.get("phase_cumulative_target"),
+            "top_inventory_matches": plan.get("top_inventory_matches"),
+        }
+    except Exception as exc:
+        result["plan_error"] = f"{type(exc).__name__}: {exc}"
+    try:
+        from app.services.daily_coverage_runtime_patch import (
+            install as install_daily_runtime,
+        )
+
+        result["runtime_patch"] = install_daily_runtime()
+    except Exception as exc:
+        result["runtime_patch_error"] = f"{type(exc).__name__}: {exc}"
+    return result
+
+
 def install() -> dict[str, Any]:
     try:
         from app.services.runner import PredictionRunner
@@ -93,7 +123,7 @@ def install() -> dict[str, Any]:
         _write(result)
         return result
     if getattr(current, "_harizon_provider_wall_clock_final_guard", False):
-        result = {"status": "already_patched"}
+        result = {"status": "already_patched", "daily_coverage": _install_daily_coverage()}
         _write(result)
         return result
 
@@ -140,15 +170,13 @@ def install() -> dict[str, Any]:
             }
             marker = getattr(self, "_mark_provider_status", None)
             if callable(marker):
-                try:
+                with contextlib.suppress(Exception):
                     marker(
                         "bzzoiro",
                         degraded=True,
                         budget_exhausted=True,
                         stop_reason="runner_provider_deadline_exhausted",
                     )
-                except Exception:
-                    pass
             _write(
                 {
                     "status": "deadline_exhausted",
@@ -180,6 +208,7 @@ def install() -> dict[str, Any]:
         "status": "installed",
         "deadline_seconds": _deadline_seconds(),
         "boundary": "PredictionRunner._fetch_provider:bzzoiro.fetch_context",
+        "daily_coverage": _install_daily_coverage(),
     }
     _write(result)
     return result
