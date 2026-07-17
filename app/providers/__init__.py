@@ -5,21 +5,27 @@ __all__ = []
 # production run, so install the flat autonomous persistence redirect here
 # before the autonomous candidate wrappers are activated by runtime preflight.
 try:
-    from app.services import autonomous_accumulation_persistence as _autonomous_persistence
+    from app.services import (
+        autonomous_accumulation_persistence as _autonomous_persistence,
+    )
 
     _autonomous_persistence.install()
 except Exception:
     pass
 
 try:
-    from app.providers import bzzoiro_v2_date_window_patch as _bzzoiro_v2_date_window_patch
+    from app.providers import (
+        bzzoiro_v2_date_window_patch as _bzzoiro_v2_date_window_patch,
+    )
 
     _bzzoiro_v2_date_window_patch.install()
 except Exception:
     pass
 
 try:
-    from app.providers import bzzoiro_v2_odds_comparison_patch as _bzzoiro_v2_odds_comparison_patch
+    from app.providers import (
+        bzzoiro_v2_odds_comparison_patch as _bzzoiro_v2_odds_comparison_patch,
+    )
 
     _bzzoiro_v2_odds_comparison_patch.install()
 except Exception:
@@ -28,7 +34,9 @@ except Exception:
 # Wrap the fully patched v2 provider so every useful detail request shares one
 # process-level request/time budget.
 try:
-    from app.services import bzzoiro_runtime_budget_patch as _bzzoiro_runtime_budget_patch
+    from app.services import (
+        bzzoiro_runtime_budget_patch as _bzzoiro_runtime_budget_patch,
+    )
 
     _bzzoiro_runtime_budget_patch.install()
 except Exception:
@@ -38,7 +46,9 @@ except Exception:
 # Install this last so those calls are rejected before they consume the shared
 # odds/stats request budget.
 try:
-    from app.services import bzzoiro_disabled_endpoint_guard as _bzzoiro_disabled_endpoint_guard
+    from app.services import (
+        bzzoiro_disabled_endpoint_guard as _bzzoiro_disabled_endpoint_guard,
+    )
 
     _bzzoiro_disabled_endpoint_guard.install()
 except Exception:
