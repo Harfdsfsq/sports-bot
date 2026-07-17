@@ -23,13 +23,23 @@ change.
 
 ## Generated artifacts
 
-- `.data/exports/autonomous-accumulation/latest-coverage-matrix.json`
-- `.data/exports/autonomous-accumulation/coverage-run-ledger.jsonl`
-- `.data/exports/autonomous-accumulation/prediction-ledger.jsonl`
-- `.data/exports/autonomous-accumulation/latest-accumulation-report.json`
+The run-bot workflow commits and uploads only flat `.data/exports/latest-*`
+files. The ledgers therefore use bounded JSON arrays rather than a pruned
+subdirectory/JSONL layout:
+
+- `.data/exports/latest-autonomous-coverage-matrix.json`
+- `.data/exports/latest-autonomous-coverage-run-ledger.json`
+- `.data/exports/latest-autonomous-prediction-ledger.json`
+- `.data/exports/latest-autonomous-accumulation-report.json`
+- `.data/exports/latest-autonomous-persistence-policy.json`
 
 The coverage matrix has L0–L3 levels. L3 means the match has the full strict
 contract: 2+ exact odds providers, 2+ bookmakers and 2+ core contexts.
+
+The coverage-run ledger retains 256 runs by default. The prediction ledger
+retains 12,000 rows by default. These limits can be changed with
+`AUTONOMOUS_COVERAGE_LEDGER_MAX_RUNS` and
+`AUTONOMOUS_PREDICTION_LEDGER_MAX_ROWS`.
 
 ## Quota policy
 
