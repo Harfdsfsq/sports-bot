@@ -194,8 +194,20 @@ def _bridge_bzzoiro_offer_overlap(summary: dict[str, Any] | None) -> None:
 async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'run-once':
         install_summary: dict[str, Any] = {}
+        try:
+            from app.services.runbot_discovery_checkpoint_patch import install as install_discovery_checkpoint
+
+            install_summary['runbot_discovery_checkpoint_install'] = install_discovery_checkpoint()
+        except Exception as exc:
+            install_summary['runbot_discovery_checkpoint_install_error'] = f'{type(exc).__name__}: {exc}'
         _install_bzzoiro_v2_source_matrix(install_summary)
         await asyncio.to_thread(RuntimePreflight(settings).run_before_prediction)
+        try:
+            from app.services.provider_wall_clock_final_guard import install as install_provider_wall_clock
+
+            install_summary['provider_wall_clock_final_guard_install'] = install_provider_wall_clock()
+        except Exception as exc:
+            install_summary['provider_wall_clock_final_guard_install_error'] = f'{type(exc).__name__}: {exc}'
         runner = PredictionRunner(settings)
         summary = await runner.run_once()
         if isinstance(summary, dict):
