@@ -48,6 +48,11 @@ def install() -> dict[str, Any]:
         strict_result = install_strict_metrics()
         provider_result = install_providers(PredictionRunner, CoveragePlanner)
         boundary_result = install_boundary(PredictionRunner, runner_module, evidence)
+        from app.services.daily_coverage_evidence_stamp_patch import (
+            install as install_evidence_stamp,
+        )
+
+        stamp_result = install_evidence_stamp(PredictionRunner)
     except Exception as exc:
         payload = {"status": "import_error", "error": f"{type(exc).__name__}: {exc}"}
         _write(payload)
@@ -60,6 +65,7 @@ def install() -> dict[str, Any]:
         "freshness": freshness_result,
         "providers": provider_result,
         "boundary": boundary_result,
+        "evidence_stamp": stamp_result,
         "publication_contract_relaxed": False,
     }
     _write(payload)
