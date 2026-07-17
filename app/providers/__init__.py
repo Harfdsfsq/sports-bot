@@ -55,13 +55,25 @@ except Exception:
     pass
 
 # Legacy source-matrix enrichers can still call metadata/prediction directly.
-# Install this last so those calls are rejected before they consume the shared
-# odds/stats request budget.
+# Install this after the request budget so those calls are rejected before they
+# consume the shared odds/stats budget.
 try:
     from app.services import (
         bzzoiro_disabled_endpoint_guard as _bzzoiro_disabled_endpoint_guard,
     )
 
     _bzzoiro_disabled_endpoint_guard.install()
+except Exception:
+    pass
+
+# A request-claim wall clock is not a true coroutine deadline: requests already
+# in flight can overshoot it. Install the outer deadline last so the whole v2
+# detail layer returns control to the prediction runner within a bounded time.
+try:
+    from app.services import (
+        bzzoiro_runtime_deadline_patch as _bzzoiro_runtime_deadline_patch,
+    )
+
+    _bzzoiro_runtime_deadline_patch.install()
 except Exception:
     pass
