@@ -2,11 +2,15 @@ from __future__ import annotations
 
 """Final runner-level wall clock for the Bzzoiro context provider.
 
-Provider methods are wrapped by several compatibility modules.  A deadline attached
+Provider methods are wrapped by several compatibility modules. A deadline attached
 to ``BzzoiroContextProvider.fetch_context`` can therefore be replaced later in the
-startup sequence.  ``PredictionRunner._fetch_provider`` is the final call boundary
+startup sequence. ``PredictionRunner._fetch_provider`` is the final call boundary
 used by the production runner, so enforcing the deadline here cannot be bypassed by
 later provider-method wrappers.
+
+This installer is also the post-discovery bootstrap point for the cumulative daily
+coverage plan. app.cli calls it immediately before PredictionRunner is instantiated,
+after the day inventory exists and after legacy provider wrappers.
 """
 
 import asyncio
@@ -72,11 +76,31 @@ def _provider_name(runner: Any, provider: Any) -> str:
 def _hard_budget_snapshot() -> dict[str, Any]:
     try:
         from app.services import bzzoiro_runtime_budget_patch
-
         value = bzzoiro_runtime_budget_patch.snapshot()
         return value if isinstance(value, dict) else {}
     except Exception:
         return {}
+
+
+def _install_daily_coverage() -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    try:
+        from app.services.daily_coverage_plan import prepare_daily_coverage
+        plan = prepare_daily_coverage()
+        result["plan"] = {
+            "status": plan.get("status"),
+            "run_index": plan.get("run_index"),
+            "phase_cumulative_target": plan.get("phase_cumulative_target"),
+            "top_inventory_matches": plan.get("top_inventory_matches"),
+        }
+    except Exception as exc:
+        result["plan_error"] = f"{type(exc).__name__}: {exc}"
+    try:
+        from app.services.daily_coverage_runtime_patch import install as install_daily_runtime
+        result["runtime_patch"] = install_daily_runtime()
+    except Exception as exc:
+        result["runtime_patch_error"] = f"{type(exc).__name__}: {exc}"
+    return result
 
 
 def install() -> dict[str, Any]:
@@ -86,17 +110,15 @@ def install() -> dict[str, Any]:
         result = {"status": "import_error", "error": f"{type(exc).__name__}: {exc}"}
         _write(result)
         return result
-
     current = getattr(PredictionRunner, "_fetch_provider", None)
     if not callable(current):
         result = {"status": "runner_method_missing"}
         _write(result)
         return result
     if getattr(current, "_harizon_provider_wall_clock_final_guard", False):
-        result = {"status": "already_patched"}
+        result = {"status": "already_patched", "daily_coverage": _install_daily_coverage()}
         _write(result)
         return result
-
     original = current
 
     async def fetch_provider_with_final_deadline(
@@ -109,7 +131,6 @@ def install() -> dict[str, Any]:
         provider_name = _provider_name(self, provider)
         if provider_name != "bzzoiro" or str(method_name) != "fetch_context":
             return await original(self, provider, method_name, *args, empty_data=empty_data)
-
         deadline = _deadline_seconds()
         started = time.monotonic()
         try:
@@ -133,53 +154,27 @@ def install() -> dict[str, Any]:
                 "runtime_hard_budget": hard_budget,
                 "publication_contract_relaxed": False,
             }
-            preview = {
-                "deadline_exhausted": True,
-                "provider": "bzzoiro",
-                "method": str(method_name),
-            }
+            preview = {"deadline_exhausted": True, "provider": "bzzoiro", "method": str(method_name)}
             marker = getattr(self, "_mark_provider_status", None)
             if callable(marker):
                 try:
-                    marker(
-                        "bzzoiro",
-                        degraded=True,
-                        budget_exhausted=True,
-                        stop_reason="runner_provider_deadline_exhausted",
-                    )
+                    marker("bzzoiro", degraded=True, budget_exhausted=True, stop_reason="runner_provider_deadline_exhausted")
                 except Exception:
                     pass
-            _write(
-                {
-                    "status": "deadline_exhausted",
-                    "provider": "bzzoiro",
-                    "method": str(method_name),
-                    "elapsed_seconds": elapsed,
-                    "hard_budget": hard_budget,
-                }
-            )
+            _write({"status": "deadline_exhausted", "provider": "bzzoiro", "method": str(method_name), "elapsed_seconds": elapsed, "hard_budget": hard_budget})
             return empty_data, stats, preview
-
         elapsed = round(time.monotonic() - started, 3)
-        _write(
-            {
-                "status": "completed",
-                "provider": "bzzoiro",
-                "method": str(method_name),
-                "elapsed_seconds": elapsed,
-                "hard_budget": _hard_budget_snapshot(),
-            }
-        )
+        _write({"status": "completed", "provider": "bzzoiro", "method": str(method_name), "elapsed_seconds": elapsed, "hard_budget": _hard_budget_snapshot()})
         return result
 
-    fetch_provider_with_final_deadline._harizon_provider_wall_clock_final_guard = True  # type: ignore[attr-defined]
-    fetch_provider_with_final_deadline._harizon_wrapped_method = original  # type: ignore[attr-defined]
-    PredictionRunner._fetch_provider = fetch_provider_with_final_deadline  # type: ignore[method-assign]
-
+    fetch_provider_with_final_deadline._harizon_provider_wall_clock_final_guard = True
+    fetch_provider_with_final_deadline._harizon_wrapped_method = original
+    PredictionRunner._fetch_provider = fetch_provider_with_final_deadline
     result = {
         "status": "installed",
         "deadline_seconds": _deadline_seconds(),
         "boundary": "PredictionRunner._fetch_provider:bzzoiro.fetch_context",
+        "daily_coverage": _install_daily_coverage(),
     }
     _write(result)
     return result
