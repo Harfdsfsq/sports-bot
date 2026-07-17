@@ -21,32 +21,32 @@ logger = logging.getLogger(__name__)
 
 
 SAFE_RUNTIME_DEFAULTS = {
-    "PUBLISH_ALLOW_B_TIER": "true",
-    "PUBLISH_COVERAGE_TIER_MODE": "hybrid",
-    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "true",
+    "PUBLISH_ALLOW_B_TIER": "false",
+    "PUBLISH_COVERAGE_TIER_MODE": "strict_a",
+    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "false",
     "STRICT_PRICE_INTEGRITY_ENABLED": "true",
     "STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES": "2",
     "STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS": "2",
-    "PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION": "false",
+    "PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION": "true",
     "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
     "MIN_BOOKS_FOR_CONSENSUS": "2",
     "MIN_BOOKS_PUBLISH": "2",
     "PUBLISH_MIN_BOOKS": "2",
-    "MIN_SOURCES_PUBLISH": "1",
-    "PUBLISH_MIN_ODDS_SOURCES": "1",
-    "MIN_CONTEXT_SOURCES_PUBLISH": "1",
-    "PUBLISH_MIN_CONTEXT_SOURCES": "1",
+    "MIN_SOURCES_PUBLISH": "2",
+    "PUBLISH_MIN_ODDS_SOURCES": "2",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "2",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
     "MARKET_DERIVED_MIN_BOOKS": "2",
     "MARKET_DERIVED_MIN_SOURCES": "2",
     "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
-    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "false",
-    "CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY": "false",
-    "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "false",
-    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
-    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
-    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
-    "TELEGRAM_MIN_ODDS_SOURCES": "1",
+    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "true",
+    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "2",
+    "TELEGRAM_MIN_ODDS_SOURCES": "2",
     "HARIZON_TELEGRAM_PICK_SAFETY_ENABLED": "true",
     "TELEGRAM_BLOCK_C_SIGNAL_PROFILE": "true",
     "TELEGRAM_BLOCK_SINGLE_SOURCE_NON_CORE": "true",
@@ -65,9 +65,116 @@ SAFE_RUNTIME_DEFAULTS = {
 }
 
 
+# This policy is intentionally authoritative. The project is now operated in an
+# autonomous accumulation phase: weak candidates are collected as shadow data,
+# while Telegram/publication remains strict A-tier. Reapplying it after runtime
+# installers prevents older compatibility patches from silently reducing 2+ to 1.
+AUTONOMOUS_ACCUMULATION_POLICY = {
+    "HARIZON_AUTONOMOUS_ACCUMULATION_MODE": "true",
+    "AUTONOMOUS_ACCUMULATION_LEDGER_ENABLED": "true",
+    "AUTONOMOUS_PUBLIC_MODEL_MODES": "xg_total,xg_spread",
+    "AUTONOMOUS_PUBLIC_FAMILIES": "totals,spreads",
+    "AUTONOMOUS_MIN_MODEL_EDGE_PP": "1.0",
+    "AUTONOMOUS_MAX_MODEL_EDGE_PP": "12.0",
+    "AUTONOMOUS_MIN_POST_SHRINK_EV_PCT": "1.5",
+    "AUTONOMOUS_MIN_CONFIDENCE": "55.0",
+    "AUTONOMOUS_MAX_PROVIDER_CONFLICT_SCORE": "0.45",
+    "PUBLISH_ALLOW_B_TIER": "false",
+    "PUBLISH_COVERAGE_TIER_MODE": "strict_a",
+    "HARIZON_PUBLICATION_TIER_MODE": "a_only",
+    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "false",
+    "PUBLISH_MIN_BOOKS": "2",
+    "MIN_BOOKS_PUBLISH": "2",
+    "PUBLISH_MIN_ODDS_SOURCES": "2",
+    "MIN_SOURCES_PUBLISH": "2",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "2",
+    "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_TIER_A_MIN_BOOKS": "2",
+    "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "2",
+    "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "true",
+    "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
+    "PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION": "true",
+    "FALLBACK_PUBLISH_MODE_ENABLED": "false",
+    "MODEL_RELAXED_FALLBACK_ENABLED": "false",
+    "FORCE_PUBLISH_WHEN_EMPTY_ENABLED": "false",
+    "QUALITY_EMERGENCY_PUBLISH_ENABLED": "false",
+    "QUALITY_LAST_RESORT_PUBLISH_ENABLED": "false",
+    "HISTORICAL_SEGMENT_RELIEF_ENABLED": "false",
+    # Discovery/coverage: all 300 matches are retained and enriched cumulatively.
+    "DAY_INVENTORY_TARGET_SIZE": "300",
+    "DAY_INVENTORY_MAX_MATCHES": "300",
+    "DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES": "300",
+    "DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES": "300",
+    "MAX_MATCHES_FOR_ODDS_FETCH": "300",
+    "ANALYSIS_MATCH_CAP_PER_RUN": "300",
+    "DAILY_ANALYSIS_MATCH_LIMIT": "300",
+    "CONTEXT_ENRICHMENT_MATCH_LIMIT": "300",
+    "DIAGNOSTICS_MATCH_LIMIT": "300",
+    "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
+    "DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED": "true",
+    "DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT": "300",
+    "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
+    "DAY_INVENTORY_NEAR_WINDOW_HOURS": "24",
+    "NEAR_WINDOW_CONTEXT_PRIORITY_ENABLED": "true",
+    "NEAR_WINDOW_CONTEXT_HOURS": "24",
+    "NEAR_WINDOW_CONTEXT_MIN_MATCHES": "64",
+    "NEAR_WINDOW_PROVIDER_CONTEXT_MIN_MATCHES": "48",
+    # odds-api.io free quota is per account, so two configured accounts may each
+    # use up to 100 requests in the hourly window.
+    "ODDS_API_IO_MAX_REQUESTS_PER_RUN": "200",
+    "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
+    "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "100",
+    "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "10",
+    "ODDS_API_IO_PAGE_LIMIT": "100",
+    # Primary contexts.
+    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "BZZOIRO_MAX_REQUESTS_PER_RUN": "200",
+    "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
+    "BZZOIRO_V2_MATCH_LIMIT": "300",
+    "BZZOIRO_V2_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150",
+    "SSTATS_MAX_REQUESTS_PER_RUN": "150",
+    "SSTATS_CONTEXT_MATCH_LIMIT": "300",
+    "SSTATS_DEEP_ENRICHMENT_ENABLED": "true",
+    "SSTATS_DEEP_DETAIL_LIMIT_PER_RUN": "80",
+    "SSTATS_GAME_DETAIL_LIMIT_PER_RUN": "8",
+    "SSTATS_ODDS_RESCUE_LIMIT_PER_RUN": "120",
+    "SSTATS_ODDS_RESCUE_ONLY_IF_ODDS_SOURCES_LT": "2",
+    # SportLogic free plan is 500/day. Thirty per regular run plus a separate
+    # inventory reserve keeps twelve two-hour runs below the daily ceiling.
+    "SPORTLOGIC_ENABLED": "true",
+    "ENABLE_SPORTLOGIC": "true",
+    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "30",
+    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "30",
+    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "30",
+    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "30",
+    "SPORTLOGIC_MATCH_LIMIT": "100",
+    "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "100",
+    "SPORTLOGIC_ODDS_MATCH_LIMIT": "30",
+    "DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS": "80",
+    "DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT": "300",
+    # Keep weak modes for shadow/backtest accumulation; the native autonomous
+    # publication guard excludes them from public picks.
+    "MARKET_DERIVED_CANDIDATES_ENABLED": "true",
+    "SIMPLE_MARKET_FALLBACK_ENABLED": "true",
+    "PARTIAL_CONTEXT_MARKET_FALLBACK_ENABLED": "true",
+    "MARKET_DERIVED_MIN_BOOKS": "2",
+    "MARKET_DERIVED_MIN_SOURCES": "2",
+}
+
+
 DISCOVERY_FIRST_DEFAULTS = {
-    "HARIZON_PROVIDER_TIER_STRATEGY_VERSION": "primary-three-v1-100-per-run",
-    "HARIZON_PRIMARY_PROVIDERS": "odds_api_io,bzzoiro,sstats",
+    "HARIZON_PROVIDER_TIER_STRATEGY_VERSION": "primary-three-v2-autonomous-coverage",
+    "HARIZON_PRIMARY_PROVIDERS": "odds_api_io,bzzoiro,sstats,sportlogic",
     "HARIZON_SUPPLEMENTAL_API_MODE": "top_pick_backfill_only",
     "SUPPLEMENTAL_PROVIDERS_REQUIRE_SHORTLIST": "true",
     "SUPPLEMENTAL_PROVIDERS_REQUIRE_MISSING_ROLE": "true",
@@ -76,11 +183,11 @@ DISCOVERY_FIRST_DEFAULTS = {
     "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "200",
     "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
     "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "100",
-    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "100",
-    "BZZOIRO_MAX_REQUESTS_PER_RUN": "100",
+    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "BZZOIRO_MAX_REQUESTS_PER_RUN": "200",
     "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
-    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "100",
-    "SSTATS_MAX_REQUESTS_PER_RUN": "100",
+    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150",
+    "SSTATS_MAX_REQUESTS_PER_RUN": "150",
     "SSTATS_CONTEXT_MATCH_LIMIT": "300",
     "SSTATS_DEEP_ENRICHMENT_ENABLED": "true",
     "SSTATS_DEEP_DETAIL_LIMIT_PER_RUN": "80",
@@ -93,11 +200,11 @@ DISCOVERY_FIRST_DEFAULTS = {
     "PROVIDER_DAY_DISCOVERY_MIN_SCORE": "0.74",
     "SPORTLOGIC_ENABLED": "true",
     "ENABLE_SPORTLOGIC": "true",
-    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "4",
-    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "4",
-    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "4",
-    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "4",
-    "SPORTLOGIC_MATCH_LIMIT": "40",
+    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "30",
+    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "30",
+    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "30",
+    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "30",
+    "SPORTLOGIC_MATCH_LIMIT": "100",
 }
 
 
@@ -136,6 +243,15 @@ def setdefault_env(values: dict[str, str]) -> int:
     return applied
 
 
+def apply_authoritative_env(values: dict[str, str]) -> int:
+    changed = 0
+    for key, value in values.items():
+        if os.getenv(key) != value:
+            os.environ[key] = value
+            changed += 1
+    return changed
+
+
 class RuntimePreflight:
     def __init__(self, settings: Any | None = None, *, export_dir: str | Path = ".data/exports") -> None:
         self.settings = settings
@@ -143,7 +259,13 @@ class RuntimePreflight:
 
     def apply_safe_defaults(self) -> int:
         applied = setdefault_env(SAFE_RUNTIME_DEFAULTS)
+        if _truthy(os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True):
+            applied += apply_authoritative_env(AUTONOMOUS_ACCUMULATION_POLICY)
         self._install_native_integrity_hooks()
+        # Older compatibility installers can write legacy B-tier/one-source env.
+        # Reapply once after installation, before Settings is created.
+        if _truthy(os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True):
+            applied += apply_authoritative_env(AUTONOMOUS_ACCUMULATION_POLICY)
         return applied
 
     def apply_phase_policy(self, phase: str = "run-once") -> dict[str, Any]:
@@ -168,6 +290,9 @@ class RuntimePreflight:
         }
         try:
             payload["safe_defaults_applied"] = self.apply_safe_defaults()
+            payload["autonomous_accumulation_mode"] = _truthy(
+                os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True
+            )
         except Exception as exc:
             payload["status"] = "safe_defaults_error_ignored"
             payload["safe_defaults_error"] = f"{type(exc).__name__}: {exc}"
@@ -196,6 +321,8 @@ class RuntimePreflight:
 
         os.environ["RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING"] = "1"
         setdefault_env(DISCOVERY_FIRST_DEFAULTS)
+        if _truthy(os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True):
+            apply_authoritative_env(AUTONOMOUS_ACCUMULATION_POLICY)
         try:
             from scripts import runbot_discovery_first_prepare
 
@@ -247,6 +374,9 @@ class RuntimePreflight:
             payload = {
                 "stage": report.stage,
                 "safe_defaults_applied": report.safe_defaults_applied,
+                "autonomous_accumulation_mode": _truthy(
+                    os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True
+                ),
                 "discovery_first": report.discovery_first,
                 "legacy_extensions": report.legacy_extensions,
             }
@@ -260,11 +390,17 @@ class RuntimePreflight:
     @staticmethod
     def _install_native_integrity_hooks() -> None:
         for module_path in (
+            "app.services.core_coverage_quota_runtime_override",
+            "app.services.inventory_coverage_source_runtime_patch",
+            "app.services.near_window_priority_runtime_patch",
             "app.services.api_runtime_enhancements",
             "app.services.market_integrity",
             "app.services.quality_stage_gate",
             "app.providers.odds_api_io_startup_compat",
             "scripts.telegram_controlled_pick_safety",
+            # Must be last: it wraps the final candidate/quality functions and
+            # records both public-safe and shadow candidates.
+            "app.services.autonomous_accumulation_runtime",
         ):
             try:
                 module = import_module(module_path)
