@@ -9,8 +9,17 @@ from typing import Any
 
 from app.schemas import MatchContext, Offer
 from app.services.daily_coverage_common import (
-    EVIDENCE_PATH, LEDGER_PATH, REPORT_PATH, atomic_write, canonical_source,
-    evidence_path, independent_sources, ledger_path, load, select_inventory, target_date,
+    EVIDENCE_PATH,
+    LEDGER_PATH,
+    REPORT_PATH,
+    atomic_write,
+    canonical_source,
+    evidence_path,
+    independent_sources,
+    ledger_path,
+    load,
+    select_inventory,
+    target_date,
 )
 from app.services.daily_coverage_plan import coverage_summary, load_plan, rank_inventory
 
