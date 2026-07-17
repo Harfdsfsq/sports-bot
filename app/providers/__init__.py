@@ -13,6 +13,18 @@ try:
 except Exception:
     pass
 
+# odds-api.io can return roughly one thousand events. Install the indexed
+# prefilter before the provider runs so exact/loose matches keep their original
+# scorer while expensive fuzzy scoring only sees a small kickoff/token shortlist.
+try:
+    from app.providers import (
+        odds_api_io_fast_match_patch as _odds_api_io_fast_match_patch,
+    )
+
+    _odds_api_io_fast_match_patch.install()
+except Exception:
+    pass
+
 try:
     from app.providers import (
         bzzoiro_v2_date_window_patch as _bzzoiro_v2_date_window_patch,
@@ -43,13 +55,25 @@ except Exception:
     pass
 
 # Legacy source-matrix enrichers can still call metadata/prediction directly.
-# Install this last so those calls are rejected before they consume the shared
-# odds/stats request budget.
+# Install this after the request budget so those calls are rejected before they
+# consume the shared odds/stats budget.
 try:
     from app.services import (
         bzzoiro_disabled_endpoint_guard as _bzzoiro_disabled_endpoint_guard,
     )
 
     _bzzoiro_disabled_endpoint_guard.install()
+except Exception:
+    pass
+
+# A request-claim wall clock is not a true coroutine deadline: requests already
+# in flight can overshoot it. Install the outer deadline last so the whole v2
+# detail layer returns control to the prediction runner within a bounded time.
+try:
+    from app.services import (
+        bzzoiro_runtime_deadline_patch as _bzzoiro_runtime_deadline_patch,
+    )
+
+    _bzzoiro_runtime_deadline_patch.install()
 except Exception:
     pass
