@@ -46,7 +46,7 @@ def _flatten(rows: list[Any]) -> list[dict[str, Any]]:
 
 
 def extract_current_odds(payload: Any) -> list[dict[str, Any]]:
-    """Return prematch market rows without depending on previous monkey-patch order."""
+    """Return prematch market rows without depending on monkey-patch order."""
     data = _unwrap(payload)
     if not isinstance(data, dict):
         return []
@@ -78,12 +78,14 @@ def install() -> dict[str, Any]:
         return {"status": "already_installed"}
     from app.providers import sstats_pari_odds, sstats_pari_parser
     from app.services import sstats_pari_runtime_repair
+    from app.services.sstats_pari_rate_limit_patch import install as install_rate_limit
 
     # sstats_pari_runtime_repair replaces parser.extract_odds during its own install.
     # Patch every live reference with this self-contained extractor afterwards.
     sstats_pari_parser.extract_odds = extract_current_odds
     sstats_pari_odds.extract_odds = extract_current_odds
     sstats_pari_runtime_repair._extract_odds = extract_current_odds
+    rate_limit = install_rate_limit()
     _INSTALLED = True
     return {
         "status": "installed",
@@ -91,6 +93,7 @@ def install() -> dict[str, Any]:
         "current_odds_supported": True,
         "nested_market_rows_supported": True,
         "patches_runtime_repair_reference": True,
+        "rate_limit": rate_limit,
         "publication_contract_relaxed": False,
     }
 
