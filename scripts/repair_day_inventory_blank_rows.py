@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Remove identity-less rows and rebuild final coverage from provider evidence."""
+"""Remove identity-less rows and rebuild final coverage from exact provider evidence."""
 
 import json
 import os
@@ -15,6 +15,7 @@ DAY_DIR = ROOT / ".data" / "day_inventory"
 CACHE_DIR = ROOT / ".data" / "cache" / "day_inventory"
 EXPORT = ROOT / ".data" / "exports"
 OUT = EXPORT / "latest-day-inventory-blank-row-repair.json"
+VERIFIED_ODDS = {"odds_api_io", "sstats_pari", "bzzoiro", "allsportsapi", "sportlogic", "bookies_api", "sharpapi", "rapidapi_odds"}
 
 
 def _tz() -> ZoneInfo:
@@ -78,6 +79,74 @@ def _repair(path: Path) -> dict[str, Any]:
     return {"path": str(path), "status": "ok", "before": before, "after": len(payload["matches"]), "removed": removed}
 
 
+def _verified_list(row: dict[str, Any], key: str) -> list[str]:
+    metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    value = metadata.get(key)
+    if isinstance(value, dict):
+        return [str(item) for item in value if str(item).strip()]
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value if str(item).strip()]
+    return []
+
+
+def _patch_truth_functions(truth: Any, cumulative: Any, bridge: Any) -> None:
+    bridge.LIVE_ODDS_SOURCES.update(VERIFIED_ODDS)
+    truth.LIVE_ODDS_SOURCES.update(VERIFIED_ODDS)
+    cumulative.LIVE_ODDS_SOURCES.update(VERIFIED_ODDS)
+
+    original_odds = truth.odds_sources
+    original_context = truth.context_sources
+    original_price = truth.price_confirmations
+
+    def odds_sources(row: dict[str, Any]) -> list[str]:
+        verified = truth.unique_norm(_verified_list(row, "verified_odds_sources"))
+        if verified or bool((row.get("coverage") or {}).get("daily_coverage_evidence_synced")):
+            return sorted(item for item in verified if item in truth.LIVE_ODDS_SOURCES)
+        return original_odds(row)
+
+    def context_sources(row: dict[str, Any]) -> list[str]:
+        verified = truth.unique_norm(_verified_list(row, "verified_context_sources"))
+        if verified or bool((row.get("coverage") or {}).get("daily_coverage_evidence_synced")):
+            return sorted(set(verified))
+        return original_context(row)
+
+    def price_confirmations(row: dict[str, Any]) -> int:
+        verified = truth.unique_norm(_verified_list(row, "verified_bookmakers"))
+        if verified or bool((row.get("coverage") or {}).get("daily_coverage_evidence_synced")):
+            return len(verified)
+        return original_price(row)
+
+    truth.odds_sources = odds_sources
+    truth.context_sources = context_sources
+    truth.price_confirmations = price_confirmations
+
+    original_c_odds = cumulative.odds_source_count
+    original_c_context = cumulative.context_source_count
+    original_c_price = cumulative.price_confirmation_count
+
+    def cumulative_odds(row: dict[str, Any]) -> int:
+        verified = {cumulative.norm_source(item) for item in _verified_list(row, "verified_odds_sources")}
+        if verified or bool((row.get("coverage") or {}).get("daily_coverage_evidence_synced")):
+            return len(verified & cumulative.LIVE_ODDS_SOURCES)
+        return original_c_odds(row)
+
+    def cumulative_context(row: dict[str, Any]) -> int:
+        verified = {cumulative.norm_source(item) for item in _verified_list(row, "verified_context_sources") if cumulative.norm_source(item)}
+        if verified or bool((row.get("coverage") or {}).get("daily_coverage_evidence_synced")):
+            return len(verified)
+        return original_c_context(row)
+
+    def cumulative_price(row: dict[str, Any]) -> int:
+        verified = {str(item).strip().lower() for item in _verified_list(row, "verified_bookmakers") if str(item).strip()}
+        if verified or bool((row.get("coverage") or {}).get("daily_coverage_evidence_synced")):
+            return len(verified)
+        return original_c_price(row)
+
+    cumulative.odds_source_count = cumulative_odds
+    cumulative.context_source_count = cumulative_context
+    cumulative.price_confirmation_count = cumulative_price
+
+
 def _install_final_truth_hooks() -> dict[str, Any]:
     result: dict[str, Any] = {}
     try:
@@ -89,19 +158,23 @@ def _install_final_truth_hooks() -> dict[str, Any]:
         from scripts import bridge_runtime_context_coverage as bridge
         from scripts import build_day_inventory_coverage_truth as truth
         from scripts import day_inventory_cumulative_coverage as cumulative
+        from app.services.strict_coverage_inventory_sync import sync
 
-        verified_odds = {"odds_api_io", "sstats_pari", "bzzoiro", "allsportsapi", "sportlogic", "bookies_api", "sharpapi", "rapidapi_odds"}
-        bridge.LIVE_ODDS_SOURCES.update(verified_odds)
-        truth.LIVE_ODDS_SOURCES.update(verified_odds)
-        cumulative.LIVE_ODDS_SOURCES.update(verified_odds)
+        _patch_truth_functions(truth, cumulative, bridge)
         result["truth_live_odds_sources"] = sorted(truth.LIVE_ODDS_SOURCES)
 
-        original = cumulative.ensure_latest_run_coverage_merged
-        if not getattr(original, "_harizon_verified_strict_truth", False):
+        current = cumulative.ensure_latest_run_coverage_merged
+        if not getattr(current, "_harizon_verified_strict_truth", False):
             def ensure_latest_run_coverage_merged():
                 steps = []
                 for name in ("match_data_coverage_report.py", "merge_run_coverage_into_day_inventory.py", "repair_inventory_source_counts.py"):
                     steps.append(cumulative.run_python_script(ROOT / "scripts" / name))
+                started = datetime.now(UTC).isoformat()
+                try:
+                    strict_result = sync()
+                    steps.append({"path": "app.services.strict_coverage_inventory_sync.sync", "status": "ok", "started_at_utc": started, "finished_at_utc": datetime.now(UTC).isoformat(), "counts": strict_result.get("counts")})
+                except Exception as exc:
+                    steps.append({"path": "app.services.strict_coverage_inventory_sync.sync", "status": "error", "error": f"{type(exc).__name__}: {exc}"})
                 try:
                     code = truth.main()
                     steps.append({"path": str(ROOT / "scripts" / "build_day_inventory_coverage_truth.py"), "status": "ok" if code in (0, None) else "error", "code": code, "strict_live_odds_sources": sorted(truth.LIVE_ODDS_SOURCES)})
