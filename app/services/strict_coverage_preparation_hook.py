@@ -55,11 +55,13 @@ def install() -> dict[str, Any]:
         return {"status": "already_installed"}
 
     from app.services import daily_coverage_plan
+    from app.services.allsportsapi_full_cohort_patch import install as install_allsportsapi_patch
     from app.services.runtime_preflight import RuntimePreflight
     from app.services.strict_coverage_inventory_sync import install as install_inventory_sync
 
     _set_full_cohort_runtime()
     daily_coverage_plan.PHASE_TARGETS = (300, 300, 300)
+    allsportsapi_result = install_allsportsapi_patch()
     inventory_result = install_inventory_sync()
 
     current = RuntimePreflight.prepare_discovery_first_inventory
@@ -88,6 +90,7 @@ def install() -> dict[str, Any]:
         "phase_targets": [300, 300, 300],
         "sstats_pari_wall_seconds": 240,
         "sstats_pari_rate_limit_per_minute": 140,
+        "allsportsapi_full_cohort": allsportsapi_result,
         "inventory_sync": inventory_result,
         "replan_after_discovery": True,
         "publication_contract_relaxed": False,
