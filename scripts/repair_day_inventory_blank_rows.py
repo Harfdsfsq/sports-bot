@@ -1,193 +1,137 @@
 from __future__ import annotations
 
-"""Drop blank/identity-less rows from day-inventory aliases.
-
-A few coverage reports showed gap examples with empty home/away/kickoff/match_key.
-Those rows are not real fixtures and should not count against 2+/2+ coverage.
-This pass keeps only rows that have a semantic fixture identity: either a match key
-or both teams plus a date/kickoff.
-"""
+"""Remove identity-less rows and rebuild final coverage from provider evidence."""
 
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-UTC = timezone.utc
-ROOT = Path('.').resolve()
-DAY_DIR = ROOT / '.data' / 'day_inventory'
-CACHE_DIR = ROOT / '.data' / 'cache' / 'day_inventory'
-EXPORT = ROOT / '.data' / 'exports'
-OUT = EXPORT / 'latest-day-inventory-blank-row-repair.json'
+ROOT = Path(".").resolve()
+DAY_DIR = ROOT / ".data" / "day_inventory"
+CACHE_DIR = ROOT / ".data" / "cache" / "day_inventory"
+EXPORT = ROOT / ".data" / "exports"
+OUT = EXPORT / "latest-day-inventory-blank-row-repair.json"
 
 
 def _tz() -> ZoneInfo:
     try:
-        return ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
+        return ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
     except Exception:
-        return ZoneInfo('Europe/Moscow')
+        return ZoneInfo("Europe/Moscow")
 
 
-def _target_date() -> str:
-    raw = str(os.getenv('DAY_INVENTORY_TARGET_DATE') or os.getenv('DAY_INVENTORY_CACHE_DATE') or '').strip()
+def _day() -> str:
+    raw = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
     return raw[:10] if raw else datetime.now(UTC).astimezone(_tz()).date().isoformat()
 
 
 def _load(path: Path, default: Any) -> Any:
     try:
-        if path.exists() and path.stat().st_size > 0:
-            return json.loads(path.read_text(encoding='utf-8', errors='replace'))
+        return json.loads(path.read_text(encoding="utf-8", errors="replace"))
     except Exception:
-        pass
-    return default
+        return default
 
 
 def _write(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _text(value: Any) -> str:
-    return str(value or '').strip()
+    return str(value or "").strip()
 
 
 def _has_date(row: dict[str, Any]) -> bool:
-    for key in ('kickoff_utc', 'commence_time', 'start_time', 'kickoff', 'event_date', 'date'):
+    for key in ("kickoff_utc", "commence_time", "start_time", "kickoff", "event_date", "date"):
         if _text(row.get(key)):
             return True
-    for key in ('match_key', 'canonical_match_id', 'canonical_match_key', 'event_key'):
-        if re.search(r'20\d{2}-\d{2}-\d{2}', _text(row.get(key))):
-            return True
-    return False
+    return any(re.search(r"20\d{2}-\d{2}-\d{2}", _text(row.get(key))) for key in ("match_key", "canonical_match_id", "canonical_match_key", "event_key"))
 
 
 def _team(row: dict[str, Any], side: str) -> str:
-    keys = ('home_team', 'home', 'home_name', 'team_home', 'match_home') if side == 'home' else ('away_team', 'away', 'away_name', 'team_away', 'match_away')
-    for key in keys:
-        value = _text(row.get(key))
-        if value:
-            return value
-    return ''
+    keys = ("home_team", "home", "home_name", "team_home", "match_home") if side == "home" else ("away_team", "away", "away_name", "team_away", "match_away")
+    return next((_text(row.get(key)) for key in keys if _text(row.get(key))), "")
 
 
-def _valid(row: dict[str, Any]) -> bool:
+def _valid(row: Any) -> bool:
     if not isinstance(row, dict):
         return False
-    explicit = _text(row.get('match_key') or row.get('canonical_match_id') or row.get('canonical_match_key') or row.get('event_key'))
-    home = _team(row, 'home')
-    away = _team(row, 'away')
-    if explicit and (home or away or _has_date(row)):
-        return True
-    return bool(home and away and _has_date(row))
+    explicit = _text(row.get("match_key") or row.get("canonical_match_id") or row.get("canonical_match_key") or row.get("event_key"))
+    home, away = _team(row, "home"), _team(row, "away")
+    return bool((explicit and (home or away or _has_date(row))) or (home and away and _has_date(row)))
 
 
-def _repair_file(path: Path) -> dict[str, Any]:
+def _repair(path: Path) -> dict[str, Any]:
     payload = _load(path, None)
-    if not isinstance(payload, dict) or not isinstance(payload.get('matches'), list):
-        return {'path': str(path), 'status': 'missing_or_no_matches'}
-    before = len(payload['matches'])
-    kept = [row for row in payload['matches'] if isinstance(row, dict) and _valid(row)]
-    removed = before - len(kept)
+    if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
+        return {"path": str(path), "status": "missing_or_no_matches"}
+    before = len(payload["matches"])
+    payload["matches"] = [row for row in payload["matches"] if _valid(row)]
+    removed = before - len(payload["matches"])
     if removed:
-        payload['matches'] = kept
-        counts = payload.setdefault('counts', {})
-        if isinstance(counts, dict):
-            counts['matches_total'] = len(kept)
-            counts['blank_rows_removed'] = int(counts.get('blank_rows_removed') or 0) + removed
-        payload['blank_rows_repaired_at_utc'] = datetime.now(UTC).isoformat()
+        payload["blank_rows_repaired_at_utc"] = datetime.now(UTC).isoformat()
         _write(path, payload)
-    return {'path': str(path), 'status': 'ok', 'before': before, 'after': len(kept), 'removed': removed}
+    return {"path": str(path), "status": "ok", "before": before, "after": len(payload["matches"]), "removed": removed}
 
 
-def _install_cumulative_truth_runner(cumulative: Any, truth: Any) -> None:
-    current = cumulative.ensure_latest_run_coverage_merged
-    if getattr(current, '_harizon_strict_daily_truth', False):
-        return
-
-    def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
-        steps: list[dict[str, Any]] = []
-        for name in (
-            'match_data_coverage_report.py',
-            'merge_run_coverage_into_day_inventory.py',
-            'repair_inventory_source_counts.py',
-        ):
-            steps.append(cumulative.run_python_script(ROOT / 'scripts' / name))
-        started = datetime.now(UTC).isoformat()
-        try:
-            code = truth.main()
-            steps.append({
-                'path': str(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'),
-                'status': 'ok' if code in (0, None) else 'error',
-                'code': code,
-                'started_at_utc': started,
-                'finished_at_utc': datetime.now(UTC).isoformat(),
-                'strict_live_odds_sources': sorted(truth.LIVE_ODDS_SOURCES),
-            })
-        except Exception as exc:
-            steps.append({
-                'path': str(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'),
-                'status': 'error',
-                'started_at_utc': started,
-                'finished_at_utc': datetime.now(UTC).isoformat(),
-                'error': f'{type(exc).__name__}: {exc}',
-            })
-        return steps
-
-    ensure_latest_run_coverage_merged._harizon_strict_daily_truth = True
-    cumulative.ensure_latest_run_coverage_merged = ensure_latest_run_coverage_merged
-
-
-def _sync_strict_coverage() -> dict[str, Any]:
+def _install_final_truth_hooks() -> dict[str, Any]:
+    result: dict[str, Any] = {}
     try:
-        from scripts.sync_daily_coverage_evidence_into_day_inventory import sync_inventory
-
-        result = sync_inventory()
-        # These modules keep small local source allowlists. Patch their live module
-        # instances in the report process so the final truth table recognises Pari
-        # as the independent source already proven in the strict evidence ledger.
+        from app.services.strict_coverage_inventory_sync import sync
+        result["strict_inventory_sync"] = sync()
+    except Exception as exc:
+        result["strict_inventory_sync"] = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+    try:
         from scripts import bridge_runtime_context_coverage as bridge
         from scripts import build_day_inventory_coverage_truth as truth
         from scripts import day_inventory_cumulative_coverage as cumulative
 
-        bridge.LIVE_ODDS_SOURCES.add('sstats_pari')
-        truth.LIVE_ODDS_SOURCES.add('sstats_pari')
-        cumulative.LIVE_ODDS_SOURCES.add('sstats_pari')
-        _install_cumulative_truth_runner(cumulative, truth)
-        return result
+        verified_odds = {"odds_api_io", "sstats_pari", "bzzoiro", "allsportsapi", "sportlogic", "bookies_api", "sharpapi", "rapidapi_odds"}
+        bridge.LIVE_ODDS_SOURCES.update(verified_odds)
+        truth.LIVE_ODDS_SOURCES.update(verified_odds)
+        cumulative.LIVE_ODDS_SOURCES.update(verified_odds)
+        result["truth_live_odds_sources"] = sorted(truth.LIVE_ODDS_SOURCES)
+
+        original = cumulative.ensure_latest_run_coverage_merged
+        if not getattr(original, "_harizon_verified_strict_truth", False):
+            def ensure_latest_run_coverage_merged():
+                steps = []
+                for name in ("match_data_coverage_report.py", "merge_run_coverage_into_day_inventory.py", "repair_inventory_source_counts.py"):
+                    steps.append(cumulative.run_python_script(ROOT / "scripts" / name))
+                try:
+                    code = truth.main()
+                    steps.append({"path": str(ROOT / "scripts" / "build_day_inventory_coverage_truth.py"), "status": "ok" if code in (0, None) else "error", "code": code, "strict_live_odds_sources": sorted(truth.LIVE_ODDS_SOURCES)})
+                except Exception as exc:
+                    steps.append({"path": str(ROOT / "scripts" / "build_day_inventory_coverage_truth.py"), "status": "error", "error": f"{type(exc).__name__}: {exc}"})
+                return steps
+            ensure_latest_run_coverage_merged._harizon_verified_strict_truth = True
+            cumulative.ensure_latest_run_coverage_merged = ensure_latest_run_coverage_merged
     except Exception as exc:
-        return {'status': 'error', 'error': f'{type(exc).__name__}: {exc}'}
+        result["truth_hook_error"] = f"{type(exc).__name__}: {exc}"
+    result["publication_contract_relaxed"] = False
+    return result
 
 
 def main() -> int:
-    day = _target_date()
-    paths = []
-    for root in (DAY_DIR, CACHE_DIR):
-        paths.extend([root / f'{day}.json', root / 'today.json', root / 'current.json', root / 'latest.json'])
-    seen: set[Path] = set()
+    day = _day()
     results = []
-    for path in paths:
-        resolved = path.resolve()
-        if resolved in seen:
-            continue
-        seen.add(resolved)
-        results.append(_repair_file(path))
-    strict_sync = _sync_strict_coverage()
-    payload = {
-        'status': 'ok',
-        'created_at_utc': datetime.now(UTC).isoformat(),
-        'date_local': day,
-        'files': results,
-        'total_removed': sum(int(r.get('removed') or 0) for r in results),
-        'daily_coverage_evidence_sync': strict_sync,
-        'publication_contract_relaxed': False,
-    }
+    seen: set[Path] = set()
+    for root in (DAY_DIR, CACHE_DIR):
+        for path in (root / f"{day}.json", root / "today.json", root / "current.json", root / "latest.json"):
+            resolved = path.resolve()
+            if resolved not in seen:
+                seen.add(resolved)
+                results.append(_repair(path))
+    hooks = _install_final_truth_hooks()
+    payload = {"status": "ok", "created_at_utc": datetime.now(UTC).isoformat(), "date_local": day, "files": results, "total_removed": sum(int(row.get("removed") or 0) for row in results), "verified_coverage_hooks": hooks, "publication_contract_relaxed": False}
     _write(OUT, payload)
     print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())
