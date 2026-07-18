@@ -7,81 +7,73 @@
     "offer_rows_from_snapshot": 0
   },
   "bottlenecks": [
+    "2plus_context_below_bookmaker_quorum",
     "bzzoiro_secondary_offers_zero",
     "sstats_team_form_zero",
     "sportlogic_no_fixtures_or_matches"
   ],
   "bzzoiro_context_gap": {
     "install": {
-      "created_at_utc": "2026-06-14T19:22:52.051671+00:00",
+      "created_at_utc": "2026-07-14T21:14:41.401083+00:00",
       "ignore_plan_default": true,
-      "match_limit": 160,
+      "match_limit": 300,
       "max_requests": 180,
       "runtime_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-context-gap-finalizer.json",
       "status": "installed"
     },
     "runtime": {
-      "created_at_utc": "2026-06-14T19:13:26.679736+00:00",
+      "created_at_utc": "2026-07-18T19:09:15.581785+00:00",
       "preview": {
         "hints_sidecar": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json",
-        "hints_sidecar_matches": 4,
+        "hints_sidecar_matches": 1,
         "matched": 0,
         "odds_comparison_attachment": {
-          "attached": 4,
-          "attempted": 4,
+          "attached": 0,
+          "attempted": 6,
           "enabled": true,
           "errors": 0,
           "limit": 140,
           "max_requests": 120
         },
-        "provider_odds_hints": 439,
-        "sample_targets": [
-          "soccer|alexandria reds|dmv elite|2026-06-14",
-          "soccer|alianza lima|u cesar vallejo|2026-06-14",
-          "soccer|chicago fire 2|inter miami 2|2026-06-14",
-          "soccer|cipolletti|costa brava general pico|2026-06-14",
-          "soccer|democrata|real noroeste|2026-06-14",
-          "soccer|deportes linares|lota schwager|2026-06-14",
-          "soccer|porto|rio branco|2026-06-14",
-          "soccer|tombense|vitoria|2026-06-14"
-        ],
-        "target_matches": 8,
-        "unmatched": 8
+        "provider_odds_hints": 22,
+        "sample_targets": [],
+        "target_matches": 0,
+        "unmatched": 0
       },
       "stats": {
         "contexts_added": 0,
         "contexts_added_total": 0,
         "enabled": true,
         "errors": 0,
-        "hinted_contexts": 4,
+        "hinted_contexts": 1,
         "lineups_resources": 0,
         "matched": 0,
-        "metadata_resources": 4,
+        "metadata_resources": 0,
         "note": "patched actual app.providers.bzzoiro_v2 provider; legacy report path kept for Telegram v8",
-        "odds_comparison_attached": 4,
-        "odds_comparison_attempted": 4,
-        "odds_hints": 439,
+        "odds_comparison_attached": 0,
+        "odds_comparison_attempted": 6,
+        "odds_hints": 22,
         "odds_resources": 4,
         "provider": "bzzoiro_v2",
         "requests": 0,
         "stats_resources": 4,
-        "target_matches": 8,
-        "v2_events_fetched": 26
+        "target_matches": 0,
+        "v2_events_fetched": 465
       },
       "status": "ran"
     }
   },
-  "created_at_utc": "2026-06-14T19:22:55.269426+00:00",
+  "created_at_utc": "2026-07-18T19:10:02.897928+00:00",
   "guards": {
     "price_integrity_removed_total": 0,
     "timing_deferred_total": 0
   },
   "inventory": {
     "matches_total": 300,
-    "ready_for_model": 40,
-    "with_1plus_context": 40,
-    "with_2plus_bookmakers": 63,
-    "with_2plus_context": 40
+    "ready_for_model": 233,
+    "with_1plus_context": 299,
+    "with_2plus_bookmakers": 55,
+    "with_2plus_context": 3
   },
   "max_policy_installed": true,
   "near_window_0_4h": {},
@@ -92,30 +84,30 @@
     "If bzzoiro_secondary_offers_zero persists, keep Bzzoiro as context/confirmation, not price source, until comparison odds parse is fixed."
   ],
   "odds_api_snapshot": {
-    "matches_count": 30,
-    "rows_count": 3004,
-    "same_side_2plus_books": 17
+    "matches_count": 6,
+    "rows_count": 388,
+    "same_side_2plus_books": 3
   },
   "providers": {
     "bzzoiro": {
       "contexts": 0,
       "errors": 0,
       "events": 0,
-      "overlap": 3,
+      "overlap": 5,
       "requests": 0,
       "secondary_offers_added": 0
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 0,
+      "books_2plus": 5,
       "errors": 0,
       "events_req": 0,
-      "matched": 0,
-      "odds_req": 0,
-      "offers": 0
+      "matched": 5,
+      "odds_req": 2,
+      "offers": 584
     },
     "sportlogic": {
-      "diagnosis": "sportlogic_no_current_games_probe_only",
+      "diagnosis": "active_odds_stale_only_no_current_fixture",
       "enabled": true,
       "errors": 0,
       "fixtures_fetched": 0,
@@ -129,17 +121,20 @@
       "odds_discovery_rows": 0,
       "odds_requests": 0,
       "offers": 0,
-      "requests": 9,
+      "requests": 4,
       "runtime_error": "",
       "sample_dates": [],
       "stale_sample": false
     },
     "sstats": {
       "contexts": 0,
-      "deep_enriched": 0,
+      "deep_enriched": 31,
+      "direct_contexts": 0,
       "errors": 0,
       "requests": 0,
-      "rows": 0
+      "rows": 0,
+      "runtime_patch": "",
+      "team_form_contexts": 0
     }
   },
   "status": "ok"

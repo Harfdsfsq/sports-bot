@@ -1,23 +1,301 @@
 {
-  "created_at_utc": "2026-07-18T17:02:59.143308+00:00",
-  "env_written_count": 137,
-  "notes": [
-    "Each configured odds-api.io account keeps its own 100/hour budget.",
-    "All 300 matches may be accumulated; provider detail calls remain quota-governed.",
-    "SportLogic regular and inventory budgets stay below the 500/day free-plan ceiling.",
-    "No one-source or B-tier publication relaxation is applied."
-  ],
-  "policy_version": "v3-autonomous-300-strict-a",
-  "requested_limits": {
-    "bzzoiro_per_run": 200,
-    "odds_api_io_account1_per_run": 100,
-    "odds_api_io_account2_per_run": 100,
-    "odds_api_io_per_hour_total": 200,
-    "sportlogic_inventory_reserve": 80,
-    "sportlogic_per_day": 500,
-    "sportlogic_regular_per_run": 30,
-    "sstats_per_minute": 150
+  "available_request_caps": {
+    "allsportsapi": 96,
+    "bzzoiro": 200,
+    "odds_api_io": 200,
+    "sportlogic": 30,
+    "sstats": 150
   },
+  "created_at_utc": "2026-07-18T19:03:04.716167+00:00",
+  "patches": {
+    "api_full_data": {
+      "result": "True",
+      "status": "ok"
+    },
+    "daily_coverage_runtime": {
+      "bootstrap_restore": {
+        "date_local": "2026-07-18",
+        "dated_evidence_accepted": true,
+        "dated_ledger_accepted": true,
+        "evidence_matches": 302,
+        "latest_evidence_accepted": true,
+        "latest_ledger_accepted": true,
+        "ledger_matches": 302,
+        "matches_with_context_evidence": 73,
+        "matches_with_odds_evidence": 276,
+        "publication_contract_relaxed": false,
+        "status": "restored"
+      },
+      "boundary": {
+        "actual_context_source_identity": true,
+        "cached_evidence_reused": true,
+        "cached_line_observation_time_preserved": true,
+        "final_provider_deadlines": true,
+        "ledger_after_each_provider": true,
+        "near_kickoff_refresh_hours": 4
+      },
+      "clubelo_strict_match": {
+        "ambiguity_margin": 0.025,
+        "publication_contract_relaxed": false,
+        "requires_distinctive_token_or_near_exact": true,
+        "status": "installed",
+        "threshold": 0.86
+      },
+      "core_targets": {
+        "core_context_providers": [
+          "bzzoiro",
+          "clubelo",
+          "espn",
+          "football_data",
+          "openfootball",
+          "openligadb",
+          "sportlogic",
+          "sstats",
+          "thesportsdb"
+        ],
+        "publication_contract_relaxed": false,
+        "selection_policy": "daily_plan_before_offer_shortlist",
+        "status": "installed"
+      },
+      "created_at_utc": "2026-07-18T19:03:04.676357+00:00",
+      "evidence_stamp": {
+        "fresh_context_effective_at_stamped": true,
+        "fresh_line_timestamp_stamped": true,
+        "publication_contract_relaxed": false,
+        "status": "installed"
+      },
+      "fixed_cohort": {
+        "past_matches_remain_in_daily_coverage_ledger": true,
+        "policy": "append_until_300_then_freeze_for_moscow_day",
+        "publication_contract_relaxed": false,
+        "semantic_ledger_identity_lookup": true,
+        "status": "installed",
+        "target_matches": 300
+      },
+      "freshness": {
+        "cache_reuse_marked": true,
+        "publication_contract_relaxed": false,
+        "status": "installed"
+      },
+      "full_inventory_provider_scope": {
+        "candidate_publication_window_unchanged": true,
+        "context_providers": [
+          "api_football",
+          "bzzoiro",
+          "clubelo",
+          "espn",
+          "football_data",
+          "openfootball",
+          "openligadb",
+          "sportlogic",
+          "sstats",
+          "thesportsdb"
+        ],
+        "odds_providers": [
+          "allsportsapi",
+          "bookies_api",
+          "bzzoiro",
+          "odds_api_io",
+          "rapidapi_odds",
+          "sharpapi",
+          "sportlogic",
+          "sstats_pari"
+        ],
+        "publication_contract_relaxed": false,
+        "status": "installed"
+      },
+      "providers": {
+        "dynamic_context_provider": "clubelo",
+        "dynamic_odds_provider": "sstats_pari"
+      },
+      "publication_contract_relaxed": false,
+      "replanned_after_source_repair": {
+        "coverage_before": {
+          "matches": 300,
+          "with_1plus_context_sources": 0,
+          "with_1plus_odds_sources": 0,
+          "with_2plus_both": 0,
+          "with_2plus_context_sources": 0,
+          "with_2plus_odds_sources": 0,
+          "with_semantic_ledger_match": 222
+        },
+        "phase_cumulative_target": 300,
+        "provider_assignments": {
+          "bzzoiro": {
+            "context": 300,
+            "offers": 300
+          },
+          "clubelo": {
+            "context": 213
+          },
+          "espn": {
+            "context": 300
+          },
+          "football_data": {
+            "context": 300
+          },
+          "odds_api_io": {
+            "offers": 300
+          },
+          "openligadb": {
+            "context": 300
+          },
+          "sportlogic": {
+            "context": 300,
+            "offers": 300
+          },
+          "sstats": {
+            "context": 300
+          },
+          "sstats_pari": {
+            "offers": 300
+          },
+          "thesportsdb": {
+            "context": 300
+          }
+        },
+        "run_index": 15,
+        "status": "ok"
+      },
+      "source_integrity": {
+        "actual_context_source_persisted": true,
+        "actual_offer_source_persisted": true,
+        "duplicate_provider_run_rows_collapsed": true,
+        "publication_contract_relaxed": false,
+        "state_repair": {
+          "date_local": "2026-07-18",
+          "entries_moved_to_actual_source": 0,
+          "entries_removed_non_independent": 0,
+          "ledger_rows_rebuilt": 349,
+          "matches": 302,
+          "publication_contract_relaxed": false,
+          "status": "repaired"
+        },
+        "status": "installed"
+      },
+      "sstats_context_cache": {
+        "internal_bzzoiro_disabled": true,
+        "parallel_history_windows": true,
+        "persistent_cache": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/sstats_games",
+        "publication_contract_relaxed": false,
+        "separate_bzzoiro_provider_remains_enabled": true,
+        "status": "installed",
+        "window_deadline_seconds": 22.0
+      },
+      "sstats_pari_current_odds": {
+        "current_odds_supported": true,
+        "nested_market_rows_supported": true,
+        "patches_runtime_repair_reference": true,
+        "publication_contract_relaxed": false,
+        "rate_limit": {
+          "detail_requests_only": true,
+          "publication_contract_relaxed": false,
+          "rate_limit_per_minute": 140,
+          "status": "installed"
+        },
+        "runtime_extractor": "self_contained_current_odds",
+        "status": "installed"
+      },
+      "sstats_pari_repair": {
+        "nested_match_info_supported": true,
+        "publication_contract_relaxed": false,
+        "status": "installed",
+        "strict_event_match_min_score": 72.0,
+        "timezone_aware_dates": true,
+        "upcoming_filter": true
+      },
+      "sstats_team_form_alias": {
+        "ambiguity_margin": 0.04,
+        "candidate_lookup": "distinctive_token_and_prefix_index",
+        "minimum_recent_matches_per_team": 3,
+        "phonetic_collision_matches_rejected": true,
+        "provider": "app.providers.sstats.SStatsContextProvider",
+        "publication_contract_relaxed": false,
+        "short_substring_matches_rejected": true,
+        "status": "installed",
+        "threshold": 0.92
+      },
+      "state_persistence": {
+        "cohort_mirror": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-cohort.json",
+        "publication_contract_relaxed": false,
+        "restores_after_cache_miss": true,
+        "state_mirror": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-state.json",
+        "status": "installed"
+      },
+      "status": "installed",
+      "strict_coverage_preparation": {
+        "allsportsapi_full_cohort": {
+          "partial_cache_never_short_circuits_full_cohort": true,
+          "publication_contract_relaxed": false,
+          "request_block_rotation": true,
+          "status": "installed"
+        },
+        "discovery_wall_seconds": 240,
+        "inventory_sync": {
+          "atexit_sync": true,
+          "initial_sync": {
+            "candidate_pool_matches": 634,
+            "counts": {
+              "matches_a_tier_coverage_ready": 7,
+              "matches_ready_for_model": 39,
+              "matches_total": 300,
+              "matches_with_1plus_context_sources": 43,
+              "matches_with_1plus_odds_sources": 218,
+              "matches_with_2plus_bookmakers": 154,
+              "matches_with_2plus_context_sources": 15,
+              "matches_with_2plus_odds_sources": 70
+            },
+            "created_at_utc": "2026-07-18T19:03:04.122339+00:00",
+            "date_local": "2026-07-18",
+            "evidence_matches": 302,
+            "publication_contract_relaxed": false,
+            "rotation_offset": 354,
+            "selected_matches": 300,
+            "status": "ok",
+            "strict_shortfall": 293
+          },
+          "publication_contract_relaxed": false,
+          "runtime_preflight_policy_reapply_updated": true,
+          "status": "installed"
+        },
+        "phase_targets": [
+          300,
+          300,
+          300
+        ],
+        "publication_contract_relaxed": false,
+        "replan_after_discovery": true,
+        "sstats_pari_rate_limit_per_minute": 140,
+        "sstats_pari_wall_seconds": 180,
+        "status": "installed"
+      },
+      "strict_metrics": {
+        "publication_contract_relaxed": false,
+        "ready_for_publish": "2 independent odds sources + 2 contexts + 2 bookmakers",
+        "status": "installed"
+      }
+    },
+    "maximum_provider_policy": {
+      "result": "None",
+      "status": "ok"
+    },
+    "secondary_odds_rescue": {
+      "status": "installed_or_rewrapped",
+      "trigger_mode": "odds_api_io_empty_or_thin"
+    },
+    "sstats_bzzoiro_odds_merge": {
+      "created_at_utc": "2026-07-18T19:03:04.689530+00:00",
+      "sstats_current_odds_as_line_source": false,
+      "sstats_policy": "context_only_by_default",
+      "status": "installed"
+    },
+    "strict_inventory_sync": {
+      "status": "already_installed"
+    }
+  },
+  "policy_version": "v4-verified-300-completion",
+  "publication_contract_relaxed": false,
+  "selection": "actual evidence first; discovery hints never counted as evidence",
   "status": "installed",
   "strict_publication": {
     "min_bookmakers": 2,
