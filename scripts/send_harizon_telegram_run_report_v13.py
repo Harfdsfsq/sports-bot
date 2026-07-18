@@ -69,11 +69,26 @@ def _verified_counts() -> dict[str, int]:
 
 
 def _pct(value: int, total: int) -> int:
-    return round(100 * value / total) if total else 0
+    if not total:
+        return 0
+    if value >= total:
+        return 100
+    return int(100 * value / total)
 
 
 def _replace_line(text: str, prefix_pattern: str, replacement: str) -> str:
     return re.sub(rf"^• {prefix_pattern}.*$", replacement, text, count=1, flags=re.MULTILINE)
+
+
+def _replace_ready_line(text: str, pattern: str, label: str, value: int, total: int) -> str:
+    regex = re.compile(rf"^• {pattern}.*$", flags=re.MULTILINE)
+
+    def replacement(match: re.Match[str]) -> str:
+        old = match.group(0)
+        suffix = old[old.find("|"):] if "|" in old else ""
+        return f"• {label}: {value}/{total}" + (f" {suffix}" if suffix else "")
+
+    return regex.sub(replacement, text, count=1)
 
 
 def _render_verified(text: str) -> str:
@@ -90,10 +105,10 @@ def _render_verified(text: str) -> str:
     text = _replace_line(text, r"2\+ контекста:", f"• 2+ независимых контекста: {c['context2']}/{total} ({_pct(c['context2'], total)}%)")
     text = _replace_line(text, r"2\+ независимых контекста:", f"• 2+ независимых контекста: {c['context2']}/{total} ({_pct(c['context2'], total)}%)")
     text = _replace_line(text, r"Готово для модели:", f"• Готово для модели: {c['model']}/{total} ({_pct(c['model'], total)}%)")
-    text = _replace_line(text, r"A-tier strict-ready:", f"• A-tier coverage-ready: {c['a']}/{total} | main опубликовано: 0")
-    text = _replace_line(text, r"A-tier coverage-ready:", f"• A-tier coverage-ready: {c['a']}/{total} | main опубликовано: 0")
-    text = _replace_line(text, r"B-tier .*coverage:", f"• B-tier coverage-ready: {c['b']}/{total} | fallback опубликовано: 0")
-    text = _replace_line(text, r"B-tier coverage-ready:", f"• B-tier coverage-ready: {c['b']}/{total} | fallback опубликовано: 0")
+    text = _replace_ready_line(text, r"A-tier strict-ready:", "A-tier coverage-ready", c["a"], total)
+    text = _replace_ready_line(text, r"A-tier coverage-ready:", "A-tier coverage-ready", c["a"], total)
+    text = _replace_ready_line(text, r"B-tier .*coverage:", "B-tier coverage-ready", c["b"], total)
+    text = _replace_ready_line(text, r"B-tier coverage-ready:", "B-tier coverage-ready", c["b"], total)
     text = re.sub(
         r"^• A-cover 2\+ odds-source ∩ 2\+ букмекера ∩ 2\+ контекста:.*$",
         f"• Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста: {c['a']}/{total}; B-cover: {c['b']}/{total}.",
