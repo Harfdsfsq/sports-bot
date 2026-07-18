@@ -11,7 +11,12 @@ _ORIGINAL_PREPARE = None
 
 def _set_full_cohort_runtime() -> None:
     values = {
-        "HARIZON_SSTATS_PARI_WALL_SECONDS": "240",
+        # The workflow allows 600 seconds for run-once. Discovery is bounded to four
+        # minutes and the paced Pari phase to three minutes; provider work runs
+        # concurrently, leaving time for modelling/export without bypassing limits.
+        "RUNBOT_DISCOVERY_FIRST_MAX_SECONDS": "240",
+        "RUNBOT_DISCOVERY_FIRST_FINAL_RESERVE_SECONDS": "20",
+        "HARIZON_SSTATS_PARI_WALL_SECONDS": "180",
         "SSTATS_PARI_RATE_LIMIT_PER_MINUTE": "140",
         "SSTATS_PARI_RATE_LIMIT_WINDOW_SECONDS": "60",
         "SSTATS_PARI_CONCURRENCY": "16",
@@ -88,7 +93,8 @@ def install() -> dict[str, Any]:
     return {
         "status": "installed",
         "phase_targets": [300, 300, 300],
-        "sstats_pari_wall_seconds": 240,
+        "discovery_wall_seconds": 240,
+        "sstats_pari_wall_seconds": 180,
         "sstats_pari_rate_limit_per_minute": 140,
         "allsportsapi_full_cohort": allsportsapi_result,
         "inventory_sync": inventory_result,
