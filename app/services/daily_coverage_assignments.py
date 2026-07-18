@@ -31,6 +31,7 @@ def _senior_club(row: dict[str, Any]) -> bool:
 def build_assignments(
     rows: list[dict[str, Any]], run_index: int
 ) -> dict[str, dict[str, list[str]]]:
+    del run_index
     out = {
         "odds_api_io": {"offers": []},
         "sstats_pari": {"offers": []},
@@ -72,11 +73,19 @@ def build_assignments(
             (len(contexts) < 2 and "clubelo" not in contexts) or hours <= 4
         ):
             out["clubelo"]["context"].append(key)
-    pari_limit = (150, 110, 80)[min(run_index, 3) - 1]
-    sportlogic_limit = max(
-        80, min(300, as_int(os.getenv("SPORTLOGIC_MATCH_LIMIT"), 180))
+
+    # No artificial 80/24-match shortlist. HTTP request ceilings remain enforced
+    # inside each provider; assignments merely ensure every uncovered row is tried.
+    pari_limit = max(1, as_int(os.getenv("SSTATS_PARI_DETAIL_MATCH_LIMIT"), 300))
+    sportlogic_limit = max(1, as_int(os.getenv("SPORTLOGIC_MATCH_LIMIT"), 300))
+    bzz_limit = max(
+        1,
+        as_int(
+            os.getenv("BZZOIRO_RUNTIME_DETAIL_MATCH_LIMIT")
+            or os.getenv("BZZOIRO_V2_MATCH_LIMIT"),
+            300,
+        ),
     )
-    bzz_limit = max(8, as_int(os.getenv("BZZOIRO_RUNTIME_DETAIL_MATCH_LIMIT"), 24))
     out["sstats_pari"]["offers"] = out["sstats_pari"]["offers"][:pari_limit]
     for role in ("offers", "context"):
         out["sportlogic"][role] = out["sportlogic"][role][:sportlogic_limit]
