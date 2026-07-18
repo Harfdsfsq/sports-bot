@@ -14,6 +14,10 @@ from app.services.daily_coverage_common import (
     row_key,
     row_kickoff,
 )
+from app.services.daily_coverage_identity import (
+    build_ledger_identity_index,
+    lookup_ledger_row,
+)
 
 
 def _bucket(hours: float) -> tuple[int, str]:
@@ -78,6 +82,7 @@ def rank_inventory(
     ledger_matches = (
         ledger.get("matches") if isinstance(ledger.get("matches"), dict) else {}
     )
+    identity_index = build_ledger_identity_index(ledger_matches)
     ranked: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
     for row in rows:
         key, kickoff = row_key(row), row_kickoff(row)
@@ -90,10 +95,12 @@ def rank_inventory(
         hours = (kickoff - now).total_seconds() / 3600.0
         if hours < -0.25:
             continue
-        ledger_row = (
-            ledger_matches.get(key)
-            if isinstance(ledger_matches.get(key), dict)
-            else {}
+        ledger_row = lookup_ledger_row(
+            row,
+            key,
+            kickoff,
+            ledger_matches,
+            identity_index,
         )
         odds, contexts = _observed(row, ledger_row)
         source_ids = row.get("source_ids") if isinstance(row.get("source_ids"), dict) else {}
@@ -121,6 +128,7 @@ def rank_inventory(
                 "context_sources_count": len(contexts),
                 "line_deficit": max(0, MIN_ODDS_SOURCES - len(odds)),
                 "context_deficit": max(0, MIN_CONTEXT_SOURCES - len(contexts)),
+                "ledger_identity_match": bool(ledger_row),
             }
         )
         rank = (
@@ -157,4 +165,5 @@ def coverage_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
             and as_int(row.get("context_sources_count")) >= 2
             for row in rows
         ),
+        "with_semantic_ledger_match": sum(bool(row.get("ledger_identity_match")) for row in rows),
     }
