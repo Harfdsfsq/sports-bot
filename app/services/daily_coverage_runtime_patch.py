@@ -26,14 +26,38 @@ def install() -> dict[str, Any]:
     if _INSTALLED:
         return {"status": "already_installed"}
     try:
+        from app.services.daily_coverage_source_integrity_patch import (
+            install as install_source_integrity,
+        )
+
+        source_integrity_result = install_source_integrity()
+        from app.services.daily_coverage_fixed_cohort_patch import (
+            install as install_fixed_cohort,
+        )
+
+        fixed_cohort_result = install_fixed_cohort()
+        from app.services.daily_coverage_plan import prepare_daily_coverage
+
+        replanned = prepare_daily_coverage()
+        from app.services.clubelo_strict_match_patch import (
+            install as install_clubelo_strict,
+        )
+        from app.services.sstats_pari_runtime_repair import (
+            install as install_sstats_pari_repair,
+        )
+        from app.services.sstats_team_form_alias_patch import (
+            install as install_sstats_alias,
+        )
+
+        clubelo_result = install_clubelo_strict()
+        sstats_pari_result = install_sstats_pari_repair()
+        sstats_alias_result = install_sstats_alias()
         from app.services import evidence
         from app.services import runner as runner_module
         from app.services.coverage_planner import CoveragePlanner
         from app.services.daily_coverage_freshness_patch import (
             install as install_freshness,
         )
-
-        freshness_result = install_freshness()
         from app.services.daily_coverage_runtime_boundary import (
             install as install_boundary,
         )
@@ -46,7 +70,13 @@ def install() -> dict[str, Any]:
         )
 
         strict_result = install_strict_metrics()
+        freshness_result = install_freshness()
         provider_result = install_providers(PredictionRunner, CoveragePlanner)
+        from app.services.daily_coverage_core_target_patch import (
+            install as install_core_targets,
+        )
+
+        core_target_result = install_core_targets(PredictionRunner)
         boundary_result = install_boundary(PredictionRunner, runner_module, evidence)
         from app.services.daily_coverage_evidence_stamp_patch import (
             install as install_evidence_stamp,
@@ -61,9 +91,21 @@ def install() -> dict[str, Any]:
     payload = {
         "status": "installed",
         "created_at_utc": datetime.now(UTC).isoformat(),
+        "source_integrity": source_integrity_result,
+        "fixed_cohort": fixed_cohort_result,
+        "replanned_after_source_repair": {
+            "status": replanned.get("status"),
+            "run_index": replanned.get("run_index"),
+            "phase_cumulative_target": replanned.get("phase_cumulative_target"),
+            "coverage_before": replanned.get("coverage_before"),
+        },
+        "sstats_pari_repair": sstats_pari_result,
+        "sstats_team_form_alias": sstats_alias_result,
+        "clubelo_strict_match": clubelo_result,
         "strict_metrics": strict_result,
         "freshness": freshness_result,
         "providers": provider_result,
+        "core_targets": core_target_result,
         "boundary": boundary_result,
         "evidence_stamp": stamp_result,
         "publication_contract_relaxed": False,
