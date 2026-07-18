@@ -3,11 +3,13 @@ from __future__ import annotations
 """Keep the public 300-match inventory on rows with verified API evidence first.
 
 Only evidence stored by real providers is counted. Provider ids are ranking hints,
-never evidence. Publication, xG, value, movement and price-integrity guards are not
-changed.
+never evidence. Until 300 rows are strict-ready, uncovered rows rotate through the
+runtime cohort so every discovered fixture gets API attempts across successive runs.
+Publication, xG, value, movement and price-integrity guards are not changed.
 """
 
 import atexit
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -28,8 +30,11 @@ def _rows(payload: Any) -> list[dict[str, Any]]:
     return [dict(row) for row in value if isinstance(row, dict)] if isinstance(value, list) else []
 
 
-def _identity(row: dict[str, Any]):
+def _identity(row: dict[str, Any], day: str):
     values = sorted(row_identities(row, row_kickoff(row)))
+    for identity in values:
+        if identity[0] == day:
+            return identity
     return values[0] if values else identity_from_key(row_key(row))
 
 
@@ -44,7 +49,7 @@ def _candidate_rows(day: str) -> list[dict[str, Any]]:
         if payload_day and payload_day != day:
             continue
         for row in _rows(payload):
-            key = _identity(row)
+            key = _identity(row, day)
             if key is None or key[0] != day:
                 continue
             current = merged.get(key)
@@ -119,6 +124,22 @@ def _enrich(row: dict[str, Any], found: list[dict[str, Any]]):
     return score, item
 
 
+def _select(ranked: list[tuple[tuple[Any, ...], dict[str, Any]]]) -> tuple[list[dict[str, Any]], int]:
+    strict = [pair for pair in ranked if pair[0][0] == 1]
+    partial = [pair for pair in ranked if pair[0][0] == 0]
+    selected = [row for _score, row in strict[:TARGET]]
+    need = TARGET - len(selected)
+    offset = 0
+    if need > 0 and partial:
+        try:
+            offset = int(str(os.getenv("GITHUB_RUN_ID") or os.getenv("GITHUB_RUN_NUMBER") or "0")) % len(partial)
+        except Exception:
+            offset = 0
+        rotated = partial[offset:] + partial[:offset]
+        selected += [row for _score, row in rotated[:need]]
+    return selected[:TARGET], offset
+
+
 def _counts(rows: list[dict[str, Any]]) -> dict[str, int]:
     return {
         "matches_total": len(rows),
@@ -145,7 +166,7 @@ def sync() -> dict[str, Any]:
         index = _evidence_index(evidence_rows)
         ranked = [_enrich(row, _match_evidence(row, evidence_rows, index)) for row in candidates]
         ranked.sort(key=lambda pair: pair[0], reverse=True)
-        selected = [row for _score, row in ranked[:TARGET]]
+        selected, rotation_offset = _select(ranked)
         counts = _counts(selected)
         now = datetime.now(UTC).isoformat()
         payload = {"date_local": day, "created_at_utc": now, "updated_at_utc": now, "build_status": "strict_coverage_ranked", "target_matches": TARGET, "counts": counts, "matches": selected, "publication_contract_relaxed": False}
@@ -153,10 +174,10 @@ def sync() -> dict[str, Any]:
         atomic_write(POOL / f"{day}.json", {"date_local": day, "updated_at_utc": now, "matches": [row for _score, row in ranked], "publication_contract_relaxed": False})
         for path in (DAY_DIR / f"{day}.json", DAY_DIR / "current.json", DAY_DIR / "latest.json", DAY_DIR / "today.json"):
             atomic_write(path, payload)
-        cohort = {"date_local": day, "created_at_utc": now, "updated_at_utc": now, "target_matches": TARGET, "frozen": counts["matches_a_tier_coverage_ready"] >= TARGET, "policy": "adaptive_verified_coverage_until_300_then_freeze", "matches": selected, "publication_contract_relaxed": False}
+        cohort = {"date_local": day, "created_at_utc": now, "updated_at_utc": now, "target_matches": TARGET, "frozen": counts["matches_a_tier_coverage_ready"] >= TARGET, "policy": "adaptive_verified_coverage_until_300_then_freeze", "rotation_offset": rotation_offset, "matches": selected, "publication_contract_relaxed": False}
         atomic_write(DAY_DIR / f"daily-coverage-cohort-{day}.json", cohort)
         atomic_write(ROOT / ".data" / "exports" / "latest-daily-coverage-cohort.json", cohort)
-        report = {"status": "ok", "date_local": day, "created_at_utc": now, "candidate_pool_matches": len(candidates), "selected_matches": len(selected), "evidence_matches": len(evidence_rows), "counts": counts, "strict_shortfall": max(0, TARGET - counts["matches_a_tier_coverage_ready"]), "publication_contract_relaxed": False}
+        report = {"status": "ok", "date_local": day, "created_at_utc": now, "candidate_pool_matches": len(candidates), "selected_matches": len(selected), "evidence_matches": len(evidence_rows), "rotation_offset": rotation_offset, "counts": counts, "strict_shortfall": max(0, TARGET - counts["matches_a_tier_coverage_ready"]), "publication_contract_relaxed": False}
         atomic_write(OUT, report)
         return report
     finally:
