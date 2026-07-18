@@ -102,6 +102,44 @@ def _repair_file(path: Path) -> dict[str, Any]:
     return {'path': str(path), 'status': 'ok', 'before': before, 'after': len(kept), 'removed': removed}
 
 
+def _install_cumulative_truth_runner(cumulative: Any, truth: Any) -> None:
+    current = cumulative.ensure_latest_run_coverage_merged
+    if getattr(current, '_harizon_strict_daily_truth', False):
+        return
+
+    def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
+        steps: list[dict[str, Any]] = []
+        for name in (
+            'match_data_coverage_report.py',
+            'merge_run_coverage_into_day_inventory.py',
+            'repair_inventory_source_counts.py',
+        ):
+            steps.append(cumulative.run_python_script(ROOT / 'scripts' / name))
+        started = datetime.now(UTC).isoformat()
+        try:
+            code = truth.main()
+            steps.append({
+                'path': str(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'),
+                'status': 'ok' if code in (0, None) else 'error',
+                'code': code,
+                'started_at_utc': started,
+                'finished_at_utc': datetime.now(UTC).isoformat(),
+                'strict_live_odds_sources': sorted(truth.LIVE_ODDS_SOURCES),
+            })
+        except Exception as exc:
+            steps.append({
+                'path': str(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'),
+                'status': 'error',
+                'started_at_utc': started,
+                'finished_at_utc': datetime.now(UTC).isoformat(),
+                'error': f'{type(exc).__name__}: {exc}',
+            })
+        return steps
+
+    ensure_latest_run_coverage_merged._harizon_strict_daily_truth = True
+    cumulative.ensure_latest_run_coverage_merged = ensure_latest_run_coverage_merged
+
+
 def _sync_strict_coverage() -> dict[str, Any]:
     try:
         from scripts.sync_daily_coverage_evidence_into_day_inventory import sync_inventory
@@ -117,6 +155,7 @@ def _sync_strict_coverage() -> dict[str, Any]:
         bridge.LIVE_ODDS_SOURCES.add('sstats_pari')
         truth.LIVE_ODDS_SOURCES.add('sstats_pari')
         cumulative.LIVE_ODDS_SOURCES.add('sstats_pari')
+        _install_cumulative_truth_runner(cumulative, truth)
         return result
     except Exception as exc:
         return {'status': 'error', 'error': f'{type(exc).__name__}: {exc}'}
