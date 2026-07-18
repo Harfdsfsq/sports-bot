@@ -15,6 +15,10 @@ from app.services.daily_coverage_common import (
     row_key,
     row_kickoff,
 )
+from app.services.daily_coverage_identity import (
+    build_ledger_identity_index,
+    lookup_ledger_row,
+)
 
 _INSTALLED = False
 _ORIGINAL_RANK = None
@@ -39,6 +43,7 @@ def _refresh(
 ) -> list[dict[str, Any]]:
     current_by_key = {row_key(row): row for row in rows if row_key(row)}
     ledger_rows = ledger.get("matches") if isinstance(ledger.get("matches"), dict) else {}
+    identity_index = build_ledger_identity_index(ledger_rows)
     result: list[dict[str, Any]] = []
     for stored in cohort:
         key = row_key(stored)
@@ -47,7 +52,13 @@ def _refresh(
         base = dict(stored)
         base.update(current_by_key.get(key) or {})
         kickoff = row_kickoff(base)
-        ledger_row = ledger_rows.get(key) if isinstance(ledger_rows.get(key), dict) else {}
+        ledger_row = lookup_ledger_row(
+            base,
+            key,
+            kickoff,
+            ledger_rows,
+            identity_index,
+        )
         odds, contexts = _coverage(base, ledger_row)
         hours = (kickoff - now).total_seconds() / 3600.0 if kickoff is not None else 9999.0
         base.update(
@@ -62,6 +73,7 @@ def _refresh(
                 "line_deficit": max(0, MIN_ODDS_SOURCES - len(odds)),
                 "context_deficit": max(0, MIN_CONTEXT_SOURCES - len(contexts)),
                 "daily_cohort_fixed": True,
+                "ledger_identity_match": bool(ledger_row),
             }
         )
         result.append(base)
@@ -127,6 +139,7 @@ def install() -> dict[str, Any]:
         "target_matches": TARGET_MATCHES,
         "policy": "append_until_300_then_freeze_for_moscow_day",
         "past_matches_remain_in_daily_coverage_ledger": True,
+        "semantic_ledger_identity_lookup": True,
         "publication_contract_relaxed": False,
     }
 
