@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-"""Keep the public 300-match inventory on rows with verified API evidence first.
+"""Select and rotate the daily 300 by verified independent API evidence.
 
-Only evidence stored by real providers is counted. Provider ids are ranking hints,
-never evidence. Until 300 rows are strict-ready, uncovered rows rotate through the
-runtime cohort so every discovered fixture gets API attempts across successive runs.
-Publication, xG, value, movement and price-integrity guards are not changed.
+Fixture ids and aliases are targeting hints only. Until 300 rows are strict-ready,
+uncovered rows rotate through the runtime cohort so every discovered fixture gets
+API attempts across successive runs. Publication, xG, value, movement and price
+integrity guards are unchanged.
 """
 
 import atexit
@@ -23,6 +23,87 @@ POOL = DAY_DIR / "coverage_candidate_pool"
 TARGET = 300
 _INSTALLED = False
 _RUNNING = False
+
+# Compatibility patches historically raised SportLogic above its documented daily
+# budget and reduced SStats/Bzzoiro to shortlist-only operation. This final policy is
+# copied into RuntimePreflight's authoritative reapply table before Settings loads.
+FINAL_ENV = {
+    "RUNBOT_DISCOVERY_FIRST_FORCE_FULL_REFRESH": "true",
+    "RUNBOT_DISCOVERY_FIRST_FULL_REFRESH_INTERVAL_MINUTES": "15",
+    "RUNBOT_INCREMENTAL_DEEP_ENRICHMENT_ENABLED": "true",
+    "RUNBOT_INCREMENTAL_BZZOIRO_GAP_ENRICHMENT_ENABLED": "true",
+    "DAY_INVENTORY_TARGET_SIZE": "300",
+    "DAY_INVENTORY_MAX_MATCHES": "300",
+    "DAY_INVENTORY_FORCE_TOP_300": "true",
+    "DAY_INVENTORY_FORCE_FULL_300": "true",
+    "DAY_INVENTORY_FORCE_ALIAS_SHRINK": "true",
+    "MAX_MATCHES_FOR_ODDS_FETCH": "300",
+    "ANALYSIS_MATCH_CAP_PER_RUN": "300",
+    "CONTEXT_ENRICHMENT_MATCH_LIMIT": "300",
+    "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
+    "ODDS_API_IO_MAX_REQUESTS_PER_RUN": "200",
+    "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
+    "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "100",
+    "ODDS_API_IO_FETCH_FULL_DAY_INVENTORY": "true",
+    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150",
+    "SSTATS_MAX_REQUESTS_PER_RUN": "150",
+    "SSTATS_CONTEXT_MATCH_LIMIT": "300",
+    "SSTATS_DEEP_DETAIL_LIMIT_PER_RUN": "150",
+    "SSTATS_DEEP_CONTEXT_MATCH_LIMIT": "300",
+    "SSTATS_ODDS_RESCUE_LIMIT_PER_RUN": "300",
+    "SSTATS_PARI_DETAIL_MATCH_LIMIT": "300",
+    "SSTATS_CURRENT_ODDS_AS_LINE_SOURCE": "false",
+    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "BZZOIRO_MAX_REQUESTS_PER_RUN": "200",
+    "BZZOIRO_REQUESTS_MAX_PER_RUN": "200",
+    "BZZOIRO_REQUEST_BUDGET_GRANTED": "200",
+    "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
+    "BZZOIRO_ODDS_MATCH_LIMIT": "300",
+    "BZZOIRO_V2_MATCH_LIMIT": "300",
+    "BZZOIRO_V2_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "BZZOIRO_V2_FETCH_EVENT_ODDS": "true",
+    "BZZOIRO_V2_FETCH_ODDS_COMPARISON": "true",
+    "BZZOIRO_ODDS_COMPARISON_AS_SECONDARY_OFFERS": "true",
+    "BZZOIRO_ODDS_MATCH_COUNTS_AS_EVENT_CONTEXT": "false",
+    "ALLSPORTSAPI_ONLY_IF_PRIMARY_ODDS_EMPTY": "false",
+    "ALLSPORTSAPI_MATCH_LIMIT": "300",
+    "ALLSPORTSAPI_PER_RUN_MAX": "96",
+    "ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN": "96",
+    "SPORTLOGIC_PER_RUN_MAX": "30",
+    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "30",
+    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "30",
+    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "30",
+    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "30",
+    "SPORTLOGIC_ODDS_MATCH_LIMIT": "30",
+    "PUBLISH_MIN_BOOKS": "2",
+    "MIN_BOOKS_PUBLISH": "2",
+    "PUBLISH_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
+    "PUBLISH_TIER_A_MIN_BOOKS": "2",
+    "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_BOOKS": "2",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "true",
+}
+
+
+def _reassert_final_env() -> bool:
+    for key, value in FINAL_ENV.items():
+        os.environ[key] = value
+    # Preserve secret-dependent enables already decided by the core policy.
+    try:
+        from app.services import runtime_preflight
+
+        runtime_preflight.AUTONOMOUS_ACCUMULATION_POLICY.update(FINAL_ENV)
+        return True
+    except Exception:
+        return False
 
 
 def _rows(payload: Any) -> list[dict[str, Any]]:
@@ -189,9 +270,10 @@ def install() -> dict[str, Any]:
     if _INSTALLED:
         return {"status": "already_installed"}
     _INSTALLED = True
+    policy_reapply_updated = _reassert_final_env()
     initial = sync()
     atexit.register(sync)
-    return {"status": "installed", "initial_sync": initial, "atexit_sync": True, "publication_contract_relaxed": False}
+    return {"status": "installed", "initial_sync": initial, "atexit_sync": True, "runtime_preflight_policy_reapply_updated": policy_reapply_updated, "publication_contract_relaxed": False}
 
 
-__all__ = ["install", "sync"]
+__all__ = ["FINAL_ENV", "install", "sync"]
