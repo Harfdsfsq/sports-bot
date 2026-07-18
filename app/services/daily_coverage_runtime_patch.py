@@ -26,6 +26,11 @@ def install() -> dict[str, Any]:
     if _INSTALLED:
         return {"status": "already_installed"}
     try:
+        from app.services.daily_coverage_bootstrap_restore_patch import (
+            install as install_bootstrap_restore,
+        )
+
+        bootstrap_restore_result = install_bootstrap_restore()
         from app.services.daily_coverage_source_integrity_patch import (
             install as install_source_integrity,
         )
@@ -36,6 +41,11 @@ def install() -> dict[str, Any]:
         )
 
         fixed_cohort_result = install_fixed_cohort()
+        from app.services.daily_coverage_state_persistence_patch import (
+            install as install_state_persistence,
+        )
+
+        state_persistence_result = install_state_persistence()
         from app.services.daily_coverage_plan import prepare_daily_coverage
 
         replanned = prepare_daily_coverage()
@@ -99,8 +109,10 @@ def install() -> dict[str, Any]:
     payload = {
         "status": "installed",
         "created_at_utc": datetime.now(UTC).isoformat(),
+        "bootstrap_restore": bootstrap_restore_result,
         "source_integrity": source_integrity_result,
         "fixed_cohort": fixed_cohort_result,
+        "state_persistence": state_persistence_result,
         "replanned_after_source_repair": {
             "status": replanned.get("status"),
             "run_index": replanned.get("run_index"),
