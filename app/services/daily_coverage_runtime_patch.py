@@ -106,6 +106,11 @@ def install() -> dict[str, Any]:
         )
 
         stamp_result = install_evidence_stamp(PredictionRunner)
+        from app.services.daily_coverage_full_inventory_provider_patch import (
+            install as install_full_inventory_providers,
+        )
+
+        full_inventory_provider_result = install_full_inventory_providers(PredictionRunner)
     except Exception as exc:
         payload = {"status": "import_error", "error": f"{type(exc).__name__}: {exc}"}
         _write(payload)
@@ -141,6 +146,7 @@ def install() -> dict[str, Any]:
         "core_targets": core_target_result,
         "boundary": boundary_result,
         "evidence_stamp": stamp_result,
+        "full_inventory_provider_scope": full_inventory_provider_result,
         "publication_contract_relaxed": False,
     }
     _write(payload)
