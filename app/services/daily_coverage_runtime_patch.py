@@ -42,6 +42,9 @@ def install() -> dict[str, Any]:
         from app.services.clubelo_strict_match_patch import (
             install as install_clubelo_strict,
         )
+        from app.services.sstats_context_runtime_cache_patch import (
+            install as install_sstats_context_cache,
+        )
         from app.services.sstats_pari_current_odds_patch import (
             install as install_sstats_pari_current_odds,
         )
@@ -56,6 +59,7 @@ def install() -> dict[str, Any]:
         sstats_pari_result = install_sstats_pari_repair()
         sstats_pari_current_odds_result = install_sstats_pari_current_odds()
         sstats_alias_result = install_sstats_alias()
+        sstats_context_cache_result = install_sstats_context_cache()
         from app.services import evidence
         from app.services import runner as runner_module
         from app.services.coverage_planner import CoveragePlanner
@@ -106,6 +110,7 @@ def install() -> dict[str, Any]:
         "sstats_pari_repair": sstats_pari_result,
         "sstats_pari_current_odds": sstats_pari_current_odds_result,
         "sstats_team_form_alias": sstats_alias_result,
+        "sstats_context_cache": sstats_context_cache_result,
         "clubelo_strict_match": clubelo_result,
         "strict_metrics": strict_result,
         "freshness": freshness_result,
