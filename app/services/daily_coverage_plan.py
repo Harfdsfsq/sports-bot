@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -11,6 +12,7 @@ from app.services.daily_coverage_common import (
     PHASE_TARGETS,
     PLAN_PATH,
     PROVIDER_TIMEOUTS,
+    app_timezone,
     as_int,
     atomic_write,
     canonical_source,
@@ -21,6 +23,9 @@ from app.services.daily_coverage_common import (
     target_date,
 )
 from app.services.daily_coverage_ranking import coverage_summary, rank_inventory
+from app.utils import canonicalize_team_name, parse_datetime
+
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def _next_run(date_key: str, now: datetime) -> tuple[int, str]:
@@ -106,6 +111,12 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
             "bookmakers_do_not_count_as_provider_sources": True,
             "synthetic_inventory_context_does_not_count": True,
         },
+        "match_identity_policy": {
+            "inventory_key": "date|home|away",
+            "runtime_key": "sport|sorted-team-pair|utc-date",
+            "utc_and_local_dates_accepted": True,
+            "team_pair_orientation_ignored": True,
+        },
         "publication_contract_relaxed": False,
     }
     atomic_write(PLAN_PATH, plan)
@@ -145,6 +156,54 @@ def provider_timeout(name: str) -> float | None:
         return None
 
 
+def _team_pair(home: Any, away: Any) -> tuple[str, str] | None:
+    first = canonicalize_team_name(str(home or ""))
+    second = canonicalize_team_name(str(away or ""))
+    if not first or not second:
+        return None
+    return tuple(sorted((first, second)))
+
+
+def _identity_from_key(value: Any) -> tuple[str, tuple[str, str]] | None:
+    parts = [part.strip() for part in str(value or "").split("|")]
+    if len(parts) >= 3 and _DATE_RE.fullmatch(parts[0]):
+        pair = _team_pair(parts[1], parts[2])
+        return (parts[0], pair) if pair else None
+    if len(parts) >= 4 and _DATE_RE.fullmatch(parts[-1]):
+        pair = _team_pair(parts[1], parts[2])
+        return (parts[-1], pair) if pair else None
+    return None
+
+
+def _match_identities(match: Any) -> set[tuple[str, tuple[str, str]]]:
+    identities: set[tuple[str, tuple[str, str]]] = set()
+    direct = _identity_from_key(getattr(match, "match_key", ""))
+    if direct:
+        identities.add(direct)
+    metadata = getattr(match, "metadata", {})
+    if isinstance(metadata, dict):
+        for key in (
+            "match_key",
+            "canonical_match_id",
+            "semantic_match_key",
+            "day_inventory_match_key",
+        ):
+            identity = _identity_from_key(metadata.get(key))
+            if identity:
+                identities.add(identity)
+    pair = _team_pair(getattr(match, "home_team", ""), getattr(match, "away_team", ""))
+    kickoff = getattr(match, "commence_time", None)
+    if pair and kickoff is not None:
+        try:
+            parsed = parse_datetime(kickoff)
+        except Exception:
+            parsed = None
+        if parsed is not None:
+            identities.add((parsed.astimezone(UTC).date().isoformat(), pair))
+            identities.add((parsed.astimezone(app_timezone()).date().isoformat(), pair))
+    return identities
+
+
 def filter_matches(provider_name: str, method_name: str, matches: Any) -> Any:
     if not isinstance(matches, list) or not matches:
         return matches
@@ -153,16 +212,21 @@ def filter_matches(provider_name: str, method_name: str, matches: Any) -> Any:
     assignments = load_plan().get("assignments") or {}
     if provider not in assignments or role not in (assignments.get(provider) or {}):
         return matches
-    keys = set((assignments.get(provider) or {}).get(role) or [])
-    return (
-        [
-            match
-            for match in matches
-            if str(getattr(match, "match_key", "")) in keys
-        ]
-        if keys
-        else []
-    )
+    keys = {str(value) for value in (assignments.get(provider) or {}).get(role) or [] if value}
+    if not keys:
+        return []
+    assignment_identities = {
+        identity for value in keys if (identity := _identity_from_key(value)) is not None
+    }
+    selected = []
+    for match in matches:
+        runtime_key = str(getattr(match, "match_key", ""))
+        if runtime_key in keys:
+            selected.append(match)
+            continue
+        if assignment_identities.intersection(_match_identities(match)):
+            selected.append(match)
+    return selected
 
 
 __all__ = [
