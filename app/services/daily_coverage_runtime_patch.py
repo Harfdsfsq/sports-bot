@@ -46,6 +46,11 @@ def install() -> dict[str, Any]:
         )
 
         state_persistence_result = install_state_persistence()
+        from app.services.strict_coverage_preparation_hook import (
+            install as install_strict_preparation,
+        )
+
+        strict_preparation_result = install_strict_preparation()
         from app.services.daily_coverage_plan import prepare_daily_coverage
 
         replanned = prepare_daily_coverage()
@@ -113,11 +118,17 @@ def install() -> dict[str, Any]:
         "source_integrity": source_integrity_result,
         "fixed_cohort": fixed_cohort_result,
         "state_persistence": state_persistence_result,
+        "strict_coverage_preparation": strict_preparation_result,
         "replanned_after_source_repair": {
             "status": replanned.get("status"),
             "run_index": replanned.get("run_index"),
             "phase_cumulative_target": replanned.get("phase_cumulative_target"),
             "coverage_before": replanned.get("coverage_before"),
+            "provider_assignments": {
+                provider: {role: len(keys or []) for role, keys in roles.items()}
+                for provider, roles in (replanned.get("assignments") or {}).items()
+                if isinstance(roles, dict)
+            },
         },
         "sstats_pari_repair": sstats_pari_result,
         "sstats_pari_current_odds": sstats_pari_current_odds_result,
