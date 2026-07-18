@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
 from pathlib import Path
 
 from app.services import daily_coverage_bootstrap_restore_patch as restore_patch
