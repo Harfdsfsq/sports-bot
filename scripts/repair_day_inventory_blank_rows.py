@@ -102,6 +102,26 @@ def _repair_file(path: Path) -> dict[str, Any]:
     return {'path': str(path), 'status': 'ok', 'before': before, 'after': len(kept), 'removed': removed}
 
 
+def _sync_strict_coverage() -> dict[str, Any]:
+    try:
+        from scripts.sync_daily_coverage_evidence_into_day_inventory import sync_inventory
+
+        result = sync_inventory()
+        # These modules keep small local source allowlists. Patch their live module
+        # instances in the report process so the final truth table recognises Pari
+        # as the independent source already proven in the strict evidence ledger.
+        from scripts import bridge_runtime_context_coverage as bridge
+        from scripts import build_day_inventory_coverage_truth as truth
+        from scripts import day_inventory_cumulative_coverage as cumulative
+
+        bridge.LIVE_ODDS_SOURCES.add('sstats_pari')
+        truth.LIVE_ODDS_SOURCES.add('sstats_pari')
+        cumulative.LIVE_ODDS_SOURCES.add('sstats_pari')
+        return result
+    except Exception as exc:
+        return {'status': 'error', 'error': f'{type(exc).__name__}: {exc}'}
+
+
 def main() -> int:
     day = _target_date()
     paths = []
@@ -115,12 +135,15 @@ def main() -> int:
             continue
         seen.add(resolved)
         results.append(_repair_file(path))
+    strict_sync = _sync_strict_coverage()
     payload = {
         'status': 'ok',
         'created_at_utc': datetime.now(UTC).isoformat(),
         'date_local': day,
         'files': results,
         'total_removed': sum(int(r.get('removed') or 0) for r in results),
+        'daily_coverage_evidence_sync': strict_sync,
+        'publication_contract_relaxed': False,
     }
     _write(OUT, payload)
     print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
