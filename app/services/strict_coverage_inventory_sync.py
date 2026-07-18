@@ -3,9 +3,9 @@ from __future__ import annotations
 """Select and rotate the daily 300 by verified independent API evidence.
 
 Fixture ids and aliases are targeting hints only. Until 300 rows are strict-ready,
-uncovered rows rotate through the runtime cohort so every discovered fixture gets
-API attempts across successive runs. Publication, xG, value, movement and price
-integrity guards are unchanged.
+high-potential uncovered rows stay in the cohort while a rotating exploration slice
+lets every discovered fixture receive API attempts. Publication, xG, value, movement
+and price-integrity guards are unchanged.
 """
 
 import atexit
@@ -14,7 +14,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from app.services.daily_coverage_common import DAY_DIR, atomic_write, evidence_path, independent_sources, load, row_key, row_kickoff, target_date
+from app.services.daily_coverage_common import (
+    DAY_DIR,
+    atomic_write,
+    evidence_path,
+    independent_sources,
+    load,
+    row_key,
+    row_kickoff,
+    target_date,
+)
 from app.services.daily_coverage_identity import identity_from_key, row_identities
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,9 +33,25 @@ TARGET = 300
 _INSTALLED = False
 _RUNNING = False
 
+# These are independent football/team context APIs suitable for strict coverage.
+# Weather/news may enrich a model later, but cannot satisfy the 2-context contract.
+CORE_CONTEXT_SOURCES = {
+    "sstats",
+    "bzzoiro",
+    "clubelo",
+    "sportlogic",
+    "football_data",
+    "thesportsdb",
+    "api_football",
+    "espn",
+    "openligadb",
+    "openfootball",
+    "futrixmetrics",
+}
+
 # Compatibility patches historically raised SportLogic above its documented daily
-# budget and reduced SStats/Bzzoiro to shortlist-only operation. This final policy is
-# copied into RuntimePreflight's authoritative reapply table before Settings loads.
+# budget and reduced SStats/Bzzoiro to shortlist-only operation. RuntimePreflight
+# reapplies this table after every native installer and before Settings is created.
 FINAL_ENV = {
     "RUNBOT_DISCOVERY_FIRST_FORCE_FULL_REFRESH": "true",
     "RUNBOT_DISCOVERY_FIRST_FULL_REFRESH_INTERVAL_MINUTES": "15",
@@ -96,7 +121,6 @@ FINAL_ENV = {
 def _reassert_final_env() -> bool:
     for key, value in FINAL_ENV.items():
         os.environ[key] = value
-    # Preserve secret-dependent enables already decided by the core policy.
     try:
         from app.services import runtime_preflight
 
@@ -112,21 +136,52 @@ def _rows(payload: Any) -> list[dict[str, Any]]:
 
 
 def _identity(row: dict[str, Any], day: str):
-    values = sorted(row_identities(row, row_kickoff(row)))
-    for identity in values:
+    identities = sorted(row_identities(row, row_kickoff(row)))
+    for identity in identities:
         if identity[0] == day:
             return identity
-    return values[0] if values else identity_from_key(row_key(row))
+    return identities[0] if identities else identity_from_key(row_key(row))
+
+
+def _candidate_paths(day: str) -> list[Path]:
+    paths = [POOL / f"{day}.json"]
+    for base in (DAY_DIR, ROOT / ".data" / "cache" / "day_inventory"):
+        paths.extend(
+            base / name
+            for name in (
+                f"{day}.json",
+                "current.json",
+                "latest.json",
+                "today.json",
+                "largest.json",
+                "highwater.json",
+                "best-day-inventory-highwater.json",
+                f"{day}-highwater.json",
+            )
+        )
+        try:
+            paths.extend(sorted(base.glob("*highwater*.json")))
+        except Exception:
+            pass
+    out: list[Path] = []
+    seen: set[str] = set()
+    for path in paths:
+        marker = str(path)
+        if marker not in seen:
+            seen.add(marker)
+            out.append(path)
+    return out
 
 
 def _candidate_rows(day: str) -> list[dict[str, Any]]:
-    paths = [DAY_DIR / f"{day}.json", DAY_DIR / "current.json", DAY_DIR / "latest.json", DAY_DIR / "today.json", DAY_DIR / "largest.json", DAY_DIR / "highwater.json", DAY_DIR / f"{day}-highwater.json", POOL / f"{day}.json"]
-    cache = ROOT / ".data" / "cache" / "day_inventory"
-    paths += [cache / f"{day}.json", cache / "current.json", cache / "latest.json", cache / "today.json", cache / "largest.json", cache / "highwater.json"]
     merged: dict[Any, dict[str, Any]] = {}
-    for path in paths:
+    for path in _candidate_paths(day):
         payload = load(path, {})
-        payload_day = str(payload.get("date_local") or payload.get("target_date") or day)[:10] if isinstance(payload, dict) else ""
+        payload_day = (
+            str(payload.get("date_local") or payload.get("target_date") or day)[:10]
+            if isinstance(payload, dict)
+            else ""
+        )
         if payload_day and payload_day != day:
             continue
         for row in _rows(payload):
@@ -148,13 +203,17 @@ def _evidence_index(rows: dict[str, Any]):
     return out
 
 
-def _match_evidence(row: dict[str, Any], rows: dict[str, Any], index: dict[Any, list[dict[str, Any]]]):
+def _match_evidence(
+    row: dict[str, Any],
+    rows: dict[str, Any],
+    index: dict[Any, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
     found: list[dict[str, Any]] = []
     exact = rows.get(row_key(row))
     if isinstance(exact, dict):
         found.append(exact)
     for identity in row_identities(row, row_kickoff(row)):
-        found += index.get(identity, [])
+        found.extend(index.get(identity, []))
     return list({id(item): item for item in found}.values())
 
 
@@ -163,61 +222,127 @@ def _sources(found: list[dict[str, Any]], role: str) -> list[str]:
     for match in found:
         bucket = match.get(role)
         if isinstance(bucket, dict):
-            values += [str(source) for source, entry in bucket.items() if isinstance(entry, dict)]
-    return independent_sources(values, role=role)
+            values.extend(
+                str(source)
+                for source, entry in bucket.items()
+                if isinstance(entry, dict)
+            )
+    sources = independent_sources(values, role=role)
+    if role == "context":
+        sources = [source for source in sources if source in CORE_CONTEXT_SOURCES]
+    return sources
 
 
 def _books(found: list[dict[str, Any]]) -> list[str]:
     result: set[str] = set()
     for match in found:
-        for entry in (match.get("odds") or {}).values() if isinstance(match.get("odds"), dict) else []:
-            for offer in entry.get("data") or [] if isinstance(entry, dict) else []:
-                if isinstance(offer, dict):
-                    book = str(offer.get("bookmaker") or "").strip().lower()
-                    if book and book not in {"unknown", "none", "null"}:
-                        result.add(book)
+        odds = match.get("odds")
+        if not isinstance(odds, dict):
+            continue
+        for entry in odds.values():
+            data = entry.get("data") if isinstance(entry, dict) else None
+            for offer in data if isinstance(data, list) else []:
+                if not isinstance(offer, dict):
+                    continue
+                book = str(offer.get("bookmaker") or "").strip().lower()
+                if book and book not in {"unknown", "none", "null"}:
+                    result.add(book)
     return sorted(result)
 
 
 def _provider_hints(row: dict[str, Any]) -> int:
     values: set[str] = set()
     metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-    for bucket in (row.get("source_ids"), row.get("provider_source_ids"), metadata.get("provider_source_ids")):
+    for bucket in (
+        row.get("source_ids"),
+        row.get("provider_source_ids"),
+        metadata.get("provider_source_ids"),
+    ):
         if isinstance(bucket, dict):
-            values |= {str(key).lower() for key, value in bucket.items() if value}
+            values.update(str(key).lower() for key, value in bucket.items() if value)
     return len(values & {"odds_api_io", "bzzoiro", "sstats", "sportlogic", "allsportsapi"})
 
 
 def _enrich(row: dict[str, Any], found: list[dict[str, Any]]):
     item = dict(row)
-    odds, contexts, books = _sources(found, "odds"), _sources(found, "context"), _books(found)
-    item.update(odds_sources=odds, context_sources=contexts, books=books, odds_sources_count=len(odds), context_sources_count=len(contexts), books_count=len(books))
+    odds = _sources(found, "odds")
+    contexts = _sources(found, "context")
+    books = _books(found)
+    item.update(
+        odds_sources=odds,
+        context_sources=contexts,
+        books=books,
+        odds_sources_count=len(odds),
+        context_sources_count=len(contexts),
+        books_count=len(books),
+    )
+    strict = len(odds) >= 2 and len(contexts) >= 2 and len(books) >= 2
     coverage = dict(item.get("coverage") or {})
-    coverage.update(odds=bool(odds), context=bool(contexts), odds_sources=odds, context_sources=contexts, ready_for_model=bool(odds and contexts), strict_coverage_ready=len(odds) >= 2 and len(contexts) >= 2 and len(books) >= 2, daily_coverage_evidence_synced=bool(found))
+    coverage.update(
+        odds=bool(odds),
+        context=bool(contexts),
+        odds_sources=odds,
+        context_sources=contexts,
+        ready_for_model=bool(odds and contexts),
+        strict_coverage_ready=strict,
+        daily_coverage_evidence_synced=bool(found),
+    )
     coverage.pop("ready_for_publish", None)
     item["coverage"] = coverage
     metadata = dict(item.get("metadata") or {})
-    metadata.update(independent_odds_sources_count=len(odds), odds_sources_count=len(odds), context_sources_count=len(contexts), confirmation_sources_count=len(contexts), price_confirmation_sources_count=len(books), price_sources_count=len(books), books_count=len(books), verified_odds_sources=odds, verified_context_sources=contexts, verified_bookmakers=books)
+    metadata.update(
+        independent_odds_sources_count=len(odds),
+        odds_sources_count=len(odds),
+        context_sources_count=len(contexts),
+        confirmation_sources_count=len(contexts),
+        price_confirmation_sources_count=len(books),
+        price_sources_count=len(books),
+        books_count=len(books),
+        verified_odds_sources=odds,
+        verified_context_sources=contexts,
+        verified_bookmakers=books,
+    )
     item["metadata"] = metadata
-    strict = len(odds) >= 2 and len(contexts) >= 2 and len(books) >= 2
     kickoff = row_kickoff(item)
-    score = (int(strict), min(len(odds), 3) + min(len(contexts), 3) + min(len(books), 4), int(len(odds) >= 2), int(len(contexts) >= 2), int(len(books) >= 2), _provider_hints(item), -(kickoff.timestamp() if kickoff else 10**15), row_key(item))
+    score = (
+        int(strict),
+        min(len(odds), 3) + min(len(contexts), 3) + min(len(books), 4),
+        int(len(odds) >= 2),
+        int(len(contexts) >= 2),
+        int(len(books) >= 2),
+        _provider_hints(item),
+        -(kickoff.timestamp() if kickoff else 10**15),
+        row_key(item),
+    )
     return score, item
 
 
-def _select(ranked: list[tuple[tuple[Any, ...], dict[str, Any]]]) -> tuple[list[dict[str, Any]], int]:
+def _run_number() -> int:
+    try:
+        return int(str(os.getenv("GITHUB_RUN_ID") or os.getenv("GITHUB_RUN_NUMBER") or "0"))
+    except Exception:
+        return 0
+
+
+def _select(
+    ranked: list[tuple[tuple[Any, ...], dict[str, Any]]],
+) -> tuple[list[dict[str, Any]], int]:
     strict = [pair for pair in ranked if pair[0][0] == 1]
     partial = [pair for pair in ranked if pair[0][0] == 0]
     selected = [row for _score, row in strict[:TARGET]]
     need = TARGET - len(selected)
     offset = 0
     if need > 0 and partial:
-        try:
-            offset = int(str(os.getenv("GITHUB_RUN_ID") or os.getenv("GITHUB_RUN_NUMBER") or "0")) % len(partial)
-        except Exception:
-            offset = 0
-        rotated = partial[offset:] + partial[:offset]
-        selected += [row for _score, row in rotated[:need]]
+        # Keep two thirds of the best partial rows so repeated API calls can finish
+        # their evidence, and rotate one third to explore the rest of the large pool.
+        stable_count = min(need, (need * 2) // 3)
+        selected.extend(row for _score, row in partial[:stable_count])
+        explore_need = need - stable_count
+        exploration = partial[stable_count:]
+        if explore_need > 0 and exploration:
+            offset = _run_number() % len(exploration)
+            rotated = exploration[offset:] + exploration[:offset]
+            selected.extend(row for _score, row in rotated[:explore_need])
     return selected[:TARGET], offset
 
 
@@ -229,8 +354,17 @@ def _counts(rows: list[dict[str, Any]]) -> dict[str, int]:
         "matches_with_2plus_odds_sources": sum(row.get("odds_sources_count", 0) >= 2 for row in rows),
         "matches_with_2plus_context_sources": sum(row.get("context_sources_count", 0) >= 2 for row in rows),
         "matches_with_2plus_bookmakers": sum(row.get("books_count", 0) >= 2 for row in rows),
-        "matches_ready_for_model": sum(row.get("odds_sources_count", 0) >= 1 and row.get("context_sources_count", 0) >= 1 for row in rows),
-        "matches_a_tier_coverage_ready": sum(row.get("odds_sources_count", 0) >= 2 and row.get("context_sources_count", 0) >= 2 and row.get("books_count", 0) >= 2 for row in rows),
+        "matches_ready_for_model": sum(
+            row.get("odds_sources_count", 0) >= 1
+            and row.get("context_sources_count", 0) >= 1
+            for row in rows
+        ),
+        "matches_a_tier_coverage_ready": sum(
+            row.get("odds_sources_count", 0) >= 2
+            and row.get("context_sources_count", 0) >= 2
+            and row.get("books_count", 0) >= 2
+            for row in rows
+        ),
     }
 
 
@@ -243,22 +377,72 @@ def sync() -> dict[str, Any]:
         day = target_date()
         candidates = _candidate_rows(day)
         evidence = load(evidence_path(day), {})
-        evidence_rows = evidence.get("matches") if isinstance(evidence, dict) and isinstance(evidence.get("matches"), dict) else {}
+        evidence_rows = (
+            evidence.get("matches")
+            if isinstance(evidence, dict) and isinstance(evidence.get("matches"), dict)
+            else {}
+        )
         index = _evidence_index(evidence_rows)
-        ranked = [_enrich(row, _match_evidence(row, evidence_rows, index)) for row in candidates]
+        ranked = [
+            _enrich(row, _match_evidence(row, evidence_rows, index))
+            for row in candidates
+        ]
         ranked.sort(key=lambda pair: pair[0], reverse=True)
         selected, rotation_offset = _select(ranked)
         counts = _counts(selected)
         now = datetime.now(UTC).isoformat()
-        payload = {"date_local": day, "created_at_utc": now, "updated_at_utc": now, "build_status": "strict_coverage_ranked", "target_matches": TARGET, "counts": counts, "matches": selected, "publication_contract_relaxed": False}
+        payload = {
+            "date_local": day,
+            "created_at_utc": now,
+            "updated_at_utc": now,
+            "build_status": "strict_coverage_ranked",
+            "target_matches": TARGET,
+            "counts": counts,
+            "matches": selected,
+            "publication_contract_relaxed": False,
+        }
         POOL.mkdir(parents=True, exist_ok=True)
-        atomic_write(POOL / f"{day}.json", {"date_local": day, "updated_at_utc": now, "matches": [row for _score, row in ranked], "publication_contract_relaxed": False})
-        for path in (DAY_DIR / f"{day}.json", DAY_DIR / "current.json", DAY_DIR / "latest.json", DAY_DIR / "today.json"):
+        atomic_write(
+            POOL / f"{day}.json",
+            {
+                "date_local": day,
+                "updated_at_utc": now,
+                "matches": [row for _score, row in ranked],
+                "publication_contract_relaxed": False,
+            },
+        )
+        for path in (
+            DAY_DIR / f"{day}.json",
+            DAY_DIR / "current.json",
+            DAY_DIR / "latest.json",
+            DAY_DIR / "today.json",
+        ):
             atomic_write(path, payload)
-        cohort = {"date_local": day, "created_at_utc": now, "updated_at_utc": now, "target_matches": TARGET, "frozen": counts["matches_a_tier_coverage_ready"] >= TARGET, "policy": "adaptive_verified_coverage_until_300_then_freeze", "rotation_offset": rotation_offset, "matches": selected, "publication_contract_relaxed": False}
+        cohort = {
+            "date_local": day,
+            "created_at_utc": now,
+            "updated_at_utc": now,
+            "target_matches": TARGET,
+            "frozen": counts["matches_a_tier_coverage_ready"] >= TARGET,
+            "policy": "adaptive_verified_coverage_until_300_then_freeze",
+            "rotation_offset": rotation_offset,
+            "matches": selected,
+            "publication_contract_relaxed": False,
+        }
         atomic_write(DAY_DIR / f"daily-coverage-cohort-{day}.json", cohort)
         atomic_write(ROOT / ".data" / "exports" / "latest-daily-coverage-cohort.json", cohort)
-        report = {"status": "ok", "date_local": day, "created_at_utc": now, "candidate_pool_matches": len(candidates), "selected_matches": len(selected), "evidence_matches": len(evidence_rows), "rotation_offset": rotation_offset, "counts": counts, "strict_shortfall": max(0, TARGET - counts["matches_a_tier_coverage_ready"]), "publication_contract_relaxed": False}
+        report = {
+            "status": "ok",
+            "date_local": day,
+            "created_at_utc": now,
+            "candidate_pool_matches": len(candidates),
+            "selected_matches": len(selected),
+            "evidence_matches": len(evidence_rows),
+            "rotation_offset": rotation_offset,
+            "counts": counts,
+            "strict_shortfall": max(0, TARGET - counts["matches_a_tier_coverage_ready"]),
+            "publication_contract_relaxed": False,
+        }
         atomic_write(OUT, report)
         return report
     finally:
@@ -273,7 +457,18 @@ def install() -> dict[str, Any]:
     policy_reapply_updated = _reassert_final_env()
     initial = sync()
     atexit.register(sync)
-    return {"status": "installed", "initial_sync": initial, "atexit_sync": True, "runtime_preflight_policy_reapply_updated": policy_reapply_updated, "publication_contract_relaxed": False}
+    return {
+        "status": "installed",
+        "initial_sync": initial,
+        "atexit_sync": True,
+        "runtime_preflight_policy_reapply_updated": policy_reapply_updated,
+        "publication_contract_relaxed": False,
+    }
 
 
-__all__ = ["FINAL_ENV", "install", "sync"]
+__all__ = [
+    "CORE_CONTEXT_SOURCES",
+    "FINAL_ENV",
+    "install",
+    "sync",
+]
