@@ -2,16 +2,37 @@ from __future__ import annotations
 
 """Re-rank and replan all 300 fixtures after discovery and before providers run."""
 
+import os
 from typing import Any
 
 _INSTALLED = False
 _ORIGINAL_PREPARE = None
 
 
+def _set_full_cohort_runtime() -> None:
+    values = {
+        "HARIZON_SSTATS_PARI_WALL_SECONDS": "240",
+        "SSTATS_PARI_RATE_LIMIT_PER_MINUTE": "140",
+        "SSTATS_PARI_RATE_LIMIT_WINDOW_SECONDS": "60",
+        "SSTATS_PARI_CONCURRENCY": "16",
+        "SSTATS_PARI_DETAIL_MATCH_LIMIT": "300",
+        "BZZOIRO_RUNTIME_DETAIL_MATCH_LIMIT": "300",
+    }
+    for key, value in values.items():
+        os.environ[key] = value
+    try:
+        from app.services import runtime_preflight
+
+        runtime_preflight.AUTONOMOUS_ACCUMULATION_POLICY.update(values)
+    except Exception:
+        pass
+
+
 def _replan() -> dict[str, Any]:
     from app.services import daily_coverage_plan
     from app.services.strict_coverage_inventory_sync import sync
 
+    _set_full_cohort_runtime()
     daily_coverage_plan.PHASE_TARGETS = (300, 300, 300)
     synced = sync()
     plan = daily_coverage_plan.prepare_daily_coverage()
@@ -37,6 +58,7 @@ def install() -> dict[str, Any]:
     from app.services.runtime_preflight import RuntimePreflight
     from app.services.strict_coverage_inventory_sync import install as install_inventory_sync
 
+    _set_full_cohort_runtime()
     daily_coverage_plan.PHASE_TARGETS = (300, 300, 300)
     inventory_result = install_inventory_sync()
 
@@ -64,6 +86,8 @@ def install() -> dict[str, Any]:
     return {
         "status": "installed",
         "phase_targets": [300, 300, 300],
+        "sstats_pari_wall_seconds": 240,
+        "sstats_pari_rate_limit_per_minute": 140,
         "inventory_sync": inventory_result,
         "replan_after_discovery": True,
         "publication_contract_relaxed": False,
