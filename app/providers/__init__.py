@@ -108,3 +108,15 @@ try:
     _bzzoiro_v2_outage_fallback.install()
 except Exception:
     pass
+
+# Native/source-matrix installers can replace provider methods later in preflight.
+# Reassert the outage layer after they finish so the final runner still gets the
+# circuit breaker and bounded v1 fallback.
+try:
+    from app.services import (
+        bzzoiro_v2_outage_reassert as _bzzoiro_v2_outage_reassert,
+    )
+
+    _bzzoiro_v2_outage_reassert.install()
+except Exception:
+    pass
