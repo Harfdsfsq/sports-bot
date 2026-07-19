@@ -120,3 +120,15 @@ try:
     _bzzoiro_v2_outage_reassert.install()
 except Exception:
     pass
+
+# Keep the strict 300-row selector on the same local-time horizon as the target
+# expander. This installer also configures semantic merge drivers for generated
+# runtime artifacts before the workflow's commit/rebase step.
+try:
+    from app.services import (
+        strict_inventory_horizon_activation as _strict_inventory_horizon_activation,
+    )
+
+    _strict_inventory_horizon_activation.install()
+except Exception:
+    pass
