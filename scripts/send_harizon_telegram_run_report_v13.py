@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -127,11 +128,64 @@ def _render_verified(text: str) -> str:
     return text
 
 
+def _fresh_runtime_payload(payload: Any, *, max_age_minutes: int = 90) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    raw = str(payload.get("created_at_utc") or "").strip()
+    if not raw:
+        return False
+    try:
+        created = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+    except Exception:
+        return False
+    age = datetime.now(UTC) - created.astimezone(UTC)
+    return timedelta(0) <= age <= timedelta(minutes=max_age_minutes)
+
+
+def _sportlogic_runtime_evidence() -> dict[str, Any]:
+    probe = _load(EXPORT / "latest-sportlogic-coverage-probe.json", {})
+    if not _fresh_runtime_payload(probe):
+        return {}
+    debug = _load(EXPORT / "latest-sportlogic-debug.json", {})
+    stats = debug.get("stats") if isinstance(debug, dict) and isinstance(debug.get("stats"), dict) else {}
+    requests = max(_int(stats.get("requests")), _int(probe.get("requests")))
+    statuses = stats.get("http_statuses") if isinstance(stats.get("http_statuses"), list) else probe.get("http_statuses")
+    enabled = _int(stats.get("enabled")) > 0 or requests > 0 or bool(statuses)
+    if not enabled:
+        return {}
+    return {
+        "requests": requests,
+        "fixtures": max(_int(stats.get("fixtures_fetched")), _int(stats.get("games_fetched")), _int(probe.get("current_games"))),
+        "matched": max(_int(stats.get("events_matched")), _int(probe.get("matched_games"))),
+        "odds_requests": _int(stats.get("odds_requests")),
+        "offers": _int(stats.get("offers_parsed")),
+        "errors": _int(stats.get("response_errors")),
+        "diagnosis": str(stats.get("diagnosis") or probe.get("diagnosis") or "runtime_enabled"),
+    }
+
+
+def _repair_sportlogic_runtime_line(text: str) -> str:
+    evidence = _sportlogic_runtime_evidence()
+    if not evidence:
+        return text
+    replacement = (
+        "• SportLogic: enabled_runtime; "
+        f"запросы {evidence['requests']}; fixtures {evidence['fixtures']}; "
+        f"matched {evidence['matched']}; odds req {evidence['odds_requests']}; "
+        f"offers {evidence['offers']}; ошибок {evidence['errors']}; "
+        f"diag {evidence['diagnosis']}."
+    )
+    return re.sub(r"^• SportLogic:.*$", replacement, text, count=1, flags=re.MULTILINE)
+
+
 def _install(module) -> None:
     base_render = module.render
 
     def render(payload):
-        return _render_verified(base_render(payload))
+        text = _render_verified(base_render(payload))
+        return _repair_sportlogic_runtime_line(text)
 
     module.render = render
     try:
