@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """Choose the replayed runtime artifact during the workflow's rebase.
 
 Generated TXT/CSV reports are snapshots rather than cumulative state. During
 ``git pull --rebase`` Git passes the commit being replayed as ``%B``; copying it to
 ``%A`` avoids conflict markers and preserves the current run's report.
 """
+
+from __future__ import annotations
 
 import shutil
 import sys
