@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Git merge driver for generated HARIZON runtime JSON.
 
 Usage is configured through ``.gitattributes`` and repository-local Git config:
@@ -7,6 +5,8 @@ Usage is configured through ``.gitattributes`` and repository-local Git config:
 The result is always written to ``%A``. Source code is intentionally not covered by
 this driver.
 """
+
+from __future__ import annotations
 
 import json
 import re
