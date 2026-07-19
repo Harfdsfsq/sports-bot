@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 106,
-      "rows_seen": 106,
+      "rows_kept": 30,
+      "rows_seen": 30,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 87,
-      "rows_seen": 112,
-      "rows_stale": 25
+      "rows_kept": 46,
+      "rows_seen": 86,
+      "rows_stale": 40
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,34 +26,35 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 43,
-      "rows_seen": 43,
+      "rows_kept": 13,
+      "rows_seen": 13,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 48,
+    "candidates_before_quality": 30,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 32,
-    "controlled_candidates_seen": 53,
+    "contexts_built": 22,
+    "controlled_candidates_seen": 15,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 58,
-    "matches_seen": 52,
-    "matches_with_offers": 33
+    "coverage_candidates_current_date": 28,
+    "matches_seen": 23,
+    "matches_with_offers": 10
   },
-  "created_at": "2026-07-19T15:13:35.487041+00:00",
+  "created_at": "2026-07-19T17:09:57.650531+00:00",
   "family_counts": {
-    "totals": 58
+    "totals": 28
   },
-  "matches_with_candidates": 33,
+  "matches_with_candidates": 17,
   "missing_data_flags": {
-    "confidence_below_micro_c": 41,
-    "edge_below_micro_c": 37,
-    "ev_below_micro_c": 25,
-    "single_context_source": 1,
-    "single_odds_source": 50
+    "confidence_below_micro_c": 27,
+    "edge_below_micro_c": 26,
+    "ev_below_micro_c": 16,
+    "single_book": 2,
+    "single_context_source": 3,
+    "single_odds_source": 16
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -67,7 +68,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 30,
+  "positive_near_miss_count": 17,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -76,11 +77,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 28,
+      "events_matched": 8,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 717,
+      "offers_parsed": 95,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -95,12 +96,31 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 27,
+      "events_matched": 5,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 3022,
+      "offers_parsed": 363,
       "provider": "account2",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "football_data",
       "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
@@ -117,7 +137,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 121,
+      "matches_built": 117,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -132,11 +152,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 161,
+      "events_fetched": 153,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 121,
+      "matches_built": 117,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -148,8 +168,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 30,
-      "direct_event_contexts_built": 30,
+      "contexts_built": 21,
+      "direct_event_contexts_built": 21,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -169,20 +189,18 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 7,
-      "direct_event_contexts_built": 7,
+      "contexts_built": 8,
+      "direct_event_contexts_built": 8,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors"
-      ],
+      "gap_flags": [],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "stats",
       "rate_limited": null,
-      "response_errors": 1,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -190,43 +208,20 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 7,
-      "direct_event_contexts_built": 7,
+      "contexts_built": 8,
+      "direct_event_contexts_built": 8,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors"
-      ],
+      "gap_flags": [],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "weather",
       "rate_limited": null,
-      "response_errors": 1,
-      "rows_fetched": null,
-      "status_category": "working",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": 498,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "low_overlap_or_matching_failed"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "bzzoiro_odds",
-      "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
-      "status_category": "low_overlap_or_matching_issue",
+      "status_category": "working",
       "team_form_contexts_built": null
     },
     {
@@ -274,52 +269,6 @@
     },
     {
       "api_key_present": null,
-      "budget_exhausted": true,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors",
-        "budget_exhausted",
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "clubelo",
-      "rate_limited": null,
-      "response_errors": 3,
-      "rows_fetched": null,
-      "status_category": "broken_or_unavailable",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": true,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors",
-        "budget_exhausted",
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "gnews",
-      "rate_limited": null,
-      "response_errors": 3,
-      "rows_fetched": null,
-      "status_category": "broken_or_unavailable",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
       "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
@@ -336,28 +285,6 @@
       "provider": "secondary_odds_rescue",
       "rate_limited": null,
       "response_errors": 1,
-      "rows_fetched": null,
-      "status_category": "broken_or_unavailable",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors",
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "thesportsdb",
-      "rate_limited": false,
-      "response_errors": 3,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -407,7 +334,7 @@
     {
       "api_key_present": true,
       "budget_exhausted": true,
-      "contexts_built": null,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
@@ -420,6 +347,28 @@
       "matches_built": null,
       "offers_parsed": null,
       "provider": "bzzoiro",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": true,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 0,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "budget_exhausted",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -514,7 +463,7 @@
     {
       "api_key_present": null,
       "budget_exhausted": false,
-      "contexts_built": 0,
+      "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
@@ -679,91 +628,74 @@
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": false,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "thesportsdb",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
-    "broken_or_unavailable": 4,
-    "low_overlap_or_matching_issue": 2,
-    "no_data": 15,
+    "broken_or_unavailable": 1,
+    "low_overlap_or_matching_issue": 1,
+    "no_data": 17,
     "rate_limited": 1,
-    "working": 7
+    "working": 8
   },
   "reject_reason_counts_from_rows": {
-    "xg_direction_conflict": 1,
-    "xg_probability_gap_hard_reject": 1
+    "tier_a_proxy_default_xg_placeholder": 1,
+    "tier_a_publication_score_below_min": 1,
+    "tier_a_quality_below_min": 1,
+    "tier_b_bookmaker_quorum_prices_missing:1/2": 1,
+    "tier_b_hard_context_required_for_proxy_quality": 1,
+    "tier_b_proxy_default_xg_placeholder": 1,
+    "tier_b_publication_score_below_min": 1,
+    "tier_b_quality_below_min": 1,
+    "tier_c_proxy_default_xg_placeholder": 1,
+    "tier_c_publication_score_below_min": 1,
+    "tier_c_quality_below_min": 1
   },
   "target_date": "2026-07-19",
   "top_near_miss": [
     {
       "away_team": "FC Yelimai",
       "best_candidate": {
-        "adjusted_probability": 0.5385,
-        "books_count": 4,
-        "canonical_edge_pp": 4.721,
-        "canonical_ev_pct": 18.47,
-        "confidence": 79.175,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.2,
-        "odds_sources_count": 1,
-        "origin": "latest_rescue_candidates",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше 2.5",
-        "sources_count": 1
-      },
-      "best_confidence": 79.175,
-      "best_edge_pp": 4.721,
-      "best_ev_pct": 18.47,
-      "books_max": 4,
-      "candidate_count": 3,
-      "commence_time": "2026-07-19T16:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "totals": 3
-      },
-      "home_team": "FC Ordabasy",
-      "league_name": "Kazakhstan - Premier League",
-      "match_key": "soccer|fc_ordabasy|fc_yelimai|2026-07-19",
-      "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "edge_below_micro_c": 1,
-        "single_odds_source": 3
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "latest_rescue_candidates": 1,
-        "rescue": 2
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "FC Yelimai",
-      "best_candidate": {
-        "adjusted_probability": 0.5385,
-        "books_count": 4,
-        "canonical_edge_pp": 4.721,
-        "canonical_ev_pct": 18.47,
-        "confidence": 79.175,
+        "adjusted_probability": 0.398179,
+        "books_count": 2,
+        "canonical_edge_pp": 2.849,
+        "canonical_ev_pct": 15.472,
+        "confidence": 68.78,
         "confirmation_sources_count": 2,
         "context_sources_count": 2,
         "family": "totals",
-        "odds": 2.2,
-        "odds_sources_count": 1,
+        "odds": 2.9,
+        "odds_sources_count": 2,
         "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
+        "point": 3.0,
         "reject_reasons": [],
-        "selection": "Больше 2.5",
-        "sources_count": 1
+        "selection": "Больше",
+        "sources_count": 2
       },
-      "best_confidence": 79.175,
-      "best_edge_pp": 4.721,
-      "best_ev_pct": 18.47,
-      "books_max": 4,
+      "best_confidence": 68.78,
+      "best_edge_pp": 2.849,
+      "best_ev_pct": 15.472,
+      "books_max": 2,
       "candidate_count": 1,
       "commence_time": "2026-07-19T16:00:00+00:00",
       "confirmation_sources_max": 2,
@@ -774,333 +706,7 @@
       },
       "home_team": "FC Ordabasy",
       "league_name": "Kazakhstan - Premier League",
-      "match_key": "soccer|ordabasy|yelimai|2026-07-19",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "FC Sheriff Tiraspol",
-      "best_candidate": {
-        "adjusted_probability": 0.440403,
-        "books_count": 2,
-        "canonical_edge_pp": 4.029,
-        "canonical_ev_pct": 17.147,
-        "confidence": 74.963,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 2.66,
-        "odds_sources_count": 1,
-        "origin": "latest_rescue_candidates",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше 2.5",
-        "sources_count": 1
-      },
-      "best_confidence": 74.963,
-      "best_edge_pp": 4.029,
-      "best_ev_pct": 17.147,
-      "books_max": 4,
-      "candidate_count": 3,
-      "commence_time": "2026-07-19T17:00:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 3
-      },
-      "home_team": "Petrocub Hincesti",
-      "league_name": "Moldova - Super Liga",
-      "match_key": "soccer|petrocub_hincesti|fc_sheriff_tiraspol|2026-07-19",
-      "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 2
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        "a_cover_market_promotion": 1,
-        "latest_rescue_candidates": 1,
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
-    },
-    {
-      "away_team": "FC Sheriff Tiraspol",
-      "best_candidate": {
-        "adjusted_probability": 0.440403,
-        "books_count": 2,
-        "canonical_edge_pp": 4.029,
-        "canonical_ev_pct": 17.147,
-        "confidence": 74.963,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 2.66,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше 2.5",
-        "sources_count": 1
-      },
-      "best_confidence": 74.963,
-      "best_edge_pp": 4.029,
-      "best_ev_pct": 17.147,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-07-19T17:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Petrocub Hincesti",
-      "league_name": "Moldova - Super Liga",
-      "match_key": "soccer|petrocub hincesti|sheriff tiraspol|2026-07-19",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "SD Aucas",
-      "best_candidate": {
-        "adjusted_probability": 0.466513,
-        "books_count": 3,
-        "canonical_edge_pp": 4.159,
-        "canonical_ev_pct": 17.095,
-        "confidence": 77.682,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 2.51,
-        "odds_sources_count": 1,
-        "origin": "latest_rescue_candidates",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше 2.5",
-        "sources_count": 1
-      },
-      "best_confidence": 77.682,
-      "best_edge_pp": 4.159,
-      "best_ev_pct": 17.095,
-      "books_max": 3,
-      "candidate_count": 2,
-      "commence_time": "2026-07-19T16:45:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 2
-      },
-      "home_team": "CD Tecnico Universitario",
-      "league_name": "Ecuador - Serie A",
-      "match_key": "soccer|cd_tecnico_universitario|sd_aucas|2026-07-19",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 2
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "latest_rescue_candidates": 1,
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "SD Aucas",
-      "best_candidate": {
-        "adjusted_probability": 0.466513,
-        "books_count": 3,
-        "canonical_edge_pp": 4.159,
-        "canonical_ev_pct": 17.095,
-        "confidence": 77.682,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 2.51,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше 2.5",
-        "sources_count": 1
-      },
-      "best_confidence": 77.682,
-      "best_edge_pp": 4.159,
-      "best_ev_pct": 17.095,
-      "books_max": 5,
-      "candidate_count": 2,
-      "commence_time": "2026-07-19T16:45:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 2
-      },
-      "home_team": "CD Tecnico Universitario",
-      "league_name": "Ecuador - Serie A",
-      "match_key": "soccer|aucas|tecnico universitario|2026-07-19",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        ".logs/debug-last-run.json": 1,
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
-    },
-    {
-      "away_team": "Paide Linnameeskond",
-      "best_candidate": {
-        "adjusted_probability": 0.441825,
-        "books_count": 3,
-        "canonical_edge_pp": 3.928,
-        "canonical_ev_pct": 16.2,
-        "confidence": 76.934,
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
-        "family": "totals",
-        "odds": 2.63,
-        "odds_sources_count": 1,
-        "origin": "latest_rescue_candidates",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше 2.5",
-        "sources_count": 1
-      },
-      "best_confidence": 76.934,
-      "best_edge_pp": 3.928,
-      "best_ev_pct": 16.2,
-      "books_max": 4,
-      "candidate_count": 3,
-      "commence_time": "2026-07-19T16:00:00+00:00",
-      "confirmation_sources_max": 6,
-      "context_sources_max": 6,
-      "controlled_count": 0,
-      "families": {
-        "totals": 3
-      },
-      "home_team": "Harju JK Laagri",
-      "league_name": "Estonia - Premium Liiga",
-      "match_key": "soccer|harju_jk_laagri|paide_linnameeskond|2026-07-19",
-      "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "edge_below_micro_c": 1,
-        "single_odds_source": 3
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "latest_rescue_candidates": 1,
-        "rescue": 2
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Paide Linnameeskond",
-      "best_candidate": {
-        "adjusted_probability": 0.441825,
-        "books_count": 3,
-        "canonical_edge_pp": 3.928,
-        "canonical_ev_pct": 16.2,
-        "confidence": 76.934,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 2.63,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше 2.5",
-        "sources_count": 1
-      },
-      "best_confidence": 76.934,
-      "best_edge_pp": 3.928,
-      "best_ev_pct": 16.2,
-      "books_max": 5,
-      "candidate_count": 2,
-      "commence_time": "2026-07-19T16:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 2
-      },
-      "home_team": "Harju JK Laagri",
-      "league_name": "Estonia - Premium Liiga",
-      "match_key": "soccer|harju jk laagri|paide linnameeskond|2026-07-19",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 2,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        ".logs/debug-last-run.json": 1,
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
-    },
-    {
-      "away_team": "The Strongest",
-      "best_candidate": {
-        "adjusted_probability": 0.447708,
-        "books_count": 3,
-        "canonical_edge_pp": 3.104,
-        "canonical_ev_pct": 15.509,
-        "confidence": 70.812,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.58,
-        "odds_sources_count": 2,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 70.812,
-      "best_edge_pp": 3.104,
-      "best_ev_pct": 15.509,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-07-19T15:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "GV Club Deportivo San Jose de Oruro",
-      "league_name": "Bolivia - Division Profesional",
-      "match_key": "soccer|gv_club_deportivo_san_jose_de_oruro|the_strongest|2026-07-19",
+      "match_key": "soccer|fc_ordabasy|fc_yelimai|2026-07-19",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1
@@ -1113,46 +719,415 @@
       "sources_max": 2
     },
     {
-      "away_team": "Zambia",
+      "away_team": "Paide Linnameeskond",
       "best_candidate": {
-        "adjusted_probability": 0.455459,
-        "books_count": 3,
-        "canonical_edge_pp": 3.71,
-        "canonical_ev_pct": 13.865,
-        "confidence": 76.228,
+        "adjusted_probability": 0.571417,
+        "books_count": 4,
+        "canonical_edge_pp": 3.666,
+        "canonical_ev_pct": 14.855,
+        "confidence": 72.703,
         "confirmation_sources_count": 4,
         "context_sources_count": 4,
         "family": "totals",
-        "odds": 2.5,
-        "odds_sources_count": 1,
+        "odds": 2.01,
+        "odds_sources_count": 2,
         "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
+        "point": 3.0,
         "reject_reasons": [],
-        "selection": "Больше 2.5",
-        "sources_count": 1
+        "selection": "Меньше",
+        "sources_count": 2
       },
-      "best_confidence": 76.228,
-      "best_edge_pp": 3.71,
-      "best_ev_pct": 13.865,
-      "books_max": 3,
+      "best_confidence": 72.703,
+      "best_edge_pp": 3.666,
+      "best_ev_pct": 14.855,
+      "books_max": 4,
       "candidate_count": 1,
-      "commence_time": "2026-07-19T18:00:00+00:00",
+      "commence_time": "2026-07-19T16:00:00+00:00",
       "confirmation_sources_max": 4,
       "context_sources_max": 4,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Algeria",
-      "league_name": "International - International Friendly Games, Women",
-      "match_key": "soccer|algeria|zambia|2026-07-19",
+      "home_team": "Harju JK Laagri",
+      "league_name": "Estonia - Premium Liiga",
+      "match_key": "soccer|harju_jk_laagri|paide_linnameeskond|2026-07-19",
       "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Cherno More Varna",
+      "best_candidate": {
+        "adjusted_probability": 0.532662,
+        "books_count": 280,
+        "canonical_edge_pp": 3.515,
+        "canonical_ev_pct": 14.522,
+        "confidence": 75.459,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.15,
+        "odds_sources_count": 2,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 2
+      },
+      "best_confidence": 75.459,
+      "best_edge_pp": 3.515,
+      "best_ev_pct": 14.522,
+      "books_max": 280,
+      "candidate_count": 1,
+      "commence_time": "2026-07-19T16:30:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Botev Vratsa",
+      "league_name": "Parva Liga",
+      "match_key": "soccer|botev vratsa|cherno more varna|2026-07-19",
+      "missing_flags": {
+        "edge_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "CA Atenas de San Carlos",
+      "best_candidate": {
+        "adjusted_probability": 0.625882,
+        "books_count": 3,
+        "canonical_edge_pp": 3.765,
+        "canonical_ev_pct": 13.911,
+        "confidence": 70.606,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.82,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 70.606,
+      "best_edge_pp": 3.765,
+      "best_ev_pct": 13.911,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-07-19T16:30:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "CA Fenix Montevideo",
+      "league_name": "Uruguay - Segunda Division",
+      "match_key": "soccer|ca_fenix_montevideo|ca_atenas_de_san_carlos|2026-07-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 1,
       "origins": {
         ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "SJK Akatemia/2",
+      "best_candidate": {
+        "adjusted_probability": 0.539495,
+        "books_count": 3,
+        "canonical_edge_pp": 3.444,
+        "canonical_ev_pct": 13.294,
+        "confidence": 70.14,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 2.1,
+        "odds_sources_count": 2,
+        "origin": ".logs/debug-last-run.json",
+        "point": 4.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 2
+      },
+      "best_confidence": 70.14,
+      "best_edge_pp": 3.444,
+      "best_ev_pct": 13.294,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-07-19T16:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "VPS Akatemia",
+      "league_name": "Finland - Kakkonen, Group C",
+      "match_key": "soccer|vps_akatemia|sjk_akatemia_2|2026-07-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Sport Boys Association",
+      "best_candidate": {
+        "adjusted_probability": 0.706,
+        "books_count": 2,
+        "canonical_edge_pp": 3.933,
+        "canonical_ev_pct": 12.96,
+        "confidence": 68.527,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 1.6,
+        "odds_sources_count": 2,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 2
+      },
+      "best_confidence": 71.43,
+      "best_edge_pp": 3.933,
+      "best_ev_pct": 12.96,
+      "books_max": 4,
+      "candidate_count": 2,
+      "commence_time": "2026-07-19T16:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Los Chankas CYC",
+      "league_name": "Peru - Primera Division, Clausura",
+      "match_key": "soccer|los_chankas_cyc|sport_boys_association|2026-07-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 2,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "FC Sheriff Tiraspol",
+      "best_candidate": {
+        "adjusted_probability": 0.583846,
+        "books_count": 3,
+        "canonical_edge_pp": 3.59,
+        "canonical_ev_pct": 12.682,
+        "confidence": 69.979,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.93,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.979,
+      "best_edge_pp": 3.59,
+      "best_ev_pct": 12.682,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-07-19T17:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Petrocub Hincesti",
+      "league_name": "Moldova - Super Liga",
+      "match_key": "soccer|petrocub_hincesti|fc_sheriff_tiraspol|2026-07-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "FK Banga Gargzdai",
+      "best_candidate": {
+        "adjusted_probability": 0.511386,
+        "books_count": 4,
+        "canonical_edge_pp": 3.292,
+        "canonical_ev_pct": 12.505,
+        "confidence": 71.517,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.2,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 71.517,
+      "best_edge_pp": 3.292,
+      "best_ev_pct": 12.505,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-07-19T15:45:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Dziugas",
+      "league_name": "Lithuania - A Lyga",
+      "match_key": "soccer|dziugas|fk_banga_gargzdai|2026-07-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Deportivo Binacional FC",
+      "best_candidate": {
+        "adjusted_probability": 0.487245,
+        "books_count": 2,
+        "canonical_edge_pp": 3.603,
+        "canonical_ev_pct": 12.066,
+        "confidence": 73.583,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 2.3,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.25,
+        "reject_reasons": [],
+        "selection": "Меньше 2.25",
+        "sources_count": 1
+      },
+      "best_confidence": 73.583,
+      "best_edge_pp": 3.603,
+      "best_ev_pct": 12.066,
+      "books_max": 2,
+      "candidate_count": 2,
+      "commence_time": "2026-07-19T20:15:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "CS Santos FC",
+      "league_name": "Peru - Liga 2, Group B",
+      "match_key": "soccer|binacional|cs santos|2026-07-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 2
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Fluminense SC",
+      "best_candidate": {
+        "adjusted_probability": 0.450652,
+        "books_count": 2,
+        "canonical_edge_pp": 4.743,
+        "canonical_ev_pct": 11.762,
+        "confidence": 68.393,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.48,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 71.653,
+      "best_edge_pp": 4.743,
+      "best_ev_pct": 11.762,
+      "books_max": 2,
+      "candidate_count": 2,
+      "commence_time": "2026-07-19T18:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "GE Juventus Jaragua do Sul SC",
+      "league_name": "Brazil - Catarinense, Segunda Divisao",
+      "match_key": "soccer|ge_juventus_jaragua_do_sul_sc|fluminense_sc|2026-07-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 2
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "latest_rescue_candidates": 1,
+        "rescue": 1
       },
       "reject_reasons": {},
       "sources_max": 1
