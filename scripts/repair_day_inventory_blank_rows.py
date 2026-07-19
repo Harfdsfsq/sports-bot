@@ -150,7 +150,14 @@ def _patch_truth_functions(truth: Any, cumulative: Any, bridge: Any) -> None:
 def _install_final_truth_hooks() -> dict[str, Any]:
     result: dict[str, Any] = {}
     try:
+        from app.services.strict_inventory_horizon_activation import install as install_horizon
+
+        result["strict_inventory_horizon_activation"] = install_horizon()
+    except Exception as exc:
+        result["strict_inventory_horizon_activation"] = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+    try:
         from app.services.strict_coverage_inventory_sync import sync
+
         result["strict_inventory_sync"] = sync()
     except Exception as exc:
         result["strict_inventory_sync"] = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
