@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Remove identity-less rows and rebuild final coverage from exact provider evidence."""
+
+from __future__ import annotations
 
 import json
 import os
@@ -188,6 +188,7 @@ def _install_final_truth_hooks() -> dict[str, Any]:
                 except Exception as exc:
                     steps.append({"path": str(ROOT / "scripts" / "build_day_inventory_coverage_truth.py"), "status": "error", "error": f"{type(exc).__name__}: {exc}"})
                 return steps
+
             ensure_latest_run_coverage_merged._harizon_verified_strict_truth = True
             cumulative.ensure_latest_run_coverage_merged = ensure_latest_run_coverage_merged
     except Exception as exc:
