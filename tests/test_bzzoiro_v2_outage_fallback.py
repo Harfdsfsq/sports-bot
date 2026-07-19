@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+
 from app.services import bzzoiro_v2_outage_fallback as fallback
 
 
