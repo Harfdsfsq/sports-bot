@@ -82,6 +82,13 @@ except Exception:
 # through the provider package, which is imported on every real run, and let it
 # reassert itself after native preflight/source-matrix installers.
 try:
+    import os as _os
+
+    # A matched Bzzoiro price row is valid independent line evidence, but it is
+    # not a second sporting context by itself. Only prediction/model payloads
+    # may satisfy the Bzzoiro context slot.
+    _os.environ["BZZOIRO_ODDS_MATCH_COUNTS_AS_EVENT_CONTEXT"] = "false"
+
     from app.services import (
         strict_coverage_native_activation as _strict_coverage_native_activation,
     )
