@@ -91,6 +91,18 @@ def row_in_horizon(row: dict[str, Any], day: str, sync_module: Any) -> bool:
     return start <= current < start + timedelta(days=horizon_days())
 
 
+def _local_identity(row: dict[str, Any], day: str, sync_module: Any) -> Any:
+    identity = sync_module._identity(row, day)
+    if identity is None:
+        identity = sync_module.identity_from_key(sync_module.row_key(row))
+    if identity is None:
+        return None
+    local_day = row_local_day(row, sync_module)
+    if local_day is None or not isinstance(identity, tuple) or not identity:
+        return identity
+    return (local_day.isoformat(), *identity[1:])
+
+
 def _candidate_rows_factory(sync_module: Any):
     def candidate_rows(day: str) -> list[dict[str, Any]]:
         merged: dict[Any, dict[str, Any]] = {}
@@ -106,9 +118,7 @@ def _candidate_rows_factory(sync_module: Any):
             for row in sync_module._rows(payload):
                 if not row_in_horizon(row, day, sync_module):
                     continue
-                key = sync_module._identity(row, day)
-                if key is None:
-                    key = sync_module.identity_from_key(sync_module.row_key(row))
+                key = _local_identity(row, day, sync_module)
                 if key is None:
                     continue
                 current = merged.get(key)
