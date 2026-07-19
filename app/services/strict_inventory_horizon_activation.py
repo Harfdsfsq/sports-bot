@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Keep strict coverage selection aligned with the configured local-time horizon.
 
 The target expander stores the best 300 fixtures across ``RUN_DAYS_AHEAD`` local
@@ -13,6 +11,8 @@ It also configures repository-local merge drivers. Runtime Actions commit artifa
 and then rebase onto ``main``; concurrent runs previously left literal Git conflict
 markers in cached inventory aliases because the shell ignored a failed rebase.
 """
+
+from __future__ import annotations
 
 import json
 import os
