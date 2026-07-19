@@ -96,3 +96,27 @@ try:
     _strict_coverage_native_activation.install()
 except Exception:
     pass
+
+# The v2 origin can intermittently return Cloudflare 5xx responses. Install the
+# bounded v1 fallback after strict activation so it wraps the final production
+# context/odds methods, shares one process cache and never counts v1+v2 twice.
+try:
+    from app.services import (
+        bzzoiro_v2_outage_fallback as _bzzoiro_v2_outage_fallback,
+    )
+
+    _bzzoiro_v2_outage_fallback.install()
+except Exception:
+    pass
+
+# Native/source-matrix installers can replace provider methods later in preflight.
+# Reassert the outage layer after they finish so the final runner still gets the
+# circuit breaker and bounded v1 fallback.
+try:
+    from app.services import (
+        bzzoiro_v2_outage_reassert as _bzzoiro_v2_outage_reassert,
+    )
+
+    _bzzoiro_v2_outage_reassert.install()
+except Exception:
+    pass
