@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-
 from app.services import daily_coverage_ledger as coverage_ledger
 
 ROOT = Path(__file__).resolve().parents[2]
