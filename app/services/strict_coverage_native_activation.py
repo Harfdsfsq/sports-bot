@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Activate strict dual-source repairs on the real production startup path.
 
 Production keeps ``LEGACY_RUNTIME_EXTENSIONS_ENABLED=false``.  Repairs that only live
@@ -9,6 +7,8 @@ discovery spends provider quota and again before ``PredictionRunner`` starts.
 
 It does not change cron/workflow or publication, value, movement and integrity guards.
 """
+
+from __future__ import annotations
 
 import asyncio
 import json
@@ -187,12 +187,15 @@ def _reassert() -> dict[str, Any]:
     try:
         from app.providers.bzzoiro_v2 import BzzoiroContextProvider
         from app.providers.odds_api_io import OddsApiIoProvider
-        from app.services import sstats_bzzoiro_odds_merge_patch as merge_module
         from app.services.strict_coverage_runtime_repair import (
             fetch_context_batch_predictions,
-            install as install_repair,
             score_event_match_compat,
         )
+        from app.services.strict_coverage_runtime_repair import (
+            install as install_repair,
+        )
+
+        from app.services import sstats_bzzoiro_odds_merge_patch as merge_module
 
         result["odds_merge_install"] = merge_module.install()
         result["strict_runtime_repair"] = install_repair()
