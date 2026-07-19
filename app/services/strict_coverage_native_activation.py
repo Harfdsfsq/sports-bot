@@ -205,6 +205,13 @@ def _reassert() -> dict[str, Any]:
         # Context must come from Bzzoiro prediction/model data, not be inferred from
         # the same odds line that is used as the independent price source.
         os.environ["BZZOIRO_CONTEXT_ODDS_FALLBACK_LIMIT"] = "0"
+        # The old pool-ID prefill performs event detail + odds + stats + comparison
+        # for every row and consumed all 48 Bzzoiro claims in run 29697518250.
+        # Bulk event/prediction pages already contain the IDs needed for matching.
+        os.environ["BZZOIRO_POOL_ID_INVENTORY_ENRICHMENT_ENABLED"] = "false"
+        os.environ["BZZOIRO_V2_FETCH_ODDS_COMPARISON"] = "false"
+        os.environ["BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT"] = "0"
+        os.environ["BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS"] = "0"
         os.environ["BZZOIRO_BEST_ODDS_MARKETS"] = "1x2,over_under_15,over_under_25,over_under_35"
         os.environ["BZZOIRO_ODDS_BEST_MAX_PAGES_PER_MARKET"] = "3"
         os.environ["BZZOIRO_ODDS_BEST_PAGE_SIZE"] = "200"
