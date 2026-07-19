@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """HARIZON report v13: render only verified per-match coverage counts."""
+
+from __future__ import annotations
 
 import importlib.util
 import json
