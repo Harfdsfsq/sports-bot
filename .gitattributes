@@ -1,0 +1,11 @@
+# Generated runtime JSON is merged semantically during the run-bot rebase.
+.data/*.json merge=harizon-runtime-json
+.data/day_inventory/*.json merge=harizon-runtime-json
+.data/cache/day_inventory/*.json merge=harizon-runtime-json
+.data/line_history/*.json merge=harizon-runtime-json
+.data/exports/latest-*.json merge=harizon-runtime-json
+
+# Latest TXT/CSV exports are snapshots. Keep the commit being replayed instead of
+# leaving conflict markers when two scheduled runs finish close together.
+.data/exports/latest-*.txt merge=harizon-runtime-latest
+.data/exports/latest-*.csv merge=harizon-runtime-latest
