@@ -11,7 +11,7 @@ this driver.
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -41,10 +41,13 @@ def _timestamp(payload: Any) -> datetime:
             if not raw:
                 continue
             try:
-                return datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+                parsed = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=UTC)
+                return parsed.astimezone(UTC)
             except Exception:
                 continue
-    return datetime.min
+    return datetime.min.replace(tzinfo=UTC)
 
 
 def _norm(value: Any) -> str:
