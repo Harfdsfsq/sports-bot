@@ -10,20 +10,20 @@
     "2_6h": {
       "matched": 8,
       "missing_context": 6,
-      "missing_form": 1,
+      "missing_form": 2,
       "missing_xg": 7,
-      "odds_rescue": 0
+      "odds_rescue": 1
     },
     "started": {
       "matched": 160,
       "missing_context": 65,
-      "missing_form": 21,
+      "missing_form": 19,
       "missing_xg": 122,
       "odds_rescue": 42
     }
   },
-  "created_at_utc": "2026-07-19T17:04:41.262489+00:00",
-  "duration_seconds": 45.12,
+  "created_at_utc": "2026-07-19T17:52:08.009883+00:00",
+  "duration_seconds": 38.8,
   "enrichment_queue": [
     {
       "away_team": "Linhares FC ES",
@@ -245,7 +245,7 @@
       },
       "debug": {
         "away_sim": 1.0,
-        "delta_minutes": 0.0,
+        "delta_minutes": 60.0,
         "home_sim": 1.0,
         "league_sim": 0.0,
         "pair_sim": 1.0,
@@ -264,11 +264,11 @@
         "/Games/injuries"
       ],
       "recommended_odds_endpoint": null,
-      "score": 0.9,
+      "score": 0.86,
       "sstats_away_team": "Zambia W",
       "sstats_game_id": "1586121",
       "sstats_home_team": "Algeria W",
-      "sstats_kickoff_utc": "2026-07-19T18:00:00+00:00",
+      "sstats_kickoff_utc": "2026-07-19T17:00:00+00:00",
       "sstats_league_name": ""
     },
     {
@@ -442,7 +442,7 @@
         "context": false,
         "form": true,
         "news": false,
-        "odds": true,
+        "odds": false,
         "ready_for_model": false,
         "ready_for_publish": false,
         "weather": false,
@@ -468,12 +468,53 @@
         "/Games/profits",
         "/Games/injuries"
       ],
-      "recommended_odds_endpoint": null,
+      "recommended_odds_endpoint": "/Odds/{gameId}",
       "score": 0.8532,
       "sstats_away_team": "La Luz",
       "sstats_game_id": "1584336",
       "sstats_home_team": "Miramar",
       "sstats_kickoff_utc": "2026-07-19T22:30:00+00:00",
+      "sstats_league_name": ""
+    },
+    {
+      "away_team": "Paysandu FC",
+      "bucket": "2_6h",
+      "coverage": {
+        "context": false,
+        "form": false,
+        "news": false,
+        "odds": true,
+        "ready_for_model": false,
+        "ready_for_publish": false,
+        "weather": false,
+        "xg": false
+      },
+      "debug": {
+        "away_sim": 1.0,
+        "delta_minutes": 0.0,
+        "home_sim": 1.0,
+        "league_sim": 0.0,
+        "pair_sim": 1.0,
+        "swapped_pair_sim": 0.1538
+      },
+      "home_team": "Colon FC",
+      "kickoff_utc": "2026-07-19T23:00:00+00:00",
+      "league_name": "Uruguay - Segunda Division",
+      "match_key": "2026-07-19|colon|paysandu",
+      "priority": 91.336,
+      "recommended_deep_endpoints": [
+        "/Games/glicko/{id}",
+        "/Games/last-games-stats",
+        "/Games/{id}",
+        "/Games/profits",
+        "/Games/injuries"
+      ],
+      "recommended_odds_endpoint": null,
+      "score": 0.9,
+      "sstats_away_team": "Paysandu",
+      "sstats_game_id": "1584337",
+      "sstats_home_team": "Colón",
+      "sstats_kickoff_utc": "2026-07-19T23:00:00+00:00",
       "sstats_league_name": ""
     },
     {
@@ -555,47 +596,6 @@
       "sstats_away_team": "Steel City",
       "sstats_game_id": "1595448",
       "sstats_home_team": "Flint City Bucks",
-      "sstats_kickoff_utc": "2026-07-19T23:00:00+00:00",
-      "sstats_league_name": ""
-    },
-    {
-      "away_team": "Ocean City Nor Easters",
-      "bucket": "2_6h",
-      "coverage": {
-        "context": false,
-        "form": true,
-        "news": false,
-        "odds": true,
-        "ready_for_model": false,
-        "ready_for_publish": false,
-        "weather": false,
-        "xg": false
-      },
-      "debug": {
-        "away_sim": 1.0,
-        "delta_minutes": 0.0,
-        "home_sim": 1.0,
-        "league_sim": 0.0,
-        "pair_sim": 1.0,
-        "swapped_pair_sim": 0.1143
-      },
-      "home_team": "Vermont Green FC",
-      "kickoff_utc": "2026-07-19T23:00:00+00:00",
-      "league_name": "USA - USL, League Two, Playoffs",
-      "match_key": "2026-07-19|vermont green|ocean city nor easters",
-      "priority": 76.486,
-      "recommended_deep_endpoints": [
-        "/Games/glicko/{id}",
-        "/Games/last-games-stats",
-        "/Games/{id}",
-        "/Games/profits",
-        "/Games/injuries"
-      ],
-      "recommended_odds_endpoint": null,
-      "score": 0.9,
-      "sstats_away_team": "Ocean City Nor'easters",
-      "sstats_game_id": "1595449",
-      "sstats_home_team": "Vermont Green",
       "sstats_kickoff_utc": "2026-07-19T23:00:00+00:00",
       "sstats_league_name": ""
     },
@@ -5462,7 +5462,7 @@
       "kickoff_utc": "2026-07-19T16:00:00+00:00",
       "league_name": "Russia - 1. Liga",
       "match_key": "2026-07-19|pfk arsenal tula|neftekhimik nizhnekamsk",
-      "priority": 77.986,
+      "priority": -100.0,
       "recommended_deep_endpoints": [
         "/Games/glicko/{id}",
         "/Games/last-games-stats",
@@ -5476,47 +5476,6 @@
       "sstats_game_id": "1577448",
       "sstats_home_team": "Arsenal Tula",
       "sstats_kickoff_utc": "2026-07-19T16:00:00+00:00",
-      "sstats_league_name": ""
-    },
-    {
-      "away_team": "FC Dinamo București",
-      "bucket": "started",
-      "coverage": {
-        "context": true,
-        "form": false,
-        "news": false,
-        "odds": true,
-        "ready_for_model": true,
-        "ready_for_publish": false,
-        "weather": false,
-        "xg": true
-      },
-      "debug": {
-        "away_sim": 1.0,
-        "delta_minutes": 0.0,
-        "home_sim": 1.0,
-        "league_sim": 0.0,
-        "pair_sim": 1.0,
-        "swapped_pair_sim": 0.303
-      },
-      "home_team": "FC Petrolul Ploiești",
-      "kickoff_utc": "2026-07-19T16:30:00+00:00",
-      "league_name": "Superliga",
-      "match_key": "soccer|dinamo bucuresti|petrolul ploiesti|2026-07-19",
-      "priority": 133.331,
-      "recommended_deep_endpoints": [
-        "/Games/glicko/{id}",
-        "/Games/last-games-stats",
-        "/Games/{id}",
-        "/Games/profits",
-        "/Games/injuries"
-      ],
-      "recommended_odds_endpoint": null,
-      "score": 0.9,
-      "sstats_away_team": "Dinamo Bucuresti",
-      "sstats_game_id": "1565188",
-      "sstats_home_team": "Petrolul Ploiesti",
-      "sstats_kickoff_utc": "2026-07-19T16:30:00+00:00",
       "sstats_league_name": ""
     },
     {
@@ -5557,47 +5516,6 @@
       "sstats_away_team": "Atenas",
       "sstats_game_id": "1584335",
       "sstats_home_team": "Fenix",
-      "sstats_kickoff_utc": "2026-07-19T16:30:00+00:00",
-      "sstats_league_name": ""
-    },
-    {
-      "away_team": "Cherno More Varna",
-      "bucket": "started",
-      "coverage": {
-        "context": true,
-        "form": false,
-        "news": false,
-        "odds": true,
-        "ready_for_model": true,
-        "ready_for_publish": false,
-        "weather": false,
-        "xg": true
-      },
-      "debug": {
-        "away_sim": 1.0,
-        "delta_minutes": 0.0,
-        "home_sim": 1.0,
-        "league_sim": 0.0,
-        "pair_sim": 1.0,
-        "swapped_pair_sim": 0.3793
-      },
-      "home_team": "Botev Vratsa",
-      "kickoff_utc": "2026-07-19T16:30:00+00:00",
-      "league_name": "Parva Liga",
-      "match_key": "soccer|botev vratsa|cherno more varna|2026-07-19",
-      "priority": 76.736,
-      "recommended_deep_endpoints": [
-        "/Games/glicko/{id}",
-        "/Games/last-games-stats",
-        "/Games/{id}",
-        "/Games/profits",
-        "/Games/injuries"
-      ],
-      "recommended_odds_endpoint": null,
-      "score": 0.9,
-      "sstats_away_team": "Cherno More Varna",
-      "sstats_game_id": "1551048",
-      "sstats_home_team": "Botev Vratsa",
       "sstats_kickoff_utc": "2026-07-19T16:30:00+00:00",
       "sstats_league_name": ""
     },
@@ -5808,7 +5726,7 @@
     }
   ],
   "inventory_matches_checked": 300,
-  "inventory_matches_seen": 425,
+  "inventory_matches_seen": 426,
   "inventory_path": ".data/day_inventory/2026-07-19.json",
   "matched": [
     {
@@ -11945,7 +11863,7 @@
       "kickoff_utc": "2026-07-19T16:00:00+00:00",
       "league_name": "Russia - 1. Liga",
       "match_key": "2026-07-19|pfk arsenal tula|neftekhimik nizhnekamsk",
-      "priority": 77.986,
+      "priority": -100.0,
       "recommended_deep_endpoints": [
         "/Games/glicko/{id}",
         "/Games/last-games-stats",
@@ -11959,47 +11877,6 @@
       "sstats_game_id": "1577448",
       "sstats_home_team": "Arsenal Tula",
       "sstats_kickoff_utc": "2026-07-19T16:00:00+00:00",
-      "sstats_league_name": ""
-    },
-    {
-      "away_team": "FC Dinamo București",
-      "bucket": "started",
-      "coverage": {
-        "context": true,
-        "form": false,
-        "news": false,
-        "odds": true,
-        "ready_for_model": true,
-        "ready_for_publish": false,
-        "weather": false,
-        "xg": true
-      },
-      "debug": {
-        "away_sim": 1.0,
-        "delta_minutes": 0.0,
-        "home_sim": 1.0,
-        "league_sim": 0.0,
-        "pair_sim": 1.0,
-        "swapped_pair_sim": 0.303
-      },
-      "home_team": "FC Petrolul Ploiești",
-      "kickoff_utc": "2026-07-19T16:30:00+00:00",
-      "league_name": "Superliga",
-      "match_key": "soccer|dinamo bucuresti|petrolul ploiesti|2026-07-19",
-      "priority": 133.331,
-      "recommended_deep_endpoints": [
-        "/Games/glicko/{id}",
-        "/Games/last-games-stats",
-        "/Games/{id}",
-        "/Games/profits",
-        "/Games/injuries"
-      ],
-      "recommended_odds_endpoint": null,
-      "score": 0.9,
-      "sstats_away_team": "Dinamo Bucuresti",
-      "sstats_game_id": "1565188",
-      "sstats_home_team": "Petrolul Ploiesti",
-      "sstats_kickoff_utc": "2026-07-19T16:30:00+00:00",
       "sstats_league_name": ""
     },
     {
@@ -12048,7 +11925,7 @@
       "bucket": "started",
       "coverage": {
         "context": true,
-        "form": false,
+        "form": true,
         "news": false,
         "odds": true,
         "ready_for_model": true,
@@ -12068,7 +11945,7 @@
       "kickoff_utc": "2026-07-19T16:30:00+00:00",
       "league_name": "Parva Liga",
       "match_key": "soccer|botev vratsa|cherno more varna|2026-07-19",
-      "priority": 76.736,
+      "priority": -100.0,
       "recommended_deep_endpoints": [
         "/Games/glicko/{id}",
         "/Games/last-games-stats",
@@ -12081,6 +11958,47 @@
       "sstats_away_team": "Cherno More Varna",
       "sstats_game_id": "1551048",
       "sstats_home_team": "Botev Vratsa",
+      "sstats_kickoff_utc": "2026-07-19T16:30:00+00:00",
+      "sstats_league_name": ""
+    },
+    {
+      "away_team": "FC Dinamo București",
+      "bucket": "started",
+      "coverage": {
+        "context": true,
+        "form": true,
+        "news": false,
+        "odds": true,
+        "ready_for_model": true,
+        "ready_for_publish": false,
+        "weather": false,
+        "xg": true
+      },
+      "debug": {
+        "away_sim": 1.0,
+        "delta_minutes": 0.0,
+        "home_sim": 1.0,
+        "league_sim": 0.0,
+        "pair_sim": 1.0,
+        "swapped_pair_sim": 0.303
+      },
+      "home_team": "FC Petrolul Ploiești",
+      "kickoff_utc": "2026-07-19T16:30:00+00:00",
+      "league_name": "Superliga",
+      "match_key": "soccer|dinamo bucuresti|petrolul ploiesti|2026-07-19",
+      "priority": -100.0,
+      "recommended_deep_endpoints": [
+        "/Games/glicko/{id}",
+        "/Games/last-games-stats",
+        "/Games/{id}",
+        "/Games/profits",
+        "/Games/injuries"
+      ],
+      "recommended_odds_endpoint": null,
+      "score": 0.9,
+      "sstats_away_team": "Dinamo Bucuresti",
+      "sstats_game_id": "1565188",
+      "sstats_home_team": "Petrolul Ploiesti",
       "sstats_kickoff_utc": "2026-07-19T16:30:00+00:00",
       "sstats_league_name": ""
     },
@@ -12591,7 +12509,7 @@
       },
       "debug": {
         "away_sim": 1.0,
-        "delta_minutes": 0.0,
+        "delta_minutes": 60.0,
         "home_sim": 1.0,
         "league_sim": 0.0,
         "pair_sim": 1.0,
@@ -12610,11 +12528,11 @@
         "/Games/injuries"
       ],
       "recommended_odds_endpoint": null,
-      "score": 0.9,
+      "score": 0.86,
       "sstats_away_team": "Zambia W",
       "sstats_game_id": "1586121",
       "sstats_home_team": "Algeria W",
-      "sstats_kickoff_utc": "2026-07-19T18:00:00+00:00",
+      "sstats_kickoff_utc": "2026-07-19T17:00:00+00:00",
       "sstats_league_name": ""
     },
     {
@@ -12788,7 +12706,7 @@
         "context": false,
         "form": true,
         "news": false,
-        "odds": true,
+        "odds": false,
         "ready_for_model": false,
         "ready_for_publish": false,
         "weather": false,
@@ -12814,12 +12732,53 @@
         "/Games/profits",
         "/Games/injuries"
       ],
-      "recommended_odds_endpoint": null,
+      "recommended_odds_endpoint": "/Odds/{gameId}",
       "score": 0.8532,
       "sstats_away_team": "La Luz",
       "sstats_game_id": "1584336",
       "sstats_home_team": "Miramar",
       "sstats_kickoff_utc": "2026-07-19T22:30:00+00:00",
+      "sstats_league_name": ""
+    },
+    {
+      "away_team": "Paysandu FC",
+      "bucket": "2_6h",
+      "coverage": {
+        "context": false,
+        "form": false,
+        "news": false,
+        "odds": true,
+        "ready_for_model": false,
+        "ready_for_publish": false,
+        "weather": false,
+        "xg": false
+      },
+      "debug": {
+        "away_sim": 1.0,
+        "delta_minutes": 0.0,
+        "home_sim": 1.0,
+        "league_sim": 0.0,
+        "pair_sim": 1.0,
+        "swapped_pair_sim": 0.1538
+      },
+      "home_team": "Colon FC",
+      "kickoff_utc": "2026-07-19T23:00:00+00:00",
+      "league_name": "Uruguay - Segunda Division",
+      "match_key": "2026-07-19|colon|paysandu",
+      "priority": 91.336,
+      "recommended_deep_endpoints": [
+        "/Games/glicko/{id}",
+        "/Games/last-games-stats",
+        "/Games/{id}",
+        "/Games/profits",
+        "/Games/injuries"
+      ],
+      "recommended_odds_endpoint": null,
+      "score": 0.9,
+      "sstats_away_team": "Paysandu",
+      "sstats_game_id": "1584337",
+      "sstats_home_team": "Colón",
+      "sstats_kickoff_utc": "2026-07-19T23:00:00+00:00",
       "sstats_league_name": ""
     },
     {
@@ -12942,47 +12901,6 @@
       "sstats_away_team": "Steel City",
       "sstats_game_id": "1595448",
       "sstats_home_team": "Flint City Bucks",
-      "sstats_kickoff_utc": "2026-07-19T23:00:00+00:00",
-      "sstats_league_name": ""
-    },
-    {
-      "away_team": "Ocean City Nor Easters",
-      "bucket": "2_6h",
-      "coverage": {
-        "context": false,
-        "form": true,
-        "news": false,
-        "odds": true,
-        "ready_for_model": false,
-        "ready_for_publish": false,
-        "weather": false,
-        "xg": false
-      },
-      "debug": {
-        "away_sim": 1.0,
-        "delta_minutes": 0.0,
-        "home_sim": 1.0,
-        "league_sim": 0.0,
-        "pair_sim": 1.0,
-        "swapped_pair_sim": 0.1143
-      },
-      "home_team": "Vermont Green FC",
-      "kickoff_utc": "2026-07-19T23:00:00+00:00",
-      "league_name": "USA - USL, League Two, Playoffs",
-      "match_key": "2026-07-19|vermont green|ocean city nor easters",
-      "priority": 76.486,
-      "recommended_deep_endpoints": [
-        "/Games/glicko/{id}",
-        "/Games/last-games-stats",
-        "/Games/{id}",
-        "/Games/profits",
-        "/Games/injuries"
-      ],
-      "recommended_odds_endpoint": null,
-      "score": 0.9,
-      "sstats_away_team": "Ocean City Nor'easters",
-      "sstats_game_id": "1595449",
-      "sstats_home_team": "Vermont Green",
       "sstats_kickoff_utc": "2026-07-19T23:00:00+00:00",
       "sstats_league_name": ""
     }
@@ -14638,7 +14556,7 @@
   "sstats_call_results": [
     {
       "command": "games_today_date",
-      "duration_ms": 1079.2,
+      "duration_ms": 1340.1,
       "error": "",
       "event_like_rows": 220,
       "http_status": 200,
@@ -14647,7 +14565,7 @@
     },
     {
       "command": "games_upcoming",
-      "duration_ms": 643.0,
+      "duration_ms": 734.1,
       "error": "",
       "event_like_rows": 1000,
       "http_status": 200,
@@ -14656,7 +14574,7 @@
     },
     {
       "command": "games_tomorrow_date",
-      "duration_ms": 142.9,
+      "duration_ms": 166.2,
       "error": "",
       "event_like_rows": 64,
       "http_status": 200,
@@ -14664,13 +14582,13 @@
       "status": "OK"
     }
   ],
-  "sstats_events_seen": 1215,
+  "sstats_events_seen": 1216,
   "summary": {
     "match_rate_pct": 58.33,
     "matched": 175,
     "potential_context_deep": 175,
     "potential_form": 175,
-    "potential_odds_rescue": 42,
+    "potential_odds_rescue": 43,
     "potential_xg_or_rating": 175,
     "unmatched": 125
   },
@@ -14796,66 +14714,6 @@
       "priority": -92.0
     },
     {
-      "away_team": "Brooklyn FC",
-      "best_candidate": {
-        "away_norm": "brooklyn",
-        "away_team": "Brooklyn",
-        "game_id": "1493584",
-        "home_norm": "sporting jax",
-        "home_team": "Sporting JAX",
-        "kickoff_utc": "2026-07-18T23:00:00+00:00",
-        "league_name": "",
-        "league_norm": "",
-        "raw_keys": [
-          "awayFTResult",
-          "awayHTResult",
-          "awayResult",
-          "awayTeam",
-          "date",
-          "dateUtc",
-          "elapsed",
-          "extraMinutes",
-          "flashId",
-          "homeFTResult",
-          "homeHTResult",
-          "homeResult",
-          "homeTeam",
-          "id",
-          "odds",
-          "periods",
-          "roundName",
-          "season",
-          "status",
-          "statusName"
-        ]
-      },
-      "best_score": 0.575,
-      "bucket": "started",
-      "coverage": {
-        "context": false,
-        "form": false,
-        "news": false,
-        "odds": false,
-        "ready_for_model": false,
-        "ready_for_publish": false,
-        "weather": false,
-        "xg": true
-      },
-      "debug": {
-        "away_sim": 1.0,
-        "delta_minutes": 0.0,
-        "home_sim": 0.1667,
-        "league_sim": 0.0,
-        "pair_sim": 0.5833,
-        "swapped_pair_sim": 0.2
-      },
-      "home_team": "SC Jacksonville",
-      "kickoff_utc": "2026-07-18T23:00:00+00:00",
-      "league_name": "USL Championship",
-      "match_key": "soccer|brooklyn|jacksonville|2026-07-18",
-      "priority": 110.0
-    },
-    {
       "away_team": "Michigan Rangers FC",
       "best_candidate": {
         "away_norm": "portland timbers",
@@ -14914,6 +14772,66 @@
       "league_name": "USA - NPSL, National Playoffs",
       "match_key": "2026-07-18|ambassadors ohio|michigan rangers",
       "priority": 96.408
+    },
+    {
+      "away_team": "Brooklyn FC",
+      "best_candidate": {
+        "away_norm": "brooklyn",
+        "away_team": "Brooklyn",
+        "game_id": "1493584",
+        "home_norm": "sporting jax",
+        "home_team": "Sporting JAX",
+        "kickoff_utc": "2026-07-18T23:00:00+00:00",
+        "league_name": "",
+        "league_norm": "",
+        "raw_keys": [
+          "awayFTResult",
+          "awayHTResult",
+          "awayResult",
+          "awayTeam",
+          "date",
+          "dateUtc",
+          "elapsed",
+          "extraMinutes",
+          "flashId",
+          "homeFTResult",
+          "homeHTResult",
+          "homeResult",
+          "homeTeam",
+          "id",
+          "odds",
+          "periods",
+          "roundName",
+          "season",
+          "status",
+          "statusName"
+        ]
+      },
+      "best_score": 0.575,
+      "bucket": "started",
+      "coverage": {
+        "context": false,
+        "form": false,
+        "news": false,
+        "odds": false,
+        "ready_for_model": false,
+        "ready_for_publish": false,
+        "weather": false,
+        "xg": true
+      },
+      "debug": {
+        "away_sim": 1.0,
+        "delta_minutes": 0.0,
+        "home_sim": 0.1667,
+        "league_sim": 0.0,
+        "pair_sim": 0.5833,
+        "swapped_pair_sim": 0.2
+      },
+      "home_team": "SC Jacksonville",
+      "kickoff_utc": "2026-07-18T23:00:00+00:00",
+      "league_name": "USL Championship",
+      "match_key": "soccer|brooklyn|jacksonville|2026-07-18",
+      "priority": -84.0
     },
     {
       "away_team": "CF Pachuca",
