@@ -1,40 +1,136 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+      "A-tier publication score is below min on many candidates."
     ],
     "quality_score_sources": {
-      "proxy": 1,
-      "raw": 1
+      "a_cover_evidence": 2,
+      "proxy": 6,
+      "raw": 3,
+      "raw_missing": 7
     },
-    "tier_a_blocker_counts": {}
+    "tier_a_blocker_counts": {
+      "tier_a_canonical_edge_below_min": 4,
+      "tier_a_canonical_ev_below_min": 3,
+      "tier_a_market_implied_xg_not_hard_confirmation": 3,
+      "tier_a_odds_sources_below_min:1/2": 3,
+      "tier_a_proxy_default_xg_placeholder": 8,
+      "tier_a_proxy_quality_not_allowed": 3,
+      "tier_a_publication_score_below_min": 6,
+      "tier_a_quality_below_min": 4
+    }
   },
-  "candidates_seen": 3,
-  "created_at": "2026-07-20T11:10:07.380917+00:00",
+  "candidates_seen": 21,
+  "created_at": "2026-07-20T13:11:47.810941+00:00",
   "enabled": true,
   "evaluated": [
     {
-      "away_team": "Rubio Nu",
-      "away_team_ru": "Рубио Ну",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-07-20T12:00:00+00:00",
-      "commence_time_display": "20.07.2026 15:00 MSK",
+      "away_team": "FC RFS",
+      "away_team_ru": "RFS",
+      "candidate_source": "a_cover_market_promotion",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
       "family": "totals",
-      "home_team": "Recoleta FC",
-      "home_team_ru": "Реколета",
-      "league_name": "Paraguay - Campeonato Femenino, Women",
-      "league_name_ru": "Парагуей - Кампеонато Феменино, Уомен",
-      "match_key": "soccer|recoleta_fc|rubio_nu|2026-07-20",
+      "home_team": "FS Jelgava",
+      "home_team_ru": "FS Джелгава",
+      "league_name": "Latvia - Virsliga",
+      "league_name_ru": "Латвиа - Вирслига",
+      "match_key": "soccer|fs_jelgava|fc_rfs|2026-07-20",
       "metrics": {
-        "adjusted_probability": 0.66624,
+        "adjusted_probability": 0.636115,
+        "books_count": 473,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.371,
+        "canonical_ev_pct": 5.595,
+        "confidence": 73.118,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "clubelo",
+          "espn",
+          "sstats"
+        ],
+        "confirmation_sources_count": 10,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.692,
+        "market_probability": 0.619195,
+        "model_probability": 0.636115,
+        "odds": 1.66,
+        "odds_sources_count": 10,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 18.875,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.60241,
+        "sources_count": 10,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.691,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.691,
+          "xg_model_optimism_gap_pp": 1.691,
+          "xg_probability": 0.619206,
+          "xg_probability_pct": 61.921,
+          "xg_source": "home_away",
+          "xg_total": 3.125
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "odds_below_global_min"
+      ],
+      "reject_reasons_ru": [
+        "коэффициент ниже общего минимума"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "JK Tallinna Kalev",
+      "away_team_ru": "JK Таллинна Калев",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T14:00:00+00:00",
+      "commence_time_display": "20.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "Tartu JK Tammeka U21",
+      "home_team_ru": "Тарту JK Таммека U21",
+      "league_name": "Estonia - Esiliiga B",
+      "league_name_ru": "Естониа - Есилиига B",
+      "match_key": "soccer|tartu_jk_tammeka_u21|jk_tallinna_kalev|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.563247,
         "books_count": 2,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 2.108,
-        "canonical_ev_pct": 3.267,
-        "confidence": 69.07,
+        "canonical_edge_pp": 8.248,
+        "canonical_ev_pct": 17.155,
+        "confidence": 76.775,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -46,16 +142,150 @@
         "confirmation_sources": [
           "sstats"
         ],
-        "confirmation_sources_count": 2,
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 4.669,
+        "market_probability": 0.516562,
+        "model_probability": 0.548247,
+        "odds": 2.08,
+        "odds_sources_count": 1,
+        "price_integrity_guard": {
+          "details": {
+            "external_snapshot_match_rows": 154,
+            "external_snapshot_max_deviation_pct": 18.0,
+            "external_snapshot_max_implied_gap_pp": 12.0,
+            "external_snapshot_median_same_side_price": 1.75,
+            "external_snapshot_price_guard_mode": "odds_api_io_same_side_snapshot_median",
+            "external_snapshot_rows_total": 2459,
+            "external_snapshot_same_side_real_book_prices": [
+              1.76,
+              1.74
+            ],
+            "external_snapshot_selected_price": 2.08,
+            "external_snapshot_selected_vs_median_deviation_pct": 18.857,
+            "external_snapshot_selected_vs_median_implied_gap_pp": 9.066,
+            "external_snapshot_side_rows": 2,
+            "external_snapshot_skipped_opposite_side": 40,
+            "external_snapshot_skipped_point_mismatch": 38,
+            "external_snapshot_skipped_unknown_side": 0,
+            "market_probability": 0.516562,
+            "max_deviation_pct": 16.0,
+            "max_selected_vs_market_gap_pp": 10.0,
+            "median_same_side_price": 1.91,
+            "price_guard_mode": "identified_same_side_real_book_median",
+            "same_side_identified_offers_count": 3,
+            "same_side_identified_prices": [
+              2.08,
+              1.76,
+              1.74
+            ],
+            "same_side_offers_count": 3,
+            "same_side_real_book_prices": [
+              2.08,
+              1.74
+            ],
+            "selected_implied_probability": 0.480769,
+            "selected_price": 2.08,
+            "selected_vs_market_gap_pp": 3.579,
+            "selected_vs_median_deviation_pct": 8.901,
+            "skipped_opposite_side": 0,
+            "skipped_point_mismatch": 0,
+            "skipped_unknown_side": 0
+          },
+          "enabled": true,
+          "reasons": [
+            "price_integrity:external_snapshot_bookmaker_median_outlier"
+          ]
+        },
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 94.255,
+        "quality_reasons": [],
+        "quality_score": 75.935,
+        "quality_score_raw": 75.935,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.480769,
+        "sources_count": 1,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 4.67,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 4.67,
+          "xg_model_optimism_gap_pp": 4.67,
+          "xg_probability": 0.516546,
+          "xg_probability_pct": 51.655,
+          "xg_source": "home_away",
+          "xg_total": 4.761
+        }
+      },
+      "ok": false,
+      "point": 4.5,
+      "reject_reasons": [
+        "price_integrity:external_snapshot_bookmaker_median_outlier"
+      ],
+      "reject_reasons_ru": [
+        "price integrity:external snapshot bookmaker median outlier"
+      ],
+      "selection": "Больше 4.5",
+      "tier": null
+    },
+    {
+      "away_team": "Al Ahed FC",
+      "away_team_ru": "Ал Ахед",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T14:30:00+00:00",
+      "commence_time_display": "20.07.2026 17:30 MSK",
+      "family": "totals",
+      "home_team": "Jwaaya FC",
+      "home_team_ru": "Джуаейа",
+      "league_name": "Lebanon - Premier League, Relegation round",
+      "league_name_ru": "Лебанон - Премьер-лига, Релегатион рунд",
+      "match_key": "soccer|jwaaya_fc|al_ahed_fc|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.516876,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.907,
+        "canonical_ev_pct": 5.96,
+        "confidence": 73.282,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "clubelo",
+          "espn",
+          "sstats"
+        ],
+        "confirmation_sources_count": 9,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.05,
-        "market_probability": 0.655738,
-        "model_probability": 0.66624,
-        "odds": 1.55,
+        "market_edge_pp": 1.436,
+        "market_probability": 0.502513,
+        "model_probability": 0.516876,
+        "odds": 2.05,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -64,28 +294,1198 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 12.573,
+        "publication_score": 18.368,
         "quality_reasons": [],
-        "quality_score": 69.099,
+        "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "selected_implied_probability": 0.645161,
-        "sources_count": 2,
+        "selected_implied_probability": 0.487805,
+        "sources_count": 9,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.99,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.05,
+          "selected_vs_median_deviation_pct": 3.015
+        },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 1.052,
+          "xg_abs_gap_pp": 1.438,
           "xg_direction_ok": true,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 1.052,
-          "xg_model_optimism_gap_pp": 1.052,
-          "xg_probability": 0.655725,
-          "xg_probability_pct": 65.572,
+          "xg_model_gap_pp": 1.438,
+          "xg_model_optimism_gap_pp": 1.438,
+          "xg_probability": 0.502497,
+          "xg_probability_pct": 50.25,
           "xg_source": "home_away",
-          "xg_total": 3.377
+          "xg_total": 2.684
         }
       },
       "ok": false,
       "point": 2.5,
+      "reject_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Tampereen Ilves",
+      "away_team_ru": "Тамперин Илвес",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Turun Palloseura",
+      "home_team_ru": "Турун Паллосеура",
+      "league_name": "Finland - Veikkausliiga",
+      "league_name_ru": "Финланд - Вейккауслиига",
+      "match_key": "soccer|turun_palloseura|tampereen_ilves|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.395128,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.281,
+        "canonical_ev_pct": 9.055,
+        "confidence": 74.675,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 6,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.49,
+        "market_probability": 0.380228,
+        "model_probability": 0.395128,
+        "odds": 2.76,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 22.675,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.362319,
+        "sources_count": 6,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.491,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.491,
+          "xg_model_optimism_gap_pp": 1.491,
+          "xg_probability": 0.380213,
+          "xg_probability_pct": 38.021,
+          "xg_source": "home_away",
+          "xg_total": 3.123
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "FC RFS",
+      "away_team_ru": "RFS",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "FS Jelgava",
+      "home_team_ru": "FS Джелгава",
+      "league_name": "Latvia - Virsliga",
+      "league_name_ru": "Латвиа - Вирслига",
+      "match_key": "soccer|fs_jelgava|fc_rfs|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.573519,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.588,
+        "canonical_ev_pct": 6.675,
+        "confidence": 75.404,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "clubelo",
+          "espn",
+          "sstats"
+        ],
+        "confirmation_sources_count": 10,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.796,
+        "market_probability": 0.555556,
+        "model_probability": 0.573519,
+        "odds": 1.86,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 21.752,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.537634,
+        "sources_count": 10,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.8,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.86,
+          "selected_vs_median_deviation_pct": 3.333
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.797,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.797,
+          "xg_model_optimism_gap_pp": 1.797,
+          "xg_probability": 0.555553,
+          "xg_probability_pct": 55.555,
+          "xg_source": "home_away",
+          "xg_total": 3.944
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "JK Tallinna Kalev",
+      "away_team_ru": "JK Таллинна Калев",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T14:00:00+00:00",
+      "commence_time_display": "20.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "Tartu JK Tammeka U21",
+      "home_team_ru": "Тарту JK Таммека U21",
+      "league_name": "Estonia - Esiliiga B",
+      "league_name_ru": "Естониа - Есилиига B",
+      "match_key": "soccer|tartu_jk_tammeka_u21|jk_tallinna_kalev|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.696536,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 5.551,
+        "canonical_ev_pct": 8.66,
+        "confidence": 74.497,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 4,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.54,
+        "market_probability": 0.671141,
+        "model_probability": 0.696536,
+        "odds": 1.56,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 26.761,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.641026,
+        "sources_count": 4,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 2.539,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 2.539,
+          "xg_model_optimism_gap_pp": 2.539,
+          "xg_probability": 0.671149,
+          "xg_probability_pct": 67.115,
+          "xg_source": "home_away",
+          "xg_total": 4.684
+        }
+      },
+      "ok": false,
+      "point": 5.5,
+      "reject_reasons": [
+        "odds_below_global_min"
+      ],
+      "reject_reasons_ru": [
+        "коэффициент ниже общего минимума"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Al Ahed FC",
+      "away_team_ru": "Ал Ахед",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T14:30:00+00:00",
+      "commence_time_display": "20.07.2026 17:30 MSK",
+      "family": "totals",
+      "home_team": "Jwaaya FC",
+      "home_team_ru": "Джуаейа",
+      "league_name": "Lebanon - Premier League, Relegation round",
+      "league_name_ru": "Лебанон - Премьер-лига, Релегатион рунд",
+      "match_key": "soccer|jwaaya_fc|al_ahed_fc|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.568426,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.198,
+        "canonical_ev_pct": 4.022,
+        "confidence": 74.21,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "clubelo",
+          "espn",
+          "sstats"
+        ],
+        "confirmation_sources_count": 9,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.287,
+        "market_probability": 0.555556,
+        "model_probability": 0.568426,
+        "odds": 1.83,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 15.921,
+        "quality_reasons": [],
+        "quality_score": 74.648,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.546448,
+        "sources_count": 9,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.8,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.83,
+          "selected_vs_median_deviation_pct": 1.667
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.286,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.286,
+          "xg_model_optimism_gap_pp": 1.286,
+          "xg_probability": 0.555562,
+          "xg_probability_pct": 55.556,
+          "xg_source": "home_away",
+          "xg_total": 2.454
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_publication_score_below_min",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_c_publication_score_below_min",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: publication score below min",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень C: publication score below min",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Tampereen Ilves",
+      "away_team_ru": "Тамперин Илвес",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Turun Palloseura",
+      "home_team_ru": "Турун Паллосеура",
+      "league_name": "Finland - Veikkausliiga",
+      "league_name_ru": "Финланд - Вейккауслиига",
+      "match_key": "soccer|turun_palloseura|tampereen_ilves|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.452812,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.264,
+        "canonical_ev_pct": 7.769,
+        "confidence": 75.904,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 2.9,
+        "market_probability": 0.423809,
+        "model_probability": 0.437812,
+        "odds": 2.38,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 87.083,
+        "quality_reasons": [],
+        "quality_score": 75.632,
+        "quality_score_raw": 75.632,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.420168,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 2.899,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 2.899,
+          "xg_model_optimism_gap_pp": 2.899,
+          "xg_probability": 0.423818,
+          "xg_probability_pct": 42.382,
+          "xg_source": "home_away",
+          "xg_total": 2.997
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Меньше 2.5",
+      "tier": null
+    },
+    {
+      "away_team": "FC RFS",
+      "away_team_ru": "RFS",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "FS Jelgava",
+      "home_team_ru": "FS Джелгава",
+      "league_name": "Latvia - Virsliga",
+      "league_name_ru": "Латвиа - Вирслига",
+      "match_key": "soccer|fs_jelgava|fc_rfs|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.446425,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.32,
+        "canonical_ev_pct": 8.035,
+        "confidence": 74.216,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "clubelo",
+          "espn",
+          "sstats"
+        ],
+        "confirmation_sources_count": 10,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.539,
+        "market_probability": 0.431034,
+        "model_probability": 0.446425,
+        "odds": 2.42,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 21.581,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.413223,
+        "sources_count": 10,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.539,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.539,
+          "xg_model_optimism_gap_pp": 1.539,
+          "xg_probability": 0.431033,
+          "xg_probability_pct": 43.103,
+          "xg_source": "home_away",
+          "xg_total": 3.352
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "FC RFS",
+      "away_team_ru": "RFS",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "FS Jelgava",
+      "home_team_ru": "FS Джелгава",
+      "league_name": "Latvia - Virsliga",
+      "league_name_ru": "Латвиа - Вирслига",
+      "match_key": "soccer|fs_jelgava|fc_rfs|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.408678,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.693,
+        "canonical_ev_pct": 9.934,
+        "confidence": 74.097,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "clubelo",
+          "espn",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 3.052,
+        "market_probability": 0.378154,
+        "model_probability": 0.393678,
+        "odds": 2.69,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 85.976,
+        "quality_reasons": [],
+        "quality_score": 76.572,
+        "quality_score_raw": 76.572,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.371747,
+        "sources_count": 3,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 3.052,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 3.052,
+          "xg_model_optimism_gap_pp": 3.052,
+          "xg_probability": 0.378153,
+          "xg_probability_pct": 37.815,
+          "xg_source": "home_away",
+          "xg_total": 3.208
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Меньше 2.5",
+      "tier": null
+    },
+    {
+      "away_team": "JK Tallinna Kalev",
+      "away_team_ru": "JK Таллинна Калев",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-20T14:00:00+00:00",
+      "commence_time_display": "20.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "Tartu JK Tammeka U21",
+      "home_team_ru": "Тарту JK Таммека U21",
+      "league_name": "Estonia - Esiliiga B",
+      "league_name_ru": "Естониа - Есилиига B",
+      "match_key": "2026-07-20|tartu jk tammeka|jk tallinna kalev",
+      "metrics": {
+        "adjusted_probability": 0.395874,
+        "books_count": 230,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.091,
+        "canonical_ev_pct": 8.469,
+        "confidence": 74.411,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 4,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.42,
+        "market_probability": 0.381679,
+        "model_probability": 0.395874,
+        "odds": 2.74,
+        "odds_sources_count": 4,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 21.622,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "a_cover_evidence",
+        "selected_implied_probability": 0.364964,
+        "sources_count": 4,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 230,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.62,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 4,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.74,
+          "selected_vs_median_deviation_pct": 4.58
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 46.125,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 46.125,
+          "xg_model_gap_pp": -46.125,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.857123,
+          "xg_probability_pct": 85.712,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_low_quality_competition_requires_a_tier",
+        "tier_c_proxy_default_xg_placeholder",
+        "tier_c_proxy_default_xg_placeholder"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: proxy default xg placeholder",
+        "уровень A: proxy default xg placeholder",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: low quality competition requires a tier",
+        "уровень C: proxy default xg placeholder",
+        "уровень C: proxy default xg placeholder"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Tampereen Ilves",
+      "away_team_ru": "Тамперин Илвес",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Turun Palloseura",
+      "home_team_ru": "Турун Паллосеура",
+      "league_name": "Finland - Veikkausliiga",
+      "league_name_ru": "Финланд - Вейккауслиига",
+      "match_key": "soccer|tampereen ilves|turun palloseura|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.478519,
+        "books_count": 227,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.556,
+        "canonical_ev_pct": 3.36,
+        "confidence": 72.412,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.904,
+        "market_probability": 0.469484,
+        "model_probability": 0.478519,
+        "odds": 2.16,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.876,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.462963,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 227,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.13,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 2,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 2.16,
+          "selected_vs_median_deviation_pct": 1.408
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 33.564,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 33.564,
+          "xg_model_optimism_gap_pp": 33.564,
+          "xg_probability": 0.142877,
+          "xg_probability_pct": 14.288,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_proxy_default_xg_placeholder",
+        "tier_c_proxy_default_xg_placeholder"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: proxy default xg placeholder",
+        "уровень A: proxy default xg placeholder",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: hard context required for proxy quality",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: proxy default xg placeholder",
+        "уровень C: proxy default xg placeholder"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Tampereen Ilves",
+      "away_team_ru": "Тамперин Илвес",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Turun Palloseura",
+      "home_team_ru": "Турун Паллосеура",
+      "league_name": "Finland - Veikkausliiga",
+      "league_name_ru": "Финланд - Вейккауслиига",
+      "match_key": "soccer|tampereen ilves|turun palloseura|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.688209,
+        "books_count": 227,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 5.127,
+        "canonical_ev_pct": 8.049,
+        "confidence": 74.222,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 4,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.376,
+        "market_probability": 0.664452,
+        "model_probability": 0.688209,
+        "odds": 1.57,
+        "odds_sources_count": 7,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 25.209,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "a_cover_evidence",
+        "selected_implied_probability": 0.636943,
+        "sources_count": 4,
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 16.891,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 16.891,
+          "xg_model_gap_pp": -16.891,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.857123,
+          "xg_probability_pct": 85.712,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 3.5,
+      "reject_reasons": [
+        "odds_below_global_min"
+      ],
+      "reject_reasons_ru": [
+        "коэффициент ниже общего минимума"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "JK Tallinna Kalev",
+      "away_team_ru": "JK Таллинна Калев",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-20T14:00:00+00:00",
+      "commence_time_display": "20.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "Tartu JK Tammeka U21",
+      "home_team_ru": "Тарту JK Таммека U21",
+      "league_name": "Estonia - Esiliiga B",
+      "league_name_ru": "Естониа - Есилиига B",
+      "match_key": "2026-07-20|tartu jk tammeka|jk tallinna kalev",
+      "metrics": {
+        "adjusted_probability": 0.598278,
+        "books_count": 220,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.024,
+        "canonical_ev_pct": 3.502,
+        "confidence": 72.176,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 4,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.177,
+        "market_probability": 0.58651,
+        "model_probability": 0.598278,
+        "odds": 1.73,
+        "odds_sources_count": 4,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.776,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.578035,
+        "sources_count": 4,
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 34.907,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 34.907,
+          "xg_model_gap_pp": -34.907,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.947347,
+          "xg_probability_pct": 94.735,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 4.5,
+      "reject_reasons": [
+        "odds_below_global_min"
+      ],
+      "reject_reasons_ru": [
+        "коэффициент ниже общего минимума"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "JK Tallinna Kalev",
+      "away_team_ru": "JK Таллинна Калев",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-20T14:00:00+00:00",
+      "commence_time_display": "20.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "Tartu JK Tammeka U21",
+      "home_team_ru": "Тарту JK Таммека U21",
+      "league_name": "Estonia - Esiliiga B",
+      "league_name_ru": "Естониа - Есилиига B",
+      "match_key": "2026-07-20|tartu jk tammeka|jk tallinna kalev",
+      "metrics": {
+        "adjusted_probability": 0.594118,
+        "books_count": 220,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 0.588,
+        "canonical_ev_pct": 1.0,
+        "confidence": 69.25,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 4,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.588,
+        "market_probability": 0.588235,
+        "model_probability": 0.594118,
+        "odds": 1.7,
+        "odds_sources_count": 4,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 6.826,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.588235,
+        "sources_count": 4,
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 54.146,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 54.146,
+          "xg_model_optimism_gap_pp": 54.146,
+          "xg_probability": 0.052653,
+          "xg_probability_pct": 5.265,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 4.0,
       "reject_reasons": [
         "odds_below_global_min"
       ],
@@ -96,27 +1496,27 @@
       "tier": null
     },
     {
-      "away_team": "Rubio Nu",
-      "away_team_ru": "Рубио Ну",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-07-20T12:00:00+00:00",
-      "commence_time_display": "20.07.2026 15:00 MSK",
+      "away_team": "Al Ahed FC",
+      "away_team_ru": "Ал Ахед",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-20T14:30:00+00:00",
+      "commence_time_display": "20.07.2026 17:30 MSK",
       "family": "totals",
-      "home_team": "Recoleta FC",
-      "home_team_ru": "Реколета",
-      "league_name": "Paraguay - Campeonato Femenino, Women",
-      "league_name_ru": "Парагуей - Кампеонато Феменино, Уомен",
-      "match_key": "soccer|recoleta_fc|rubio_nu|2026-07-20",
+      "home_team": "Jwaaya FC",
+      "home_team_ru": "Джуаейа",
+      "league_name": "Lebanon - Premier League, Relegation round",
+      "league_name_ru": "Лебанон - Премьер-лига, Релегатион рунд",
+      "match_key": "2026-07-20|jwaaya|al ahed",
       "metrics": {
-        "adjusted_probability": 0.499324,
-        "books_count": 2,
+        "adjusted_probability": 0.407056,
+        "books_count": 204,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 9.932,
-        "canonical_ev_pct": 24.831,
-        "confidence": 76.775,
+        "canonical_edge_pp": 0.383,
+        "canonical_ev_pct": 0.95,
+        "confidence": 69.528,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -126,8 +1526,6 @@
           "weather_supports_under": false
         },
         "confirmation_sources": [
-          "clubelo",
-          "espn",
           "sstats"
         ],
         "confirmation_sources_count": 3,
@@ -135,77 +1533,12 @@
           "enabled": false,
           "reason": "family_not_dnb"
         },
-        "line_sources": [
-          "odds_api_io"
-        ],
-        "market_edge_pp": 5.0,
-        "market_probability": 0.449324,
-        "model_probability": 0.484324,
-        "odds": 2.5,
-        "odds_sources_count": 1,
-        "price_integrity_guard": {
-          "details": {
-            "external_snapshot_match_rows": 102,
-            "external_snapshot_max_deviation_pct": 18.0,
-            "external_snapshot_max_implied_gap_pp": 12.0,
-            "external_snapshot_median_same_side_price": 1.955,
-            "external_snapshot_price_guard_mode": "odds_api_io_same_side_snapshot_median",
-            "external_snapshot_rows_total": 1040,
-            "external_snapshot_same_side_real_book_prices": [
-              2.5,
-              1.41
-            ],
-            "external_snapshot_selected_price": 2.5,
-            "external_snapshot_selected_vs_median_deviation_pct": 27.877,
-            "external_snapshot_selected_vs_median_implied_gap_pp": 11.151,
-            "external_snapshot_side_rows": 2,
-            "external_snapshot_skipped_opposite_side": 34,
-            "external_snapshot_skipped_point_mismatch": 32,
-            "external_snapshot_skipped_unknown_side": 0,
-            "high_price_external_guard_confirmation_sources_count": 3,
-            "high_price_external_guard_external_snapshot_match_rows": 102,
-            "high_price_external_guard_external_snapshot_rows_total": 1040,
-            "high_price_external_guard_external_snapshot_side_rows": 2,
-            "high_price_external_guard_external_snapshot_skipped_opposite_side": 34,
-            "high_price_external_guard_external_snapshot_skipped_point_mismatch": 32,
-            "high_price_external_guard_external_snapshot_skipped_unknown_side": 0,
-            "high_price_external_guard_line_sources": [
-              "odds_api_io"
-            ],
-            "high_price_external_guard_odds_sources_count": 1,
-            "high_price_external_guard_prices": [
-              2.5,
-              1.41
-            ],
-            "market_probability": 0.449324,
-            "max_deviation_pct": 16.0,
-            "max_selected_vs_market_gap_pp": 10.0,
-            "median_same_side_price": 1.955,
-            "price_guard_mode": "identified_same_side_real_book_median",
-            "same_side_identified_offers_count": 2,
-            "same_side_identified_prices": [
-              2.5,
-              1.41
-            ],
-            "same_side_offers_count": 2,
-            "same_side_real_book_prices": [
-              2.5,
-              1.41
-            ],
-            "selected_implied_probability": 0.4,
-            "selected_price": 2.5,
-            "selected_vs_market_gap_pp": 4.932,
-            "selected_vs_median_deviation_pct": 27.877,
-            "skipped_opposite_side": 0,
-            "skipped_point_mismatch": 0,
-            "skipped_unknown_side": 0
-          },
-          "enabled": true,
-          "reasons": [
-            "price_integrity:selected_price_vs_bookmaker_median_outlier",
-            "price_integrity:external_snapshot_bookmaker_median_outlier"
-          ]
-        },
+        "line_sources": [],
+        "market_edge_pp": 0.383,
+        "market_probability": 0.403226,
+        "model_probability": 0.407056,
+        "odds": 2.48,
+        "odds_sources_count": 2,
         "proxy_single_source_thresholds": {
           "applies": false,
           "enabled": true,
@@ -213,63 +1546,113 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 93.486,
+        "publication_score": 7.559,
         "quality_reasons": [],
-        "quality_score": 91.546,
-        "quality_score_raw": 91.546,
-        "quality_score_source": "raw",
-        "selected_implied_probability": 0.4,
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.403226,
         "sources_count": 3,
-        "xg_sanity": {
+        "tier_b_bookmaker_quorum": {
+          "books_count": 204,
           "enabled": true,
-          "xg_abs_gap_pp": 5.002,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.215,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 2,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.48,
+          "selected_vs_median_deviation_pct": 11.964
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 0.105,
           "xg_direction_ok": false,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 5.002,
-          "xg_model_optimism_gap_pp": 5.002,
-          "xg_probability": 0.449302,
-          "xg_probability_pct": 44.93,
+          "xg_model_gap_pp": 0.105,
+          "xg_model_optimism_gap_pp": 0.105,
+          "xg_probability": 0.406006,
+          "xg_probability_pct": 40.601,
           "xg_source": "home_away",
-          "xg_total": 2.886
+          "xg_total": 2.0
         }
       },
       "ok": false,
-      "point": 2.5,
+      "point": 2.0,
       "reject_reasons": [
-        "price_integrity:selected_price_vs_bookmaker_median_outlier",
-        "price_integrity:external_snapshot_bookmaker_median_outlier",
-        "xg_direction_conflict"
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_canonical_ev_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_bookmaker_quorum_price_outlier:11.96>8.00",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_canonical_ev_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_proxy_default_xg_placeholder",
+        "tier_c_proxy_default_xg_placeholder"
       ],
       "reject_reasons_ru": [
-        "price integrity:selected price vs bookmaker median outlier",
-        "price integrity:external snapshot bookmaker median outlier",
-        "направление ставки конфликтует с xG"
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "EV ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: proxy default xg placeholder",
+        "уровень A: proxy default xg placeholder",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: bookmaker quorum price outlier:11.96>8.00",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: proxy default xg placeholder",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "EV ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: proxy default xg placeholder",
+        "уровень C: proxy default xg placeholder"
       ],
-      "selection": "Меньше 2.5",
+      "selection": "Меньше",
       "tier": null
     },
     {
-      "away_team": "Rubio Nu",
-      "away_team_ru": "Рубио Ну",
-      "candidate_source": "debug_candidates_before_quality",
-      "commence_time": "2026-07-20T12:00:00+00:00",
-      "commence_time_display": "20.07.2026 15:00 MSK",
+      "away_team": "FC RFS",
+      "away_team_ru": "RFS",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
       "family": "totals",
-      "home_team": "Recoleta FC",
-      "home_team_ru": "Реколета",
-      "league_name": "Paraguay - Campeonato Femenino, Women",
-      "league_name_ru": "Парагуей - Кампеонато Феменино, Уомен",
-      "match_key": "soccer|recoleta|rubio nu|2026-07-20",
+      "home_team": "FS Jelgava",
+      "home_team_ru": "FS Джелгава",
+      "league_name": "Latvia - Virsliga",
+      "league_name_ru": "Латвиа - Вирслига",
+      "match_key": "2026-07-20|fs jelgava|rfs",
       "metrics": {
-        "adjusted_probability": 0.499324,
-        "books_count": 2,
+        "adjusted_probability": 0.497059,
+        "books_count": 211,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 9.932,
-        "canonical_ev_pct": 24.831,
-        "confidence": 76.775,
+        "canonical_edge_pp": 0.686,
+        "canonical_ev_pct": 1.4,
+        "confidence": 73.03,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -283,82 +1666,17 @@
           "espn",
           "sstats"
         ],
-        "confirmation_sources_count": 3,
+        "confirmation_sources_count": 8,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
-        "line_sources": [
-          "odds_api_io"
-        ],
-        "market_edge_pp": 5.0,
-        "market_probability": 0.449324,
-        "model_probability": 0.484324,
-        "odds": 2.5,
-        "odds_sources_count": 1,
-        "price_integrity_guard": {
-          "details": {
-            "external_snapshot_match_rows": 102,
-            "external_snapshot_max_deviation_pct": 18.0,
-            "external_snapshot_max_implied_gap_pp": 12.0,
-            "external_snapshot_median_same_side_price": 1.955,
-            "external_snapshot_price_guard_mode": "odds_api_io_same_side_snapshot_median",
-            "external_snapshot_rows_total": 1040,
-            "external_snapshot_same_side_real_book_prices": [
-              2.5,
-              1.41
-            ],
-            "external_snapshot_selected_price": 2.5,
-            "external_snapshot_selected_vs_median_deviation_pct": 27.877,
-            "external_snapshot_selected_vs_median_implied_gap_pp": 11.151,
-            "external_snapshot_side_rows": 2,
-            "external_snapshot_skipped_opposite_side": 34,
-            "external_snapshot_skipped_point_mismatch": 32,
-            "external_snapshot_skipped_unknown_side": 0,
-            "high_price_external_guard_confirmation_sources_count": 3,
-            "high_price_external_guard_external_snapshot_match_rows": 102,
-            "high_price_external_guard_external_snapshot_rows_total": 1040,
-            "high_price_external_guard_external_snapshot_side_rows": 2,
-            "high_price_external_guard_external_snapshot_skipped_opposite_side": 34,
-            "high_price_external_guard_external_snapshot_skipped_point_mismatch": 32,
-            "high_price_external_guard_external_snapshot_skipped_unknown_side": 0,
-            "high_price_external_guard_line_sources": [
-              "odds_api_io"
-            ],
-            "high_price_external_guard_odds_sources_count": 1,
-            "high_price_external_guard_prices": [
-              2.5,
-              1.41
-            ],
-            "market_probability": 0.449324,
-            "max_deviation_pct": 16.0,
-            "max_selected_vs_market_gap_pp": 10.0,
-            "median_same_side_price": 1.955,
-            "price_guard_mode": "identified_same_side_real_book_median",
-            "same_side_identified_offers_count": 2,
-            "same_side_identified_prices": [
-              2.5,
-              1.41
-            ],
-            "same_side_offers_count": 2,
-            "same_side_real_book_prices": [
-              2.5,
-              1.41
-            ],
-            "selected_implied_probability": 0.4,
-            "selected_price": 2.5,
-            "selected_vs_market_gap_pp": 4.932,
-            "selected_vs_median_deviation_pct": 27.877,
-            "skipped_opposite_side": 0,
-            "skipped_point_mismatch": 0,
-            "skipped_unknown_side": 0
-          },
-          "enabled": true,
-          "reasons": [
-            "price_integrity:selected_price_vs_bookmaker_median_outlier",
-            "price_integrity:external_snapshot_bookmaker_median_outlier"
-          ]
-        },
+        "line_sources": [],
+        "market_edge_pp": 0.686,
+        "market_probability": 0.490196,
+        "model_probability": 0.497059,
+        "odds": 2.04,
+        "odds_sources_count": 8,
         "proxy_single_source_thresholds": {
           "applies": false,
           "enabled": true,
@@ -366,13 +1684,272 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 93.486,
+        "publication_score": 9.883,
         "quality_reasons": [],
-        "quality_score": 91.546,
-        "quality_score_raw": 91.546,
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.490196,
+        "sources_count": 8,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 211,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.04,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 8,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 2.04,
+          "selected_vs_median_deviation_pct": 0.0
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 17.962,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 17.962,
+          "xg_model_gap_pp": -17.962,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.676676,
+          "xg_probability_pct": 67.668,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_canonical_ev_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_canonical_ev_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_proxy_default_xg_placeholder",
+        "tier_c_proxy_default_xg_placeholder"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "EV ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: proxy default xg placeholder",
+        "уровень A: proxy default xg placeholder",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: proxy default xg placeholder",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "EV ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: proxy default xg placeholder",
+        "уровень C: proxy default xg placeholder"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Ilves",
+      "away_team_ru": "Илвес",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Turun Palloseura",
+      "home_team_ru": "Турун Паллосеура",
+      "league_name": "Veikkausliiga",
+      "league_name_ru": "Вейккауслиига",
+      "match_key": "soccer|ilves|turun palloseura|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.561111,
+        "books_count": 220,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 0.556,
+        "canonical_ev_pct": 1.0,
+        "confidence": 66.25,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 7,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.555,
+        "market_probability": 0.555556,
+        "model_probability": 0.561111,
+        "odds": 1.8,
+        "odds_sources_count": 7,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 6.761,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.555556,
+        "sources_count": 7,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 220,
+          "enabled": true,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 7,
+          "priced_books_count": 1,
+          "same_market_side_line_only": true
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_canonical_ev_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_bookmaker_quorum_prices_missing:1/2",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_canonical_ev_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "EV ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: bookmaker quorum prices missing:1/2",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "EV ниже минимума уровня C",
+        "уровень C: publication score below min"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Tampereen Ilves",
+      "away_team_ru": "Тамперин Илвес",
+      "candidate_source": "debug_candidates_before_quality",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Turun Palloseura",
+      "home_team_ru": "Турун Паллосеура",
+      "league_name": "Finland - Veikkausliiga",
+      "league_name_ru": "Финланд - Вейккауслиига",
+      "match_key": "soccer|tampereen ilves|turun palloseura|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.452812,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.264,
+        "canonical_ev_pct": 7.769,
+        "confidence": 75.904,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 2.9,
+        "market_probability": 0.423809,
+        "model_probability": 0.437812,
+        "odds": 2.38,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 87.083,
+        "quality_reasons": [],
+        "quality_score": 75.632,
+        "quality_score_raw": 75.632,
         "quality_score_source": "raw",
-        "selected_implied_probability": 0.4,
-        "sources_count": 3,
+        "selected_implied_probability": 0.420168,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 4,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.265,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 4,
+          "same_market_side_line_only": true,
+          "selected_price": 2.38,
+          "selected_vs_median_deviation_pct": 5.077
+        },
         "xg_sanity": {
           "enabled": false,
           "reason": "missing_xg",
@@ -384,23 +1961,245 @@
       "ok": false,
       "point": 2.5,
       "reject_reasons": [
-        "price_integrity:selected_price_vs_bookmaker_median_outlier",
+        "tier_c_watch_only",
+        "missing_total_xg_sanity"
+      ],
+      "reject_reasons_ru": [
+        "уровень C: watch only",
+        "missing total xg sanity"
+      ],
+      "selection": "Меньше 2.5",
+      "tier": "уровень C"
+    },
+    {
+      "away_team": "FC RFS",
+      "away_team_ru": "RFS",
+      "candidate_source": "debug_candidates_before_quality",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "FS Jelgava",
+      "home_team_ru": "FS Джелгава",
+      "league_name": "Latvia - Virsliga",
+      "league_name_ru": "Латвиа - Вирслига",
+      "match_key": "soccer|fs jelgava|rfs|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.408678,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.693,
+        "canonical_ev_pct": 9.934,
+        "confidence": 74.097,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "clubelo",
+          "espn",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 3.052,
+        "market_probability": 0.378154,
+        "model_probability": 0.393678,
+        "odds": 2.69,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 85.976,
+        "quality_reasons": [],
+        "quality_score": 76.572,
+        "quality_score_raw": 76.572,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.371747,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.4,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 2.69,
+          "selected_vs_median_deviation_pct": 12.083
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_c_watch_only",
+        "missing_total_xg_sanity"
+      ],
+      "reject_reasons_ru": [
+        "уровень C: watch only",
+        "missing total xg sanity"
+      ],
+      "selection": "Меньше 2.5",
+      "tier": "уровень C"
+    },
+    {
+      "away_team": "JK Tallinna Kalev",
+      "away_team_ru": "JK Таллинна Калев",
+      "candidate_source": "debug_candidates_before_quality",
+      "commence_time": "2026-07-20T14:00:00+00:00",
+      "commence_time_display": "20.07.2026 17:00 MSK",
+      "family": "totals",
+      "home_team": "Tartu JK Tammeka U21",
+      "home_team_ru": "Тарту JK Таммека U21",
+      "league_name": "Estonia - Esiliiga B",
+      "league_name_ru": "Естониа - Есилиига B",
+      "match_key": "soccer|jk tallinna kalev|tartu jk tammeka|2026-07-20",
+      "metrics": {
+        "adjusted_probability": 0.563247,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 8.248,
+        "canonical_ev_pct": 17.155,
+        "confidence": 76.775,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 4.669,
+        "market_probability": 0.516562,
+        "model_probability": 0.548247,
+        "odds": 2.08,
+        "odds_sources_count": 1,
+        "price_integrity_guard": {
+          "details": {
+            "external_snapshot_match_rows": 154,
+            "external_snapshot_max_deviation_pct": 18.0,
+            "external_snapshot_max_implied_gap_pp": 12.0,
+            "external_snapshot_median_same_side_price": 1.75,
+            "external_snapshot_price_guard_mode": "odds_api_io_same_side_snapshot_median",
+            "external_snapshot_rows_total": 2459,
+            "external_snapshot_same_side_real_book_prices": [
+              1.76,
+              1.74
+            ],
+            "external_snapshot_selected_price": 2.08,
+            "external_snapshot_selected_vs_median_deviation_pct": 18.857,
+            "external_snapshot_selected_vs_median_implied_gap_pp": 9.066,
+            "external_snapshot_side_rows": 2,
+            "external_snapshot_skipped_opposite_side": 40,
+            "external_snapshot_skipped_point_mismatch": 38,
+            "external_snapshot_skipped_unknown_side": 0,
+            "market_probability": 0.516562,
+            "max_deviation_pct": 16.0,
+            "max_selected_vs_market_gap_pp": 10.0,
+            "median_same_side_price": 1.91,
+            "price_guard_mode": "identified_same_side_real_book_median",
+            "same_side_identified_offers_count": 3,
+            "same_side_identified_prices": [
+              2.08,
+              1.76,
+              1.74
+            ],
+            "same_side_offers_count": 3,
+            "same_side_real_book_prices": [
+              2.08,
+              1.74
+            ],
+            "selected_implied_probability": 0.480769,
+            "selected_price": 2.08,
+            "selected_vs_market_gap_pp": 3.579,
+            "selected_vs_median_deviation_pct": 8.901,
+            "skipped_opposite_side": 0,
+            "skipped_point_mismatch": 0,
+            "skipped_unknown_side": 0
+          },
+          "enabled": true,
+          "reasons": [
+            "price_integrity:external_snapshot_bookmaker_median_outlier"
+          ]
+        },
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 94.255,
+        "quality_reasons": [],
+        "quality_score": 75.935,
+        "quality_score_raw": 75.935,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.480769,
+        "sources_count": 1,
+        "xg_sanity": {
+          "enabled": false,
+          "reason": "missing_xg",
+          "xg_away_raw": null,
+          "xg_home_raw": null,
+          "xg_source": "invalid_or_missing"
+        }
+      },
+      "ok": false,
+      "point": 4.5,
+      "reject_reasons": [
         "price_integrity:external_snapshot_bookmaker_median_outlier"
       ],
       "reject_reasons_ru": [
-        "price integrity:selected price vs bookmaker median outlier",
         "price integrity:external snapshot bookmaker median outlier"
       ],
-      "selection": "Меньше 2.5",
+      "selection": "Больше 4.5",
       "tier": null
     }
   ],
   "no_pick_report_sent": true,
   "pool_counts": {
-    "debug_candidates_before_quality": 1,
-    "debug_candidates_before_quality_stale_or_outside_window": 24,
+    "debug_candidates_before_quality": 3,
+    "debug_candidates_before_quality_stale_or_outside_window": 22,
     "latest_picks_stale_or_outside_window": 72,
-    "latest_rescue_candidates": 2
+    "latest_rescue_candidates": 18
   },
   "published": false,
   "scan_policy": {
@@ -414,16 +2213,41 @@
   "shadow_ranking": {
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
-    "duplicates_removed": 1,
+    "duplicates_removed": 3,
     "reason_counts_without_daily_cap": {
-      "odds_below_global_min": 1,
+      "odds_below_global_min": 5,
       "price_integrity:external_snapshot_bookmaker_median_outlier": 1,
-      "price_integrity:selected_price_vs_bookmaker_median_outlier": 1
+      "tier_a_canonical_edge_below_min": 4,
+      "tier_a_canonical_ev_below_min": 3,
+      "tier_a_market_implied_xg_not_hard_confirmation": 3,
+      "tier_a_odds_sources_below_min:1/2": 3,
+      "tier_a_proxy_default_xg_placeholder": 8,
+      "tier_a_proxy_quality_not_allowed": 3,
+      "tier_a_publication_score_below_min": 6,
+      "tier_a_quality_below_min": 4,
+      "tier_b_bookmaker_quorum_price_outlier:11.96>8.00": 1,
+      "tier_b_bookmaker_quorum_prices_missing:1/2": 1,
+      "tier_b_canonical_edge_below_min": 4,
+      "tier_b_canonical_ev_below_min": 3,
+      "tier_b_hard_context_required_for_proxy_quality": 1,
+      "tier_b_low_quality_competition_requires_a_tier": 1,
+      "tier_b_market_implied_xg_not_hard_confirmation": 3,
+      "tier_b_odds_sources_below_min:1/2": 3,
+      "tier_b_proxy_default_xg_placeholder": 8,
+      "tier_b_publication_score_below_min": 5,
+      "tier_b_quality_below_min": 4,
+      "tier_c_canonical_edge_below_min": 4,
+      "tier_c_canonical_ev_below_min": 3,
+      "tier_c_market_implied_xg_not_hard_confirmation": 3,
+      "tier_c_proxy_default_xg_placeholder": 8,
+      "tier_c_publication_score_below_min": 5,
+      "tier_c_quality_below_min": 4,
+      "xg_direction_conflict": 4
     },
     "top_would_publish_without_daily_cap": []
   },
   "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4295,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1784545808,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4298,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1784553114,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
@@ -432,5 +2256,83 @@
     "min_kickoff_lead_minutes": 20,
     "publish_window_hours": 2
   },
-  "watchlist": []
+  "watchlist": [
+    {
+      "away_team": "FC RFS",
+      "away_team_ru": "RFS",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "FS Jelgava",
+      "home_team_ru": "FS Джелгава",
+      "league_name": "Latvia - Virsliga",
+      "league_name_ru": "Латвиа - Вирслига",
+      "match_key": "soccer|fs jelgava|rfs|2026-07-20",
+      "metrics": {
+        "books_count": 3,
+        "canonical_edge_pp": 3.693,
+        "canonical_ev_pct": 9.934,
+        "confidence": 74.097,
+        "confirmation_sources": [
+          "clubelo",
+          "espn",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "odds": 2.69,
+        "odds_sources_count": 1,
+        "quality_score": 76.572,
+        "quality_score_source": "raw",
+        "sources_count": 3
+      },
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_c_watch_only",
+        "missing_total_xg_sanity"
+      ],
+      "reject_reasons_ru": [
+        "уровень C: watch only",
+        "missing total xg sanity"
+      ],
+      "selection": "Меньше 2.5"
+    },
+    {
+      "away_team": "Tampereen Ilves",
+      "away_team_ru": "Тамперин Илвес",
+      "commence_time": "2026-07-20T15:00:00+00:00",
+      "commence_time_display": "20.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Turun Palloseura",
+      "home_team_ru": "Турун Паллосеура",
+      "league_name": "Finland - Veikkausliiga",
+      "league_name_ru": "Финланд - Вейккауслиига",
+      "match_key": "soccer|tampereen ilves|turun palloseura|2026-07-20",
+      "metrics": {
+        "books_count": 4,
+        "canonical_edge_pp": 3.264,
+        "canonical_ev_pct": 7.769,
+        "confidence": 75.904,
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "odds": 2.38,
+        "odds_sources_count": 1,
+        "quality_score": 75.632,
+        "quality_score_source": "raw",
+        "sources_count": 2
+      },
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_c_watch_only",
+        "missing_total_xg_sanity"
+      ],
+      "reject_reasons_ru": [
+        "уровень C: watch only",
+        "missing total xg sanity"
+      ],
+      "selection": "Меньше 2.5"
+    }
+  ]
 }
