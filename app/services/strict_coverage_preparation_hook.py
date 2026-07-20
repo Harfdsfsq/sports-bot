@@ -26,27 +26,15 @@ def _set_full_cohort_runtime() -> dict[str, bool]:
         "MAX_MATCHES_FOR_ODDS_FETCH": "300",
         "CONTEXT_ENRICHMENT_MATCH_LIMIT": "300",
     }
-    activated = {
-        "oddspapi": _present("ODDSPAPI_API_KEY"),
-        "api_football": _present("API_FOOTBALL_KEY"),
-    }
-    if activated["oddspapi"]:
-        values.update(
-            {
-                "ENABLE_ODDSPAPI": "true",
-                "ODDSPAPI_ENABLED": "true",
-                "ODDSPAPI_MATCH_LIMIT": "16",
-                "ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES": "120",
-            }
-        )
+    activated = {"api_football": _present("API_FOOTBALL_KEY")}
     if activated["api_football"]:
         values.update(
             {
                 "API_FOOTBALL_ENABLED": "true",
                 "ENABLE_API_FOOTBALL": "true",
-                "API_FOOTBALL_PER_RUN_MAX": "8",
-                "API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "8",
-                "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "80",
+                "API_FOOTBALL_PER_RUN_MAX": "7",
+                "API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "7",
+                "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "300",
             }
         )
     for key, value in values.items():
