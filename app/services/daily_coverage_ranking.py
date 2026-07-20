@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+import os
+from datetime import date, datetime
 from typing import Any
 
 from app.services.daily_coverage_common import (
@@ -18,6 +19,32 @@ from app.services.daily_coverage_identity import (
     build_ledger_identity_index,
     lookup_ledger_row,
 )
+
+
+def coverage_horizon_days() -> int:
+    for name in (
+        "DAY_INVENTORY_HORIZON_DAYS",
+        "DAY_INVENTORY_TARGET_HORIZON_DAYS",
+        "RUN_DAYS_AHEAD",
+    ):
+        raw = os.getenv(name)
+        if raw is None or not str(raw).strip():
+            continue
+        try:
+            return max(1, min(4, int(float(str(raw)))))
+        except (TypeError, ValueError):
+            continue
+    return 2
+
+
+def horizon_day_offset(kickoff: datetime, date_key: str) -> int | None:
+    try:
+        start = date.fromisoformat(str(date_key)[:10])
+    except ValueError:
+        return 0
+    current = kickoff.astimezone(app_timezone()).date()
+    offset = (current - start).days
+    return offset if 0 <= offset < coverage_horizon_days() else None
 
 
 def _bucket(hours: float) -> tuple[int, str]:
@@ -78,7 +105,6 @@ def rank_inventory(
     now: datetime,
     date_key: str,
 ) -> list[dict[str, Any]]:
-    local_tz = app_timezone()
     ledger_matches = (
         ledger.get("matches") if isinstance(ledger.get("matches"), dict) else {}
     )
@@ -86,11 +112,10 @@ def rank_inventory(
     ranked: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
     for row in rows:
         key, kickoff = row_key(row), row_kickoff(row)
-        if (
-            not key
-            or kickoff is None
-            or kickoff.astimezone(local_tz).date().isoformat() != date_key
-        ):
+        if not key or kickoff is None:
+            continue
+        day_offset = horizon_day_offset(kickoff, date_key)
+        if day_offset is None:
             continue
         hours = (kickoff - now).total_seconds() / 3600.0
         if hours < -0.25:
@@ -122,6 +147,8 @@ def rank_inventory(
                 "kickoff_utc": kickoff.isoformat(),
                 "hours_to_kickoff": round(hours, 3),
                 "time_bucket": bucket_name,
+                "horizon_day_offset": day_offset,
+                "coverage_horizon_days": coverage_horizon_days(),
                 "odds_sources": odds,
                 "context_sources": contexts,
                 "odds_sources_count": len(odds),
@@ -166,4 +193,14 @@ def coverage_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
             for row in rows
         ),
         "with_semantic_ledger_match": sum(bool(row.get("ledger_identity_match")) for row in rows),
+        "horizon_day_0": sum(as_int(row.get("horizon_day_offset"), -1) == 0 for row in rows),
+        "horizon_day_1plus": sum(as_int(row.get("horizon_day_offset"), -1) >= 1 for row in rows),
     }
+
+
+__all__ = [
+    "coverage_horizon_days",
+    "coverage_summary",
+    "horizon_day_offset",
+    "rank_inventory",
+]

@@ -1,15 +1,9 @@
 """Keep strict coverage selection aligned with the configured local-time horizon.
 
-The target expander stores the best 300 fixtures across ``RUN_DAYS_AHEAD`` local
-calendar days. The original strict synchronizer later filtered those rows by the
-UTC-like date embedded in provider keys, shrinking a valid 300-row horizon to the
-90 rows whose identities happened to equal the current local date. This installer
-replaces only the candidate collection step: evidence ranking and all publication
-contracts stay unchanged.
-
-It also configures repository-local merge drivers. Runtime Actions commit artifacts
-and then rebase onto ``main``; concurrent runs previously left literal Git conflict
-markers in cached inventory aliases because the shell ignored a failed rebase.
+The selector accepts every real fixture within ``RUN_DAYS_AHEAD`` and rejects
+identity-only evidence rows that have no teams or exact kickoff. Generated runtime JSON
+merge drivers are configured at startup so concurrent scheduled runs cannot persist Git
+conflict markers.
 """
 
 from __future__ import annotations
@@ -35,7 +29,7 @@ def _int_env(*names: str, default: int, minimum: int = 1, maximum: int = 4) -> i
             continue
         try:
             return max(minimum, min(maximum, int(float(str(raw)))))
-        except Exception:
+        except (TypeError, ValueError):
             continue
     return max(minimum, min(maximum, default))
 
@@ -59,7 +53,7 @@ def app_timezone() -> ZoneInfo:
 def _parse_day(value: Any) -> date | None:
     try:
         return date.fromisoformat(str(value or "")[:10])
-    except Exception:
+    except (TypeError, ValueError):
         return None
 
 
@@ -87,8 +81,50 @@ def row_in_horizon(row: dict[str, Any], day: str, sync_module: Any) -> bool:
     if start is None:
         return True
     if current is None:
-        return True
+        return False
     return start <= current < start + timedelta(days=horizon_days())
+
+
+def _team(row: dict[str, Any], side: str) -> str:
+    keys = (
+        ("home_team", "home", "home_name", "team_home", "match_home")
+        if side == "home"
+        else ("away_team", "away", "away_name", "team_away", "match_away")
+    )
+    return next(
+        (
+            str(row.get(key) or "").strip()
+            for key in keys
+            if str(row.get(key) or "").strip()
+        ),
+        "",
+    )
+
+
+def _real_fixture(row: dict[str, Any], sync_module: Any) -> bool:
+    return bool(
+        _team(row, "home")
+        and _team(row, "away")
+        and sync_module.row_kickoff(row) is not None
+    )
+
+
+def _row_quality(row: dict[str, Any], sync_module: Any) -> tuple[int, int, int]:
+    metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    verified = 0
+    for key in (
+        "verified_odds_sources",
+        "verified_context_sources",
+        "verified_bookmakers",
+    ):
+        value = metadata.get(key)
+        if isinstance(value, (list, tuple, set, dict)):
+            verified += len(value)
+    return (
+        int(_real_fixture(row, sync_module)),
+        verified,
+        len(json.dumps(row, ensure_ascii=False, default=str)),
+    )
 
 
 def _local_identity(row: dict[str, Any], day: str, sync_module: Any) -> Any:
@@ -116,19 +152,21 @@ def _candidate_rows_factory(sync_module: Any):
             if payload_day and payload_day != day:
                 continue
             for row in sync_module._rows(payload):
+                if not _real_fixture(row, sync_module):
+                    continue
                 if not row_in_horizon(row, day, sync_module):
                     continue
                 key = _local_identity(row, day, sync_module)
                 if key is None:
                     continue
                 current = merged.get(key)
-                if current is None or len(json.dumps(row, ensure_ascii=False, default=str)) > len(
-                    json.dumps(current, ensure_ascii=False, default=str)
+                if current is None or _row_quality(row, sync_module) > _row_quality(
+                    current, sync_module
                 ):
                     merged[key] = row
         return list(merged.values())
 
-    candidate_rows._harizon_local_horizon_inventory = True  # type: ignore[attr-defined]
+    candidate_rows._harizon_local_horizon_inventory = True
     return candidate_rows
 
 
@@ -141,9 +179,19 @@ def _configure_git_merge_driver() -> dict[str, Any]:
     latest_command = "python scripts/merge_runtime_latest.py %O %A %B %L %P"
     try:
         commands = (
-            ["git", "config", "merge.harizon-runtime-json.name", "HARIZON semantic runtime JSON merge"],
+            [
+                "git",
+                "config",
+                "merge.harizon-runtime-json.name",
+                "HARIZON semantic runtime JSON merge",
+            ],
             ["git", "config", "merge.harizon-runtime-json.driver", json_command],
-            ["git", "config", "merge.harizon-runtime-latest.name", "HARIZON latest artifact merge"],
+            [
+                "git",
+                "config",
+                "merge.harizon-runtime-latest.name",
+                "HARIZON latest artifact merge",
+            ],
             ["git", "config", "merge.harizon-runtime-latest.driver", latest_command],
         )
         for command in commands:
@@ -195,6 +243,7 @@ def install() -> dict[str, Any]:
         "status": "installed",
         "created_at_utc": datetime.now(UTC).isoformat(),
         "candidate_rows": candidate_status,
+        "real_fixture_rows_only": True,
         "horizon_days": horizon_days(),
         "timezone": str(app_timezone()),
         "git_merge_driver": git_driver,
@@ -204,4 +253,10 @@ def install() -> dict[str, Any]:
     return payload
 
 
-__all__ = ["app_timezone", "horizon_days", "install", "row_in_horizon", "row_local_day"]
+__all__ = [
+    "app_timezone",
+    "horizon_days",
+    "install",
+    "row_in_horizon",
+    "row_local_day",
+]
