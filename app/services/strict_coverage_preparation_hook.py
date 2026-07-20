@@ -9,7 +9,11 @@ _INSTALLED = False
 _ORIGINAL_PREPARE = None
 
 
-def _set_full_cohort_runtime() -> None:
+def _present(name: str) -> bool:
+    return bool(str(os.getenv(name) or "").strip())
+
+
+def _set_full_cohort_runtime() -> dict[str, bool]:
     values = {
         "RUNBOT_DISCOVERY_FIRST_MAX_SECONDS": "240",
         "RUNBOT_DISCOVERY_FIRST_FINAL_RESERVE_SECONDS": "20",
@@ -22,6 +26,29 @@ def _set_full_cohort_runtime() -> None:
         "MAX_MATCHES_FOR_ODDS_FETCH": "300",
         "CONTEXT_ENRICHMENT_MATCH_LIMIT": "300",
     }
+    activated = {
+        "oddspapi": _present("ODDSPAPI_API_KEY"),
+        "api_football": _present("API_FOOTBALL_KEY"),
+    }
+    if activated["oddspapi"]:
+        values.update(
+            {
+                "ENABLE_ODDSPAPI": "true",
+                "ODDSPAPI_ENABLED": "true",
+                "ODDSPAPI_MATCH_LIMIT": "16",
+                "ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES": "120",
+            }
+        )
+    if activated["api_football"]:
+        values.update(
+            {
+                "API_FOOTBALL_ENABLED": "true",
+                "ENABLE_API_FOOTBALL": "true",
+                "API_FOOTBALL_PER_RUN_MAX": "8",
+                "API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "8",
+                "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "80",
+            }
+        )
     for key, value in values.items():
         os.environ[key] = value
     try:
@@ -30,6 +57,7 @@ def _set_full_cohort_runtime() -> None:
         runtime_preflight.AUTONOMOUS_ACCUMULATION_POLICY.update(values)
     except Exception:
         pass
+    return activated
 
 
 def _rebuild_real_inventory() -> dict[str, Any]:
@@ -45,7 +73,7 @@ def _replan() -> dict[str, Any]:
     from app.services import daily_coverage_plan
     from app.services.strict_coverage_inventory_sync import sync
 
-    _set_full_cohort_runtime()
+    activated = _set_full_cohort_runtime()
     daily_coverage_plan.PHASE_TARGETS = (300, 300, 300)
     real_inventory = _rebuild_real_inventory()
     synced = sync()
@@ -56,6 +84,7 @@ def _replan() -> dict[str, Any]:
         "plan_status": plan.get("status"),
         "inventory_rows_seen": plan.get("inventory_rows_seen"),
         "phase_cumulative_target": plan.get("phase_cumulative_target"),
+        "keyed_independent_providers": activated,
         "provider_assignments": {
             provider: {role: len(keys or []) for role, keys in roles.items()}
             for provider, roles in (plan.get("assignments") or {}).items()
@@ -77,7 +106,7 @@ def install() -> dict[str, Any]:
     from app.services.runtime_preflight import RuntimePreflight
     from app.services.strict_coverage_inventory_sync import install as install_inventory_sync
 
-    _set_full_cohort_runtime()
+    activated = _set_full_cohort_runtime()
     daily_coverage_plan.PHASE_TARGETS = (300, 300, 300)
     allsportsapi_result = install_allsportsapi_patch()
     initial_real_inventory = _rebuild_real_inventory()
@@ -116,6 +145,7 @@ def install() -> dict[str, Any]:
         "discovery_wall_seconds": 240,
         "sstats_pari_wall_seconds": 180,
         "sstats_pari_rate_limit_per_minute": 140,
+        "keyed_independent_providers": activated,
         "allsportsapi_full_cohort": allsportsapi_result,
         "initial_real_fixture_inventory": initial_real_inventory,
         "inventory_sync": inventory_result,
