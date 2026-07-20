@@ -1,15 +1,15 @@
-from __future__ import annotations
+"""Let coverage providers enrich the full configured horizon.
 
-"""Let coverage providers enrich the full day while prediction stays near-window.
-
-`PredictionRunner` intentionally filters candidate modelling to the publication
-window. Previously the same short list was also passed to odds/context APIs, making
-300/300 daily coverage impossible. This patch stores the full discovered inventory
-and only broadens provider calls selected by the strict daily plan. Candidate and
-publication windows are untouched.
+Prediction modelling intentionally stays inside the publication window. Coverage APIs,
+however, must receive the complete upcoming inventory across ``RUN_DAYS_AHEAD``;
+otherwise the provider pool collapses throughout the day and tomorrow's matches never
+receive their first or second independent source.
 """
 
-from datetime import UTC, datetime, timedelta
+from __future__ import annotations
+
+import os
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from app.services.daily_coverage_common import canonical_source, target_date
@@ -43,6 +43,22 @@ _CONTEXT = {
 }
 
 
+def _horizon_days() -> int:
+    for name in (
+        "DAY_INVENTORY_HORIZON_DAYS",
+        "DAY_INVENTORY_TARGET_HORIZON_DAYS",
+        "RUN_DAYS_AHEAD",
+    ):
+        raw = os.getenv(name)
+        if raw is None or not str(raw).strip():
+            continue
+        try:
+            return max(1, min(4, int(float(str(raw)))))
+        except (TypeError, ValueError):
+            continue
+    return 2
+
+
 def _provider_name(runner: Any, provider: Any) -> str:
     try:
         return canonical_source(runner._provider_name(provider))
@@ -63,9 +79,15 @@ def _dedupe(*groups: list[Any] | None) -> list[Any]:
     return out
 
 
-def _current_day_matches(runner: Any, matches: list[Any], now_utc: datetime) -> list[Any]:
-    day = target_date(now_utc)
+def _coverage_horizon_matches(
+    runner: Any, matches: list[Any], now_utc: datetime
+) -> list[Any]:
     tz = getattr(getattr(runner, "settings", None), "tzinfo", UTC)
+    try:
+        start = date.fromisoformat(target_date(now_utc))
+    except ValueError:
+        start = now_utc.astimezone(tz).date()
+    end = start + timedelta(days=_horizon_days())
     result: list[Any] = []
     for match in matches:
         kickoff = getattr(match, "commence_time", None)
@@ -73,10 +95,9 @@ def _current_day_matches(runner: Any, matches: list[Any], now_utc: datetime) -> 
             continue
         if kickoff.tzinfo is None:
             kickoff = kickoff.replace(tzinfo=UTC)
-        if kickoff.astimezone(tz).date().isoformat() != day:
+        local_day = kickoff.astimezone(tz).date()
+        if not (start <= local_day < end):
             continue
-        # Do not spend live request quota on long-finished fixtures. Their earlier
-        # evidence remains available from the cumulative ledger/cache.
         if kickoff.astimezone(UTC) < now_utc - timedelta(minutes=20):
             continue
         result.append(match)
@@ -98,7 +119,9 @@ def install(prediction_runner: Any) -> dict[str, Any]:
 
     def _filter_matches(self: Any, matches: list[Any], now_utc: datetime):
         assert callable(_ORIGINAL_FILTER)
-        self._harizon_full_day_coverage_matches = _current_day_matches(self, list(matches or []), now_utc)
+        self._harizon_full_horizon_coverage_matches = _coverage_horizon_matches(
+            self, list(matches or []), now_utc
+        )
         return _ORIGINAL_FILTER(self, matches, now_utc)
 
     async def _fetch_provider(
@@ -110,14 +133,20 @@ def install(prediction_runner: Any) -> dict[str, Any]:
     ):
         assert callable(_ORIGINAL_FETCH)
         if provider is None or not args or not isinstance(args[0], list):
-            return await _ORIGINAL_FETCH(self, provider, method_name, *args, empty_data=empty_data)
+            return await _ORIGINAL_FETCH(
+                self, provider, method_name, *args, empty_data=empty_data
+            )
         name = _provider_name(self, provider)
         role_is_odds = "offer" in str(method_name).lower()
         eligible = name in (_ODDS if role_is_odds else _CONTEXT)
         if not eligible:
-            return await _ORIGINAL_FETCH(self, provider, method_name, *args, empty_data=empty_data)
+            return await _ORIGINAL_FETCH(
+                self, provider, method_name, *args, empty_data=empty_data
+            )
 
-        broad = _dedupe(getattr(self, "_harizon_full_day_coverage_matches", []), args[0])
+        broad = _dedupe(
+            getattr(self, "_harizon_full_horizon_coverage_matches", []), args[0]
+        )
         planned = list(filter_matches(name, method_name, broad) or [])
         call_args = list(args)
         call_args[0] = planned or list(args[0])
@@ -129,8 +158,11 @@ def install(prediction_runner: Any) -> dict[str, Any]:
             empty_data=empty_data,
         )
         if isinstance(stats, dict):
+            stats["full_horizon_coverage_pool"] = len(broad)
             stats["full_day_coverage_pool"] = len(broad)
+            stats["full_horizon_coverage_targets"] = len(call_args[0])
             stats["full_day_coverage_targets"] = len(call_args[0])
+            stats["coverage_horizon_days"] = _horizon_days()
             stats["candidate_publish_window_targets"] = len(args[0])
             stats["publication_window_relaxed"] = False
         return data, stats, preview
@@ -142,6 +174,8 @@ def install(prediction_runner: Any) -> dict[str, Any]:
     _INSTALLED = True
     return {
         "status": "installed",
+        "coverage_scope": "configured_local_time_horizon",
+        "coverage_horizon_days": _horizon_days(),
         "odds_providers": sorted(_ODDS),
         "context_providers": sorted(_CONTEXT),
         "candidate_publication_window_unchanged": True,
