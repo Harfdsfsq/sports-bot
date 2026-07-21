@@ -1,19 +1,1309 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+      "A-tier publication score is below min on many candidates.",
+      "Some candidates still have fewer than the A-tier confirmation/context minimum."
     ],
-    "quality_score_sources": {},
-    "tier_a_blocker_counts": {}
+    "quality_score_sources": {
+      "proxy": 9,
+      "raw_missing": 3
+    },
+    "tier_a_blocker_counts": {
+      "tier_a_canonical_edge_below_min": 4,
+      "tier_a_canonical_ev_below_min": 2,
+      "tier_a_confirmation_sources_below_min": 1,
+      "tier_a_confirmation_sources_below_min:1/2": 1,
+      "tier_a_market_implied_xg_not_hard_confirmation": 5,
+      "tier_a_odds_sources_below_min:1/2": 5,
+      "tier_a_proxy_default_xg_placeholder": 4,
+      "tier_a_proxy_quality_not_allowed": 5,
+      "tier_a_publication_score_below_min": 6,
+      "tier_a_quality_below_min": 2,
+      "tier_a_two_plus_context_sources_required:1/2": 1,
+      "tier_a_two_plus_odds_sources_required:1/2": 1
+    }
   },
-  "candidates_seen": 0,
-  "created_at": "2026-07-21T21:13:30.100272+00:00",
+  "candidates_seen": 12,
+  "created_at": "2026-07-21T23:15:36.434582+00:00",
   "enabled": true,
-  "evaluated": [],
+  "evaluated": [
+    {
+      "away_team": "Barcelona SC",
+      "away_team_ru": "Барселона",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T00:00:00+00:00",
+      "commence_time_display": "22.07.2026 03:00 MSK",
+      "family": "totals",
+      "home_team": "CD Universidad Catolica del Ecuador",
+      "home_team_ru": "Универсидад Католика дел Екуадор",
+      "league_name": "Ecuador - Serie A",
+      "league_name_ru": "Екуадор - Серия A",
+      "match_key": "soccer|cd_universidad_catolica_del_ecuador|barcelona_sc|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.497664,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.457,
+        "canonical_ev_pct": 3.016,
+        "confidence": 72.557,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats",
+          "thesportsdb"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.867,
+        "market_probability": 0.488998,
+        "model_probability": 0.497664,
+        "odds": 2.07,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.384,
+        "quality_reasons": [],
+        "quality_score": 70.8,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.483092,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 4,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.045,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 4,
+          "same_market_side_line_only": true,
+          "selected_price": 2.07,
+          "selected_vs_median_deviation_pct": 1.222
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 0.869,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 0.869,
+          "xg_model_optimism_gap_pp": 0.869,
+          "xg_probability": 0.488976,
+          "xg_probability_pct": 48.898,
+          "xg_source": "home_away",
+          "xg_total": 2.63
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Больше",
+      "tier": null
+    },
+    {
+      "away_team": "Fortaleza EC CE",
+      "away_team_ru": "Форталеза EC CE",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T00:35:00+00:00",
+      "commence_time_display": "22.07.2026 03:35 MSK",
+      "family": "totals",
+      "home_team": "Vila Nova FC GO",
+      "home_team_ru": "Вила Нова GO",
+      "league_name": "Brazil - Brasileiro Serie B",
+      "league_name_ru": "Бразилия - Брасилейро Серия B",
+      "match_key": "soccer|vila_nova_fc_go|fortaleza_ec_ce|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.480677,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.613,
+        "canonical_ev_pct": 5.749,
+        "confidence": 71.687,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.229,
+        "market_probability": 0.468384,
+        "model_probability": 0.480677,
+        "odds": 2.2,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 17.537,
+        "quality_reasons": [],
+        "quality_score": 75.74,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.454545,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.135,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.2,
+          "selected_vs_median_deviation_pct": 3.044
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.228,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.228,
+          "xg_model_optimism_gap_pp": 1.228,
+          "xg_probability": 0.468394,
+          "xg_probability_pct": 46.839,
+          "xg_source": "home_away",
+          "xg_total": 1.781
+        }
+      },
+      "ok": false,
+      "point": 2.0,
+      "reject_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_publication_score_below_min",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень C: publication score below min",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Bogota FC",
+      "away_team_ru": "Богота",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T00:00:00+00:00",
+      "commence_time_display": "22.07.2026 03:00 MSK",
+      "family": "totals",
+      "home_team": "AD Pasto",
+      "home_team_ru": "AD Пасто",
+      "league_name": "Colombia - Copa DIMAYOR, Knockout Stage",
+      "league_name_ru": "Колумбия - Копа Димейор, Кнокут Стаге",
+      "match_key": "soccer|ad_pasto|bogota_fc|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.486279,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 4.768,
+        "canonical_ev_pct": 10.872,
+        "confidence": 77.592,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.116,
+        "market_probability": 0.465116,
+        "model_probability": 0.486279,
+        "odds": 2.28,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 30.139,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.438596,
+        "sources_count": 3,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 2.115,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 2.115,
+          "xg_model_optimism_gap_pp": 2.115,
+          "xg_probability": 0.465127,
+          "xg_probability_pct": 46.513,
+          "xg_source": "home_away",
+          "xg_total": 2.818
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Envigado FC",
+      "away_team_ru": "Енвигадо",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T00:00:00+00:00",
+      "commence_time_display": "22.07.2026 03:00 MSK",
+      "family": "totals",
+      "home_team": "CD Once Caldas",
+      "home_team_ru": "Онке Калдас",
+      "league_name": "Colombia - Copa DIMAYOR, Knockout Stage",
+      "league_name_ru": "Колумбия - Копа Димейор, Кнокут Стаге",
+      "match_key": "soccer|cd_once_caldas|envigado_fc|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.564077,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 4.594,
+        "canonical_ev_pct": 8.867,
+        "confidence": 75.19,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.06,
+        "market_probability": 0.543478,
+        "model_probability": 0.564077,
+        "odds": 1.93,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 26.385,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.518135,
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 4.565,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 4.565,
+          "xg_model_optimism_gap_pp": 4.565,
+          "xg_probability": 0.51843,
+          "xg_probability_pct": 51.843,
+          "xg_source": "home_away",
+          "xg_total": 2.6
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Barcelona SC",
+      "away_team_ru": "Барселона",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T00:00:00+00:00",
+      "commence_time_display": "22.07.2026 03:00 MSK",
+      "family": "totals",
+      "home_team": "CD Universidad Catolica del Ecuador",
+      "home_team_ru": "Универсидад Католика дел Екуадор",
+      "league_name": "Ecuador - Serie A",
+      "league_name_ru": "Екуадор - Серия A",
+      "match_key": "soccer|cd_universidad_catolica_del_ecuador|barcelona_sc|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.590935,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 6.462,
+        "canonical_ev_pct": 12.278,
+        "confidence": 76.725,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats",
+          "thesportsdb"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 2.436,
+        "market_probability": 0.566572,
+        "model_probability": 0.590935,
+        "odds": 1.9,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 34.043,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.526316,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 4,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.765,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 4,
+          "same_market_side_line_only": true,
+          "selected_price": 1.9,
+          "selected_vs_median_deviation_pct": 7.649
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 2.436,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 2.436,
+          "xg_model_optimism_gap_pp": 2.436,
+          "xg_probability": 0.566577,
+          "xg_probability_pct": 56.658,
+          "xg_source": "home_away",
+          "xg_total": 2.412
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Santos FC SP",
+      "away_team_ru": "Сантос SP",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T00:30:00+00:00",
+      "commence_time_display": "22.07.2026 03:30 MSK",
+      "family": "totals",
+      "home_team": "UCV FC",
+      "home_team_ru": "UCV",
+      "league_name": "International Clubs - CONMEBOL Sudamericana, Knockout stage",
+      "league_name_ru": "Интернатионал Клубс - Конмебол Судамерикана, Кнокут стаге",
+      "match_key": "soccer|ucv_fc|santos_fc_sp|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.603478,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.53,
+        "canonical_ev_pct": 6.212,
+        "confidence": 70.695,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "sstats"
+        ],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.524,
+        "market_probability": 0.588235,
+        "model_probability": 0.603478,
+        "odds": 1.76,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": true,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 18.903,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.568182,
+        "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.72,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.76,
+          "selected_vs_median_deviation_pct": 2.326
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.522,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.522,
+          "xg_model_optimism_gap_pp": 1.522,
+          "xg_probability": 0.588258,
+          "xg_probability_pct": 58.826,
+          "xg_source": "home_away",
+          "xg_total": 2.329
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_two_plus_odds_sources_required:1/2",
+        "tier_a_two_plus_context_sources_required:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_confirmation_sources_below_min:1/2",
+        "tier_b_two_plus_odds_sources_required:1/2",
+        "tier_b_two_plus_context_sources_required:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_two_plus_odds_sources_required:1/2",
+        "tier_c_two_plus_context_sources_required:1/2",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "уровень A: two plus odds sources required:1/2",
+        "уровень A: two plus context sources required:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: confirmation sources below min:1/2",
+        "уровень B: two plus odds sources required:1/2",
+        "уровень B: two plus context sources required:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень C: two plus odds sources required:1/2",
+        "уровень C: two plus context sources required:1/2",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Fortaleza EC CE",
+      "away_team_ru": "Форталеза EC CE",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T00:35:00+00:00",
+      "commence_time_display": "22.07.2026 03:35 MSK",
+      "family": "totals",
+      "home_team": "Vila Nova FC GO",
+      "home_team_ru": "Вила Нова GO",
+      "league_name": "Brazil - Brasileiro Serie B",
+      "league_name_ru": "Бразилия - Брасилейро Серия B",
+      "match_key": "soccer|vila_nova_fc_go|fortaleza_ec_ce|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.637914,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.911,
+        "canonical_ev_pct": 6.532,
+        "confidence": 73.839,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.872,
+        "market_probability": 0.619195,
+        "model_probability": 0.637914,
+        "odds": 1.67,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 22.234,
+        "quality_reasons": [],
+        "quality_score": 76.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.598802,
+        "sources_count": 3,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.874,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.874,
+          "xg_model_optimism_gap_pp": 1.874,
+          "xg_probability": 0.619176,
+          "xg_probability_pct": 61.918,
+          "xg_source": "home_away",
+          "xg_total": 2.213
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "odds_below_global_min"
+      ],
+      "reject_reasons_ru": [
+        "коэффициент ниже общего минимума"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Sao Paulo FC SP",
+      "away_team_ru": "Сао Пауло SP",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T00:45:00+00:00",
+      "commence_time_display": "22.07.2026 03:45 MSK",
+      "family": "totals",
+      "home_team": "CR Vasco da Gama RJ",
+      "home_team_ru": "CR Васко да Гама RJ",
+      "league_name": "Brazil - Copa do Brasil, Women",
+      "league_name_ru": "Бразилия - Копа до Брасил, Уомен",
+      "match_key": "soccer|cr_vasco_da_gama_rj|sao_paulo_fc_sp|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.46466,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.988,
+        "canonical_ev_pct": 6.872,
+        "confidence": 69.192,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.217,
+        "market_probability": 0.452489,
+        "model_probability": 0.46466,
+        "odds": 2.3,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": true,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 17.378,
+        "quality_reasons": [],
+        "quality_score": 75.509,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.434783,
+        "sources_count": 1,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.219,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.219,
+          "xg_model_optimism_gap_pp": 1.219,
+          "xg_probability": 0.45247,
+          "xg_probability_pct": 45.247,
+          "xg_source": "home_away",
+          "xg_total": 2.872
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "xg_direction_conflict"
+      ],
+      "reject_reasons_ru": [
+        "направление ставки конфликтует с xG"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Club Puebla",
+      "away_team_ru": "Клуб Пуебла",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T01:00:00+00:00",
+      "commence_time_display": "22.07.2026 04:00 MSK",
+      "family": "totals",
+      "home_team": "CF Cruz Azul",
+      "home_team_ru": "Крус Асуль",
+      "league_name": "Mexico - Liga MX, Apertura",
+      "league_name_ru": "Мексико - Лига MX, Апертура",
+      "match_key": "soccer|cf_cruz_azul|club_puebla|2026-07-22",
+      "metrics": {
+        "adjusted_probability": 0.521149,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.864,
+        "canonical_ev_pct": 3.709,
+        "confidence": 71.069,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.964,
+        "market_probability": 0.511509,
+        "model_probability": 0.521149,
+        "odds": 1.99,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 13.792,
+        "quality_reasons": [],
+        "quality_score": 71.074,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "proxy",
+        "selected_implied_probability": 0.502513,
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 3,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.96,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 3,
+          "same_market_side_line_only": true,
+          "selected_price": 1.99,
+          "selected_vs_median_deviation_pct": 1.531
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 0.963,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 0.963,
+          "xg_model_optimism_gap_pp": 0.963,
+          "xg_probability": 0.511523,
+          "xg_probability_pct": 51.152,
+          "xg_source": "home_away",
+          "xg_total": 2.628
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A не принимает proxy-качество",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Bogota FC",
+      "away_team_ru": "Богота",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-22T00:00:00+00:00",
+      "commence_time_display": "22.07.2026 03:00 MSK",
+      "family": "totals",
+      "home_team": "AD Pasto",
+      "home_team_ru": "AD Пасто",
+      "league_name": "Colombia - Copa DIMAYOR, Knockout Stage",
+      "league_name_ru": "Колумбия - Копа Димейор, Кнокут Стаге",
+      "match_key": "2026-07-22|ad pasto|bogota",
+      "metrics": {
+        "adjusted_probability": 0.585756,
+        "books_count": 5,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 0.436,
+        "canonical_ev_pct": 0.75,
+        "confidence": 67.638,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.436,
+        "market_probability": 0.581395,
+        "model_probability": 0.585756,
+        "odds": 1.72,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 6.235,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.581395,
+        "sources_count": 3,
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 9.092,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 9.092,
+          "xg_model_gap_pp": -9.092,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.676676,
+          "xg_probability_pct": 67.668,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "odds_below_global_min"
+      ],
+      "reject_reasons_ru": [
+        "коэффициент ниже общего минимума"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Real Cartagena",
+      "away_team_ru": "Рил Картагена",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-22T00:30:00+00:00",
+      "commence_time_display": "22.07.2026 03:30 MSK",
+      "family": "totals",
+      "home_team": "América de Cali",
+      "home_team_ru": "Амéрика де Кали",
+      "league_name": "Copa Colombia",
+      "league_name_ru": "Копа Коломбиа",
+      "match_key": "2026-07-22|america cali|real cartagena",
+      "metrics": {
+        "adjusted_probability": 0.530263,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 0.395,
+        "canonical_ev_pct": 0.75,
+        "confidence": 67.638,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.395,
+        "market_probability": 0.526316,
+        "model_probability": 0.530263,
+        "odds": 1.9,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 6.152,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.526316,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 4,
+          "enabled": true,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 2,
+          "priced_books_count": 1,
+          "same_market_side_line_only": true
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 14.641,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 14.641,
+          "xg_model_gap_pp": -14.641,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_probability": 0.676676,
+          "xg_probability_pct": 67.668,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 3.0,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_canonical_ev_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_bookmaker_quorum_prices_missing:1/2",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_canonical_ev_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_proxy_default_xg_placeholder",
+        "tier_c_proxy_default_xg_placeholder"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "EV ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: proxy default xg placeholder",
+        "уровень A: proxy default xg placeholder",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: bookmaker quorum prices missing:1/2",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: hard context required for proxy quality",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "EV ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: proxy default xg placeholder",
+        "уровень C: proxy default xg placeholder"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Fortaleza EC CE",
+      "away_team_ru": "Форталеза EC CE",
+      "candidate_source": "awaiting_movement_lifecycle",
+      "commence_time": "2026-07-22T00:35:00+00:00",
+      "commence_time_display": "22.07.2026 03:35 MSK",
+      "family": "totals",
+      "home_team": "Vila Nova FC GO",
+      "home_team_ru": "Вила Нова GO",
+      "league_name": "Brazil - Brasileiro Serie B",
+      "league_name_ru": "Бразилия - Брасилейро Серия B",
+      "match_key": "2026-07-22|vila nova go|fortaleza ec ce",
+      "metrics": {
+        "adjusted_probability": 0.562531,
+        "books_count": 4,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.004,
+        "canonical_ev_pct": 1.818,
+        "confidence": 69.918,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 3,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.697,
+        "market_probability": 0.555556,
+        "model_probability": 0.562531,
+        "odds": 1.81,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 9.8,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.552486,
+        "sources_count": 3,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 4,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.8,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 2,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 1.81,
+          "selected_vs_median_deviation_pct": 0.556
+        },
+        "xg_sanity": {
+          "enabled": false,
+          "proxy_default_xg_guard": {
+            "enabled": true,
+            "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+            "requires_hard_xg_or_non_default_pair": true
+          },
+          "reason": "proxy_default_1_1_xg_placeholder",
+          "xg_abs_gap_pp": 23.921,
+          "xg_direction_ok": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 23.921,
+          "xg_model_optimism_gap_pp": 23.921,
+          "xg_probability": 0.323324,
+          "xg_probability_pct": 32.332,
+          "xg_source": "home_away",
+          "xg_total": 2.0
+        }
+      },
+      "ok": false,
+      "point": 2.0,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_canonical_ev_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_a_proxy_default_xg_placeholder",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_proxy_default_xg_placeholder",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_canonical_ev_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_proxy_default_xg_placeholder",
+        "tier_c_proxy_default_xg_placeholder"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "EV ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: proxy default xg placeholder",
+        "уровень A: proxy default xg placeholder",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: proxy default xg placeholder",
+        "уровень B: hard context required for proxy quality",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "EV ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: proxy default xg placeholder",
+        "уровень C: proxy default xg placeholder"
+      ],
+      "selection": "Больше",
+      "tier": null
+    }
+  ],
   "no_pick_report_sent": true,
   "pool_counts": {
     "debug_candidates_before_quality_stale_or_outside_window": 5,
-    "latest_picks_stale_or_outside_window": 78
+    "latest_picks_stale_or_outside_window": 78,
+    "latest_rescue_candidates": 12
   },
   "published": false,
   "scan_policy": {
@@ -28,11 +1318,45 @@
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
     "duplicates_removed": 0,
-    "reason_counts_without_daily_cap": {},
+    "reason_counts_without_daily_cap": {
+      "odds_below_global_min": 2,
+      "tier_a_canonical_edge_below_min": 4,
+      "tier_a_canonical_ev_below_min": 2,
+      "tier_a_confirmation_sources_below_min:1/2": 1,
+      "tier_a_market_implied_xg_not_hard_confirmation": 5,
+      "tier_a_odds_sources_below_min:1/2": 5,
+      "tier_a_proxy_default_xg_placeholder": 4,
+      "tier_a_proxy_quality_not_allowed": 5,
+      "tier_a_publication_score_below_min": 6,
+      "tier_a_quality_below_min": 2,
+      "tier_a_two_plus_context_sources_required:1/2": 1,
+      "tier_a_two_plus_odds_sources_required:1/2": 1,
+      "tier_b_bookmaker_quorum_prices_missing:1/2": 1,
+      "tier_b_canonical_edge_below_min": 4,
+      "tier_b_canonical_ev_below_min": 2,
+      "tier_b_confirmation_sources_below_min:1/2": 1,
+      "tier_b_hard_context_required_for_proxy_quality": 7,
+      "tier_b_market_implied_xg_not_hard_confirmation": 5,
+      "tier_b_odds_sources_below_min:1/2": 5,
+      "tier_b_proxy_default_xg_placeholder": 4,
+      "tier_b_publication_score_below_min": 4,
+      "tier_b_quality_below_min": 2,
+      "tier_b_two_plus_context_sources_required:1/2": 1,
+      "tier_b_two_plus_odds_sources_required:1/2": 1,
+      "tier_c_canonical_edge_below_min": 4,
+      "tier_c_canonical_ev_below_min": 2,
+      "tier_c_market_implied_xg_not_hard_confirmation": 5,
+      "tier_c_proxy_default_xg_placeholder": 4,
+      "tier_c_publication_score_below_min": 5,
+      "tier_c_quality_below_min": 2,
+      "tier_c_two_plus_context_sources_required:1/2": 1,
+      "tier_c_two_plus_odds_sources_required:1/2": 1,
+      "xg_direction_conflict": 3
+    },
     "top_would_publish_without_daily_cap": []
   },
   "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4346,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1784668410,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4349,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1784675748,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
