@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-21T05:05:36.999616+00:00
+UTC: 2026-07-21T07:05:23.086621+00:00
 target_date: 2026-07-21
 canonical_matches: 409
-2+ provider sources: 185
-2+ primary sources: 182
-all 3 primary sources: 73
+2+ provider sources: 208
+2+ primary sources: 205
+all 3 primary sources: 61
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
@@ -13,12 +13,12 @@ all 3 primary sources: 73
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=2 ok=1 rows=100 event_like=0 unique=0 statuses={"EMPTY": 1, "OK": 1}
-- sstats: commands=1 ok=1 rows=188 event_like=162 unique=162 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=193 event_like=173 unique=173 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 224, "2": 112, "3": 72, "5": 1}
-- primary providers: {"1": 227, "2": 109, "3": 73}
+- all providers: {"1": 201, "2": 147, "3": 60, "5": 1}
+- primary providers: {"1": 204, "2": 144, "3": 61}
 
 ## Top canonical matches
 - 2026-07-20T22:00:00+00:00 | Volta Redonda — São Gonçalo EC RJ | providers=sstats ids={"sstats": "1589165"}
@@ -28,7 +28,7 @@ all 3 primary sources: 73
 - 2026-07-20T23:00:00+00:00 | Quilmes — Gimnasia Jujuy | providers=sstats ids={"sstats": "1498664"}
 - 2026-07-21T00:00:00+00:00 | Chaco For Ever — San Miguel | providers=sstats ids={"sstats": "1498655"}
 - 2026-07-21T00:30:00+00:00 | Central Norte — Deportivo Morón | providers=sstats,thesportsdb ids={"thesportsdb": "2404923", "sstats": "1498653"}
-- 2026-07-21T04:00:00+00:00 | FC Tokyo — Nagoya Grampus | providers=bzzoiro ids={"bzzoiro": "220458"}
+- 2026-07-21T04:00:00+00:00 | FC Tokyo — Nagoya Grampus | providers=bzzoiro,sstats ids={"bzzoiro": "220458", "sstats": "1591889"}
 - 2026-07-21T07:30:00+00:00 | Canberra Juventus FC U23 — Canberra Croatia FC U23 | providers=odds_api_io ids={"odds_api_io": "72493078"}
 - 2026-07-21T07:30:00+00:00 | Urawa Red Diamonds — Fujieda MYFC | providers=bzzoiro ids={"bzzoiro": "220459"}
 - 2026-07-21T08:00:00+00:00 | Dalian Kewei — Beijing Guoan | providers=odds_api_io,sstats ids={"odds_api_io": "72455350", "sstats": "1567360"}
@@ -47,10 +47,10 @@ all 3 primary sources: 73
 - 2026-07-21T10:30:00+00:00 | Bayswater City — Sydney FC | providers=odds_api_io,sstats ids={"odds_api_io": "72338834", "sstats": "1560858"}
 - 2026-07-21T10:45:00+00:00 | Western Strikes — Cove FC | providers=odds_api_io ids={"odds_api_io": "72533980"}
 - 2026-07-21T11:00:00+00:00 | Sheffield United — Huddersfield Town | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "71973704", "bzzoiro": "219228", "sstats": "1548888"}
+- 2026-07-21T11:00:00+00:00 | Bristol City — Newport County | providers=bzzoiro,sstats ids={"bzzoiro": "220460", "sstats": "1598491"}
 - 2026-07-21T11:00:00+00:00 | Cockburn City SC Reserves — Uwa Nedlands FC Reserves | providers=odds_api_io ids={"odds_api_io": "72299988"}
 - 2026-07-21T11:00:00+00:00 | Shanghai Port FC — Shenzhen Peng City | providers=odds_api_io ids={"odds_api_io": "72455354"}
-- 2026-07-21T11:00:00+00:00 | Bristol City — Newport County | providers=bzzoiro ids={"bzzoiro": "220460"}
-- 2026-07-21T11:35:00+00:00 | Shanghai Shenhua FC — Qingdao Hainiu FC | providers=odds_api_io ids={"odds_api_io": "72455342"}
+- 2026-07-21T11:35:00+00:00 | Shanghai Shenhua FC — Qingdao Hainiu FC | providers=odds_api_io,sstats ids={"odds_api_io": "72455342", "sstats": "1567358"}
 
 ## Targeted enrichment plan sample
 - Volta Redonda — São Gonçalo EC RJ | primary=1 providers=sstats
@@ -81,9 +81,9 @@ all 3 primary sources: 73
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- FC Tokyo — Nagoya Grampus | primary=1 providers=bzzoiro
+- FC Tokyo — Nagoya Grampus | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Canberra Juventus FC U23 — Canberra Croatia FC U23 | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
