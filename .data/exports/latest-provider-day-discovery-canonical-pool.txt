@@ -1,14 +1,14 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-21T07:05:23.086621+00:00
+UTC: 2026-07-21T09:06:08.221064+00:00
 target_date: 2026-07-21
 canonical_matches: 409
-2+ provider sources: 208
-2+ primary sources: 205
-all 3 primary sources: 61
+2+ provider sources: 207
+2+ primary sources: 204
+all 3 primary sources: 62
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=20 ok=9 rows=815 event_like=815 unique=210 statuses={"OK": 9, "EMPTY": 11}
+- bzzoiro: commands=20 ok=9 rows=843 event_like=843 unique=210 statuses={"OK": 9, "EMPTY": 11}
 - football_data: commands=1 ok=1 rows=2 event_like=2 unique=2 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
@@ -17,8 +17,8 @@ all 3 primary sources: 61
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 201, "2": 147, "3": 60, "5": 1}
-- primary providers: {"1": 204, "2": 144, "3": 61}
+- all providers: {"1": 202, "2": 145, "3": 61, "5": 1}
+- primary providers: {"1": 205, "2": 142, "3": 62}
 
 ## Top canonical matches
 - 2026-07-20T22:00:00+00:00 | Volta Redonda — São Gonçalo EC RJ | providers=sstats ids={"sstats": "1589165"}
@@ -31,8 +31,7 @@ all 3 primary sources: 61
 - 2026-07-21T04:00:00+00:00 | FC Tokyo — Nagoya Grampus | providers=bzzoiro,sstats ids={"bzzoiro": "220458", "sstats": "1591889"}
 - 2026-07-21T07:30:00+00:00 | Canberra Juventus FC U23 — Canberra Croatia FC U23 | providers=odds_api_io ids={"odds_api_io": "72493078"}
 - 2026-07-21T07:30:00+00:00 | Urawa Red Diamonds — Fujieda MYFC | providers=bzzoiro ids={"bzzoiro": "220459"}
-- 2026-07-21T08:00:00+00:00 | Dalian Kewei — Beijing Guoan | providers=odds_api_io,sstats ids={"odds_api_io": "72455350", "sstats": "1567360"}
-- 2026-07-21T08:15:00+00:00 | Newcastle Olympic FC Reserve — Belmont Swansea United FC Reserves | providers=odds_api_io ids={"odds_api_io": "72993736"}
+- 2026-07-21T08:00:00+00:00 | Dalian Kewei — Beijing Guoan | providers=sstats ids={"sstats": "1567360"}
 - 2026-07-21T09:30:00+00:00 | Coal India Spa — Aryans Sports | providers=odds_api_io,sstats ids={"odds_api_io": "72896912", "sstats": "1595186"}
 - 2026-07-21T09:30:00+00:00 | Preston Lions FC — Newcastle United Jets | providers=odds_api_io,sstats ids={"odds_api_io": "72338828", "sstats": "1560864"}
 - 2026-07-21T09:30:00+00:00 | Lions FC — Perth Glory FC | providers=odds_api_io,sstats ids={"odds_api_io": "72338830", "sstats": "1560865"}
@@ -51,6 +50,7 @@ all 3 primary sources: 61
 - 2026-07-21T11:00:00+00:00 | Cockburn City SC Reserves — Uwa Nedlands FC Reserves | providers=odds_api_io ids={"odds_api_io": "72299988"}
 - 2026-07-21T11:00:00+00:00 | Shanghai Port FC — Shenzhen Peng City | providers=odds_api_io ids={"odds_api_io": "72455354"}
 - 2026-07-21T11:35:00+00:00 | Shanghai Shenhua FC — Qingdao Hainiu FC | providers=odds_api_io,sstats ids={"odds_api_io": "72455342", "sstats": "1567358"}
+- 2026-07-21T11:35:00+00:00 | Wuhan Three Towns FC — Shandong Taishan FC | providers=odds_api_io,sstats ids={"odds_api_io": "72455356", "sstats": "1567363"}
 
 ## Targeted enrichment plan sample
 - Volta Redonda — São Gonçalo EC RJ | primary=1 providers=sstats
@@ -93,12 +93,8 @@ all 3 primary sources: 61
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Dalian Kewei — Beijing Guoan | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Dalian Kewei — Beijing Guoan | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Newcastle Olympic FC Reserve — Belmont Swansea United FC Reserves | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Coal India Spa — Aryans Sports | primary=2 providers=odds_api_io,sstats
@@ -132,4 +128,9 @@ all 3 primary sources: 61
 - Adelaide Hills — Vipers FC | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Jeju SK FC — Gangwon FC | primary=3 providers=bzzoiro,odds_api_io,sstats
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
