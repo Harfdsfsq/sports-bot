@@ -1,30 +1,30 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-21T23:05:04.228306+00:00
+UTC: 2026-07-22T01:05:05.646774+00:00
 target_date: 2026-07-22
 canonical_matches: 381
-2+ provider sources: 147
-2+ primary sources: 142
-all 3 primary sources: 38
+2+ provider sources: 193
+2+ primary sources: 191
+all 3 primary sources: 71
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=20 ok=8 rows=695 event_like=695 unique=164 statuses={"OK": 8, "EMPTY": 12}
+- bzzoiro: commands=20 ok=8 rows=665 event_like=665 unique=164 statuses={"OK": 8, "EMPTY": 12}
 - football_data: commands=1 ok=1 rows=6 event_like=6 unique=6 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=2 ok=1 rows=100 event_like=0 unique=0 statuses={"EMPTY": 1, "OK": 1}
-- sstats: commands=1 ok=1 rows=116 event_like=96 unique=96 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=215 event_like=178 unique=178 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 234, "3": 42, "2": 105}
-- primary providers: {"1": 239, "3": 38, "2": 104}
+- all providers: {"1": 188, "3": 70, "2": 119, "4": 4}
+- primary providers: {"1": 190, "3": 71, "2": 120}
 
 ## Top canonical matches
 - 2026-07-21T21:00:00+00:00 | Atletico Nacional — Tigres FC | providers=sstats ids={"sstats": "1545505"}
 - 2026-07-21T21:30:00+00:00 | Libertad — Delfin SC | providers=sstats ids={"sstats": "1519419"}
-- 2026-07-21T22:00:00+00:00 | Internacional de Bogota — Internacional Palmira | providers=sstats ids={"sstats": "1545508"}
 - 2026-07-21T22:00:00+00:00 | Central Córdoba SdE Res. — Platense Res. | providers=sstats ids={"sstats": "1576840"}
+- 2026-07-21T22:00:00+00:00 | Internacional de Bogota — Internacional Palmira | providers=sstats ids={"sstats": "1545508"}
 - 2026-07-21T22:30:00+00:00 | Atletico-MG — Bahia | providers=sstats ids={"sstats": "1492290"}
 - 2026-07-21T22:30:00+00:00 | Avai — America Mineiro | providers=sstats ids={"sstats": "1520781"}
 - 2026-07-21T22:30:00+00:00 | Novorizontino — Criciuma | providers=sstats ids={"sstats": "1520787"}
@@ -61,11 +61,11 @@ all 3 primary sources: 38
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Internacional de Bogota — Internacional Palmira | primary=1 providers=sstats
+- Central Córdoba SdE Res. — Platense Res. | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Central Córdoba SdE Res. — Platense Res. | primary=1 providers=sstats
+- Internacional de Bogota — Internacional Palmira | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
