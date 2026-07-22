@@ -1,14 +1,132 @@
 {
-  "created_at_utc": "2026-07-22T05:16:29.795301+00:00",
+  "created_at_utc": "2026-07-22T07:18:12.904699+00:00",
   "duplicates_removed": 0,
-  "evaluated_rows": 0,
+  "evaluated_rows": 4,
   "plain_explanation": [
-    "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+    "A-tier rejects proxy quality; it needs raw/model quality, not only reserve proxy score.",
+    "A-tier publication score is below min on many candidates.",
+    "Some candidates still have fewer than the A-tier confirmation/context minimum."
   ],
-  "quality_score_sources": {},
+  "quality_score_sources": {
+    "proxy": 3,
+    "raw_missing": 1
+  },
   "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
   "status": "ok",
-  "tier_a_blocker_counts": {},
-  "top_a_tier_blocked_samples": [],
-  "unique_evaluated_rows": 0
+  "tier_a_blocker_counts": {
+    "tier_a_canonical_edge_below_min": 1,
+    "tier_a_confirmation_sources_below_min": 1,
+    "tier_a_confirmation_sources_below_min:1/2": 1,
+    "tier_a_market_implied_xg_not_hard_confirmation": 2,
+    "tier_a_odds_sources_below_min:1/2": 2,
+    "tier_a_proxy_quality_not_allowed": 2,
+    "tier_a_publication_score_below_min": 1,
+    "tier_a_two_plus_context_sources_required:1/2": 1,
+    "tier_a_two_plus_odds_sources_required:1/2": 1
+  },
+  "top_a_tier_blocked_samples": [
+    {
+      "a_tier_reasons": [
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_two_plus_odds_sources_required:1/2",
+        "tier_a_two_plus_context_sources_required:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_a_confirmation_sources_below_min"
+      ],
+      "away_team": "Brisbane Roar FC",
+      "books_count": 4,
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T09:00:00+00:00",
+      "confidence": 74.277,
+      "confirmation_sources": [],
+      "confirmation_sources_count": 1,
+      "daily_cap_reasons": [],
+      "dedupe_key": "2026-07-22|international clubs club friendly games|ipswich fc|brisbane roar fc|totals|over|3.5",
+      "edge_pp": 5.137,
+      "ev_pct": 10.171,
+      "family": "totals",
+      "home_team": "Ipswich FC",
+      "league_name": "International Clubs - Club Friendly Games",
+      "match_key": "soccer|ipswich_fc|brisbane_roar_fc|2026-07-22",
+      "odds": 1.98,
+      "odds_sources_count": 1,
+      "other_reasons": [
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_two_plus_odds_sources_required:1/2",
+        "tier_a_two_plus_context_sources_required:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_confirmation_sources_below_min:1/2",
+        "tier_b_two_plus_odds_sources_required:1/2",
+        "tier_b_two_plus_context_sources_required:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality"
+      ],
+      "point": 3.5,
+      "publication_score": 27.869,
+      "quality_score": 76.0,
+      "quality_score_source": "proxy",
+      "rank": 1,
+      "selection": "Больше",
+      "shadow_score": -12.578,
+      "status_without_daily_cap": "blocked_by_other_guards",
+      "tier": null
+    },
+    {
+      "a_tier_reasons": [
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation"
+      ],
+      "away_team": "Belmont Swansea United FC",
+      "books_count": 3,
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-22T09:00:00+00:00",
+      "confidence": 72.311,
+      "confirmation_sources": [
+        "clubelo"
+      ],
+      "confirmation_sources_count": 3,
+      "daily_cap_reasons": [],
+      "dedupe_key": "2026-07-22|australia northern nsw npl|newcastle olympic fc|belmont swansea united fc|totals|over|3.5",
+      "edge_pp": 1.568,
+      "ev_pct": 3.135,
+      "family": "totals",
+      "home_team": "Newcastle Olympic FC",
+      "league_name": "Australia - Northern NSW NPL",
+      "match_key": "soccer|newcastle_olympic_fc|belmont_swansea_united_fc|2026-07-22",
+      "odds": 2.0,
+      "odds_sources_count": 1,
+      "other_reasons": [
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_proxy_quality_not_allowed",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "point": 3.5,
+      "publication_score": 13.641,
+      "quality_score": 70.961,
+      "quality_score_source": "proxy",
+      "rank": 2,
+      "selection": "Больше",
+      "shadow_score": -45.815,
+      "status_without_daily_cap": "blocked_by_other_guards",
+      "tier": null
+    }
+  ],
+  "unique_evaluated_rows": 4
 }

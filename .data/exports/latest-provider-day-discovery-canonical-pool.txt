@@ -1,29 +1,28 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-22T05:05:07.824173+00:00
+UTC: 2026-07-22T07:05:14.351996+00:00
 target_date: 2026-07-22
 canonical_matches: 391
-2+ provider sources: 200
-2+ primary sources: 198
-all 3 primary sources: 68
+2+ provider sources: 196
+2+ primary sources: 194
+all 3 primary sources: 67
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
 - bzzoiro: commands=20 ok=8 rows=692 event_like=692 unique=180 statuses={"OK": 8, "EMPTY": 12}
 - football_data: commands=1 ok=1 rows=6 event_like=6 unique=6 statuses={"OK": 1}
-- highlightly: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
+- highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=2 ok=1 rows=100 event_like=0 unique=0 statuses={"EMPTY": 1, "OK": 1}
-- sstats: commands=1 ok=1 rows=215 event_like=178 unique=178 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=212 event_like=173 unique=173 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 191, "2": 129, "3": 67, "4": 4}
-- primary providers: {"1": 193, "2": 130, "3": 68}
+- all providers: {"1": 195, "2": 126, "3": 66, "4": 4}
+- primary providers: {"1": 197, "2": 127, "3": 67}
 
 ## Top canonical matches
 - 2026-07-21T21:00:00+00:00 | Atletico Nacional — Tigres FC | providers=sstats ids={"sstats": "1545505"}
 - 2026-07-21T21:30:00+00:00 | Libertad — Delfin SC | providers=sstats ids={"sstats": "1519419"}
-- 2026-07-21T22:00:00+00:00 | Central Córdoba SdE Res. — Platense Res. | providers=sstats ids={"sstats": "1576840"}
 - 2026-07-21T22:00:00+00:00 | Internacional de Bogota — Internacional Palmira | providers=sstats ids={"sstats": "1545508"}
 - 2026-07-21T22:30:00+00:00 | Atletico-MG — Bahia | providers=sstats ids={"sstats": "1492290"}
 - 2026-07-21T22:30:00+00:00 | Avai — America Mineiro | providers=sstats ids={"sstats": "1520781"}
@@ -39,7 +38,7 @@ all 3 primary sources: 68
 - 2026-07-22T00:35:00+00:00 | Vila Nova FC — Fortaleza | providers=bzzoiro,sstats ids={"bzzoiro": "10043", "sstats": "1520789"}
 - 2026-07-22T01:00:00+00:00 | Cruz Azul — Club Puebla | providers=bzzoiro,sstats ids={"bzzoiro": "211507", "sstats": "1550903"}
 - 2026-07-22T02:00:00+00:00 | Vissel Kobe — FC Imabari | providers=bzzoiro,sstats ids={"bzzoiro": "220474", "sstats": "1589291"}
-- 2026-07-22T03:05:00+00:00 | Deportivo Toluca FC — Pumas UNAM | providers=bzzoiro,odds_api_io ids={"odds_api_io": "72055050", "bzzoiro": "211508"}
+- 2026-07-22T03:05:00+00:00 | CD Toluca — Pumas UNAM | providers=bzzoiro ids={"bzzoiro": "211508"}
 - 2026-07-22T07:30:00+00:00 | Tuggeranong United FC U23 — Canberra White Eagles FC U23 | providers=odds_api_io ids={"odds_api_io": "72715060"}
 - 2026-07-22T07:30:00+00:00 | East Coast Bays — Auckland City FC | providers=odds_api_io ids={"odds_api_io": "72768794"}
 - 2026-07-22T08:00:00+00:00 | Neftchi Baku PFC — Zfk Buducnost | providers=odds_api_io,sstats ids={"odds_api_io": "72204574", "sstats": "1558456"}
@@ -51,6 +50,7 @@ all 3 primary sources: 68
 - 2026-07-22T09:00:00+00:00 | Edgeworth FC Reserve — Kahibah FC Reserve | providers=odds_api_io ids={"odds_api_io": "72916692"}
 - 2026-07-22T09:30:00+00:00 | Sydney United 58 FC — Central Coast Mariners | providers=odds_api_io,sstats ids={"odds_api_io": "72338836", "sstats": "1560869"}
 - 2026-07-22T09:30:00+00:00 | Maitland FC — Fremantle City | providers=odds_api_io,sstats ids={"odds_api_io": "72338838", "sstats": "1560862"}
+- 2026-07-22T09:30:00+00:00 | Tigers FC — Western Sydney Wanderers | providers=odds_api_io,sstats ids={"odds_api_io": "72338840", "sstats": "1560870"}
 
 ## Targeted enrichment plan sample
 - Atletico Nacional — Tigres FC | primary=1 providers=sstats
@@ -58,10 +58,6 @@ all 3 primary sources: 68
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Libertad — Delfin SC | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Central Córdoba SdE Res. — Platense Res. | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -125,11 +121,15 @@ all 3 primary sources: 68
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Deportivo Toluca FC — Pumas UNAM | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- CD Toluca — Pumas UNAM | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Tuggeranong United FC U23 — Canberra White Eagles FC U23 | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- East Coast Bays — Auckland City FC | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
