@@ -1,14 +1,15 @@
 """Final runner-level wall clock for the Bzzoiro context provider.
 
-Provider methods are wrapped by several compatibility modules.  A deadline attached
-to ``BzzoiroContextProvider.fetch_context`` can therefore be replaced later in the
-startup sequence.  ``PredictionRunner._fetch_provider`` is the final call boundary
-used by the production runner, so enforcing the deadline here cannot be bypassed by
-later provider-method wrappers.
+Provider methods are wrapped by several compatibility modules. A deadline attached to
+``BzzoiroContextProvider.fetch_context`` can therefore be replaced later in the startup
+sequence. ``PredictionRunner._fetch_provider`` is the final call boundary used by the
+production runner, so enforcing the deadline here cannot be bypassed by later provider
+method wrappers.
 
-This installer is also the post-discovery bootstrap point for the cumulative daily
-coverage orchestrator.  app.cli calls it immediately before PredictionRunner is
-instantiated, after the day inventory exists and after legacy provider wrappers.
+This installer is also the post-discovery bootstrap point for cumulative daily coverage.
+It explicitly reasserts the persisted full-horizon provider wrapper after all preflight
+installers, because an earlier module-level ``installed`` flag is not proof that the final
+runner methods still contain that wrapper.
 """
 
 from __future__ import annotations
@@ -67,8 +68,12 @@ def _provider_name(runner: Any, provider: Any) -> str:
             return str(resolver(provider) or "").strip().lower()
         except Exception:
             pass
-    module_name = str(getattr(getattr(provider, "__class__", None), "__module__", "") or "").lower()
-    class_name = str(getattr(getattr(provider, "__class__", None), "__name__", "") or "").lower()
+    module_name = str(
+        getattr(getattr(provider, "__class__", None), "__module__", "") or ""
+    ).lower()
+    class_name = str(
+        getattr(getattr(provider, "__class__", None), "__name__", "") or ""
+    ).lower()
     if "bzzoiro" in module_name or "bzzoiro" in class_name:
         return "bzzoiro"
     return module_name.rsplit(".", 1)[-1] or class_name or "unknown"
@@ -106,6 +111,21 @@ def _install_daily_coverage() -> dict[str, Any]:
         result["runtime_patch"] = install_daily_runtime()
     except Exception as exc:
         result["runtime_patch_error"] = f"{type(exc).__name__}: {exc}"
+
+    # RuntimePreflight and source-matrix installers may have replaced runner methods
+    # after the first daily-coverage installation. Reassert against the actual final
+    # class methods, even when the module was already installed earlier in the process.
+    try:
+        from app.services.daily_coverage_full_inventory_provider_patch import (
+            install as install_full_horizon,
+        )
+        from app.services.runner import PredictionRunner
+
+        result["full_horizon_final_reassert"] = install_full_horizon(PredictionRunner)
+    except Exception as exc:
+        result["full_horizon_final_reassert_error"] = (
+            f"{type(exc).__name__}: {exc}"
+        )
     return result
 
 
@@ -123,7 +143,10 @@ def install() -> dict[str, Any]:
         _write(result)
         return result
     if getattr(current, "_harizon_provider_wall_clock_final_guard", False):
-        result = {"status": "already_patched", "daily_coverage": _install_daily_coverage()}
+        result = {
+            "status": "already_patched",
+            "daily_coverage": _install_daily_coverage(),
+        }
         _write(result)
         return result
 
@@ -138,7 +161,9 @@ def install() -> dict[str, Any]:
     ) -> tuple[Any, dict[str, Any], dict[str, Any]]:
         provider_name = _provider_name(self, provider)
         if provider_name != "bzzoiro" or str(method_name) != "fetch_context":
-            return await original(self, provider, method_name, *args, empty_data=empty_data)
+            return await original(
+                self, provider, method_name, *args, empty_data=empty_data
+            )
 
         deadline = _deadline_seconds()
         started = time.monotonic()
