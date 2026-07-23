@@ -3,6 +3,7 @@ name: focused-alpha-ci
 on:
   pull_request:
     paths:
+      - "app/cli.py"
       - "app/services/focused_alpha*.py"
       - "app/services/daily_coverage_plan.py"
       - "app/services/daily_coverage_assignments.py"
@@ -36,6 +37,7 @@ jobs:
       - name: Compile Focused Alpha modules
         run: |
           python -m py_compile \
+            app/cli.py \
             app/services/focused_alpha.py \
             app/services/focused_alpha_assignments.py \
             app/services/focused_alpha_history.py \
@@ -50,6 +52,7 @@ jobs:
       - name: Ruff Focused Alpha change set
         run: |
           ruff check --config pyproject.toml \
+            app/cli.py \
             app/services/focused_alpha.py \
             app/services/focused_alpha_assignments.py \
             app/services/focused_alpha_history.py \
