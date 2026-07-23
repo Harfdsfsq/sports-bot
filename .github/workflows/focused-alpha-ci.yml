@@ -1,0 +1,47 @@
+name: focused-alpha-ci
+
+on:
+  pull_request:
+    paths:
+      - "app/services/focused_alpha*.py"
+      - "app/services/daily_coverage_plan.py"
+      - "app/services/daily_coverage_full_inventory_provider_patch.py"
+      - "scripts/build_focused_alpha_decisions.py"
+      - "scripts/patch_focused_alpha_candidate_rank.py"
+      - "scripts/publish_controlled_fallback_guarded.py"
+      - "tests/test_focused_alpha*.py"
+      - ".github/workflows/focused-alpha-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-alpha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Compile Focused Alpha modules
+        run: |
+          python -m py_compile \
+            app/services/focused_alpha.py \
+            app/services/focused_alpha_history.py \
+            app/services/focused_alpha_learning_ledger.py \
+            app/services/focused_alpha_runtime_policy.py \
+            app/services/daily_coverage_plan.py \
+            app/services/daily_coverage_full_inventory_provider_patch.py \
+            scripts/build_focused_alpha_decisions.py \
+            scripts/patch_focused_alpha_candidate_rank.py \
+            scripts/publish_controlled_fallback_guarded.py
+      - name: Run Focused Alpha tests
+        run: python -m pytest -q tests/test_focused_alpha*.py
