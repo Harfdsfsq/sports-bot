@@ -41,6 +41,7 @@ def main() -> int:
         from scripts.patch_same_match_total_conflict_guard import install as install_same_match_total_conflict_guard
         from scripts.patch_fallback_current_run_only import install as install_fallback_current_run_only
         from scripts.patch_tier_a_strict_policy import install as install_tier_a_strict_policy
+        from scripts.patch_focused_alpha_candidate_rank import install as install_focused_alpha_rank
 
         install_tier_a_strict_policy(v18.base)
         install_semantic_ledger_daily_count(v18)
@@ -50,6 +51,7 @@ def main() -> int:
         install_same_match_total_conflict_guard(v18.base)
         install_fallback_current_run_only(v18.base)
         install_daily_cap_after_quality(v18)
+        install_focused_alpha_rank(v18.base)
     except Exception:
         pass
 
