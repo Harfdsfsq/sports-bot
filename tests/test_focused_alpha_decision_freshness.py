@@ -4,7 +4,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from scripts import build_focused_alpha_decisions as decisions
+from scripts import build_focused_alpha_decisions_v2 as decisions
 
 
 def _candidate(kickoff: datetime, name: str) -> dict:
@@ -35,7 +35,11 @@ def test_collect_candidates_rejects_stale_and_far_future_rows(
                 _candidate(now + timedelta(minutes=10), "Inside lead"),
                 _candidate(now + timedelta(hours=5), "Fresh"),
                 _candidate(now + timedelta(hours=50), "Far"),
-                {"match_key": "missing-time", "home_team": "Missing", "away_team": "Opponent"},
+                {
+                    "match_key": "missing-time",
+                    "home_team": "Missing",
+                    "away_team": "Opponent",
+                },
             ]
         ),
         encoding="utf-8",
@@ -78,12 +82,12 @@ def test_build_decisions_reports_candidate_pool_filtering(
     monkeypatch.setattr(decisions, "CANDIDATE_PATHS", (path,))
     monkeypatch.setattr(decisions, "OUT", tmp_path / "decisions.json")
     monkeypatch.setattr(
-        decisions,
+        decisions.base,
         "build_history_audit",
         lambda: {"live_learning_ready": False, "by_league": {}},
     )
 
-    payload = decisions.build_decisions()
+    payload = decisions.build_decisions(now=now)
 
     assert payload["candidate_pool"]["raw_rows"] == 2
     assert payload["candidate_pool"]["stale_or_started"] == 1
