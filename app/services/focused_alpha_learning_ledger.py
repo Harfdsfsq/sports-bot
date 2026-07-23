@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """Persistent decision/price ledger for Focused Alpha calibration and CLV.
 
 Every run records compact pre-match observations. Repeated snapshots update a
 candidate closing price, while canonical publication history supplies settlement for
 matching public decisions. The ledger does not change publication behaviour.
 """
+
+from __future__ import annotations
 
 import hashlib
 import json
@@ -115,7 +115,7 @@ def _history_match(decision: dict[str, Any], history: list[dict[str, Any]]) -> d
 
 def _compact(row: dict[str, Any], selected_keys: set[str], snapshot_at: str, run_id: str) -> dict[str, Any]:
     decision_key = _text(row.get("decision_key"))
-    observation_id = hashlib.sha1(f"{run_id}|{decision_key}".encode("utf-8")).hexdigest()
+    observation_id = hashlib.sha1(f"{run_id}|{decision_key}".encode()).hexdigest()
     return {
         "observation_id": observation_id,
         "run_id": run_id,

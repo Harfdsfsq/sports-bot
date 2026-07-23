@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Runtime contract for the Focused Alpha production architecture.
 
 The policy changes the optimisation target, not the safety standard.  It reduces
@@ -7,6 +5,8 @@ provider scope and publication volume, keeps a broad data window, and requires t
 strict A contract for live Telegram output.  Shadow candidates remain available for
 future calibration.
 """
+
+from __future__ import annotations
 
 import json
 import os

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Build the Focused Alpha shadow decision board.
 
 This script never sends Telegram messages.  It records the complete candidate state
@@ -7,6 +5,8 @@ needed for calibration and chooses at most a small, diversified shadow portfolio
 Production publication remains behind the existing guards and an explicit future
 FOCUSED_ALPHA_LIVE_ENABLED switch.
 """
+
+from __future__ import annotations
 
 import json
 import math

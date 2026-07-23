@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Use Focused Alpha only as an ordering rule after all publication guards pass."""
+
+from __future__ import annotations
 
 import json
 import os

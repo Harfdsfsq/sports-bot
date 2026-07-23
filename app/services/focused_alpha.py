@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Adaptive information-value selection for HARIZON.
 
 The discovery inventory remains broad, but expensive provider work is concentrated
@@ -7,13 +5,13 @@ on matches that can plausibly become high-quality decisions.  The selector does 
 require a fixed number of matches and never relaxes publication guards.
 """
 
-import json
+from __future__ import annotations
+
 import math
 import os
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 from app.services.daily_coverage_common import (

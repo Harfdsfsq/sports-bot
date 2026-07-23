@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Canonical historical audit for the Focused Alpha pipeline.
 
 The repository contains overlapping publication exports. This module merges them by
@@ -8,6 +6,8 @@ recomputes flat-unit PnL from result and price, and exposes conservative league
 priors. Missing probabilities, closing prices or source identity keep the dataset
 out of live-learning mode.
 """
+
+from __future__ import annotations
 
 import csv
 import io

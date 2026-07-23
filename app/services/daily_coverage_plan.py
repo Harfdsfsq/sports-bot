@@ -25,7 +25,11 @@ from app.services.daily_coverage_common import (
 from app.services.daily_coverage_ranking import coverage_summary, rank_inventory
 from app.services.focused_alpha import (
     enabled as focused_alpha_enabled,
+)
+from app.services.focused_alpha import (
     phase_targets as focused_alpha_phase_targets,
+)
+from app.services.focused_alpha import (
     select_focus_cohort,
 )
 from app.utils import canonicalize_team_name, parse_datetime
@@ -151,7 +155,7 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
             if focused_alpha_enabled()
             else "fixed_2plus_coverage"
         ),
-        "fixed_300_provider_target": False if focused_alpha_enabled() else True,
+        "fixed_300_provider_target": not focused_alpha_enabled(),
         "publication_minimum_count": 0,
         "provider_timeouts_seconds": PROVIDER_TIMEOUTS,
         "matches": {

@@ -6,14 +6,15 @@ import logging
 import os
 import re
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from app.config import get_settings
 from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
 from app.reporting.history_guard_audit import HistoryGuardAuditService
-from app.services.runtime_preflight import RuntimePreflight
 from app.services.runner import PredictionRunner
+from app.services.runtime_preflight import RuntimePreflight
 from app.state import resolve_run_history_roots
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()

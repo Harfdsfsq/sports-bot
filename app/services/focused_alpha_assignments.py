@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Provider routing by expected marginal information value.
 
 Focused Alpha does not broadcast every uncovered fixture to every API. It ranks the
@@ -7,6 +5,8 @@ providers that are most likely to add a missing independent source for this spec
 match, then respects per-provider run budgets. Provider routing never changes the
 publication contract.
 """
+
+from __future__ import annotations
 
 import json
 import os
