@@ -144,3 +144,13 @@ try:
     _authoritative_coverage_planner_patch.install()
 except Exception:
     pass
+
+# Discovery aliases can normalize to the same final semantic match key. Remove
+# those duplicates before strict selection so all 300 slots represent different
+# fixtures and provider assignments never repeat the same match.
+try:
+    from app.services import strict_unique_cohort_patch as _strict_unique_cohort_patch
+
+    _strict_unique_cohort_patch.install()
+except Exception:
+    pass
