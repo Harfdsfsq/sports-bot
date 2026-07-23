@@ -41,6 +41,20 @@ def reassert() -> dict[str, Any]:
     else:
         result["context"] = "already_wrapped"
 
+    # A healthy v2 origin may still return an empty prediction batch.  Reassert the
+    # bounded v1 empty-result fallback after the outage wrapper so native installers
+    # cannot silently remove it later in preflight.
+    try:
+        from app.services import bzzoiro_empty_prediction_fallback as empty_fallback
+
+        result["empty_prediction_context"] = empty_fallback.reassert()
+    except Exception as exc:
+        result["empty_prediction_context"] = {
+            "status": "error",
+            "error": f"{type(exc).__name__}: {exc}",
+            "publication_contract_relaxed": False,
+        }
+
     current_merge = merge_module.fetch_bzzoiro
     if not getattr(current_merge, "_harizon_bzzoiro_v2_outage_fallback", False):
         wrapped_merge = fallback._merge_fetch_factory(current_merge, merge_module)
