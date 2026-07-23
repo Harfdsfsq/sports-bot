@@ -1,35 +1,35 @@
 # run-bot discovery-first prepare
 status: ok_budget_limited
 mode: runbot_discovery_first_prepare_v5_full_bounded
-created_at_utc: 2026-07-23T13:25:31.289123+00:00
-duration_seconds: 253.72
+created_at_utc: 2026-07-23T15:10:52.120654+00:00
+duration_seconds: 376.52
 budget_seconds: 240.0
 
 ## Steps
 - build_base_inventory_if_needed: ok {"status": "skipped_sufficient_inventory"}
 - semantic_inventory_dedupe_pre: ok {"type": "int"}
 - target_expand_pre_discovery: ok {"type": "int"}
-- provider_day_discovery_canonical_pool_v2: ok {"mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon", "status": "ok", "canonical_matches": 578, "canonical_with_2plus_primary_sources": 171, "canonical_with_all_3_primary_sources": 65}
-- merge_discovery_pool_into_inventory: ok {"mode": "provider_day_discovery_inventory_merge_v2_full_pool", "status": "ok", "inventory_matches_after": 629, "canonical_rows_seen": 578, "matched_existing": 289, "appended": 289}
+- provider_day_discovery_canonical_pool_v2: ok {"mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon", "status": "ok", "canonical_matches": 582, "canonical_with_2plus_primary_sources": 166, "canonical_with_all_3_primary_sources": 65}
+- merge_discovery_pool_into_inventory: ok {"mode": "provider_day_discovery_inventory_merge_v2_full_pool", "status": "ok", "inventory_matches_after": 636, "canonical_rows_seen": 582, "matched_existing": 286, "appended": 296}
 - semantic_inventory_dedupe_post_merge: ok {"type": "int"}
 - post_merge_sstats_crosswalk_v2: ok {"mode": "sstats_crosswalk_probe_v2_full_matched", "matched": 215, "match_rate_pct": 71.67}
-- apply_sstats_crosswalk_ids_to_inventory: ok {"mode": "sstats_crosswalk_inventory_apply_v1", "status": "ok", "inventory_matches": 629, "matched_rows_seen": 215, "applied": 215}
-- apply_sstats_deep_inventory_enrichment_v4: ok {"mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "crosswalk_matched": 215, "request_count": 149, "enriched_matches": 47}
-- target_bzzoiro_v2_inventory_gaps: skipped {}
+- apply_sstats_crosswalk_ids_to_inventory: ok {"mode": "sstats_crosswalk_inventory_apply_v1", "status": "ok", "inventory_matches": 636, "matched_rows_seen": 215, "applied": 215}
+- apply_sstats_deep_inventory_enrichment_v4: skipped {}
   - reason: discovery_budget_reserve
+- target_bzzoiro_v2_inventory_gaps: ok {"type": "int"}
 - semantic_inventory_dedupe_final: ok {"type": "int"}
 - target_expand_final: skipped {}
-  - reason: inventory_already_at_or_above_target:629/300
-- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 300, "matches": 300, "fixture_2plus_sources": 288, "odds_2plus_sources": 163, "context_2plus_sources": 172, "ready_for_model": 224, "ready_for_publish": 161}
+  - reason: inventory_already_at_or_above_target:636/300
+- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 300, "matches": 300, "fixture_2plus_sources": 289, "odds_2plus_sources": 143, "context_2plus_sources": 118, "ready_for_model": 216, "ready_for_publish": 111}
 - inventory_provider_gap_audit: ok {"type": "int"}
 
 ## Final
-- inventory_matches: 629
-- semantic_unique_matches: 629
+- inventory_matches: 636
+- semantic_unique_matches: 636
 - semantic_duplicate_rows: 0
 - matrix_matches: 300
-- fixture_2plus_sources: 288
-- odds_2plus_sources: 163
-- context_2plus_sources: 172
-- ready_for_model: 224
-- ready_for_publish: 161
+- fixture_2plus_sources: 289
+- odds_2plus_sources: 143
+- context_2plus_sources: 118
+- ready_for_model: 216
+- ready_for_publish: 111
