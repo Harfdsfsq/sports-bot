@@ -12,7 +12,7 @@ def _apply_focused_alpha_policy() -> None:
 
 def _build_focused_alpha_decisions() -> None:
     try:
-        from scripts.build_focused_alpha_decisions import main as build_decisions
+        from scripts.build_focused_alpha_decisions_v2 import main as build_decisions
 
         build_decisions()
         from app.services.focused_alpha_learning_ledger import update_learning_ledger
