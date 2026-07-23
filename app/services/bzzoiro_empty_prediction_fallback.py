@@ -1,7 +1,7 @@
 """Use the supported Bzzoiro v1 context endpoint when v2 is healthy but empty.
 
 Bzzoiro v2 can return HTTP 200 and a populated event list while the batch
-``/predictions/`` endpoint returns zero rows.  The outage fallback correctly does
+``/predictions/`` endpoint returns zero rows. The outage fallback correctly does
 not open its 5xx circuit in that case, but the run receives no Bzzoiro context.
 This wrapper performs one bounded v1 context attempt per process, caches the hard
 contexts, and keeps v1/v2 canonicalized as the same ``bzzoiro`` source.
@@ -19,7 +19,12 @@ from app.services import bzzoiro_v2_outage_fallback as outage
 from app.services import daily_coverage_ledger as coverage_ledger
 
 ROOT = Path(__file__).resolve().parents[2]
-REPORT_PATH = ROOT / ".data" / "exports" / "latest-bzzoiro-empty-v2-context-fallback.json"
+REPORT_PATH = (
+    ROOT
+    / ".data"
+    / "exports"
+    / "latest-bzzoiro-empty-v2-context-fallback.json"
+)
 _INSTALLED = False
 _ORIGINAL_CONTEXT = None
 _ATTEMPTED = False
@@ -70,7 +75,11 @@ def _successful_empty_v2(contexts: Any, stats: Any) -> bool:
 
     if contexts or not isinstance(stats, dict) or outage._server_failure(stats):
         return False
-    if not _truthy(os.getenv("BZZOIRO_V1_CONTEXT_EMPTY_V2_FALLBACK_ENABLED"), True):
+    enabled = _truthy(
+        os.getenv("BZZOIRO_V1_CONTEXT_EMPTY_V2_FALLBACK_ENABLED"),
+        True,
+    )
+    if not enabled:
         return False
     codes = outage._status_codes(stats)
     if codes and any(code != 200 for code in codes):
@@ -100,7 +109,8 @@ def _cached_for(matches: list[Any]) -> dict[str, Any]:
 
 
 async def _v1_once(
-    settings: Any, matches: list[Any]
+    settings: Any,
+    matches: list[Any],
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     global _ATTEMPTED
 
@@ -140,7 +150,10 @@ async def _v1_once(
 
 def _context_factory(original: Any):
     async def fetch_context(self: Any, matches: list[Any]):
-        primary_contexts, primary_stats, primary_preview = await original(self, matches)
+        primary_contexts, primary_stats, primary_preview = await original(
+            self,
+            matches,
+        )
         contexts = dict(primary_contexts or {})
         stats = dict(primary_stats or {})
         preview = dict(primary_preview or {})
@@ -148,7 +161,8 @@ def _context_factory(original: Any):
             return contexts, stats, preview
 
         fallback_contexts, fallback_stats, fallback_preview = await _v1_once(
-            getattr(self, "settings", None), list(matches or [])
+            getattr(self, "settings", None),
+            list(matches or []),
         )
         stats["v1_empty_prediction_fallback"] = fallback_stats
         preview["v1_empty_prediction_fallback"] = fallback_preview
@@ -159,13 +173,16 @@ def _context_factory(original: Any):
                 fallback_contexts
             )
             coverage_ledger.record_provider_result(
-                "bzzoiro", "fetch_context", fallback_contexts, stats
+                "bzzoiro",
+                "fetch_context",
+                fallback_contexts,
+                stats,
             )
         return contexts, stats, preview
 
     fetch_context._harizon_bzzoiro_v2_empty_prediction_fallback = True  # type: ignore[attr-defined]
-    # The existing outage wrapper remains inside this wrapper.  Preserve its marker
-    # so routine reassertion does not stack another copy around the same method.
+    # The outage wrapper remains inside this wrapper. Preserve its marker so
+    # routine reassertion does not stack another copy around the same method.
     fetch_context._harizon_bzzoiro_v2_outage_fallback = bool(  # type: ignore[attr-defined]
         getattr(original, "_harizon_bzzoiro_v2_outage_fallback", False)
     )
@@ -173,23 +190,34 @@ def _context_factory(original: Any):
 
 
 def reassert() -> dict[str, Any]:
-    global _ORIGINAL_CONTEXT
+    global _INSTALLED, _ORIGINAL_CONTEXT
     from app.providers.bzzoiro_v2 import BzzoiroContextProvider
 
     current = BzzoiroContextProvider.fetch_context
     if getattr(current, "_harizon_bzzoiro_v2_empty_prediction_fallback", False):
-        result = {"status": "already_wrapped", "publication_contract_relaxed": False}
+        result = {
+            "status": "already_wrapped",
+            "publication_contract_relaxed": False,
+        }
     else:
         _ORIGINAL_CONTEXT = current
         BzzoiroContextProvider.fetch_context = _context_factory(current)  # type: ignore[assignment]
-        result = {"status": "wrapped", "publication_contract_relaxed": False}
+        result = {
+            "status": "wrapped",
+            "publication_contract_relaxed": False,
+        }
+    _INSTALLED = True
     _write({"runtime_reassert": result})
     return result
 
 
 def install() -> dict[str, Any]:
     global _INSTALLED
-    if not _truthy(os.getenv("BZZOIRO_V1_CONTEXT_EMPTY_V2_FALLBACK_ENABLED"), True):
+    enabled = _truthy(
+        os.getenv("BZZOIRO_V1_CONTEXT_EMPTY_V2_FALLBACK_ENABLED"),
+        True,
+    )
+    if not enabled:
         return {"status": "disabled_by_env"}
     runtime = reassert()
     _INSTALLED = True
