@@ -32,6 +32,23 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
+def _positive_env(name: str) -> int | None:
+    """Return an explicitly configured positive integer, otherwise ``None``.
+
+    An explicit production cap is a hard operator decision. Runtime preflight may
+    supply a default only when that decision is absent; it must never raise a
+    smaller positive value to an internal target.
+    """
+    raw = os.getenv(name)
+    if raw in (None, ""):
+        return None
+    try:
+        value = int(float(str(raw).strip()))
+    except Exception:
+        return None
+    return value if value > 0 else None
+
+
 def _local_date() -> str:
     explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
     if explicit:
@@ -46,25 +63,57 @@ def _local_date() -> str:
 def _apply_daily_slot_target_policy() -> dict[str, Any]:
     if _truthy(os.getenv("CONTROLLED_FALLBACK_DISABLE_DAILY_CAP_FLOOR"), False):
         return {"status": "disabled"}
-    floor = max(1, _int_env("CONTROLLED_FALLBACK_DAILY_MAX_FLOOR", _int_env("HARIZON_TARGET_DAILY_MAX_PICKS", 5)))
+
+    default_limit = max(
+        1,
+        _int_env(
+            "CONTROLLED_FALLBACK_DAILY_MAX_FLOOR",
+            _int_env("HARIZON_TARGET_DAILY_MAX_PICKS", 5),
+        ),
+    )
     before = {
         "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED"),
         "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER"),
         "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": os.getenv("CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS"),
     }
-    current_published = _int_env("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED", 0)
-    current_b_tier = _int_env("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER", 0)
-    if current_published <= 0 or current_published < floor:
-        os.environ["CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED"] = str(floor)
-    if current_b_tier <= 0 or current_b_tier < floor:
-        os.environ["CONTROLLED_FALLBACK_DAILY_MAX_B_TIER"] = str(floor)
+
+    explicit_published = _positive_env("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED")
+    explicit_b_tier = _positive_env("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER")
+
+    if explicit_published is None:
+        os.environ["CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED"] = str(default_limit)
+        effective_published = default_limit
+    else:
+        effective_published = explicit_published
+
+    if explicit_b_tier is None:
+        # When the total cap is explicitly configured, use the same value for the
+        # missing B-tier cap rather than silently creating a wider five-pick lane.
+        os.environ["CONTROLLED_FALLBACK_DAILY_MAX_B_TIER"] = str(effective_published)
+        effective_b_tier = effective_published
+    else:
+        effective_b_tier = explicit_b_tier
+
     os.environ.setdefault("CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS", "1")
     after = {
         "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED"),
         "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": os.getenv("CONTROLLED_FALLBACK_DAILY_MAX_B_TIER"),
         "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": os.getenv("CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS"),
     }
-    return {"status": "ok", "floor": floor, "before": before, "after": after, "policy": "allow target range up to 5/day while still reserving the final slot before release hour"}
+    return {
+        "status": "ok",
+        # Keep the legacy field for report readers, but make its new semantics
+        # explicit: this is a default, not a lower bound over operator config.
+        "floor": default_limit,
+        "default_limit": default_limit,
+        "before": before,
+        "after": after,
+        "explicit_published_preserved": explicit_published is not None,
+        "explicit_b_tier_preserved": explicit_b_tier is not None,
+        "effective_published_limit": effective_published,
+        "effective_b_tier_limit": effective_b_tier,
+        "policy": "positive explicit daily caps are authoritative; internal target is applied only when a cap is unset or invalid",
+    }
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -101,6 +150,7 @@ def _module_main(module_name: str) -> Callable[[], Any]:
     def run() -> Any:
         module = importlib.import_module(module_name)
         return module.main()
+
     return run
 
 
