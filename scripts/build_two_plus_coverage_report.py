@@ -46,7 +46,12 @@ def candidates(payload: Any) -> list[dict[str, Any]]:
 
 
 def metric(row: dict[str, Any], *keys: str) -> int:
-    for box in (row, row.get('metrics') if isinstance(row.get('metrics'), dict) else {}, row.get('source_summary') if isinstance(row.get('source_summary'), dict) else {}, row.get('diagnostics') if isinstance(row.get('diagnostics'), dict) else {}):
+    for box in (
+        row,
+        row.get('metrics') if isinstance(row.get('metrics'), dict) else {},
+        row.get('source_summary') if isinstance(row.get('source_summary'), dict) else {},
+        row.get('diagnostics') if isinstance(row.get('diagnostics'), dict) else {},
+    ):
         if not isinstance(box, dict):
             continue
         for key in keys:
@@ -83,8 +88,23 @@ def _count_value(counts: dict[str, Any], row_values: list[int], *keys: str) -> i
     return max(row_values or [0])
 
 
+def _strict_counts(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {}
+    value = payload.get('counts')
+    if isinstance(value, dict):
+        return value
+    required = {
+        'matches_total',
+        'matches_with_2plus_odds_sources',
+        'matches_with_2plus_context_sources',
+    }
+    return payload if required.intersection(payload) else {}
+
+
 def main() -> int:
     truth = load(EXPORT / 'latest-day-inventory-coverage-truth.json', {})
+    strict_sync = load(EXPORT / 'latest-strict-coverage-inventory-sync.json', {})
     diag = load(EXPORT / 'latest-fresh-b-cover-diagnostics.json', {})
     fallback = load(EXPORT / 'latest-controlled-fallback-report.json', {})
     bzz = load(EXPORT / 'latest-bzzoiro-context-gap-finalizer.json', {})
@@ -104,7 +124,12 @@ def main() -> int:
                 'context_sources_count': ctx,
                 'reasons': row.get('reasons') or row.get('reject_reasons'),
             })
-    counts = truth.get('counts') if isinstance(truth.get('counts'), dict) else (truth if isinstance(truth, dict) else {})
+    truth_counts = truth.get('counts') if isinstance(truth.get('counts'), dict) else (truth if isinstance(truth, dict) else {})
+    strict_counts = _strict_counts(strict_sync)
+    # The strict sync is the authoritative final classifier. It reads persisted API
+    # evidence and excludes aliases/proxy rows. Truth row recounts are diagnostic only
+    # because generated inventory files can be rewritten after the sync step.
+    counts = strict_counts or truth_counts
     inv_rows = _rows(truth)
     row_odds_2plus = _count_rows(inv_rows, 'odds_sources_count', 'odds_source_count', 'independent_odds_sources_count')
     row_ctx_2plus = _count_rows(inv_rows, 'context_sources_count', 'context_source_count', 'confirmation_sources_count')
@@ -130,6 +155,7 @@ def main() -> int:
         'status': 'ok',
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
         'policy': 'target 2+ independent line/odds sources and 2+ context sources for Telegram publication',
+        'authoritative_count_source': 'latest-strict-coverage-inventory-sync.json' if strict_counts else 'coverage_truth_fallback',
         'inventory': {
             'total': total,
             'odds_2plus_sources': odds_2plus,
