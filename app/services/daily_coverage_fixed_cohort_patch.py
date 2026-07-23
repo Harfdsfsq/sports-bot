@@ -28,10 +28,44 @@ def _path(date_key: str) -> Path:
     return DAY_DIR / f"daily-coverage-cohort-{date_key}.json"
 
 
-def _coverage(row: dict[str, Any], ledger_row: dict[str, Any]) -> tuple[list[str], list[str]]:
-    del row
-    odds = independent_sources(ledger_row.get("odds_sources") or [], role="odds")
-    contexts = independent_sources(ledger_row.get("context_sources") or [], role="context")
+def _values(box: Any, key: str) -> list[str]:
+    if not isinstance(box, dict):
+        return []
+    value = box.get(key)
+    if isinstance(value, dict):
+        return [str(item) for item in value if str(item).strip()]
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value if str(item).strip()]
+    return []
+
+
+def _verified(row: Any, role: str) -> list[str]:
+    if not isinstance(row, dict):
+        return []
+    metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+    key = "verified_odds_sources" if role == "odds" else "verified_context_sources"
+    values = _values(metadata, key)
+    if bool(coverage.get("daily_coverage_evidence_synced")):
+        values.extend(_values(coverage, f"{role}_sources"))
+    return independent_sources(values, role=role)
+
+
+def _coverage(
+    row: dict[str, Any], ledger_row: dict[str, Any]
+) -> tuple[list[str], list[str]]:
+    odds = independent_sources(
+        list(ledger_row.get("odds_sources") or [])
+        + _verified(row, "odds")
+        + _verified(ledger_row, "odds"),
+        role="odds",
+    )
+    contexts = independent_sources(
+        list(ledger_row.get("context_sources") or [])
+        + _verified(row, "context")
+        + _verified(ledger_row, "context"),
+        role="context",
+    )
     return odds, contexts
 
 
@@ -60,11 +94,20 @@ def _refresh(
             identity_index,
         )
         odds, contexts = _coverage(base, ledger_row)
-        hours = (kickoff - now).total_seconds() / 3600.0 if kickoff is not None else 9999.0
+        hours = (
+            (kickoff - now).total_seconds() / 3600.0
+            if kickoff is not None
+            else 9999.0
+        )
+        assignment_eligible = kickoff is not None and hours >= -0.25
         base.update(
             {
                 "match_key": key,
-                "kickoff_utc": kickoff.isoformat() if kickoff is not None else base.get("kickoff_utc"),
+                "kickoff_utc": (
+                    kickoff.isoformat()
+                    if kickoff is not None
+                    else base.get("kickoff_utc")
+                ),
                 "hours_to_kickoff": round(hours, 3),
                 "odds_sources": odds,
                 "context_sources": contexts,
@@ -74,6 +117,10 @@ def _refresh(
                 "context_deficit": max(0, MIN_CONTEXT_SOURCES - len(contexts)),
                 "daily_cohort_fixed": True,
                 "ledger_identity_match": bool(ledger_row),
+                "provider_assignment_eligible": assignment_eligible,
+                "provider_assignment_skip_reason": (
+                    None if assignment_eligible else "kickoff_expired_or_missing"
+                ),
             }
         )
         result.append(base)
@@ -89,7 +136,11 @@ def _rank(
     assert callable(_ORIGINAL_RANK)
     path = _path(date_key)
     state = load(path, {})
-    stored = state.get("matches") if isinstance(state, dict) and isinstance(state.get("matches"), list) else []
+    stored = (
+        state.get("matches")
+        if isinstance(state, dict) and isinstance(state.get("matches"), list)
+        else []
+    )
     existing_keys = {row_key(row) for row in stored if row_key(row)}
     if len(stored) < TARGET_MATCHES:
         ranked = _ORIGINAL_RANK(rows, ledger, now, date_key)
@@ -104,7 +155,9 @@ def _rank(
             path,
             {
                 "date_local": date_key,
-                "created_at_utc": state.get("created_at_utc") if isinstance(state, dict) else None
+                "created_at_utc": (
+                    state.get("created_at_utc") if isinstance(state, dict) else None
+                )
                 or datetime.now(UTC).isoformat(),
                 "updated_at_utc": datetime.now(UTC).isoformat(),
                 "target_matches": TARGET_MATCHES,
@@ -137,8 +190,10 @@ def install() -> dict[str, Any]:
     return {
         "status": "installed",
         "target_matches": TARGET_MATCHES,
-        "policy": "append_until_300_then_freeze_for_moscow_day",
+        "policy": "retain_daily_300_but_assign_only_active_verified_gaps",
         "past_matches_remain_in_daily_coverage_ledger": True,
+        "past_matches_excluded_from_provider_assignments": True,
+        "strict_verified_evidence_restored": True,
         "semantic_ledger_identity_lookup": True,
         "publication_contract_relaxed": False,
     }
