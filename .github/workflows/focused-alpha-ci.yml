@@ -45,3 +45,41 @@ jobs:
             scripts/publish_controlled_fallback_guarded.py
       - name: Run Focused Alpha tests
         run: python -m pytest -q tests/test_focused_alpha*.py
+      - name: Build repository history and decision baseline
+        run: |
+          python - <<'PY'
+          import json
+          from app.services.focused_alpha_history import build_history_audit
+          from scripts.build_focused_alpha_decisions import build_decisions
+          from app.services.focused_alpha_learning_ledger import update_learning_ledger
+
+          audit = build_history_audit()
+          board = build_decisions()
+          ledger = update_learning_ledger(board)
+          print(json.dumps({
+              "history": {
+                  "raw_rows": audit.get("raw_rows"),
+                  "canonical_rows": audit.get("canonical_rows"),
+                  "telegram_sent_rows": audit.get("telegram_sent_rows"),
+                  "settled_rows": audit.get("settled_rows"),
+                  "duplicates_collapsed": audit.get("duplicates_collapsed"),
+                  "live_learning_ready": audit.get("live_learning_ready"),
+                  "live_learning_blockers": audit.get("live_learning_blockers"),
+              },
+              "decisions": {
+                  "candidates_seen": board.get("candidates_seen"),
+                  "passes_shadow_contract": board.get("passes_shadow_contract"),
+                  "selected_count": board.get("selected_count"),
+              },
+              "ledger": ledger.get("summary"),
+          }, ensure_ascii=False, indent=2))
+          PY
+      - name: Upload Focused Alpha baseline
+        uses: actions/upload-artifact@v5
+        with:
+          name: focused-alpha-baseline-${{ github.run_id }}
+          path: |
+            .data/exports/latest-focused-alpha-*.json
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
