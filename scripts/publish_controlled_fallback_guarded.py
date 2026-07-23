@@ -12,6 +12,7 @@ def main() -> int:
         from scripts.patch_reserved_slot_expiring_candidate import install as install_reserved_slot_expiry_override
         from scripts.patch_daily_slot_bundle_cap import install as install_daily_slot_bundle_cap
         from scripts.patch_daily_slot_semantic_ledger_count import install as install_semantic_ledger_daily_count
+        from scripts.patch_daily_cap_after_quality import install as install_daily_cap_after_quality
         from scripts.patch_display_line_count_safe import install as install_display_line_count_safe
         from scripts.patch_same_match_total_conflict_guard import install as install_same_match_total_conflict_guard
         from scripts.patch_fallback_current_run_only import install as install_fallback_current_run_only
@@ -23,6 +24,7 @@ def main() -> int:
         install_display_line_count_safe(v18.base)
         install_same_match_total_conflict_guard(v18.base)
         install_fallback_current_run_only(v18.base)
+        install_daily_cap_after_quality(v18)
     except Exception:
         pass
     from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
