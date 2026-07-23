@@ -25,6 +25,9 @@ def main() -> int:
     from scripts.patch_current_bankroll_source import install as install_current_bankroll_source
     from scripts.patch_proxy_default_xg_guard import install as install_proxy_default_xg_guard
     from scripts.patch_publication_safety_contract import install as install_publication_safety_contract
+    from scripts.patch_semantic_movement_current_price_guard import (
+        install as install_semantic_movement_current_price_guard,
+    )
 
     install_duplicate_matcher(v18)
     install_a_cover_evidence_quality(v18.base)
@@ -35,6 +38,7 @@ def main() -> int:
     install_display_line_count_safe(v18.base)
     install_same_match_total_conflict_guard(v18.base)
     install_current_bankroll_source(v18.base)
+    install_semantic_movement_current_price_guard(v18.base)
     code = int(v18.main() or 0)
     try:
         from scripts.sync_run_report_ledger_export import main as sync_run_ledger
