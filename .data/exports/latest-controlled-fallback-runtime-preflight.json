@@ -1,9 +1,9 @@
 {
-  "created_at_utc": "2026-07-23T19:11:56.616787+00:00",
+  "created_at_utc": "2026-07-23T19:24:32.702974+00:00",
   "daily_slot_policy": {
     "after": {
-      "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "5",
-      "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": "5",
+      "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "3",
+      "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": "3",
       "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": "1"
     },
     "before": {
@@ -11,8 +11,13 @@
       "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": "3",
       "CONTROLLED_FALLBACK_RESERVED_DAILY_SLOTS": null
     },
+    "default_limit": 5,
+    "effective_b_tier_limit": 3,
+    "effective_published_limit": 3,
+    "explicit_b_tier_preserved": true,
+    "explicit_published_preserved": true,
     "floor": 5,
-    "policy": "allow target range up to 5/day while still reserving the final slot before release hour",
+    "policy": "positive explicit daily caps are authoritative; internal target is applied only when a cap is unset or invalid",
     "status": "ok"
   },
   "date_local": "2026-07-23",
@@ -20,107 +25,107 @@
   "status": "ok",
   "steps": [
     {
-      "duration_seconds": 0.293,
+      "duration_seconds": 0.328,
       "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:10:52.446842+00:00",
+      "finished_at_utc": "2026-07-23T19:23:39.969065+00:00",
       "name": "runtime_json_state_guard",
-      "started_at_utc": "2026-07-23T19:10:52.153669+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 0.003,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:10:52.450287+00:00",
-      "name": "normalize_persisted_publication_indexes",
-      "started_at_utc": "2026-07-23T19:10:52.446885+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 0.812,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:10:53.262731+00:00",
-      "name": "normalize_day_inventory_time_windows",
-      "started_at_utc": "2026-07-23T19:10:52.450298+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 50.46,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:43.722782+00:00",
-      "name": "backfill_inventory_bookmaker_coverage",
-      "started_at_utc": "2026-07-23T19:10:53.262748+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 0.002,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:43.724683+00:00",
-      "name": "extend_day_inventory_for_target_shortfall",
-      "started_at_utc": "2026-07-23T19:11:43.722812+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 4.768,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:48.492896+00:00",
-      "name": "repair_day_inventory_blank_rows",
-      "started_at_utc": "2026-07-23T19:11:43.724694+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 3.885,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:52.377566+00:00",
-      "name": "build_b_cover_candidate_gap_report",
-      "started_at_utc": "2026-07-23T19:11:48.492915+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 3.739,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:56.116916+00:00",
-      "name": "promote_a_cover_value_candidates",
-      "started_at_utc": "2026-07-23T19:11:52.377591+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 0.003,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:56.120032+00:00",
-      "name": "normalize_rescue_candidate_keys",
-      "started_at_utc": "2026-07-23T19:11:56.116954+00:00",
-      "status": "ok"
-    },
-    {
-      "duration_seconds": 0.011,
-      "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:56.130724+00:00",
-      "name": "enrich_rescue_candidates_xg_confirmation",
-      "started_at_utc": "2026-07-23T19:11:56.120044+00:00",
+      "started_at_utc": "2026-07-23T19:23:39.640836+00:00",
       "status": "ok"
     },
     {
       "duration_seconds": 0.004,
       "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:56.134525+00:00",
+      "finished_at_utc": "2026-07-23T19:23:39.973431+00:00",
+      "name": "normalize_persisted_publication_indexes",
+      "started_at_utc": "2026-07-23T19:23:39.969108+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 0.853,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:23:40.826834+00:00",
+      "name": "normalize_day_inventory_time_windows",
+      "started_at_utc": "2026-07-23T19:23:39.973449+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 33.206,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:24:14.032394+00:00",
+      "name": "backfill_inventory_bookmaker_coverage",
+      "started_at_utc": "2026-07-23T19:23:40.826854+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 0.002,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:24:14.034700+00:00",
+      "name": "extend_day_inventory_for_target_shortfall",
+      "started_at_utc": "2026-07-23T19:24:14.032432+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 6.739,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:24:20.773543+00:00",
+      "name": "repair_day_inventory_blank_rows",
+      "started_at_utc": "2026-07-23T19:24:14.034713+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 5.63,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:24:26.403829+00:00",
+      "name": "build_b_cover_candidate_gap_report",
+      "started_at_utc": "2026-07-23T19:24:20.773561+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 5.569,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:24:31.972704+00:00",
+      "name": "promote_a_cover_value_candidates",
+      "started_at_utc": "2026-07-23T19:24:26.403865+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 0.004,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:24:31.976905+00:00",
+      "name": "normalize_rescue_candidate_keys",
+      "started_at_utc": "2026-07-23T19:24:31.972736+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 0.017,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:24:31.993446+00:00",
+      "name": "enrich_rescue_candidates_xg_confirmation",
+      "started_at_utc": "2026-07-23T19:24:31.976918+00:00",
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 0.006,
+      "exit_code": 0,
+      "finished_at_utc": "2026-07-23T19:24:31.999813+00:00",
       "name": "replace_rescue_proxy_placeholder_xg",
-      "started_at_utc": "2026-07-23T19:11:56.130737+00:00",
+      "started_at_utc": "2026-07-23T19:24:31.993471+00:00",
       "status": "ok"
     },
     {
-      "duration_seconds": 0.47,
+      "duration_seconds": 0.692,
       "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:56.604786+00:00",
+      "finished_at_utc": "2026-07-23T19:24:32.692159+00:00",
       "name": "update_day_inventory_priority_and_line_state_safe_clock",
-      "started_at_utc": "2026-07-23T19:11:56.134535+00:00",
+      "started_at_utc": "2026-07-23T19:24:31.999827+00:00",
       "status": "ok"
     },
     {
-      "duration_seconds": 0.012,
+      "duration_seconds": 0.011,
       "exit_code": 0,
-      "finished_at_utc": "2026-07-23T19:11:56.616766+00:00",
+      "finished_at_utc": "2026-07-23T19:24:32.702947+00:00",
       "name": "build_a_cover_candidate_gap_report",
-      "started_at_utc": "2026-07-23T19:11:56.604810+00:00",
+      "started_at_utc": "2026-07-23T19:24:32.692181+00:00",
       "status": "ok"
     }
   ]
