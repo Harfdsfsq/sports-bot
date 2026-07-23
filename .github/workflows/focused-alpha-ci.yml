@@ -16,15 +16,18 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   focused-alpha:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout repository
+      - name: Checkout repository branch
         uses: actions/checkout@v6
+        with:
+          ref: feature/focused-alpha-system
+          fetch-depth: 0
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -34,6 +37,60 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install ruff
+      - name: Normalize Focused Alpha change set once
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          paths = [
+              Path("app/services/focused_alpha.py"),
+              Path("app/services/focused_alpha_assignments.py"),
+              Path("app/services/focused_alpha_history.py"),
+              Path("app/services/focused_alpha_learning_ledger.py"),
+              Path("app/services/focused_alpha_runtime_policy.py"),
+              Path("scripts/build_focused_alpha_decisions.py"),
+              Path("scripts/patch_focused_alpha_candidate_rank.py"),
+          ]
+          prefix = "from __future__ import annotations\n\n"
+          for path in paths:
+              text = path.read_text(encoding="utf-8")
+              if not text.startswith(prefix):
+                  continue
+              rest = text[len(prefix):]
+              if not rest.startswith('"""'):
+                  continue
+              end = rest.find('"""', 3)
+              if end < 0:
+                  raise RuntimeError(f"unterminated module docstring: {path}")
+              end += 3
+              docstring = rest[:end]
+              tail = rest[end:].lstrip("\n")
+              path.write_text(
+                  docstring + "\n\n" + prefix + tail,
+                  encoding="utf-8",
+              )
+          PY
+          ruff check --config pyproject.toml --fix --unsafe-fixes \
+            app/cli.py \
+            app/services/focused_alpha.py \
+            app/services/focused_alpha_assignments.py \
+            app/services/focused_alpha_history.py \
+            app/services/focused_alpha_learning_ledger.py \
+            app/services/focused_alpha_runtime_policy.py \
+            app/services/daily_coverage_plan.py \
+            app/services/daily_coverage_assignments.py \
+            app/services/daily_coverage_full_inventory_provider_patch.py \
+            scripts/build_focused_alpha_decisions.py \
+            scripts/patch_focused_alpha_candidate_rank.py \
+            scripts/publish_controlled_fallback_guarded.py \
+            tests/test_focused_alpha*.py
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add app/cli.py app/services scripts tests
+            git commit -m "Normalize Focused Alpha change set"
+            git push origin HEAD:feature/focused-alpha-system
+          fi
       - name: Compile Focused Alpha modules
         run: |
           python -m py_compile \
