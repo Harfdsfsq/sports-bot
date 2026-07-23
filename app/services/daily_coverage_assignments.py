@@ -45,10 +45,12 @@ def build_assignments(
         "thesportsdb": {"context": []},
     }
     for row in rows:
+        hours = as_float(row.get("hours_to_kickoff"), 99.0)
+        if row.get("provider_assignment_eligible") is False or hours < -0.25:
+            continue
         key = row["match_key"]
         odds = set(row["odds_sources"])
         contexts = set(row["context_sources"])
-        hours = as_float(row.get("hours_to_kickoff"), 99.0)
         if len(odds) < 2 or hours <= 4:
             out["odds_api_io"]["offers"].append(key)
         for provider in ("sstats_pari", "sportlogic", "bzzoiro"):
@@ -75,7 +77,7 @@ def build_assignments(
             out["clubelo"]["context"].append(key)
 
     # No artificial 80/24-match shortlist. HTTP request ceilings remain enforced
-    # inside each provider; assignments merely ensure every uncovered row is tried.
+    # inside each provider; assignments merely ensure every active uncovered row is tried.
     pari_limit = max(1, as_int(os.getenv("SSTATS_PARI_DETAIL_MATCH_LIMIT"), 300))
     sportlogic_limit = max(1, as_int(os.getenv("SPORTLOGIC_MATCH_LIMIT"), 300))
     bzz_limit = max(
