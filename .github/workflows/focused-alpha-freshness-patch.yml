@@ -1,0 +1,216 @@
+name: focused-alpha-freshness-patch
+
+on:
+  push:
+    branches:
+      - feature/focused-alpha-system
+    paths:
+      - ".github/workflows/focused-alpha-freshness-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feature/focused-alpha-system
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Patch candidate freshness window
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/build_focused_alpha_decisions.py")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              "from datetime import UTC, datetime\n",
+              "from datetime import UTC, datetime, timedelta\n",
+              1,
+          )
+          start = text.index("def collect_candidates(")
+          end = text.index("\ndef _source_count", start)
+          replacement = '''def _parse_dt(value: Any) -> datetime | None:
+              if isinstance(value, datetime):
+                  parsed = value
+              else:
+                  raw = str(value or "").strip()
+                  if not raw:
+                      return None
+                  if raw.endswith("Z"):
+                      raw = raw[:-1] + "+00:00"
+                  try:
+                      parsed = datetime.fromisoformat(raw)
+                  except Exception:
+                      return None
+              if parsed.tzinfo is None:
+                  parsed = parsed.replace(tzinfo=UTC)
+              return parsed.astimezone(UTC)
+
+
+          def _candidate_kickoff(row: dict[str, Any]) -> datetime | None:
+              for key in (
+                  "commence_time",
+                  "commence_time_utc",
+                  "kickoff_utc",
+                  "kickoff",
+                  "start_time",
+                  "start_at",
+                  "event_time",
+              ):
+                  parsed = _parse_dt(row.get(key))
+                  if parsed is not None:
+                      return parsed
+              for container_key in ("metadata", "source_summary", "diagnostics"):
+                  container = row.get(container_key)
+                  if not isinstance(container, dict):
+                      continue
+                  for key in ("commence_time", "kickoff_utc", "kickoff", "start_time"):
+                      parsed = _parse_dt(container.get(key))
+                      if parsed is not None:
+                          return parsed
+              return None
+
+
+          def _window_limits() -> tuple[timedelta, timedelta]:
+              minimum_minutes = max(
+                  0.0,
+                  _float(os.getenv("MIN_KICKOFF_LEAD_MINUTES"), 20.0),
+              )
+              horizon_hours = max(
+                  minimum_minutes / 60.0,
+                  _float(
+                      os.getenv("FOCUSED_ALPHA_CANDIDATE_MAX_HOURS")
+                      or os.getenv("HARIZON_DATA_COLLECTION_WINDOW_HOURS"),
+                      36.0,
+                  ),
+              )
+              return timedelta(minutes=minimum_minutes), timedelta(hours=horizon_hours)
+
+
+          def _candidate_completeness(row: dict[str, Any]) -> int:
+              return sum(
+                  row.get(field) not in (None, "", [], {})
+                  for field in (
+                      "odds",
+                      "adjusted_probability",
+                      "model_probability",
+                      "market_probability",
+                      "confidence",
+                      "quality_score",
+                      "ev_pct",
+                      "edge_pct",
+                      "confirmation_sources",
+                      "odds_sources_count",
+                      "commence_time",
+                  )
+              )
+
+
+          def collect_candidates(
+              *,
+              now: datetime | None = None,
+              stats: dict[str, int] | None = None,
+          ) -> list[dict[str, Any]]:
+              current = (now or datetime.now(UTC)).astimezone(UTC)
+              minimum_lead, maximum_horizon = _window_limits()
+              counts = {
+                  "raw_rows": 0,
+                  "missing_kickoff": 0,
+                  "inside_minimum_lead": 0,
+                  "stale_or_started": 0,
+                  "outside_data_horizon": 0,
+                  "eligible_rows": 0,
+                  "unique_rows": 0,
+                  "duplicates_collapsed": 0,
+              }
+              best: dict[str, dict[str, Any]] = {}
+              for candidate_path in CANDIDATE_PATHS:
+                  for source_row in _rows(_load(candidate_path, {})):
+                      counts["raw_rows"] += 1
+                      row = dict(source_row)
+                      kickoff = _candidate_kickoff(row)
+                      if kickoff is None:
+                          counts["missing_kickoff"] += 1
+                          continue
+                      delta = kickoff - current
+                      if delta < timedelta(0):
+                          counts["stale_or_started"] += 1
+                          continue
+                      if delta < minimum_lead:
+                          counts["inside_minimum_lead"] += 1
+                          continue
+                      if delta > maximum_horizon:
+                          counts["outside_data_horizon"] += 1
+                          continue
+                      counts["eligible_rows"] += 1
+                      row["commence_time"] = kickoff.isoformat()
+                      row["hours_to_kickoff"] = round(
+                          delta.total_seconds() / 3600.0,
+                          6,
+                      )
+                      row["_focused_alpha_source_path"] = (
+                          str(candidate_path.relative_to(ROOT))
+                          if candidate_path.is_relative_to(ROOT)
+                          else str(candidate_path)
+                      )
+                      key = _key(row)
+                      if not key.strip("|"):
+                          continue
+                      current_best = best.get(key)
+                      if current_best is None or _candidate_completeness(row) >= _candidate_completeness(current_best):
+                          best[key] = row
+              counts["unique_rows"] = len(best)
+              counts["duplicates_collapsed"] = max(
+                  0,
+                  counts["eligible_rows"] - counts["unique_rows"],
+              )
+              if stats is not None:
+                  stats.clear()
+                  stats.update(counts)
+              return list(best.values())
+
+'''
+          replacement = "\n".join(
+              line[10:] if line.startswith("          ") else line
+              for line in replacement.splitlines()
+          )
+          text = text[:start] + replacement + text[end + 1 :]
+          text = text.replace(
+              "    history = build_history_audit()\n"
+              "    scored = [score_candidate(row, history) for row in collect_candidates()]\n",
+              "    history = build_history_audit()\n"
+              "    pool_stats: dict[str, int] = {}\n"
+              "    candidates = collect_candidates(stats=pool_stats)\n"
+              "    scored = [score_candidate(row, history) for row in candidates]\n",
+              1,
+          )
+          text = text.replace(
+              '        "candidates_seen": len(scored),\n',
+              '        "candidate_pool": pool_stats,\n'
+              '        "candidates_seen": len(scored),\n',
+              1,
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
+      - name: Normalize and verify
+        run: |
+          pip install -r requirements.txt ruff
+          ruff check --config pyproject.toml --fix --unsafe-fixes \
+            scripts/build_focused_alpha_decisions.py \
+            tests/test_focused_alpha_decision_freshness.py
+          python -m py_compile scripts/build_focused_alpha_decisions.py
+          python -m pytest -q tests/test_focused_alpha_decision_freshness.py
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/build_focused_alpha_decisions.py tests/test_focused_alpha_decision_freshness.py
+          git commit -m "Filter Focused Alpha candidates by active data window"
+          git push origin HEAD:feature/focused-alpha-system
