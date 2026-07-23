@@ -2,14 +2,11 @@ from __future__ import annotations
 
 """Canonical historical audit for the Focused Alpha pipeline.
 
-The repository contains several overlapping publication exports.  This module does
-not treat any one file as authoritative.  It merges them by prediction/semantic
-identity, prefers the most complete settled representation, recomputes unit PnL
-from result, stake and price, and exposes conservative league priors.
-
-The audit is intentionally strict: missing probabilities, closing prices or source
-identity keep the dataset out of live-learning mode.  A dirty result ledger must
-never tune production thresholds automatically.
+The repository contains overlapping publication exports. This module merges them by
+prediction/semantic identity, prefers the most complete settled representation,
+recomputes flat-unit PnL from result and price, and exposes conservative league
+priors. Missing probabilities, closing prices or source identity keep the dataset
+out of live-learning mode.
 """
 
 import csv
@@ -29,7 +26,7 @@ REPORT_PATH = EXPORT / "latest-focused-alpha-history-audit.json"
 CANONICAL_PATH = EXPORT / "latest-focused-alpha-canonical-history.json"
 
 _FINAL_RESULTS = {"won", "lost", "push", "void", "cancelled", "refunded"}
-_EMPTY = {None, "", "null", "none", "nan", "n/a"}
+_EMPTY_TEXT = {"", "null", "none", "nan", "n/a", "unknown"}
 
 
 def _load_json(path: Path, default: Any) -> Any:
@@ -42,7 +39,10 @@ def _load_json(path: Path, default: Any) -> Any:
 
 def _write(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _text(value: Any) -> str:
@@ -55,8 +55,18 @@ def _norm(value: Any) -> str:
     return " ".join(text.split())
 
 
+def _is_empty(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip().lower() in _EMPTY_TEXT
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) == 0
+    return False
+
+
 def _float(value: Any) -> float | None:
-    if value in _EMPTY:
+    if _is_empty(value):
         return None
     try:
         result = float(str(value).replace(",", "."))
@@ -112,9 +122,6 @@ def _semantic_key(row: dict[str, Any]) -> str:
 def _csv_rows(path: Path) -> list[dict[str, Any]]:
     try:
         text = path.read_text(encoding="utf-8-sig", errors="replace")
-    except Exception:
-        return []
-    try:
         return [dict(row) for row in csv.DictReader(io.StringIO(text))]
     except Exception:
         return []
@@ -124,17 +131,17 @@ def _json_rows(path: Path) -> list[dict[str, Any]]:
     payload = _load_json(path, [])
     if isinstance(payload, list):
         return [dict(row) for row in payload if isinstance(row, dict)]
-    if isinstance(payload, dict):
-        rows: list[dict[str, Any]] = []
-        for value in payload.values():
-            if isinstance(value, dict):
-                rows.append(dict(value))
-        for key in ("rows", "bets", "items", "published_candidates"):
-            value = payload.get(key)
-            if isinstance(value, list):
-                rows.extend(dict(row) for row in value if isinstance(row, dict))
-        return rows
-    return []
+    if not isinstance(payload, dict):
+        return []
+    rows: list[dict[str, Any]] = []
+    for value in payload.values():
+        if isinstance(value, dict):
+            rows.append(dict(value))
+    for key in ("rows", "bets", "items", "published_candidates"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            rows.extend(dict(row) for row in value if isinstance(row, dict))
+    return rows
 
 
 def collect_raw_rows() -> list[dict[str, Any]]:
@@ -146,8 +153,8 @@ def collect_raw_rows() -> list[dict[str, Any]]:
     )
     rows: list[dict[str, Any]] = []
     for path, loader in sources:
-        for row in loader(path):
-            row = dict(row)
+        for source_row in loader(path):
+            row = dict(source_row)
             row["_history_source_path"] = str(path.relative_to(ROOT))
             rows.append(row)
     return rows
@@ -155,9 +162,12 @@ def collect_raw_rows() -> list[dict[str, Any]]:
 
 def _completeness(row: dict[str, Any]) -> tuple[int, int, int, int]:
     final = int(_result(row) in _FINAL_RESULTS)
-    settled = int(bool(_text(row.get("settled_at") or row.get("settlement_attempt_reason") == "settled")))
+    settled = int(
+        bool(_text(row.get("settled_at")))
+        or _text(row.get("settlement_attempt_reason")).lower() == "settled"
+    )
     useful_fields = sum(
-        row.get(key) not in _EMPTY
+        not _is_empty(row.get(key))
         for key in (
             "odds",
             "stake_amount",
@@ -168,6 +178,7 @@ def _completeness(row: dict[str, Any]) -> tuple[int, int, int, int]:
             "ev_pct",
             "quality_score",
             "confidence",
+            "odds_sources",
             "context_sources",
             "selected_bookmaker",
             "published_at",
@@ -175,20 +186,21 @@ def _completeness(row: dict[str, Any]) -> tuple[int, int, int, int]:
             "final_score",
         )
     )
-    timestamp = _text(row.get("settled_at") or row.get("published_at") or row.get("sent_at"))
+    timestamp = _text(
+        row.get("settled_at") or row.get("published_at") or row.get("sent_at")
+    )
     return final, settled, useful_fields, int(bool(timestamp))
 
 
 def _merge_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    ordered = sorted(rows, key=_completeness)
     merged: dict[str, Any] = {}
     source_paths: set[str] = set()
-    for row in ordered:
+    for row in sorted(rows, key=_completeness):
         source_paths.add(_text(row.get("_history_source_path")))
         for key, value in row.items():
             if key.startswith("_history_"):
                 continue
-            if value not in _EMPTY:
+            if not _is_empty(value):
                 merged[key] = value
     merged["history_source_paths"] = sorted(path for path in source_paths if path)
     merged["history_duplicate_rows"] = len(rows)
@@ -198,24 +210,27 @@ def _merge_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return merged
 
 
-def canonical_history() -> list[dict[str, Any]]:
+def canonical_history(
+    raw_rows: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     ignored = 0
-    for row in collect_raw_rows():
+    for row in raw_rows if raw_rows is not None else collect_raw_rows():
         key = _semantic_key(row)
         if not key.strip("|") or key == "||||":
             ignored += 1
             continue
         grouped[key].append(row)
     rows = [_merge_rows(group) for group in grouped.values()]
-    rows.sort(key=lambda row: (_text(row.get("commence_time_utc") or row.get("commence_time")), row["history_key"]))
+    rows.sort(
+        key=lambda row: (
+            _text(row.get("commence_time_utc") or row.get("commence_time")),
+            row["history_key"],
+        )
+    )
     for row in rows:
         row["history_rows_ignored_without_identity"] = ignored
     return rows
-
-
-def _stake(row: dict[str, Any]) -> float:
-    return max(0.0, _float(row.get("stake_amount") or row.get("stake")) or 0.0)
 
 
 def _unit_pnl(row: dict[str, Any]) -> float | None:
@@ -245,13 +260,13 @@ def _odds_band(value: float | None) -> str:
 
 
 def _group_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    settled = [(row, _unit_pnl(row)) for row in rows]
-    settled = [(row, pnl) for row, pnl in settled if pnl is not None]
+    settled_pairs = [(row, _unit_pnl(row)) for row in rows]
+    settled = [(row, pnl) for row, pnl in settled_pairs if pnl is not None]
     wins = sum(_result(row) == "won" for row, _ in settled)
     losses = sum(_result(row) == "lost" for row, _ in settled)
     pushes = len(settled) - wins - losses
     units = round(sum(float(pnl) for _, pnl in settled), 4)
-    risk = sum(1 for row, _ in settled if _result(row) in {"won", "lost"})
+    risk = sum(_result(row) in {"won", "lost"} for row, _ in settled)
     yield_pct = round(100.0 * units / risk, 3) if risk else None
     return {
         "rows": len(rows),
@@ -259,7 +274,9 @@ def _group_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "won": wins,
         "lost": losses,
         "push_or_void": pushes,
-        "hit_rate_ex_push_pct": round(100.0 * wins / max(1, wins + losses), 3) if wins + losses else None,
+        "hit_rate_ex_push_pct": (
+            round(100.0 * wins / (wins + losses), 3) if wins + losses else None
+        ),
         "profit_units_flat_1u": units,
         "yield_pct_flat_1u": yield_pct,
     }
@@ -273,54 +290,121 @@ def _nested_stats(rows: list[dict[str, Any]], key_fn: Any) -> dict[str, Any]:
 
 
 def _has_probability(row: dict[str, Any]) -> bool:
-    return any(_float(row.get(key)) is not None for key in ("model_probability_pct", "adjusted_probability_pct"))
+    return any(
+        _float(row.get(key)) is not None
+        for key in ("model_probability_pct", "adjusted_probability_pct")
+    )
 
 
 def _has_closing_price(row: dict[str, Any]) -> bool:
     return any(
         _float(row.get(key)) is not None
-        for key in ("closing_odds", "close_odds", "closing_price", "market_close_odds")
+        for key in (
+            "closing_odds",
+            "close_odds",
+            "closing_price",
+            "market_close_odds",
+        )
     )
+
+
+def _source_names(value: Any) -> set[str]:
+    raw = value if isinstance(value, (list, tuple, set)) else re.split(
+        r"[,;+|/]", _text(value)
+    )
+    return {_norm(item) for item in raw if _norm(item)}
+
+
+def _has_source_identity(row: dict[str, Any]) -> bool:
+    odds = set()
+    contexts = set()
+    for key in ("odds_sources", "line_sources", "selected_source"):
+        odds.update(_source_names(row.get(key)))
+    for key in ("context_sources", "confirmation_sources"):
+        contexts.update(_source_names(row.get(key)))
+    return bool(odds) and bool(contexts)
 
 
 def build_history_audit() -> dict[str, Any]:
-    rows = canonical_history()
-    sent = [row for row in rows if _bool(row.get("telegram_sent")) or _text(row.get("publication_lifecycle_status")) == "telegram_sent"]
+    raw_rows = collect_raw_rows()
+    rows = canonical_history(raw_rows)
+    sent = [
+        row
+        for row in rows
+        if _bool(row.get("telegram_sent"))
+        or _text(row.get("publication_lifecycle_status")) == "telegram_sent"
+    ]
     settled = [row for row in sent if _unit_pnl(row) is not None]
-    stale_pending = [
+    pending_with_kickoff = [
         row
         for row in sent
-        if _result(row) == "pending" and _text(row.get("commence_time_utc") or row.get("commence_time"))[:10]
+        if _result(row) == "pending"
+        and _text(row.get("commence_time_utc") or row.get("commence_time"))[:10]
     ]
     with_probability = sum(_has_probability(row) for row in settled)
     with_closing = sum(_has_closing_price(row) for row in settled)
-    with_source_identity = sum(bool(_text(row.get("context_sources") or row.get("selected_source"))) for row in settled)
+    with_source_identity = sum(_has_source_identity(row) for row in settled)
     minimum_settled = 100
+    probability_required = math.ceil(0.9 * len(settled))
+    closing_required = math.ceil(0.8 * len(settled))
+    identity_required = math.ceil(0.9 * len(settled))
     live_learning_ready = (
         len(settled) >= minimum_settled
-        and with_probability >= math.ceil(0.9 * len(settled))
-        and with_closing >= math.ceil(0.8 * len(settled))
-        and with_source_identity >= math.ceil(0.9 * len(settled))
+        and with_probability >= probability_required
+        and with_closing >= closing_required
+        and with_source_identity >= identity_required
     )
+    blockers: list[str | None] = []
+    if not live_learning_ready:
+        blockers = [
+            (
+                f"settled_sample_below_min:{len(settled)}/{minimum_settled}"
+                if len(settled) < minimum_settled
+                else None
+            ),
+            (
+                f"model_probability_coverage:{with_probability}/{len(settled)}"
+                if settled and with_probability < probability_required
+                else None
+            ),
+            (
+                f"closing_price_coverage:{with_closing}/{len(settled)}"
+                if settled and with_closing < closing_required
+                else None
+            ),
+            (
+                f"source_identity_coverage:{with_source_identity}/{len(settled)}"
+                if settled and with_source_identity < identity_required
+                else None
+            ),
+        ]
     report = {
         "status": "ok",
         "created_at_utc": datetime.now(UTC).isoformat(),
         "policy": "canonical_semantic_dedupe_prefer_settled_recompute_flat_unit_pnl",
-        "raw_rows": len(collect_raw_rows()),
+        "raw_rows": len(raw_rows),
         "canonical_rows": len(rows),
         "telegram_sent_rows": len(sent),
         "settled_rows": len(settled),
         "pending_rows": len(sent) - len(settled),
-        "pending_with_known_kickoff": len(stale_pending),
-        "duplicates_collapsed": max(0, len(collect_raw_rows()) - len(rows)),
+        "pending_with_known_kickoff": len(pending_with_kickoff),
+        "duplicates_collapsed": max(0, len(raw_rows) - len(rows)),
         "performance": _group_stats(sent),
-        "by_league": _nested_stats(sent, lambda row: _text(row.get("league_name")) or "unknown"),
-        "by_selection": _nested_stats(sent, lambda row: _text(row.get("selection_key") or row.get("selection")) or "unknown"),
-        "by_odds_band": _nested_stats(sent, lambda row: _odds_band(_float(row.get("odds")))),
+        "by_league": _nested_stats(
+            sent, lambda row: _text(row.get("league_name")) or "unknown"
+        ),
+        "by_selection": _nested_stats(
+            sent,
+            lambda row: _text(row.get("selection_key") or row.get("selection"))
+            or "unknown",
+        ),
+        "by_odds_band": _nested_stats(
+            sent, lambda row: _odds_band(_float(row.get("odds")))
+        ),
         "data_quality": {
             "settled_with_model_probability": with_probability,
             "settled_with_closing_price": with_closing,
-            "settled_with_source_identity": with_source_identity,
+            "settled_with_odds_and_context_identity": with_source_identity,
             "settled_missing_model_probability": len(settled) - with_probability,
             "settled_missing_closing_price": len(settled) - with_closing,
             "settled_missing_source_identity": len(settled) - with_source_identity,
@@ -328,35 +412,38 @@ def build_history_audit() -> dict[str, Any]:
             "legacy_books_count_not_trusted_as_independent_sources": True,
         },
         "live_learning_ready": live_learning_ready,
-        "live_learning_blockers": [] if live_learning_ready else [
-            f"settled_sample_below_min:{len(settled)}/{minimum_settled}" if len(settled) < minimum_settled else None,
-            f"model_probability_coverage:{with_probability}/{len(settled)}" if settled and with_probability < math.ceil(0.9 * len(settled)) else None,
-            f"closing_price_coverage:{with_closing}/{len(settled)}" if settled and with_closing < math.ceil(0.8 * len(settled)) else None,
-            f"source_identity_coverage:{with_source_identity}/{len(settled)}" if settled and with_source_identity < math.ceil(0.9 * len(settled)) else None,
-        ],
+        "live_learning_blockers": [value for value in blockers if value],
         "publication_thresholds_auto_tuned": False,
     }
-    report["live_learning_blockers"] = [value for value in report["live_learning_blockers"] if value]
     _write(CANONICAL_PATH, rows)
     _write(REPORT_PATH, report)
     return report
 
 
-def league_prior(league_name: Any, report: dict[str, Any] | None = None) -> dict[str, float]:
+def league_prior(
+    league_name: Any,
+    report: dict[str, Any] | None = None,
+) -> dict[str, float]:
     audit = report or _load_json(REPORT_PATH, {})
-    row = (audit.get("by_league") or {}).get(_text(league_name)) if isinstance(audit, dict) else None
+    row = (
+        (audit.get("by_league") or {}).get(_text(league_name))
+        if isinstance(audit, dict)
+        else None
+    )
     if not isinstance(row, dict):
         return {"sample": 0.0, "reliability": 0.0, "profit_signal": 0.0}
     sample = float(row.get("settled") or 0)
     yield_pct = _float(row.get("yield_pct_flat_1u")) or 0.0
-    # Strong shrinkage prevents a handful of historical bets from steering the live
-    # system.  Profit is diagnostic until the full audit becomes learning-ready.
     shrink = sample / (sample + 30.0)
     reliability = min(1.0, sample / 20.0)
     profit_signal = max(-1.0, min(1.0, yield_pct / 20.0)) * shrink
     if not bool(audit.get("live_learning_ready")):
         profit_signal *= 0.15
-    return {"sample": sample, "reliability": reliability, "profit_signal": profit_signal}
+    return {
+        "sample": sample,
+        "reliability": reliability,
+        "profit_signal": profit_signal,
+    }
 
 
 __all__ = [
