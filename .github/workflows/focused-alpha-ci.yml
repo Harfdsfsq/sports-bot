@@ -5,6 +5,7 @@ on:
     paths:
       - "app/services/focused_alpha*.py"
       - "app/services/daily_coverage_plan.py"
+      - "app/services/daily_coverage_assignments.py"
       - "app/services/daily_coverage_full_inventory_provider_patch.py"
       - "scripts/build_focused_alpha_decisions.py"
       - "scripts/patch_focused_alpha_candidate_rank.py"
@@ -36,10 +37,12 @@ jobs:
         run: |
           python -m py_compile \
             app/services/focused_alpha.py \
+            app/services/focused_alpha_assignments.py \
             app/services/focused_alpha_history.py \
             app/services/focused_alpha_learning_ledger.py \
             app/services/focused_alpha_runtime_policy.py \
             app/services/daily_coverage_plan.py \
+            app/services/daily_coverage_assignments.py \
             app/services/daily_coverage_full_inventory_provider_patch.py \
             scripts/build_focused_alpha_decisions.py \
             scripts/patch_focused_alpha_candidate_rank.py \
@@ -48,10 +51,12 @@ jobs:
         run: |
           ruff check --config pyproject.toml \
             app/services/focused_alpha.py \
+            app/services/focused_alpha_assignments.py \
             app/services/focused_alpha_history.py \
             app/services/focused_alpha_learning_ledger.py \
             app/services/focused_alpha_runtime_policy.py \
             app/services/daily_coverage_plan.py \
+            app/services/daily_coverage_assignments.py \
             app/services/daily_coverage_full_inventory_provider_patch.py \
             scripts/build_focused_alpha_decisions.py \
             scripts/patch_focused_alpha_candidate_rank.py \
@@ -89,11 +94,12 @@ jobs:
           }, ensure_ascii=False, indent=2))
           PY
       - name: Upload Focused Alpha baseline
+        if: always()
         uses: actions/upload-artifact@v5
         with:
           name: focused-alpha-baseline-${{ github.run_id }}
           path: |
             .data/exports/latest-focused-alpha-*.json
-          if-no-files-found: error
+          if-no-files-found: warn
           include-hidden-files: true
           retention-days: 7
