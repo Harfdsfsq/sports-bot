@@ -1,9 +1,9 @@
-"""Let coverage providers enrich the full configured horizon.
+"""Let coverage providers enrich the configured planning horizon.
 
-Prediction modelling intentionally stays inside the publication window. Coverage APIs,
-however, must receive the complete upcoming inventory across ``RUN_DAYS_AHEAD``;
-otherwise the provider pool collapses throughout the day and tomorrow's matches never
-receive their first or second independent source.
+Prediction modelling intentionally stays inside the publication window. Coverage APIs
+may receive a wider upcoming inventory, but the daily planner is authoritative: an
+explicit empty provider assignment means zero targets and must not silently fall
+back to the original broad list.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from app.services.daily_coverage_common import canonical_source, target_date
-from app.services.daily_coverage_plan import filter_matches
+from app.services.daily_coverage_plan import filter_matches, load_plan
 
 _INSTALLED = False
 _ORIGINAL_FILTER = None
@@ -104,6 +104,17 @@ def _coverage_horizon_matches(
     return result
 
 
+def _assignment_declared(provider: str, method_name: str) -> bool:
+    role = "offers" if "offer" in str(method_name).lower() else "context"
+    assignments = load_plan().get("assignments") or {}
+    return (
+        isinstance(assignments, dict)
+        and provider in assignments
+        and isinstance(assignments.get(provider), dict)
+        and role in assignments[provider]
+    )
+
+
 def install(prediction_runner: Any) -> dict[str, Any]:
     global _INSTALLED, _ORIGINAL_FILTER, _ORIGINAL_FETCH
     if _INSTALLED:
@@ -148,8 +159,11 @@ def install(prediction_runner: Any) -> dict[str, Any]:
             getattr(self, "_harizon_full_horizon_coverage_matches", []), args[0]
         )
         planned = list(filter_matches(name, method_name, broad) or [])
+        declared = _assignment_declared(name, method_name)
         call_args = list(args)
-        call_args[0] = planned or list(args[0])
+        # An explicit [] is a valid Focused Alpha decision. Only providers absent
+        # from the plan retain legacy fallback-to-current-window behaviour.
+        call_args[0] = planned if declared else list(args[0])
         data, stats, preview = await _ORIGINAL_FETCH(
             self,
             provider,
@@ -164,6 +178,8 @@ def install(prediction_runner: Any) -> dict[str, Any]:
             stats["full_day_coverage_targets"] = len(call_args[0])
             stats["coverage_horizon_days"] = _horizon_days()
             stats["candidate_publish_window_targets"] = len(args[0])
+            stats["provider_assignment_declared"] = declared
+            stats["explicit_empty_assignment_respected"] = declared and not planned
             stats["publication_window_relaxed"] = False
         return data, stats, preview
 
@@ -174,10 +190,11 @@ def install(prediction_runner: Any) -> dict[str, Any]:
     _INSTALLED = True
     return {
         "status": "installed",
-        "coverage_scope": "configured_local_time_horizon",
+        "coverage_scope": "adaptive_planned_local_time_horizon",
         "coverage_horizon_days": _horizon_days(),
         "odds_providers": sorted(_ODDS),
         "context_providers": sorted(_CONTEXT),
+        "explicit_empty_assignments_are_authoritative": True,
         "candidate_publication_window_unchanged": True,
         "publication_contract_relaxed": False,
     }
