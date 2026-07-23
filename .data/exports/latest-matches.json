@@ -43,7 +43,7 @@
           "odds_api_io",
           "sstats_pari"
         ],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 9,
         "price_sources_count": 9,
         "ready_for_model": false,
@@ -132,9 +132,12 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T01:13:45.419089+00:00",
-      "books_count": 6,
+      "books_count": 10,
       "confirmation_sources_count": 3,
       "context_sources_count": 3,
+      "coverage_repair_sources": [
+        "latest-controlled-fallback-report.json"
+      ],
       "day_inventory": true,
       "day_inventory_coverage": {
         "books": [
@@ -143,7 +146,7 @@
           "sbobet",
           "unibet"
         ],
-        "books_count": 4,
+        "books_count": 12,
         "context": true,
         "context_2plus_sources": true,
         "context_sources": [
@@ -176,7 +179,7 @@
           "book:betfair exchange",
           "book:unibet"
         ],
-        "line_sources_count": 3,
+        "line_sources_count": 2,
         "min_books": 2,
         "min_context_sources": 2,
         "min_odds_sources": 2,
@@ -201,27 +204,27 @@
       },
       "day_inventory_path": ".data/day_inventory/2026-07-23.json",
       "day_inventory_refresh": {
-        "last_context_refresh_utc": "2026-07-22T21:15:56.008503+00:00",
-        "last_odds_refresh_utc": "2026-07-22T21:15:55.995999+00:00",
-        "last_run_coverage_merge_utc": "2026-07-23T12:33:37.862889+00:00"
+        "last_context_refresh_utc": "2026-07-23T13:16:09.898939+00:00",
+        "last_odds_refresh_utc": "2026-07-23T13:16:09.893752+00:00",
+        "last_run_coverage_merge_utc": "2026-07-23T13:16:09.292432+00:00"
       },
       "day_inventory_source_ids": {
         "bzzoiro": "221107",
         "odds_api_io": "72180198",
         "sstats": "1591944"
       },
-      "fixture_sources_count": 3,
+      "fixture_sources_count": 4,
       "independent_odds_sources_count": 3,
-      "latest_best_confidence": 67.638,
-      "latest_best_edge_pp": 0.457,
-      "latest_best_ev_pct": 0.75,
-      "latest_books_max": 4,
-      "latest_candidate_count": 1,
-      "latest_confirmation_sources_max": 3,
-      "latest_context_sources_max": 3,
+      "latest_best_confidence": 75.742,
+      "latest_best_edge_pp": 3.202,
+      "latest_best_ev_pct": 7.428,
+      "latest_books_max": 15,
+      "latest_candidate_count": 3,
+      "latest_confirmation_sources_max": 4,
+      "latest_context_sources_max": 4,
       "latest_controlled_count": 0,
-      "latest_odds_sources_max": 3,
-      "latest_sources_max": 3,
+      "latest_odds_sources_max": 4,
+      "latest_sources_max": 4,
       "line_sources": [
         "bzzoiro",
         "odds_api_io"
@@ -232,26 +235,135 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 6,
-      "price_sources_count": 6,
-      "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.760748+00:00",
+      "price_confirmation_sources_count": 10,
+      "price_sources_count": 10,
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.082365+00:00",
       "source_evidence_samples": [
         {
-          "deep_ok": true,
-          "detail_ok": false,
-          "game_id": "1591944",
-          "source": "latest-sstats-deep-inventory-enrichment.json"
+          "books": 15,
+          "context_sources": 4,
+          "odds_sources": 4,
+          "source": "latest-match-data-coverage-matches.json"
+        },
+        {
+          "source": "latest-rescue-candidates.json",
+          "summary_keys": [
+            "bookmaker",
+            "books",
+            "books_count",
+            "context_sources",
+            "line_movement_lifecycle_status",
+            "market_move",
+            "market_movement",
+            "median_price",
+            "prices",
+            "publication_lifecycle_status"
+          ]
+        },
+        {
+          "source": "latest-rescue-candidates.json",
+          "summary_keys": [
+            "bookmaker",
+            "books",
+            "books_count",
+            "context_sources",
+            "line_movement_lifecycle_status",
+            "market_move",
+            "market_movement",
+            "median_price",
+            "prices",
+            "publication_lifecycle_status"
+          ]
+        },
+        {
+          "source": "latest-rescue-candidates.json",
+          "summary_keys": [
+            "bookmaker",
+            "books",
+            "books_count",
+            "context_sources",
+            "line_movement_lifecycle_status",
+            "market_move",
+            "market_movement",
+            "median_price",
+            "prices",
+            "publication_lifecycle_status"
+          ]
+        },
+        {
+          "metric_keys": [
+            "adjusted_probability",
+            "books_count",
+            "btts_sanity",
+            "canonical_edge_pp",
+            "canonical_ev_pct",
+            "confidence",
+            "confirmation_meta",
+            "confirmation_sources",
+            "confirmation_sources_count",
+            "dnb_sanity"
+          ],
+          "source": "latest-controlled-fallback-report.json"
+        },
+        {
+          "metric_keys": [
+            "adjusted_probability",
+            "books_count",
+            "btts_sanity",
+            "canonical_edge_pp",
+            "canonical_ev_pct",
+            "confidence",
+            "confirmation_meta",
+            "confirmation_sources",
+            "confirmation_sources_count",
+            "dnb_sanity"
+          ],
+          "source": "latest-controlled-fallback-report.json"
+        },
+        {
+          "metric_keys": [
+            "adjusted_probability",
+            "books_count",
+            "btts_sanity",
+            "canonical_edge_pp",
+            "canonical_ev_pct",
+            "confidence",
+            "confirmation_meta",
+            "confirmation_sources",
+            "confirmation_sources_count",
+            "dnb_sanity"
+          ],
+          "source": "latest-controlled-fallback-report.json"
+        },
+        {
+          "metric_keys": [
+            "adjusted_probability",
+            "books_count",
+            "btts_sanity",
+            "canonical_edge_pp",
+            "canonical_ev_pct",
+            "confidence",
+            "confirmation_meta",
+            "confirmation_sources",
+            "confirmation_sources_count",
+            "dnb_sanity"
+          ],
+          "source": "controlled-fallback-report.json"
         }
       ],
-      "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
-      "sources_count": 3,
+      "source_evidence_updated_utc": "2026-07-23T13:16:09.841849+00:00",
+      "sources_count": 4,
       "verified_bookmakers": [
+        "888sport",
         "bet365",
+        "betano",
         "betfair exchange",
         "betway",
         "marathon",
         "novibet",
-        "pari"
+        "pari",
+        "pinnacle",
+        "unibet"
       ],
       "verified_context_sources": [
         "bzzoiro",
@@ -274,15 +386,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 45.45,
-    "forecast_market_probability_pct": 43.58,
+    "forecast_adjusted_probability_pct": 45.17,
+    "forecast_market_probability_pct": 43.41,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 74.44,
+    "forecast_confidence": 74.12,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 84.704,
+    "forecast_publication_score": 83.732,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -309,7 +421,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T01:13:46.017326+00:00",
-      "books_count": 10,
+      "books_count": 11,
       "confirmation_sources_count": 3,
       "context_sources_count": 3,
       "day_inventory": true,
@@ -379,7 +491,8 @@
       "day_inventory_path": ".data/day_inventory/2026-07-23.json",
       "day_inventory_refresh": {
         "last_context_refresh_utc": "2026-07-22T21:15:56.008503+00:00",
-        "last_odds_refresh_utc": "2026-07-22T21:15:55.995999+00:00"
+        "last_odds_refresh_utc": "2026-07-22T21:15:55.995999+00:00",
+        "last_run_coverage_merge_utc": "2026-07-23T13:16:09.292432+00:00"
       },
       "day_inventory_source_ids": {
         "bzzoiro": "221108",
@@ -388,7 +501,16 @@
       },
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 3,
+      "latest_best_confidence": 74.443,
+      "latest_best_edge_pp": 2.537,
+      "latest_best_ev_pct": 4.541,
       "latest_books_max": 13,
+      "latest_candidate_count": 2,
+      "latest_confirmation_sources_max": 5,
+      "latest_context_sources_max": 5,
+      "latest_controlled_count": 0,
+      "latest_odds_sources_max": 5,
+      "latest_sources_max": 5,
       "line_sources": [
         "bzzoiro",
         "odds_api_io"
@@ -399,8 +521,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 10,
-      "price_sources_count": 10,
+      "price_confirmation_sources_count": 11,
+      "price_sources_count": 11,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|alashkert yerevan|cfr 1907 cluj"
       ],
@@ -427,12 +549,14 @@
         }
       ],
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
+      "sources_count": 5,
       "verified_bookmakers": [
-        "1xbet",
+        "10bet",
         "888sport",
         "bet365",
         "betano",
         "betfair exchange",
+        "betsson",
         "betway",
         "marathon",
         "novibet",
@@ -460,15 +584,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 48.47,
-    "forecast_market_probability_pct": 46.62,
+    "forecast_adjusted_probability_pct": 48.06,
+    "forecast_market_probability_pct": 46.66,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 74.37,
+    "forecast_confidence": 72.93,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 83.997,
+    "forecast_publication_score": 79.754,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -495,7 +619,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T09:14:07.405433+00:00",
-      "books_count": 9,
+      "books_count": 10,
       "confirmation_sources_count": 2,
       "context_sources_count": 2,
       "day_inventory": true,
@@ -562,8 +686,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 9,
-      "price_sources_count": 9,
+      "price_confirmation_sources_count": 10,
+      "price_sources_count": 10,
       "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.762377+00:00",
       "source_evidence_samples": [
         {
@@ -578,12 +702,13 @@
         "10bet",
         "bet365",
         "betano",
+        "betsson",
         "betway",
         "novibet",
         "pari",
         "pinnacle",
         "sbobet",
-        "williamhill"
+        "unibet"
       ],
       "verified_context_sources": [
         "bzzoiro",
@@ -707,7 +832,8 @@
       "day_inventory_path": ".data/day_inventory/2026-07-23.json",
       "day_inventory_refresh": {
         "last_context_refresh_utc": "2026-07-21T23:13:09.156555+00:00",
-        "last_odds_refresh_utc": "2026-07-21T23:13:09.156555+00:00"
+        "last_odds_refresh_utc": "2026-07-21T23:13:09.156555+00:00",
+        "last_run_coverage_merge_utc": "2026-07-23T13:16:09.292432+00:00"
       },
       "day_inventory_source_ids": {
         "bzzoiro": "219298",
@@ -715,11 +841,119 @@
       },
       "fixture_sources_count": 2,
       "independent_odds_sources_count": 3,
+      "latest_best_confidence": 68.596,
+      "latest_best_edge_pp": 2.375,
+      "latest_best_ev_pct": 4.929,
       "latest_books_max": 9,
+      "latest_candidate_count": 2,
+      "latest_confirmation_sources_max": 2,
+      "latest_context_sources_max": 2,
+      "latest_controlled_count": 0,
+      "latest_odds_sources_max": 2,
+      "latest_sources_max": 2,
       "odds_sources_count": 3,
       "price_confirmation_sources_count": 7,
       "price_sources_count": 7,
+      "source_evidence_samples": [
+        {
+          "books": 10,
+          "context_sources": 2,
+          "odds_sources": 2,
+          "source": "latest-match-data-coverage-matches.json"
+        },
+        {
+          "source": "latest-rescue-candidates.json",
+          "summary_keys": [
+            "bookmaker",
+            "books",
+            "books_count",
+            "context_sources",
+            "line_movement_lifecycle_status",
+            "market_move",
+            "market_movement",
+            "median_price",
+            "prices",
+            "publication_lifecycle_status"
+          ]
+        },
+        {
+          "source": "latest-rescue-candidates.json",
+          "summary_keys": [
+            "bookmaker",
+            "books",
+            "books_count",
+            "context_sources",
+            "line_movement_lifecycle_status",
+            "market_move",
+            "market_movement",
+            "median_price",
+            "prices",
+            "publication_lifecycle_status"
+          ]
+        },
+        {
+          "metric_keys": [
+            "adjusted_probability",
+            "books_count",
+            "btts_sanity",
+            "canonical_edge_pp",
+            "canonical_ev_pct",
+            "confidence",
+            "confirmation_meta",
+            "confirmation_sources",
+            "confirmation_sources_count",
+            "dnb_sanity"
+          ],
+          "source": "latest-controlled-fallback-report.json"
+        },
+        {
+          "metric_keys": [
+            "adjusted_probability",
+            "books_count",
+            "btts_sanity",
+            "canonical_edge_pp",
+            "canonical_ev_pct",
+            "confidence",
+            "confirmation_meta",
+            "confirmation_sources",
+            "confirmation_sources_count",
+            "dnb_sanity"
+          ],
+          "source": "latest-controlled-fallback-report.json"
+        },
+        {
+          "metric_keys": [
+            "adjusted_probability",
+            "books_count",
+            "btts_sanity",
+            "canonical_edge_pp",
+            "canonical_ev_pct",
+            "confidence",
+            "confirmation_meta",
+            "confirmation_sources",
+            "confirmation_sources_count",
+            "dnb_sanity"
+          ],
+          "source": "controlled-fallback-report.json"
+        },
+        {
+          "metric_keys": [
+            "adjusted_probability",
+            "books_count",
+            "btts_sanity",
+            "canonical_edge_pp",
+            "canonical_ev_pct",
+            "confidence",
+            "confirmation_meta",
+            "confirmation_sources",
+            "confirmation_sources_count",
+            "dnb_sanity"
+          ],
+          "source": "controlled-fallback-report.json"
+        }
+      ],
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
+      "sources_count": 2,
       "verified_bookmakers": [
         "bet365",
         "betfair exchange",
@@ -727,7 +961,7 @@
         "interwetten",
         "novibet",
         "pari",
-        "sbobet"
+        "unibet"
       ],
       "verified_context_sources": [],
       "verified_odds_sources": [
@@ -746,15 +980,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 53.76,
-    "forecast_market_probability_pct": 51.83,
+    "forecast_adjusted_probability_pct": 53.18,
+    "forecast_market_probability_pct": 51.73,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 76.94,
+    "forecast_confidence": 75.38,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 87.387,
+    "forecast_publication_score": 83.075,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -991,7 +1225,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T12:01:33.803133+00:00",
-      "books_count": 4,
+      "books_count": 3,
       "confirmation_sources_count": 0,
       "context_sources_count": 0,
       "day_inventory": true,
@@ -1053,8 +1287,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 2,
-      "price_confirmation_sources_count": 4,
-      "price_sources_count": 4,
+      "price_confirmation_sources_count": 3,
+      "price_sources_count": 3,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|navbahor|qizilqum zarafshon"
       ],
@@ -1072,8 +1306,7 @@
       "verified_bookmakers": [
         "bet365",
         "betfair exchange",
-        "pari",
-        "sbobet"
+        "pari"
       ],
       "verified_context_sources": [],
       "verified_odds_sources": [
@@ -1153,7 +1386,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -1356,7 +1589,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T09:14:07.405694+00:00",
-      "books_count": 4,
+      "books_count": 3,
       "confirmation_sources_count": 0,
       "context_sources_count": 0,
       "day_inventory": true,
@@ -1418,8 +1651,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 2,
-      "price_confirmation_sources_count": 4,
-      "price_sources_count": 4,
+      "price_confirmation_sources_count": 3,
+      "price_sources_count": 3,
       "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.761382+00:00",
       "source_evidence_samples": [
         {
@@ -1433,8 +1666,7 @@
       "verified_bookmakers": [
         "bet365",
         "betfair exchange",
-        "pari",
-        "sbobet"
+        "pari"
       ],
       "verified_context_sources": [],
       "verified_odds_sources": [
@@ -1518,7 +1750,7 @@
           "odds_api_io",
           "sstats_pari"
         ],
-        "odds_sources_count": 3,
+        "odds_sources_count": 2,
         "price_confirmations": 9,
         "price_sources_count": 9,
         "ready_for_model": false,
@@ -1810,41 +2042,10 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-22T23:13:49.060975+00:00",
-      "books_count": 5,
+      "books_count": 6,
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
-      "fixture_sources_count": 4,
-      "independent_odds_sources_count": 3,
-      "latest_books_max": 7,
-      "odds_sources_count": 3,
-      "price_confirmation_sources_count": 5,
-      "price_sources_count": 5,
-      "source_evidence_samples": [
-        {
-          "deep_ok": true,
-          "detail_ok": false,
-          "game_id": "1598508",
-          "source": "latest-sstats-deep-inventory-enrichment.json"
-        }
-      ],
-      "source_evidence_updated_utc": "2026-07-22T23:13:07.941483+00:00",
-      "verified_bookmakers": [
-        "bet365",
-        "betfair exchange",
-        "interwetten",
-        "novibet",
-        "pari"
-      ],
-      "verified_context_sources": [
-        "sstats"
-      ],
-      "verified_odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "sstats_pari"
-      ],
       "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-07-23.json",
       "day_inventory_coverage": {
         "books": [
           "bet365",
@@ -1864,18 +2065,45 @@
         "context_sources": [
           "sstats"
         ],
+        "context_sources_basis": [
+          "context_sources_count"
+        ],
         "context_sources_count": 2,
+        "core_context_sources": [
+          "bzzoiro",
+          "inventory_context",
+          "runtime_context",
+          "sstats",
+          "sstats_form"
+        ],
+        "core_context_sources_count": 5,
         "daily_coverage_evidence_synced": true,
+        "declared_context_sources_count": 5,
+        "declared_odds_sources_count": 3,
         "fixture_core": true,
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources": [
+          "book:bet365",
+          "book:betfair exchange",
+          "book:unibet"
+        ],
+        "line_sources_count": 2,
+        "min_books": 2,
+        "min_context_sources": 2,
+        "min_odds_sources": 2,
+        "named_odds_sources_count": 1,
         "odds": true,
         "odds_2plus_sources": true,
         "odds_sources": [
           "bzzoiro",
           "odds_api_io",
           "sstats_pari"
+        ],
+        "odds_sources_basis": [
+          "normalized_odds_source_lists",
+          "raw_bucket_offers.sources"
         ],
         "odds_sources_count": 3,
         "price_confirmations": 7,
@@ -1884,6 +2112,7 @@
         "strict_coverage_ready": false,
         "xg": true
       },
+      "day_inventory_path": ".data/day_inventory/2026-07-23.json",
       "day_inventory_refresh": {
         "last_context_refresh_utc": "2026-07-22T21:15:56.008503+00:00",
         "last_odds_refresh_utc": "2026-07-22T05:13:07.200347+00:00"
@@ -1892,7 +2121,48 @@
         "bzzoiro": "221015",
         "odds_api_io": "72716594",
         "sstats": "1598508"
-      }
+      },
+      "fixture_sources_count": 4,
+      "independent_odds_sources_count": 3,
+      "latest_books_max": 7,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "odds_sources_count": 3,
+      "price_confirmation_sources_count": 6,
+      "price_sources_count": 6,
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.084846+00:00",
+      "source_evidence_samples": [
+        {
+          "deep_ok": true,
+          "detail_ok": false,
+          "game_id": "1598508",
+          "source": "latest-sstats-deep-inventory-enrichment.json"
+        }
+      ],
+      "source_evidence_updated_utc": "2026-07-22T23:13:07.941483+00:00",
+      "verified_bookmakers": [
+        "bet365",
+        "betfair exchange",
+        "interwetten",
+        "novibet",
+        "pari",
+        "unibet"
+      ],
+      "verified_context_sources": [
+        "sstats"
+      ],
+      "verified_odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "sstats_pari"
+      ]
     },
     "forecast_status": "",
     "forecast_family": "totals",
@@ -1904,15 +2174,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 57.14,
-    "forecast_market_probability_pct": 55.59,
+    "forecast_adjusted_probability_pct": 57.27,
+    "forecast_market_probability_pct": 55.78,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 73.42,
+    "forecast_confidence": 73.23,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 80.42,
+    "forecast_publication_score": 79.896,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -1974,7 +2244,7 @@
           "odds_api_io",
           "sstats_pari"
         ],
-        "odds_sources_count": 3,
+        "odds_sources_count": 2,
         "price_confirmations": 9,
         "price_sources_count": 9,
         "ready_for_model": true,
@@ -2206,7 +2476,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T12:01:33.790474+00:00",
-      "books_count": 8,
+      "books_count": 9,
       "confirmation_sources_count": 2,
       "context_sources_count": 2,
       "day_inventory": true,
@@ -2300,8 +2570,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 8,
-      "price_sources_count": 8,
+      "price_confirmation_sources_count": 9,
+      "price_sources_count": 9,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|panevezys|tobol kostanay"
       ],
@@ -2329,8 +2599,9 @@
       ],
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "verified_bookmakers": [
+        "10bet",
+        "888sport",
         "bet365",
-        "betano",
         "betfair exchange",
         "betway",
         "interwetten",
@@ -2350,23 +2621,23 @@
     },
     "forecast_status": "",
     "forecast_family": "totals",
-    "forecast_selection": "Меньше 2.25",
+    "forecast_selection": "Меньше 2",
     "forecast_selection_key": "",
     "forecast_team_side": "",
-    "forecast_line": 2.25,
+    "forecast_line": 2.0,
     "forecast_odds": "",
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 55.25,
-    "forecast_market_probability_pct": 53.55,
+    "forecast_adjusted_probability_pct": 47.01,
+    "forecast_market_probability_pct": 45.26,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 73.91,
+    "forecast_confidence": 74.08,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 81.889,
+    "forecast_publication_score": 83.319,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -2393,7 +2664,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T12:01:33.800841+00:00",
-      "books_count": 4,
+      "books_count": 3,
       "confirmation_sources_count": 0,
       "context_sources_count": 0,
       "day_inventory": true,
@@ -2477,8 +2748,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 2,
-      "price_confirmation_sources_count": 4,
-      "price_sources_count": 4,
+      "price_confirmation_sources_count": 3,
+      "price_sources_count": 3,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|venezia|vis pesaro 1898"
       ],
@@ -2496,8 +2767,7 @@
       "verified_bookmakers": [
         "bet365",
         "betfair exchange",
-        "pari",
-        "unibet"
+        "pari"
       ],
       "verified_context_sources": [],
       "verified_odds_sources": [
@@ -2760,7 +3030,7 @@
     "commence_time": "2026-07-23T16:00:00+00:00",
     "tier": "mid",
     "metadata": {
-      "books_count": 9,
+      "books_count": 8,
       "confirmation_sources_count": 3,
       "context_sources_count": 3,
       "day_inventory": true,
@@ -2848,8 +3118,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 9,
-      "price_sources_count": 9,
+      "price_confirmation_sources_count": 8,
+      "price_sources_count": 8,
       "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.764872+00:00",
       "source_evidence_samples": [
         {
@@ -2868,7 +3138,6 @@
         "marathon",
         "novibet",
         "pari",
-        "sbobet",
         "unibet"
       ],
       "verified_context_sources": [
@@ -3038,6 +3307,9 @@
       ],
       "day_inventory": true,
       "day_inventory_coverage": {
+        "books": [
+          "bet365"
+        ],
         "books_count": 2,
         "context": false,
         "context_2plus_sources": false,
@@ -3055,6 +3327,8 @@
           "sstats_pari"
         ],
         "odds_sources_count": 2,
+        "price_confirmations": 1,
+        "price_sources_count": 1,
         "ready_for_model": false,
         "strict_coverage_ready": false,
         "weather": false,
@@ -3070,7 +3344,7 @@
         "day_inventory": "70684264",
         "odds_api_io": "70684264"
       },
-      "fixture_sources_count": 1,
+      "fixture_sources_count": 2,
       "independent_odds_sources_count": 2,
       "latest_books_max": 2,
       "latest_run_source": "day_inventory",
@@ -3088,9 +3362,9 @@
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|atlantis 2|kontu"
       ],
-      "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
-      "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.764191+00:00",
-      "source_evidence_updated_utc": "2026-07-23T12:03:00.353516+00:00",
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.085947+00:00",
+      "source_evidence_updated_utc": "2026-07-23T13:16:09.841849+00:00",
       "verified_bookmakers": [
         "bet365",
         "pari"
@@ -3228,7 +3502,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T12:01:33.790748+00:00",
-      "books_count": 7,
+      "books_count": 9,
       "confirmation_sources_count": 2,
       "context_sources_count": 2,
       "day_inventory": true,
@@ -3322,8 +3596,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 7,
-      "price_sources_count": 7,
+      "price_confirmation_sources_count": 9,
+      "price_sources_count": 9,
       "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.764147+00:00",
       "source_evidence_samples": [
         {
@@ -3337,11 +3611,13 @@
       "verified_bookmakers": [
         "888sport",
         "bet365",
+        "betano",
         "betfair exchange",
         "betway",
         "novibet",
         "pari",
-        "pinnacle"
+        "pinnacle",
+        "unibet"
       ],
       "verified_context_sources": [
         "clubelo",
@@ -3363,15 +3639,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 40.58,
-    "forecast_market_probability_pct": 38.75,
+    "forecast_adjusted_probability_pct": 40.33,
+    "forecast_market_probability_pct": 38.74,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 74.34,
+    "forecast_confidence": 73.56,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 85.283,
+    "forecast_publication_score": 82.632,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -3572,7 +3848,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T01:13:51.511140+00:00",
-      "books_count": 6,
+      "books_count": 8,
       "confirmation_sources_count": 2,
       "context_sources_count": 2,
       "day_inventory": true,
@@ -3661,8 +3937,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 6,
-      "price_sources_count": 6,
+      "price_confirmation_sources_count": 8,
+      "price_sources_count": 8,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|debreceni vsc|pyunik yerevan"
       ],
@@ -3685,12 +3961,14 @@
       ],
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "verified_bookmakers": [
+        "10bet",
         "888sport",
         "bet365",
         "betfair exchange",
         "betsson",
         "betway",
-        "pari"
+        "pari",
+        "unibet"
       ],
       "verified_context_sources": [
         "bzzoiro",
@@ -3893,7 +4171,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -4086,38 +4364,10 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T09:14:16.641360+00:00",
-      "books_count": 3,
+      "books_count": 4,
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
-      "fixture_sources_count": 2,
-      "independent_odds_sources_count": 2,
-      "latest_books_max": 9,
-      "odds_sources_count": 2,
-      "price_confirmation_sources_count": 3,
-      "price_sources_count": 3,
-      "source_evidence_samples": [
-        {
-          "deep_ok": true,
-          "detail_ok": false,
-          "game_id": "1583411",
-          "source": "latest-sstats-deep-inventory-enrichment.json"
-        }
-      ],
-      "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
-      "verified_bookmakers": [
-        "bet365",
-        "betfair exchange",
-        "pari"
-      ],
-      "verified_context_sources": [
-        "sstats"
-      ],
-      "verified_odds_sources": [
-        "odds_api_io",
-        "sstats_pari"
-      ],
       "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-07-23.json",
       "day_inventory_coverage": {
         "books": [
           "bet365",
@@ -4131,9 +4381,9 @@
           "under35",
           "unibet"
         ],
-        "books_count": 9,
+        "books_count": 6,
         "context": true,
-        "context_2plus_sources": true,
+        "context_2plus_sources": false,
         "context_sources": [
           "sstats"
         ],
@@ -4143,6 +4393,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 1,
         "odds": true,
         "odds_2plus_sources": false,
         "odds_sources": [
@@ -4156,6 +4407,7 @@
         "strict_coverage_ready": false,
         "xg": true
       },
+      "day_inventory_path": ".data/day_inventory/2026-07-23.json",
       "day_inventory_refresh": {
         "last_context_refresh_utc": "2026-07-22T21:15:56.008503+00:00",
         "last_odds_refresh_utc": "2026-07-22T23:17:05.671455+00:00"
@@ -4163,7 +4415,54 @@
       "day_inventory_source_ids": {
         "bzzoiro": "221016",
         "sstats": "1583411"
-      }
+      },
+      "fixture_sources_count": 2,
+      "independent_odds_sources_count": 2,
+      "latest_books_max": 9,
+      "line_sources": [
+        "odds_api_io"
+      ],
+      "line_sources_count": 1,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 2,
+      "price_confirmation_sources_count": 4,
+      "price_sources_count": 4,
+      "runtime_context_bridge_matched_aliases": [
+        "2026-07-23|hnk gorica|shakhtar donetsk"
+      ],
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.084389+00:00",
+      "source_evidence_samples": [
+        {
+          "deep_ok": true,
+          "detail_ok": false,
+          "game_id": "1583411",
+          "source": "latest-sstats-deep-inventory-enrichment.json"
+        }
+      ],
+      "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
+      "verified_bookmakers": [
+        "bet365",
+        "betfair exchange",
+        "pari",
+        "unibet"
+      ],
+      "verified_context_sources": [
+        "sstats"
+      ],
+      "verified_odds_sources": [
+        "odds_api_io",
+        "sstats_pari"
+      ]
     },
     "forecast_status": "",
     "forecast_family": "",
@@ -4232,7 +4531,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -5007,23 +5306,10 @@
     "forecast_context_source": "market_signal",
     "forecast_context_confidence": "",
     "forecast_market_movement": "insufficient_history",
-    "forecast_quality_status": "passed_quality",
-    "forecast_quality_score": 77.891,
+    "forecast_quality_status": "",
+    "forecast_quality_score": "",
     "forecast_quality_reasons": "",
-    "forecast_quality_calibration": {
-      "applied": true,
-      "delta_probability": 0.015,
-      "raw_delta_probability": 0.03775,
-      "segments_used": [
-        "family:totals",
-        "market:totals:under",
-        "league:preferred",
-        "context:market_signal",
-        "bookmaker:betfair exchange",
-        "odds:2.05-2.74",
-        "prob:40-45"
-      ]
-    },
+    "forecast_quality_calibration": "",
     "forecast_reasons": "",
     "forecast_analysis_points": ""
   },
@@ -5062,7 +5348,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -5254,7 +5540,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-22T23:13:52.930476+00:00",
-      "books_count": 9,
+      "books_count": 8,
       "confirmation_sources_count": 3,
       "context_sources_count": 3,
       "day_inventory": true,
@@ -5348,8 +5634,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 9,
-      "price_sources_count": 9,
+      "price_confirmation_sources_count": 8,
+      "price_sources_count": 8,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|paide linnameeskond|zira",
         "2026-07-23|paide linnameeskon|zira"
@@ -5390,10 +5676,9 @@
       "verified_bookmakers": [
         "888sport",
         "bet365",
-        "betano",
         "betfair exchange",
         "betway",
-        "novibet",
+        "interwetten",
         "pari",
         "pinnacle",
         "unibet"
@@ -5419,15 +5704,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 52.11,
-    "forecast_market_probability_pct": 50.07,
+    "forecast_adjusted_probability_pct": 51.86,
+    "forecast_market_probability_pct": 49.91,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 77.3,
+    "forecast_confidence": 77.02,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 88.643,
+    "forecast_publication_score": 87.856,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -5472,14 +5757,16 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "lineups": true,
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
         "strict_coverage_ready": false,
+        "venue_referee": true,
         "xg": false
       },
       "day_inventory_path": ".data/day_inventory/2026-07-23.json",
@@ -5559,7 +5846,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-22T21:15:03.393877+00:00",
-      "books_count": 9,
+      "books_count": 10,
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
       "day_inventory": true,
@@ -5644,8 +5931,8 @@
         "odds_api_io"
       ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 9,
-      "price_sources_count": 9,
+      "price_confirmation_sources_count": 10,
+      "price_sources_count": 10,
       "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.765600+00:00",
       "source_evidence_samples": [
         {
@@ -5659,6 +5946,7 @@
       "verified_bookmakers": [
         "10bet",
         "bet365",
+        "betano",
         "betfair exchange",
         "betway",
         "bwin",
@@ -5678,33 +5966,46 @@
     },
     "forecast_status": "",
     "forecast_family": "totals",
-    "forecast_selection": "Больше 2.75",
-    "forecast_selection_key": "",
+    "forecast_selection": "Меньше",
+    "forecast_selection_key": "under",
     "forecast_team_side": "",
-    "forecast_line": 2.75,
+    "forecast_line": 2.5,
     "forecast_odds": "",
-    "forecast_bookmaker": "",
-    "forecast_odds_source": "",
-    "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 46.96,
-    "forecast_market_probability_pct": 45.72,
+    "forecast_bookmaker": "Betfair Exchange",
+    "forecast_odds_source": "odds_api_io",
+    "forecast_model_probability_pct": 52.36,
+    "forecast_adjusted_probability_pct": 50.17,
+    "forecast_market_probability_pct": 48.16,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 70.09,
+    "forecast_confidence": 80.22,
     "forecast_books_count": "",
     "forecast_sources_count": "",
-    "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 74.928,
+    "forecast_model_mode": "market_simple_totals",
+    "forecast_publication_score": 34.33,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
-    "forecast_context_source": "",
+    "forecast_context_source": "market_signal",
     "forecast_context_confidence": "",
-    "forecast_market_movement": "",
-    "forecast_quality_status": "",
-    "forecast_quality_score": "",
+    "forecast_market_movement": "insufficient_history",
+    "forecast_quality_status": "passed_quality",
+    "forecast_quality_score": 82.624,
     "forecast_quality_reasons": "",
-    "forecast_quality_calibration": "",
+    "forecast_quality_calibration": {
+      "applied": true,
+      "delta_probability": 0.015,
+      "raw_delta_probability": 0.03179,
+      "segments_used": [
+        "family:totals",
+        "market:totals:under",
+        "league:preferred",
+        "context:market_signal",
+        "bookmaker:betfair exchange",
+        "odds:2.05-2.74",
+        "prob:50-55"
+      ]
+    },
     "forecast_reasons": "",
     "forecast_analysis_points": ""
   },
@@ -5742,7 +6043,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -6058,9 +6359,9 @@
           "sbobet",
           "unibet"
         ],
-        "books_count": 4,
+        "books_count": 14,
         "context": true,
-        "context_2plus_sources": true,
+        "context_2plus_sources": false,
         "context_sources": [
           "sstats"
         ],
@@ -6070,6 +6371,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 2,
         "odds": true,
         "odds_2plus_sources": true,
         "odds_sources": [
@@ -6096,14 +6398,31 @@
       },
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 3,
-      "latest_books_max": 4,
+      "latest_books_max": 14,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 3,
       "price_confirmation_sources_count": 10,
       "price_sources_count": 10,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|aek larnaca|beitar jerusalem"
       ],
-      "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.090817+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -6115,15 +6434,15 @@
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "verified_bookmakers": [
         "10bet",
+        "888sport",
         "bet365",
+        "betano",
         "betfair exchange",
-        "betsson",
         "interwetten",
         "novibet",
         "pari",
         "pinnacle",
-        "unibet",
-        "williamhill"
+        "unibet"
       ],
       "verified_context_sources": [
         "sstats"
@@ -6195,7 +6514,7 @@
           "under25",
           "under35"
         ],
-        "books_count": 9,
+        "books_count": 12,
         "context": true,
         "context_2plus_sources": true,
         "context_sources": [
@@ -6209,6 +6528,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 2,
         "odds": true,
         "odds_2plus_sources": true,
         "odds_sources": [
@@ -6235,16 +6555,58 @@
       },
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 3,
-      "latest_books_max": 9,
+      "latest_books_max": 12,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 3,
       "price_confirmation_sources_count": 8,
       "price_sources_count": 8,
       "runtime_context_bridge_matched_aliases": [
-        "2026-07-23|dac 1904 dunajska streda|velez mostar",
         "2026-07-23|dac 1904 dunajska|velez mostar",
+        "2026-07-23|dac 1904 dunajska streda|velez mostar",
         "2026-07-23|dac 1904 dunajska |velez mostar"
       ],
-      "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.091796+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -6255,13 +6617,13 @@
       ],
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "verified_bookmakers": [
-        "10bet",
         "bet365",
-        "betano",
         "betfair exchange",
         "betway",
+        "interwetten",
         "novibet",
         "pari",
+        "pinnacle",
         "unibet"
       ],
       "verified_context_sources": [
@@ -6277,23 +6639,23 @@
     },
     "forecast_status": "",
     "forecast_family": "totals",
-    "forecast_selection": "Меньше 2.5",
+    "forecast_selection": "Меньше 2.75",
     "forecast_selection_key": "",
     "forecast_team_side": "",
-    "forecast_line": 2.5,
+    "forecast_line": 2.75,
     "forecast_odds": "",
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 45.82,
-    "forecast_market_probability_pct": 44.29,
+    "forecast_adjusted_probability_pct": 51.22,
+    "forecast_market_probability_pct": 49.84,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 75.68,
+    "forecast_confidence": 72.87,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 84.618,
+    "forecast_publication_score": 79.34,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -6377,6 +6739,18 @@
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|estrela amadora|nacional"
       ],
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
       "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
       "source_evidence_samples": [
         {
@@ -6439,7 +6813,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-22T23:14:01.688670+00:00",
-      "books_count": 10,
+      "books_count": 9,
       "confirmation_sources_count": 2,
       "context_sources_count": 2,
       "day_inventory": true,
@@ -6491,20 +6865,19 @@
       "independent_odds_sources_count": 3,
       "latest_books_max": 7,
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 10,
-      "price_sources_count": 10,
+      "price_confirmation_sources_count": 9,
+      "price_sources_count": 9,
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "verified_bookmakers": [
-        "10bet",
         "1xbet",
         "bet365",
         "betano",
         "betfair exchange",
+        "betsson",
         "betway",
         "bwin",
         "novibet",
-        "pari",
-        "unibet"
+        "pari"
       ],
       "verified_context_sources": [
         "bzzoiro",
@@ -6526,15 +6899,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 41.81,
-    "forecast_market_probability_pct": 40.34,
+    "forecast_adjusted_probability_pct": 41.93,
+    "forecast_market_probability_pct": 40.41,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 70.87,
+    "forecast_confidence": 71.0,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 77.822,
+    "forecast_publication_score": 78.235,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -6561,7 +6934,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T01:13:59.352227+00:00",
-      "books_count": 9,
+      "books_count": 10,
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
       "day_inventory": true,
@@ -6572,7 +6945,7 @@
           "sbobet",
           "unibet"
         ],
-        "books_count": 4,
+        "books_count": 13,
         "context": true,
         "context_2plus_sources": true,
         "context_sources": [
@@ -6584,6 +6957,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 2,
         "odds": true,
         "odds_2plus_sources": true,
         "odds_sources": [
@@ -6610,15 +6984,37 @@
       },
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 3,
-      "latest_books_max": 4,
+      "latest_books_max": 13,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 9,
-      "price_sources_count": 9,
+      "price_confirmation_sources_count": 10,
+      "price_sources_count": 10,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|rks rakow czestochowa|valletta",
         "2026-07-23|rks rakow czestoch|valletta"
       ],
-      "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.089712+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -6630,11 +7026,12 @@
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "verified_bookmakers": [
         "1xbet",
+        "888sport",
         "bet365",
         "betano",
         "betfair exchange",
-        "betsson",
         "betway",
+        "marathon",
         "novibet",
         "pari",
         "unibet"
@@ -6806,7 +7203,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T01:13:59.992370+00:00",
-      "books_count": 10,
+      "books_count": 11,
       "confirmation_sources_count": 3,
       "context_sources_count": 3,
       "day_inventory": true,
@@ -6817,7 +7214,7 @@
           "sbobet",
           "unibet"
         ],
-        "books_count": 4,
+        "books_count": 14,
         "context": true,
         "context_2plus_sources": true,
         "context_sources": [
@@ -6831,6 +7228,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 2,
         "odds": true,
         "odds_2plus_sources": true,
         "odds_sources": [
@@ -6857,14 +7255,36 @@
       },
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 3,
-      "latest_books_max": 4,
+      "latest_books_max": 14,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 10,
-      "price_sources_count": 10,
+      "price_confirmation_sources_count": 11,
+      "price_sources_count": 11,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|bate borisov|sion"
       ],
-      "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.093210+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -6875,6 +7295,7 @@
       ],
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "verified_bookmakers": [
+        "10bet",
         "1xbet",
         "888sport",
         "bet365",
@@ -6882,9 +7303,9 @@
         "betfair exchange",
         "betsson",
         "interwetten",
+        "marathon",
         "novibet",
-        "pari",
-        "unibet"
+        "pari"
       ],
       "verified_context_sources": [
         "bzzoiro",
@@ -6942,7 +7363,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T11:14:13.427641+00:00",
-      "books_count": 3,
+      "books_count": 2,
       "confirmation_sources_count": 0,
       "context_sources_count": 0,
       "day_inventory": true,
@@ -6968,6 +7389,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 1,
         "odds": true,
         "odds_2plus_sources": false,
         "odds_sources": [
@@ -6993,15 +7415,23 @@
       "fixture_sources_count": 2,
       "independent_odds_sources_count": 2,
       "latest_books_max": 9,
+      "line_sources": [
+        "odds_api_io"
+      ],
+      "line_sources_count": 1,
+      "odds_sources": [
+        "odds_api_io"
+      ],
       "odds_sources_count": 2,
-      "price_confirmation_sources_count": 3,
-      "price_sources_count": 3,
+      "price_confirmation_sources_count": 2,
+      "price_sources_count": 2,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|bayern alzenau|vfr wormatia 08 wo",
         "2026-07-23|bayern alzenau|vfr wormatia 08",
         "2026-07-23|bayern alzenau|vfr wormatia 08 worms"
       ],
       "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.090294+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -7013,8 +7443,7 @@
       "source_evidence_updated_utc": "2026-07-23T12:03:00.353516+00:00",
       "verified_bookmakers": [
         "bet365",
-        "pari",
-        "unibet"
+        "pari"
       ],
       "verified_context_sources": [],
       "verified_odds_sources": [
@@ -7067,7 +7496,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-22T23:14:02.402929+00:00",
-      "books_count": 8,
+      "books_count": 7,
       "confirmation_sources_count": 3,
       "context_sources_count": 3,
       "day_inventory": true,
@@ -7123,8 +7552,8 @@
       "independent_odds_sources_count": 3,
       "latest_books_max": 7,
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 8,
-      "price_sources_count": 8,
+      "price_confirmation_sources_count": 7,
+      "price_sources_count": 7,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|dinamo tbilisi|vilnius zalgiris"
       ],
@@ -7145,7 +7574,6 @@
         "bwin",
         "interwetten",
         "marathon",
-        "novibet",
         "pari"
       ],
       "verified_context_sources": [
@@ -7168,16 +7596,16 @@
     "forecast_odds": "",
     "forecast_bookmaker": "Betfair Exchange",
     "forecast_odds_source": "odds_api_io",
-    "forecast_model_probability_pct": 35.42,
-    "forecast_adjusted_probability_pct": 33.29,
-    "forecast_market_probability_pct": 31.67,
+    "forecast_model_probability_pct": 35.57,
+    "forecast_adjusted_probability_pct": 33.22,
+    "forecast_market_probability_pct": 31.37,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 68.34,
+    "forecast_confidence": 70.42,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "market_simple_totals",
-    "forecast_publication_score": 30.943,
+    "forecast_publication_score": 31.278,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -7204,7 +7632,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T12:01:33.792553+00:00",
-      "books_count": 9,
+      "books_count": 7,
       "confirmation_sources_count": 2,
       "context_sources_count": 2,
       "day_inventory": true,
@@ -7235,6 +7663,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 2,
         "odds": true,
         "odds_2plus_sources": true,
         "odds_sources": [
@@ -7261,13 +7690,35 @@
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 2,
       "latest_books_max": 9,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 2,
-      "price_confirmation_sources_count": 9,
-      "price_sources_count": 9,
+      "price_confirmation_sources_count": 7,
+      "price_sources_count": 7,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|dynamo kyiv|paok thessaloniki"
       ],
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
       "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.094566+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -7278,12 +7729,10 @@
       ],
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "verified_bookmakers": [
-        "10bet",
         "bet365",
         "betano",
         "betfair exchange",
         "betsson",
-        "betway",
         "novibet",
         "pinnacle",
         "unibet"
@@ -7299,23 +7748,23 @@
     },
     "forecast_status": "",
     "forecast_family": "totals",
-    "forecast_selection": "Меньше 2",
+    "forecast_selection": "Больше 2.5",
     "forecast_selection_key": "",
     "forecast_team_side": "",
-    "forecast_line": 2.0,
+    "forecast_line": 2.5,
     "forecast_odds": "",
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 43.67,
-    "forecast_market_probability_pct": 42.06,
+    "forecast_adjusted_probability_pct": 44.45,
+    "forecast_market_probability_pct": 43.2,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 71.29,
+    "forecast_confidence": 72.45,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 78.964,
+    "forecast_publication_score": 78.564,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -7473,6 +7922,38 @@
         "soccer|dynamo kyiv|paok|2026-07-23",
         "2026-07-23|dynamo kyiv|paok",
         "soccer_dynamo_kyiv_paok_2026_07_23"
+      ],
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
       ],
       "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
       "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.765976+00:00",
@@ -7658,7 +8139,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T09:14:26.455411+00:00",
-      "books_count": 9,
+      "books_count": 10,
       "confirmation_sources_count": 3,
       "context_sources_count": 3,
       "day_inventory": true,
@@ -7676,7 +8157,7 @@
           "under35",
           "unibet"
         ],
-        "books_count": 9,
+        "books_count": 12,
         "context": true,
         "context_2plus_sources": true,
         "context_sources": [
@@ -7690,6 +8171,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 2,
         "odds": true,
         "odds_2plus_sources": true,
         "odds_sources": [
@@ -7714,16 +8196,38 @@
         "odds_api_io": "72180124",
         "sstats": "1556512"
       },
-      "fixture_sources_count": 3,
+      "fixture_sources_count": 4,
       "independent_odds_sources_count": 3,
-      "latest_books_max": 9,
+      "latest_books_max": 12,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 9,
-      "price_sources_count": 9,
+      "price_confirmation_sources_count": 10,
+      "price_sources_count": 10,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|gais|nordsjaelland"
       ],
-      "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.092290+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -7732,7 +8236,7 @@
           "source": "latest-sstats-deep-inventory-enrichment.json"
         }
       ],
-      "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
+      "source_evidence_updated_utc": "2026-07-23T13:16:09.841849+00:00",
       "verified_bookmakers": [
         "888sport",
         "bet365",
@@ -7740,6 +8244,7 @@
         "betfair exchange",
         "betsson",
         "betway",
+        "interwetten",
         "pari",
         "pinnacle",
         "unibet"
@@ -7757,23 +8262,23 @@
     },
     "forecast_status": "",
     "forecast_family": "totals",
-    "forecast_selection": "Больше 2.5",
+    "forecast_selection": "Меньше 2.25",
     "forecast_selection_key": "",
     "forecast_team_side": "",
-    "forecast_line": 2.5,
+    "forecast_line": 2.25,
     "forecast_odds": "",
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 51.47,
-    "forecast_market_probability_pct": 50.17,
+    "forecast_adjusted_probability_pct": 44.77,
+    "forecast_market_probability_pct": 43.47,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 74.89,
+    "forecast_confidence": 70.31,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 81.822,
+    "forecast_publication_score": 75.736,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -7823,7 +8328,7 @@
           "under35",
           "unibet"
         ],
-        "books_count": 9,
+        "books_count": 10,
         "context": true,
         "context_2plus_sources": true,
         "context_source_count": 1,
@@ -7837,6 +8342,7 @@
         "fixture_core": true,
         "fixture_source_2plus": true,
         "form": false,
+        "line_sources_count": 2,
         "news": false,
         "odds": true,
         "odds_2plus_sources": true,
@@ -7867,7 +8373,16 @@
       },
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 3,
-      "latest_books_max": 9,
+      "latest_books_max": 10,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 3,
       "price_confirmation_sources_count": 8,
       "price_sources_count": 8,
@@ -7877,7 +8392,20 @@
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|hammarby if|rsc anderlecht"
       ],
-      "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "clubelo",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.090189+00:00",
       "source_evidence_updated_utc": "2026-07-23T09:13:32.286858+00:00",
       "sources_seen": "bzzoiro",
       "verified_bookmakers": [
@@ -7903,29 +8431,29 @@
     },
     "forecast_status": "",
     "forecast_family": "totals",
-    "forecast_selection": "Меньше",
-    "forecast_selection_key": "under",
+    "forecast_selection": "Больше 2.5",
+    "forecast_selection_key": "",
     "forecast_team_side": "",
-    "forecast_line": 1.5,
+    "forecast_line": 2.5,
     "forecast_odds": "",
-    "forecast_bookmaker": "Betfair Exchange",
-    "forecast_odds_source": "odds_api_io",
-    "forecast_model_probability_pct": 30.2,
-    "forecast_adjusted_probability_pct": 27.6,
-    "forecast_market_probability_pct": 25.4,
+    "forecast_bookmaker": "",
+    "forecast_odds_source": "",
+    "forecast_model_probability_pct": "",
+    "forecast_adjusted_probability_pct": 52.87,
+    "forecast_market_probability_pct": 51.53,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 75.51,
+    "forecast_confidence": 75.03,
     "forecast_books_count": "",
     "forecast_sources_count": "",
-    "forecast_model_mode": "market_derived_totals",
-    "forecast_publication_score": 40.692,
+    "forecast_model_mode": "controlled_consensus_rescue",
+    "forecast_publication_score": 82.134,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
-    "forecast_context_source": "market_signal",
+    "forecast_context_source": "",
     "forecast_context_confidence": "",
-    "forecast_market_movement": "insufficient_history",
+    "forecast_market_movement": "",
     "forecast_quality_status": "",
     "forecast_quality_score": "",
     "forecast_quality_reasons": "",
@@ -7951,6 +8479,7 @@
       "context_sources_count": 0,
       "day_inventory": true,
       "day_inventory_coverage": {
+        "books_count": 2,
         "context": false,
         "context_2plus_sources": false,
         "context_sources": [],
@@ -7958,6 +8487,7 @@
         "daily_coverage_evidence_synced": true,
         "fixture_core": true,
         "form": false,
+        "line_sources_count": 1,
         "odds": true,
         "odds_2plus_sources": false,
         "odds_sources": [
@@ -7976,17 +8506,26 @@
       "day_inventory_source_ids": {
         "odds_api_io": "69921846"
       },
-      "fixture_sources_count": 1,
+      "fixture_sources_count": 2,
       "independent_odds_sources_count": 2,
+      "latest_books_max": 2,
+      "line_sources": [
+        "odds_api_io"
+      ],
+      "line_sources_count": 1,
+      "odds_sources": [
+        "odds_api_io"
+      ],
       "odds_sources_count": 2,
       "price_confirmation_sources_count": 2,
       "price_sources_count": 2,
       "runtime_context_bridge_matched_aliases": [
-        "2026-07-23|helsingin ponnistus|if sibbo vargarna",
-        "2026-07-23|helsingin ponnistu|if sibbo vargarna"
+        "2026-07-23|helsingin ponnistu|if sibbo vargarna",
+        "2026-07-23|helsingin ponnistus|if sibbo vargarna"
       ],
-      "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
-      "source_evidence_updated_utc": "2026-07-23T12:03:00.353516+00:00",
+      "runtime_context_bridge_updated_utc": "2026-07-23T13:11:29.629897+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.091336+00:00",
+      "source_evidence_updated_utc": "2026-07-23T13:16:09.841849+00:00",
       "verified_bookmakers": [
         "bet365",
         "pari"
@@ -8175,6 +8714,23 @@
         "soccer|hradec kralove|troms il|2026-07-23",
         "2026-07-23|hradec kralove|troms il"
       ],
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
       "runtime_context_bridge_updated_utc": "2026-07-23T12:30:23.813825+00:00",
       "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.766291+00:00",
       "source_evidence_samples": [
@@ -8266,7 +8822,7 @@
           "sbobet",
           "unibet"
         ],
-        "books_count": 4,
+        "books_count": 12,
         "context": true,
         "context_2plus_sources": true,
         "context_sources": [
@@ -8277,6 +8833,7 @@
         "fixture_core": true,
         "fixture_source_2plus": true,
         "form": true,
+        "line_sources_count": 2,
         "odds": true,
         "odds_2plus_sources": true,
         "odds_sources": [
@@ -8303,16 +8860,26 @@
       },
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 3,
-      "latest_books_max": 4,
+      "latest_books_max": 12,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 3,
       "price_confirmation_sources_count": 9,
       "price_sources_count": 9,
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.092753+00:00",
       "source_evidence_updated_utc": "2026-07-23T07:13:17.852961+00:00",
       "verified_bookmakers": [
         "10bet",
         "bet365",
+        "betano",
         "betfair exchange",
-        "betway",
         "bwin",
         "novibet",
         "pari",
@@ -8373,7 +8940,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-23T12:01:33.795221+00:00",
-      "books_count": 10,
+      "books_count": 8,
       "bzzoiro_context_fields": true,
       "bzzoiro_has_context_hint": true,
       "bzzoiro_has_prediction": true,
@@ -8409,6 +8976,7 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
+        "line_sources_count": 2,
         "news": false,
         "odds": true,
         "odds_2plus_sources": true,
@@ -8440,12 +9008,22 @@
       "fixture_sources_count": 3,
       "independent_odds_sources_count": 3,
       "latest_books_max": 9,
+      "line_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "line_sources_count": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 10,
-      "price_sources_count": 10,
+      "price_confirmation_sources_count": 8,
+      "price_sources_count": 8,
       "provider_source_ids": {
         "bzzoiro": "216526"
       },
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.091250+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -8457,16 +9035,14 @@
       "source_evidence_updated_utc": "2026-07-23T11:13:18.389951+00:00",
       "sources_seen": "bzzoiro",
       "verified_bookmakers": [
-        "1xbet",
+        "10bet",
+        "888sport",
         "bet365",
-        "betano",
         "betfair exchange",
         "betway",
         "interwetten",
         "novibet",
-        "pari",
-        "sbobet",
-        "unibet"
+        "pari"
       ],
       "verified_context_sources": [
         "sstats"
@@ -8487,15 +9063,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 60.42,
-    "forecast_market_probability_pct": 59.08,
+    "forecast_adjusted_probability_pct": 60.37,
+    "forecast_market_probability_pct": 59.05,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 72.74,
+    "forecast_confidence": 72.68,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 78.452,
+    "forecast_publication_score": 78.3,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -8604,7 +9180,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-22T23:14:02.402522+00:00",
-      "books_count": 7,
+      "books_count": 6,
       "confirmation_sources_count": 2,
       "context_sources_count": 2,
       "day_inventory": true,
@@ -8659,8 +9235,8 @@
       "independent_odds_sources_count": 3,
       "latest_books_max": 7,
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 7,
-      "price_sources_count": 7,
+      "price_confirmation_sources_count": 6,
+      "price_sources_count": 6,
       "runtime_context_bridge_matched_aliases": [
         "2026-07-23|maxline vitebsk|sutjeska niksic"
       ],
@@ -8680,8 +9256,7 @@
         "betano",
         "betfair exchange",
         "betway",
-        "pari",
-        "unibet"
+        "pari"
       ],
       "verified_context_sources": [
         "bzzoiro",
@@ -8738,7 +9313,7 @@
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-07-22T23:14:02.402804+00:00",
-      "books_count": 11,
+      "books_count": 10,
       "confirmation_sources_count": 2,
       "context_sources_count": 2,
       "day_inventory": true,
@@ -8793,8 +9368,8 @@
       "independent_odds_sources_count": 3,
       "latest_books_max": 7,
       "odds_sources_count": 3,
-      "price_confirmation_sources_count": 11,
-      "price_sources_count": 11,
+      "price_confirmation_sources_count": 10,
+      "price_sources_count": 10,
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -8811,7 +9386,6 @@
         "betano",
         "betfair exchange",
         "betway",
-        "interwetten",
         "marathon",
         "pari",
         "pinnacle",
@@ -8837,15 +9411,15 @@
     "forecast_bookmaker": "",
     "forecast_odds_source": "",
     "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": 52.44,
-    "forecast_market_probability_pct": 50.98,
+    "forecast_adjusted_probability_pct": 52.27,
+    "forecast_market_probability_pct": 50.87,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 73.12,
+    "forecast_confidence": 72.93,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "controlled_consensus_rescue",
-    "forecast_publication_score": 79.948,
+    "forecast_publication_score": 79.433,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -9795,7 +10369,7 @@
           "bzzoiro",
           "odds_api_io"
         ],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 9,
         "price_sources_count": 9,
         "ready_for_model": true,
@@ -9921,7 +10495,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -10039,7 +10613,7 @@
         "odds_sources": [
           "sstats_pari"
         ],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 9,
         "price_sources_count": 9,
         "ready_for_model": true,
@@ -10362,7 +10936,7 @@
           "normalized_odds_source_lists",
           "raw_bucket_offers.sources"
         ],
-        "odds_sources_count": 1,
+        "odds_sources_count": 3,
         "price_confirmations": 4,
         "price_sources_count": 4,
         "ready_for_model": true,
@@ -11177,7 +11751,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -11586,7 +12160,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -11774,7 +12348,7 @@
         "odds": false,
         "odds_2plus_sources": false,
         "odds_sources": [],
-        "odds_sources_count": 1,
+        "odds_sources_count": 2,
         "price_confirmations": 1,
         "price_sources_count": 1,
         "ready_for_model": false,
@@ -15124,8 +15698,8 @@
     "tier": "mid",
     "metadata": {
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
-      "bookmaker_backfill_updated_at_utc": "2026-07-23T09:14:33.898377+00:00",
-      "books_count": 2,
+      "bookmaker_backfill_updated_at_utc": "2026-07-23T13:13:23.106714+00:00",
+      "books_count": 3,
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
       "day_inventory": true,
@@ -15147,7 +15721,7 @@
         "context_sources": [
           "sstats"
         ],
-        "context_sources_count": 2,
+        "context_sources_count": 3,
         "daily_coverage_evidence_synced": true,
         "fixture_core": true,
         "form": false,
@@ -15172,7 +15746,7 @@
       "day_inventory_source_ids": {
         "odds_api_io": "68307954"
       },
-      "fixture_sources_count": 1,
+      "fixture_sources_count": 2,
       "independent_odds_sources_count": 1,
       "latest_books_max": 9,
       "line_sources": [
@@ -15183,13 +15757,14 @@
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmation_sources_count": 2,
-      "price_sources_count": 2,
-      "runtime_offer_sources_annotated_at_utc": "2026-07-23T12:28:14.767881+00:00",
-      "source_evidence_updated_utc": "2026-07-23T12:03:00.353516+00:00",
+      "price_confirmation_sources_count": 3,
+      "price_sources_count": 3,
+      "runtime_offer_sources_annotated_at_utc": "2026-07-23T13:08:06.095770+00:00",
+      "source_evidence_updated_utc": "2026-07-23T13:16:09.841849+00:00",
       "verified_bookmakers": [
         "bet365",
-        "betfair exchange"
+        "betfair exchange",
+        "sbobet"
       ],
       "verified_context_sources": [
         "sstats"
