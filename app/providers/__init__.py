@@ -132,3 +132,15 @@ try:
     _strict_inventory_horizon_activation.install()
 except Exception:
     pass
+
+# Strict inventory synchronization stores the authoritative independent source
+# lists in metadata. Preserve those lists when the daily planner ranks the next
+# deficit batch; fixture ids, aliases and proxy counts remain ineligible.
+try:
+    from app.services import (
+        authoritative_coverage_planner_patch as _authoritative_coverage_planner_patch,
+    )
+
+    _authoritative_coverage_planner_patch.install()
+except Exception:
+    pass
