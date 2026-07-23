@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-23T21:53:29.211474+00:00
+UTC: 2026-07-23T23:05:58.532654+00:00
 target_date: 2026-07-24
 canonical_matches: 594
-2+ provider sources: 118
-2+ primary sources: 114
-all 3 primary sources: 17
+2+ provider sources: 188
+2+ primary sources: 184
+all 3 primary sources: 31
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
@@ -13,22 +13,22 @@ all 3 primary sources: 17
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=2 ok=1 rows=100 event_like=0 unique=0 statuses={"EMPTY": 1, "OK": 1}
-- sstats: commands=1 ok=1 rows=105 event_like=95 unique=95 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=199 event_like=179 unique=179 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 476, "2": 100, "3": 18}
-- primary providers: {"1": 479, "2": 97, "3": 17, "0": 1}
+- all providers: {"1": 406, "2": 156, "3": 32}
+- primary providers: {"1": 409, "2": 153, "3": 31, "0": 1}
 
 ## Top canonical matches
-- 2026-07-23T21:30:00+00:00 | Leones del Norte — Guayaquil City FC | providers=sstats ids={"sstats": "1519418"}
 - 2026-07-23T21:30:00+00:00 | Orense SC — Aucas | providers=sstats ids={"sstats": "1519422"}
+- 2026-07-23T21:30:00+00:00 | Leones del Norte — Guayaquil City FC | providers=sstats ids={"sstats": "1519418"}
 - 2026-07-23T22:00:00+00:00 | Bolívar — Gremio | providers=sstats ids={"sstats": "1547774"}
-- 2026-07-23T22:30:00+00:00 | Botafogo — Vitoria | providers=sstats ids={"sstats": "1492141"}
 - 2026-07-23T22:30:00+00:00 | Corinthians — remo | providers=sstats ids={"sstats": "1492293"}
-- 2026-07-23T22:30:00+00:00 | Athletic Club — São Bernardo | providers=sstats ids={"sstats": "1520780"}
-- 2026-07-23T22:30:00+00:00 | Belgrano Cordoba — Rosario Central | providers=sstats ids={"sstats": "1493003"}
 - 2026-07-23T22:30:00+00:00 | Sarmiento Junin — Argentinos JRS | providers=sstats ids={"sstats": "1493015"}
+- 2026-07-23T22:30:00+00:00 | Athletic Club — São Bernardo | providers=sstats ids={"sstats": "1520780"}
+- 2026-07-23T22:30:00+00:00 | Botafogo — Vitoria | providers=sstats ids={"sstats": "1492141"}
+- 2026-07-23T22:30:00+00:00 | Belgrano Cordoba — Rosario Central | providers=sstats ids={"sstats": "1493003"}
 - 2026-07-24T00:00:00+00:00 | Asociacion Deportivo Cali — America de Cali Sa | providers=odds_api_io,sstats ids={"odds_api_io": "72686518", "sstats": "1525741"}
 - 2026-07-24T00:00:00+00:00 | CS Emelec — Mushuc Runa SC | providers=odds_api_io,sstats ids={"odds_api_io": "68687764", "sstats": "1519416"}
 - 2026-07-24T00:00:00+00:00 | CD Walter Ferretti — Diriangen FC Diriamba | providers=odds_api_io ids={"odds_api_io": "72700838"}
@@ -53,11 +53,11 @@ all 3 primary sources: 17
 - 2026-07-24T09:30:00+00:00 | New Alipore Suruchi Sangha — Aryans Sports | providers=odds_api_io,sstats ids={"odds_api_io": "72991088", "sstats": "1600185"}
 
 ## Targeted enrichment plan sample
-- Leones del Norte — Guayaquil City FC | primary=1 providers=sstats
+- Orense SC — Aucas | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Orense SC — Aucas | primary=1 providers=sstats
+- Leones del Norte — Guayaquil City FC | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -65,11 +65,11 @@ all 3 primary sources: 17
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Botafogo — Vitoria | primary=1 providers=sstats
+- Corinthians — remo | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Corinthians — remo | primary=1 providers=sstats
+- Sarmiento Junin — Argentinos JRS | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -77,11 +77,11 @@ all 3 primary sources: 17
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Belgrano Cordoba — Rosario Central | primary=1 providers=sstats
+- Botafogo — Vitoria | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Sarmiento Junin — Argentinos JRS | primary=1 providers=sstats
+- Belgrano Cordoba — Rosario Central | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
