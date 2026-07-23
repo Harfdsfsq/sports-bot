@@ -48,38 +48,114 @@ def test_repairs_bzzoiro_provider_and_overlap_lines(tmp_path: Path, monkeypatch)
     assert "overlap bridge: offers 0" not in repaired
 
 
-def test_repairs_movement_waiting_only_claim(tmp_path: Path, monkeypatch) -> None:
+def test_separates_waiting_rows_from_post_snapshot_drops(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(report, "EXPORT", tmp_path)
     dropped = []
-    for index in range(18):
-        reasons = ["needs_next_cron_line_movement_recheck"]
-        if index >= 4:
+    for index in range(8):
+        if index < 5:
+            reasons = ["needs_next_cron_line_movement_recheck"]
+            lifecycle = "awaiting_next_run"
+        elif index == 5:
             reasons = [
                 "current_ev_below_floor:1.0<2.9",
                 "current_edge_below_floor:0.4<1.4",
                 "needs_next_cron_line_movement_recheck",
             ]
-        dropped.append({"guard": {"reasons": reasons}})
+            lifecycle = "awaiting_next_run"
+        else:
+            reasons = [
+                "current_ev_below_floor:1.0<2.9",
+                "current_edge_below_floor:0.4<1.4",
+            ]
+            lifecycle = "movement_failed"
+        dropped.append({"guard": {"reasons": reasons, "line_movement_lifecycle_status": lifecycle}})
     _write(
         tmp_path / "latest-line-movement-guard-report.json",
         {
             "updated_at_utc": datetime.now(UTC).isoformat(),
-            "candidates_dropped": 18,
+            "candidates_dropped": 8,
             "files": [{"dropped_sample": dropped}],
         },
     )
     text = (
-        "• Главная причина: кандидаты ждут следующий cron для второго снимка линии (18)\n"
-        "• Line guard: увидел 31, оставил 0, отложил 18 до следующего cron\n"
-        "• кандидат ждёт следующий cron для второго снимка линии: 18 (100%)\n"
+        "• Главная причина: кандидаты ждут следующий cron для второго снимка линии (8)\n"
+        "• Line guard: увидел 24, оставил 0, отложил 6, снял 2\n"
+        "• кандидат ждёт следующий cron для второго снимка линии: 8 (100%)\n"
         "• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. "
         "Ждём следующий регулярный run.\n"
     )
 
+    evidence = report._movement_runtime_evidence()
     repaired = report._repair_movement_runtime_lines(text)
 
-    assert "только 4 блокируются исключительно ожиданием" in repaired
-    assert "у 14 есть дополнительные EV/edge-блокеры" in repaired
-    assert "movement-only 4, с другими блокерами 14" in repaired
-    assert "также ниже EV/edge 14" in repaired
-    assert "У 4 кандидатов единственный текущий стопор" in repaired
+    assert evidence == {
+        "dropped_total": 8,
+        "waiting_total": 6,
+        "movement_only": 5,
+        "with_other": 1,
+        "removed_after_snapshot": 2,
+    }
+    assert "второй снимок линии отсутствует у 6" in repaired
+    assert "только 5 блокируются исключительно ожиданием" in repaired
+    assert "у 1 есть дополнительные EV/edge-блокеры" in repaired
+    assert "ещё 2 сняты после имеющегося снимка" in repaired
+    assert "ожидание второго снимка линии: 6" in repaired
+    assert "после снимка снято 2" in repaired
+    assert "Line guard: увидел 24, оставил 0, отложил 6, снял 2" in repaired
+
+
+def test_stale_sstats_deep_report_is_not_reused_when_current_step_skipped(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(report, "EXPORT", tmp_path)
+    _write(
+        tmp_path / "latest-runbot-discovery-first-prepare.json",
+        {
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "steps": [
+                {
+                    "name": "apply_sstats_deep_inventory_enrichment_v4",
+                    "status": "skipped",
+                    "reason": "discovery_budget_reserve",
+                }
+            ],
+        },
+    )
+    _write(
+        tmp_path / "latest-sstats-deep-inventory-enrichment.json",
+        {"created_at_utc": "2026-07-23T19:08:18+00:00", "enriched_matches": 48},
+    )
+    text = (
+        "• SStats: запросы 31; сырых строк 26487; контекстов 30; "
+        "deep-enriched 48; team-form 0; direct 0; ошибок 0.\n"
+    )
+    payload = {"api": {"sstats": {"deep_enriched": 48}}}
+
+    evidence = report._sstats_deep_runtime_evidence()
+    report._normalize_sstats_payload(payload)
+    repaired = report._repair_sstats_runtime_line(text)
+
+    assert evidence == {"deep_enriched": 0, "status": "current_run_skipped"}
+    assert payload["api"]["sstats"]["deep_enriched"] == 0
+    assert payload["api"]["sstats"]["deep_status"] == "current_run_skipped"
+    assert "deep-enriched 0 (текущий deep-step пропущен)" in repaired
+    assert "deep-enriched 48" not in repaired
+
+
+def test_fresh_successful_sstats_deep_report_is_preserved(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(report, "EXPORT", tmp_path)
+    now = datetime.now(UTC).isoformat()
+    _write(
+        tmp_path / "latest-runbot-discovery-first-prepare.json",
+        {
+            "created_at_utc": now,
+            "steps": [{"name": "apply_sstats_deep_inventory_enrichment_v4", "status": "ok"}],
+        },
+    )
+    _write(
+        tmp_path / "latest-sstats-deep-inventory-enrichment.json",
+        {"created_at_utc": now, "enriched_matches": 17},
+    )
+
+    assert report._sstats_deep_runtime_evidence() == {"deep_enriched": 17, "status": "fresh"}
