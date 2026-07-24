@@ -1,0 +1,64 @@
+name: runtime-integrity-ci
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/services/focused_alpha_accumulation_runtime_patch_v2.py"
+      - "app/services/focused_alpha_runtime_policy.py"
+      - "app/services/settlement_sstats_pagination_runtime_patch.py"
+      - "scripts/send_harizon_telegram_run_report_v14/__init__.py"
+      - "tests/test_runtime_integrity_repairs.py"
+      - ".github/workflows/runtime-integrity-ci.yml"
+  pull_request:
+    paths:
+      - "app/services/focused_alpha_accumulation_runtime_patch_v2.py"
+      - "app/services/focused_alpha_runtime_policy.py"
+      - "app/services/settlement_sstats_pagination_runtime_patch.py"
+      - "scripts/send_harizon_telegram_run_report_v14/__init__.py"
+      - "tests/test_runtime_integrity_repairs.py"
+      - ".github/workflows/runtime-integrity-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+      - name: Compile repaired runtime modules
+        run: |
+          python -m py_compile \
+            app/services/focused_alpha_accumulation_runtime_patch_v2.py \
+            app/services/focused_alpha_runtime_policy.py \
+            app/services/settlement_sstats_pagination_runtime_patch.py \
+            scripts/send_harizon_telegram_run_report_v14/__init__.py \
+            tests/test_runtime_integrity_repairs.py
+      - name: Ruff repaired runtime modules
+        run: |
+          ruff check --config pyproject.toml \
+            app/services/focused_alpha_accumulation_runtime_patch_v2.py \
+            app/services/focused_alpha_runtime_policy.py \
+            app/services/settlement_sstats_pagination_runtime_patch.py \
+            scripts/send_harizon_telegram_run_report_v14/__init__.py \
+            tests/test_runtime_integrity_repairs.py
+      - name: Test repaired runtime contracts
+        run: |
+          python -m pytest -q \
+            tests/test_runtime_integrity_repairs.py \
+            tests/test_focused_alpha_accumulation_runtime_patch.py \
+            tests/test_focused_alpha_accumulation_runtime_patch_v2.py
