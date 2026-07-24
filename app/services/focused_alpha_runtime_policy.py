@@ -1,8 +1,8 @@
 """Runtime contract for the Focused Alpha production architecture.
 
-The policy changes the optimisation target, not the safety standard.  It reduces
+The policy changes the optimisation target, not the safety standard. It reduces
 provider scope and publication volume, keeps a broad data window, and requires the
-strict A contract for live Telegram output.  Shadow candidates remain available for
+strict A contract for live Telegram output. Shadow candidates remain available for
 future calibration.
 """
 
@@ -16,6 +16,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / ".data" / "exports" / "latest-focused-alpha-runtime-policy.json"
+RUN_LIFECYCLE = ROOT / ".data" / "exports" / "latest-main-run-lifecycle.json"
+DEBUG_PATH = ROOT / ".logs" / "debug-last-run.json"
 
 POLICY: dict[str, str] = {
     "FOCUSED_ALPHA_ENABLED": "true",
@@ -30,21 +32,30 @@ POLICY: dict[str, str] = {
     "FOCUSED_ALPHA_MIN_EDGE_PP": "2.0",
     "FOCUSED_ALPHA_MIN_QUALITY": "68",
     "FOCUSED_ALPHA_MIN_CONFIDENCE": "68",
-    # Collect early, publish late.  app.cli disables main publication when the data
+    # A full provider-day discovery refresh is expensive and must be reused across
+    # regular two-hour runs. The focused runner performs its own bounded fresh-market
+    # and context refresh after preflight.
+    "RUNBOT_DISCOVERY_FIRST_FORCE_FULL_REFRESH": "false",
+    "RUNBOT_DISCOVERY_FIRST_FULL_REFRESH_INTERVAL_MINUTES": "360",
+    "RUNBOT_DISCOVERY_FIRST_MAX_SECONDS": "210",
+    "RUNBOT_INCREMENTAL_DEEP_ENRICHMENT_ENABLED": "false",
+    "RUNBOT_INCREMENTAL_BZZOIRO_GAP_ENRICHMENT_ENABLED": "false",
+    "RUNBOT_FULL_BZZOIRO_GAP_ENRICHMENT_ENABLED": "false",
+    # Collect early, publish late. app.cli disables main publication when the data
     # window is wider than the final controlled-fallback window.
     "HARIZON_DATA_COLLECTION_WINDOW_HOURS": "36",
     "HARIZON_DISABLE_MAIN_PUBLICATION_FOR_DATA_WINDOW": "true",
     "PUBLISH_WINDOW_HOURS": "2",
     "CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS": "2",
     "MIN_KICKOFF_LEAD_MINUTES": "20",
-    # No volume target.  At most two distinct high-quality decisions per day.
+    # No volume target. At most two distinct high-quality decisions per day.
     "MAX_PICKS_PER_RUN": "2",
     "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": "2",
     "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "2",
     "REPUBLISH_SEEN_CANDIDATES_WHEN_EMPTY": "false",
     "BANKROLL_FORCE_MIN_STAKE_WHEN_EMPTY_ENABLED": "false",
     # Live output is A-only until the canonical history has sufficient probability,
-    # closing-price and settlement coverage.  B remains useful as a watchlist.
+    # closing-price and settlement coverage. B remains useful as a watchlist.
     "PUBLISH_ALLOW_B_TIER": "false",
     "PUBLISH_B_TIER_WATCH_ONLY": "true",
     "PUBLISH_COVERAGE_TIER_MODE": "a_only_publish_b_watchlist",
@@ -93,9 +104,70 @@ def _enabled() -> bool:
 def _write(payload: dict[str, Any]) -> None:
     try:
         OUT.parent.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        OUT.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     except Exception:
         pass
+
+
+def _start_run_lifecycle_once() -> dict[str, Any]:
+    """Remove stale volatile debug state before the production run starts."""
+
+    if not (os.getenv("GITHUB_RUN_ID") or os.getenv("HARIZON_FORCE_RUN_LIFECYCLE")):
+        return {"status": "not_github_run"}
+    marker = os.getenv("HARIZON_MAIN_RUN_LIFECYCLE_STARTED_AT")
+    if marker:
+        return {"status": "already_started", "started_at_utc": marker}
+
+    started = datetime.now(UTC).isoformat()
+    os.environ["HARIZON_MAIN_RUN_LIFECYCLE_STARTED_AT"] = started
+    stale_debug_removed = False
+    try:
+        if DEBUG_PATH.exists():
+            DEBUG_PATH.unlink()
+            stale_debug_removed = True
+    except Exception:
+        pass
+    payload = {
+        "status": "running",
+        "started_at_utc": started,
+        "github_run_id": os.getenv("GITHUB_RUN_ID"),
+        "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT"),
+        "stale_debug_removed": stale_debug_removed,
+        "fresh_debug_required": True,
+    }
+    try:
+        RUN_LIFECYCLE.parent.mkdir(parents=True, exist_ok=True)
+        RUN_LIFECYCLE.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+    return payload
+
+
+def _reassert_preflight_policy() -> bool:
+    """Keep later authoritative preflight passes from restoring full refreshes."""
+
+    try:
+        from app.services import runtime_preflight
+
+        runtime_preflight.AUTONOMOUS_ACCUMULATION_POLICY.update(POLICY)
+        runtime_preflight.DISCOVERY_FIRST_DEFAULTS.update(
+            {
+                key: value
+                for key, value in POLICY.items()
+                if key.startswith("RUNBOT_DISCOVERY_FIRST")
+                or key.startswith("RUNBOT_INCREMENTAL")
+                or key == "RUNBOT_FULL_BZZOIRO_GAP_ENRICHMENT_ENABLED"
+            }
+        )
+        return True
+    except Exception:
+        return False
 
 
 def apply(*, force: bool = True) -> dict[str, Any]:
@@ -103,12 +175,18 @@ def apply(*, force: bool = True) -> dict[str, Any]:
         payload = {"status": "disabled", "publication_contract_relaxed": False}
         _write(payload)
         return payload
+    lifecycle = _start_run_lifecycle_once()
     before = {key: os.getenv(key) for key in POLICY}
     for key, value in POLICY.items():
         if force or os.getenv(key) in (None, ""):
             os.environ[key] = value
+    preflight_policy_reasserted = _reassert_preflight_policy()
     after = {key: os.getenv(key) for key in POLICY}
-    changed = {key: {"before": before[key], "after": after[key]} for key in POLICY if before[key] != after[key]}
+    changed = {
+        key: {"before": before[key], "after": after[key]}
+        for key in POLICY
+        if before[key] != after[key]
+    }
     payload = {
         "status": "applied",
         "created_at_utc": datetime.now(UTC).isoformat(),
@@ -121,6 +199,8 @@ def apply(*, force: bool = True) -> dict[str, Any]:
         "provider_focus_max_matches": 100,
         "main_publication_disabled_for_wide_data_window": True,
         "live_learning_auto_tuning": False,
+        "preflight_policy_reasserted": preflight_policy_reasserted,
+        "run_lifecycle": lifecycle,
         "publication_contract_relaxed": False,
     }
     _write(payload)
