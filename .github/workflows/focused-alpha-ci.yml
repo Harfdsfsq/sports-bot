@@ -8,7 +8,7 @@ on:
       - "app/services/daily_coverage_plan.py"
       - "app/services/daily_coverage_assignments.py"
       - "app/services/daily_coverage_full_inventory_provider_patch.py"
-      - "scripts/build_focused_alpha_decisions.py"
+      - "scripts/build_focused_alpha_decisions*.py"
       - "scripts/patch_focused_alpha_candidate_rank.py"
       - "scripts/publish_controlled_fallback_guarded.py"
       - "tests/test_focused_alpha*.py"
@@ -47,6 +47,7 @@ jobs:
             app/services/daily_coverage_assignments.py \
             app/services/daily_coverage_full_inventory_provider_patch.py \
             scripts/build_focused_alpha_decisions.py \
+            scripts/build_focused_alpha_decisions_v2.py \
             scripts/patch_focused_alpha_candidate_rank.py \
             scripts/publish_controlled_fallback_guarded.py
       - name: Ruff Focused Alpha change set
@@ -64,6 +65,7 @@ jobs:
             app/services/daily_coverage_assignments.py \
             app/services/daily_coverage_full_inventory_provider_patch.py \
             scripts/build_focused_alpha_decisions.py \
+            scripts/build_focused_alpha_decisions_v2.py \
             scripts/patch_focused_alpha_candidate_rank.py \
             scripts/publish_controlled_fallback_guarded.py \
             tests/test_focused_alpha*.py 2>&1 | tee .data/exports/latest-focused-alpha-ruff.txt
@@ -74,7 +76,7 @@ jobs:
           python - <<'PY'
           import json
           from app.services.focused_alpha_history import build_history_audit
-          from scripts.build_focused_alpha_decisions import build_decisions
+          from scripts.build_focused_alpha_decisions_v2 import build_decisions
           from app.services.focused_alpha_learning_ledger import update_learning_ledger
 
           audit = build_history_audit()
@@ -91,6 +93,7 @@ jobs:
                   "live_learning_blockers": audit.get("live_learning_blockers"),
               },
               "decisions": {
+                  "candidate_pool": board.get("candidate_pool"),
                   "candidates_seen": board.get("candidates_seen"),
                   "passes_shadow_contract": board.get("passes_shadow_contract"),
                   "selected_count": board.get("selected_count"),
