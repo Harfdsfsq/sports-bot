@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-07-24T08:05:26.555989+00:00",
+  "created_at": "2026-07-24T09:09:09.647043+00:00",
   "enabled": true,
   "summary": {
     "total_tracked_bets": 434,
@@ -934,7 +934,7 @@
     ]
   },
   "recent_learning_state": {
-    "archive_path": ".logs/runs/2026-07-24/070958-run.json",
+    "archive_path": ".logs/runs/2026-07-24/080827-run.json",
     "daily_quality_analysis": {
       "by_family": {},
       "by_league_bucket": {},
@@ -942,8 +942,208 @@
       "settled_bets": 0,
       "top_failure_tags": {}
     },
-    "error_analysis": {},
-    "learning": {},
+    "error_analysis": {
+      "by_family": {
+        "totals": {
+          "avg_odds": 2.171,
+          "count": 90,
+          "hit_rate_pct": 56.67,
+          "losses": 39,
+          "pnl": 52.43,
+          "roi_pct": 17.13,
+          "stake": 306.0,
+          "wins": 51
+        }
+      },
+      "by_league_bucket": {
+        "low": {
+          "avg_odds": 2.292,
+          "count": 9,
+          "hit_rate_pct": 33.33,
+          "losses": 6,
+          "pnl": -0.69,
+          "roi_pct": -2.76,
+          "stake": 25.0,
+          "wins": 3
+        },
+        "other": {
+          "avg_odds": 2.185,
+          "count": 44,
+          "hit_rate_pct": 61.36,
+          "losses": 17,
+          "pnl": 40.65,
+          "roi_pct": 30.8,
+          "stake": 132.0,
+          "wins": 27
+        },
+        "preferred": {
+          "avg_odds": 2.081,
+          "count": 35,
+          "hit_rate_pct": 57.14,
+          "losses": 15,
+          "pnl": 11.43,
+          "roi_pct": 7.78,
+          "stake": 147.0,
+          "wins": 20
+        },
+        "secondary": {
+          "avg_odds": 2.88,
+          "count": 2,
+          "hit_rate_pct": 50.0,
+          "losses": 1,
+          "pnl": 1.04,
+          "roi_pct": 52.0,
+          "stake": 2.0,
+          "wins": 1
+        }
+      },
+      "lost_bets": 39,
+      "settled_bets": 90,
+      "top_failure_tags": {
+        "low_confidence": 18,
+        "market_simple_mode": 13,
+        "non_core_league": 23,
+        "thin_ev": 6,
+        "totals_over": 9
+      }
+    },
+    "learning": {
+      "enabled": true,
+      "min_sample": 8,
+      "negative_segments": [
+        {
+          "avg_predicted_probability": 0.4849,
+          "calibration_delta_probability": -0.1516,
+          "count": 9,
+          "hit_rate_pct": 33.33,
+          "roi_pct": -2.76,
+          "segment": "league:low"
+        },
+        {
+          "avg_predicted_probability": 0.5173,
+          "calibration_delta_probability": -0.1423,
+          "count": 8,
+          "hit_rate_pct": 37.5,
+          "roi_pct": -22.62,
+          "segment": "prob:50-55"
+        },
+        {
+          "avg_predicted_probability": 0.4751,
+          "calibration_delta_probability": -0.0751,
+          "count": 10,
+          "hit_rate_pct": 40.0,
+          "roi_pct": -7.0,
+          "segment": "prob:45-50"
+        },
+        {
+          "avg_predicted_probability": 0.4757,
+          "calibration_delta_probability": -0.059,
+          "count": 36,
+          "hit_rate_pct": 41.67,
+          "roi_pct": -9.5,
+          "segment": "context:market_signal"
+        },
+        {
+          "avg_predicted_probability": 0.4294,
+          "calibration_delta_probability": -0.0544,
+          "count": 8,
+          "hit_rate_pct": 37.5,
+          "roi_pct": -6.88,
+          "segment": "prob:40-45"
+        },
+        {
+          "avg_predicted_probability": 0.4679,
+          "calibration_delta_probability": -0.0346,
+          "count": 30,
+          "hit_rate_pct": 43.33,
+          "roi_pct": -4.5,
+          "segment": "bookmaker:betfair exchange"
+        },
+        {
+          "avg_predicted_probability": 0.5005,
+          "calibration_delta_probability": -0.0005,
+          "count": 18,
+          "hit_rate_pct": 50.0,
+          "roi_pct": 8.0,
+          "segment": "market:totals:over"
+        }
+      ],
+      "positive_segments": [
+        {
+          "avg_predicted_probability": 0.0,
+          "calibration_delta_probability": 0.6667,
+          "count": 54,
+          "hit_rate_pct": 66.67,
+          "roi_pct": 20.69,
+          "segment": "bookmaker:unknown"
+        },
+        {
+          "avg_predicted_probability": 0.0,
+          "calibration_delta_probability": 0.6667,
+          "count": 54,
+          "hit_rate_pct": 66.67,
+          "roi_pct": 20.69,
+          "segment": "context:unknown"
+        },
+        {
+          "avg_predicted_probability": 0.0,
+          "calibration_delta_probability": 0.6667,
+          "count": 54,
+          "hit_rate_pct": 66.67,
+          "roi_pct": 20.69,
+          "segment": "prob:unknown"
+        },
+        {
+          "avg_predicted_probability": 0.4828,
+          "calibration_delta_probability": 0.1309,
+          "count": 44,
+          "hit_rate_pct": 61.36,
+          "roi_pct": 30.8,
+          "segment": "league:other"
+        },
+        {
+          "avg_predicted_probability": 0.4632,
+          "calibration_delta_probability": 0.1201,
+          "count": 72,
+          "hit_rate_pct": 58.33,
+          "roi_pct": 18.59,
+          "segment": "market:totals:under"
+        },
+        {
+          "avg_predicted_probability": 0.5403,
+          "calibration_delta_probability": 0.1068,
+          "count": 34,
+          "hit_rate_pct": 64.71,
+          "roi_pct": 14.92,
+          "segment": "odds:1.70-2.04"
+        },
+        {
+          "avg_predicted_probability": 0.4763,
+          "calibration_delta_probability": 0.0951,
+          "count": 35,
+          "hit_rate_pct": 57.14,
+          "roi_pct": 7.78,
+          "segment": "league:preferred"
+        },
+        {
+          "avg_predicted_probability": 0.4757,
+          "calibration_delta_probability": 0.091,
+          "count": 90,
+          "hit_rate_pct": 56.67,
+          "roi_pct": 17.13,
+          "segment": "family:totals"
+        },
+        {
+          "avg_predicted_probability": 0.4509,
+          "calibration_delta_probability": 0.0185,
+          "count": 49,
+          "hit_rate_pct": 46.94,
+          "roi_pct": 8.07,
+          "segment": "odds:2.05-2.74"
+        }
+      ],
+      "segments_tracked": 16
+    },
     "next_day_adjustments": {
       "actions": [],
       "enabled": true,
@@ -953,7 +1153,18 @@
       "settled_bets": 0
     },
     "report_date": "2026-07-22",
-    "summary": {},
-    "updated_at": "2026-07-24T07:09:58.469298+00:00"
+    "summary": {
+      "avg_odds": 2.171,
+      "count": 90,
+      "hit_rate_pct": 56.67,
+      "losses": 39,
+      "pnl": 52.43,
+      "roi_pct": 17.13,
+      "settled_binary_bets": 90,
+      "stake": 306.0,
+      "total_tracked_bets": 434,
+      "wins": 51
+    },
+    "updated_at": "2026-07-24T08:08:27.957938+00:00"
   }
 }
