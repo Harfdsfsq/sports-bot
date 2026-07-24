@@ -28,8 +28,9 @@ def _senior_club(row: dict[str, Any]) -> bool:
     )
 
 
-def build_assignments(
-    rows: list[dict[str, Any]], run_index: int
+def _legacy_assignments(
+    rows: list[dict[str, Any]],
+    run_index: int,
 ) -> dict[str, dict[str, list[str]]]:
     del run_index
     out = {
@@ -76,8 +77,6 @@ def build_assignments(
         ):
             out["clubelo"]["context"].append(key)
 
-    # No artificial 80/24-match shortlist. HTTP request ceilings remain enforced
-    # inside each provider; assignments merely ensure every active uncovered row is tried.
     pari_limit = max(1, as_int(os.getenv("SSTATS_PARI_DETAIL_MATCH_LIMIT"), 300))
     sportlogic_limit = max(1, as_int(os.getenv("SPORTLOGIC_MATCH_LIMIT"), 300))
     bzz_limit = max(
@@ -93,3 +92,23 @@ def build_assignments(
         out["sportlogic"][role] = out["sportlogic"][role][:sportlogic_limit]
         out["bzzoiro"][role] = out["bzzoiro"][role][:bzz_limit]
     return out
+
+
+def build_assignments(
+    rows: list[dict[str, Any]],
+    run_index: int,
+) -> dict[str, dict[str, list[str]]]:
+    try:
+        from app.services.focused_alpha_assignments import (
+            build_focused_assignments,
+            enabled,
+        )
+
+        if enabled():
+            return build_focused_assignments(rows, run_index)
+    except Exception:
+        pass
+    return _legacy_assignments(rows, run_index)
+
+
+__all__ = ["build_assignments"]

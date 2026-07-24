@@ -23,6 +23,15 @@ from app.services.daily_coverage_common import (
     target_date,
 )
 from app.services.daily_coverage_ranking import coverage_summary, rank_inventory
+from app.services.focused_alpha import (
+    enabled as focused_alpha_enabled,
+)
+from app.services.focused_alpha import (
+    phase_targets as focused_alpha_phase_targets,
+)
+from app.services.focused_alpha import (
+    select_focus_cohort,
+)
 from app.utils import canonicalize_team_name, parse_datetime
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -51,6 +60,52 @@ def _next_run(date_key: str, now: datetime) -> tuple[int, str]:
     return max(1, as_int(state.get("run_index"), 1)), run_id
 
 
+def _focus_selection(
+    ranked: list[dict[str, Any]],
+    *,
+    current: datetime,
+    run_index: int,
+) -> tuple[list[dict[str, Any]], list[int], dict[str, Any]]:
+    """Return this run's adaptive provider target cohort.
+
+    The fixed daily inventory remains a discovery/identity ledger.  Expensive API
+    calls are assigned only to the best information-value matches.  There is no
+    minimum cohort size and no publication quota.
+    """
+
+    if not focused_alpha_enabled():
+        phase_values = list(PHASE_TARGETS)
+        target_count = min(len(ranked), phase_values[min(run_index, 3) - 1])
+        return ranked[:target_count], phase_values, {
+            "mode": "legacy_fixed_coverage",
+            "selected_rows": target_count,
+            "fixed_coverage_quota": True,
+            "publication_contract_relaxed": False,
+        }
+    try:
+        focus = select_focus_cohort(ranked, now=current)
+        selected = list(focus.get("rows") or [])
+        phase_values = list(focused_alpha_phase_targets())
+        target_count = min(len(selected), phase_values[min(run_index, 3) - 1])
+        report = dict(focus.get("report") or {})
+        report["phase_selected_rows"] = target_count
+        report["run_index"] = run_index
+        return selected[:target_count], phase_values, report
+    except Exception as exc:
+        # A scoring/report failure must not make the production runner blind.  The
+        # fallback is deliberately smaller than the old 300-match assignment.
+        phase_values = [40, 70, 100]
+        target_count = min(len(ranked), phase_values[min(run_index, 3) - 1])
+        return ranked[:target_count], phase_values, {
+            "mode": "focused_alpha_safe_fallback",
+            "status": "error",
+            "error": f"{type(exc).__name__}: {exc}",
+            "selected_rows": target_count,
+            "fixed_coverage_quota": False,
+            "publication_contract_relaxed": False,
+        }
+
+
 def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
     current = (now or datetime.now(UTC)).astimezone(UTC)
     date_key = target_date(current)
@@ -60,15 +115,21 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
         ledger = {"date_local": date_key, "matches": {}, "runs": []}
     ranked = rank_inventory(rows, ledger, current, date_key)
     run_index, run_id = _next_run(date_key, current)
-    target_count = min(len(ranked), PHASE_TARGETS[min(run_index, 3) - 1])
-    targets = ranked[:target_count]
+    targets, active_phase_targets, focus_report = _focus_selection(
+        ranked,
+        current=current,
+        run_index=run_index,
+    )
+    target_count = len(targets)
     assignments = build_assignments(targets, run_index)
     os.environ["SSTATS_PARI_DETAIL_MATCH_LIMIT"] = str(
         len(assignments["sstats_pari"]["offers"])
     )
     os.environ.setdefault("SSTATS_PARI_CONCURRENCY", "12")
     os.environ.setdefault("SSTATS_PARI_TIMEOUT_SECONDS", "7")
-    os.environ.setdefault("CLUBELO_CONTEXT_MATCH_LIMIT", "300")
+    os.environ["CLUBELO_CONTEXT_MATCH_LIMIT"] = str(
+        len(assignments.get("clubelo", {}).get("context", []))
+    )
     plan = {
         "status": "ok" if ranked else "inventory_missing_or_empty",
         "created_at_utc": current.isoformat(),
@@ -76,10 +137,11 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
         "inventory_path": str(inventory_path) if inventory_path else None,
         "inventory_rows_seen": len(rows),
         "top_inventory_matches": len(ranked),
+        "discovery_universe_matches": len(ranked),
         "run_id": run_id,
         "run_index": run_index,
         "phase": min(run_index, 3),
-        "phase_targets": list(PHASE_TARGETS),
+        "phase_targets": active_phase_targets,
         "phase_cumulative_target": target_count,
         "min_odds_sources": 2,
         "min_context_sources": 2,
@@ -87,6 +149,14 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
         "target_coverage_before": coverage_summary(targets),
         "target_match_keys": [row["match_key"] for row in targets],
         "assignments": assignments,
+        "focused_alpha": focus_report,
+        "coverage_objective": (
+            "maximize_expected_information_and_risk_adjusted_decision_quality"
+            if focused_alpha_enabled()
+            else "fixed_2plus_coverage"
+        ),
+        "fixed_300_provider_target": not focused_alpha_enabled(),
+        "publication_minimum_count": 0,
         "provider_timeouts_seconds": PROVIDER_TIMEOUTS,
         "matches": {
             row["match_key"]: {
@@ -102,6 +172,8 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
                     "context_sources",
                     "line_deficit",
                     "context_deficit",
+                    "focused_alpha_score",
+                    "focused_alpha_exploration",
                 )
             }
             for row in ranked
@@ -127,6 +199,7 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
             "run_index": run_index,
             "planned_at_utc": current.isoformat(),
             "cumulative_target": target_count,
+            "selection_mode": focus_report.get("mode") or "unknown",
         }
     )
     ledger["runs"] = ledger["runs"][-32:]

@@ -6,14 +6,15 @@ import logging
 import os
 import re
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from app.config import get_settings
 from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
 from app.reporting.history_guard_audit import HistoryGuardAuditService
-from app.services.runtime_preflight import RuntimePreflight
 from app.services.runner import PredictionRunner
+from app.services.runtime_preflight import RuntimePreflight
 from app.state import resolve_run_history_roots
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
@@ -79,6 +80,23 @@ def _first_env_value(*names: str) -> str | None:
     return None
 
 
+def _apply_focused_alpha_policy(summary: dict[str, Any] | None = None) -> None:
+    try:
+        from app.services.focused_alpha_runtime_policy import apply
+
+        result = apply(force=True)
+        if isinstance(summary, dict):
+            summary['focused_alpha_runtime_policy'] = result
+    except Exception as exc:
+        logging.getLogger(__name__).warning(
+            'focused alpha runtime policy failed: %s: %s',
+            type(exc).__name__,
+            exc,
+        )
+        if isinstance(summary, dict):
+            summary['focused_alpha_runtime_policy_error'] = f'{type(exc).__name__}: {exc}'
+
+
 def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
     value = getattr(settings, attr_name, None)
     if str(value or '').strip():
@@ -131,7 +149,10 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
     )
     if data_window_raw:
         try:
-            data_window_hours = max(int(float(data_window_raw)), int(getattr(settings, 'publish_window_hours', 0) or 0))
+            data_window_hours = max(
+                int(float(data_window_raw)),
+                int(getattr(settings, 'publish_window_hours', 0) or 0),
+            )
         except Exception:
             data_window_hours = 0
         if data_window_hours > int(getattr(settings, 'publish_window_hours', 0) or 0):
@@ -148,17 +169,31 @@ def _install_bzzoiro_v2_source_matrix(summary: dict[str, Any] | None = None) -> 
         return
     try:
         from app.services.bzzoiro_v2_source_matrix_runtime_patch import install
+
         result = install()
         if isinstance(summary, dict):
             summary['bzzoiro_v2_source_matrix_install'] = result
     except Exception as exc:
-        logging.getLogger(__name__).warning('bzzoiro v2 source matrix install failed: %s: %s', type(exc).__name__, exc)
+        logging.getLogger(__name__).warning(
+            'bzzoiro v2 source matrix install failed: %s: %s',
+            type(exc).__name__,
+            exc,
+        )
         if isinstance(summary, dict):
             summary['bzzoiro_v2_source_matrix_install_error'] = f'{type(exc).__name__}: {exc}'
         try:
             out = Path('.data/exports/latest-bzzoiro-v2-source-matrix-install.json')
             out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_text(json.dumps({'installed': False, 'error': f'{type(exc).__name__}: {exc}'}, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+            out.write_text(
+                json.dumps(
+                    {'installed': False, 'error': f'{type(exc).__name__}: {exc}'},
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+                + '\n',
+                encoding='utf-8',
+            )
         except Exception:
             pass
 
@@ -168,11 +203,16 @@ def _bridge_runtime_context_coverage(summary: dict[str, Any] | None) -> None:
         return
     try:
         from scripts.bridge_runtime_context_coverage import main as bridge_main
+
         code = bridge_main()
         if isinstance(summary, dict):
             summary['runtime_context_coverage_bridge_exit_code'] = code
     except Exception as exc:
-        logging.getLogger(__name__).warning('runtime context coverage bridge failed: %s: %s', type(exc).__name__, exc)
+        logging.getLogger(__name__).warning(
+            'runtime context coverage bridge failed: %s: %s',
+            type(exc).__name__,
+            exc,
+        )
         if isinstance(summary, dict):
             summary['runtime_context_coverage_bridge_error'] = f'{type(exc).__name__}: {exc}'
 
@@ -182,11 +222,16 @@ def _bridge_bzzoiro_offer_overlap(summary: dict[str, Any] | None) -> None:
         return
     try:
         from scripts.bridge_bzzoiro_offer_overlap import main as bridge_main
+
         code = bridge_main()
         if isinstance(summary, dict):
             summary['bzzoiro_offer_overlap_bridge_exit_code'] = code
     except Exception as exc:
-        logging.getLogger(__name__).warning('bzzoiro offer overlap bridge failed: %s: %s', type(exc).__name__, exc)
+        logging.getLogger(__name__).warning(
+            'runtime context coverage bridge failed: %s: %s',
+            type(exc).__name__,
+            exc,
+        )
         if isinstance(summary, dict):
             summary['bzzoiro_offer_overlap_bridge_error'] = f'{type(exc).__name__}: {exc}'
 
@@ -195,15 +240,23 @@ async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, A
     if command == 'run-once':
         install_summary: dict[str, Any] = {}
         try:
-            from app.services.runbot_discovery_checkpoint_patch import install as install_discovery_checkpoint
+            from app.services.runbot_discovery_checkpoint_patch import (
+                install as install_discovery_checkpoint,
+            )
 
             install_summary['runbot_discovery_checkpoint_install'] = install_discovery_checkpoint()
         except Exception as exc:
             install_summary['runbot_discovery_checkpoint_install_error'] = f'{type(exc).__name__}: {exc}'
         _install_bzzoiro_v2_source_matrix(install_summary)
         await asyncio.to_thread(RuntimePreflight(settings).run_before_prediction)
+        # Discovery/preflight compatibility modules still carry the former 300-row
+        # accumulation policy. Reassert the decision-focused contract immediately
+        # before PredictionRunner starts.
+        _apply_focused_alpha_policy(install_summary)
         try:
-            from app.services.provider_wall_clock_final_guard import install as install_provider_wall_clock
+            from app.services.provider_wall_clock_final_guard import (
+                install as install_provider_wall_clock,
+            )
 
             install_summary['provider_wall_clock_final_guard_install'] = install_provider_wall_clock()
         except Exception as exc:
@@ -220,21 +273,29 @@ async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, A
 
 def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'coverage-audit':
-        report = CoverageAuditService(_reporting_path(settings, 'coverage_report_path', 'coverage-audit.json')).build(debug_path=settings.debug_path)
+        report = CoverageAuditService(
+            _reporting_path(settings, 'coverage_report_path', 'coverage-audit.json')
+        ).build(debug_path=settings.debug_path)
         return 0, report
     if command == 'reporting-sqlite':
         history_root = [str(path) for path in resolve_run_history_roots(settings)]
-        result = ReportingSQLiteExporter(_reporting_path(settings, 'reporting_sqlite_path', 'reporting.sqlite')).export(
+        result = ReportingSQLiteExporter(
+            _reporting_path(settings, 'reporting_sqlite_path', 'reporting.sqlite')
+        ).export(
             state_path=settings.state_path,
             history_root=history_root,
         )
         return 0, result
     if command == 'training-dataset':
-        result = TrainingDatasetExporter(_reporting_path(settings, 'training_dataset_path', 'training-dataset.csv')).export(state_path=settings.state_path)
+        result = TrainingDatasetExporter(
+            _reporting_path(settings, 'training_dataset_path', 'training-dataset.csv')
+        ).export(state_path=settings.state_path)
         return 0, result
     if command == 'history-guard-audit':
         history_root = [str(path) for path in resolve_run_history_roots(settings)]
-        result = HistoryGuardAuditService(_reporting_path(settings, 'history_guard_audit_path', 'history-guard-audit.json')).build(history_root=history_root)
+        result = HistoryGuardAuditService(
+            _reporting_path(settings, 'history_guard_audit_path', 'history-guard-audit.json')
+        ).build(history_root=history_root)
         return 0, result
     return 1, None
 
@@ -245,6 +306,8 @@ async def _main(argv: Sequence[str] | None = None) -> int:
     preflight.apply_safe_defaults()
     if args and args[0] == 'run-once':
         preflight.apply_phase_policy()
+        # Must run after autonomous phase policy and before Settings is loaded.
+        _apply_focused_alpha_policy()
     settings = _apply_runtime_env_overrides(get_settings())
     command = args[0] if args else ''
 
