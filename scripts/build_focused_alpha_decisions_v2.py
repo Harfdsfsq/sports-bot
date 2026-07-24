@@ -1,8 +1,8 @@
-"""Focused Alpha decision board v2 with strict candidate freshness.
+"""Focused Alpha decision board v2 with strict freshness and evidence truth.
 
 The legacy scorer remains the single implementation of conservative utility. This
-wrapper restricts its inputs to fixtures that can still be acted on, so stale
-candidate exports cannot contaminate shadow selection or the learning ledger.
+wrapper restricts inputs to actionable fixtures and repairs cumulative counters into
+exact provider/bookmaker identities before scoring.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from app.services.focused_alpha_evidence_truth import repair_candidate_evidence
 from scripts import build_focused_alpha_decisions as base
 
 ROOT = base.ROOT
@@ -97,8 +98,9 @@ def _present(value: Any) -> bool:
 
 
 def _candidate_completeness(row: dict[str, Any]) -> int:
+    repaired = repair_candidate_evidence(row)
     return sum(
-        _present(row.get(field))
+        _present(repaired.get(field))
         for field in (
             "odds",
             "adjusted_probability",
@@ -109,7 +111,7 @@ def _candidate_completeness(row: dict[str, Any]) -> int:
             "ev_pct",
             "edge_pct",
             "confirmation_sources",
-            "odds_sources_count",
+            "odds_sources",
             "commence_time",
         )
     )
@@ -134,6 +136,7 @@ def collect_candidates(
         "eligible_rows": 0,
         "unique_rows": 0,
         "duplicates_collapsed": 0,
+        "evidence_truth_repaired": 0,
     }
     best: dict[str, dict[str, Any]] = {}
     for candidate_path in CANDIDATE_PATHS:
@@ -162,13 +165,14 @@ def collect_candidates(
                 if candidate_path.is_relative_to(ROOT)
                 else str(candidate_path)
             )
+            row = repair_candidate_evidence(row)
+            counts["evidence_truth_repaired"] += 1
             key = base._key(row)
             if not key.strip("|"):
                 continue
             current_best = best.get(key)
-            if current_best is None or _candidate_completeness(
-                row
-            ) >= _candidate_completeness(current_best):
+            # Preserve the earlier, more authoritative candidate path on an exact tie.
+            if current_best is None or _candidate_completeness(row) > _candidate_completeness(current_best):
                 best[key] = row
     counts["unique_rows"] = len(best)
     counts["duplicates_collapsed"] = max(
@@ -224,7 +228,7 @@ def build_decisions(*, now: datetime | None = None) -> dict[str, Any]:
     ).strip().lower() in {"1", "true", "yes", "on"}
     payload = {
         "status": "ok",
-        "version": "focused_alpha_decisions_v2_fresh_window",
+        "version": "focused_alpha_decisions_v2_fresh_evidence_truth",
         "created_at_utc": (now or datetime.now(UTC)).astimezone(UTC).isoformat(),
         "mode": (
             "shadow"
@@ -246,6 +250,7 @@ def build_decisions(*, now: datetime | None = None) -> dict[str, Any]:
         "selected_shadow": selected,
         "ranked": scored[:100],
         "publication_contract_relaxed": False,
+        "evidence_truth_basis": "explicit_provider_and_exact_offer_identities",
     }
     _write(payload)
     return payload
