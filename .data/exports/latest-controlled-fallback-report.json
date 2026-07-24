@@ -1,48 +1,40 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "Some candidates still have fewer than the A-tier confirmation/context minimum."
+      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
     ],
     "quality_score_sources": {
-      "raw": 1,
-      "raw_missing": 2
+      "raw": 2,
+      "raw_missing": 3
     },
-    "tier_a_blocker_counts": {
-      "tier_a_confirmation_sources_below_min": 1,
-      "tier_a_confirmation_sources_below_min:1/2": 1,
-      "tier_a_market_implied_xg_not_hard_confirmation": 1,
-      "tier_a_odds_sources_below_min:1/2": 1,
-      "tier_a_quality_below_min": 1,
-      "tier_a_two_plus_context_sources_required:1/2": 1,
-      "tier_a_two_plus_odds_sources_required:1/2": 1
-    }
+    "tier_a_blocker_counts": {}
   },
-  "candidates_seen": 3,
-  "created_at": "2026-07-24T09:11:36.983489+00:00",
+  "candidates_seen": 5,
+  "created_at": "2026-07-24T11:12:10.903342+00:00",
   "enabled": true,
   "evaluated": [
     {
-      "away_team": "Salisbury United",
-      "away_team_ru": "Салисбури Унитед",
-      "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-07-24T10:15:00+00:00",
-      "commence_time_display": "24.07.2026 13:15 MSK",
+      "away_team": "Olympique Lyon",
+      "away_team_ru": "Лион",
+      "candidate_source": "a_cover_market_promotion",
+      "commence_time": "2026-07-24T12:00:00+00:00",
+      "commence_time_display": "24.07.2026 15:00 MSK",
       "family": "totals",
-      "home_team": "Eastern United",
-      "home_team_ru": "Истерн Унитед",
-      "league_name": "Australia - South Australia State League 1",
-      "league_name_ru": "Австралия - Сут Аустралиа Стате Лигуе 1",
-      "match_key": "soccer|eastern_united|salisbury_united|2026-07-24",
+      "home_team": "VFL Wolfsburg",
+      "home_team_ru": "VFL Уолфсбург",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24",
       "metrics": {
-        "adjusted_probability": 0.420183,
-        "books_count": 2,
+        "adjusted_probability": 0.664196,
+        "books_count": 3,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 2.803,
-        "canonical_ev_pct": 7.147,
-        "confidence": 70.816,
+        "canonical_edge_pp": 2.725,
+        "canonical_ev_pct": 4.279,
+        "confidence": 66.525,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -51,19 +43,123 @@
           "weather_supports_over": false,
           "weather_supports_under": false
         },
-        "confirmation_sources": [
-          "sstats"
-        ],
+        "confirmation_sources": [],
         "confirmation_sources_count": 2,
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.202,
-        "market_probability": 0.408163,
-        "model_probability": 0.420183,
-        "odds": 2.55,
+        "market_edge_pp": 1.273,
+        "market_probability": 0.651466,
+        "model_probability": 0.664196,
+        "odds": 1.57,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 14.971,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.636943,
+        "semantic_current_price_guard": {
+          "created_at_utc": "2026-07-24T11:09:11.486546+00:00",
+          "current_bookmaker": "Betfair Exchange",
+          "current_price": 1.57,
+          "matching_offers": 2,
+          "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+          "price_diff_pct": 0.0,
+          "selected_bookmaker": "betfair",
+          "selected_price": 1.57,
+          "stale": false
+        },
+        "semantic_line_movement_guard": {
+          "entries": [
+            {
+              "captured_at_utc": "2026-07-24T11:12:10.125555+00:00",
+              "current_odds": 1.57,
+              "key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24|totals|under|4.5|betfair_exchange",
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": true,
+              "reasons": [],
+              "status": "movement_confirmed"
+            }
+          ],
+          "matching_entries": 1
+        },
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.275,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.275,
+          "xg_model_optimism_gap_pp": 1.275,
+          "xg_probability": 0.651448,
+          "xg_probability_pct": 65.145,
+          "xg_source": "home_away",
+          "xg_total": 3.884
+        }
+      },
+      "ok": false,
+      "point": 4.5,
+      "reject_reasons": [
+        "odds_below_global_min"
+      ],
+      "reject_reasons_ru": [
+        "коэффициент ниже общего минимума"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Olympique Lyon",
+      "away_team_ru": "Лион",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-24T12:00:00+00:00",
+      "commence_time_display": "24.07.2026 15:00 MSK",
+      "family": "totals",
+      "home_team": "VFL Wolfsburg",
+      "home_team_ru": "VFL Уолфсбург",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24",
+      "metrics": {
+        "adjusted_probability": 0.426692,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.019,
+        "canonical_ev_pct": 4.966,
+        "confidence": 66.835,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.916,
+        "market_probability": 0.417537,
+        "model_probability": 0.426692,
+        "odds": 2.46,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -72,34 +168,34 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 18.424,
+        "publication_score": 14.349,
         "quality_reasons": [],
         "quality_score": 0.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "raw_missing",
-        "selected_implied_probability": 0.392157,
+        "selected_implied_probability": 0.406504,
         "semantic_current_price_guard": {
-          "created_at_utc": "2026-07-24T09:09:21.732362+00:00",
-          "current_bookmaker": "Unibet",
-          "current_price": 2.55,
-          "matching_offers": 3,
+          "created_at_utc": "2026-07-24T11:09:11.486546+00:00",
+          "current_bookmaker": "Betfair Exchange",
+          "current_price": 2.46,
+          "matching_offers": 2,
           "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
           "price_diff_pct": 0.0,
-          "selected_bookmaker": "unibet",
-          "selected_price": 2.55,
+          "selected_bookmaker": "betfair",
+          "selected_price": 2.46,
           "stale": false
         },
         "semantic_line_movement_guard": {
           "entries": [
             {
-              "captured_at_utc": "2026-07-24T09:11:36.465469+00:00",
-              "current_odds": 2.55,
-              "key": "soccer|eastern_united|salisbury_united|2026-07-24|totals|under|2.5|unibet",
+              "captured_at_utc": "2026-07-24T11:12:10.125555+00:00",
+              "current_odds": 2.46,
+              "key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24|totals|over|4.5|betfair_exchange",
               "line_move_pct": 0.0,
               "no_more_cron_before_kickoff": true,
               "passed": true,
               "reasons": [],
-              "status": "publish_now_no_next_cron"
+              "status": "movement_confirmed"
             }
           ],
           "matching_entries": 1
@@ -107,50 +203,50 @@
         "sources_count": 2,
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 1.201,
+          "xg_abs_gap_pp": 0.914,
           "xg_direction_ok": false,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 1.201,
-          "xg_model_optimism_gap_pp": 1.201,
-          "xg_probability": 0.408173,
-          "xg_probability_pct": 40.817,
+          "xg_model_gap_pp": 0.914,
+          "xg_model_optimism_gap_pp": 0.914,
+          "xg_probability": 0.417554,
+          "xg_probability_pct": 41.755,
           "xg_source": "home_away",
-          "xg_total": 3.068
+          "xg_total": 4.238
         }
       },
       "ok": false,
-      "point": 2.5,
+      "point": 4.5,
       "reject_reasons": [
         "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
         "направление ставки конфликтует с xG"
       ],
-      "selection": "Меньше",
+      "selection": "Больше",
       "tier": null
     },
     {
-      "away_team": "Udinese Calcio",
-      "away_team_ru": "Удинесе Калкио",
+      "away_team": "Olympique Lyon",
+      "away_team_ru": "Лион",
       "candidate_source": "latest_rescue_candidates",
-      "commence_time": "2026-07-24T11:00:00+00:00",
-      "commence_time_display": "24.07.2026 14:00 MSK",
+      "commence_time": "2026-07-24T12:00:00+00:00",
+      "commence_time_display": "24.07.2026 15:00 MSK",
       "family": "totals",
-      "home_team": "Swansea City",
-      "home_team_ru": "Суанси Кити",
+      "home_team": "VFL Wolfsburg",
+      "home_team_ru": "VFL Уолфсбург",
       "league_name": "International Clubs - Club Friendly Games",
       "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
-      "match_key": "soccer|swansea_city|udinese_calcio|2026-07-24",
+      "match_key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24",
       "metrics": {
-        "adjusted_probability": 0.534351,
-        "books_count": 4,
+        "adjusted_probability": 0.626608,
+        "books_count": 2,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 3.684,
-        "canonical_ev_pct": 7.405,
-        "confidence": 70.032,
+        "canonical_edge_pp": 3.137,
+        "canonical_ev_pct": 5.27,
+        "confidence": 65.472,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -166,10 +262,10 @@
           "reason": "family_not_dnb"
         },
         "line_sources": [],
-        "market_edge_pp": 1.622,
-        "market_probability": 0.518135,
-        "model_probability": 0.534351,
-        "odds": 2.01,
+        "market_edge_pp": 1.311,
+        "market_probability": 0.613497,
+        "model_probability": 0.626608,
+        "odds": 1.68,
         "odds_sources_count": 1,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -178,29 +274,29 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 21.783,
+        "publication_score": 15.835,
         "quality_reasons": [],
         "quality_score": 0.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "raw_missing",
-        "selected_implied_probability": 0.497512,
+        "selected_implied_probability": 0.595238,
         "semantic_current_price_guard": {
-          "created_at_utc": "2026-07-24T09:09:21.732362+00:00",
+          "created_at_utc": "2026-07-24T11:09:11.486546+00:00",
           "current_bookmaker": "Betfair Exchange",
-          "current_price": 2.01,
-          "matching_offers": 4,
+          "current_price": 1.68,
+          "matching_offers": 2,
           "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
           "price_diff_pct": 0.0,
           "selected_bookmaker": "betfair",
-          "selected_price": 2.01,
+          "selected_price": 1.68,
           "stale": false
         },
         "semantic_line_movement_guard": {
           "entries": [
             {
-              "captured_at_utc": "2026-07-24T09:11:36.465469+00:00",
-              "current_odds": 2.01,
-              "key": "soccer|swansea_city|udinese_calcio|2026-07-24|totals|over|2.5|betfair_exchange",
+              "captured_at_utc": "2026-07-24T11:12:10.125555+00:00",
+              "current_odds": 1.68,
+              "key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24|totals|over|3.5|betfair_exchange",
               "line_move_pct": 0.0,
               "no_more_cron_before_kickoff": true,
               "passed": true,
@@ -211,98 +307,228 @@
           "matching_entries": 1
         },
         "sources_count": 1,
-        "tier_b_bookmaker_quorum": {
-          "books_count": 4,
-          "enabled": true,
-          "max_deviation_pct": 8.0,
-          "median_price": 1.93,
-          "mode": "bookmaker_quorum",
-          "odds_sources_count": 1,
-          "priced_books_count": 4,
-          "same_market_side_line_only": true,
-          "selected_price": 2.01,
-          "selected_vs_median_deviation_pct": 4.145
-        },
         "xg_sanity": {
           "enabled": true,
-          "xg_abs_gap_pp": 1.619,
+          "xg_abs_gap_pp": 1.311,
           "xg_direction_ok": true,
           "xg_model_conservative_gap_pp": 0.0,
-          "xg_model_gap_pp": 1.619,
-          "xg_model_optimism_gap_pp": 1.619,
-          "xg_probability": 0.518156,
-          "xg_probability_pct": 51.816,
+          "xg_model_gap_pp": 1.311,
+          "xg_model_optimism_gap_pp": 1.311,
+          "xg_probability": 0.613496,
+          "xg_probability_pct": 61.35,
           "xg_source": "home_away",
-          "xg_total": 2.748
+          "xg_total": 4.248
         }
       },
       "ok": false,
-      "point": 2.5,
+      "point": 3.5,
       "reject_reasons": [
-        "tier_a_quality_below_min",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_a_confirmation_sources_below_min:1/2",
-        "tier_a_two_plus_odds_sources_required:1/2",
-        "tier_a_two_plus_context_sources_required:1/2",
-        "tier_a_market_implied_xg_not_hard_confirmation",
-        "tier_b_quality_below_min",
-        "tier_b_odds_sources_below_min:1/2",
-        "tier_b_confirmation_sources_below_min:1/2",
-        "tier_b_two_plus_odds_sources_required:1/2",
-        "tier_b_two_plus_context_sources_required:1/2",
-        "tier_b_market_implied_xg_not_hard_confirmation",
-        "tier_b_hard_context_required_for_proxy_quality",
-        "tier_b_low_quality_competition_requires_a_tier",
-        "tier_c_quality_below_min",
-        "tier_c_two_plus_odds_sources_required:1/2",
-        "tier_c_two_plus_context_sources_required:1/2",
-        "tier_c_market_implied_xg_not_hard_confirmation"
+        "odds_below_global_min"
       ],
       "reject_reasons_ru": [
-        "качество ниже минимума уровня A",
-        "уровень A: odds sources below min:1/2",
-        "уровень A: confirmation sources below min:1/2",
-        "уровень A: two plus odds sources required:1/2",
-        "уровень A: two plus context sources required:1/2",
-        "уровень A: market implied xg not hard confirmation",
-        "качество ниже минимума уровня B",
-        "уровень B: odds sources below min:1/2",
-        "уровень B: confirmation sources below min:1/2",
-        "уровень B: two plus odds sources required:1/2",
-        "уровень B: two plus context sources required:1/2",
-        "уровень B: market implied xg not hard confirmation",
-        "уровень B: hard context required for proxy quality",
-        "уровень B: low quality competition requires a tier",
-        "качество ниже минимума уровня C",
-        "уровень C: two plus odds sources required:1/2",
-        "уровень C: two plus context sources required:1/2",
-        "уровень C: market implied xg not hard confirmation"
+        "коэффициент ниже общего минимума"
       ],
       "selection": "Больше",
       "tier": null
     },
     {
-      "away_team": "Udinese Calcio",
-      "away_team_ru": "Удинесе Калкио",
-      "candidate_source": "debug_candidates_before_quality",
-      "commence_time": "2026-07-24T11:00:00+00:00",
-      "commence_time_display": "24.07.2026 14:00 MSK",
+      "away_team": "Olympique Lyon",
+      "away_team_ru": "Лион",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-24T12:00:00+00:00",
+      "commence_time_display": "24.07.2026 15:00 MSK",
       "family": "totals",
-      "home_team": "Swansea City",
-      "home_team_ru": "Суанси Кити",
+      "home_team": "VFL Wolfsburg",
+      "home_team_ru": "VFL Уолфсбург",
       "league_name": "International Clubs - Club Friendly Games",
       "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
-      "match_key": "soccer|swansea city|udinese|2026-07-24",
+      "match_key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24",
       "metrics": {
-        "adjusted_probability": 0.539539,
-        "books_count": 5,
+        "adjusted_probability": 0.607074,
+        "books_count": 2,
         "btts_sanity": {
           "enabled": false,
           "reason": "family_not_btts"
         },
-        "canonical_edge_pp": 4.449,
-        "canonical_ev_pct": 8.987,
-        "confidence": 81.048,
+        "canonical_edge_pp": 9.425,
+        "canonical_ev_pct": 18.379,
+        "confidence": 76.775,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "market_edge_pp": 5.0,
+        "market_probability": 0.557074,
+        "model_probability": 0.592074,
+        "odds": 1.95,
+        "odds_sources_count": 1,
+        "price_integrity_guard": {
+          "details": {
+            "allowed_total_points": "whole_or_half_only",
+            "external_snapshot_match_rows": 147,
+            "external_snapshot_max_deviation_pct": 18.0,
+            "external_snapshot_max_implied_gap_pp": 12.0,
+            "external_snapshot_median_same_side_price": 1.48,
+            "external_snapshot_price_guard_mode": "odds_api_io_same_side_snapshot_median",
+            "external_snapshot_rows_total": 3314,
+            "external_snapshot_same_side_real_book_prices": [
+              1.95,
+              1.01
+            ],
+            "external_snapshot_selected_price": 1.95,
+            "external_snapshot_selected_vs_median_deviation_pct": 31.757,
+            "external_snapshot_selected_vs_median_implied_gap_pp": 16.286,
+            "external_snapshot_side_rows": 2,
+            "external_snapshot_skipped_opposite_side": 36,
+            "external_snapshot_skipped_point_mismatch": 34,
+            "external_snapshot_skipped_unknown_side": 0,
+            "market_probability": 0.557074,
+            "max_deviation_pct": 16.0,
+            "max_selected_vs_market_gap_pp": 10.0,
+            "median_same_side_price": 1.48,
+            "price_guard_mode": "identified_same_side_real_book_median",
+            "same_side_identified_offers_count": 2,
+            "same_side_identified_prices": [
+              1.95,
+              1.01
+            ],
+            "same_side_offers_count": 2,
+            "same_side_real_book_prices": [
+              1.95,
+              1.01
+            ],
+            "selected_implied_probability": 0.512821,
+            "selected_point": 4.25,
+            "selected_price": 1.95,
+            "selected_vs_market_gap_pp": 4.425,
+            "selected_vs_median_deviation_pct": 31.757,
+            "skipped_opposite_side": 0,
+            "skipped_point_mismatch": 0,
+            "skipped_unknown_side": 0
+          },
+          "enabled": true,
+          "reasons": [
+            "market_point:quarter_totals_not_allowed",
+            "price_integrity:selected_price_vs_bookmaker_median_outlier",
+            "price_integrity:external_snapshot_bookmaker_median_outlier"
+          ]
+        },
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 94.561,
+        "quality_reasons": [],
+        "quality_score": 83.121,
+        "quality_score_raw": 83.121,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.512821,
+        "semantic_current_price_guard": {
+          "created_at_utc": "2026-07-24T11:09:11.486546+00:00",
+          "current_bookmaker": "Bet365",
+          "current_price": 1.95,
+          "matching_offers": 2,
+          "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+          "price_diff_pct": 0.0,
+          "selected_bookmaker": "bet365",
+          "selected_price": 1.95,
+          "stale": false
+        },
+        "semantic_line_movement_guard": {
+          "entries": [
+            {
+              "captured_at_utc": "2026-07-24T11:10:50.070815+00:00",
+              "current_odds": 1.95,
+              "key": "soccer|olympique lyon|vfl wolfsburg|2026-07-24|totals|totals|over|4.25||4.25|bet365",
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": true,
+              "reasons": [],
+              "status": "movement_confirmed"
+            },
+            {
+              "captured_at_utc": "2026-07-24T11:12:10.125555+00:00",
+              "current_odds": 1.95,
+              "key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24|totals|over|4.25|bet365",
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": true,
+              "reasons": [],
+              "status": "publish_now_no_next_cron"
+            }
+          ],
+          "matching_entries": 2
+        },
+        "sources_count": 2,
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 4.999,
+          "xg_direction_ok": true,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 4.999,
+          "xg_model_optimism_gap_pp": 4.999,
+          "xg_probability": 0.557082,
+          "xg_probability_pct": 55.708,
+          "xg_source": "home_away",
+          "xg_total": 4.986
+        }
+      },
+      "ok": false,
+      "point": 4.25,
+      "reject_reasons": [
+        "market_point:quarter_totals_not_allowed",
+        "price_integrity:selected_price_vs_bookmaker_median_outlier",
+        "price_integrity:external_snapshot_bookmaker_median_outlier"
+      ],
+      "reject_reasons_ru": [
+        "market point:quarter totals not allowed",
+        "price integrity:selected price vs bookmaker median outlier",
+        "price integrity:external snapshot bookmaker median outlier"
+      ],
+      "selection": "Больше 4.25",
+      "tier": null
+    },
+    {
+      "away_team": "Olympique Lyon",
+      "away_team_ru": "Лион",
+      "candidate_source": "debug_candidates_before_quality",
+      "commence_time": "2026-07-24T12:00:00+00:00",
+      "commence_time_display": "24.07.2026 15:00 MSK",
+      "family": "totals",
+      "home_team": "VFL Wolfsburg",
+      "home_team_ru": "VFL Уолфсбург",
+      "league_name": "International Clubs - Club Friendly Games",
+      "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+      "match_key": "soccer|olympique lyon|vfl wolfsburg|2026-07-24",
+      "metrics": {
+        "adjusted_probability": 0.459528,
+        "books_count": 3,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.093,
+        "canonical_ev_pct": 4.772,
+        "confidence": 71.155,
         "confirmation_meta": {
           "weather_confirmation_relevant": false,
           "weather_dropped_as_neutral": false,
@@ -324,10 +550,10 @@
           "bzzoiro",
           "odds_api_io"
         ],
-        "market_edge_pp": 3.505,
-        "market_probability": 0.504489,
-        "model_probability": 0.546489,
-        "odds": 2.02,
+        "market_edge_pp": 3.616,
+        "market_probability": 0.423371,
+        "model_probability": 0.471371,
+        "odds": 2.28,
         "odds_sources_count": 2,
         "proxy_single_source_thresholds": {
           "applies": false,
@@ -336,29 +562,29 @@
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0
         },
-        "publication_score": 38.877,
+        "publication_score": 28.039,
         "quality_reasons": [],
-        "quality_score": 83.082,
-        "quality_score_raw": 83.082,
+        "quality_score": 71.465,
+        "quality_score_raw": 71.465,
         "quality_score_source": "raw",
-        "selected_implied_probability": 0.49505,
+        "selected_implied_probability": 0.438596,
         "semantic_current_price_guard": {
-          "created_at_utc": "2026-07-24T09:09:21.732362+00:00",
+          "created_at_utc": "2026-07-24T11:09:11.486546+00:00",
           "current_bookmaker": "Betfair Exchange",
-          "current_price": 1.92,
-          "matching_offers": 4,
+          "current_price": 2.22,
+          "matching_offers": 2,
           "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-          "price_diff_pct": 5.208,
+          "price_diff_pct": 2.703,
           "selected_bookmaker": "betfair",
-          "selected_price": 2.02,
+          "selected_price": 2.28,
           "stale": false
         },
         "semantic_line_movement_guard": {
           "entries": [
             {
-              "captured_at_utc": "2026-07-24T09:10:27.780778+00:00",
-              "current_odds": 2.02,
-              "key": "soccer|swansea city|udinese|2026-07-24|totals|totals|under|2.5||2.5|betfair",
+              "captured_at_utc": "2026-07-24T11:10:50.070815+00:00",
+              "current_odds": 2.28,
+              "key": "soccer|olympique lyon|vfl wolfsburg|2026-07-24|totals|under|3.5|betfair",
               "line_move_pct": 0.0,
               "no_more_cron_before_kickoff": true,
               "passed": true,
@@ -366,9 +592,9 @@
               "status": "movement_confirmed"
             },
             {
-              "captured_at_utc": "2026-07-24T09:10:27.780778+00:00",
-              "current_odds": 2.02,
-              "key": "soccer|swansea city|udinese|2026-07-24|totals|under|2.5|betfair",
+              "captured_at_utc": "2026-07-24T11:12:10.125555+00:00",
+              "current_odds": 2.28,
+              "key": "soccer|vfl_wolfsburg|olympique_lyonnais|2026-07-24|totals|under|3.5|betfair_exchange",
               "line_move_pct": 0.0,
               "no_more_cron_before_kickoff": true,
               "passed": true,
@@ -376,17 +602,17 @@
               "status": "movement_confirmed"
             },
             {
-              "captured_at_utc": "2026-07-24T09:11:36.465469+00:00",
-              "current_odds": 2.02,
-              "key": "soccer|swansea_city|udinese_calcio|2026-07-24|totals|under|2.5|betfair",
+              "captured_at_utc": "2026-07-24T11:12:10.125555+00:00",
+              "current_odds": 2.28,
+              "key": "soccer|vfl_wolfsburg|olympique_lyon|2026-07-24|totals|under|3.5|betfair",
               "line_move_pct": 0.0,
               "no_more_cron_before_kickoff": true,
               "passed": true,
               "reasons": [],
-              "status": "movement_confirmed"
+              "status": "publish_now_no_next_cron"
             }
           ],
-          "matching_entries": 3
+          "matching_entries": 4
         },
         "sources_count": 2,
         "xg_sanity": {
@@ -398,12 +624,12 @@
         }
       },
       "ok": false,
-      "point": 2.5,
+      "point": 3.5,
       "reject_reasons": [
-        "semantic_selected_price_not_current:2.020/1.920"
+        "semantic_selected_price_not_current:2.280/2.220"
       ],
       "reject_reasons_ru": [
-        "semantic selected price not current:2.020/1.920"
+        "semantic selected price not current:2.280/2.220"
       ],
       "selection": "Меньше",
       "tier": null
@@ -412,10 +638,10 @@
   "no_pick_report_sent": true,
   "pool_counts": {
     "debug_candidates_before_quality": 1,
-    "debug_candidates_before_quality_duplicate_in_pool": 1,
-    "debug_candidates_before_quality_stale_or_outside_window": 23,
+    "debug_candidates_before_quality_duplicate_in_pool": 2,
+    "debug_candidates_before_quality_stale_or_outside_window": 22,
     "latest_picks_stale_or_outside_window": 88,
-    "latest_rescue_candidates": 2
+    "latest_rescue_candidates": 4
   },
   "published": false,
   "scan_policy": {
@@ -431,31 +657,17 @@
     "blocked_only_by_daily_cap": 0,
     "duplicates_removed": 0,
     "reason_counts_without_daily_cap": {
-      "semantic_selected_price_not_current:2.020/1.920": 1,
-      "tier_a_confirmation_sources_below_min:1/2": 1,
-      "tier_a_market_implied_xg_not_hard_confirmation": 1,
-      "tier_a_odds_sources_below_min:1/2": 1,
-      "tier_a_quality_below_min": 1,
-      "tier_a_two_plus_context_sources_required:1/2": 1,
-      "tier_a_two_plus_odds_sources_required:1/2": 1,
-      "tier_b_confirmation_sources_below_min:1/2": 1,
-      "tier_b_hard_context_required_for_proxy_quality": 1,
-      "tier_b_low_quality_competition_requires_a_tier": 1,
-      "tier_b_market_implied_xg_not_hard_confirmation": 1,
-      "tier_b_odds_sources_below_min:1/2": 1,
-      "tier_b_quality_below_min": 1,
-      "tier_b_two_plus_context_sources_required:1/2": 1,
-      "tier_b_two_plus_odds_sources_required:1/2": 1,
-      "tier_c_market_implied_xg_not_hard_confirmation": 1,
-      "tier_c_quality_below_min": 1,
-      "tier_c_two_plus_context_sources_required:1/2": 1,
-      "tier_c_two_plus_odds_sources_required:1/2": 1,
+      "market_point:quarter_totals_not_allowed": 1,
+      "odds_below_global_min": 2,
+      "price_integrity:external_snapshot_bookmaker_median_outlier": 1,
+      "price_integrity:selected_price_vs_bookmaker_median_outlier": 1,
+      "semantic_selected_price_not_current:2.280/2.220": 1,
       "xg_direction_conflict": 1
     },
     "top_would_publish_without_daily_cap": []
   },
   "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4458,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1784884298,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4461,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1784891533,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
