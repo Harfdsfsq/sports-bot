@@ -10,6 +10,7 @@ on:
       - "app/services/daily_coverage_runtime_patch.py"
       - "app/services/daily_coverage_full_inventory_provider_patch.py"
       - "scripts/build_focused_alpha_decisions*.py"
+      - "scripts/promote_a_cover_value_candidates.py"
       - "scripts/patch_focused_alpha_candidate_rank.py"
       - "scripts/publish_controlled_fallback_guarded.py"
       - "scripts/repair_synthetic_publication_timestamps.py"
@@ -45,6 +46,7 @@ jobs:
             app/services/focused_alpha.py \
             app/services/focused_alpha_assignments.py \
             app/services/focused_alpha_assignments_v2.py \
+            app/services/focused_alpha_evidence_truth.py \
             app/services/focused_alpha_history.py \
             app/services/focused_alpha_learning_ledger.py \
             app/services/focused_alpha_runtime_policy.py \
@@ -55,6 +57,7 @@ jobs:
             app/services/daily_coverage_full_inventory_provider_patch.py \
             scripts/build_focused_alpha_decisions.py \
             scripts/build_focused_alpha_decisions_v2.py \
+            scripts/promote_a_cover_value_candidates.py \
             scripts/patch_focused_alpha_candidate_rank.py \
             scripts/publish_controlled_fallback_guarded.py \
             scripts/repair_synthetic_publication_timestamps.py \
@@ -69,6 +72,7 @@ jobs:
             app/services/focused_alpha.py \
             app/services/focused_alpha_assignments.py \
             app/services/focused_alpha_assignments_v2.py \
+            app/services/focused_alpha_evidence_truth.py \
             app/services/focused_alpha_history.py \
             app/services/focused_alpha_learning_ledger.py \
             app/services/focused_alpha_runtime_policy.py \
@@ -79,6 +83,7 @@ jobs:
             app/services/daily_coverage_full_inventory_provider_patch.py \
             scripts/build_focused_alpha_decisions.py \
             scripts/build_focused_alpha_decisions_v2.py \
+            scripts/promote_a_cover_value_candidates.py \
             scripts/patch_focused_alpha_candidate_rank.py \
             scripts/publish_controlled_fallback_guarded.py \
             scripts/repair_synthetic_publication_timestamps.py \
@@ -125,6 +130,7 @@ jobs:
           path: |
             .data/exports/latest-focused-alpha-*.json
             .data/exports/latest-focused-alpha-*.txt
+            .data/exports/latest-a-cover-value-promotion.json
             .data/exports/latest-synthetic-publication-timestamp-repair.json
           if-no-files-found: warn
           include-hidden-files: true
