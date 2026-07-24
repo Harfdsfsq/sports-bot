@@ -13,4 +13,20 @@ except Exception as exc:
         "publication_contract_relaxed": False,
     }
 
-__all__ = ["ACCUMULATION_PATCH", "POLICY", "apply"]
+try:
+    from app.services.settlement_sstats_pagination_runtime_patch import install as _install_settlement_pagination
+
+    SETTLEMENT_PAGINATION_PATCH = _install_settlement_pagination()
+except Exception as exc:
+    SETTLEMENT_PAGINATION_PATCH = {
+        "status": "install_error",
+        "error": f"{type(exc).__name__}: {exc}",
+        "publication_contract_relaxed": False,
+    }
+
+__all__ = [
+    "ACCUMULATION_PATCH",
+    "POLICY",
+    "SETTLEMENT_PAGINATION_PATCH",
+    "apply",
+]
