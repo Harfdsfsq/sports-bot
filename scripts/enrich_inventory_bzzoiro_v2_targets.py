@@ -124,6 +124,7 @@ async def run_pool_id_prefill() -> dict[str, Any]:
         return {'status': 'disabled'}
     try:
         from scripts.enrich_inventory_bzzoiro_pool_ids import run as pool_run
+
         result = await pool_run()
         return result if isinstance(result, dict) else {'status': 'ok', 'result_type': type(result).__name__}
     except Exception as exc:
@@ -133,6 +134,18 @@ async def run_pool_id_prefill() -> dict[str, Any]:
 async def run() -> dict[str, Any]:
     if not truthy(os.getenv('BZZOIRO_V2_INVENTORY_TARGET_ENRICHMENT_ENABLED'), True):
         return {'status': 'disabled'}
+    if (
+        os.getenv('RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING') == '1'
+        and not truthy(os.getenv('RUNBOT_FULL_BZZOIRO_GAP_ENRICHMENT_ENABLED'), False)
+    ):
+        report = {
+            'status': 'deferred_to_prediction_runner',
+            'created_at_utc': datetime.now(UTC).isoformat(),
+            'reason': 'focused_alpha_bounded_provider_refresh',
+            'publication_contract_relaxed': False,
+        }
+        write(OUT, report)
+        return report
     day = str(os.getenv('DAY_INVENTORY_TARGET_DATE') or os.getenv('DAY_INVENTORY_CACHE_DATE') or datetime.now(UTC).date().isoformat())[:10]
     pool_prefill = await run_pool_id_prefill()
     payload = load_inventory(day)
@@ -145,13 +158,13 @@ async def run() -> dict[str, Any]:
     for idx, row in enumerate(rows):
         if not isinstance(row, dict) or not row_needs_bzzoiro(row):
             continue
-        m = make_match(row, idx)
-        if m is None:
+        match = make_match(row, idx)
+        if match is None:
             continue
-        if m.match_key in match_map:
+        if match.match_key in match_map:
             continue
-        match_map[m.match_key] = idx
-        targets.append(m)
+        match_map[match.match_key] = idx
+        targets.append(match)
         if len(targets) >= limit:
             break
     if not targets:
@@ -175,26 +188,48 @@ async def run() -> dict[str, Any]:
             row['expected_home'] = ctx.expected_home
         if ctx.expected_away is not None:
             row['expected_away'] = ctx.expected_away
-        ss = row.setdefault('source_summary', {}) if isinstance(row.setdefault('source_summary', {}), dict) else {}
-        ss['bzzoiro_v2_inventory_target_enriched'] = True
-        ss['bzzoiro_v2_context_confidence'] = getattr(ctx, 'confidence', None)
-        ss['bzzoiro_v2_context_details'] = getattr(ctx, 'details', {}) or {}
+        source_summary = row.setdefault('source_summary', {}) if isinstance(row.setdefault('source_summary', {}), dict) else {}
+        source_summary['bzzoiro_v2_inventory_target_enriched'] = True
+        source_summary['bzzoiro_v2_context_confidence'] = getattr(ctx, 'confidence', None)
+        source_summary['bzzoiro_v2_context_details'] = getattr(ctx, 'details', {}) or {}
         hints = (getattr(ctx, 'details', {}) or {}).get('provider_odds_hints')
         if isinstance(hints, list) and hints:
             add_unique(row, 'odds_sources', 'bzzoiro')
             add_unique(row, 'line_sources', 'bzzoiro')
             row['odds_sources_count'] = max(as_int(row.get('odds_sources_count')), len({x for x in items(row.get('odds_sources')) if x in {'odds_api_io', 'bzzoiro', 'sportlogic'}}))
-            ss['bzzoiro_v2_provider_odds_hints_count'] = len(hints)
-            ss['bzzoiro_v2_provider_odds_hints_sample'] = hints[:20]
+            source_summary['bzzoiro_v2_provider_odds_hints_count'] = len(hints)
+            source_summary['bzzoiro_v2_provider_odds_hints_sample'] = hints[:20]
         if json.dumps(row, ensure_ascii=False, sort_keys=True, default=str) != before:
             touched += 1
             if len(examples) < 12:
-                examples.append({'match_key': match_key, 'home': row.get('home_team'), 'away': row.get('away_team'), 'expected_home': row.get('expected_home'), 'expected_away': row.get('expected_away'), 'odds_sources': row.get('odds_sources'), 'context_sources': row.get('context_sources')})
+                examples.append(
+                    {
+                        'match_key': match_key,
+                        'home': row.get('home_team'),
+                        'away': row.get('away_team'),
+                        'expected_home': row.get('expected_home'),
+                        'expected_away': row.get('expected_away'),
+                        'odds_sources': row.get('odds_sources'),
+                        'context_sources': row.get('context_sources'),
+                    }
+                )
     payload['matches'] = rows
     payload['bzzoiro_v2_inventory_target_updated_at_utc'] = datetime.now(UTC).isoformat()
     for path in aliases_for_payload(day):
         write(path, payload)
-    report = {'status': 'ok', 'created_at_utc': datetime.now(UTC).isoformat(), 'inventory_rows': len(rows), 'target_limit': limit, 'targets_selected': len(targets), 'contexts_matched': len(contexts), 'rows_touched': touched, 'pool_id_prefill': pool_prefill, 'stats': stats, 'preview': preview, 'examples': examples}
+    report = {
+        'status': 'ok',
+        'created_at_utc': datetime.now(UTC).isoformat(),
+        'inventory_rows': len(rows),
+        'target_limit': limit,
+        'targets_selected': len(targets),
+        'contexts_matched': len(contexts),
+        'rows_touched': touched,
+        'pool_id_prefill': pool_prefill,
+        'stats': stats,
+        'preview': preview,
+        'examples': examples,
+    }
     write(OUT, report)
     return report
 
