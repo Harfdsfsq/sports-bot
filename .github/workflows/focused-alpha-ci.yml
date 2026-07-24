@@ -12,6 +12,7 @@ on:
       - "scripts/build_focused_alpha_decisions*.py"
       - "scripts/patch_focused_alpha_candidate_rank.py"
       - "scripts/publish_controlled_fallback_guarded.py"
+      - "scripts/repair_synthetic_publication_timestamps.py"
       - "scripts/send_harizon_telegram_run_report_v13.py"
       - "scripts/send_harizon_telegram_run_report_v14.py"
       - "tests/test_focused_alpha*.py"
@@ -43,6 +44,7 @@ jobs:
             app/cli.py \
             app/services/focused_alpha.py \
             app/services/focused_alpha_assignments.py \
+            app/services/focused_alpha_assignments_v2.py \
             app/services/focused_alpha_history.py \
             app/services/focused_alpha_learning_ledger.py \
             app/services/focused_alpha_runtime_policy.py \
@@ -55,6 +57,7 @@ jobs:
             scripts/build_focused_alpha_decisions_v2.py \
             scripts/patch_focused_alpha_candidate_rank.py \
             scripts/publish_controlled_fallback_guarded.py \
+            scripts/repair_synthetic_publication_timestamps.py \
             scripts/send_harizon_telegram_run_report_v13.py \
             scripts/send_harizon_telegram_run_report_v14.py
       - name: Ruff Focused Alpha change set
@@ -65,6 +68,7 @@ jobs:
             app/cli.py \
             app/services/focused_alpha.py \
             app/services/focused_alpha_assignments.py \
+            app/services/focused_alpha_assignments_v2.py \
             app/services/focused_alpha_history.py \
             app/services/focused_alpha_learning_ledger.py \
             app/services/focused_alpha_runtime_policy.py \
@@ -77,6 +81,7 @@ jobs:
             scripts/build_focused_alpha_decisions_v2.py \
             scripts/patch_focused_alpha_candidate_rank.py \
             scripts/publish_controlled_fallback_guarded.py \
+            scripts/repair_synthetic_publication_timestamps.py \
             scripts/send_harizon_telegram_run_report_v13.py \
             scripts/send_harizon_telegram_run_report_v14.py \
             tests/test_focused_alpha*.py 2>&1 | tee .data/exports/latest-focused-alpha-ruff.txt
@@ -120,6 +125,7 @@ jobs:
           path: |
             .data/exports/latest-focused-alpha-*.json
             .data/exports/latest-focused-alpha-*.txt
+            .data/exports/latest-synthetic-publication-timestamp-repair.json
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 7
