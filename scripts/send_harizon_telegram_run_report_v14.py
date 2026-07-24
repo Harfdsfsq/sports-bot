@@ -1,12 +1,14 @@
-"""HARIZON report v14: authoritative current-run publication truth.
+"""HARIZON report v14: authoritative current-run publication and lifecycle truth.
 
 Cumulative ledgers are historical state. Current-run publication count comes from the
 fresh runner counters. Ledger rows are only a compatibility fallback when they carry an
 explicit Telegram send timestamp; synthetic ``published_at_utc`` is never send evidence.
+A timed-out run must never reuse an older ``debug-last-run.json`` as current funnel truth.
 """
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -15,6 +17,8 @@ from scripts import send_harizon_telegram_run_report_v13 as v13
 
 EXPORT = Path(".data/exports")
 DEBUG = Path(".logs/debug-last-run.json")
+LIFECYCLE = EXPORT / "latest-main-run-lifecycle.json"
+STEP_STATUS = EXPORT / "latest-run-bot-step-status.json"
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -28,6 +32,13 @@ def _parse_time(value: Any) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
     return parsed.astimezone(UTC)
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace").strip()
+    except Exception:
+        return ""
 
 
 def _sent_row(row: Any) -> bool:
@@ -44,6 +55,7 @@ def _sent_row(row: Any) -> bool:
 
 def _explicit_send_time(row: dict[str, Any]) -> datetime | None:
     """Return only a transport/send timestamp, never a normalized ledger timestamp."""
+
     for key in (
         "telegram_sent_at_utc",
         "telegram_sent_at",
@@ -56,13 +68,97 @@ def _explicit_send_time(row: dict[str, Any]) -> datetime | None:
     return None
 
 
-def _current_run_anchor(now: datetime) -> tuple[datetime, str]:
-    debug = v13._load(DEBUG, {})
-    summary = (
-        debug.get("summary")
-        if isinstance(debug, dict) and isinstance(debug.get("summary"), dict)
-        else {}
+def _debug_summary(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {}
+    summary = payload.get("summary")
+    return summary if isinstance(summary, dict) else {}
+
+
+def _debug_started_at(payload: Any) -> datetime | None:
+    summary = _debug_summary(payload)
+    return _parse_time(
+        summary.get("started_time_utc")
+        or summary.get("started_at_utc")
+        or summary.get("started_time")
     )
+
+
+def _run_lifecycle_truth(now: datetime) -> dict[str, Any]:
+    lifecycle = v13._load(LIFECYCLE, {})
+    lifecycle = lifecycle if isinstance(lifecycle, dict) else {}
+    started = _parse_time(lifecycle.get("started_at_utc"))
+    age_minutes = None
+    if started is not None:
+        age_minutes = max(0.0, (now - started).total_seconds() / 60.0)
+
+    debug = v13._load(DEBUG, {})
+    debug_started = _debug_started_at(debug)
+    fresh_debug = bool(
+        started is not None
+        and debug_started is not None
+        and started - timedelta(minutes=1) <= debug_started <= now + timedelta(minutes=2)
+    )
+
+    step_text = _read_text(STEP_STATUS)
+    step_lower = step_text.lower()
+    status_match = re.search(r"status\s+(\d+)", step_lower)
+    process_status = int(status_match.group(1)) if status_match else None
+    timed_out = "timed out" in step_lower or process_status == 124
+    failed_step = "run bot failed" in step_lower or (
+        process_status is not None and process_status != 0
+    )
+    step_ok = "run bot ok" in step_lower
+    lifecycle_status = str(lifecycle.get("status") or "").strip().lower()
+    current_lifecycle = bool(
+        started is not None
+        and timedelta(0) <= now - started <= timedelta(hours=2)
+    )
+
+    failure_reason = ""
+    if timed_out:
+        failure_reason = "runner_timeout_status_124"
+    elif failed_step:
+        failure_reason = f"runner_failed_status_{process_status or 'unknown'}"
+    elif lifecycle_status in {"failed", "timed_out", "timeout", "error"}:
+        failure_reason = f"runner_{lifecycle_status}"
+    elif current_lifecycle and not fresh_debug and step_ok:
+        failure_reason = "runner_completed_without_fresh_debug"
+    elif (
+        current_lifecycle
+        and not fresh_debug
+        and age_minutes is not None
+        and age_minutes >= 8.0
+    ):
+        failure_reason = "runner_incomplete_without_fresh_debug"
+
+    return {
+        "present": bool(lifecycle),
+        "current": current_lifecycle,
+        "status": lifecycle_status,
+        "started_at_utc": started.isoformat() if started is not None else None,
+        "age_minutes": round(age_minutes, 2) if age_minutes is not None else None,
+        "github_run_id": lifecycle.get("github_run_id"),
+        "github_run_attempt": lifecycle.get("github_run_attempt"),
+        "stale_debug_removed_at_start": bool(lifecycle.get("stale_debug_removed")),
+        "debug_started_at_utc": debug_started.isoformat() if debug_started is not None else None,
+        "fresh_debug": fresh_debug,
+        "step_status_text": step_text[:300],
+        "process_status": process_status,
+        "timed_out": timed_out,
+        "failed": bool(failure_reason),
+        "failure_reason": failure_reason,
+    }
+
+
+def _current_run_anchor(now: datetime) -> tuple[datetime, str]:
+    lifecycle = _run_lifecycle_truth(now)
+    lifecycle_started = _parse_time(lifecycle.get("started_at_utc"))
+    if lifecycle.get("current") and lifecycle_started is not None:
+        return lifecycle_started - timedelta(minutes=1), "latest-main-run-lifecycle.json"
+
+    debug = v13._load(DEBUG, {})
+    summary = _debug_summary(debug)
     parsed = _parse_time(summary.get("started_time_utc") or summary.get("started_at_utc"))
     if parsed is not None and timedelta(0) <= now - parsed <= timedelta(hours=2):
         return parsed - timedelta(minutes=1), "debug.summary.started_time_utc"
@@ -103,11 +199,15 @@ def current_run_sent_rows(
     return result
 
 
-def _debug_truth() -> tuple[dict[str, Any], dict[str, Any], str]:
+def _debug_truth(now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any], str]:
+    current = (now or datetime.now(UTC)).astimezone(UTC)
     payload = v13._load(DEBUG, {})
+    lifecycle = _run_lifecycle_truth(current)
+    if lifecycle.get("current") and not lifecycle.get("fresh_debug"):
+        return {}, {}, str(lifecycle.get("failure_reason") or "stale_debug_ignored")
     if not isinstance(payload, dict):
         return {}, {}, ""
-    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    summary = _debug_summary(payload)
     return payload, summary, str(payload.get("error") or "").strip()
 
 
@@ -147,12 +247,33 @@ def _non_publish_status(payload: dict[str, Any]) -> tuple[str, str]:
     )
 
 
+def _zero_stale_main_funnel(funnel: dict[str, Any]) -> None:
+    for key in (
+        "raw_candidates",
+        "candidates_before_quality",
+        "candidates_after_quality",
+        "quality_passed_count",
+        "passed_candidates",
+        "publishable_candidates",
+        "main_pipeline_published_count",
+    ):
+        if key in funnel or key in {
+            "raw_candidates",
+            "candidates_before_quality",
+            "candidates_after_quality",
+            "publishable_candidates",
+        }:
+            funnel[key] = 0
+    funnel["main_pipeline_published"] = False
+
+
 def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, Any]:
     if not isinstance(payload, dict):
         return {}
     now = (now or datetime.now(UTC)).astimezone(UTC)
+    lifecycle = _run_lifecycle_truth(now)
     anchor, anchor_source = _current_run_anchor(now)
-    debug, summary, error = _debug_truth()
+    debug, summary, debug_error = _debug_truth(now)
     del debug
 
     picks = v13._load(EXPORT / "latest-picks.json", [])
@@ -178,6 +299,10 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
         payload["funnel"] = funnel
     old_main = int(funnel.get("main_pipeline_published_count") or 0)
     fallback_count = int(funnel.get("fallback_published_count") or 0)
+    if lifecycle.get("failed") and not lifecycle.get("fresh_debug"):
+        _zero_stale_main_funnel(funnel)
+        main_count = 0
+        debug_counter_declared = False
     published_count = max(main_count, fallback_count)
     diagnostics = funnel.get("main_pipeline_publication_counter_diagnostics")
     diagnostics = dict(diagnostics) if isinstance(diagnostics, dict) else {}
@@ -198,6 +323,8 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
             "old_main_pipeline_count": old_main,
             "published_at_utc_accepted_as_send_evidence": False,
             "current_run_scope_enforced": True,
+            "main_run_lifecycle": lifecycle,
+            "stale_debug_accepted": False if lifecycle.get("current") else None,
         }
     )
     funnel.update(
@@ -217,6 +344,8 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
     if not isinstance(report_diagnostics, dict):
         report_diagnostics = {}
         payload["diagnostics"] = report_diagnostics
+    report_diagnostics["main_run_lifecycle"] = lifecycle
+    error = str(lifecycle.get("failure_reason") or debug_error).strip()
     if error:
         report_diagnostics["runner_error"] = error
 
@@ -236,11 +365,19 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
                 "top_reason": "fallback_published",
             }
         )
-    elif error:
+    elif lifecycle.get("timed_out"):
         payload.update(
             {
                 "status": "run_failed",
-                "status_ru": "🔴 основной run завершился ошибкой",
+                "status_ru": "🔴 основной run превысил лимит времени",
+                "top_reason": "runner_timeout",
+            }
+        )
+    elif lifecycle.get("failed") or error:
+        payload.update(
+            {
+                "status": "run_failed",
+                "status_ru": "🔴 основной run не сформировал свежий результат",
                 "top_reason": "runner_error",
             }
         )
