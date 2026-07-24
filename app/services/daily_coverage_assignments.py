@@ -99,7 +99,7 @@ def build_assignments(
     run_index: int,
 ) -> dict[str, dict[str, list[str]]]:
     try:
-        from app.services.focused_alpha_assignments import (
+        from app.services.focused_alpha_assignments_v2 import (
             build_focused_assignments,
             enabled,
         )
