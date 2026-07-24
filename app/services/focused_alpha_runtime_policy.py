@@ -3,7 +3,7 @@
 from app.services.focused_alpha_runtime_contract import POLICY, apply
 
 try:
-    from app.services.focused_alpha_accumulation_runtime_patch import install as _install_accumulation
+    from app.services.focused_alpha_accumulation_runtime_patch_v2 import install as _install_accumulation
 
     ACCUMULATION_PATCH = _install_accumulation()
 except Exception as exc:
