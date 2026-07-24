@@ -16,18 +16,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   focused-alpha:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout repository branch
+      - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          ref: feature/focused-alpha-system
-          fetch-depth: 0
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -37,16 +34,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install ruff
-      - name: Commit final lint normalization
-        run: |
-          sed -i '/^from pathlib import Path$/d' scripts/build_focused_alpha_decisions_v2.py
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add scripts/build_focused_alpha_decisions_v2.py
-            git commit -m "Remove unused Focused Alpha v2 import"
-            git push origin HEAD:feature/focused-alpha-system
-          fi
       - name: Compile Focused Alpha modules
         run: |
           python -m py_compile \
