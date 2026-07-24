@@ -430,7 +430,6 @@ def _install(module: Any) -> None:
 
 
 if __name__ == "__main__":
-    _refresh_truth()
-    module = _load_v12()
-    _install(module)
-    raise SystemExit(module.v9.v8.v7.v5.main())
+    from scripts.send_harizon_telegram_run_report_v14 import main as v14_main
+
+    raise SystemExit(v14_main())
