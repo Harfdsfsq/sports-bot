@@ -111,6 +111,13 @@ def install() -> dict[str, Any]:
         )
 
         full_inventory_provider_result = install_full_inventory_providers(PredictionRunner)
+        from app.services.focused_alpha_filter_contract_patch import (
+            install as install_focused_alpha_filter_contract,
+        )
+
+        focused_alpha_filter_contract_result = install_focused_alpha_filter_contract(
+            PredictionRunner
+        )
     except Exception as exc:
         payload = {"status": "import_error", "error": f"{type(exc).__name__}: {exc}"}
         _write(payload)
@@ -147,6 +154,7 @@ def install() -> dict[str, Any]:
         "boundary": boundary_result,
         "evidence_stamp": stamp_result,
         "full_inventory_provider_scope": full_inventory_provider_result,
+        "focused_alpha_filter_contract": focused_alpha_filter_contract_result,
         "publication_contract_relaxed": False,
     }
     _write(payload)
