@@ -1,5 +1,5 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-23T23:05:58.532654+00:00
+UTC: 2026-07-24T01:05:49.827492+00:00
 target_date: 2026-07-24
 canonical_matches: 594
 2+ provider sources: 188
@@ -8,7 +8,7 @@ all 3 primary sources: 31
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=20 ok=9 rows=1123 event_like=1123 unique=338 statuses={"OK": 9, "EMPTY": 11}
+- bzzoiro: commands=20 ok=8 rows=983 event_like=983 unique=338 statuses={"OK": 8, "ERROR": 1, "EMPTY": 11}
 - football_data: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
@@ -24,17 +24,17 @@ all 3 primary sources: 31
 - 2026-07-23T21:30:00+00:00 | Orense SC — Aucas | providers=sstats ids={"sstats": "1519422"}
 - 2026-07-23T21:30:00+00:00 | Leones del Norte — Guayaquil City FC | providers=sstats ids={"sstats": "1519418"}
 - 2026-07-23T22:00:00+00:00 | Bolívar — Gremio | providers=sstats ids={"sstats": "1547774"}
+- 2026-07-23T22:30:00+00:00 | Athletic Club — São Bernardo | providers=sstats ids={"sstats": "1520780"}
 - 2026-07-23T22:30:00+00:00 | Corinthians — remo | providers=sstats ids={"sstats": "1492293"}
 - 2026-07-23T22:30:00+00:00 | Sarmiento Junin — Argentinos JRS | providers=sstats ids={"sstats": "1493015"}
-- 2026-07-23T22:30:00+00:00 | Athletic Club — São Bernardo | providers=sstats ids={"sstats": "1520780"}
 - 2026-07-23T22:30:00+00:00 | Botafogo — Vitoria | providers=sstats ids={"sstats": "1492141"}
 - 2026-07-23T22:30:00+00:00 | Belgrano Cordoba — Rosario Central | providers=sstats ids={"sstats": "1493003"}
 - 2026-07-24T00:00:00+00:00 | Asociacion Deportivo Cali — America de Cali Sa | providers=odds_api_io,sstats ids={"odds_api_io": "72686518", "sstats": "1525741"}
 - 2026-07-24T00:00:00+00:00 | CS Emelec — Mushuc Runa SC | providers=odds_api_io,sstats ids={"odds_api_io": "68687764", "sstats": "1519416"}
 - 2026-07-24T00:00:00+00:00 | CD Walter Ferretti — Diriangen FC Diriamba | providers=odds_api_io ids={"odds_api_io": "72700838"}
 - 2026-07-24T00:30:00+00:00 | Botafogo FC SP — EC Juventude RS | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "68823086", "bzzoiro": "10036", "sstats": "1520782"}
-- 2026-07-24T00:30:00+00:00 | Boca Juniors — CD O´Higgins | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "71798190", "bzzoiro": "207974", "sstats": "1547773"}
 - 2026-07-24T00:30:00+00:00 | Independiente Santa Fe — Caracas FC | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "71798194", "bzzoiro": "207978", "sstats": "1547778"}
+- 2026-07-24T00:30:00+00:00 | Boca Juniors — CD O´Higgins | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "71798190", "bzzoiro": "207974", "sstats": "1547773"}
 - 2026-07-24T00:45:00+00:00 | Defensa y Justicia — CA Aldosivi | providers=odds_api_io,sstats,thesportsdb ids={"odds_api_io": "72529074", "thesportsdb": "2397953", "sstats": "1493004"}
 - 2026-07-24T02:00:00+00:00 | CS Herediano — Puntarenas FC | providers=odds_api_io,sstats ids={"odds_api_io": "72053542", "sstats": "1551648"}
 - 2026-07-24T07:00:00+00:00 | Csm Flacara Moreni — AFC Chindia Targoviste | providers=odds_api_io ids={"odds_api_io": "73107880"}
@@ -65,15 +65,15 @@ all 3 primary sources: 31
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Athletic Club — São Bernardo | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Corinthians — remo | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Sarmiento Junin — Argentinos JRS | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Athletic Club — São Bernardo | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -102,12 +102,12 @@ all 3 primary sources: 31
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Boca Juniors — CD O´Higgins | primary=3 providers=bzzoiro,odds_api_io,sstats
+- Independiente Santa Fe — Caracas FC | primary=3 providers=bzzoiro,odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Independiente Santa Fe — Caracas FC | primary=3 providers=bzzoiro,odds_api_io,sstats
+- Boca Juniors — CD O´Higgins | primary=3 providers=bzzoiro,odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
