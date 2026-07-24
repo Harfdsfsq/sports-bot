@@ -108,8 +108,12 @@ def _accumulate_v2(board: dict[str, Any] | None = None) -> dict[str, Any]:
     result = _ORIGINAL_ACCUMULATE(_canonical_board(board))
     if isinstance(result, dict):
         result["version"] = "focused_alpha_accumulation_v2_exact_evidence_stable_cap"
-        result["identity_policy"] = "sorted_team_pair_kickoff_date_family_selection_point"
-        result["evidence_truth_basis"] = "explicit_provider_and_exact_offer_identities"
+        result["identity_policy"] = (
+            "sorted_team_pair_kickoff_date_family_selection_point"
+        )
+        result["evidence_truth_basis"] = (
+            "explicit_provider_and_exact_offer_identities"
+        )
         result["publication_contract_relaxed"] = False
         result["telegram_publication_enabled"] = False
         try:
@@ -127,8 +131,10 @@ def install() -> dict[str, Any]:
         base.accumulate = _accumulate_v2
         _PATCHED = True
     installed = base.install()
+    accepted_statuses = {"installed", "already_installed"}
+    status = "installed" if installed.get("status") in accepted_statuses else installed.get("status")
     return {
-        "status": "installed" if installed.get("status") in {"installed", "already_installed"} else installed.get("status"),
+        "status": status,
         "base_install": installed,
         "version": "focused_alpha_accumulation_v2_exact_evidence_stable_cap",
         "publication_contract_relaxed": False,
@@ -141,6 +147,7 @@ __all__ = [
     "_bounded_choose",
     "_canonical_board",
     "_canonical_decision_key",
+    "_canonical_row",
     "_strict_evidence",
     "install",
 ]
