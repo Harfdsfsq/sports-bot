@@ -1,27 +1,27 @@
 {
   "budget_limited": true,
   "budget_seconds": 210.0,
-  "created_at_utc": "2026-07-24T15:06:44.350325+00:00",
-  "duration_seconds": 164.56,
+  "created_at_utc": "2026-07-24T21:06:38.480302+00:00",
+  "duration_seconds": 179.7,
   "final": {
-    "context_2plus_sources": 13,
-    "fixture_2plus_sources": 224,
-    "inventory_matches": 330,
+    "context_2plus_sources": 1,
+    "fixture_2plus_sources": 36,
+    "inventory_matches": 300,
     "matrix_matches": 300,
-    "odds_2plus_sources": 120,
-    "ready_for_model": 72,
-    "ready_for_publish": 13,
+    "odds_2plus_sources": 0,
+    "ready_for_model": 14,
+    "ready_for_publish": 0,
     "semantic_duplicate_rows": 0,
-    "semantic_unique_matches": 330
+    "semantic_unique_matches": 300
   },
   "mode": "runbot_discovery_first_prepare_v5_full_bounded",
   "previous_full_prepare": {
-    "age_minutes": 80.62,
-    "created_at_utc": "2026-07-24T13:43:22.519286+00:00",
+    "age_minutes": 119.33,
+    "created_at_utc": "2026-07-24T19:04:18.925879+00:00",
     "full_checkpoint": {
-      "age_minutes": 80.62,
+      "age_minutes": 356.91,
       "checkpoint_path": ".data/exports/latest-runbot-discovery-first-full-prepare.json",
-      "created_at_utc": "2026-07-24T13:43:22.519286+00:00",
+      "created_at_utc": "2026-07-24T15:06:44.350325+00:00",
       "mode": "runbot_discovery_first_prepare_v5_full_bounded",
       "refresh_interval_minutes": 360,
       "reusable": false,
@@ -29,25 +29,25 @@
       "status": "ok_budget_limited",
       "target_date": "2026-07-24"
     },
-    "mode": "runbot_discovery_first_prepare_v5_full_bounded",
+    "mode": "runbot_discovery_first_prepare_v5_incremental_reuse",
     "refresh_interval_minutes": 360,
     "reusable": false,
     "source": "latest_prepare_fallback",
-    "status": "ok_budget_limited",
+    "status": "ok",
     "target_date": "2026-07-24"
   },
   "status": "ok_budget_limited",
   "steps": [
     {
-      "duration_seconds": 0.19,
+      "duration_seconds": 59.72,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
-        "status": "skipped_sufficient_inventory"
+        "status": "rebuilt_below_target"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.49,
+      "duration_seconds": 0.13,
       "name": "semantic_inventory_dedupe_pre",
       "result_summary": {
         "type": "int"
@@ -55,7 +55,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 29.04,
+      "duration_seconds": 17.61,
       "name": "target_expand_pre_discovery",
       "result_summary": {
         "type": "int"
@@ -63,16 +63,11 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 97.66,
+      "duration_seconds": 0.0,
       "name": "provider_day_discovery_canonical_pool_v2",
-      "result_summary": {
-        "canonical_matches": 629,
-        "canonical_with_2plus_primary_sources": 147,
-        "canonical_with_all_3_primary_sources": 20,
-        "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon",
-        "status": "ok"
-      },
-      "status": "ok"
+      "reason": "discovery_budget_reserve",
+      "result_summary": {},
+      "status": "skipped"
     },
     {
       "duration_seconds": 0.0,
@@ -82,33 +77,38 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 34.66,
+      "duration_seconds": 37.87,
       "name": "post_merge_sstats_crosswalk_v2",
       "result_summary": {
-        "match_rate_pct": 67.0,
-        "matched": 201,
+        "match_rate_pct": 75.0,
+        "matched": 225,
         "mode": "sstats_crosswalk_probe_v2_full_matched"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.48,
+      "duration_seconds": 0.13,
       "name": "apply_sstats_crosswalk_ids_to_inventory",
       "result_summary": {
-        "applied": 201,
-        "inventory_matches": 330,
-        "matched_rows_seen": 201,
+        "applied": 225,
+        "inventory_matches": 300,
+        "matched_rows_seen": 225,
         "mode": "sstats_crosswalk_inventory_apply_v1",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 63.88,
       "name": "apply_sstats_deep_inventory_enrichment_v4",
-      "reason": "discovery_budget_reserve",
-      "result_summary": {},
-      "status": "skipped"
+      "result_summary": {
+        "crosswalk_matched": 225,
+        "enriched_matches": 34,
+        "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority",
+        "request_count": 100,
+        "status": "ok"
+      },
+      "status": "ok"
     },
     {
       "duration_seconds": 0.0,
@@ -118,7 +118,7 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.53,
+      "duration_seconds": 0.13,
       "name": "semantic_inventory_dedupe_final",
       "result_summary": {
         "type": "int"
@@ -128,27 +128,27 @@
     {
       "duration_seconds": 0.0,
       "name": "target_expand_final",
-      "reason": "inventory_already_at_or_above_target:330/300",
+      "reason": "inventory_already_at_or_above_target:300/300",
       "result_summary": {},
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.11,
+      "duration_seconds": 0.05,
       "name": "build_source_aware_coverage_matrix",
       "result_summary": {
-        "context_2plus_sources": 13,
-        "fixture_2plus_sources": 224,
+        "context_2plus_sources": 1,
+        "fixture_2plus_sources": 36,
         "matches": 300,
         "matrix_matches": 300,
-        "odds_2plus_sources": 120,
-        "ready_for_model": 72,
-        "ready_for_publish": 13,
+        "odds_2plus_sources": 0,
+        "ready_for_model": 14,
+        "ready_for_publish": 0,
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.12,
+      "duration_seconds": 0.03,
       "name": "inventory_provider_gap_audit",
       "result_summary": {
         "type": "int"
@@ -156,5 +156,5 @@
       "status": "ok"
     }
   ],
-  "target_date": "2026-07-24"
+  "target_date": "2026-07-25"
 }
