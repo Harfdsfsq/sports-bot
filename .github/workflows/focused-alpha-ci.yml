@@ -12,10 +12,10 @@ on:
       - "scripts/build_focused_alpha_decisions*.py"
       - "scripts/patch_focused_alpha_candidate_rank.py"
       - "scripts/publish_controlled_fallback_guarded.py"
+      - "scripts/send_harizon_telegram_run_report_v13.py"
       - "scripts/send_harizon_telegram_run_report_v14.py"
       - "tests/test_focused_alpha*.py"
       - ".github/workflows/focused-alpha-ci.yml"
-      - ".github/workflows/run-bot.yml"
   workflow_dispatch:
 
 permissions:
@@ -40,14 +40,34 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install ruff
-      - name: Wire v14 current-run report
+      - name: Wire v14 through v13 entrypoint
         run: |
-          sed -i 's/send_harizon_telegram_run_report_v13.py/send_harizon_telegram_run_report_v14.py/' .github/workflows/run-bot.yml
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/send_harizon_telegram_run_report_v13.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''if __name__ == "__main__":
+              _refresh_truth()
+              module = _load_v12()
+              _install(module)
+              raise SystemExit(module.v9.v8.v7.v5.main())
+          '''.replace("          ", "")
+          new = '''if __name__ == "__main__":
+              from scripts.send_harizon_telegram_run_report_v14 import main as v14_main
+
+              raise SystemExit(v14_main())
+          '''.replace("          ", "")
+          if old in text:
+              path.write_text(text.replace(old, new), encoding="utf-8")
+          elif "send_harizon_telegram_run_report_v14" not in text:
+              raise SystemExit("v13 entrypoint block not found")
+          PY
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add .github/workflows/run-bot.yml
-            git commit -m "Use current-run publication truth report"
+            git add scripts/send_harizon_telegram_run_report_v13.py
+            git commit -m "Delegate HARIZON report entrypoint to v14"
             git push origin HEAD:fix/focused-alpha-run-contract
           fi
       - name: Compile Focused Alpha modules
@@ -68,6 +88,7 @@ jobs:
             scripts/build_focused_alpha_decisions_v2.py \
             scripts/patch_focused_alpha_candidate_rank.py \
             scripts/publish_controlled_fallback_guarded.py \
+            scripts/send_harizon_telegram_run_report_v13.py \
             scripts/send_harizon_telegram_run_report_v14.py
       - name: Ruff Focused Alpha change set
         run: |
@@ -89,6 +110,7 @@ jobs:
             scripts/build_focused_alpha_decisions_v2.py \
             scripts/patch_focused_alpha_candidate_rank.py \
             scripts/publish_controlled_fallback_guarded.py \
+            scripts/send_harizon_telegram_run_report_v13.py \
             scripts/send_harizon_telegram_run_report_v14.py \
             tests/test_focused_alpha*.py 2>&1 | tee .data/exports/latest-focused-alpha-ruff.txt
       - name: Run Focused Alpha tests
