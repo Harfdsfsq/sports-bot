@@ -1,27 +1,27 @@
 {
   "budget_limited": true,
   "budget_seconds": 240.0,
-  "created_at_utc": "2026-07-24T11:07:37.830476+00:00",
-  "duration_seconds": 197.98,
+  "created_at_utc": "2026-07-24T13:09:03.400886+00:00",
+  "duration_seconds": 255.37,
   "final": {
-    "context_2plus_sources": 0,
-    "fixture_2plus_sources": 241,
-    "inventory_matches": 647,
+    "context_2plus_sources": 10,
+    "fixture_2plus_sources": 246,
+    "inventory_matches": 685,
     "matrix_matches": 300,
-    "odds_2plus_sources": 114,
-    "ready_for_model": 79,
-    "ready_for_publish": 0,
+    "odds_2plus_sources": 88,
+    "ready_for_model": 105,
+    "ready_for_publish": 10,
     "semantic_duplicate_rows": 0,
-    "semantic_unique_matches": 647
+    "semantic_unique_matches": 685
   },
   "mode": "runbot_discovery_first_prepare_v5_full_bounded",
   "previous_full_prepare": {
-    "age_minutes": 116.12,
-    "created_at_utc": "2026-07-24T09:08:12.488260+00:00",
+    "age_minutes": 117.17,
+    "created_at_utc": "2026-07-24T11:07:37.830476+00:00",
     "full_checkpoint": {
-      "age_minutes": 116.12,
+      "age_minutes": 117.17,
       "checkpoint_path": ".data/exports/latest-runbot-discovery-first-full-prepare.json",
-      "created_at_utc": "2026-07-24T09:08:12.488260+00:00",
+      "created_at_utc": "2026-07-24T11:07:37.830476+00:00",
       "mode": "runbot_discovery_first_prepare_v5_full_bounded",
       "refresh_interval_minutes": 15,
       "reusable": false,
@@ -39,7 +39,7 @@
   "status": "ok_budget_limited",
   "steps": [
     {
-      "duration_seconds": 0.18,
+      "duration_seconds": 0.14,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
         "status": "skipped_sufficient_inventory"
@@ -47,7 +47,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.46,
+      "duration_seconds": 0.34,
       "name": "semantic_inventory_dedupe_pre",
       "result_summary": {
         "type": "int"
@@ -55,7 +55,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 28.28,
+      "duration_seconds": 22.22,
       "name": "target_expand_pre_discovery",
       "result_summary": {
         "type": "int"
@@ -63,32 +63,32 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 98.87,
+      "duration_seconds": 81.46,
       "name": "provider_day_discovery_canonical_pool_v2",
       "result_summary": {
-        "canonical_matches": 608,
-        "canonical_with_2plus_primary_sources": 177,
-        "canonical_with_all_3_primary_sources": 25,
+        "canonical_matches": 625,
+        "canonical_with_2plus_primary_sources": 154,
+        "canonical_with_all_3_primary_sources": 22,
         "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 34.08,
+      "duration_seconds": 28.67,
       "name": "merge_discovery_pool_into_inventory",
       "result_summary": {
-        "appended": 325,
-        "canonical_rows_seen": 608,
-        "inventory_matches_after": 647,
-        "matched_existing": 283,
+        "appended": 360,
+        "canonical_rows_seen": 625,
+        "inventory_matches_after": 685,
+        "matched_existing": 265,
         "mode": "provider_day_discovery_inventory_merge_v2_full_pool",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.5,
+      "duration_seconds": 0.4,
       "name": "semantic_inventory_dedupe_post_merge",
       "result_summary": {
         "type": "int"
@@ -96,33 +96,38 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 33.59,
+      "duration_seconds": 27.29,
       "name": "post_merge_sstats_crosswalk_v2",
       "result_summary": {
-        "match_rate_pct": 66.0,
-        "matched": 198,
+        "match_rate_pct": 66.33,
+        "matched": 199,
         "mode": "sstats_crosswalk_probe_v2_full_matched"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.47,
+      "duration_seconds": 0.38,
       "name": "apply_sstats_crosswalk_ids_to_inventory",
       "result_summary": {
-        "applied": 198,
-        "inventory_matches": 647,
-        "matched_rows_seen": 198,
+        "applied": 199,
+        "inventory_matches": 685,
+        "matched_rows_seen": 199,
         "mode": "sstats_crosswalk_inventory_apply_v1",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 93.23,
       "name": "apply_sstats_deep_inventory_enrichment_v4",
-      "reason": "discovery_budget_reserve",
-      "result_summary": {},
-      "status": "skipped"
+      "result_summary": {
+        "crosswalk_matched": 199,
+        "enriched_matches": 48,
+        "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority",
+        "request_count": 150,
+        "status": "ok"
+      },
+      "status": "ok"
     },
     {
       "duration_seconds": 0.0,
@@ -132,7 +137,7 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.51,
+      "duration_seconds": 0.39,
       "name": "semantic_inventory_dedupe_final",
       "result_summary": {
         "type": "int"
@@ -142,27 +147,27 @@
     {
       "duration_seconds": 0.0,
       "name": "target_expand_final",
-      "reason": "inventory_already_at_or_above_target:647/300",
+      "reason": "inventory_already_at_or_above_target:685/300",
       "result_summary": {},
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.11,
+      "duration_seconds": 0.08,
       "name": "build_source_aware_coverage_matrix",
       "result_summary": {
-        "context_2plus_sources": 0,
-        "fixture_2plus_sources": 241,
+        "context_2plus_sources": 10,
+        "fixture_2plus_sources": 246,
         "matches": 300,
         "matrix_matches": 300,
-        "odds_2plus_sources": 114,
-        "ready_for_model": 79,
-        "ready_for_publish": 0,
+        "odds_2plus_sources": 88,
+        "ready_for_model": 105,
+        "ready_for_publish": 10,
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.15,
+      "duration_seconds": 0.12,
       "name": "inventory_provider_gap_audit",
       "result_summary": {
         "type": "int"
