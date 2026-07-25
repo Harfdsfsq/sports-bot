@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-07-25T21:02:43.621054+00:00",
+  "created_at": "2026-07-25T23:03:02.078571+00:00",
   "enabled": true,
   "exports": {
     "ALLSPORTSAPI_ENABLED": "true",
@@ -47,7 +47,7 @@
     "ENABLE_FUTRIXMETRICS_CONTEXT": "true",
     "ENABLE_GNEWS_CONTEXT": "true",
     "ENABLE_NEWSAPI_CONTEXT": "true",
-    "ENABLE_ODDSPAPI": "false",
+    "ENABLE_ODDSPAPI": "true",
     "ENABLE_ODDS_API_IO": "true",
     "ENABLE_SSTATS_CONTEXT": "true",
     "ENABLE_THESPORTSDB_CONTEXT": "true",
@@ -110,12 +110,12 @@
     "NEWSDATA_MAX_REQUESTS_PER_RUN": "10",
     "NEWSDATA_PER_RUN_MAX": "10",
     "NEWS_CONTEXT_CACHE_TTL_MINUTES": "240",
-    "ODDSPAPI_ENABLED": "false",
-    "ODDSPAPI_MATCH_LIMIT": "0",
-    "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
+    "ODDSPAPI_ENABLED": "true",
+    "ODDSPAPI_MATCH_LIMIT": "6",
+    "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "1",
     "ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES": "360",
-    "ODDSPAPI_PER_RUN_MAX": "0",
-    "ODDSPAPI_TOURNAMENT_LIMIT": "0",
+    "ODDSPAPI_PER_RUN_MAX": "1",
+    "ODDSPAPI_TOURNAMENT_LIMIT": "1",
     "ODDS_API_IO_ACCOUNT1_MAX_REQUESTS_PER_RUN": "40",
     "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "40",
     "ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN": "40",
@@ -243,8 +243,8 @@
       "reserve_tokens": 6,
       "role": "form_xg_context",
       "skip_reason": null,
-      "tokens_after": 6.948,
-      "tokens_before": 12.948
+      "tokens_after": 6.963,
+      "tokens_before": 12.963
     },
     {
       "bucket_max": 78.0,
@@ -259,8 +259,8 @@
       "reserve_tokens": 6,
       "role": "football_context",
       "skip_reason": null,
-      "tokens_after": 68.473,
-      "tokens_before": 74.473
+      "tokens_after": 68.99,
+      "tokens_before": 74.99
     },
     {
       "bucket_max": 160.0,
@@ -281,8 +281,8 @@
     {
       "bucket_max": 6.0,
       "daily_budget": 6.0,
-      "enabled_for_run": false,
-      "granted": 0,
+      "enabled_for_run": true,
+      "granted": 1,
       "minute_spacing": 240,
       "per_run_max": 1,
       "provider": "oddspapi",
@@ -290,9 +290,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "odds_fallback",
-      "skip_reason": "spacing_active:0.4m",
-      "tokens_after": 5.998,
-      "tokens_before": 5.998
+      "skip_reason": null,
+      "tokens_after": 5.0,
+      "tokens_before": 6.0
     },
     {
       "bucket_max": 360.0,
@@ -339,8 +339,8 @@
       "reserve_tokens": 18,
       "role": "mapping_context",
       "skip_reason": null,
-      "tokens_after": 153.917,
-      "tokens_before": 171.917
+      "tokens_after": 155.969,
+      "tokens_before": 173.969
     },
     {
       "bucket_max": 96.0,
@@ -371,8 +371,8 @@
       "reserve_tokens": 6,
       "role": "live_scores_match_context",
       "skip_reason": null,
-      "tokens_after": 68.473,
-      "tokens_before": 74.473
+      "tokens_after": 68.99,
+      "tokens_before": 74.99
     },
     {
       "bucket_max": 39.0,
@@ -419,8 +419,8 @@
       "reserve_tokens": 1,
       "role": "rapidapi_probe_fallback",
       "skip_reason": null,
-      "tokens_after": 1.747,
-      "tokens_before": 1.747
+      "tokens_after": 1.914,
+      "tokens_before": 1.914
     },
     {
       "bucket_max": 1680.0,
@@ -578,9 +578,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "rating_cache",
-      "skip_reason": "spacing_active:1200.3m",
-      "tokens_after": 1.131,
-      "tokens_before": 1.131
+      "skip_reason": "spacing_active:1080.0m",
+      "tokens_after": 1.214,
+      "tokens_before": 1.214
     },
     {
       "bucket_max": 3.0,
@@ -594,9 +594,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "historical_csv_cache",
-      "skip_reason": "spacing_active:1200.3m",
-      "tokens_after": 1.131,
-      "tokens_before": 1.131
+      "skip_reason": "spacing_active:1080.0m",
+      "tokens_after": 1.214,
+      "tokens_before": 1.214
     },
     {
       "bucket_max": 120.0,
@@ -615,7 +615,7 @@
       "tokens_before": 120.0
     }
   ],
-  "providers_enabled_for_run": 22,
+  "providers_enabled_for_run": 23,
   "recovery_version": "pdf-free-limits-2026-05-05-v3",
   "source_document": "api_free_limits_ru.pdf / api_free_limits_ru.docx, checked 2026-05-05",
   "state_path": ".data/provider_quota_governor_state.json"
