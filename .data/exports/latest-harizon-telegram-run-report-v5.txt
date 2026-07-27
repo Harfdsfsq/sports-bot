@@ -3,29 +3,29 @@
 • Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 193/300 матчей (цель: 300 лучших, добор каждый run; shortfall 107; target-expand stage 194/300, shortfall 106; status partial_known_rows_only). Runtime rows processed: 0 (это не размер inventory).
-• 1+ линия: 170/193 (88%) | 1+ контекст: 152/193 (78%)
-• 2+ букмекера: 110/193 (56%)
+• Инвентарь дня: собрано 66/300 матчей (цель: 300 лучших, добор каждый run; shortfall 234; target-expand stage 65/300, shortfall 235; status partial_known_rows_only). Runtime rows processed: 0 (это не размер inventory).
+• 1+ линия: 41/66 (62%) | 1+ контекст: 47/66 (71%)
+• 2+ букмекера: 0/66 (0%)
 • Odds-api offer snapshot: rows 162, matches 1, same-side 2+ books 1
-• 2+ независимых источника линий: 0/193 (0%) — strict metric для A/B-tier.
-• 2+ независимых контекста: 0/193 (0%)
-• Готово для модели: 143/193 (74%)
+• 2+ независимых источника линий: 0/66 (0%) — strict metric для A/B-tier.
+• 2+ независимых контекста: 0/66 (0%)
+• Готово для модели: 40/66 (60%)
 
-• Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются. До полного 300/300 осталось: 193.
+• Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются. До полного 300/300 осталось: 66.
 
 🏷️ A/B-tier публикация
-• A-tier coverage-ready: 0/193 | main опубликовано: 0
+• A-tier coverage-ready: 0/66 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier coverage-ready: 0/193 | fallback опубликовано: 0
+• B-tier coverage-ready: 0/66 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста: 0/193; B-cover: 0/193.
+• Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста: 0/66; B-cover: 0/66.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 88; pending 14; duplicates removed 354; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 2
+• Pre-kickoff проверок: 3 | матчей без следующего регулярного run: 3
 • Line guard: увидел 16, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -36,7 +36,7 @@
 📡 Провайдеры: запросы и полезные данные
 • odds-api.io: events req 0, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
 • Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 34; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 39; team-form 0; direct 0; ошибок 0.
 • SportLogic: disabled_by_env; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.
 • Комбинации источников линий: н/д
 
@@ -50,11 +50,11 @@
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/2 book/1 context.
 • Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 0; top: нет clean-кандидатов после снятия daily cap.
 • A-tier blockers: n/a; quality sources n/a; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
-• Inventory target-expand stage: 194/300; shortfall 106; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 2; normalized 110→110; gap after 0.
+• Inventory target-expand stage: 65/300; shortfall 235; status partial_known_rows_only.
+• Bookmaker mapping repair: raw 2+ 2; normalized 0→0; gap after 2.
 • Bzzoiro overlap bridge: offers 0; match-overlap 0; same-bucket overlap 0.
-• Fresh B-cover diagnostic: rows 143; with current offer 0; without current offer 143; active 40; active with offer 0; fresh buckets 92; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 0; top skips promotion_skip_no_offer_bucket 143.
+• Fresh B-cover diagnostic: rows 40; with current offer 0; without current offer 40; active 40; active with offer 0; fresh buckets 92; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 0; top skips promotion_skip_no_offer_bucket 39.
 • Rescue xG/confirmation enrichment: candidates 88; xG added 0; confirmation added 0; missing context match 88.
 
 📌 Что это значит
@@ -62,7 +62,7 @@
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 30296348686
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/30296348686
-• Artifact: run-bot-30296348686
+• Run ID: 30305030600
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/30305030600
+• Artifact: run-bot-30305030600
 • workflow run-bot, attempt 1
