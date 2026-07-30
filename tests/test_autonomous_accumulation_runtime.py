@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import app.services.autonomous_accumulation_runtime as runtime
-
-UTC = timezone.utc
 
 
 @dataclass
@@ -150,3 +148,39 @@ def test_market_derived_candidate_is_shadow_only(monkeypatch) -> None:
     reasons = runtime._safety(candidate, object())
 
     assert any(reason.startswith("shadow_only_model_mode") for reason in reasons)
+
+
+def test_rules_b_tier_accepts_one_odds_and_one_core_context(monkeypatch) -> None:
+    monkeypatch.setattr(
+        runtime,
+        "_candidate_coverage",
+        lambda candidate, settings: {
+            "odds_sources_count": 1,
+            "books_count": 2,
+            "core_context_sources_count": 1,
+        },
+    )
+    settings = SimpleNamespace(
+        min_sources_publish=1,
+        min_books_publish=2,
+        min_context_sources_publish=1,
+    )
+    candidate = SimpleNamespace(
+        model_mode="xg_total",
+        family="totals",
+        expected_home=1.55,
+        expected_away=1.05,
+        model_probability=0.58,
+        market_probability=0.52,
+        ev_pct=4.0,
+        confidence=70.0,
+        source_summary={},
+        diagnostics={},
+        analysis={},
+    )
+
+    reasons = runtime._safety(candidate, settings)
+
+    assert not any(reason.startswith("strict_odds_sources_below") for reason in reasons)
+    assert not any(reason.startswith("strict_bookmakers_below") for reason in reasons)
+    assert not any(reason.startswith("strict_core_context_sources_below") for reason in reasons)

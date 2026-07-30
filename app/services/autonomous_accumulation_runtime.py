@@ -425,12 +425,15 @@ def _safety(candidate: Any, settings: Any) -> list[str]:
         reasons.append(f"shadow_only_model_mode:{mode or 'unknown'}")
     if family not in _csv("AUTONOMOUS_PUBLIC_FAMILIES", PUBLIC_FAMILIES):
         reasons.append(f"shadow_only_market_family:{family or 'unknown'}")
-    if int(coverage.get("odds_sources_count") or 0) < 2:
-        reasons.append("strict_odds_sources_below_2")
-    if int(coverage.get("books_count") or 0) < 2:
-        reasons.append("strict_bookmakers_below_2")
-    if int(coverage.get("core_context_sources_count") or 0) < 2:
-        reasons.append("strict_core_context_sources_below_2")
+    min_odds_sources = max(1, int(getattr(settings, "min_sources_publish", 2) or 2))
+    min_books = max(1, int(getattr(settings, "min_books_publish", 2) or 2))
+    min_context_sources = max(1, int(getattr(settings, "min_context_sources_publish", 2) or 2))
+    if int(coverage.get("odds_sources_count") or 0) < min_odds_sources:
+        reasons.append(f"strict_odds_sources_below_{min_odds_sources}")
+    if int(coverage.get("books_count") or 0) < min_books:
+        reasons.append(f"strict_bookmakers_below_{min_books}")
+    if int(coverage.get("core_context_sources_count") or 0) < min_context_sources:
+        reasons.append(f"strict_core_context_sources_below_{min_context_sources}")
     if mode in PUBLIC_MODES:
         if getattr(candidate, "expected_home", None) is None or getattr(candidate, "expected_away", None) is None:
             reasons.append("xg_inputs_missing")

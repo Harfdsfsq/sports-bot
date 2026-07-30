@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.config import Settings
 from app.schemas import Match, MatchContext, Offer
 from app.services.evidence import build_context_bundles, build_match_serving
 from app.services.model import CandidateFactory
-
-UTC = timezone.utc
 
 
 def _match() -> Match:
@@ -84,6 +82,12 @@ def test_context_bundle_preserves_provider_observations_and_serving_counts():
 
 def test_candidate_factory_accepts_context_bundle_adapter(monkeypatch):
     monkeypatch.setenv("PUBLISH_MIN_ODDS_SOURCES", "2")
+    monkeypatch.setenv("TOTALS_MIN_EDGE_PCT", "0.1")
+    monkeypatch.setenv("TOTALS_MIN_EV_PCT", "0.1")
+    monkeypatch.setenv("TOTALS_OVER25_MIN_EDGE_PCT", "0.1")
+    monkeypatch.setenv("TOTALS_OVER25_MIN_EV_PCT", "0.1")
+    monkeypatch.setenv("TOTALS_OVER25_MIN_SUM_XG", "2.0")
+    monkeypatch.setenv("TOTALS_OVER25_MIN_ADJUSTED_PROBABILITY", "0.45")
     match = _match()
     observed_at = datetime(2026, 6, 1, 12, 0, tzinfo=UTC)
     context_maps = {
