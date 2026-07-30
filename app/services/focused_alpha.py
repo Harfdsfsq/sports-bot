@@ -350,6 +350,15 @@ def _league_key(row: dict[str, Any]) -> str:
     return str(row.get("league_name") or "unknown").strip().lower()
 
 
+def _kickoff_priority(hours: float) -> tuple[int, float]:
+    """Return the rules-defined nearest-first collection bucket."""
+
+    for index, upper in enumerate((4.0, 8.0, 12.0, 16.0, 20.0, 24.0, 36.0)):
+        if hours <= upper:
+            return index, hours
+    return 7, hours
+
+
 def select_focus_cohort(
     ranked_rows: list[dict[str, Any]],
     *,
@@ -394,6 +403,7 @@ def select_focus_cohort(
         if league_counts[league] >= max_per_league:
             rejected["league_diversity_cap"] += 1
             continue
+        row["focused_alpha_selection_lane"] = "quality"
         selected.append(row)
         selected_keys.add(key)
         league_counts[league] += 1
@@ -418,19 +428,114 @@ def select_focus_cohort(
                 continue
             row = dict(row)
             row["focused_alpha_exploration"] = True
+            row["focused_alpha_selection_lane"] = "exploration"
             selected.append(row)
             selected_keys.add(key)
             league_counts[league] += 1
             if len(selected) >= maximum:
                 break
 
+    quality_selected_rows = len(selected)
+    bootstrap_slots = _limit(
+        "FOCUSED_ALPHA_BOOTSTRAP_MATCHES",
+        24,
+        0,
+        maximum,
+    )
+    bootstrap_max_hours = float(
+        _limit("FOCUSED_ALPHA_BOOTSTRAP_MAX_HOURS", 36, 4, 72)
+    )
+    active_provider_rows = sum(
+        1
+        for row, detail in scored
+        if row.get("provider_assignment_eligible") is not False
+        and 0.33
+        <= as_float(detail.get("hours_to_kickoff"), 999.0)
+        <= bootstrap_max_hours
+    )
+    bootstrap_selected: list[dict[str, Any]] = []
+
+    # Cold-start recovery: a match cannot be required to already have providers
+    # before it is allowed to call those providers. This lane only chooses a
+    # bounded enrichment cohort; all value, price-integrity, coverage and
+    # line-movement publication guards remain authoritative.
+    if not selected and bootstrap_slots > 0:
+        bootstrap_candidates = sorted(
+            scored,
+            key=lambda pair: (
+                *_kickoff_priority(
+                    as_float(pair[1].get("hours_to_kickoff"), 999.0)
+                ),
+                sum(
+                    bool((pair[1].get("flags") or {}).get(name))
+                    for name in ("youth", "reserve", "friendly")
+                ),
+                -(
+                    len((pair[1].get("evidence") or {}).get("odds_sources") or [])
+                    + len(
+                        (pair[1].get("evidence") or {}).get("context_sources")
+                        or []
+                    )
+                ),
+                -as_float(pair[1].get("focused_alpha_score")),
+                str(pair[0].get("match_key") or ""),
+            ),
+        )
+        for row, detail in bootstrap_candidates:
+            key = str(row.get("match_key") or "")
+            hours = as_float(detail.get("hours_to_kickoff"), 999.0)
+            if (
+                not key
+                or key in selected_keys
+                or row.get("provider_assignment_eligible") is False
+                or hours < 0.33
+                or hours > bootstrap_max_hours
+                or not row.get("home_team")
+                or not row.get("away_team")
+                or not row.get("kickoff_utc")
+            ):
+                continue
+            league = _league_key(row)
+            if league_counts[league] >= max_per_league:
+                continue
+            item = dict(row)
+            item["focused_alpha_bootstrap"] = True
+            item["focused_alpha_selection_lane"] = "bootstrap_enrichment"
+            item["focused_alpha_bootstrap_reason"] = (
+                "no_quality_cohort_before_provider_enrichment"
+            )
+            selected.append(item)
+            bootstrap_selected.append(item)
+            selected_keys.add(key)
+            league_counts[league] += 1
+            if len(bootstrap_selected) >= bootstrap_slots or len(selected) >= maximum:
+                break
+
     phase = phase_targets()
+    health_status = "ok"
+    if active_provider_rows > 0 and not selected:
+        health_status = "blocked_active_inventory_without_provider_targets"
+    elif bootstrap_selected:
+        health_status = "cold_start_bootstrap_active"
     report = {
-        "status": "ok",
+        "status": health_status,
         "created_at_utc": current.isoformat(),
         "mode": "focused_alpha_information_value",
         "discovery_rows_seen": len(ranked_rows),
         "selected_rows": len(selected),
+        "quality_selected_rows": quality_selected_rows,
+        "bootstrap_selected_rows": len(bootstrap_selected),
+        "bootstrap_triggered": bool(bootstrap_selected),
+        "bootstrap_reason": (
+            "no_quality_cohort_before_provider_enrichment"
+            if bootstrap_selected
+            else None
+        ),
+        "bootstrap_match_keys": [
+            row["match_key"] for row in bootstrap_selected
+        ],
+        "bootstrap_max_hours": bootstrap_max_hours,
+        "active_provider_eligible_rows": active_provider_rows,
         "selected_unique_keys": len(selected_keys),
         "max_matches": maximum,
         "minimum_score": minimum_score,
@@ -457,6 +562,8 @@ def select_focus_cohort(
                 "hours_to_kickoff": row.get("hours_to_kickoff"),
                 "focused_alpha_score": row.get("focused_alpha_score"),
                 "focused_alpha_exploration": bool(row.get("focused_alpha_exploration")),
+                "focused_alpha_bootstrap": bool(row.get("focused_alpha_bootstrap")),
+                "selection_lane": row.get("focused_alpha_selection_lane"),
                 "components": (row.get("focused_alpha") or {}).get("components"),
                 "evidence": (row.get("focused_alpha") or {}).get("evidence"),
                 "reasons": (row.get("focused_alpha") or {}).get("reasons"),

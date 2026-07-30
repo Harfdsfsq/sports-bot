@@ -13,6 +13,7 @@ from app.services.daily_coverage_common import (
     PLAN_PATH,
     PROVIDER_TIMEOUTS,
     app_timezone,
+    as_float,
     as_int,
     atomic_write,
     canonical_source,
@@ -106,6 +107,35 @@ def _focus_selection(
         }
 
 
+def _assignment_total(assignments: dict[str, Any]) -> int:
+    return sum(
+        len(keys)
+        for roles in assignments.values()
+        if isinstance(roles, dict)
+        for keys in roles.values()
+        if isinstance(keys, list)
+    )
+
+
+def _active_provider_rows(rows: list[dict[str, Any]]) -> int:
+    collection_hours = max(
+        4.0,
+        as_float(
+            os.getenv("HARIZON_DATA_COLLECTION_WINDOW_HOURS")
+            or os.getenv("DATA_COLLECTION_WINDOW_HOURS"),
+            36.0,
+        ),
+    )
+    return sum(
+        1
+        for row in rows
+        if row.get("provider_assignment_eligible") is not False
+        and 0.33
+        <= as_float(row.get("hours_to_kickoff"), 999.0)
+        <= collection_hours
+    )
+
+
 def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
     current = (now or datetime.now(UTC)).astimezone(UTC)
     date_key = target_date(current)
@@ -122,6 +152,13 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
     )
     target_count = len(targets)
     assignments = build_assignments(targets, run_index)
+    assignment_total = _assignment_total(assignments)
+    active_provider_rows = _active_provider_rows(ranked)
+    assignment_health = "ok"
+    if active_provider_rows > 0 and target_count == 0:
+        assignment_health = "blocked_active_inventory_without_focus_targets"
+    elif target_count > 0 and assignment_total == 0:
+        assignment_health = "blocked_focus_targets_without_provider_assignments"
     os.environ["SSTATS_PARI_DETAIL_MATCH_LIMIT"] = str(
         len(assignments["sstats_pari"]["offers"])
     )
@@ -131,7 +168,11 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
         len(assignments.get("clubelo", {}).get("context", []))
     )
     plan = {
-        "status": "ok" if ranked else "inventory_missing_or_empty",
+        "status": (
+            "inventory_missing_or_empty"
+            if not ranked
+            else assignment_health
+        ),
         "created_at_utc": current.isoformat(),
         "date_local": date_key,
         "inventory_path": str(inventory_path) if inventory_path else None,
@@ -149,6 +190,13 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
         "target_coverage_before": coverage_summary(targets),
         "target_match_keys": [row["match_key"] for row in targets],
         "assignments": assignments,
+        "provider_assignment_health": {
+            "status": assignment_health,
+            "active_provider_eligible_rows": active_provider_rows,
+            "focused_targets": target_count,
+            "provider_role_assignments": assignment_total,
+            "silent_empty_assignments_allowed": False,
+        },
         "focused_alpha": focus_report,
         "coverage_objective": (
             "maximize_expected_information_and_risk_adjusted_decision_quality"
@@ -174,6 +222,8 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
                     "context_deficit",
                     "focused_alpha_score",
                     "focused_alpha_exploration",
+                    "focused_alpha_bootstrap",
+                    "focused_alpha_selection_lane",
                 )
             }
             for row in ranked

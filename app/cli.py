@@ -135,11 +135,10 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
             continue
         object.__setattr__(settings, attr_name, value)
 
-    # HARIZON uses a narrow 2h publication window, but provider coverage needs a
-    # wider lookahead so odds/context are collected before the final pre-kickoff
-    # run. app.cli is only used for the main data/model pass; controlled fallback
-    # is published later by a separate guarded script that still reads
-    # CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS=2 and the daily cap.
+    # Provider coverage has a wider lookahead than publication. Keep the runner's
+    # publish window narrow: the full-horizon provider patch uses the collection
+    # window independently and must not turn a 36h data horizon into a 36h
+    # Telegram publication horizon.
     data_window_raw = _first_env_value(
         'HARIZON_DATA_COLLECTION_WINDOW_HOURS',
         'DATA_COLLECTION_WINDOW_HOURS',
@@ -156,11 +155,15 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
         except Exception:
             data_window_hours = 0
         if data_window_hours > int(getattr(settings, 'publish_window_hours', 0) or 0):
-            object.__setattr__(settings, 'publish_window_hours', data_window_hours)
-            if _parse_bool(os.getenv('HARIZON_DISABLE_MAIN_PUBLICATION_FOR_DATA_WINDOW', 'true')):
+            disable_main_publication = _parse_bool(
+                os.getenv('HARIZON_DISABLE_MAIN_PUBLICATION_FOR_DATA_WINDOW', 'false')
+            )
+            if disable_main_publication:
                 object.__setattr__(settings, 'prediction_publication_enabled', False)
             os.environ['HARIZON_EFFECTIVE_DATA_COLLECTION_WINDOW_HOURS'] = str(data_window_hours)
-            os.environ.setdefault('HARIZON_MAIN_PUBLICATION_DISABLED_FOR_DATA_WINDOW', 'true')
+            os.environ['HARIZON_MAIN_PUBLICATION_DISABLED_FOR_DATA_WINDOW'] = (
+                'true' if disable_main_publication else 'false'
+            )
     return settings
 
 

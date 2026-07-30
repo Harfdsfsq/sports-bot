@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -18,7 +18,7 @@ def test_inventory_priority_ignores_stale_debug_timestamp(tmp_path, monkeypatch)
     mod = importlib.import_module("scripts.update_day_inventory_priority_and_line_state")
     now = mod.now_utc_from_debug()
 
-    assert now == datetime(2026, 5, 22, 15, 11, tzinfo=timezone.utc)
+    assert now == datetime(2026, 5, 22, 15, 11, tzinfo=UTC)
 
 
 def test_inventory_priority_recomputes_near_kickoff_minutes(tmp_path, monkeypatch):
@@ -114,3 +114,4 @@ def test_run_bot_workflow_uses_rules_b_tier_and_sportlogic():
     assert 'ENABLE_SPORTLOGIC: "true"' in workflow
     assert 'SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "4"' in workflow
     assert "latest-run-bot-step-status.json" in workflow
+    assert 'exit "${run_status}"' in workflow

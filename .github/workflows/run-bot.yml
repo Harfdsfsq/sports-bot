@@ -362,11 +362,13 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p .data/exports artifacts/run-bot
+          run_status=0
           echo "run-bot dispatch mode=${CRONJOB_RUN_MODE} effective RUN_MODE=${RUN_MODE} start $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee .data/exports/latest-run-bot-step-status.json
           if timeout 600s python -u -m app.cli run-once 2>&1 | tee .data/exports/latest-run-bot.log; then
             echo "run bot ok" | tee .data/exports/latest-run-bot-step-status.json
           else
             status=$?
+            run_status=${status}
             echo "run bot failed or timed out with status ${status}" | tee .data/exports/latest-run-bot-step-status.json
           fi
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
@@ -384,6 +386,7 @@ jobs:
           cp .data/day_inventory/latest.json artifacts/run-bot/day_inventory/latest.json 2>/dev/null || true
           cp .data/day_inventory/current.json artifacts/run-bot/day_inventory/current.json 2>/dev/null || true
           cp .data/day_inventory/today.json artifacts/run-bot/day_inventory/today.json 2>/dev/null || true
+          exit "${run_status}"
 
       - name: Persist movement watchlist and diagnostics
         if: always()

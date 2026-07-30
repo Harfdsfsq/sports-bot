@@ -65,3 +65,32 @@ def test_one_plus_one_match_receives_information_gain_priority() -> None:
 
     assert detail["evidence"]["expected_enrichment_gain_score"] > 0
     assert "high_expected_enrichment_gain" in detail["reasons"]
+
+
+def test_cold_start_selects_bounded_nearest_first_bootstrap(monkeypatch) -> None:
+    monkeypatch.setenv("FOCUSED_ALPHA_MIN_MATCH_SCORE", "44")
+    monkeypatch.setenv("FOCUSED_ALPHA_EXPLORATION_SLOTS", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_BOOTSTRAP_MATCHES", "2")
+    monkeypatch.setenv("FOCUSED_ALPHA_BOOTSTRAP_MAX_HOURS", "36")
+    monkeypatch.setattr(focused_alpha, "atomic_write", lambda *args, **kwargs: None)
+    history = {"live_learning_ready": False, "settled_rows": 0, "by_league": {}}
+    rows = [
+        _row("Far", "weak"),
+        _row("Near", "weak"),
+        _row("Middle", "weak"),
+    ]
+    rows[0]["hours_to_kickoff"] = 18.0
+    rows[1]["hours_to_kickoff"] = 3.0
+    rows[2]["hours_to_kickoff"] = 7.0
+
+    result = focused_alpha.select_focus_cohort(
+        rows,
+        now=datetime(2026, 7, 24, tzinfo=UTC),
+        history_report=history,
+    )
+
+    assert [row["home_team"] for row in result["rows"]] == ["Near", "Middle"]
+    assert all(row["focused_alpha_bootstrap"] for row in result["rows"])
+    assert result["report"]["quality_selected_rows"] == 0
+    assert result["report"]["bootstrap_selected_rows"] == 2
+    assert result["report"]["status"] == "cold_start_bootstrap_active"

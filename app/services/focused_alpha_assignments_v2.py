@@ -187,6 +187,13 @@ def _german_competition(row: dict[str, Any]) -> bool:
     )
 
 
+def _kickoff_bucket(hours: float) -> int:
+    for index, upper in enumerate((4.0, 8.0, 12.0, 16.0, 20.0, 24.0, 36.0)):
+        if hours <= upper:
+            return index
+    return 7
+
+
 def _load(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8", errors="replace"))
@@ -336,11 +343,11 @@ def build_focused_assignments(
     reasons: Counter[str] = Counter()
     routing_sample: list[dict[str, Any]] = []
 
-    odds_lane = _limit("FOCUSED_ALPHA_ODDS_REFRESH_MATCHES", 40, 10, 100)
+    odds_lane = _limit("FOCUSED_ALPHA_ODDS_REFRESH_MATCHES", 40, 1, 100)
     double_odds_lane = _limit(
         "FOCUSED_ALPHA_DOUBLE_ODDS_REFRESH_MATCHES", 24, 0, odds_lane
     )
-    context_lane = _limit("FOCUSED_ALPHA_CONTEXT_ENRICH_MATCHES", 30, 5, 80)
+    context_lane = _limit("FOCUSED_ALPHA_CONTEXT_ENRICH_MATCHES", 30, 1, 80)
     double_context_lane = _limit(
         "FOCUSED_ALPHA_DOUBLE_CONTEXT_MATCHES", 15, 0, context_lane
     )
@@ -372,9 +379,19 @@ def build_focused_assignments(
         ("sportlogic", "context"): 0,
     }
 
+    bootstrap_priority = any(
+        bool(row.get("focused_alpha_bootstrap"))
+        for row in rows
+        if isinstance(row, dict)
+    )
     ordered = sorted(
         [row for row in rows if isinstance(row, dict)],
         key=lambda row: (
+            (
+                _kickoff_bucket(as_float(row.get("hours_to_kickoff"), 999.0))
+                if bootstrap_priority
+                else 0
+            ),
             -as_float(row.get("focused_alpha_score")),
             as_float(row.get("hours_to_kickoff"), 999.0),
             str(row.get("match_key") or ""),
@@ -469,6 +486,11 @@ def build_focused_assignments(
         "status": "ok",
         "created_at_utc": now.isoformat(),
         "mode": "fresh_market_then_bounded_context",
+        "priority_mode": (
+            "nearest_kickoff_bucket_first"
+            if bootstrap_priority
+            else "focused_alpha_score_first"
+        ),
         "rows_seen": len(ordered),
         "odds_refresh_lane_rows": min(len(ordered), odds_lane),
         "double_odds_lane_rows": min(len(ordered), double_odds_lane),
