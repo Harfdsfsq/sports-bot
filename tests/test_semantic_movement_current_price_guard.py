@@ -188,6 +188,59 @@ def test_zilina_current_price_and_confirmed_movement_pass(
     assert guard.semantic_integrity_reasons(candidate, {}) == []
 
 
+def test_match_total_does_not_use_team_total_price(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    kickoff = "2026-07-31T00:00:00+00:00"
+    offers = [
+        {
+            "home_team": "Independiente Rivadavia",
+            "away_team": "CA Huracan",
+            "commence_time": kickoff,
+            "family": "totals",
+            "market_name": "total",
+            "selection": "over",
+            "point": 1.5,
+            "bookmaker": "Unibet",
+            "price": 1.60,
+        },
+        {
+            "home_team": "Independiente Rivadavia",
+            "away_team": "CA Huracan",
+            "commence_time": kickoff,
+            "family": "teamTotals",
+            "market_name": "team total away",
+            "selection": "over",
+            "point": 1.5,
+            "bookmaker": "Unibet",
+            "price": 4.60,
+        },
+    ]
+    _reset(monkeypatch, tmp_path, offers, {})
+    monkeypatch.setenv("PUBLISH_REQUIRE_LINE_MOVEMENT", "false")
+    candidate = {
+        "match_key": "soccer|independiente_rivadavia|ca_huracan|2026-07-31",
+        "home_team": "Independiente Rivadavia",
+        "away_team": "CA Huracan",
+        "commence_time": kickoff,
+        "family": "totals",
+        "selection": "Больше",
+        "point": 1.5,
+        "bookmaker": "Unibet",
+        "odds": 1.60,
+    }
+
+    diagnostics: dict[str, Any] = {}
+    reasons = guard.semantic_integrity_reasons(candidate, diagnostics)
+
+    assert not any(
+        reason.startswith("semantic_selected_price_not_current") for reason in reasons
+    )
+    assert diagnostics["semantic_current_price_guard"]["matching_offers"] == 1
+    assert diagnostics["semantic_current_price_guard"]["current_price"] == 1.60
+
+
 def test_install_sanitizes_rescue_and_deduplicates_semantic_aliases(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

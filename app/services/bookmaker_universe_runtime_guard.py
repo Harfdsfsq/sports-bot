@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 
-BOOKMAKER_UNIVERSE = "Bet365,Unibet,Betfair Exchange,Sbobet"
+BOOKMAKER_UNIVERSE = (
+    "Bet365,Unibet,William Hill,Bwin,Betfair Exchange,Sbobet"
+)
 
 ALIASES = {
     "BOOKMAKERS": BOOKMAKER_UNIVERSE,
@@ -16,8 +18,8 @@ ALIASES = {
     "ODDS_API_IO_BOOKMAKERS": "Bet365,Unibet",
     "ODDS_API_IO_BOOKMAKERS_1": "Bet365,Unibet",
     "ODDS_API_IO_BOOKMAKERS_ACCOUNT1": "Bet365,Unibet",
-    "ODDS_API_IO_BOOKMAKERS_2": "Betfair Exchange,Sbobet",
-    "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
+    "ODDS_API_IO_BOOKMAKERS_2": "William Hill,Bwin",
+    "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "William Hill,Bwin",
     # Actual Settings aliases.
     "MIN_BOOKS_PUBLISH": "2",
     "MIN_SOURCES_PUBLISH": "1",

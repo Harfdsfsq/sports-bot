@@ -15,7 +15,10 @@ from app.services.telegram import TelegramPublisher
 from app.utils import normalize_probability_percent, to_decimal_probability
 from scripts.apply_provider_request_budget import build_env_for_decision, decide_provider, final_market_integrity_env, market_integrity_check
 from scripts.publish_controlled_fallback import final_publish_guard_reasons, hard_reject_reasons, xg_sanity_metrics
-from scripts.send_harizon_telegram_run_report_v5 import provider_auth_failed
+from scripts.send_harizon_telegram_run_report_v5 import (
+    provider_auth_failed,
+    provider_plan_restricted,
+)
 
 UTC = timezone.utc
 
@@ -66,6 +69,34 @@ def test_report_detects_odds_api_io_auth_failure_from_statuses():
     assert provider_auth_failed({"event_http_statuses": [401]}) is True
     assert provider_auth_failed({"last_body_preview": '{"error":"You need to provide a valid apiKey"}'}) is True
     assert provider_auth_failed({"event_http_statuses": [200], "last_body_preview": "ok"}) is False
+
+
+def test_report_does_not_call_paid_plan_restriction_an_invalid_key():
+    row = {
+        "auth_error": True,
+        "odds_http_statuses": [200, 403],
+        "last_body_preview": (
+            "Betfair Exchange is a sharp or exchange book and is only available "
+            "on our paid plans"
+        ),
+    }
+
+    assert provider_plan_restricted(row) is True
+    assert provider_auth_failed(row) is False
+
+
+def test_odds_api_io_uses_free_plan_books_unless_paid_plan_is_enabled(monkeypatch):
+    monkeypatch.delenv("ODDS_API_IO_PAID_PLAN_ENABLED", raising=False)
+    settings = Settings(
+        _env_file=None,
+        odds_api_io_key="key-1",
+        odds_api_io_key_2="key-2",
+        odds_api_io_bookmakers_account2=["Betfair Exchange", "Sbobet"],
+    )
+
+    accounts = OddsApiIoProvider(settings)._odds_accounts()
+
+    assert accounts[1]["bookmakers"] == "William Hill,Bwin"
 
 
 def test_probability_helpers_accept_percent_strings():

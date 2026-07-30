@@ -175,7 +175,24 @@ def _fresh_runtime_payload(payload: Any, *, max_age_minutes: int = 90) -> bool:
     return timedelta(0) <= age <= timedelta(minutes=max_age_minutes)
 
 
-def _sportlogic_runtime_evidence() -> dict[str, Any]:
+def _sportlogic_runtime_evidence(payload: Any = None) -> dict[str, Any]:
+    if isinstance(payload, dict) and payload.get("status") != "run_failed":
+        api = payload.get("api")
+        sport = api.get("sportlogic") if isinstance(api, dict) else {}
+        if isinstance(sport, dict) and (
+            bool(sport.get("enabled")) or _int(sport.get("requests")) > 0
+        ):
+            return {
+                "requests": _int(sport.get("requests")),
+                "fixtures": _int(sport.get("fixtures")),
+                "matched": _int(sport.get("matched")),
+                "odds_requests": _int(sport.get("odds_requests")),
+                "offers": _int(sport.get("offers")),
+                "errors": _int(sport.get("errors")),
+                "diagnosis": str(
+                    sport.get("diagnosis") or "runtime_enabled"
+                ),
+            }
     probe = _load(EXPORT / "latest-sportlogic-coverage-probe.json", {})
     if not _fresh_runtime_payload(probe):
         return {}
@@ -200,8 +217,8 @@ def _sportlogic_runtime_evidence() -> dict[str, Any]:
     }
 
 
-def _repair_sportlogic_runtime_line(text: str) -> str:
-    evidence = _sportlogic_runtime_evidence()
+def _repair_sportlogic_runtime_line(text: str, payload: Any = None) -> str:
+    evidence = _sportlogic_runtime_evidence(payload)
     if not evidence:
         return text
     replacement = (
@@ -416,7 +433,7 @@ def _install(module: Any) -> None:
     def render(payload: Any) -> str:
         _normalize_sstats_payload(payload)
         text = _render_verified(base_render(payload))
-        text = _repair_sportlogic_runtime_line(text)
+        text = _repair_sportlogic_runtime_line(text, payload)
         text = _repair_bzzoiro_runtime_lines(text)
         text = _repair_sstats_runtime_line(text)
         return _repair_movement_runtime_lines(text)

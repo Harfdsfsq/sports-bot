@@ -48,6 +48,7 @@ class OddsApiIoProvider:
             "payload_shapes": [],
             "last_body_preview": None,
             "auth_error": False,
+            "plan_restriction": False,
             "stop_reason": "",
             "rate_limited": False,
             "max_http_requests_per_run": self.max_http_requests,
@@ -193,6 +194,7 @@ class OddsApiIoProvider:
             "bookmakers_seen": 0,
             "last_body_preview": None,
             "auth_error": False,
+            "plan_restriction": False,
             "stop_reason": "",
             "simulated_skipped": 0,
             "requested_bookmakers": None,
@@ -209,6 +211,7 @@ class OddsApiIoProvider:
                     "offers_parsed": 0,
                     "events_matched": 0,
                     "rate_limited": False,
+                    "plan_restriction": False,
                     "http_statuses": [],
                 }
                 for account in accounts
@@ -604,6 +607,13 @@ class OddsApiIoProvider:
             stats["odds_http_statuses"].append(response.status_code)
             account_stats["http_statuses"].append(response.status_code)
             stats["last_body_preview"] = response.text[:2000]
+            if self._is_plan_restriction(response):
+                self._mark_plan_restriction(
+                    stats,
+                    response.status_code,
+                    account_name=account_name,
+                )
+                return []
             if response.status_code in (401, 403):
                 self._mark_auth_error(stats, response.status_code, account_name=account_name)
                 return []
@@ -644,6 +654,40 @@ class OddsApiIoProvider:
             account_stats["auth_error"] = True
             account_stats["auth_status_code"] = status_code
 
+    @staticmethod
+    def _is_plan_restriction(response: httpx.Response) -> bool:
+        if response.status_code != 403:
+            return False
+        body = str(response.text or "").lower()
+        markers = (
+            "only available on our paid plan",
+            "only available on our paid plans",
+            "sharp or exchange book",
+            "sharp/exchange",
+            "not included in your plan",
+        )
+        return any(marker in body for marker in markers)
+
+    def _mark_plan_restriction(
+        self,
+        stats: dict[str, Any],
+        status_code: int,
+        account_name: str | None = None,
+    ) -> None:
+        stats["response_errors"] = int(stats.get("response_errors") or 0) + 1
+        stats["plan_restriction"] = True
+        stats["plan_restriction_status_code"] = status_code
+        stats["stop_reason"] = "plan_restriction"
+        if account_name:
+            account_stats = stats.setdefault("accounts", {}).setdefault(
+                account_name, {}
+            )
+            account_stats["response_errors"] = int(
+                account_stats.get("response_errors") or 0
+            ) + 1
+            account_stats["plan_restriction"] = True
+            account_stats["plan_restriction_status_code"] = status_code
+
     def _request_budget_allows(self, stats: dict[str, Any], account_name: str | None = None) -> bool:
         if self.max_http_requests <= 0:
             stats["budget_exhausted"] = True
@@ -679,6 +723,9 @@ class OddsApiIoProvider:
             "betfair": "Betfair Exchange",
             "betfairexchange": "Betfair Exchange",
             "sbobet": "Sbobet",
+            "williamhill": "William Hill",
+            "bwin": "Bwin",
+            "betway": "Betway",
         }
         for item in preferred:
             raw = str(item or "").strip()
@@ -699,8 +746,21 @@ class OddsApiIoProvider:
         )
         account2_books = self._bookmakers_param_from_values(
             list(getattr(self.settings, "odds_api_io_bookmakers_account2", []) or []),
-            ["Betfair Exchange", "Sbobet"],
+            ["William Hill", "Bwin"],
         )
+        if str(os.getenv("ODDS_API_IO_PAID_PLAN_ENABLED") or "").strip().lower() not in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }:
+            configured = {
+                normalize_bookmaker_name(value)
+                for value in account2_books.split(",")
+                if value.strip()
+            }
+            if configured and configured <= {"betfair", "sbobet"}:
+                account2_books = "William Hill,Bwin"
         accounts: list[dict[str, str]] = []
         if account1_key:
             accounts.append({"name": "account1", "api_key": account1_key, "bookmakers": account1_books})

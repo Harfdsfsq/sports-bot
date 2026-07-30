@@ -238,6 +238,14 @@ def _same_fixture(left: dict[str, Any], right: dict[str, Any]) -> bool:
 
 def _family(row: dict[str, Any]) -> str:
     text = _ascii(row.get("family") or row.get("market_family") or row.get("market"))
+    compact = text.replace(" ", "")
+    if (
+        "teamtotal" in compact
+        or "individualtotal" in compact
+        or "индивидуальн" in text
+        or ("team" in text.split() and "total" in text.split())
+    ):
+        return "team_totals"
     if "total" in text or "тотал" in text:
         return "totals"
     if "spread" in text or "handicap" in text or "фора" in text:

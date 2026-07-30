@@ -69,3 +69,42 @@ def test_does_not_use_stale_sportlogic_artifact(tmp_path: Path, monkeypatch) -> 
     text = "• SportLogic: disabled_by_env; запросы 0.\n"
 
     assert report._repair_sportlogic_runtime_line(text) == text
+
+
+def test_uses_current_report_payload_before_stale_probe(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(report, "EXPORT", tmp_path)
+    (tmp_path / "latest-sportlogic-coverage-probe.json").write_text(
+        json.dumps(
+            {
+                "created_at_utc": "2026-01-01T00:00:00+00:00",
+                "requests": 3,
+                "http_statuses": [200],
+            }
+        ),
+        encoding="utf-8",
+    )
+    payload = {
+        "status": "candidates_but_quality_rejected",
+        "api": {
+            "sportlogic": {
+                "enabled": True,
+                "requests": 5,
+                "fixtures": 100,
+                "matched": 0,
+                "odds_requests": 0,
+                "offers": 0,
+                "errors": 0,
+                "diagnosis": "active_odds_stale_only_no_current_fixture",
+            }
+        },
+    }
+    text = "• SportLogic: disabled_by_env; запросы 0. \n"
+
+    repaired = report._repair_sportlogic_runtime_line(text, payload)
+
+    assert "SportLogic: enabled_runtime" in repaired
+    assert "запросы 5" in repaired
+    assert "fixtures 100" in repaired
+    assert "active_odds_stale_only_no_current_fixture" in repaired

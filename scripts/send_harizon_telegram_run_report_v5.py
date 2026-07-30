@@ -310,6 +310,7 @@ def reason_ru(reason: str) -> str:
         "line_movement_guard_dropped": "line movement guard снял кандидата",
         "line_movement_guard_waiting_next_run": "кандидат ждёт следующий cron для второго снимка линии",
         "odds_api_io_auth_failed": "odds-api.io auth failed: invalid API key",
+        "odds_api_io_plan_restricted": "odds-api.io: выбранные букмекеры недоступны на текущем тарифе",
         "main_pipeline_published": "опубликовано основным пайплайном",
         "fallback_published": "опубликовано fallback-пайплайном",
         "telegram_sent": "Telegram подтвердил отправку",
@@ -367,7 +368,30 @@ def source_stats(data: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+def provider_plan_restricted(row: dict[str, Any]) -> bool:
+    if bool(row.get("plan_restriction")):
+        return True
+    accounts = row.get("accounts")
+    if isinstance(accounts, dict) and any(
+        bool(account.get("plan_restriction"))
+        for account in accounts.values()
+        if isinstance(account, dict)
+    ):
+        return True
+    preview = str(row.get("last_body_preview") or "").lower()
+    markers = (
+        "only available on our paid plan",
+        "only available on our paid plans",
+        "sharp or exchange book",
+        "sharp/exchange",
+        "not included in your plan",
+    )
+    return any(marker in preview for marker in markers)
+
+
 def provider_auth_failed(row: dict[str, Any]) -> bool:
+    if provider_plan_restricted(row):
+        return False
     if bool(row.get("auth_error")):
         return True
     statuses: list[int] = []
@@ -408,6 +432,7 @@ def build_payload() -> dict[str, Any]:
     pool_counts = first_dict(fallback.get("pool_counts"))
     stats = source_stats(data)
     odds = first_dict(stats.get("odds_api_io"))
+    odds_plan_restricted = provider_plan_restricted(odds)
     odds_auth_failed = provider_auth_failed(odds)
     sstats = first_dict(stats.get("sstats"))
     bzz = first_dict(stats.get("bzzoiro"))
@@ -474,6 +499,8 @@ def build_payload() -> dict[str, Any]:
         reasons["line_movement_guard_dropped"] += line_dropped
     if odds_auth_failed:
         reasons["odds_api_io_auth_failed"] += 1
+    elif odds_plan_restricted:
+        reasons["odds_api_io_plan_restricted"] += 1
     if bool(publication_counter_diagnostics.get("counter_inconsistent")):
         reasons["publication_counter_inconsistent"] += 1
 
@@ -514,10 +541,10 @@ def build_payload() -> dict[str, Any]:
         "publish_filter_blocked": as_int(windowed_filter.get("blocked")),
     }
     api = {
-        "odds_api_io": {"events_req": as_int(odds.get("event_requests")), "odds_req": as_int(odds.get("odds_requests")), "matched": as_int(odds.get("events_matched")), "offers": as_int(odds.get("offers_parsed")), "books_2plus": as_int(odds.get("matches_with_2plus_books")), "errors": as_int(odds.get("response_errors")), "auth_failed": odds_auth_failed},
+        "odds_api_io": {"events_req": as_int(odds.get("event_requests")), "odds_req": as_int(odds.get("odds_requests")), "matched": as_int(odds.get("events_matched")), "offers": as_int(odds.get("offers_parsed")), "books_2plus": as_int(odds.get("matches_with_2plus_books")), "errors": as_int(odds.get("response_errors")), "auth_failed": odds_auth_failed, "plan_restricted": odds_plan_restricted},
         "sstats": {"requests": as_int(sstats.get("requests")), "contexts": as_int(sstats.get("contexts_built")), "rows": as_int(sstats.get("rows_fetched")), "errors": as_int(sstats.get("response_errors")), "deep_enriched": as_int(first_dict(sstats.get("sstats_deep")).get("contexts_enriched"))},
         "bzzoiro": {"requests": as_int(bzz.get("requests")), "contexts": as_int(bzz.get("contexts_built")), "events": as_int(bzz.get("events_fetched"), as_int(bzz.get("rows_fetched"))), "secondary_offers_added": as_int(bzz.get("secondary_offers_added")), "overlap": as_int(bzz.get("combo_with_odds_api_io")), "errors": as_int(bzz.get("response_errors"))},
-        "sportlogic": {"enabled": bool(first_dict(data.get("sportlogic_final")).get("sportlogic", {}).get("enabled") if isinstance(first_dict(data.get("sportlogic_final")).get("sportlogic"), dict) else sport.get("enabled")), "requests": as_int(sport.get("requests")), "odds_requests": as_int(sport.get("odds_requests")), "matched": as_int(sport.get("events_matched")), "offers": as_int(sport.get("offers_parsed")), "errors": as_int(sport.get("response_errors")), "runtime_error": str(sport.get("runtime_error") or "")},
+        "sportlogic": {"enabled": bool(first_dict(data.get("sportlogic_final")).get("sportlogic", {}).get("enabled") if isinstance(first_dict(data.get("sportlogic_final")).get("sportlogic"), dict) else sport.get("enabled")), "requests": as_int(sport.get("requests")), "fixtures": max(as_int(sport.get("fixtures_fetched")), as_int(sport.get("games_fetched"))), "odds_requests": as_int(sport.get("odds_requests")), "matched": as_int(sport.get("events_matched")), "offers": as_int(sport.get("offers_parsed")), "errors": as_int(sport.get("response_errors")), "diagnosis": str(sport.get("diagnosis") or ""), "runtime_error": str(sport.get("runtime_error") or "")},
     }
     line = {"final_pre_kickoff_checks": as_int(refresh.get("final_pre_kickoff_checks")), "no_more_regular_run_before_kickoff": as_int(refresh.get("no_more_regular_run_before_kickoff")), "seen": as_int(line_guard.get("candidates_seen")), "kept": as_int(line_guard.get("candidates_kept")), "dropped": as_int(line_guard.get("candidates_dropped")), "waiting_next_run": line_waiting_next_run, "dropped_final": line_dropped}
 
