@@ -1,35 +1,35 @@
 # Provider day discovery canonical pool
-UTC: 2026-07-30T05:06:12.700811+00:00
+UTC: 2026-07-30T13:06:04.637477+00:00
 target_date: 2026-07-30
-canonical_matches: 540
-2+ provider sources: 152
-2+ primary sources: 148
+canonical_matches: 546
+2+ provider sources: 149
+2+ primary sources: 145
 all 3 primary sources: 73
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=20 ok=9 rows=1041 event_like=1041 unique=324 statuses={"OK": 9, "EMPTY": 11}
+- bzzoiro: commands=20 ok=9 rows=1061 event_like=1061 unique=324 statuses={"OK": 9, "EMPTY": 11}
 - football_data: commands=1 ok=1 rows=2 event_like=2 unique=2 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=2 ok=1 rows=100 event_like=0 unique=0 statuses={"EMPTY": 1, "OK": 1}
-- sstats: commands=1 ok=1 rows=189 event_like=153 unique=153 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=211 event_like=156 unique=156 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 388, "2": 79, "3": 72, "4": 1}
-- primary providers: {"1": 392, "2": 75, "3": 73}
+- all providers: {"1": 397, "2": 76, "3": 72, "4": 1}
+- primary providers: {"1": 401, "2": 72, "3": 73}
 
 ## Top canonical matches
 - 2026-07-29T21:30:00+00:00 | Nacional Asuncion — Olimpia | providers=sstats ids={"sstats": "1584341"}
-- 2026-07-29T22:00:00+00:00 | Internacional Palmira — Internacional de Bogota | providers=sstats ids={"sstats": "1545516"}
 - 2026-07-29T22:00:00+00:00 | Vasco DA Gama — Independiente Medellin | providers=sstats ids={"sstats": "1547788"}
+- 2026-07-29T22:00:00+00:00 | Internacional Palmira — Internacional de Bogota | providers=sstats ids={"sstats": "1545516"}
 - 2026-07-29T22:30:00+00:00 | Internacional — Flamengo | providers=sstats ids={"sstats": "1492316"}
 - 2026-07-29T22:30:00+00:00 | Mirassol — remo | providers=sstats ids={"sstats": "1492317"}
 - 2026-07-29T22:30:00+00:00 | Barranquilla — Junior | providers=sstats ids={"sstats": "1545512"}
 - 2026-07-29T23:00:00+00:00 | Pittsburgh Riverhounds — FC Tulsa | providers=sstats ids={"sstats": "1493600"}
-- 2026-07-29T23:00:00+00:00 | Greenville Triumph — Boise | providers=sstats ids={"sstats": "1493920"}
 - 2026-07-29T23:00:00+00:00 | Municipal Limeño — Inca Aruba | providers=sstats ids={"sstats": "1600547"}
+- 2026-07-29T23:00:00+00:00 | Greenville Triumph — Boise | providers=sstats ids={"sstats": "1493920"}
 - 2026-07-29T23:30:00+00:00 | Louisville City — Birmingham Legion | providers=sstats ids={"sstats": "1493599"}
 - 2026-07-29T23:30:00+00:00 | Liverpool — Wrexham | providers=sstats ids={"sstats": "1589333"}
 - 2026-07-30T00:00:00+00:00 | Kansas City Current — Racing Louisville | providers=bzzoiro,sstats ids={"bzzoiro": "216386", "sstats": "1508483"}
@@ -48,20 +48,20 @@ all 3 primary sources: 73
 - 2026-07-30T01:00:00+00:00 | Firpo — Fuerte San Francisco | providers=sstats ids={"sstats": "1600548"}
 - 2026-07-30T01:00:00+00:00 | Canada U20 — Honduras U20 | providers=sstats ids={"sstats": "1544728"}
 - 2026-07-30T02:00:00+00:00 | Bay FC — NJ/NY Gotham FC | providers=bzzoiro,sstats ids={"bzzoiro": "216388", "sstats": "1508485"}
-- 2026-07-30T02:00:00+00:00 | Alianza — Antigua GFC | providers=sstats ids={"sstats": "1548341"}
 - 2026-07-30T02:00:00+00:00 | LD Alajuelense — Xelajú | providers=sstats ids={"sstats": "1548340"}
-- 2026-07-30T08:00:00+00:00 | Al-Shabab FC (SA) — Al Ahli Doha SC | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "73164802", "bzzoiro": "223197", "sstats": "1604700"}
+- 2026-07-30T02:00:00+00:00 | Alianza — Antigua GFC | providers=sstats ids={"sstats": "1548341"}
+- 2026-07-30T08:00:00+00:00 | Mallorca — Al-Ittihad | providers=bzzoiro,sstats ids={"bzzoiro": "223196", "sstats": "1604698"}
 
 ## Targeted enrichment plan sample
 - Nacional Asuncion — Olimpia | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Internacional Palmira — Internacional de Bogota | primary=1 providers=sstats
+- Vasco DA Gama — Independiente Medellin | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Vasco DA Gama — Independiente Medellin | primary=1 providers=sstats
+- Internacional Palmira — Internacional de Bogota | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -81,11 +81,11 @@ all 3 primary sources: 73
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Greenville Triumph — Boise | primary=1 providers=sstats
+- Municipal Limeño — Inca Aruba | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Municipal Limeño — Inca Aruba | primary=1 providers=sstats
+- Greenville Triumph — Boise | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
