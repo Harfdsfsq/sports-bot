@@ -369,7 +369,11 @@ jobs:
           else
             status=$?
             run_status=${status}
-            echo "run bot failed or timed out with status ${status}" | tee .data/exports/latest-run-bot-step-status.json
+            if [[ "${status}" -eq 124 ]]; then
+              echo "run bot timed out with status ${status}" | tee .data/exports/latest-run-bot-step-status.json
+            else
+              echo "run bot failed with status ${status}" | tee .data/exports/latest-run-bot-step-status.json
+            fi
           fi
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
           cp .data/exports/latest-run-bot-step-status.json artifacts/run-bot/latest-run-bot-step-status.json 2>/dev/null || true

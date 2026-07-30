@@ -19,6 +19,7 @@ EXPORT = Path(".data/exports")
 DEBUG = Path(".logs/debug-last-run.json")
 LIFECYCLE = EXPORT / "latest-main-run-lifecycle.json"
 STEP_STATUS = EXPORT / "latest-run-bot-step-status.json"
+RUN_LOG = EXPORT / "latest-run-bot.log"
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -39,6 +40,24 @@ def _read_text(path: Path) -> str:
         return path.read_text(encoding="utf-8", errors="replace").strip()
     except Exception:
         return ""
+
+
+def _runtime_failure_detail() -> str:
+    text = _read_text(RUN_LOG)
+    if not text:
+        return ""
+    patterns = (
+        r"^(SyntaxError: .+)$",
+        r"^((?:[A-Za-z_][\w.]*)(?:Error|Exception): .+)$",
+        r"^(Traceback \(most recent call last\):)$",
+    )
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    for pattern in patterns:
+        for line in reversed(lines):
+            match = re.match(pattern, line)
+            if match:
+                return match.group(1)[:240]
+    return ""
 
 
 def _sent_row(row: Any) -> bool:
@@ -104,7 +123,9 @@ def _run_lifecycle_truth(now: datetime) -> dict[str, Any]:
     step_lower = step_text.lower()
     status_match = re.search(r"status\s+(\d+)", step_lower)
     process_status = int(status_match.group(1)) if status_match else None
-    timed_out = "timed out" in step_lower or process_status == 124
+    timed_out = process_status == 124 or bool(
+        re.search(r"\brun bot timed out\b", step_lower)
+    )
     failed_step = "run bot failed" in step_lower or (
         process_status is not None and process_status != 0
     )
@@ -116,6 +137,7 @@ def _run_lifecycle_truth(now: datetime) -> dict[str, Any]:
     )
 
     failure_reason = ""
+    failure_detail = _runtime_failure_detail()
     if timed_out:
         failure_reason = "runner_timeout_status_124"
     elif failed_step:
@@ -148,6 +170,7 @@ def _run_lifecycle_truth(now: datetime) -> dict[str, Any]:
         "timed_out": timed_out,
         "failed": bool(failure_reason),
         "failure_reason": failure_reason,
+        "failure_detail": failure_detail,
     }
 
 
@@ -348,6 +371,9 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
     error = str(lifecycle.get("failure_reason") or debug_error).strip()
     if error:
         report_diagnostics["runner_error"] = error
+    failure_detail = str(lifecycle.get("failure_detail") or "").strip()
+    if failure_detail:
+        report_diagnostics["runner_error_detail"] = failure_detail
 
     if main_count > 0:
         payload.update(
@@ -374,10 +400,14 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
             }
         )
     elif lifecycle.get("failed") or error:
+        process_status = lifecycle.get("process_status")
         payload.update(
             {
                 "status": "run_failed",
-                "status_ru": "🔴 основной run не сформировал свежий результат",
+                "status_ru": (
+                    "🔴 основной run завершился с ошибкой"
+                    + (f" (status {process_status})" if process_status is not None else "")
+                ),
                 "top_reason": "runner_error",
             }
         )

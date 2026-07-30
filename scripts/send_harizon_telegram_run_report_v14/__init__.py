@@ -47,7 +47,14 @@ _IMPL._debug_main_publication_count = _debug_main_publication_count
 def _sync_impl_overrides() -> None:
     """Forward compatibility-package monkeypatches to the file implementation."""
 
-    for name in ("EXPORT", "DEBUG", "LIFECYCLE", "STEP_STATUS", "_read_text"):
+    for name in (
+        "EXPORT",
+        "DEBUG",
+        "LIFECYCLE",
+        "STEP_STATUS",
+        "RUN_LOG",
+        "_read_text",
+    ):
         if name in globals():
             setattr(_IMPL, name, globals()[name])
 
