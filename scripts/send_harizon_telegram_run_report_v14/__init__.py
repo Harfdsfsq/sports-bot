@@ -19,6 +19,18 @@ if _SPEC is None or _SPEC.loader is None:
 _IMPL = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_IMPL)
 
+_DEFAULT_EXPORT = _IMPL.EXPORT
+_DEFAULT_DEBUG = _IMPL.DEBUG
+_DEFAULT_LIFECYCLE = _IMPL.LIFECYCLE
+_DEFAULT_STEP_STATUS = _IMPL.STEP_STATUS
+_DEFAULT_RUN_LOG = _IMPL.RUN_LOG
+
+EXPORT = _DEFAULT_EXPORT
+DEBUG = _DEFAULT_DEBUG
+LIFECYCLE = _DEFAULT_LIFECYCLE
+STEP_STATUS = _DEFAULT_STEP_STATUS
+RUN_LOG = _DEFAULT_RUN_LOG
+
 
 def _counter(value: Any) -> int:
     try:
@@ -47,16 +59,26 @@ _IMPL._debug_main_publication_count = _debug_main_publication_count
 def _sync_impl_overrides() -> None:
     """Forward compatibility-package monkeypatches to the file implementation."""
 
-    for name in (
-        "EXPORT",
-        "DEBUG",
-        "LIFECYCLE",
-        "STEP_STATUS",
-        "RUN_LOG",
-        "_read_text",
-    ):
-        if name in globals():
-            setattr(_IMPL, name, globals()[name])
+    export = Path(EXPORT)
+    _IMPL.EXPORT = export
+    _IMPL.DEBUG = DEBUG
+    _IMPL.LIFECYCLE = (
+        export / "latest-main-run-lifecycle.json"
+        if export != _DEFAULT_EXPORT and LIFECYCLE == _DEFAULT_LIFECYCLE
+        else LIFECYCLE
+    )
+    _IMPL.STEP_STATUS = (
+        export / "latest-run-bot-step-status.json"
+        if export != _DEFAULT_EXPORT and STEP_STATUS == _DEFAULT_STEP_STATUS
+        else STEP_STATUS
+    )
+    _IMPL.RUN_LOG = (
+        export / "latest-run-bot.log"
+        if export != _DEFAULT_EXPORT and RUN_LOG == _DEFAULT_RUN_LOG
+        else RUN_LOG
+    )
+    if "_read_text" in globals():
+        _IMPL._read_text = globals()["_read_text"]
 
 
 def repair_payload(payload: Any, *, now: Any = None) -> dict[str, Any]:
