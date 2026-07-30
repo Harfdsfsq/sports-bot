@@ -15,6 +15,7 @@ Nothing in this module grants publication rights or relaxes live guards.
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -210,10 +211,8 @@ def _accumulate_v2(board: dict[str, Any] | None = None) -> dict[str, Any]:
         )
         result["publication_contract_relaxed"] = False
         result["telegram_publication_enabled"] = False
-        try:
+        with suppress(Exception):
             base._write(base.ACCUMULATION_PATH, result)
-        except Exception:
-            pass
     return result
 
 

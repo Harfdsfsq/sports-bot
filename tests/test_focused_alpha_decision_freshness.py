@@ -61,6 +61,7 @@ def test_collect_candidates_rejects_stale_and_far_future_rows(
         "eligible_rows": 1,
         "unique_rows": 1,
         "duplicates_collapsed": 0,
+        "evidence_truth_repaired": 1,
     }
 
 

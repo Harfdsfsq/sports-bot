@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """Promote truthful active A-cover rows into guarded fallback review.
 
 This script does not publish. It builds at most a small set of exact-market totals
 candidates and keeps the final value, hard-xG, movement, price-integrity, duplicate,
 daily-cap and Telegram guards untouched.
 """
+
+from __future__ import annotations
 
 import json
 import os

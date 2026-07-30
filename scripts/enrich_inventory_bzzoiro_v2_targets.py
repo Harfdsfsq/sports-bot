@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +17,6 @@ ROOT = Path('.').resolve()
 DAY_DIR = ROOT / '.data' / 'day_inventory'
 EXPORT_DIR = ROOT / '.data' / 'exports'
 OUT = EXPORT_DIR / 'latest-bzzoiro-v2-inventory-target-enrichment.json'
-UTC = timezone.utc
 
 
 def load(path: Path, default: Any) -> Any:

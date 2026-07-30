@@ -44,7 +44,16 @@ _ORIGINAL_REPAIR_PAYLOAD = _IMPL.repair_payload
 _IMPL._debug_main_publication_count = _debug_main_publication_count
 
 
+def _sync_impl_overrides() -> None:
+    """Forward compatibility-package monkeypatches to the file implementation."""
+
+    for name in ("EXPORT", "DEBUG", "LIFECYCLE", "STEP_STATUS", "_read_text"):
+        if name in globals():
+            setattr(_IMPL, name, globals()[name])
+
+
 def repair_payload(payload: Any, *, now: Any = None) -> dict[str, Any]:
+    _sync_impl_overrides()
     repaired = _ORIGINAL_REPAIR_PAYLOAD(payload, now=now)
     try:
         _debug, summary, _error = _IMPL._debug_truth(now)
@@ -71,6 +80,7 @@ _IMPL.repair_payload = repair_payload
 
 
 def main() -> int:
+    _sync_impl_overrides()
     return int(_IMPL.main() or 0)
 
 

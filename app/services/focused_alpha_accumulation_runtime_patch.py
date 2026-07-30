@@ -14,6 +14,7 @@ import json
 import math
 import os
 import re
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -657,10 +658,8 @@ def install() -> dict[str, Any]:
                 summary["accumulation_shadow_selected_total"] = _dict(accumulation, "summary").get("selected_decisions", 0)
                 summary["accumulation_shadow_settled"] = _dict(accumulation, "summary").get("settled", 0)
                 summary["accumulation_shadow_profit_units"] = _dict(accumulation, "summary").get("profit_units_flat_1u", 0.0)
-            try:
+            with suppress(Exception):
                 target._write(target.LEDGER_PATH, result)
-            except Exception:
-                pass
         return result
 
     wrapped._focused_alpha_accumulation_patch = True  # type: ignore[attr-defined]
