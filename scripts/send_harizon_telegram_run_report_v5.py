@@ -378,6 +378,8 @@ def provider_plan_restricted(row: dict[str, Any]) -> bool:
         if isinstance(account, dict)
     ):
         return True
+    if bool(row.get("plan_restriction_recovered")):
+        return False
     preview = str(row.get("last_body_preview") or "").lower()
     markers = (
         "only available on our paid plan",
@@ -409,7 +411,11 @@ def provider_auth_failed(row: dict[str, Any]) -> bool:
             value = account.get("http_statuses")
             if isinstance(value, list):
                 statuses.extend(as_int(item) for item in value)
-    if any(status in (401, 403) for status in statuses):
+    if any(status == 401 for status in statuses):
+        return True
+    if any(status == 403 for status in statuses) and not bool(
+        row.get("plan_restriction_recovered")
+    ):
         return True
     preview = str(row.get("last_body_preview") or "").lower()
     return "valid apikey" in preview or "api key" in preview and "invalid" in preview

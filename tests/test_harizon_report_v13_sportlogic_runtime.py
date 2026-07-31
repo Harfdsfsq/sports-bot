@@ -50,7 +50,8 @@ def test_repairs_false_sportlogic_disabled_line(tmp_path: Path, monkeypatch) -> 
 
     assert "SportLogic: enabled_runtime" in repaired
     assert "запросы 3" in repaired
-    assert "fixtures 50" in repaired
+    assert "rows 50" in repaired
+    assert "current fixtures 0" in repaired
     assert "active_odds_stale_only_no_current_fixture" in repaired
 
 
@@ -106,14 +107,47 @@ def test_uses_current_report_payload_before_stale_probe(
 
     assert "SportLogic: enabled_runtime" in repaired
     assert "запросы 5" in repaired
-    assert "fixtures 100" in repaired
+    assert "rows 100" in repaired
+    assert "current fixtures 100" in repaired
     assert "active_odds_stale_only_no_current_fixture" in repaired
 
 
-def test_current_report_does_not_refresh_nested_stale_sportlogic_sample(
+def test_current_report_uses_fresh_probe_after_nested_stale_sportlogic_sample(
     tmp_path: Path, monkeypatch
 ) -> None:
     monkeypatch.setattr(report, "EXPORT", tmp_path)
+    (tmp_path / "latest-sportlogic-coverage-probe.json").write_text(
+        json.dumps(
+            {
+                "created_at_utc": datetime.now(UTC).isoformat(),
+                "requests": 3,
+                "active_odds_rows_seen": 50,
+                "current_games": 0,
+                "matched_games": 0,
+                "diagnosis": "active_odds_stale_only_no_current_fixture",
+                "http_statuses": [200, 200, 200],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "latest-sportlogic-debug.json").write_text(
+        json.dumps(
+            {
+                "stats": {
+                    "enabled": 2,
+                    "requests": 3,
+                    "active_odds_rows_seen": 50,
+                    "fixtures_fetched": 50,
+                    "matches_built": 0,
+                    "events_matched": 0,
+                    "response_errors": 0,
+                    "diagnosis": "active_odds_stale_only_no_current_fixture",
+                    "http_statuses": [200, 200, 200],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "status": "lines_but_no_raw_candidates",
@@ -134,6 +168,7 @@ def test_current_report_does_not_refresh_nested_stale_sportlogic_sample(
     repaired = report._repair_sportlogic_runtime_line(text, payload)
 
     assert "SportLogic: enabled_runtime" in repaired
-    assert "запросы 0" in repaired
-    assert "fixtures 0" in repaired
-    assert "configured_enabled_no_fresh_runtime_evidence" in repaired
+    assert "запросы 3" in repaired
+    assert "rows 50" in repaired
+    assert "current fixtures 0" in repaired
+    assert "active_odds_stale_only_no_current_fixture" in repaired

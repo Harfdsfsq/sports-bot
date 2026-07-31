@@ -179,22 +179,16 @@ def _sportlogic_runtime_evidence(payload: Any = None) -> dict[str, Any]:
     if isinstance(payload, dict) and payload.get("status") != "run_failed":
         api = payload.get("api")
         sport = api.get("sportlogic") if isinstance(api, dict) else {}
-        if isinstance(sport, dict) and (
-            bool(sport.get("enabled")) or _int(sport.get("requests")) > 0
+        if (
+            isinstance(sport, dict)
+            and (bool(sport.get("enabled")) or _int(sport.get("requests")) > 0)
+            and not bool(sport.get("stale_sample"))
         ):
-            if bool(sport.get("stale_sample")):
-                return {
-                    "requests": 0,
-                    "fixtures": 0,
-                    "matched": 0,
-                    "odds_requests": 0,
-                    "offers": 0,
-                    "errors": 0,
-                    "diagnosis": "configured_enabled_no_fresh_runtime_evidence",
-                }
+            fixtures = _int(sport.get("fixtures"))
             return {
                 "requests": _int(sport.get("requests")),
-                "fixtures": _int(sport.get("fixtures")),
+                "raw_rows": max(_int(sport.get("raw_rows")), fixtures),
+                "fixtures": fixtures,
                 "matched": _int(sport.get("matched")),
                 "odds_requests": _int(sport.get("odds_requests")),
                 "offers": _int(sport.get("offers")),
@@ -214,9 +208,15 @@ def _sportlogic_runtime_evidence(payload: Any = None) -> dict[str, Any]:
         return {}
     return {
         "requests": requests,
-        "fixtures": max(
+        "raw_rows": max(
+            _int(stats.get("active_odds_rows_seen")),
             _int(stats.get("fixtures_fetched")),
             _int(stats.get("games_fetched")),
+            _int(probe.get("active_odds_rows_seen")),
+        ),
+        "fixtures": max(
+            _int(stats.get("current_fixtures")),
+            _int(stats.get("matches_built")),
             _int(probe.get("current_games")),
         ),
         "matched": max(_int(stats.get("events_matched")), _int(probe.get("matched_games"))),
@@ -233,7 +233,8 @@ def _repair_sportlogic_runtime_line(text: str, payload: Any = None) -> str:
         return text
     replacement = (
         "• SportLogic: enabled_runtime; "
-        f"запросы {evidence['requests']}; fixtures {evidence['fixtures']}; "
+        f"запросы {evidence['requests']}; rows {evidence['raw_rows']}; "
+        f"current fixtures {evidence['fixtures']}; "
         f"matched {evidence['matched']}; odds req {evidence['odds_requests']}; "
         f"offers {evidence['offers']}; ошибок {evidence['errors']}; "
         f"diag {evidence['diagnosis']}."

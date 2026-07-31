@@ -31,6 +31,7 @@ def test_policy_reasserts_rules_ab_tiers_and_separate_windows(tmp_path: Path, mo
     assert report["effective"]["PREDICTION_PUBLICATION_ENABLED"] == "true"
     assert report["effective"]["NIGHTLY_REVIEW_REPORT_ONLY_ENABLED"] == "false"
     assert report["effective"]["FOCUSED_ALPHA_LIVE_ENABLED"] == "false"
+    assert report["effective"]["RUNBOT_INCREMENTAL_DEEP_ENRICHMENT_ENABLED"] == "true"
     assert report["effective"]["CONTROLLED_FALLBACK_USE_QUALITY_PROXY"] == "false"
     assert report["main_publication_disabled_for_wide_data_window"] is False
     assert report["publication_contract_relaxed"] is False

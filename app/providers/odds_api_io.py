@@ -199,12 +199,18 @@ class OddsApiIoProvider:
             "simulated_skipped": 0,
             "requested_bookmakers": None,
             "requested_bookmakers_by_account": [
-                {"account": account["name"], "bookmakers": account["bookmakers"]}
+                {
+                    "account": account["name"],
+                    "bookmakers": account["bookmakers"],
+                    "fallback_bookmakers": account.get("fallback_bookmakers", ""),
+                }
                 for account in accounts
             ],
             "accounts": {
                 account["name"]: {
                     "bookmakers": account["bookmakers"],
+                    "fallback_bookmakers": account.get("fallback_bookmakers", ""),
+                    "effective_bookmakers": account["bookmakers"],
                     "api_key_present": bool(account.get("api_key")),
                     "odds_requests": 0,
                     "response_errors": 0,
@@ -370,6 +376,7 @@ class OddsApiIoProvider:
                         str(account["bookmakers"]),
                         stats,
                         account_name=str(account["name"]),
+                        fallback_books=str(account.get("fallback_bookmakers") or ""),
                     )
                     if stats.get("rate_limited"):
                         break
@@ -385,7 +392,16 @@ class OddsApiIoProvider:
                             continue
                         for offer in parsed:
                             offer.metadata["odds_api_io_account"] = str(account["name"])
-                            offer.metadata["requested_bookmakers"] = str(account["bookmakers"])
+                            account_stats = stats["accounts"].setdefault(str(account["name"]), {})
+                            effective_books = str(
+                                account_stats.get("effective_bookmakers")
+                                or account["bookmakers"]
+                            )
+                            offer.metadata["requested_bookmakers"] = effective_books
+                            offer.metadata["configured_bookmakers"] = str(account["bookmakers"])
+                            offer.metadata["entitlement_fallback_used"] = bool(
+                                account_stats.get("entitlement_fallback_used")
+                            )
                         offers_by_match[row["match"].match_key].extend(parsed)
                         stats["offers_parsed"] += len(parsed)
                         stats["markets_parsed"] += len({(offer.bookmaker, offer.family, offer.market_name, offer.point) for offer in parsed})
@@ -564,13 +580,14 @@ class OddsApiIoProvider:
         client: httpx.AsyncClient,
         api_key: str,
         event_ids: list[int],
-        target_books: str,
+        target_books: str | None,
     ) -> httpx.Response | None:
         params = {
             "apiKey": api_key,
             "eventIds": ",".join(str(item) for item in event_ids),
-            "bookmakers": target_books,
         }
+        if str(target_books or "").strip():
+            params["bookmakers"] = str(target_books).strip()
         return await client.get(f"{self.base_url}/odds/multi", params=params)
 
     async def _fetch_odds_multi_chunk(
@@ -581,12 +598,18 @@ class OddsApiIoProvider:
         target_books: str,
         stats: dict[str, Any],
         account_name: str = "account1",
+        fallback_books: str = "",
     ) -> list[dict[str, Any]]:
         if not event_ids:
             return []
         account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
         account_stats.setdefault("bookmakers", target_books)
+        account_stats.setdefault("fallback_bookmakers", fallback_books)
+        account_stats.setdefault("effective_bookmakers", target_books)
         account_stats.setdefault("http_statuses", [])
+        if bool(account_stats.get("plan_restriction")):
+            return []
+        request_books = str(account_stats.get("effective_bookmakers") or target_books)
         attempts = 0
         while attempts < 2:
             if not self._request_budget_allows(stats, account_name=account_name):
@@ -596,7 +619,7 @@ class OddsApiIoProvider:
             account_stats["odds_requests"] = int(account_stats.get("odds_requests") or 0) + 1
             self._record_request(account_name=account_name)
             try:
-                response = await self._request_odds_multi(client, api_key, event_ids, target_books)
+                response = await self._request_odds_multi(client, api_key, event_ids, request_books)
             except Exception as exc:
                 stats["response_errors"] += 1
                 account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
@@ -608,6 +631,23 @@ class OddsApiIoProvider:
             account_stats["http_statuses"].append(response.status_code)
             stats["last_body_preview"] = response.text[:2000]
             if self._is_plan_restriction(response):
+                stats["plan_restriction_responses"] = int(
+                    stats.get("plan_restriction_responses") or 0
+                ) + 1
+                account_stats["plan_restriction_responses"] = int(
+                    account_stats.get("plan_restriction_responses") or 0
+                ) + 1
+                can_fallback = (
+                    bool(str(fallback_books or "").strip())
+                    and str(fallback_books).strip() != request_books
+                    and not bool(account_stats.get("entitlement_fallback_attempted"))
+                )
+                if can_fallback:
+                    account_stats["entitlement_fallback_attempted"] = True
+                    account_stats["configured_bookmakers"] = target_books
+                    request_books = str(fallback_books).strip()
+                    account_stats["effective_bookmakers"] = request_books
+                    continue
                 self._mark_plan_restriction(
                     stats,
                     response.status_code,
@@ -631,11 +671,32 @@ class OddsApiIoProvider:
                 shape = self._payload_shape(payload)
                 if shape not in stats["payload_shapes"]:
                     stats["payload_shapes"].append(shape)
+                account_stats["effective_bookmakers"] = request_books
+                if bool(account_stats.get("entitlement_fallback_attempted")):
+                    account_stats["entitlement_fallback_used"] = True
+                    account_stats["plan_restriction_recovered"] = True
+                    stats["plan_restriction_recovered"] = True
                 return [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
             if response.status_code >= 500 and len(event_ids) > 1:
                 mid = max(1, len(event_ids) // 2)
-                left = await self._fetch_odds_multi_chunk(client, api_key, event_ids[:mid], target_books, stats, account_name=account_name)
-                right = await self._fetch_odds_multi_chunk(client, api_key, event_ids[mid:], target_books, stats, account_name=account_name)
+                left = await self._fetch_odds_multi_chunk(
+                    client,
+                    api_key,
+                    event_ids[:mid],
+                    target_books,
+                    stats,
+                    account_name=account_name,
+                    fallback_books=fallback_books,
+                )
+                right = await self._fetch_odds_multi_chunk(
+                    client,
+                    api_key,
+                    event_ids[mid:],
+                    target_books,
+                    stats,
+                    account_name=account_name,
+                    fallback_books=fallback_books,
+                )
                 return left + right
             stats["response_errors"] += 1
             account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
@@ -747,11 +808,29 @@ class OddsApiIoProvider:
             list(getattr(self.settings, "odds_api_io_bookmakers_account2", []) or []),
             ["Betfair Exchange", "Sbobet"],
         )
+        account2_fallback_books = self._bookmakers_param_from_values(
+            list(
+                getattr(
+                    self.settings,
+                    "odds_api_io_bookmakers_account2_fallback",
+                    [],
+                )
+                or []
+            ),
+            ["William Hill", "Betway"],
+        )
         accounts: list[dict[str, str]] = []
         if account1_key:
             accounts.append({"name": "account1", "api_key": account1_key, "bookmakers": account1_books})
         if account2_key:
-            accounts.append({"name": "account2", "api_key": account2_key, "bookmakers": account2_books})
+            accounts.append(
+                {
+                    "name": "account2",
+                    "api_key": account2_key,
+                    "bookmakers": account2_books,
+                    "fallback_bookmakers": account2_fallback_books,
+                }
+            )
         return accounts
 
     @staticmethod
