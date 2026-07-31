@@ -172,3 +172,121 @@ def test_run_window_bridge_spends_budget_on_nearest_bucket_first(monkeypatch) ->
     assignments = routing.build_focused_assignments(rows, 1)
 
     assert assignments["odds_api_io"]["offers"] == ["window-low-score"]
+
+
+def test_coverage_backlog_fills_empty_rows_before_refreshing_covered_rows(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        routing, "_provider_health", lambda: {"sportlogic": {"usable": False}}
+    )
+    monkeypatch.setenv("FOCUSED_ALPHA_ODDS_API_IO_OFFERS_BUDGET", "1")
+    monkeypatch.setenv("FOCUSED_ALPHA_BZZOIRO_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_SSTATS_PARI_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_SPORTLOGIC_OFFERS_BUDGET", "0")
+    rows = [
+        _row(
+            "covered-high-score",
+            100,
+            odds=["odds_api_io", "bzzoiro"],
+            contexts=["sstats", "bzzoiro"],
+            odds_age_minutes=900,
+            context_age_minutes=900,
+        ),
+        _row("empty-low-score", 1),
+    ]
+    for row in rows:
+        row.update(
+            {
+                "hours_to_kickoff": 6,
+                "provider_coverage_backlog": True,
+                "line_deficit": max(0, 2 - len(row["odds_sources"])),
+                "context_deficit": max(0, 2 - len(row["context_sources"])),
+            }
+        )
+
+    assignments = routing.build_focused_assignments(rows, 7)
+
+    assert assignments["odds_api_io"]["offers"] == ["empty-low-score"]
+    assert "covered-high-score" not in _assigned_keys(assignments, "offers")
+
+
+def test_stale_sportlogic_probe_allows_bounded_bootstrap(monkeypatch) -> None:
+    monkeypatch.setenv("SPORTLOGIC_API_KEY", "configured")
+    monkeypatch.setenv("SPORTLOGIC_ENABLED", "true")
+    monkeypatch.delenv("SPORTLOGIC_DAILY_CIRCUIT_OPEN", raising=False)
+    monkeypatch.setattr(
+        routing,
+        "_load",
+        lambda _path: {
+            "created_at_utc": "2026-07-20T00:00:00+00:00",
+            "diagnosis": "active_odds_stale_only_no_current_fixture",
+            "matched_games": 0,
+        },
+    )
+
+    health = routing._provider_health()["sportlogic"]
+
+    assert health["usable"] is True
+    assert health["bootstrap_probe"] is True
+
+
+def test_coverage_backlog_can_route_120_odds_refreshes(monkeypatch) -> None:
+    monkeypatch.setattr(
+        routing, "_provider_health", lambda: {"sportlogic": {"usable": False}}
+    )
+    monkeypatch.setenv("FOCUSED_ALPHA_ODDS_REFRESH_MATCHES", "120")
+    monkeypatch.setenv("FOCUSED_ALPHA_DOUBLE_ODDS_REFRESH_MATCHES", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_ODDS_API_IO_OFFERS_BUDGET", "120")
+    monkeypatch.setenv("FOCUSED_ALPHA_BZZOIRO_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_SSTATS_PARI_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_SPORTLOGIC_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_CONTEXT_ENRICH_MATCHES", "1")
+    monkeypatch.setenv("FOCUSED_ALPHA_SSTATS_CONTEXT_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_BZZOIRO_CONTEXT_BUDGET", "0")
+    rows = []
+    for index in range(130):
+        row = _row(f"empty-{index:03d}", 1)
+        row.update(
+            {
+                "hours_to_kickoff": 6,
+                "provider_coverage_backlog": True,
+                "line_deficit": 2,
+                "context_deficit": 2,
+            }
+        )
+        rows.append(row)
+
+    assignments = routing.build_focused_assignments(rows, 7)
+
+    assert len(assignments["odds_api_io"]["offers"]) == 120
+
+
+def test_sportlogic_bootstrap_gets_bounded_repair_lane(monkeypatch) -> None:
+    monkeypatch.setattr(
+        routing,
+        "_provider_health",
+        lambda: {"sportlogic": {"usable": True, "bootstrap_probe": True}},
+    )
+    monkeypatch.setenv("FOCUSED_ALPHA_ODDS_REFRESH_MATCHES", "10")
+    monkeypatch.setenv("FOCUSED_ALPHA_DOUBLE_ODDS_REFRESH_MATCHES", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_ODDS_API_IO_OFFERS_BUDGET", "10")
+    monkeypatch.setenv("FOCUSED_ALPHA_BZZOIRO_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_SSTATS_PARI_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_SPORTLOGIC_OFFERS_BUDGET", "3")
+    rows = []
+    for index in range(5):
+        row = _row(f"gap-{index}", 1)
+        row.update(
+            {
+                "hours_to_kickoff": index + 1,
+                "provider_coverage_backlog": True,
+                "line_deficit": 2,
+                "context_deficit": 2,
+            }
+        )
+        rows.append(row)
+
+    assignments = routing.build_focused_assignments(rows, 7)
+
+    assert assignments["sportlogic"]["offers"] == ["gap-0", "gap-1", "gap-2"]

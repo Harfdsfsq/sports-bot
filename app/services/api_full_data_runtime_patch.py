@@ -381,7 +381,9 @@ async def _enrich_football_data(self: Any, contexts: dict[str, Any], stats: dict
 
 
 async def _enrich_odds_api_io(self: Any, matches: list[Any], offers_by_match: dict[str, list[Any]], stats: dict[str, Any], preview: dict[str, Any]) -> None:
-    if not offers_by_match or not _truthy(os.getenv("API_FULL_DATA_ODDS_API_IO_ENABLED"), True):
+    if not offers_by_match or not _truthy(
+        os.getenv("API_FULL_DATA_ODDS_API_IO_ENABLED"), False
+    ):
         return
     accounts = self._odds_accounts() if hasattr(self, "_odds_accounts") else []
     if not accounts:

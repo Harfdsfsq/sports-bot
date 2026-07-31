@@ -15,6 +15,15 @@ on:
       - "app/services/daily_coverage_assignments.py"
       - "app/services/daily_coverage_runtime_patch.py"
       - "app/services/daily_coverage_full_inventory_provider_patch.py"
+      - "app/config.py"
+      - "app/providers/odds_api_io.py"
+      - "app/services/api_full_data_runtime_patch.py"
+      - "app/services/api_runtime_enhancements.py"
+      - "app/services/bookmaker_universe_runtime_guard.py"
+      - "app/services/bzzoiro_context_gap_finalizer.py"
+      - "app/services/primary_provider_tier_runtime_guard.py"
+      - "scripts/apply_per_run_api_quota_contract.py"
+      - "scripts/apply_provider_quota_governor.py"
       - "scripts/build_focused_alpha_decisions*.py"
       - "scripts/enrich_rescue_candidates_xg_confirmation.py"
       - "scripts/enrich_inventory_bzzoiro_v2_targets.py"
@@ -24,10 +33,16 @@ on:
       - "scripts/repair_synthetic_publication_timestamps.py"
       - "scripts/send_harizon_telegram_run_report_v13.py"
       - "scripts/send_harizon_telegram_run_report_v14.py"
+      - "scripts/send_harizon_telegram_run_report_v8.py"
       - "scripts/send_harizon_telegram_run_report_v14/**"
       - "tests/test_focused_alpha*.py"
       - "tests/test_evidence_bundle_serving.py"
       - "tests/test_autonomous_accumulation_runtime.py"
+      - "tests/test_bzzoiro_source_id_prefetch.py"
+      - "tests/test_daily_coverage_plan.py"
+      - "tests/test_providers_and_telegram.py"
+      - "tests/test_harizon_provider_backlog_report.py"
+      - ".github/workflows/run-bot.yml"
       - ".github/workflows/focused-alpha-ci.yml"
   pull_request:
     paths:
@@ -41,6 +56,15 @@ on:
       - "app/services/daily_coverage_assignments.py"
       - "app/services/daily_coverage_runtime_patch.py"
       - "app/services/daily_coverage_full_inventory_provider_patch.py"
+      - "app/config.py"
+      - "app/providers/odds_api_io.py"
+      - "app/services/api_full_data_runtime_patch.py"
+      - "app/services/api_runtime_enhancements.py"
+      - "app/services/bookmaker_universe_runtime_guard.py"
+      - "app/services/bzzoiro_context_gap_finalizer.py"
+      - "app/services/primary_provider_tier_runtime_guard.py"
+      - "scripts/apply_per_run_api_quota_contract.py"
+      - "scripts/apply_provider_quota_governor.py"
       - "scripts/build_focused_alpha_decisions*.py"
       - "scripts/enrich_rescue_candidates_xg_confirmation.py"
       - "scripts/enrich_inventory_bzzoiro_v2_targets.py"
@@ -50,10 +74,16 @@ on:
       - "scripts/repair_synthetic_publication_timestamps.py"
       - "scripts/send_harizon_telegram_run_report_v13.py"
       - "scripts/send_harizon_telegram_run_report_v14.py"
+      - "scripts/send_harizon_telegram_run_report_v8.py"
       - "scripts/send_harizon_telegram_run_report_v14/**"
       - "tests/test_focused_alpha*.py"
       - "tests/test_evidence_bundle_serving.py"
       - "tests/test_autonomous_accumulation_runtime.py"
+      - "tests/test_bzzoiro_source_id_prefetch.py"
+      - "tests/test_daily_coverage_plan.py"
+      - "tests/test_providers_and_telegram.py"
+      - "tests/test_harizon_provider_backlog_report.py"
+      - ".github/workflows/run-bot.yml"
       - ".github/workflows/focused-alpha-ci.yml"
   workflow_dispatch:
 
@@ -96,6 +126,15 @@ jobs:
             app/services/daily_coverage_assignments.py \
             app/services/daily_coverage_runtime_patch.py \
             app/services/daily_coverage_full_inventory_provider_patch.py \
+            app/config.py \
+            app/providers/odds_api_io.py \
+            app/services/api_full_data_runtime_patch.py \
+            app/services/api_runtime_enhancements.py \
+            app/services/bookmaker_universe_runtime_guard.py \
+            app/services/bzzoiro_context_gap_finalizer.py \
+            app/services/primary_provider_tier_runtime_guard.py \
+            scripts/apply_per_run_api_quota_contract.py \
+            scripts/apply_provider_quota_governor.py \
             scripts/build_focused_alpha_decisions.py \
             scripts/build_focused_alpha_decisions_v2.py \
             scripts/enrich_rescue_candidates_xg_confirmation.py \
@@ -105,7 +144,8 @@ jobs:
             scripts/publish_controlled_fallback_guarded.py \
             scripts/repair_synthetic_publication_timestamps.py \
             scripts/send_harizon_telegram_run_report_v13.py \
-            scripts/send_harizon_telegram_run_report_v14.py
+            scripts/send_harizon_telegram_run_report_v14.py \
+            scripts/send_harizon_telegram_run_report_v8.py
       - name: Ruff Focused Alpha change set
         run: |
           mkdir -p .data/exports
@@ -137,11 +177,23 @@ jobs:
             scripts/repair_synthetic_publication_timestamps.py \
             scripts/send_harizon_telegram_run_report_v13.py \
             scripts/send_harizon_telegram_run_report_v14.py \
+            scripts/send_harizon_telegram_run_report_v8.py \
             tests/test_autonomous_accumulation_runtime.py \
             tests/test_evidence_bundle_serving.py \
+            tests/test_bzzoiro_source_id_prefetch.py \
+            tests/test_daily_coverage_plan.py \
+            tests/test_harizon_provider_backlog_report.py \
             tests/test_focused_alpha*.py 2>&1 | tee .data/exports/latest-focused-alpha-ruff.txt
       - name: Run Focused Alpha tests
-        run: python -m pytest -q tests/test_autonomous_accumulation_runtime.py tests/test_evidence_bundle_serving.py tests/test_focused_alpha*.py
+        run: >-
+          python -m pytest -q
+          tests/test_autonomous_accumulation_runtime.py
+          tests/test_evidence_bundle_serving.py
+          tests/test_focused_alpha*.py
+          tests/test_bzzoiro_source_id_prefetch.py
+          tests/test_daily_coverage_plan.py
+          tests/test_harizon_provider_backlog_report.py
+          tests/test_providers_and_telegram.py::test_odds_api_io_keeps_valid_second_account_bookmakers
       - name: Build repository history and decision baseline
         run: |
           python - <<'PY'

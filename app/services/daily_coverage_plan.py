@@ -136,6 +136,104 @@ def _active_provider_rows(rows: list[dict[str, Any]]) -> int:
     )
 
 
+def _coverage_bucket(hours: float) -> int:
+    for index, upper in enumerate((4.0, 8.0, 12.0, 16.0, 20.0, 24.0, 36.0)):
+        if hours <= upper:
+            return index
+    return 7
+
+
+def _provider_coverage_targets(
+    ranked: list[dict[str, Any]],
+    model_targets: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Build a broad enrichment scope without widening the model scope.
+
+    Focused Alpha deliberately keeps modelling bounded.  Provider collection has a
+    different job: progressively give every active inventory row at least one line
+    and one real context, then work toward the 2+ source contract.  Mixing those two
+    scopes was why a 300-row inventory produced provider assignments for only 24
+    rows in production.
+    """
+
+    if not focused_alpha_enabled() or str(
+        os.getenv("HARIZON_FULL_INVENTORY_COVERAGE_ROUTING_ENABLED", "true")
+    ).strip().lower() not in {"1", "true", "yes", "on", "force"}:
+        return list(model_targets)
+
+    try:
+        limit = max(
+            1,
+            min(
+                len(ranked),
+                int(
+                    float(
+                        os.getenv("HARIZON_FULL_INVENTORY_PROVIDER_TARGETS")
+                        or os.getenv("DAY_INVENTORY_TARGET_SIZE")
+                        or 300
+                    )
+                ),
+            ),
+        )
+    except (TypeError, ValueError):
+        limit = min(len(ranked), 300)
+    try:
+        horizon = max(
+            4.0,
+            min(
+                72.0,
+                float(
+                    os.getenv("HARIZON_DATA_COLLECTION_WINDOW_HOURS")
+                    or os.getenv("HARIZON_COVERAGE_UPLIFT_NEAR_WINDOW_HOURS")
+                    or 36.0
+                ),
+            ),
+        )
+    except (TypeError, ValueError):
+        horizon = 36.0
+
+    model_keys = {
+        str(row.get("match_key") or "")
+        for row in model_targets
+        if str(row.get("match_key") or "")
+    }
+    active: list[dict[str, Any]] = []
+    for source in ranked:
+        hours = as_float(source.get("hours_to_kickoff"), 999.0)
+        if (
+            source.get("provider_assignment_eligible") is False
+            or hours < 0.33
+            or hours > horizon
+        ):
+            continue
+        row = dict(source)
+        row["provider_coverage_backlog"] = True
+        row["focused_alpha_model_target"] = str(row.get("match_key") or "") in model_keys
+        active.append(row)
+
+    # Rules-defined time buckets stay authoritative.  Inside each bucket, first
+    # cover rows with no line/context at all, then close the remaining 2+ gaps.
+    active.sort(
+        key=lambda row: (
+            _coverage_bucket(as_float(row.get("hours_to_kickoff"), 999.0)),
+            -(
+                int(as_int(row.get("odds_sources_count")) == 0)
+                + int(as_int(row.get("context_sources_count")) == 0)
+            ),
+            -(
+                as_int(row.get("line_deficit"))
+                + as_int(row.get("context_deficit"))
+            ),
+            as_int(row.get("odds_sources_count"))
+            + as_int(row.get("context_sources_count")),
+            0 if row.get("focused_alpha_model_target") else 1,
+            as_float(row.get("hours_to_kickoff"), 999.0),
+            str(row.get("match_key") or ""),
+        )
+    )
+    return active[:limit]
+
+
 def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
     current = (now or datetime.now(UTC)).astimezone(UTC)
     date_key = target_date(current)
@@ -151,14 +249,16 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
         run_index=run_index,
     )
     target_count = len(targets)
-    assignments = build_assignments(targets, run_index)
+    provider_targets = _provider_coverage_targets(ranked, targets)
+    provider_target_count = len(provider_targets)
+    assignments = build_assignments(provider_targets, run_index)
     assignment_total = _assignment_total(assignments)
     active_provider_rows = _active_provider_rows(ranked)
     assignment_health = "ok"
-    if active_provider_rows > 0 and target_count == 0:
-        assignment_health = "blocked_active_inventory_without_focus_targets"
-    elif target_count > 0 and assignment_total == 0:
-        assignment_health = "blocked_focus_targets_without_provider_assignments"
+    if active_provider_rows > 0 and provider_target_count == 0:
+        assignment_health = "blocked_active_inventory_without_provider_targets"
+    elif provider_target_count > 0 and assignment_total == 0:
+        assignment_health = "blocked_provider_targets_without_assignments"
     os.environ["SSTATS_PARI_DETAIL_MATCH_LIMIT"] = str(
         len(assignments["sstats_pari"]["offers"])
     )
@@ -184,22 +284,27 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
         "phase": min(run_index, 3),
         "phase_targets": active_phase_targets,
         "phase_cumulative_target": target_count,
+        "provider_coverage_target_count": provider_target_count,
         "min_odds_sources": 2,
         "min_context_sources": 2,
         "coverage_before": coverage_summary(ranked),
         "target_coverage_before": coverage_summary(targets),
         "target_match_keys": [row["match_key"] for row in targets],
+        "provider_target_match_keys": [
+            row["match_key"] for row in provider_targets
+        ],
         "assignments": assignments,
         "provider_assignment_health": {
             "status": assignment_health,
             "active_provider_eligible_rows": active_provider_rows,
             "focused_targets": target_count,
+            "provider_coverage_targets": provider_target_count,
             "provider_role_assignments": assignment_total,
             "silent_empty_assignments_allowed": False,
         },
         "focused_alpha": focus_report,
         "coverage_objective": (
-            "maximize_expected_information_and_risk_adjusted_decision_quality"
+            "full_inventory_information_backlog_plus_bounded_model_scope"
             if focused_alpha_enabled()
             else "fixed_2plus_coverage"
         ),

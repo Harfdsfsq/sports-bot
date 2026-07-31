@@ -215,11 +215,41 @@ def _provider_health() -> dict[str, dict[str, Any]]:
         as_int(stats.get("events_matched")),
         as_int(sportlogic.get("matched_games")),
     )
+    report_times = [
+        _parse_time(sportlogic.get("created_at_utc")),
+        _parse_time(sportlogic_debug.get("created_at_utc")),
+    ]
+    recent = any(
+        stamp is not None
+        and (datetime.now(UTC) - stamp).total_seconds() <= 6 * 3600
+        for stamp in report_times
+    )
+    configured = bool(
+        str(
+            os.getenv("SPORTLOGIC_API_KEY")
+            or os.getenv("SPORTLOGIC_KEY")
+            or os.getenv("SPORTLOGIC_TOKEN")
+            or ""
+        ).strip()
+    ) and _truthy("SPORTLOGIC_ENABLED", True)
+    circuit_open = _truthy("SPORTLOGIC_DAILY_CIRCUIT_OPEN", False)
+    explicitly_bad = recent and any(
+        token in diagnosis
+        for token in ("auth", "rate_limit", "daily_limit", "quota")
+    )
+    # A stale zero-match probe must not permanently prevent the next probe.  That
+    # created a closed loop: SportLogic needed a successful assignment to become
+    # healthy, while routing required it to be healthy before assigning anything.
+    usable = (
+        matched > 0 and "stale" not in diagnosis
+    ) or (configured and not circuit_open and not explicitly_bad and not recent)
     return {
         "sportlogic": {
             "matched": matched,
             "diagnosis": diagnosis,
-            "usable": matched > 0 and "stale" not in diagnosis,
+            "report_recent": recent,
+            "bootstrap_probe": usable and matched <= 0,
+            "usable": usable,
         }
     }
 
@@ -335,7 +365,6 @@ def build_focused_assignments(
     rows: list[dict[str, Any]],
     run_index: int,
 ) -> dict[str, dict[str, list[str]]]:
-    del run_index
     now = datetime.now(UTC)
     out = _empty_assignments()
     health = _provider_health()
@@ -343,11 +372,11 @@ def build_focused_assignments(
     reasons: Counter[str] = Counter()
     routing_sample: list[dict[str, Any]] = []
 
-    odds_lane = _limit("FOCUSED_ALPHA_ODDS_REFRESH_MATCHES", 40, 1, 100)
+    odds_lane = _limit("FOCUSED_ALPHA_ODDS_REFRESH_MATCHES", 40, 1, 300)
     double_odds_lane = _limit(
         "FOCUSED_ALPHA_DOUBLE_ODDS_REFRESH_MATCHES", 24, 0, odds_lane
     )
-    context_lane = _limit("FOCUSED_ALPHA_CONTEXT_ENRICH_MATCHES", 30, 1, 80)
+    context_lane = _limit("FOCUSED_ALPHA_CONTEXT_ENRICH_MATCHES", 30, 1, 300)
     double_context_lane = _limit(
         "FOCUSED_ALPHA_DOUBLE_CONTEXT_MATCHES", 15, 0, context_lane
     )
@@ -362,7 +391,9 @@ def build_focused_assignments(
         ("sstats_pari", "offers"): _limit(
             "FOCUSED_ALPHA_SSTATS_PARI_OFFERS_BUDGET", 16
         ),
-        ("sportlogic", "offers"): 0,
+        ("sportlogic", "offers"): _limit(
+            "FOCUSED_ALPHA_SPORTLOGIC_OFFERS_BUDGET", 3, 0, 12
+        ),
         ("sstats", "context"): _limit("FOCUSED_ALPHA_SSTATS_CONTEXT_BUDGET", 30),
         ("bzzoiro", "context"): _limit("FOCUSED_ALPHA_BZZOIRO_CONTEXT_BUDGET", 24),
         ("clubelo", "context"): _limit("FOCUSED_ALPHA_CLUBELO_CONTEXT_BUDGET", 16),
@@ -390,6 +421,11 @@ def build_focused_assignments(
         if isinstance(row, dict)
     )
     near_window_priority = bootstrap_priority or bridge_priority
+    coverage_backlog = any(
+        bool(row.get("provider_coverage_backlog"))
+        for row in rows
+        if isinstance(row, dict)
+    )
     ordered = sorted(
         [row for row in rows if isinstance(row, dict)],
         key=lambda row: (
@@ -400,9 +436,21 @@ def build_focused_assignments(
             ),
             (
                 _kickoff_bucket(as_float(row.get("hours_to_kickoff"), 999.0))
-                if near_window_priority
+                if near_window_priority or coverage_backlog
                 else 0
             ),
+            -(
+                int(len(row.get("odds_sources") or []) == 0)
+                + int(len(row.get("context_sources") or []) == 0)
+            )
+            if coverage_backlog
+            else 0,
+            -(
+                as_int(row.get("line_deficit"))
+                + as_int(row.get("context_deficit"))
+            )
+            if coverage_backlog
+            else 0,
             -as_float(row.get("focused_alpha_score")),
             as_float(row.get("hours_to_kickoff"), 999.0),
             str(row.get("match_key") or ""),
@@ -432,6 +480,10 @@ def build_focused_assignments(
         needs_odds_refresh = (
             index < odds_lane or hours <= 4 or len(odds) < 2 or not odds_fresh
         )
+        if coverage_backlog and len(odds) >= 2 and not row.get(
+            "focused_alpha_model_target"
+        ):
+            needs_odds_refresh = False
         if needs_odds_refresh and (index < odds_lane or hours <= 4):
             selected["offers"] = _append_best(
                 row=row,
@@ -455,7 +507,14 @@ def build_focused_assignments(
         context_eligible = index < context_lane and (
             bool(odds) or bool(selected["offers"])
         )
-        if context_eligible and (len(contexts) < 2 or not context_fresh):
+        if coverage_backlog:
+            context_eligible = index < context_lane
+        needs_context = len(contexts) < 2 or not context_fresh
+        if coverage_backlog and len(contexts) >= 2 and not row.get(
+            "focused_alpha_model_target"
+        ):
+            needs_context = False
+        if context_eligible and needs_context:
             selected["context"] = _append_best(
                 row=row,
                 key=key,
@@ -493,12 +552,41 @@ def build_focused_assignments(
                 }
             )
 
+    # SportLogic is intentionally a tiny repair lane.  When a stale zero-match
+    # report is being bootstrapped, score-based competition would always lose to
+    # the primary providers and the health deadlock would persist.  Add at most
+    # the configured three nearest gaps; the provider's four-request runtime cap
+    # still bounds one fixture-list call plus three odds details.
+    sportlogic_health = health.get("sportlogic", {})
+    sportlogic_budget = budgets.get(("sportlogic", "offers"), 0)
+    if sportlogic_health.get("usable") and sportlogic_budget > 0:
+        existing_sportlogic = set(out["sportlogic"]["offers"])
+        for row in ordered:
+            if len(out["sportlogic"]["offers"]) >= sportlogic_budget:
+                break
+            key = str(row.get("match_key") or "")
+            hours = as_float(row.get("hours_to_kickoff"), 99.0)
+            if (
+                not key
+                or key in existing_sportlogic
+                or row.get("provider_assignment_eligible") is False
+                or hours < 0.33
+                or len(row.get("odds_sources") or []) >= 2
+            ):
+                continue
+            out["sportlogic"]["offers"].append(key)
+            existing_sportlogic.add(key)
+            used[("sportlogic", "offers")] += 1
+            reasons["sportlogic_bounded_repair_lane"] += 1
+
     report = {
         "status": "ok",
         "created_at_utc": now.isoformat(),
         "mode": "fresh_market_then_bounded_context",
         "priority_mode": (
-            "run_window_bridge_first"
+            "coverage_backlog_nearest_gap_first"
+            if coverage_backlog
+            else "run_window_bridge_first"
             if bridge_priority
             else (
                 "nearest_kickoff_bucket_first"
@@ -507,6 +595,8 @@ def build_focused_assignments(
             )
         ),
         "rows_seen": len(ordered),
+        "run_index": run_index,
+        "provider_coverage_backlog_mode": coverage_backlog,
         "odds_refresh_lane_rows": min(len(ordered), odds_lane),
         "double_odds_lane_rows": min(len(ordered), double_odds_lane),
         "context_enrichment_lane_rows": min(len(ordered), context_lane),

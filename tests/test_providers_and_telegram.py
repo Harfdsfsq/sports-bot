@@ -85,7 +85,7 @@ def test_report_does_not_call_paid_plan_restriction_an_invalid_key():
     assert provider_auth_failed(row) is False
 
 
-def test_odds_api_io_uses_free_plan_books_unless_paid_plan_is_enabled(monkeypatch):
+def test_odds_api_io_keeps_valid_second_account_bookmakers(monkeypatch):
     monkeypatch.delenv("ODDS_API_IO_PAID_PLAN_ENABLED", raising=False)
     settings = Settings(
         _env_file=None,
@@ -96,7 +96,7 @@ def test_odds_api_io_uses_free_plan_books_unless_paid_plan_is_enabled(monkeypatc
 
     accounts = OddsApiIoProvider(settings)._odds_accounts()
 
-    assert accounts[1]["bookmakers"] == "William Hill,Bwin"
+    assert accounts[1]["bookmakers"] == "Betfair Exchange,Sbobet"
 
 
 def test_probability_helpers_accept_percent_strings():

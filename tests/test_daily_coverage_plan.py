@@ -41,6 +41,7 @@ def _paths(monkeypatch, tmp_path: Path) -> tuple[Path, Path]:
 
 def test_three_unique_runs_expand_target_to_300(monkeypatch, tmp_path: Path) -> None:
     day_dir, _ = _paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(plan, "focused_alpha_enabled", lambda: False)
     monkeypatch.setenv("APP_TIMEZONE", "UTC")
     monkeypatch.setenv("DAY_INVENTORY_TARGET_DATE", "2026-07-18")
     now = datetime(2026, 7, 18, 0, 0, tzinfo=UTC)
@@ -62,3 +63,46 @@ def test_accounts_and_synthetic_context_are_not_independent() -> None:
     assert common.independent_sources(
         ["sstats", "self_history", "provider_day_discovery_canonical_pool", "clubelo"], role="context"
     ) == ["clubelo", "sstats"]
+
+
+def test_provider_backlog_is_broader_than_focused_model_scope(monkeypatch) -> None:
+    monkeypatch.setattr(plan, "focused_alpha_enabled", lambda: True)
+    monkeypatch.setenv("HARIZON_FULL_INVENTORY_PROVIDER_TARGETS", "300")
+    monkeypatch.setenv("HARIZON_DATA_COLLECTION_WINDOW_HOURS", "36")
+    ranked = [
+        {
+            "match_key": "far-covered",
+            "hours_to_kickoff": 10.0,
+            "odds_sources_count": 2,
+            "context_sources_count": 2,
+            "line_deficit": 0,
+            "context_deficit": 0,
+        },
+        {
+            "match_key": "near-covered",
+            "hours_to_kickoff": 2.0,
+            "odds_sources_count": 2,
+            "context_sources_count": 2,
+            "line_deficit": 0,
+            "context_deficit": 0,
+        },
+        {
+            "match_key": "near-empty",
+            "hours_to_kickoff": 2.5,
+            "odds_sources_count": 0,
+            "context_sources_count": 0,
+            "line_deficit": 2,
+            "context_deficit": 2,
+        },
+    ]
+
+    targets = plan._provider_coverage_targets(ranked, [ranked[1]])
+
+    assert [row["match_key"] for row in targets] == [
+        "near-empty",
+        "near-covered",
+        "far-covered",
+    ]
+    assert len(targets) == 3
+    assert targets[1]["focused_alpha_model_target"] is True
+    assert all(row["provider_coverage_backlog"] for row in targets)

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """HARIZON Telegram run report v8.
 
 Readable bookmaker-quorum report. Publication price contract:
@@ -7,6 +5,8 @@ Readable bookmaker-quorum report. Publication price contract:
 - price-integrity guard stays mandatory;
 - 2+ independent odds sources are an A-tier strict metric, not a B-tier block.
 """
+
+from __future__ import annotations
 
 import importlib.util
 import json
@@ -17,6 +17,7 @@ from typing import Any
 V7_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v7.py")
 EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
+DAILY_COVERAGE_PLAN = EXPORT_DIR / "latest-daily-coverage-plan.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 PRICE_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-price-integrity-guard.json"
@@ -162,12 +163,36 @@ def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     _normalize_runtime_patched_sstats(payload)
     plan = _load_json(PROGRESSIVE_PLAN)
+    daily_plan = _load_json(DAILY_COVERAGE_PLAN)
     payload["version"] = "harizon-telegram-report-v8-bookmaker-mapping-guard"
     payload.setdefault("diagnostics", {})["progressive_core_coverage"] = {
         "contract": plan.get("contract") if isinstance(plan.get("contract"), dict) else {},
         "counts": plan.get("counts") if isinstance(plan.get("counts"), dict) else {},
         "gap_sample_size": len(plan.get("core_gap_sample") or plan.get("gap_sample") or []) if isinstance(plan, dict) else 0,
     }
+    provider_health = (
+        daily_plan.get("provider_assignment_health")
+        if isinstance(daily_plan.get("provider_assignment_health"), dict)
+        else {}
+    )
+    if provider_health:
+        payload.setdefault("diagnostics", {})["provider_coverage_routing"] = {
+            "provider_targets": _as_int(
+                provider_health.get("provider_coverage_targets")
+                or daily_plan.get("provider_coverage_target_count")
+            ),
+            "model_targets": _as_int(
+                provider_health.get("focused_targets")
+                or daily_plan.get("phase_cumulative_target")
+            ),
+            "role_assignments": _as_int(
+                provider_health.get("provider_role_assignments")
+            ),
+            "active_provider_eligible_rows": _as_int(
+                provider_health.get("active_provider_eligible_rows")
+            ),
+            "publication_scope_widened": False,
+        }
     day_summary = _load_json(EXPORT_DIR / "latest-day-inventory-summary.json")
     truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
     truth_report = _load_json(TRUTH_REPORT)
@@ -346,6 +371,7 @@ def render(payload: dict[str, Any]) -> str:
     run_bot_step_status = diag.get("run_bot_step_status") if isinstance(diag.get("run_bot_step_status"), dict) else {}
     github_actions = diag.get("github_actions") if isinstance(diag.get("github_actions"), dict) else {}
     publication_ledger_sync = diag.get("publication_ledger_sync") if isinstance(diag.get("publication_ledger_sync"), dict) else {}
+    provider_routing = diag.get("provider_coverage_routing") if isinstance(diag.get("provider_coverage_routing"), dict) else {}
     window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
 
     inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
@@ -480,9 +506,20 @@ def render(payload: dict[str, Any]) -> str:
         "",
         "📦 Инвентарь и покрытие",
         f"• Инвентарь дня: собрано {inv_total}/{inv_target} матчей (цель: 300 лучших, добор каждый run{target_note}). Runtime rows processed: {run_matches} (это не размер inventory).",
+    ]
+    provider_targets = _as_int(provider_routing.get("provider_targets"))
+    if provider_targets:
+        lines.append(
+            "• Очередь provider-enrichment: "
+            f"{provider_targets} активных матчей; model scope "
+            f"{_as_int(provider_routing.get('model_targets'))}; назначений по ролям "
+            f"{_as_int(provider_routing.get('role_assignments'))}. "
+            "Очередь сбора не расширяет публикационный scope."
+        )
+    lines.extend([
         f"• 1+ линия: {with_odds}/{inv_total} ({_pct(with_odds, inv_total)}) | 1+ контекст: {with_context}/{inv_total} ({_pct(with_context, inv_total)})",
         f"• 2+ букмекера: {price2}/{inv_total} ({_pct(price2, inv_total)})",
-    ]
+    ])
     if raw_book_line:
         lines.append(raw_book_line)
     if backfill_line:

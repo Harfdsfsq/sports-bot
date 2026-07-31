@@ -724,7 +724,6 @@ class OddsApiIoProvider:
             "betfairexchange": "Betfair Exchange",
             "sbobet": "Sbobet",
             "williamhill": "William Hill",
-            "bwin": "Bwin",
             "betway": "Betway",
         }
         for item in preferred:
@@ -746,21 +745,8 @@ class OddsApiIoProvider:
         )
         account2_books = self._bookmakers_param_from_values(
             list(getattr(self.settings, "odds_api_io_bookmakers_account2", []) or []),
-            ["William Hill", "Bwin"],
+            ["Betfair Exchange", "Sbobet"],
         )
-        if str(os.getenv("ODDS_API_IO_PAID_PLAN_ENABLED") or "").strip().lower() not in {
-            "1",
-            "true",
-            "yes",
-            "on",
-        }:
-            configured = {
-                normalize_bookmaker_name(value)
-                for value in account2_books.split(",")
-                if value.strip()
-            }
-            if configured and configured <= {"betfair", "sbobet"}:
-                account2_books = "William Hill,Bwin"
         accounts: list[dict[str, str]] = []
         if account1_key:
             accounts.append({"name": "account1", "api_key": account1_key, "bookmakers": account1_books})

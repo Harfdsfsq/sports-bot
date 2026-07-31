@@ -159,7 +159,7 @@ def odds_api_io_env(grant: int) -> dict[str, str]:
         "ANALYSIS_MATCH_CAP_PER_RUN": str(clamp_int(180 + grant, 240, 620)) if grant > 0 else "120",
         "DIAGNOSTICS_MATCH_LIMIT": str(clamp_int(180 + grant, 240, 620)) if grant > 0 else "120",
         "ODDS_API_IO_BOOKMAKERS_ACCOUNT1": "Bet365,Unibet",
-        "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "William Hill,Bwin",
+        "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
         "ODDS_API_IO_BOOKMAKERS": "Bet365,Unibet",
     }
     out.update(strict_market_integrity_env())
