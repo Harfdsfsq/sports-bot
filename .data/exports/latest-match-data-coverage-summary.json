@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 4,
+      "rows_seen": 4,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 55,
-      "rows_stale": 55
+      "rows_kept": 42,
+      "rows_seen": 96,
+      "rows_stale": 54
     },
     "lifecycle": {
       "files_present": 0,
@@ -25,28 +25,42 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 2,
+      "rows_seen": 2,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 24,
+    "candidates_before_quality": 26,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 0,
-    "controlled_candidates_seen": null,
+    "contexts_built": 16,
+    "controlled_candidates_seen": 2,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 0,
-    "matches_seen": 0,
-    "matches_with_offers": 0
+    "coverage_candidates_current_date": 19,
+    "matches_seen": 6,
+    "matches_with_offers": 5
   },
-  "created_at": "2026-07-31T11:07:29.558006+00:00",
-  "family_counts": {},
-  "matches_with_candidates": 0,
-  "missing_data_flags": {},
+  "created_at": "2026-07-31T12:00:46.126410+00:00",
+  "family_counts": {
+    "btts": 1,
+    "dnb": 2,
+    "h2h": 1,
+    "spreads": 7,
+    "teamtotals": 1,
+    "totals": 7
+  },
+  "matches_with_candidates": 6,
+  "missing_data_flags": {
+    "confidence_below_micro_c": 19,
+    "edge_below_micro_c": 19,
+    "ev_below_micro_c": 19,
+    "single_book": 15,
+    "single_context_source": 16,
+    "single_odds_source": 19
+  },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -59,8 +73,46 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 0,
+  "positive_near_miss_count": 2,
   "provider_gap_summary": [
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 10,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 185,
+      "provider": "account1",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 45,
+      "provider": "bzzoiro_odds",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
     {
       "api_key_present": true,
       "budget_exhausted": false,
@@ -70,12 +122,14 @@
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
-      "matches_built": 644,
+      "gap_flags": [
+        "response_errors"
+      ],
+      "matches_built": 643,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 0,
+      "response_errors": 3,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -90,13 +144,199 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 644,
+      "matches_built": 643,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 16,
+      "direct_event_contexts_built": 16,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 4,
+      "direct_event_contexts_built": 4,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 45,
+      "provider": "v2_primary",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 4,
+      "direct_event_contexts_built": 4,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 100,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "low_overlap_or_matching_failed"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "odds_feed",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "low_overlap_or_matching_issue",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "rate_limited",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "odds_api1",
+      "rate_limited": true,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "rate_limited",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "account2",
+      "rate_limited": false,
+      "response_errors": 3,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 100,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "low_overlap_or_matching_failed"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "secondary_odds_rescue",
+      "rate_limited": null,
+      "response_errors": 1,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": 0,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "allsportsapi",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
       "team_form_contexts_built": null
     },
     {
@@ -121,9 +361,73 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "bzzoiro",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
       "budget_exhausted": null,
       "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "free_live_football_data",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": true,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "budget_exhausted",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "futrixmetrics",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
@@ -185,22 +489,43 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": false,
+      "budget_exhausted": null,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
       "fixtures_fetched": null,
       "gap_flags": [
         "no_useful_rows"
       ],
-      "matches_built": 0,
-      "offers_parsed": null,
-      "provider": "sstats",
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "sportapi7",
       "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": 0,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "sportsbook_api",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
     },
@@ -226,8 +551,8 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": false,
+      "api_key_present": null,
+      "budget_exhausted": null,
       "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -239,40 +564,123 @@
       ],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "stats",
+      "provider": "v1_empty_prediction_fallback",
       "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
-    "no_data": 8,
-    "working": 2
+    "broken_or_unavailable": 2,
+    "low_overlap_or_matching_issue": 1,
+    "no_data": 12,
+    "rate_limited": 1,
+    "working": 8
   },
   "reject_reason_counts_from_rows": {},
   "target_date": "2026-07-31",
-  "top_near_miss": []
+  "top_near_miss": [
+    {
+      "away_team": "Singapore",
+      "best_candidate": {
+        "adjusted_probability": 0.517274,
+        "books_count": 2,
+        "canonical_edge_pp": 3.65,
+        "canonical_ev_pct": 7.593,
+        "confidence": 69.517,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.08,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 71.777,
+      "best_edge_pp": 3.65,
+      "best_ev_pct": 7.593,
+      "books_max": 2,
+      "candidate_count": 2,
+      "commence_time": "2026-07-31T13:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Vietnam",
+      "league_name": "International - ASEAN Championship, Group A",
+      "match_key": "soccer|vietnam|singapore|2026-07-31",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 2,
+        "single_odds_source": 2
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "latest_rescue_candidates": 1,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "",
+      "best_candidate": {
+        "adjusted_probability": 0.56307,
+        "books_count": 2,
+        "canonical_edge_pp": 3.046,
+        "canonical_ev_pct": 6.983,
+        "confidence": 71.777,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.9,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Меньше 3.5",
+        "sources_count": 1
+      },
+      "best_confidence": 71.777,
+      "best_edge_pp": 3.046,
+      "best_ev_pct": 6.983,
+      "books_max": 2,
+      "candidate_count": 5,
+      "commence_time": "",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "btts": 1,
+        "spreads": 1,
+        "teamtotals": 1,
+        "totals": 2
+      },
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|singapore|vietnam|2026-07-31",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 5,
+        "single_book": 3,
+        "single_context_source": 4,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    }
+  ]
 }
