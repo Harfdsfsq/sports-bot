@@ -290,6 +290,53 @@ def _zero_stale_main_funnel(funnel: dict[str, Any]) -> None:
     funnel["main_pipeline_published"] = False
 
 
+def _repair_odds_event_bootstrap_api(
+    payload: dict[str, Any],
+    summary: dict[str, Any],
+) -> None:
+    source_stats = summary.get("source_stats")
+    source_stats = source_stats if isinstance(source_stats, dict) else {}
+    offer_stats = source_stats.get("odds_api_io")
+    offer_stats = offer_stats if isinstance(offer_stats, dict) else {}
+    bootstrap = source_stats.get("odds_api_io_bootstrap")
+    bootstrap = bootstrap if isinstance(bootstrap, dict) else {}
+    if not bootstrap:
+        match_bootstrap = source_stats.get("match_bootstrap")
+        match_bootstrap = (
+            match_bootstrap if isinstance(match_bootstrap, dict) else {}
+        )
+        attempts = match_bootstrap.get("attempts")
+        attempts = attempts if isinstance(attempts, dict) else {}
+        candidate = attempts.get("odds_api_io")
+        bootstrap = candidate if isinstance(candidate, dict) else {}
+    if not bootstrap:
+        return
+
+    api = payload.setdefault("api", {})
+    if not isinstance(api, dict):
+        api = {}
+        payload["api"] = api
+    odds = api.setdefault("odds_api_io", {})
+    if not isinstance(odds, dict):
+        odds = {}
+        api["odds_api_io"] = odds
+    events_req = max(
+        _counter(odds.get("events_req")),
+        _counter(bootstrap.get("event_requests")),
+    )
+    bootstrap_errors = _counter(bootstrap.get("response_errors"))
+    offer_errors = _counter(offer_stats.get("response_errors"))
+    odds.update(
+        {
+            "events_req": events_req,
+            "bootstrap_events_fetched": _counter(bootstrap.get("events_fetched")),
+            "bootstrap_matches_built": _counter(bootstrap.get("matches_built")),
+            "bootstrap_errors": bootstrap_errors,
+            "errors": max(_counter(odds.get("errors")), offer_errors + bootstrap_errors),
+        }
+    )
+
+
 def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, Any]:
     if not isinstance(payload, dict):
         return {}
@@ -298,6 +345,7 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
     anchor, anchor_source = _current_run_anchor(now)
     debug, summary, debug_error = _debug_truth(now)
     del debug
+    _repair_odds_event_bootstrap_api(payload, summary)
 
     picks = v13._load(EXPORT / "latest-picks.json", [])
     pending = v13._load(EXPORT / "latest-pending-bets.json", [])

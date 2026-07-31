@@ -384,12 +384,23 @@ def build_focused_assignments(
         for row in rows
         if isinstance(row, dict)
     )
+    bridge_priority = any(
+        bool(row.get("focused_alpha_run_window_bridge"))
+        for row in rows
+        if isinstance(row, dict)
+    )
+    near_window_priority = bootstrap_priority or bridge_priority
     ordered = sorted(
         [row for row in rows if isinstance(row, dict)],
         key=lambda row: (
             (
+                0 if row.get("focused_alpha_run_window_bridge") else 1
+                if bridge_priority
+                else 0
+            ),
+            (
                 _kickoff_bucket(as_float(row.get("hours_to_kickoff"), 999.0))
-                if bootstrap_priority
+                if near_window_priority
                 else 0
             ),
             -as_float(row.get("focused_alpha_score")),
@@ -487,9 +498,13 @@ def build_focused_assignments(
         "created_at_utc": now.isoformat(),
         "mode": "fresh_market_then_bounded_context",
         "priority_mode": (
-            "nearest_kickoff_bucket_first"
-            if bootstrap_priority
-            else "focused_alpha_score_first"
+            "run_window_bridge_first"
+            if bridge_priority
+            else (
+                "nearest_kickoff_bucket_first"
+                if bootstrap_priority
+                else "focused_alpha_score_first"
+            )
         ),
         "rows_seen": len(ordered),
         "odds_refresh_lane_rows": min(len(ordered), odds_lane),

@@ -52,6 +52,40 @@ def test_filter_contract_preserves_legacy_list_shape() -> None:
     ) == ["a", "b"]
 
 
+def test_report_counts_odds_event_bootstrap_when_offer_stage_is_skipped() -> None:
+    payload = {
+        "api": {
+            "odds_api_io": {
+                "events_req": 0,
+                "odds_req": 0,
+                "errors": 0,
+            }
+        }
+    }
+    summary = {
+        "source_stats": {
+            "odds_api_io": {
+                "planned_skip": True,
+                "response_errors": 0,
+            },
+            "odds_api_io_bootstrap": {
+                "event_requests": 10,
+                "events_fetched": 1000,
+                "matches_built": 651,
+                "response_errors": 0,
+            },
+        }
+    }
+
+    report_v14._repair_odds_event_bootstrap_api(payload, summary)
+
+    odds = payload["api"]["odds_api_io"]
+    assert odds["events_req"] == 10
+    assert odds["bootstrap_events_fetched"] == 1000
+    assert odds["bootstrap_matches_built"] == 651
+    assert odds["odds_req"] == 0
+
+
 def _write(path, payload) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
 

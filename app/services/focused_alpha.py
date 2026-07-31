@@ -44,6 +44,13 @@ def _limit(name: str, default: int, low: int, high: int) -> int:
         return default
 
 
+def _float_limit(name: str, default: float, low: float, high: float) -> float:
+    try:
+        return max(low, min(high, float(str(os.getenv(name) or default))))
+    except Exception:
+        return default
+
+
 def max_matches() -> int:
     return _limit("FOCUSED_ALPHA_MAX_MATCHES", 100, 10, 180)
 
@@ -455,6 +462,90 @@ def select_focus_cohort(
     )
     bootstrap_selected: list[dict[str, Any]] = []
 
+    # A quality target outside the current publication window must not make the
+    # whole run blind to matches that will start before the next scheduled run.
+    # Add a bounded enrichment-only bridge when the quality cohort and the active
+    # runner window do not overlap.  This changes provider targeting only; every
+    # publication guard remains authoritative downstream.
+    publish_window_hours = _float_limit(
+        "PUBLISH_WINDOW_HOURS",
+        2.0,
+        0.5,
+        48.0,
+    )
+    min_lead_hours = _float_limit(
+        "MIN_KICKOFF_LEAD_MINUTES",
+        20.0,
+        0.0,
+        240.0,
+    ) / 60.0
+    run_window_bridge_slots = _limit(
+        "FOCUSED_ALPHA_RUN_WINDOW_BRIDGE_MATCHES",
+        24,
+        0,
+        maximum,
+    )
+    selected_in_run_window = sum(
+        1
+        for row in selected
+        if min_lead_hours
+        <= as_float(row.get("hours_to_kickoff"), 999.0)
+        <= publish_window_hours
+    )
+    run_window_bridge_selected: list[dict[str, Any]] = []
+    if selected and not selected_in_run_window and run_window_bridge_slots > 0:
+        bridge_candidates = sorted(
+            scored,
+            key=lambda pair: (
+                as_float(pair[1].get("hours_to_kickoff"), 999.0),
+                sum(
+                    bool((pair[1].get("flags") or {}).get(name))
+                    for name in ("youth", "reserve", "friendly")
+                ),
+                -(
+                    len((pair[1].get("evidence") or {}).get("odds_sources") or [])
+                    + len(
+                        (pair[1].get("evidence") or {}).get("context_sources")
+                        or []
+                    )
+                ),
+                -as_float(pair[1].get("focused_alpha_score")),
+                str(pair[0].get("match_key") or ""),
+            ),
+        )
+        for row, detail in bridge_candidates:
+            key = str(row.get("match_key") or "")
+            hours = as_float(detail.get("hours_to_kickoff"), 999.0)
+            if (
+                not key
+                or key in selected_keys
+                or row.get("provider_assignment_eligible") is False
+                or hours < min_lead_hours
+                or hours > publish_window_hours
+                or not row.get("home_team")
+                or not row.get("away_team")
+                or not row.get("kickoff_utc")
+            ):
+                continue
+            league = _league_key(row)
+            if league_counts[league] >= max_per_league:
+                continue
+            item = dict(row)
+            item["focused_alpha_run_window_bridge"] = True
+            item["focused_alpha_selection_lane"] = "run_window_bridge_enrichment"
+            item["focused_alpha_run_window_bridge_reason"] = (
+                "quality_cohort_outside_publish_window"
+            )
+            selected.append(item)
+            run_window_bridge_selected.append(item)
+            selected_keys.add(key)
+            league_counts[league] += 1
+            if (
+                len(run_window_bridge_selected) >= run_window_bridge_slots
+                or len(selected) >= maximum
+            ):
+                break
+
     # Cold-start recovery: a match cannot be required to already have providers
     # before it is allowed to call those providers. This lane only chooses a
     # bounded enrichment cohort; all value, price-integrity, coverage and
@@ -517,6 +608,8 @@ def select_focus_cohort(
         health_status = "blocked_active_inventory_without_provider_targets"
     elif bootstrap_selected:
         health_status = "cold_start_bootstrap_active"
+    elif run_window_bridge_selected:
+        health_status = "run_window_bridge_active"
     report = {
         "status": health_status,
         "created_at_utc": current.isoformat(),
@@ -535,6 +628,14 @@ def select_focus_cohort(
             row["match_key"] for row in bootstrap_selected
         ],
         "bootstrap_max_hours": bootstrap_max_hours,
+        "run_window_bridge_triggered": bool(run_window_bridge_selected),
+        "run_window_bridge_selected_rows": len(run_window_bridge_selected),
+        "run_window_bridge_match_keys": [
+            row["match_key"] for row in run_window_bridge_selected
+        ],
+        "run_window_hours": publish_window_hours,
+        "run_window_min_lead_hours": round(min_lead_hours, 3),
+        "quality_targets_in_run_window_before_bridge": selected_in_run_window,
         "active_provider_eligible_rows": active_provider_rows,
         "selected_unique_keys": len(selected_keys),
         "max_matches": maximum,
@@ -563,6 +664,9 @@ def select_focus_cohort(
                 "focused_alpha_score": row.get("focused_alpha_score"),
                 "focused_alpha_exploration": bool(row.get("focused_alpha_exploration")),
                 "focused_alpha_bootstrap": bool(row.get("focused_alpha_bootstrap")),
+                "focused_alpha_run_window_bridge": bool(
+                    row.get("focused_alpha_run_window_bridge")
+                ),
                 "selection_lane": row.get("focused_alpha_selection_lane"),
                 "components": (row.get("focused_alpha") or {}).get("components"),
                 "evidence": (row.get("focused_alpha") or {}).get("evidence"),

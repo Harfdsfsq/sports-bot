@@ -94,3 +94,43 @@ def test_cold_start_selects_bounded_nearest_first_bootstrap(monkeypatch) -> None
     assert result["report"]["quality_selected_rows"] == 0
     assert result["report"]["bootstrap_selected_rows"] == 2
     assert result["report"]["status"] == "cold_start_bootstrap_active"
+
+
+def test_quality_target_outside_run_window_adds_bounded_window_bridge(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("FOCUSED_ALPHA_MIN_MATCH_SCORE", "44")
+    monkeypatch.setenv("FOCUSED_ALPHA_EXPLORATION_SLOTS", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_RUN_WINDOW_BRIDGE_MATCHES", "2")
+    monkeypatch.setenv("PUBLISH_WINDOW_HOURS", "2")
+    monkeypatch.setenv("MIN_KICKOFF_LEAD_MINUTES", "20")
+    monkeypatch.setattr(focused_alpha, "atomic_write", lambda *args, **kwargs: None)
+    history = {"live_learning_ready": False, "settled_rows": 0, "by_league": {}}
+    rows = [
+        _row("StrongOutside", "strong"),
+        _row("NearFirst", "weak"),
+        _row("NearSecond", "weak"),
+        _row("FarWeak", "weak"),
+    ]
+    for row, hours in zip(rows, (2.9, 0.75, 1.5, 6.0), strict=True):
+        row["hours_to_kickoff"] = hours
+
+    result = focused_alpha.select_focus_cohort(
+        rows,
+        now=datetime(2026, 7, 24, tzinfo=UTC),
+        history_report=history,
+    )
+
+    assert [row["home_team"] for row in result["rows"]] == [
+        "StrongOutside",
+        "NearFirst",
+        "NearSecond",
+    ]
+    assert all(
+        row["focused_alpha_run_window_bridge"] for row in result["rows"][1:]
+    )
+    assert result["report"]["quality_selected_rows"] == 1
+    assert result["report"]["run_window_bridge_selected_rows"] == 2
+    assert result["report"]["run_window_bridge_triggered"] is True
+    assert result["report"]["status"] == "run_window_bridge_active"
+    assert result["report"]["publication_contract_relaxed"] is False

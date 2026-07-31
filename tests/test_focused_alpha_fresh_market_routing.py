@@ -153,3 +153,22 @@ def test_bootstrap_routing_spends_budget_on_nearest_bucket_first(monkeypatch) ->
     assignments = routing.build_focused_assignments(rows, 1)
 
     assert assignments["odds_api_io"]["offers"] == ["near-low-score"]
+
+
+def test_run_window_bridge_spends_budget_on_nearest_bucket_first(monkeypatch) -> None:
+    monkeypatch.setattr(routing, "_provider_health", lambda: {"sportlogic": {"usable": False}})
+    monkeypatch.setenv("FOCUSED_ALPHA_ODDS_API_IO_OFFERS_BUDGET", "1")
+    monkeypatch.setenv("FOCUSED_ALPHA_BZZOIRO_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_SSTATS_PARI_OFFERS_BUDGET", "0")
+    monkeypatch.setenv("FOCUSED_ALPHA_ODDS_REFRESH_MATCHES", "10")
+    rows = [
+        _row("outside-high-score", 100),
+        _row("window-low-score", 5),
+    ]
+    rows[0]["hours_to_kickoff"] = 3
+    rows[1]["hours_to_kickoff"] = 1
+    rows[1]["focused_alpha_run_window_bridge"] = True
+
+    assignments = routing.build_focused_assignments(rows, 1)
+
+    assert assignments["odds_api_io"]["offers"] == ["window-low-score"]
