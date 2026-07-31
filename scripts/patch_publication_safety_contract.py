@@ -9,8 +9,9 @@ weak reserve candidates from becoming real Telegram picks:
 * proxy/default 1.00:1.00 xG is a hard reject for every tier;
 * market-implied xG may replace a fake placeholder for diagnostics, but it is not
   accepted as hard xG confirmation for Telegram publication;
-* Telegram fallback now requires 2+ independent line/odds sources and 2+ context
-  confirmations when HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM=true;
+* A-tier requires 2+ independent line/odds sources and 2+ context
+  confirmations; B-tier keeps the regulated 1 odds / 2 books / 1 context
+  contract;
 * B-tier proxy/promotion rows need hard context evidence;
 * reserve/youth/friendly-style rows are not allowed through B-tier;
 * all decisions are written to a small diagnostic artifact.
@@ -216,7 +217,13 @@ def install(base: Any) -> None:
     def wrapped(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
         reasons = list(old(tier, candidate, metrics) or [])
         t = str(tier or '').strip().upper()
-        if _truthy('HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM', True) or _truthy('CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS', True):
+        # The historical global flag predates the A/B contract.  It is an
+        # A-tier strictness flag, not permission to raise B-tier from 1/2/1 to
+        # 2/2/2 after the focused-alpha policy has been applied.
+        if t == 'A' and (
+            _truthy('HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM', True)
+            or _truthy('CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS', True)
+        ):
             odds = _odds_sources(metrics)
             ctx = _context_sources(metrics)
             if odds < 2:
@@ -225,7 +232,13 @@ def install(base: Any) -> None:
                 add(f'tier_{t.lower()}_two_plus_context_sources_required:{ctx}/2', reasons)
         if _truthy('CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS', True) and _is_proxy_default_xg(metrics):
             add(f'tier_{t.lower()}_proxy_default_xg_placeholder', reasons)
-        if _truthy('CONTROLLED_FALLBACK_BLOCK_MARKET_IMPLIED_XG_AS_HARD', True) and _is_market_implied_xg(candidate, metrics) and not _has_hard_xg(candidate, metrics):
+        xg = _xg_payload(metrics)
+        hard_xg_flag = xg.get('xg_hard_confirmation')
+        market_implied_without_hard_direction = _is_market_implied_xg(candidate, metrics) and (
+            hard_xg_flag is False
+            or (hard_xg_flag is None and not _has_hard_xg(candidate, metrics))
+        )
+        if _truthy('CONTROLLED_FALLBACK_BLOCK_MARKET_IMPLIED_XG_AS_HARD', True) and market_implied_without_hard_direction:
             add(f'tier_{t.lower()}_market_implied_xg_not_hard_confirmation', reasons)
         if t == 'B' and _truthy('CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT', True):
             if _looks_weak_quality(candidate, metrics) and not _has_hard_context(candidate, metrics):
@@ -240,7 +253,7 @@ def install(base: Any) -> None:
     _write_report({
         'status': 'installed',
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
-        'policy': 'pilot: publish only strict candidates with 2+ line sources and 2+ context sources; proxy/default xG and market-implied-only xG are not hard publication confirmation',
+        'policy': 'A=2 odds/2 books/2 context; B=1 odds/2 books/1 real context; proxy/default xG and market-implied-only xG are not hard publication confirmation',
         'env': {
             'HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM': str(os.getenv('HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM') or 'true'),
             'CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS': str(os.getenv('CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS') or 'true'),

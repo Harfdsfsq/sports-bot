@@ -4,16 +4,23 @@ import json
 import runpy
 from pathlib import Path
 
+import pytest
+
 
 def test_ab_tier_contract_enables_controlled_b_publication(monkeypatch, tmp_path) -> None:
     env_file = tmp_path / "github_env"
     monkeypatch.setenv("GITHUB_ENV", str(env_file))
-    runpy.run_path("scripts/apply_ab_tier_bookmaker_contract.py", run_name="__main__")
+    with pytest.raises(SystemExit) as exc:
+        runpy.run_path("scripts/apply_ab_tier_bookmaker_contract.py", run_name="__main__")
+    assert exc.value.code == 0
     exported = env_file.read_text(encoding="utf-8")
     assert "PUBLISH_ALLOW_B_TIER=true" in exported
     assert "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B=true" in exported
     assert "CONTROLLED_FALLBACK_TIER_B_PUBLISH_ENABLED=true" in exported
     assert "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS=2" in exported
+    assert "PUBLISH_TIER_A_MIN_ODDS_SOURCES=2" in exported
+    assert "CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES=true" in exported
+    assert "CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES=2" in exported
     assert "PROMOTE_A_COVER_ONLY_PUBLISH_WINDOW=false" in exported
     assert "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN=3" in exported
     assert "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH=1" in exported

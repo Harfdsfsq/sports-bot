@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
+from scripts import patch_publication_safety_contract as safety
 from scripts import publish_controlled_fallback as pcf
 
 
@@ -169,6 +172,100 @@ def test_totals_xg_sanity_uses_nested_total_xg(monkeypatch):
     assert metrics["xg_sanity"]["xg_source"] == "total_xg"
     assert metrics["xg_sanity"]["xg_total"] == 2.5
     assert "missing_total_xg_sanity" not in pcf.hard_reject_reasons(candidate, metrics, {})
+
+
+def test_market_implied_xg_is_not_reported_as_direction_conflict(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    candidate = _candidate()
+    candidate.update(
+        {
+            "selection": "Меньше",
+            "point": 2.5,
+            "expected_home": 1.4159,
+            "expected_away": 1.4159,
+            "adjusted_probability": 0.472754,
+            "market_probability": 0.461894,
+            "diagnostics": {
+                **candidate["diagnostics"],
+                "xg_enrichment": {
+                    "source": "market_implied_total_xg",
+                    "source_mode": "market_implied_total_xg",
+                    "context_path": "market_probability_from_candidate",
+                },
+            },
+        }
+    )
+
+    metrics = pcf.candidate_metrics(candidate)
+
+    assert metrics["xg_sanity"]["xg_source"] == "market_implied_total_xg"
+    assert metrics["xg_sanity"]["xg_hard_confirmation"] is False
+    assert metrics["xg_sanity"]["xg_direction_evaluated"] is False
+    assert "xg_direction_conflict" not in pcf.hard_reject_reasons(candidate, metrics, {})
+
+
+def test_b_tier_contract_is_not_raised_by_legacy_a_tier_env(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", "2")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", "2")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", "2")
+    candidate = _candidate()
+    candidate["books_count"] = 2
+    candidate["source_summary"]["publish_coverage_contract"]["odds_sources"] = ["odds_api_io"]
+    candidate["source_summary"]["publish_coverage_contract"]["odds_sources_count"] = 1
+    candidate["source_summary"]["context_sources"] = ["sstats"]
+    candidate["source_summary"]["publish_coverage_contract"]["context_sources"] = ["sstats"]
+    candidate["source_summary"]["publish_coverage_contract"]["context_sources_count"] = 1
+
+    metrics = pcf.candidate_metrics(candidate)
+    reasons = pcf.tier_reasons("B", candidate, metrics)
+
+    assert not [reason for reason in reasons if "odds_sources_below_min" in reason]
+    assert not [reason for reason in reasons if "confirmation_sources_below_min" in reason]
+
+
+def test_safety_patch_applies_two_plus_global_flag_only_to_a_tier(monkeypatch):
+    monkeypatch.setenv("HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM", "true")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS", "true")
+    base = SimpleNamespace(tier_reasons=lambda tier, candidate, metrics: [])
+    safety.install(base)
+    metrics = {
+        "odds_sources_count": 1,
+        "confirmation_sources_count": 1,
+        "quality_score_source": "raw",
+    }
+
+    a_reasons = base.tier_reasons("A", {}, metrics)
+    b_reasons = base.tier_reasons("B", {}, metrics)
+
+    assert "tier_a_two_plus_odds_sources_required:1/2" in a_reasons
+    assert "tier_a_two_plus_context_sources_required:1/2" in a_reasons
+    assert not [reason for reason in b_reasons if "two_plus_odds_sources_required" in reason]
+    assert not [reason for reason in b_reasons if "two_plus_context_sources_required" in reason]
+
+
+def test_safety_patch_blocks_market_implied_xg_without_hard_direction(monkeypatch):
+    base = SimpleNamespace(tier_reasons=lambda tier, candidate, metrics: [])
+    safety.install(base)
+    candidate = {
+        "diagnostics": {
+            "xg_enrichment": {
+                "source": "market_implied_total_xg",
+                "context_path": "market_probability_from_candidate",
+            }
+        }
+    }
+    metrics = {
+        "xg_sanity": {
+            "xg_source": "market_implied_total_xg",
+            "xg_hard_confirmation": False,
+        },
+        "quality_score_source": "raw",
+    }
+
+    reasons = base.tier_reasons("B", candidate, metrics)
+
+    assert "tier_b_market_implied_xg_not_hard_confirmation" in reasons
 
 
 def test_quarter_total_line_is_never_publishable(monkeypatch):

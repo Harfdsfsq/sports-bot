@@ -182,6 +182,16 @@ def _sportlogic_runtime_evidence(payload: Any = None) -> dict[str, Any]:
         if isinstance(sport, dict) and (
             bool(sport.get("enabled")) or _int(sport.get("requests")) > 0
         ):
+            if bool(sport.get("stale_sample")):
+                return {
+                    "requests": 0,
+                    "fixtures": 0,
+                    "matched": 0,
+                    "odds_requests": 0,
+                    "offers": 0,
+                    "errors": 0,
+                    "diagnosis": "configured_enabled_no_fresh_runtime_evidence",
+                }
             return {
                 "requests": _int(sport.get("requests")),
                 "fixtures": _int(sport.get("fixtures")),

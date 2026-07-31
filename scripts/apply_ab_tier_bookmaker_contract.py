@@ -2,9 +2,8 @@ from __future__ import annotations
 
 """Apply the HARIZON A/B public publication evidence contract.
 
-A-tier public = 2 bookmaker/line price confirmations and 2 context sources.
-A second API odds provider is useful diagnostics, but it is not the blocker when
-one odds provider already confirms the same market/side/line through 2+ books.
+A-tier public = 2 independent odds sources, 2 bookmaker/line price
+confirmations and 2 context sources.
 B-tier remains a controlled fallback tier and still must pass value, xG, quality,
 line movement, price integrity, dedupe, daily limit and publish-window guards.
 """
@@ -27,7 +26,7 @@ CONTRACT_ENV = {
     'MIN_CONTEXT_SOURCES_PUBLISH': '1',
     'PUBLISH_MIN_ODDS_SOURCES': '1',
     'MIN_SOURCES_PUBLISH': '1',
-    'PUBLISH_TIER_A_MIN_ODDS_SOURCES': '1',
+    'PUBLISH_TIER_A_MIN_ODDS_SOURCES': '2',
     'PUBLISH_TIER_A_MIN_BOOKS': '2',
     'PUBLISH_TIER_A_MIN_CONTEXT_SOURCES': '2',
     'PUBLISH_TIER_B_MIN_ODDS_SOURCES': '1',
@@ -44,9 +43,9 @@ CONTRACT_ENV = {
     'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES': 'false',
-    'CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES': 'false',
-    'CONTROLLED_FALLBACK_TIER_A_LINE_CONFIRMATION_MODE': 'bookmaker_or_provider',
-    'CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES': '1',
+    'CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES': 'true',
+    'CONTROLLED_FALLBACK_TIER_A_LINE_CONFIRMATION_MODE': 'independent_provider_and_bookmaker',
+    'CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES': '2',
     'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS': '2',
     'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKMAKERS': '2',
     'CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES': '2',
@@ -93,11 +92,11 @@ def main() -> int:
         'contract': {
             'public_publication_tier': 'A-public plus controlled-B-public-fallback',
             'A': {
-                'min_odds_sources': 1,
+                'min_odds_sources': 2,
                 'min_bookmakers': 2,
                 'min_context_sources': 2,
-                'line_confirmation_mode': 'bookmaker_or_provider',
-                'two_api_odds_sources': 'diagnostic_not_blocking',
+                'line_confirmation_mode': 'independent_provider_and_bookmaker',
+                'two_api_odds_sources': 'required',
             },
             'B': {
                 'mode': 'controlled_public_fallback',
@@ -115,8 +114,7 @@ def main() -> int:
             },
             'guards_unchanged': ['value', 'xg', 'quality_score', 'line_movement', 'price_integrity', 'dedupe', 'daily_limit', 'publish_window'],
             'notes': [
-                'A-tier needs two same-market line/book confirmations and two context sources.',
-                'Two independent API odds providers remain a coverage diagnostic, not an A-tier hard blocker.',
+                'A-tier needs two independent odds sources, two same-market bookmaker confirmations and two context sources.',
                 'B-tier is not auto-publish; it still must pass guarded fallback final checks.',
                 'Quarter totals remain blocked by publication point guard.',
                 'A-cover promotion may happen before the 2h publish window only to stage line-movement lifecycle candidates.',
@@ -125,7 +123,7 @@ def main() -> int:
         'env': CONTRACT_ENV,
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-    print('Applied HARIZON A/B contract: A=2 books/lines + 2 contexts; two API odds providers diagnostic only; B=1 odds/2 books/1 context.')
+    print('Applied HARIZON A/B contract: A=2 odds/2 books/2 contexts; B=1 odds/2 books/1 context.')
     return 0
 
 

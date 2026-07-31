@@ -23,10 +23,13 @@ def test_quota_policy_is_strict_and_per_account(monkeypatch, tmp_path) -> None:
     assert os.environ["ODDS_API_IO_ACCOUNT2_PER_RUN_MAX"] == "100"
     assert os.environ["ODDS_API_IO_MAX_REQUESTS_PER_RUN"] == "200"
     assert os.environ["SPORTLOGIC_MAX_REQUESTS_PER_RUN"] == "30"
-    assert os.environ["DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS"] == "80"
-    assert os.environ["PUBLISH_MIN_ODDS_SOURCES"] == "2"
-    assert os.environ["PUBLISH_MIN_CONTEXT_SOURCES"] == "2"
+    assert os.environ["DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS"] == "40"
+    assert os.environ["PUBLISH_TIER_A_MIN_ODDS_SOURCES"] == "2"
+    assert os.environ["PUBLISH_TIER_A_MIN_CONTEXT_SOURCES"] == "2"
+    assert os.environ["PUBLISH_TIER_B_MIN_ODDS_SOURCES"] == "1"
+    assert os.environ["PUBLISH_TIER_B_MIN_CONTEXT_SOURCES"] == "1"
     assert os.environ["API_COVERAGE_MIN_EXACT_BOOKS"] == "2"
 
     persisted = json.loads((tmp_path / "quota.json").read_text(encoding="utf-8"))
-    assert persisted["strict_publication"]["min_exact_odds_sources"] == 2
+    assert persisted["strict_publication"]["A"]["min_exact_odds_sources"] == 2
+    assert persisted["strict_publication"]["B"]["min_exact_odds_sources"] == 1

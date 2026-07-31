@@ -10,7 +10,17 @@ def test_coverage_uplift_does_not_disable_sportlogic() -> None:
     assert 'ENABLE_SPORTLOGIC": "false"' not in text
     assert 'put_limit(env, "SPORTLOGIC", 0)' not in text
     assert "SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED" in text
-    assert "v19-sportlogic-enabled-coverage-uplift" in text
+    assert "v22-two-plus-lines-contexts" in text
+
+
+def test_coverage_uplift_preserves_ab_contract() -> None:
+    text = Path("scripts/apply_coverage_uplift_runtime_policy.py").read_text(encoding="utf-8")
+
+    assert "'PUBLISH_TIER_A_MIN_ODDS_SOURCES': '2'" in text
+    assert "'PUBLISH_TIER_A_MIN_CONTEXT_SOURCES': '2'" in text
+    assert "'PUBLISH_TIER_B_MIN_ODDS_SOURCES': '1'" in text
+    assert "'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES': '1'" in text
+    assert "'CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS': 'false'" in text
 
 
 def test_inventory_bookmaker_backfill_repairs_context_and_source_counts() -> None:

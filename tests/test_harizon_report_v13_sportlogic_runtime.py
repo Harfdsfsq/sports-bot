@@ -108,3 +108,32 @@ def test_uses_current_report_payload_before_stale_probe(
     assert "запросы 5" in repaired
     assert "fixtures 100" in repaired
     assert "active_odds_stale_only_no_current_fixture" in repaired
+
+
+def test_current_report_does_not_refresh_nested_stale_sportlogic_sample(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(report, "EXPORT", tmp_path)
+    payload = {
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "status": "lines_but_no_raw_candidates",
+        "api": {
+            "sportlogic": {
+                "enabled": True,
+                "requests": 5,
+                "fixtures": 100,
+                "matched": 0,
+                "stale_sample": True,
+                "sample_dates": ["2026-05-02"],
+                "diagnosis": "active_odds_stale_only_no_current_fixture",
+            }
+        },
+    }
+    text = "• SportLogic: disabled_by_env; запросы 0.\n"
+
+    repaired = report._repair_sportlogic_runtime_line(text, payload)
+
+    assert "SportLogic: enabled_runtime" in repaired
+    assert "запросы 0" in repaired
+    assert "fixtures 0" in repaired
+    assert "configured_enabled_no_fresh_runtime_evidence" in repaired

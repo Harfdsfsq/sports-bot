@@ -586,6 +586,46 @@ def _nested_total_xg_value(candidate: dict[str, Any]) -> Any:
     return None
 
 
+def _xg_source_marker(candidate: dict[str, Any]) -> str:
+    """Return the provenance of the xG values used for totals sanity.
+
+    Market-implied xG is deliberately stored in ``expected_home`` /
+    ``expected_away`` for compatibility with older reports.  Those flat fields
+    must not erase the provenance carried by the enrichment payload, otherwise
+    the publication guard mistakes a price-derived anchor for independent xG.
+    """
+    values: list[str] = []
+    containers = [
+        candidate,
+        candidate.get("source_summary"),
+        candidate.get("diagnostics"),
+    ]
+    for container in containers:
+        if not isinstance(container, dict):
+            continue
+        for key in ("xg_source", "source_mode", "proxy_default_xg_replacement_source"):
+            value = container.get(key)
+            if value not in (None, ""):
+                values.append(str(value).strip().lower())
+        for nested_key in ("xg", "model_xg", "xg_enrichment"):
+            nested = container.get(nested_key)
+            if not isinstance(nested, dict):
+                continue
+            for key in ("xg_source", "source", "source_mode"):
+                value = nested.get(key)
+                if value not in (None, ""):
+                    values.append(str(value).strip().lower())
+
+    market_tokens = (
+        "market_implied_total_xg",
+        "market_probability_from_candidate",
+        "market_implied_replaces_proxy_placeholder",
+    )
+    if any(any(token in value for token in market_tokens) for value in values):
+        return "market_implied_total_xg"
+    return next((value for value in values if value), "")
+
+
 def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -> dict[str, Any]:
     if not env_bool("CONTROLLED_FALLBACK_XG_SANITY_ENABLED", True):
         return {"enabled": False}
@@ -599,7 +639,7 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
     if expected_home in (None, "") or expected_away in (None, ""):
         expected_home = _nested_xg_value(candidate, "home")
         expected_away = _nested_xg_value(candidate, "away")
-    xg_source = "home_away"
+    xg_source = _xg_source_marker(candidate) or "home_away"
     if expected_home in (None, "") or expected_away in (None, ""):
         total_xg_raw = _nested_total_xg_value(candidate)
         total_xg = _float_or_none(total_xg_raw)
@@ -645,7 +685,8 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
 
     direction_ok = True
     margin = env_float("CONTROLLED_FALLBACK_XG_DIRECTION_MARGIN", 0.05)
-    if total_xg is not None and line is not None:
+    market_implied = xg_source == "market_implied_total_xg"
+    if total_xg is not None and line is not None and not market_implied:
         if is_over and total_xg < line - margin:
             direction_ok = False
         if is_under and total_xg > line + margin:
@@ -662,6 +703,8 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
         "xg_model_conservative_gap_pp": round(conservative_gap_pp, 3),
         "xg_total": round(total_xg, 3) if total_xg is not None else None,
         "xg_direction_ok": direction_ok,
+        "xg_direction_evaluated": not market_implied,
+        "xg_hard_confirmation": not market_implied,
     }
 
 
@@ -1344,13 +1387,17 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
             reasons.append(f"tier_a_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
     elif tier == "B":
         if env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES", True):
-            min_odds_sources = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 1))
+            # HARIZON's B-tier contract is invariant: one independent line
+            # source, two same-market bookmakers, and one real context source.
+            # Legacy coverage installers may still export A-tier values here;
+            # do not let those late env writes silently turn B into A.
+            min_odds_sources = 1
             if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
                 reasons.append(f"tier_b_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
-        min_books = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 2)))
+        min_books = 2
         if int(metrics.get("books_count") or 0) < min_books:
             reasons.append(f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}")
-        min_confirmations = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 1)))
+        min_confirmations = 1
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
             reasons.append(f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
         reasons.extend(_bookmaker_quorum_price_guard(candidate, metrics))
