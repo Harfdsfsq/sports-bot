@@ -1,9 +1,9 @@
 {
   "b_cover_rows": 85,
   "b_cover_without_candidate": 82,
-  "candidate_rows_seen": 33,
-  "candidate_rows_seen_before_promotion": 30,
-  "created_at_utc": "2026-07-31T09:06:35.935430+00:00",
+  "candidate_rows_seen": 30,
+  "candidate_rows_seen_before_promotion": 27,
+  "created_at_utc": "2026-07-31T11:06:16.965819+00:00",
   "inventory_load": {
     "candidate_source_scores": [
       {
@@ -51,8 +51,8 @@
     ],
     "prebuild_coverage_truth": {
       "enabled": true,
-      "finished_at_utc": "2026-07-31T09:06:34.615636+00:00",
-      "started_at_utc": "2026-07-31T09:06:33.528667+00:00",
+      "finished_at_utc": "2026-07-31T11:06:15.184714+00:00",
+      "started_at_utc": "2026-07-31T11:06:13.686826+00:00",
       "status": "ok",
       "steps": [
         {
@@ -125,7 +125,7 @@
   "promoted_count": 3,
   "promotion": {
     "considered_b_cover_rows": 85,
-    "created_at_utc": "2026-07-31T09:06:35.912168+00:00",
+    "created_at_utc": "2026-07-31T11:06:16.934570+00:00",
     "enabled": true,
     "inventory_load": {
       "candidate_source_scores": [
@@ -174,8 +174,8 @@
       ],
       "prebuild_coverage_truth": {
         "enabled": true,
-        "finished_at_utc": "2026-07-31T09:06:34.615636+00:00",
-        "started_at_utc": "2026-07-31T09:06:33.528667+00:00",
+        "finished_at_utc": "2026-07-31T11:06:15.184714+00:00",
+        "started_at_utc": "2026-07-31T11:06:13.686826+00:00",
         "status": "ok",
         "steps": [
           {
@@ -246,18 +246,17 @@
     },
     "inventory_rows_seen": 277,
     "offer_diagnostics": {
-      "accepted_offer_rows": 174,
-      "scanned_dicts": 51617,
+      "accepted_offer_rows": 175,
+      "scanned_dicts": 51629,
       "source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 2,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 3,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 68,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 2,
-        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 2,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 3,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/2026-07-31.json": 4,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/current.json": 4,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/latest.json": 4,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/today.json": 4,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 2,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 3,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-07-31.json": 41,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/latest.json": 41
       }
@@ -265,8 +264,8 @@
     "promoted_count": 3,
     "reason_counts": {
       "promoted": 3,
-      "promotion_skip_duplicate_candidate": 2,
-      "promotion_skip_edge_below_min": 11,
+      "promotion_skip_duplicate_candidate": 3,
+      "promotion_skip_edge_below_min": 9,
       "promotion_skip_no_offer_bucket": 79,
       "promotion_skip_odds_above_max": 9,
       "promotion_skip_odds_below_min": 12,
@@ -275,21 +274,27 @@
     "rescue_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
     "sample": [
       {
-        "adjusted_probability": 0.593717,
+        "adjusted_probability": 0.492683,
         "away_team": "FC Chambly Oise",
         "bookmaker": "bet365",
-        "books_count": 2,
+        "books_count": 1,
         "canonical_match_id": "2026-07-31|amiens|chambly oise",
         "commence_time": "2026-07-31T09:00:00+00:00",
-        "confidence": 69.355,
+        "confidence": 69.25,
         "confirmation_sources": [
           "clubelo",
+          "day_inventory",
+          "inventory_context",
+          "model_xg",
           "sstats"
         ],
-        "confirmation_sources_count": 2,
+        "confirmation_sources_count": 5,
         "context": {
           "context_sources": [
             "clubelo",
+            "day_inventory",
+            "inventory_context",
+            "model_xg",
             "sstats"
           ],
           "expected_away": 1.3396,
@@ -297,79 +302,99 @@
         },
         "diagnostics": {
           "promotion": {
-            "canonical_edge_pp": 2.229,
-            "canonical_ev_pct": 3.9,
-            "created_at_utc": "2026-07-31T09:06:35.901864+00:00",
+            "canonical_edge_pp": 0.488,
+            "canonical_ev_pct": 1.0,
+            "created_at_utc": "2026-07-31T11:06:16.928230+00:00",
             "created_by": "build_b_cover_candidate_gap_report.py",
-            "median_price": 1.715,
-            "selected_price": 1.75,
-            "selected_vs_median_deviation_pct": 2.041
+            "median_price": 2.05,
+            "selected_price": 2.05,
+            "selected_vs_median_deviation_pct": 0.0
           }
         },
-        "edge_pct": 2.229,
-        "ev_pct": 3.9,
+        "edge_pct": 0.488,
+        "ev_pct": 1.0,
         "expected_away": 1.3396,
         "expected_home": 1.3396,
         "family": "totals",
         "home_team": "Amiens SC",
         "league_name": "Club Friendlies",
         "market_family": "totals",
-        "market_probability": 0.58309,
+        "market_probability": 0.487805,
         "match_key": "2026-07-31|amiens|chambly oise",
-        "model_probability": 0.593717,
-        "odds": 1.75,
+        "model_probability": 0.492683,
+        "odds": 2.05,
         "odds_sources_count": 1,
         "point": 2.5,
-        "publication_score": 13.543,
+        "publication_score": 6.626,
         "reasons": [
           "mode=b_cover_market_promotion",
           "model=conservative_median_market_anchor",
-          "books=2",
-          "context_sources=2",
-          "best_vs_median=2.04%"
+          "books=1",
+          "context_sources=5",
+          "best_vs_median=0.00%"
         ],
-        "selected_odds": 1.75,
-        "selection": "Больше",
-        "selection_key": "over",
+        "selected_odds": 2.05,
+        "selection": "Меньше",
+        "selection_key": "under",
         "source_summary": {
           "bookmaker": "bet365",
           "books": [
-            "bet365",
-            "unibet"
+            "bet365"
           ],
-          "books_count": 2,
+          "books_count": 1,
           "context_sources": [
             "clubelo",
+            "day_inventory",
+            "inventory_context",
+            "model_xg",
             "sstats"
           ],
-          "median_price": 1.715,
+          "median_price": 2.05,
           "prices": [
-            1.75,
-            1.68
+            2.05,
+            2.05,
+            2.05,
+            2.05
           ],
           "raw_bucket_offers": [
             {
               "bookmaker": "bet365",
               "family": "totals",
               "point": 2.5,
-              "price": 1.75,
-              "selection": "over",
-              "source": "odds_api_io"
+              "price": 2.05,
+              "selection": "under",
+              "source": "day_inventory"
             },
             {
-              "bookmaker": "unibet",
+              "bookmaker": "bet365",
               "family": "totals",
               "point": 2.5,
-              "price": 1.68,
-              "selection": "over",
-              "source": "odds_api_io"
+              "price": 2.05,
+              "selection": "under",
+              "source": "day_inventory"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": 2.5,
+              "price": 2.05,
+              "selection": "under",
+              "source": "day_inventory"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": 2.5,
+              "price": 2.05,
+              "selection": "under",
+              "source": "day_inventory"
             }
           ],
           "selected_bookmaker": "bet365",
           "selected_source": "b_cover_market_promotion",
-          "selected_vs_median_deviation_pct": 2.041
+          "selected_vs_median_deviation_pct": 0.0
         },
-        "sources_count": 2
+        "sources_count": 5
       },
       {
         "adjusted_probability": 0.460433,
@@ -398,7 +423,7 @@
           "promotion": {
             "canonical_edge_pp": 2.565,
             "canonical_ev_pct": 5.899,
-            "created_at_utc": "2026-07-31T09:06:35.902351+00:00",
+            "created_at_utc": "2026-07-31T11:06:16.929055+00:00",
             "created_by": "build_b_cover_candidate_gap_report.py",
             "median_price": 2.23,
             "selected_price": 2.3,
@@ -538,7 +563,7 @@
           "promotion": {
             "canonical_edge_pp": 0.6,
             "canonical_ev_pct": 1.2,
-            "created_at_utc": "2026-07-31T09:06:35.904015+00:00",
+            "created_at_utc": "2026-07-31T11:06:16.930754+00:00",
             "created_by": "build_b_cover_candidate_gap_report.py",
             "median_price": 2.0,
             "selected_price": 2.0,
@@ -661,259 +686,6 @@
   },
   "sample": [
     {
-      "away_team": "FC Chambly Oise",
-      "books_count": 43,
-      "context_count": 2,
-      "gap_reason": "has_candidate",
-      "has_candidate_in_latest_run": true,
-      "has_xg_like_context": true,
-      "home_team": "Amiens SC",
-      "kickoff": "2026-07-31T09:00:00+00:00",
-      "match_key": "2026-07-31|amiens|chambly oise"
-    },
-    {
-      "away_team": "Neom SC",
-      "books_count": 7,
-      "context_count": 3,
-      "gap_reason": "has_candidate",
-      "has_candidate_in_latest_run": true,
-      "has_xg_like_context": true,
-      "home_team": "UD Las Palmas",
-      "kickoff": "2026-07-31T09:00:00+00:00",
-      "match_key": "2026-07-31|ud las palmas|neom"
-    },
-    {
-      "away_team": "Real Madrid Castilla",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Albacete Balompie",
-      "kickoff": "2026-07-31T09:00:00+00:00",
-      "match_key": "2026-07-31|albacete balompie|real madrid castilla"
-    },
-    {
-      "away_team": "Stade Lavallois",
-      "books_count": 1,
-      "context_count": 1,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Le Havre",
-      "kickoff": "2026-07-31T09:00:00+00:00",
-      "match_key": "2026-07-31|le havre|stade lavallois"
-    },
-    {
-      "away_team": "Jeugd KAA Gent B",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "KV Kortrijk",
-      "kickoff": "2026-07-31T09:00:00+00:00",
-      "match_key": "2026-07-31|kv kortrijk|jeugd kaa gent b"
-    },
-    {
-      "away_team": "KAA Gent Reserve U23",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "KV Kortrijk",
-      "kickoff": "2026-07-31T09:00:00+00:00",
-      "match_key": "2026-07-31|kv kortrijk|kaa gent reserve u23"
-    },
-    {
-      "away_team": "Flinders United Wfc",
-      "books_count": 2,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Salisbury Inter",
-      "kickoff": "2026-07-31T08:45:00+00:00",
-      "match_key": "2026-07-31|salisbury inter|flinders united wfc"
-    },
-    {
-      "away_team": "FC Dieppe",
-      "books_count": 1,
-      "context_count": 1,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Caen",
-      "kickoff": "2026-07-31T09:30:00+00:00",
-      "match_key": "2026-07-31|caen|dieppe"
-    },
-    {
-      "away_team": "Dieppe FC",
-      "books_count": 1,
-      "context_count": 1,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "SM Caen",
-      "kickoff": "2026-07-31T09:30:00+00:00",
-      "match_key": "2026-07-31|sm caen|dieppe"
-    },
-    {
-      "away_team": "Eastern Suburbs",
-      "books_count": 1,
-      "context_count": 1,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Rochedale Rovers",
-      "kickoff": "2026-07-31T09:30:00+00:00",
-      "match_key": "2026-07-31|rochedale rovers|eastern suburbs"
-    },
-    {
-      "away_team": "Brisbane City",
-      "books_count": 1,
-      "context_count": 1,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Wynnum Wolves FC",
-      "kickoff": "2026-07-31T09:30:00+00:00",
-      "match_key": "2026-07-31|wynnum wolves|brisbane city"
-    },
-    {
-      "away_team": "CD Castellon",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Deportivo Alaves",
-      "kickoff": "2026-07-31T08:30:00+00:00",
-      "match_key": "2026-07-31|deportivo alaves|castellon"
-    },
-    {
-      "away_team": "Córdoba",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Elche",
-      "kickoff": "2026-07-31T08:30:00+00:00",
-      "match_key": "2026-07-31|elche|c rdoba"
-    },
-    {
-      "away_team": "Cordoba CF",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Elche CF",
-      "kickoff": "2026-07-31T08:30:00+00:00",
-      "match_key": "2026-07-31|elche|cordoba"
-    },
-    {
-      "away_team": "Capalaba FC U23",
-      "books_count": 5,
-      "context_count": 5,
-      "gap_reason": "has_candidate",
-      "has_candidate_in_latest_run": true,
-      "has_xg_like_context": true,
-      "home_team": "North Star U23",
-      "kickoff": "2026-07-31T08:30:00+00:00",
-      "match_key": "2026-07-31|north star|capalaba"
-    },
-    {
-      "away_team": "Logan Lightning U23",
-      "books_count": 36,
-      "context_count": 1,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Broadbeach United U23",
-      "kickoff": "2026-07-31T08:30:00+00:00",
-      "match_key": "2026-07-31|broadbeach united|logan lightning"
-    },
-    {
-      "away_team": "Western United FC U23",
-      "books_count": 12,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Melbourne Knights FC U23",
-      "kickoff": "2026-07-31T08:15:00+00:00",
-      "match_key": "2026-07-31|melbourne knights|western united"
-    },
-    {
-      "away_team": "Green Gully SC U23",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Preston Lions FC U23",
-      "kickoff": "2026-07-31T08:15:00+00:00",
-      "match_key": "2026-07-31|preston lions|green gully"
-    },
-    {
-      "away_team": "Eltham Redbacks FC U23",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Northcote City FC U23",
-      "kickoff": "2026-07-31T08:15:00+00:00",
-      "match_key": "2026-07-31|northcote city|eltham redbacks"
-    },
-    {
-      "away_team": "Hertha BSC",
-      "books_count": 1,
-      "context_count": 1,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "1. FC Cologne",
-      "kickoff": "2026-07-31T10:00:00+00:00",
-      "match_key": "2026-07-31|1 cologne|hertha bsc"
-    },
-    {
-      "away_team": "Chertanovo Moscow",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Ural Ekaterinburg",
-      "kickoff": "2026-07-31T08:00:00+00:00",
-      "match_key": "2026-07-31|ural ekaterinburg|chertanovo moscow"
-    },
-    {
-      "away_team": "Blacktown Spartans FC U20",
-      "books_count": 2,
-      "context_count": 3,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Prospect United U20",
-      "kickoff": "2026-07-31T08:00:00+00:00",
-      "match_key": "2026-07-31|prospect united|blacktown spartans"
-    },
-    {
-      "away_team": "Broadmeadow Magic FC Reserve",
-      "books_count": 2,
-      "context_count": 1,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Cooks Hill United FC Reserve",
-      "kickoff": "2026-07-31T08:00:00+00:00",
-      "match_key": "2026-07-31|cooks hill united|broadmeadow magic"
-    },
-    {
       "away_team": "Dalian Yingbo FC",
       "books_count": 1,
       "context_count": 1,
@@ -923,17 +695,6 @@
       "home_team": "Henan FC",
       "kickoff": "2026-07-31T11:35:00+00:00",
       "match_key": "2026-07-31|henan|dalian yingbo"
-    },
-    {
-      "away_team": "CD Castellón",
-      "books_count": 9,
-      "context_count": 2,
-      "gap_reason": "b_cover_no_candidate",
-      "has_candidate_in_latest_run": false,
-      "has_xg_like_context": true,
-      "home_team": "Deportivo Alavés",
-      "kickoff": "2026-07-31T12:00:00+00:00",
-      "match_key": "2026-07-31|deportivo alav s|castell n"
     },
     {
       "away_team": "SC Freiburg",
@@ -967,6 +728,72 @@
       "home_team": "Greuther Furth",
       "kickoff": "2026-07-31T12:00:00+00:00",
       "match_key": "2026-07-31|greuther furth|freiburg"
+    },
+    {
+      "away_team": "CD Castellón",
+      "books_count": 9,
+      "context_count": 2,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Deportivo Alavés",
+      "kickoff": "2026-07-31T12:00:00+00:00",
+      "match_key": "2026-07-31|deportivo alav s|castell n"
+    },
+    {
+      "away_team": "Hertha BSC",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "1. FC Cologne",
+      "kickoff": "2026-07-31T10:00:00+00:00",
+      "match_key": "2026-07-31|1 cologne|hertha bsc"
+    },
+    {
+      "away_team": "FC Dieppe",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Caen",
+      "kickoff": "2026-07-31T09:30:00+00:00",
+      "match_key": "2026-07-31|caen|dieppe"
+    },
+    {
+      "away_team": "Eastern Suburbs",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Rochedale Rovers",
+      "kickoff": "2026-07-31T09:30:00+00:00",
+      "match_key": "2026-07-31|rochedale rovers|eastern suburbs"
+    },
+    {
+      "away_team": "Brisbane City",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Wynnum Wolves FC",
+      "kickoff": "2026-07-31T09:30:00+00:00",
+      "match_key": "2026-07-31|wynnum wolves|brisbane city"
+    },
+    {
+      "away_team": "Dieppe FC",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "SM Caen",
+      "kickoff": "2026-07-31T09:30:00+00:00",
+      "match_key": "2026-07-31|sm caen|dieppe"
     },
     {
       "away_team": "GOAL FC",
@@ -1099,6 +926,204 @@
       "home_team": "Valenciennes",
       "kickoff": "2026-07-31T16:00:00+00:00",
       "match_key": "2026-07-31|valenciennes|us boulogne c te d opale"
+    },
+    {
+      "away_team": "Widzew Łódź",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Wisła Płock",
+      "kickoff": "2026-07-31T16:00:00+00:00",
+      "match_key": "2026-07-31|wis a p ock|widzew d"
+    },
+    {
+      "away_team": "Amiens SC",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Red Star FC",
+      "kickoff": "2026-07-31T16:00:00+00:00",
+      "match_key": "2026-07-31|red star|amiens"
+    },
+    {
+      "away_team": "Lokomotiv Sofia",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Slavia Sofia",
+      "kickoff": "2026-07-31T16:00:00+00:00",
+      "match_key": "2026-07-31|slavia sofia|lokomotiv sofia"
+    },
+    {
+      "away_team": "AL Wakrah SC",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "FC Nantes",
+      "kickoff": "2026-07-31T16:00:00+00:00",
+      "match_key": "2026-07-31|nantes|al wakrah"
+    },
+    {
+      "away_team": "Pontivy GSI",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "US Concarneau",
+      "kickoff": "2026-07-31T16:00:00+00:00",
+      "match_key": "2026-07-31|us concarneau|pontivy gsi"
+    },
+    {
+      "away_team": "US Boulogne",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Valenciennes FC",
+      "kickoff": "2026-07-31T16:00:00+00:00",
+      "match_key": "2026-07-31|valenciennes|us boulogne"
+    },
+    {
+      "away_team": "Widzew Lodz",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Wisla Plock",
+      "kickoff": "2026-07-31T16:00:00+00:00",
+      "match_key": "2026-07-31|wisla plock|widzew lodz"
+    },
+    {
+      "away_team": "Sevilla",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "NEC Nijmegen",
+      "kickoff": "2026-07-31T17:00:00+00:00",
+      "match_key": "2026-07-31|nec nijmegen|sevilla"
+    },
+    {
+      "away_team": "Oissel",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Quevilly - Rouen Métropole",
+      "kickoff": "2026-07-31T17:00:00+00:00",
+      "match_key": "2026-07-31|quevilly rouen m tropole|oissel"
+    },
+    {
+      "away_team": "Folgore Caratese",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Sassuolo",
+      "kickoff": "2026-07-31T17:00:00+00:00",
+      "match_key": "2026-07-31|sassuolo|folgore caratese"
+    },
+    {
+      "away_team": "Real Sociedad",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Toulouse",
+      "kickoff": "2026-07-31T17:00:00+00:00",
+      "match_key": "2026-07-31|toulouse|real sociedad"
+    },
+    {
+      "away_team": "HamKam",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Vålerenga IF",
+      "kickoff": "2026-07-31T17:00:00+00:00",
+      "match_key": "2026-07-31|v lerenga if|hamkam"
+    },
+    {
+      "away_team": "Gillingham",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Ebbsfleet United",
+      "kickoff": "2026-07-31T18:00:00+00:00",
+      "match_key": "2026-07-31|ebbsfleet united|gillingham"
+    },
+    {
+      "away_team": "Derby County",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Mansfield Town",
+      "kickoff": "2026-07-31T18:00:00+00:00",
+      "match_key": "2026-07-31|mansfield town|derby county"
+    },
+    {
+      "away_team": "Académica Coimbra",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "UD Santarém",
+      "kickoff": "2026-07-31T18:00:00+00:00",
+      "match_key": "2026-07-31|ud santar m|acad mica coimbra"
+    },
+    {
+      "away_team": "SC Aubagne Air Bel",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "SC Toulon",
+      "kickoff": "2026-07-31T18:00:00+00:00",
+      "match_key": "2026-07-31|toulon|aubagne air bel"
+    },
+    {
+      "away_team": "Real Madrid Castilla U21",
+      "books_count": 9,
+      "context_count": 2,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Albacete Balompié",
+      "kickoff": "2026-07-31T18:00:00+00:00",
+      "match_key": "2026-07-31|albacete balompi|real madrid castilla"
+    },
+    {
+      "away_team": "Manchester United U21",
+      "books_count": 1,
+      "context_count": 1,
+      "gap_reason": "b_cover_no_candidate",
+      "has_candidate_in_latest_run": false,
+      "has_xg_like_context": true,
+      "home_team": "Altrincham FC",
+      "kickoff": "2026-07-31T18:00:00+00:00",
+      "match_key": "2026-07-31|altrincham|manchester united"
     }
   ],
   "target_date": "2026-07-31"
