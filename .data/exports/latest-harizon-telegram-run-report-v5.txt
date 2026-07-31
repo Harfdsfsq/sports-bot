@@ -3,43 +3,43 @@
 • Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 355/300; status ok_target_met). Runtime rows processed: 0 (это не размер inventory).
-• Очередь provider-enrichment: 2 активных матчей; model scope 2; назначений по ролям 10. Очередь сбора не расширяет публикационный scope.
-• 1+ линия: 178/300 (59%) | 1+ контекст: 122/300 (40%)
-• 2+ букмекера: 82/300 (27%)
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 303/300; status ok_target_met). Runtime rows processed: 12 (это не размер inventory).
+• Очередь provider-enrichment: 294 активных матчей; model scope 24; назначений по ролям 393. Очередь сбора не расширяет публикационный scope.
+• 1+ линия: 11/300 (3%) | 1+ контекст: 34/300 (11%)
+• 2+ букмекера: 10/300 (3%)
 • Odds-api offer snapshot: rows 205, matches 9, same-side 2+ books 4
-• 2+ независимых источника линий: 33/300 (11%) — strict metric для A/B-tier.
-• 2+ независимых контекста: 8/300 (2%)
-• Готово для модели: 91/300 (30%)
+• 2+ независимых источника линий: 0/300 (0%) — strict metric для A/B-tier.
+• 2+ независимых контекста: 2/300 (0%)
+• Готово для модели: 8/300 (2%)
 
-• Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются. До полного 300/300 осталось: 294.
+• Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются. До полного 300/300 осталось: 300.
 
 🏷️ A/B-tier публикация
-• A-tier coverage-ready: 6/300 | main опубликовано: 0
+• A-tier coverage-ready: 0/300 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier coverage-ready: 6/300 | fallback опубликовано: 0
+• B-tier coverage-ready: 0/300 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста: 6/300; B-cover: 6/300.
+• Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста: 0/300; B-cover: 0/300.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 88; pending 14; duplicates removed 354; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
+• Pre-kickoff проверок: 15 | матчей без следующего регулярного run: 14
 • Line guard: увидел 16, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/24
+• Raw/candidates before quality: 0/0
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
 • odds-api.io: events req 10, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
-• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 0 (текущий deep-step пропущен); team-form 0; direct 0; ошибок 0.
-• SportLogic: disabled_by_env; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.
-• Комбинации источников линий: н/д
+• Bzzoiro: direct req 4, v2 req 4; v2 ctx 2; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 11; сырых строк 3926; контекстов 33; deep-enriched 0 (текущий deep-step пропущен); team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled_runtime; запросы 6; rows 0; current fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag active_odds_stale_only_no_current_fixture.
+• Комбинации источников линий: bzzoiro: 10
 
 🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
@@ -51,11 +51,11 @@
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/2 book/1 context.
 • Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 0; top: нет clean-кандидатов после снятия daily cap.
 • A-tier blockers: n/a; quality sources n/a; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
-• Inventory target-expand stage: 355/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 84; normalized 155→155; gap after 0.
+• Inventory target-expand stage: 303/300; shortfall 0; status ok_target_met.
+• Bookmaker mapping repair: raw 2+ 4; normalized 7→3; gap after 1.
 • Bzzoiro overlap bridge: offers 0; match-overlap 0; same-bucket overlap 0.
-• Fresh B-cover diagnostic: rows 182; with current offer 6; without current offer 176; active 2; active with offer 0; fresh buckets 98; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 3; top skips promotion_skip_no_offer_bucket 186; promotion_skip_edge_below_min 18; promotion_skip_odds_above_max 14; promotion_skip_odds_below_min 11; promotion_skip_price_outlier 6.
+• Fresh B-cover diagnostic: rows 7; with current offer 7; without current offer 0; active 7; active with offer 7; fresh buckets 137; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 0; top skips promotion_skip_edge_below_min 12; promotion_skip_odds_above_max 4; promotion_skip_no_offer_bucket 3.
 • Rescue xG/confirmation enrichment: candidates 88; xG added 0; confirmation added 0; missing context match 88.
 
 📌 Что это значит
@@ -63,7 +63,7 @@
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 30657441590
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/30657441590
-• Artifact: run-bot-30657441590
+• Run ID: 30665024921
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/30665024921
+• Artifact: run-bot-30665024921
 • workflow run-bot, attempt 1
