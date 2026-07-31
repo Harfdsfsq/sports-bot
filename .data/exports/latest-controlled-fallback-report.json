@@ -1,19 +1,612 @@
 {
   "a_tier_diagnostics": {
     "plain_explanation": [
-      "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+      "A-tier publication score is below min on many candidates.",
+      "Some candidates still have fewer than the A-tier confirmation/context minimum."
     ],
-    "quality_score_sources": {},
-    "tier_a_blocker_counts": {}
+    "quality_score_sources": {
+      "raw": 1,
+      "raw_missing": 3
+    },
+    "tier_a_blocker_counts": {
+      "tier_a_canonical_edge_below_min": 2,
+      "tier_a_confirmation_sources_below_min:1/2": 3,
+      "tier_a_market_implied_xg_not_hard_confirmation": 4,
+      "tier_a_odds_sources_below_min:1/2": 3,
+      "tier_a_publication_score_below_min": 2,
+      "tier_a_quality_below_min": 3
+    }
   },
-  "candidates_seen": 0,
-  "created_at": "2026-07-31T12:48:56.206546+00:00",
+  "candidates_seen": 4,
+  "created_at": "2026-07-31T13:09:31.854704+00:00",
   "enabled": true,
-  "evaluated": [],
+  "evaluated": [
+    {
+      "away_team": "UKS SMS Lodz",
+      "away_team_ru": "UKS SMS Лодз",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-31T15:00:00+00:00",
+      "commence_time_display": "31.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Czarni Sosnowiec",
+      "home_team_ru": "Кзарни Сосноуиек",
+      "league_name": "Poland - Ekstraliga, Women",
+      "league_name_ru": "Польша - Екстралига, Уомен",
+      "match_key": "soccer|czarni_sosnowiec|uks_sms_lodz|2026-07-31",
+      "metrics": {
+        "adjusted_probability": 0.377818,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 3.883,
+        "canonical_ev_pct": 11.456,
+        "confidence": 72.755,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [],
+        "confirmation_sources_count": 2,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.418,
+        "market_probability": 0.363636,
+        "model_probability": 0.377818,
+        "odds": 2.95,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 25.542,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.338983,
+        "semantic_current_price_guard": {
+          "created_at_utc": "2026-07-31T13:05:20.929557+00:00",
+          "current_bookmaker": "Unibet",
+          "current_price": 2.95,
+          "matching_offers": 3,
+          "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+          "price_diff_pct": 0.0,
+          "selected_bookmaker": "unibet",
+          "selected_price": 2.95,
+          "stale": false
+        },
+        "semantic_line_movement_guard": {
+          "entries": [
+            {
+              "captured_at_utc": "2026-07-31T13:09:30.758638+00:00",
+              "current_odds": 2.95,
+              "key": "soccer|czarni_sosnowiec|uks_sms_lodz|2026-07-31|totals|under|2.5|unibet",
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": true,
+              "reasons": [],
+              "status": "publish_now_no_next_cron"
+            }
+          ],
+          "matching_entries": 1
+        },
+        "sources_count": 2,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.85,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.95,
+          "selected_vs_median_deviation_pct": 3.509
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.42,
+          "xg_direction_evaluated": false,
+          "xg_direction_ok": true,
+          "xg_hard_confirmation": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.42,
+          "xg_model_optimism_gap_pp": 1.42,
+          "xg_probability": 0.363621,
+          "xg_probability_pct": 36.362,
+          "xg_source": "market_implied_total_xg",
+          "xg_total": 3.279
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_quality_below_min",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_b_low_quality_competition_requires_a_tier",
+        "tier_c_quality_below_min",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "качество ниже минимума уровня B",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень B: low quality competition requires a tier",
+        "качество ниже минимума уровня C",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Club Tijuana de Caliente U21",
+      "away_team_ru": "Клуб Тиджуана де Калиенте U21",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-31T15:00:00+00:00",
+      "commence_time_display": "31.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Atletico San Luis U21",
+      "home_team_ru": "Атлетико Сан Луис U21",
+      "league_name": "Mexico - U21 Liga MX, Apertura",
+      "league_name_ru": "Мексико - U21 Лига MX, Апертура",
+      "match_key": "soccer|atletico_san_luis_u21|club_tijuana_de_caliente_u21|2026-07-31",
+      "metrics": {
+        "adjusted_probability": 0.492806,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.662,
+        "canonical_ev_pct": 3.489,
+        "confidence": 64.67,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 0.737,
+        "market_probability": 0.485437,
+        "model_probability": 0.492806,
+        "odds": 2.1,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 10.836,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.47619,
+        "semantic_current_price_guard": {
+          "created_at_utc": "2026-07-31T13:05:20.929557+00:00",
+          "current_bookmaker": "Bet365",
+          "current_price": 2.1,
+          "matching_offers": 3,
+          "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+          "price_diff_pct": 0.0,
+          "selected_bookmaker": "bet365",
+          "selected_price": 2.1,
+          "stale": false
+        },
+        "semantic_line_movement_guard": {
+          "entries": [
+            {
+              "captured_at_utc": "2026-07-31T13:09:30.758638+00:00",
+              "current_odds": 2.1,
+              "key": "soccer|atletico_san_luis_u21|club_tijuana_de_caliente_u21|2026-07-31|totals|under|2.5|bet365",
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": true,
+              "reasons": [],
+              "status": "movement_confirmed"
+            }
+          ],
+          "matching_entries": 1
+        },
+        "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.06,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.1,
+          "selected_vs_median_deviation_pct": 1.942
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 0.738,
+          "xg_direction_evaluated": false,
+          "xg_direction_ok": true,
+          "xg_hard_confirmation": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 0.738,
+          "xg_model_optimism_gap_pp": 0.738,
+          "xg_probability": 0.48543,
+          "xg_probability_pct": 48.543,
+          "xg_source": "market_implied_total_xg",
+          "xg_total": 2.734
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_b_low_quality_competition_requires_a_tier",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень B: low quality competition requires a tier",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Guadalajara U21",
+      "away_team_ru": "Гуадаладжара U21",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-31T15:00:00+00:00",
+      "commence_time_display": "31.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "Puebla U21",
+      "home_team_ru": "Пуебла U21",
+      "league_name": "Mexico - U21 Liga MX, Apertura",
+      "league_name_ru": "Мексико - U21 Лига MX, Апертура",
+      "match_key": "soccer|puebla_u21|guadalajara_u21|2026-07-31",
+      "metrics": {
+        "adjusted_probability": 0.58298,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 2.742,
+        "canonical_ev_pct": 4.936,
+        "confidence": 65.321,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [],
+        "market_edge_pp": 1.155,
+        "market_probability": 0.571429,
+        "model_probability": 0.58298,
+        "odds": 1.8,
+        "odds_sources_count": 1,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 14.662,
+        "quality_reasons": [],
+        "quality_score": 0.0,
+        "quality_score_raw": 0.0,
+        "quality_score_source": "raw_missing",
+        "selected_implied_probability": 0.555556,
+        "semantic_current_price_guard": {
+          "created_at_utc": "2026-07-31T13:05:20.929557+00:00",
+          "current_bookmaker": "Bet365",
+          "current_price": 1.8,
+          "matching_offers": 2,
+          "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+          "price_diff_pct": 0.0,
+          "selected_bookmaker": "bet365",
+          "selected_price": 1.8,
+          "stale": false
+        },
+        "semantic_line_movement_guard": {
+          "entries": [
+            {
+              "captured_at_utc": "2026-07-31T13:09:30.758638+00:00",
+              "current_odds": 1.8,
+              "key": "soccer|puebla_u21|guadalajara_u21|2026-07-31|totals|under|2.5|bet365",
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": true,
+              "reasons": [],
+              "status": "movement_confirmed"
+            }
+          ],
+          "matching_entries": 1
+        },
+        "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 1.75,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 1,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 1.8,
+          "selected_vs_median_deviation_pct": 2.857
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 1.155,
+          "xg_direction_evaluated": false,
+          "xg_direction_ok": true,
+          "xg_hard_confirmation": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 1.155,
+          "xg_model_optimism_gap_pp": 1.155,
+          "xg_probability": 0.571434,
+          "xg_probability_pct": 57.143,
+          "xg_source": "market_implied_total_xg",
+          "xg_total": 2.393
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_quality_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_hard_context_required_for_proxy_quality",
+        "tier_b_low_quality_competition_requires_a_tier",
+        "tier_c_quality_below_min",
+        "tier_c_publication_score_below_min",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "качество ниже минимума уровня A",
+        "уровень A: publication score below min",
+        "уровень A: odds sources below min:1/2",
+        "уровень A: confirmation sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "качество ниже минимума уровня B",
+        "уровень B: publication score below min",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: hard context required for proxy quality",
+        "уровень B: low quality competition requires a tier",
+        "качество ниже минимума уровня C",
+        "уровень C: publication score below min",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    },
+    {
+      "away_team": "Cercle Brugge",
+      "away_team_ru": "Керкле Бругге",
+      "candidate_source": "latest_rescue_candidates",
+      "commence_time": "2026-07-31T15:00:00+00:00",
+      "commence_time_display": "31.07.2026 18:00 MSK",
+      "family": "totals",
+      "home_team": "AS Monaco",
+      "home_team_ru": "Монако",
+      "league_name": "Club Friendlies",
+      "league_name_ru": "Клуб Фриендлиес",
+      "match_key": "soccer|as_monaco|cercle_brugge|2026-07-31",
+      "metrics": {
+        "adjusted_probability": 0.41948,
+        "books_count": 2,
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "canonical_edge_pp": 1.948,
+        "canonical_ev_pct": 4.87,
+        "confidence": 71.155,
+        "confirmation_meta": {
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_supports_over": false,
+          "weather_supports_under": false
+        },
+        "confirmation_sources": [
+          "bzzoiro"
+        ],
+        "confirmation_sources_count": 1,
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "line_sources": [
+          "bzzoiro",
+          "odds_api_io"
+        ],
+        "market_edge_pp": 3.616,
+        "market_probability": 0.383322,
+        "model_probability": 0.431322,
+        "odds": 2.5,
+        "odds_sources_count": 2,
+        "proxy_single_source_thresholds": {
+          "applies": false,
+          "enabled": true,
+          "min_confidence": 78.0,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0
+        },
+        "publication_score": 28.199,
+        "quality_reasons": [],
+        "quality_score": 60.63,
+        "quality_score_raw": 60.63,
+        "quality_score_source": "raw",
+        "selected_implied_probability": 0.4,
+        "semantic_current_price_guard": {
+          "created_at_utc": "2026-07-31T13:05:20.929557+00:00",
+          "current_bookmaker": "Bet365",
+          "current_price": 2.5,
+          "matching_offers": 3,
+          "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+          "price_diff_pct": 0.0,
+          "selected_bookmaker": "bet365",
+          "selected_price": 2.5,
+          "stale": false
+        },
+        "semantic_line_movement_guard": {
+          "entries": [
+            {
+              "captured_at_utc": "2026-07-31T13:07:33.607397+00:00",
+              "current_odds": 2.5,
+              "key": "soccer|as monaco|cercle brugge|2026-07-31|totals|under|2.5|bet365",
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": true,
+              "reasons": [],
+              "status": "movement_confirmed"
+            },
+            {
+              "captured_at_utc": "2026-07-31T13:09:30.758638+00:00",
+              "current_odds": 2.5,
+              "key": "soccer|as_monaco|cercle_brugge|2026-07-31|totals|under|2.5|bet365",
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": true,
+              "reasons": [],
+              "status": "publish_now_no_next_cron"
+            }
+          ],
+          "matching_entries": 2
+        },
+        "sources_count": 1,
+        "tier_b_bookmaker_quorum": {
+          "books_count": 2,
+          "enabled": true,
+          "max_deviation_pct": 8.0,
+          "median_price": 2.415,
+          "mode": "bookmaker_quorum",
+          "odds_sources_count": 2,
+          "priced_books_count": 2,
+          "same_market_side_line_only": true,
+          "selected_price": 2.5,
+          "selected_vs_median_deviation_pct": 3.52
+        },
+        "xg_sanity": {
+          "enabled": true,
+          "xg_abs_gap_pp": 3.614,
+          "xg_direction_evaluated": false,
+          "xg_direction_ok": true,
+          "xg_hard_confirmation": false,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_model_gap_pp": 3.614,
+          "xg_model_optimism_gap_pp": 3.614,
+          "xg_probability": 0.383337,
+          "xg_probability_pct": 38.334,
+          "xg_source": "market_implied_total_xg",
+          "xg_total": 3.184
+        }
+      },
+      "ok": false,
+      "point": 2.5,
+      "reject_reasons": [
+        "tier_a_canonical_edge_below_min",
+        "tier_a_confirmation_sources_below_min:1/2",
+        "tier_a_market_implied_xg_not_hard_confirmation",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_market_implied_xg_not_hard_confirmation",
+        "tier_b_low_quality_competition_requires_a_tier",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_market_implied_xg_not_hard_confirmation"
+      ],
+      "reject_reasons_ru": [
+        "запас value ниже минимума уровня A",
+        "уровень A: confirmation sources below min:1/2",
+        "уровень A: market implied xg not hard confirmation",
+        "запас value ниже минимума уровня B",
+        "уровень B: market implied xg not hard confirmation",
+        "уровень B: low quality competition requires a tier",
+        "запас value ниже минимума уровня C",
+        "уровень C: market implied xg not hard confirmation"
+      ],
+      "selection": "Меньше",
+      "tier": null
+    }
+  ],
   "no_pick_report_sent": true,
   "pool_counts": {
+    "debug_candidates_before_quality_duplicate_in_pool": 1,
     "debug_candidates_before_quality_stale_or_outside_window": 24,
-    "latest_picks_stale_or_outside_window": 88
+    "latest_picks_stale_or_outside_window": 88,
+    "latest_rescue_candidates": 4
   },
   "published": false,
   "scan_policy": {
@@ -28,11 +621,28 @@
     "blocked_by_daily_cap_and_other_guards": 0,
     "blocked_only_by_daily_cap": 0,
     "duplicates_removed": 0,
-    "reason_counts_without_daily_cap": {},
+    "reason_counts_without_daily_cap": {
+      "tier_a_canonical_edge_below_min": 2,
+      "tier_a_confirmation_sources_below_min:1/2": 3,
+      "tier_a_market_implied_xg_not_hard_confirmation": 4,
+      "tier_a_odds_sources_below_min:1/2": 3,
+      "tier_a_publication_score_below_min": 2,
+      "tier_a_quality_below_min": 3,
+      "tier_b_canonical_edge_below_min": 2,
+      "tier_b_hard_context_required_for_proxy_quality": 3,
+      "tier_b_low_quality_competition_requires_a_tier": 4,
+      "tier_b_market_implied_xg_not_hard_confirmation": 4,
+      "tier_b_publication_score_below_min": 2,
+      "tier_b_quality_below_min": 3,
+      "tier_c_canonical_edge_below_min": 2,
+      "tier_c_market_implied_xg_not_hard_confirmation": 4,
+      "tier_c_publication_score_below_min": 2,
+      "tier_c_quality_below_min": 3
+    },
     "top_would_publish_without_daily_cap": []
   },
   "status": "no_viable_controlled_fallback",
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4736,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1785502136,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":4739,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1785503374,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440",
   "time_guard": {
     "base_min_kickoff_lead_minutes": 20,
     "enabled": true,
