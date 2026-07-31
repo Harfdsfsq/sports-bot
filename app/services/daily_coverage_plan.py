@@ -327,20 +327,60 @@ def _match_identities(match: Any) -> set[tuple[str, tuple[str, str]]]:
     return identities
 
 
+def planned_target_identities(
+    plan: dict[str, Any],
+    keys: set[str],
+    *,
+    tz: Any | None = None,
+) -> set[tuple[str, tuple[str, str]]]:
+    """Resolve exact target identities even when a stored key lost diacritics."""
+
+    identities = {
+        identity for value in keys if (identity := _identity_from_key(value)) is not None
+    }
+    focus = plan.get("focused_alpha") if isinstance(plan.get("focused_alpha"), dict) else {}
+    selected = focus.get("selected") if isinstance(focus, dict) else []
+    target_tz = tz or app_timezone()
+    for row in selected if isinstance(selected, list) else []:
+        if not isinstance(row, dict):
+            continue
+        row_keys = {
+            str(row.get(name) or "").strip()
+            for name in (
+                "match_key",
+                "canonical_match_key",
+                "canonical_match_id",
+                "semantic_match_key",
+            )
+            if str(row.get(name) or "").strip()
+        }
+        if keys and not row_keys.intersection(keys):
+            continue
+        pair = _team_pair(row.get("home_team"), row.get("away_team"))
+        kickoff = row.get("kickoff_utc") or row.get("kickoff")
+        try:
+            parsed = parse_datetime(kickoff) if kickoff else None
+        except Exception:
+            parsed = None
+        if pair and parsed is not None:
+            identities.add((parsed.astimezone(UTC).date().isoformat(), pair))
+            identities.add((parsed.astimezone(target_tz).date().isoformat(), pair))
+    return identities
+
+
 def filter_matches(provider_name: str, method_name: str, matches: Any) -> Any:
     if not isinstance(matches, list) or not matches:
         return matches
     provider = canonical_source(provider_name)
     role = "offers" if "offer" in method_name.lower() else "context"
-    assignments = load_plan().get("assignments") or {}
+    plan = load_plan()
+    assignments = plan.get("assignments") or {}
     if provider not in assignments or role not in (assignments.get(provider) or {}):
         return matches
     keys = {str(value) for value in (assignments.get(provider) or {}).get(role) or [] if value}
     if not keys:
         return []
-    assignment_identities = {
-        identity for value in keys if (identity := _identity_from_key(value)) is not None
-    }
+    assignment_identities = planned_target_identities(plan, keys)
     selected = []
     for match in matches:
         runtime_key = str(getattr(match, "match_key", ""))
@@ -356,6 +396,7 @@ __all__ = [
     "coverage_summary",
     "filter_matches",
     "load_plan",
+    "planned_target_identities",
     "prepare_daily_coverage",
     "provider_timeout",
     "rank_inventory",

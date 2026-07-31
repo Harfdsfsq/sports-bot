@@ -14,7 +14,11 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from app.services.daily_coverage_common import canonical_source, target_date
-from app.services.daily_coverage_plan import filter_matches, load_plan
+from app.services.daily_coverage_plan import (
+    filter_matches,
+    load_plan,
+    planned_target_identities,
+)
 from app.utils import canonicalize_team_name, parse_datetime
 
 _INSTALLED = False
@@ -157,12 +161,8 @@ def _focused_model_scope(runner: Any, matches: list[Any]) -> tuple[list[Any], bo
     }
     if not keys:
         return [], True
-    identities = {
-        identity
-        for value in keys
-        if (identity := _identity_from_key(value)) is not None
-    }
     tz = getattr(getattr(runner, "settings", None), "tzinfo", UTC)
+    identities = planned_target_identities(plan, keys, tz=tz)
     selected: list[Any] = []
     for match in matches:
         runtime_key = str(getattr(match, "match_key", ""))

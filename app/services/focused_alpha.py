@@ -22,6 +22,7 @@ from app.services.daily_coverage_common import (
     independent_sources,
 )
 from app.services.focused_alpha_history import build_history_audit, league_prior
+from app.utils import canonicalize_team_name, parse_datetime
 
 REPORT_PATH = EXPORT_DIR / "latest-focused-alpha-cohort.json"
 
@@ -366,6 +367,32 @@ def _kickoff_priority(hours: float) -> tuple[int, float]:
     return 7, hours
 
 
+def _routing_match_key(row: dict[str, Any]) -> str:
+    """Build the provider/runtime identity without losing Unicode letters."""
+
+    home = canonicalize_team_name(str(row.get("home_team") or ""))
+    away = canonicalize_team_name(str(row.get("away_team") or ""))
+    kickoff = row.get("kickoff_utc") or row.get("kickoff")
+    if home and away and kickoff:
+        try:
+            date_key = parse_datetime(kickoff).astimezone(UTC).date().isoformat()
+        except Exception:
+            date_key = ""
+        if date_key:
+            return f"{date_key}|{home}|{away}"
+    for name in (
+        "canonical_match_key",
+        "canonical_match_id",
+        "semantic_match_key",
+        "semantic_key",
+        "match_key",
+    ):
+        value = str(row.get(name) or "").strip()
+        if value:
+            return value
+    return ""
+
+
 def select_focus_cohort(
     ranked_rows: list[dict[str, Any]],
     *,
@@ -381,8 +408,14 @@ def select_focus_cohort(
 
     scored: list[tuple[dict[str, Any], dict[str, Any]]] = []
     for row in ranked_rows:
-        detail = score_match(row, audit)
         item = dict(row)
+        source_match_key = str(item.get("match_key") or "").strip()
+        routing_match_key = _routing_match_key(item)
+        if routing_match_key:
+            item["match_key"] = routing_match_key
+        if source_match_key and source_match_key != routing_match_key:
+            item["focused_alpha_source_match_key"] = source_match_key
+        detail = score_match(item, audit)
         item["focused_alpha_score"] = detail["focused_alpha_score"]
         item["focused_alpha"] = detail
         scored.append((item, detail))

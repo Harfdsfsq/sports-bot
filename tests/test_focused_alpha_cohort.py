@@ -134,3 +134,35 @@ def test_quality_target_outside_run_window_adds_bounded_window_bridge(
     assert result["report"]["run_window_bridge_triggered"] is True
     assert result["report"]["status"] == "run_window_bridge_active"
     assert result["report"]["publication_contract_relaxed"] is False
+
+
+def test_focus_cohort_preserves_diacritics_in_runtime_routing_key(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("FOCUSED_ALPHA_MIN_MATCH_SCORE", "44")
+    monkeypatch.setenv("FOCUSED_ALPHA_EXPLORATION_SLOTS", "0")
+    monkeypatch.setattr(focused_alpha, "atomic_write", lambda *args, **kwargs: None)
+    row = _row("Deportivo Alavés", "strong")
+    row.update(
+        {
+            "away_team": "CD Castellón",
+            "kickoff_utc": "2026-07-31T12:00:00+00:00",
+            "hours_to_kickoff": 0.919,
+            "match_key": "2026-07-31|deportivo alav s|castell n",
+        }
+    )
+
+    result = focused_alpha.select_focus_cohort(
+        [row],
+        now=datetime(2026, 7, 31, 11, 4, tzinfo=UTC),
+        history_report={"live_learning_ready": False, "settled_rows": 0, "by_league": {}},
+    )
+
+    selected = result["rows"][0]
+    assert selected["match_key"] == "2026-07-31|alaves|castellon"
+    assert selected["focused_alpha_source_match_key"] == (
+        "2026-07-31|deportivo alav s|castell n"
+    )
+    assert result["report"]["selected_match_keys"] == [
+        "2026-07-31|alaves|castellon"
+    ]
