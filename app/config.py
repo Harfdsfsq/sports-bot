@@ -722,6 +722,7 @@ class Settings(BaseSettings):
         "odds_api_io_bookmakers",
         "odds_api_io_bookmakers_account1",
         "odds_api_io_bookmakers_account2",
+        "odds_api_io_bookmakers_account2_fallback",
         "bookies_api_sports",
         "espn_soccer_leagues",
         "espn_soft_fail_statuses",

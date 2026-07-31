@@ -104,6 +104,10 @@ def test_report_does_not_call_paid_plan_restriction_an_invalid_key():
 
 def test_odds_api_io_keeps_valid_second_account_bookmakers(monkeypatch):
     monkeypatch.delenv("ODDS_API_IO_PAID_PLAN_ENABLED", raising=False)
+    monkeypatch.setenv(
+        "ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK",
+        "William Hill,Betway",
+    )
     settings = Settings(
         _env_file=None,
         odds_api_io_key="key-1",
@@ -113,6 +117,10 @@ def test_odds_api_io_keeps_valid_second_account_bookmakers(monkeypatch):
 
     accounts = OddsApiIoProvider(settings)._odds_accounts()
 
+    assert settings.odds_api_io_bookmakers_account2_fallback == [
+        "William Hill",
+        "Betway",
+    ]
     assert accounts[1]["bookmakers"] == "Betfair Exchange,Sbobet"
     assert accounts[1]["fallback_bookmakers"] == "William Hill,Betway"
 
