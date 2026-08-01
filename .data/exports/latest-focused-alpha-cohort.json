@@ -1,11 +1,15 @@
 {
-  "active_provider_eligible_rows": 4,
-  "bootstrap_match_keys": [],
+  "active_provider_eligible_rows": 3,
+  "bootstrap_match_keys": [
+    "2026-08-01|lexington|monterey bay",
+    "2026-08-01|loudoun united|hartford athletic",
+    "2026-08-01|charleston battery|brooklyn"
+  ],
   "bootstrap_max_hours": 36.0,
-  "bootstrap_reason": null,
-  "bootstrap_selected_rows": 0,
-  "bootstrap_triggered": false,
-  "created_at_utc": "2026-08-01T17:06:36.379198+00:00",
+  "bootstrap_reason": "no_quality_cohort_before_provider_enrichment",
+  "bootstrap_selected_rows": 3,
+  "bootstrap_triggered": true,
+  "created_at_utc": "2026-08-01T19:06:45.582648+00:00",
   "discovery_rows_seen": 300,
   "exploration_slots": 6,
   "fixed_coverage_quota": false,
@@ -13,7 +17,7 @@
   "history_settled_rows": 37,
   "history_thresholds_auto_tuned": false,
   "league_counts": {
-    "club friendlies": 2
+    "usl championship": 3
   },
   "max_matches": 100,
   "max_per_league": 10,
@@ -26,10 +30,10 @@
   ],
   "publication_contract_relaxed": false,
   "publication_minimum_count": 0,
-  "quality_selected_rows": 2,
-  "quality_targets_in_run_window_before_bridge": 2,
+  "quality_selected_rows": 0,
+  "quality_targets_in_run_window_before_bridge": 0,
   "rejection_counts": {
-    "score_below_min": 298
+    "score_below_min": 300
   },
   "run_window_bridge_match_keys": [],
   "run_window_bridge_selected_rows": 0,
@@ -37,93 +41,6 @@
   "run_window_hours": 2.0,
   "run_window_min_lead_hours": 0.333,
   "selected": [
-    {
-      "away_team": "Valencia",
-      "components": {
-        "evidence": 70.5,
-        "identity": 12.0,
-        "learned_prior": 0.0,
-        "penalty": 0.0,
-        "timing": 4.0
-      },
-      "evidence": {
-        "bookmaker_depth": 5,
-        "context_sources": [
-          "sstats"
-        ],
-        "expected_enrichment_gain_score": 9.0,
-        "has_form_signal": true,
-        "has_hard_xg_signal": false,
-        "odds_sources": [
-          "bzzoiro",
-          "odds_api_io"
-        ],
-        "provider_identity_count": 3
-      },
-      "focused_alpha_bootstrap": false,
-      "focused_alpha_exploration": false,
-      "focused_alpha_run_window_bridge": false,
-      "focused_alpha_score": 86.5,
-      "home_team": "Stoke City",
-      "hours_to_kickoff": 0.39,
-      "kickoff_utc": "2026-08-01T17:30:00+00:00",
-      "league_name": "Club Friendlies",
-      "match_key": "2026-08-01|stoke city|valencia",
-      "reasons": [
-        "odds_sources=2",
-        "context_sources=1",
-        "form_present",
-        "high_expected_enrichment_gain"
-      ],
-      "selection_lane": "quality"
-    },
-    {
-      "away_team": "Guingamp",
-      "components": {
-        "evidence": 47.0,
-        "identity": 12.0,
-        "learned_prior": 0.0,
-        "penalty": 0.0,
-        "timing": 4.0
-      },
-      "evidence": {
-        "bookmaker_depth": 9,
-        "context_sources": [
-          "sstats"
-        ],
-        "expected_enrichment_gain_score": 1.0,
-        "has_form_signal": true,
-        "has_hard_xg_signal": true,
-        "odds_sources": [],
-        "provider_identity_count": 2
-      },
-      "focused_alpha_bootstrap": false,
-      "focused_alpha_exploration": false,
-      "focused_alpha_run_window_bridge": false,
-      "focused_alpha_score": 63.0,
-      "home_team": "Stade Brestois",
-      "hours_to_kickoff": 0.89,
-      "kickoff_utc": "2026-08-01T18:00:00+00:00",
-      "league_name": "Club Friendlies",
-      "match_key": "2026-08-01|stade brestois|guingamp",
-      "reasons": [
-        "context_sources=1",
-        "xg_present",
-        "form_present",
-        "high_expected_enrichment_gain"
-      ],
-      "selection_lane": "quality"
-    }
-  ],
-  "selected_match_keys": [
-    "2026-08-01|stoke city|valencia",
-    "2026-08-01|stade brestois|guingamp"
-  ],
-  "selected_rows": 2,
-  "selected_unique_keys": 2,
-  "selection_objective": "maximize_expected_information_and_risk_adjusted_decision_quality",
-  "status": "ok",
-  "top_rejected": [
     {
       "away_team": "Monterey Bay FC",
       "components": {
@@ -142,10 +59,17 @@
         "odds_sources": [],
         "provider_identity_count": 2
       },
+      "focused_alpha_bootstrap": true,
+      "focused_alpha_exploration": false,
+      "focused_alpha_run_window_bridge": false,
+      "focused_alpha_score": 3.0,
       "home_team": "Lexington SC",
+      "hours_to_kickoff": 3.887,
+      "kickoff_utc": "2026-08-01T23:00:00+00:00",
       "league_name": "USL Championship",
       "match_key": "2026-08-01|lexington|monterey bay",
-      "score": 3.0
+      "reasons": [],
+      "selection_lane": "bootstrap_enrichment"
     },
     {
       "away_team": "Hartford Athletic",
@@ -165,36 +89,62 @@
         "odds_sources": [],
         "provider_identity_count": 2
       },
+      "focused_alpha_bootstrap": true,
+      "focused_alpha_exploration": false,
+      "focused_alpha_run_window_bridge": false,
+      "focused_alpha_score": 3.0,
       "home_team": "Loudoun United FC",
+      "hours_to_kickoff": 3.887,
+      "kickoff_utc": "2026-08-01T23:00:00+00:00",
       "league_name": "USL Championship",
       "match_key": "2026-08-01|loudoun united|hartford athletic",
-      "score": 3.0
+      "reasons": [],
+      "selection_lane": "bootstrap_enrichment"
     },
     {
-      "away_team": "Aston Villa",
+      "away_team": "Brooklyn FC",
       "components": {
-        "evidence": 48.5,
-        "identity": 12.0,
+        "evidence": 0.5,
+        "identity": 8.0,
         "learned_prior": 0.0,
         "penalty": 0.0,
-        "timing": -100.0
+        "timing": 12.0
       },
       "evidence": {
-        "bookmaker_depth": 9,
-        "context_sources": [
-          "sstats"
-        ],
-        "expected_enrichment_gain_score": 1.0,
+        "bookmaker_depth": 0,
+        "context_sources": [],
+        "expected_enrichment_gain_score": -20.0,
         "has_form_signal": true,
         "has_hard_xg_signal": true,
         "odds_sources": [],
         "provider_identity_count": 3
       },
-      "home_team": "Indonesia XI",
-      "league_name": "Club Friendlies",
-      "match_key": "2026-08-01|indonesia xi|aston villa",
-      "score": -39.5
-    },
+      "focused_alpha_bootstrap": true,
+      "focused_alpha_exploration": false,
+      "focused_alpha_run_window_bridge": false,
+      "focused_alpha_score": 20.5,
+      "home_team": "Charleston Battery",
+      "hours_to_kickoff": 4.387,
+      "kickoff_utc": "2026-08-01T23:30:00+00:00",
+      "league_name": "USL Championship",
+      "match_key": "2026-08-01|charleston battery|brooklyn",
+      "reasons": [
+        "xg_present",
+        "form_present"
+      ],
+      "selection_lane": "bootstrap_enrichment"
+    }
+  ],
+  "selected_match_keys": [
+    "2026-08-01|lexington|monterey bay",
+    "2026-08-01|loudoun united|hartford athletic",
+    "2026-08-01|charleston battery|brooklyn"
+  ],
+  "selected_rows": 3,
+  "selected_unique_keys": 3,
+  "selection_objective": "maximize_expected_information_and_risk_adjusted_decision_quality",
+  "status": "cold_start_bootstrap_active",
+  "top_rejected": [
     {
       "away_team": "Toronto FC",
       "components": {
@@ -589,75 +539,6 @@
       "score": -110.435
     },
     {
-      "away_team": "Rayo Vallecano",
-      "components": {
-        "evidence": -18.5,
-        "identity": 8.0,
-        "learned_prior": 0.0,
-        "penalty": 0.0,
-        "timing": -100.0
-      },
-      "evidence": {
-        "bookmaker_depth": 0,
-        "context_sources": [],
-        "expected_enrichment_gain_score": -20.0,
-        "has_form_signal": false,
-        "has_hard_xg_signal": false,
-        "odds_sources": [],
-        "provider_identity_count": 1
-      },
-      "home_team": "RC Sporting Charleroi",
-      "league_name": "",
-      "match_key": "2026-08-01|rc sporting charleroi|rayo vallecano",
-      "score": -110.5
-    },
-    {
-      "away_team": "Alemannia Aachen",
-      "components": {
-        "evidence": -18.5,
-        "identity": 8.0,
-        "learned_prior": 0.0,
-        "penalty": 0.0,
-        "timing": -100.0
-      },
-      "evidence": {
-        "bookmaker_depth": 0,
-        "context_sources": [],
-        "expected_enrichment_gain_score": -20.0,
-        "has_form_signal": false,
-        "has_hard_xg_signal": false,
-        "odds_sources": [],
-        "provider_identity_count": 1
-      },
-      "home_team": "Roda JC Kerkrade",
-      "league_name": "",
-      "match_key": "2026-08-01|roda jc kerkrade|alemannia aachen",
-      "score": -110.5
-    },
-    {
-      "away_team": "Real Racing Club",
-      "components": {
-        "evidence": -18.5,
-        "identity": 8.0,
-        "learned_prior": 0.0,
-        "penalty": 0.0,
-        "timing": -100.0
-      },
-      "evidence": {
-        "bookmaker_depth": 0,
-        "context_sources": [],
-        "expected_enrichment_gain_score": -20.0,
-        "has_form_signal": false,
-        "has_hard_xg_signal": false,
-        "odds_sources": [],
-        "provider_identity_count": 1
-      },
-      "home_team": "Wolverhampton",
-      "league_name": "",
-      "match_key": "2026-08-01|wolverhampton|real racing",
-      "score": -110.5
-    },
-    {
       "away_team": "Viking FK",
       "components": {
         "evidence": 77.0,
@@ -936,6 +817,173 @@
       "league_name": "K League 1",
       "match_key": "2026-08-01|pohang steelers|gimcheon sangmu",
       "score": -111.811
+    },
+    {
+      "away_team": "Swindon Town",
+      "components": {
+        "evidence": 76.166,
+        "identity": 12.0,
+        "learned_prior": 0.0,
+        "penalty": 100.0,
+        "timing": -100.0
+      },
+      "evidence": {
+        "bookmaker_depth": 4,
+        "context_sources": [
+          "sstats"
+        ],
+        "expected_enrichment_gain_score": 9.0,
+        "has_form_signal": false,
+        "has_hard_xg_signal": true,
+        "odds_sources": [
+          "bzzoiro",
+          "odds_api_io"
+        ],
+        "provider_identity_count": 3
+      },
+      "home_team": "Forest Green Rovers",
+      "league_name": "Club Friendlies",
+      "match_key": "2026-08-01|forest green rovers|swindon town",
+      "score": -111.834
+    },
+    {
+      "away_team": "Club Tijuana",
+      "components": {
+        "evidence": 76.003,
+        "identity": 12.0,
+        "learned_prior": 0.0,
+        "penalty": 100.0,
+        "timing": -100.0
+      },
+      "evidence": {
+        "bookmaker_depth": 4,
+        "context_sources": [
+          "sstats"
+        ],
+        "expected_enrichment_gain_score": 16.0,
+        "has_form_signal": true,
+        "has_hard_xg_signal": true,
+        "odds_sources": [
+          "bzzoiro"
+        ],
+        "provider_identity_count": 3
+      },
+      "home_team": "Atlético San Luis",
+      "league_name": "Liga MX Apertura",
+      "match_key": "2026-08-01|atletico san luis|tijuana",
+      "score": -111.997
+    },
+    {
+      "away_team": "Wisła Kraków",
+      "components": {
+        "evidence": 76.0,
+        "identity": 12.0,
+        "learned_prior": 0.0,
+        "penalty": 100.0,
+        "timing": -100.0
+      },
+      "evidence": {
+        "bookmaker_depth": 5,
+        "context_sources": [
+          "sstats"
+        ],
+        "expected_enrichment_gain_score": 9.0,
+        "has_form_signal": false,
+        "has_hard_xg_signal": true,
+        "odds_sources": [
+          "bzzoiro",
+          "odds_api_io"
+        ],
+        "provider_identity_count": 4
+      },
+      "home_team": "Piast Gliwice",
+      "league_name": "Ekstraklasa",
+      "match_key": "2026-08-01|piast gliwice|wis a krakow",
+      "score": -112.0
+    },
+    {
+      "away_team": "St. Mirren",
+      "components": {
+        "evidence": 76.0,
+        "identity": 12.0,
+        "learned_prior": 0.0,
+        "penalty": 100.0,
+        "timing": -100.0
+      },
+      "evidence": {
+        "bookmaker_depth": 5,
+        "context_sources": [
+          "sstats"
+        ],
+        "expected_enrichment_gain_score": 9.0,
+        "has_form_signal": false,
+        "has_hard_xg_signal": true,
+        "odds_sources": [
+          "bzzoiro",
+          "odds_api_io"
+        ],
+        "provider_identity_count": 4
+      },
+      "home_team": "Falkirk FC",
+      "league_name": "Scottish Premiership",
+      "match_key": "2026-08-01|falkirk|saint mirren",
+      "score": -112.0
+    },
+    {
+      "away_team": "FF Jaro",
+      "components": {
+        "evidence": 76.0,
+        "identity": 12.0,
+        "learned_prior": 0.0,
+        "penalty": 100.0,
+        "timing": -100.0
+      },
+      "evidence": {
+        "bookmaker_depth": 5,
+        "context_sources": [
+          "sstats"
+        ],
+        "expected_enrichment_gain_score": 9.0,
+        "has_form_signal": false,
+        "has_hard_xg_signal": true,
+        "odds_sources": [
+          "bzzoiro",
+          "odds_api_io"
+        ],
+        "provider_identity_count": 4
+      },
+      "home_team": "FC Lahti",
+      "league_name": "Veikkausliiga",
+      "match_key": "2026-08-01|lahti|ff jaro",
+      "score": -112.0
+    },
+    {
+      "away_team": "FC Lausanne-Sport",
+      "components": {
+        "evidence": 76.0,
+        "identity": 12.0,
+        "learned_prior": 0.0,
+        "penalty": 100.0,
+        "timing": -100.0
+      },
+      "evidence": {
+        "bookmaker_depth": 5,
+        "context_sources": [
+          "sstats"
+        ],
+        "expected_enrichment_gain_score": 9.0,
+        "has_form_signal": false,
+        "has_hard_xg_signal": true,
+        "odds_sources": [
+          "bzzoiro",
+          "odds_api_io"
+        ],
+        "provider_identity_count": 4
+      },
+      "home_team": "Basel",
+      "league_name": "Super League",
+      "match_key": "2026-08-01|basel|lausanne sport",
+      "score": -112.0
     }
   ]
 }
