@@ -3,15 +3,15 @@
 • Главная причина: odds-api.io auth failed: invalid API key
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 303/300; status ok_target_met). Runtime rows processed: 10 (это не размер inventory).
-• Очередь provider-enrichment: 260 активных матчей; model scope 17; назначений по ролям 388. Очередь сбора не расширяет публикационный scope.
-• 1+ линия: 100/300 (33%) | 1+ контекст: 75/300 (25%)
-• 2+ букмекера: 53/300 (17%)
-• Raw 2+ букмекера odds-api.io current snapshot: 40 | normalized cumulative inventory: 53.
-• Odds-api offer snapshot: rows 1408, matches 65, same-side 2+ books 38
-• 2+ независимых источника линий: 12/300 (4%) — strict metric для A/B-tier.
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 303/300; status ok_target_met). Runtime rows processed: 9 (это не размер inventory).
+• Очередь provider-enrichment: 215 активных матчей; model scope 30; назначений по ролям 388. Очередь сбора не расширяет публикационный scope.
+• 1+ линия: 128/300 (42%) | 1+ контекст: 91/300 (30%)
+• 2+ букмекера: 70/300 (23%)
+• Raw 2+ букмекера odds-api.io current snapshot: 29 | normalized cumulative inventory: 70.
+• Odds-api offer snapshot: rows 1166, matches 52, same-side 2+ books 28
+• 2+ независимых источника линий: 24/300 (8%) — strict metric для A/B-tier.
 • 2+ независимых контекста: 2/300 (0%)
-• Готово для модели: 53/300 (17%)
+• Готово для модели: 56/300 (18%)
 
 • Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются. До полного 300/300 осталось: 298.
 
@@ -27,60 +27,58 @@
 • Ledger: unique published 88; pending 14; duplicates removed 354; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 13 | матчей без следующего регулярного run: 13
-• Line guard: увидел 30, оставил 12, снял 2
+• Pre-kickoff проверок: 14 | матчей без следующего регулярного run: 13
+• Line guard: увидел 35, оставил 6, снял 13
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/26
+• Raw/candidates before quality: 0/24
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Controlled fallback: seen 3 | evaluated 3 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 10, odds req 23; смэтчил матчей 107; offers 1464; 2+ букмекера 40; ошибок 11.
-• Bzzoiro: direct req 4, v2 req 4; v2 ctx 0; batch odds rows 427; matches with offers 7; secondary offers 56; 2+ source matches 3; ошибок 0.
-• SStats: запросы 9; сырых строк 4203; контекстов 37; deep-enriched 47; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 10, odds req 19; смэтчил матчей 87; offers 1313; 2+ букмекера 29; ошибок 9.
+• Bzzoiro: direct req 4, v2 req 4; v2 ctx 0; batch odds rows 460; matches with offers 17; secondary offers 147; 2+ source matches 12; ошибок 0.
+• SStats: запросы 5; сырых строк 4203; контекстов 16; deep-enriched 47; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled_runtime; запросы 6; rows 0; current fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag active_odds_stale_only_no_current_fixture.
 • Комбинации источников линий: bzzoiro: 10
 
 🚫 Почему не опубликовано
-• tier a confirmation sources below min:1/2: 3 (12%)
-• tier a market implied xg not hard confirmation: 3 (12%)
-• tier b market implied xg not hard confirmation: 3 (12%)
-• tier c market implied xg not hard confirmation: 3 (12%)
-• tier a quality below min: 2 (8%)
-• tier b quality below min: 2 (8%)
-• tier b hard context required for proxy quality: 2 (8%)
-• tier c quality below min: 2 (8%)
+• line movement guard снял кандидата: 13 (32%)
+• tier a quality below min: 3 (8%)
+• tier a confirmation sources below min:1/2: 3 (8%)
+• tier a market implied xg not hard confirmation: 3 (8%)
+• tier b quality below min: 3 (8%)
+• tier b market implied xg not hard confirmation: 3 (8%)
+• tier b hard context required for proxy quality: 3 (8%)
+• tier c quality below min: 3 (8%)
 • Диагностика legacy odds-source: 3 — не заменяет обязательные 2+ odds-source
 
 🔎 Проверенные reserve-кандидаты
-1. Ventura County FC — North Texas SC | Меньше @2.50 | EV +4.5% | edge +1.8 п.п. | q 0.0
-   • причина: tier a quality below min, tier a canonical edge below min, tier a publication score below min, tier a confirmation sources below min:1/2
-2. Adamstown Rosebud FC Reserve — Valentine FC Reserve | Больше @1.55 | EV +3.0% | edge +1.9 п.п. | q 0.0
-   • причина: odds below global min
-3. Adamstown Rosebud FC Reserve — Valentine FC Reserve | Меньше @2.50 | EV +11.5% | edge +4.6 п.п. | q 0.0
+1. Belconnen United — Tigers FC | Меньше @1.95 | EV +9.5% | edge +4.9 п.п. | q 0.0
    • причина: tier a quality below min, tier a confirmation sources below min:1/2, tier a market implied xg not hard confirmation, tier b quality below min
-4. USA U20 — Cuba U20 | Меньше 3.5 @1.95 | EV +8.2% | edge +4.2 п.п. | q 78.2
-   • причина: tier a confirmation sources below min:1/2, tier a market implied xg not hard confirmation, tier b market implied xg not hard confirmation, tier b low quality competition requires a tier
+2. Balcatta Etna FC U23 — Armadale SC U23 | Меньше @3.05 | EV +8.6% | edge +2.8 п.п. | q 0.0
+   • причина: tier a quality below min, tier a publication score below min, tier a confirmation sources below min:1/2, tier a market implied xg not hard confirmation
+3. Uwa Nedlands FC Reserves — Mandurah City FC Reserves | Меньше @2.62 | EV +9.7% | edge +3.7 п.п. | q 0.0
+   • причина: tier a quality below min, tier a confirmation sources below min:1/2, tier a market implied xg not hard confirmation, tier b quality below min
 
 🧯 Диагностика новых стопоров
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/2 book/1 context.
 • Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 0; top: нет clean-кандидатов после снятия daily cap.
-• Effective blockers without daily cap: tier_a_confirmation_sources_below_min:1/2 3; tier_a_market_implied_xg_not_hard_confirmation 3; tier_a_odds_sources_below_min:1/2 3; tier_b_market_implied_xg_not_hard_confirmation 3; tier_c_market_implied_xg_not_hard_confirmation 3.
-• A-tier blockers: tier_a_confirmation_sources_below_min:1/2 3; tier_a_market_implied_xg_not_hard_confirmation 3; tier_a_odds_sources_below_min:1/2 3; tier_a_quality_below_min 2; tier_a_canonical_edge_below_min 1; quality sources raw_missing 3; raw 1.
+• Effective blockers without daily cap: tier_a_confirmation_sources_below_min:1/2 3; tier_a_market_implied_xg_not_hard_confirmation 3; tier_a_odds_sources_below_min:1/2 3; tier_a_quality_below_min 3; tier_b_hard_context_required_for_proxy_quality 3.
+• A-tier blockers: tier_a_confirmation_sources_below_min:1/2 3; tier_a_market_implied_xg_not_hard_confirmation 3; tier_a_odds_sources_below_min:1/2 3; tier_a_quality_below_min 3; tier_a_publication_score_below_min 1; quality sources raw_missing 3.
 • Inventory target-expand stage: 303/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 324; normalized 95→103; gap after 221.
-• Bzzoiro runtime merge: offers 56; matches with offers 7; 2+ source matches 3; batch rows 427; requests 4; errors 0.
-• Fresh B-cover diagnostic: rows 89; with current offer 53; without current offer 36; active 70; active with offer 53; fresh buckets 1374; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 15; top skips promotion_skip_edge_below_min 166; promotion_skip_odds_below_min 119; promotion_skip_odds_above_max 94; promotion_skip_price_outlier 39; promotion_skip_no_offer_bucket 32.
-• Rescue xG/confirmation enrichment: candidates 102; xG added 7; confirmation added 13; missing context match 89.
+• Bookmaker mapping repair: raw 2+ 246; normalized 142→139; gap after 107.
+• Bzzoiro runtime merge: offers 147; matches with offers 17; 2+ source matches 12; batch rows 460; requests 4; errors 0.
+• Fresh B-cover diagnostic: rows 135; with current offer 53; without current offer 82; active 89; active with offer 53; fresh buckets 1138; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 24; top skips promotion_skip_edge_below_min 98; promotion_skip_odds_below_min 88; promotion_skip_no_offer_bucket 81; promotion_skip_odds_above_max 67; promotion_skip_price_outlier 36.
+• Rescue xG/confirmation enrichment: candidates 107; xG added 5; confirmation added 17; missing context match 90.
 
 📌 Что это значит
 • Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 30676927237
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/30676927237
-• Artifact: run-bot-30676927237
+• Run ID: 30681132927
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/30681132927
+• Artifact: run-bot-30681132927
 • workflow run-bot, attempt 1
