@@ -1,70 +1,56 @@
 # SStats inventory crosswalk probe v2
-UTC: 2026-08-02T05:06:23.434946+00:00
-Inventory checked: 300/512 | SStats events: 1113
-Matched: 219 | unmatched: 81 | rate=73.0%
-Potential uplift: context_deep=219 xg_or_rating=219 form=219 odds_rescue=37
+UTC: 2026-08-02T21:04:54.494223+00:00
+Inventory checked: 55/55 | SStats events: 1013
+Matched: 50 | unmatched: 5 | rate=90.91%
+Potential uplift: context_deep=50 xg_or_rating=50 form=50 odds_rescue=48
 
 ## SStats calls
-- games_today_date: OK http=200 rows=519 event_like=519
+- games_today_date: OK http=200 rows=143 event_like=143
 - games_upcoming: OK http=200 rows=1000 event_like=1000
-- games_tomorrow_date: OK http=200 rows=140 event_like=140
+- games_tomorrow_date: OK http=200 rows=145 event_like=145
 
 ## By kickoff bucket
-- 0_2h: matched=4 missing_context=1 missing_xg=4 missing_form=4 odds_rescue=0
-- 2_6h: matched=49 missing_context=31 missing_xg=46 missing_form=49 odds_rescue=1
-- 6_12h: matched=73 missing_context=35 missing_xg=53 missing_form=73 odds_rescue=8
-- started: matched=93 missing_context=31 missing_xg=68 missing_form=72 odds_rescue=28
+- 0_2h: matched=7 missing_context=2 missing_xg=7 missing_form=2 odds_rescue=6
+- 12_24h: matched=12 missing_context=0 missing_xg=12 missing_form=1 odds_rescue=12
+- 24h_plus: matched=25 missing_context=25 missing_xg=25 missing_form=25 odds_rescue=25
+- 2_6h: matched=5 missing_context=1 missing_xg=5 missing_form=2 odds_rescue=4
+- started: matched=1 missing_context=0 missing_xg=1 missing_form=0 odds_rescue=1
 
 ## Next SStats deep enrichment queue
-- 0_2h | 2026-08-02T05:30:00+00:00 | South Melbourne FC — ST Albans Saints Dinamo SC => gameId=1521997 score=0.8532 missing=context:False xg:True form:True
-- 0_2h | 2026-08-02T06:00:00+00:00 | Sydney Olympic FC — APIA Leichhardt => gameId=1517612 score=0.8532 missing=context:False xg:True form:True
-- 0_2h | 2026-08-02T06:30:00+00:00 | St George Willawong FC — Brisbane Strikers FC => gameId=1524181 score=0.9 missing=context:False xg:True form:True
-- 0_2h | 2026-08-02T07:00:00+00:00 | Central Coast Mariners U20 — Inter Lions FC U20 => gameId=1517832 score=0.7732 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T08:00:00+00:00 | FC Ska-Khabarovsk — FK Ural Yekaterinburg => gameId=1577463 score=0.8532 missing=context:False xg:True form:True
-- 2_6h | 2026-08-02T08:00:00+00:00 | Shanghai Second — Changchun Xidu => gameId=1532849 score=0.9 missing=context:False xg:True form:True
-- 2_6h | 2026-08-02T08:00:00+00:00 | FC Viktoriya Sumy — FC Kolos Kovalivka 2 => gameId=1581864 score=0.7609 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T08:00:00+00:00 | Dynamo Vladivostok — FC Dynamo Bryansk => gameId=1583829 score=0.8505 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T08:00:00+00:00 | FC Ural-2 Yekaterinburg — FK Akron-2 Tolyatti => gameId=1536865 score=0.8064 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T08:15:00+00:00 | MFK Havirov — FC Zlin B => gameId=1577871 score=0.8532 missing=context:False xg:True form:True
-- 2_6h | 2026-08-02T08:15:00+00:00 | SK Unicov — MFk Karvina B => gameId=1577877 score=0.8532 missing=context:False xg:True form:True
-- 2_6h | 2026-08-02T08:30:00+00:00 | FC Petrzalka — MFk Bytca => gameId=1561084 score=0.9 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T08:30:00+00:00 | OFK Dynamo Malzenice — Slovan Bratislava B => gameId=1561083 score=0.8532 missing=context:False xg:True form:True
-- 2_6h | 2026-08-02T08:45:00+00:00 | USC Paloma Hamburg — SC Vorwarts-Wacker Billstedt => gameId=1566294 score=0.7534 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | Preussen Munster U19 — 1 FC Magdeburg U19 => gameId=1582207 score=0.835 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | FSV Mainz U19 — FC Augsburg U19 => gameId=1582204 score=0.7394 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | TSG Wieseck U19 — TSV 1860 Munich U19 => gameId=1582218 score=0.7521 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | RSV Eintracht Stahnsdorf 1949 U19 — Bayern Munich U19 => gameId=1582210 score=0.8099 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | Jfg Schaumberg Prims U19 — VfB Stuttgart U19 => gameId=1582211 score=0.8099 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | Berliner SC U19 — Greuther Furth U19 => gameId=1582191 score=0.9 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | DJK Don Bosco Bamberg U19 — MSV Duisburg U19 => gameId=1582194 score=0.7781 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | Freiburger FC U19 — Borussia Monchengladbach U19 => gameId=1582199 score=0.79 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:00:00+00:00 | SV Rodinghausen U19 — FC Schalke 04 U19 => gameId=1582209 score=0.8567 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T09:30:00+00:00 | AGF Aarhus — Kolding IF => gameId=1582094 score=0.7665 missing=context:True xg:True form:True
-- 2_6h | 2026-08-02T10:00:00+00:00 | Qviding FIF — BK Astrio => gameId=1511355 score=0.8532 missing=context:False xg:True form:True
+- 0_2h | 2026-08-02T21:30:00+00:00 | Chapecoense — Cruzeiro => gameId=1546845 score=0.9 missing=context:False xg:True form:False
+- 0_2h | 2026-08-02T22:15:00+00:00 | River Plate — Rosario Central => gameId=1493044 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-08-02T22:30:00+00:00 | Internacional — Corinthians => gameId=1546846 score=0.9 missing=context:False xg:True form:False
+- 0_2h | 2026-08-02T22:45:00+00:00 | América de Cali — Boyacá Chicó FC => gameId=1549694 score=0.8532 missing=context:False xg:True form:False
+- 0_2h | 2026-08-02T23:00:00+00:00 | Club América — Santos Laguna => gameId=1550919 score=0.9 missing=context:False xg:True form:False
+- 0_2h | 2026-08-02T23:00:00+00:00 | Utah Royals FC — Portland Thorns FC => gameId=1508492 score=0.9 missing=context:False xg:True form:False
+- 0_2h | 2026-08-02T23:00:00+00:00 | Birmingham Legion — Rhode Island FC => gameId=1493601 score=0.9 missing=context:True xg:True form:True
+- 2_6h | 2026-08-03T00:30:00+00:00 | Lanús — Instituto => gameId=1493040 score=0.8532 missing=context:False xg:True form:True
+- 2_6h | 2026-08-03T00:30:00+00:00 | CA Lanús — Instituto De Córdoba => gameId=1493040 score=0.8216 missing=context:True xg:True form:True
+- 2_6h | 2026-08-03T01:00:00+00:00 | Independiente Santa Fe — Once Caldas => gameId=1549702 score=0.8532 missing=context:False xg:True form:False
+- 2_6h | 2026-08-03T01:00:00+00:00 | Denver Summit FC — Boston Legacy FC => gameId=1508493 score=0.9 missing=context:False xg:True form:False
+- 2_6h | 2026-08-03T01:05:00+00:00 | CD Toluca — Club Necaxa => gameId=1550920 score=0.9 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T15:00:00+00:00 | Al-Shabab — MC Alger => gameId=1604757 score=0.9 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T15:30:00+00:00 | FC Universitatea Cluj — FC Botoșani => gameId=1565205 score=0.9 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T16:00:00+00:00 | SJK — HJK => gameId=1495750 score=0.8532 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T17:00:00+00:00 | Djurgårdens IF — Västerås SK => gameId=1494227 score=0.9 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T17:00:00+00:00 | Halmstads BK — IK Sirius => gameId=1494232 score=0.8064 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T17:00:00+00:00 | Odense Boldklub — Sønderjyske Fodbold => gameId=1548985 score=0.7322 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T17:00:00+00:00 | KS Cracovia — Pogoń Szczecin => gameId=1553110 score=0.75 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T18:15:00+00:00 | FK Spartak Varna — Lokomotiv Plovdiv => gameId=1551067 score=0.9 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T18:30:00+00:00 | York City — Crawley Town => gameId=1554098 score=0.8532 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T18:30:00+00:00 | Celtic — Dundee FC => gameId=1556633 score=0.9 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T18:30:00+00:00 | FCSB — FCV Farul Constanța => gameId=1565202 score=0.8541 missing=context:False xg:True form:False
+- 12_24h | 2026-08-03T19:45:00+00:00 | Sarmiento — Independiente Rivadavia => gameId=1493045 score=0.8056 missing=context:False xg:True form:True
+- 24h_plus | 2026-08-03T22:00:00+00:00 | Vélez Sarsfield — CA Independiente => gameId=1493046 score=0.8597 missing=context:True xg:True form:True
 
 ## Unmatched sample
-- started | Universidad Latina — Herrera FC | best_score=0.492
-- started | CD Tapatio — Jaiba Brava | best_score=0.6176
-- started | Rancho Santana FC — HYH Sebaco FC | best_score=0.64
-- started | CT United FC — Orlando City B | best_score=0.666
-- started | Bristol Rhythm AFC — El Farolito | best_score=0.3738
-- started | Birmingham Legion — Rhode Island FC | best_score=0.63
-- started | Coastal Spirit FC — Northern AFC | best_score=0.4299
-- started | Cavalry FC — Inter Toronto FC | best_score=0.6075
-- started | Piratas Veracruz — Atletico Morelia | best_score=0.5932
-- started | Napier City Rovers AFC — Petone FC | best_score=0.4005
-- started | CD Bocas FC — Veraguas United FC B | best_score=0.49
-- started | Aguacatan FC — Deportivo Iztapa | best_score=0.4431
-- started | CSD Sacachispas — San Benito FC | best_score=0.374
-- started | Sacramento Republic FC — SC Jacksonville | best_score=0.575
-- started | South Hobart FC — Taroona | best_score=0.4296
-- started | West Canberra Wanderers FC — Majura FC | best_score=0.5249
-- started | Azzurri United FC B Div 3 — Palmerston Rovers FC Div 3 | best_score=0.3914
-- started | Canberra Olympic — Canberra Croatia FC | best_score=0.6596
-- started | Charlestown Azzurri FC — Lake Macquarie City FC | best_score=0.4768
-- started | Yeronga Eagles FC — North Lakes United | best_score=0.5002
+- 24h_plus | Club Atlético Platense — CA Talleres | best_score=0.6943
+- 24h_plus | Aston Villa — BG Pathum United | best_score=0.3476
+- 24h_plus | AC Sparta Praha — SK Sturm Graz | best_score=0.51
+- 24h_plus | Larne FC — FC Iberia 1999 | best_score=0.627
+- 24h_plus | Shamrock Rovers — KF Egnatia | best_score=0.705
 
 ## Full matched persistence
-- matched_full: 219
+- matched_full: 50
 - matched_sample: 40
-- enrichment_queue: 160
+- enrichment_queue: 50
