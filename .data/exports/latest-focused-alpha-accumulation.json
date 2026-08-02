@@ -447,12 +447,53 @@
         "market_implied_total_xg",
         "market_probability_from_candidate"
       ]
+    },
+    {
+      "blockers": [
+        "hard_xg_missing"
+      ],
+      "bookmakers": [
+        "betfair",
+        "unibet"
+      ],
+      "books_count": 2,
+      "confidence": 76.775,
+      "conservative_ev_pct": 11.814,
+      "conservative_probability": 0.617759,
+      "context_sources": [
+        "espn",
+        "sstats"
+      ],
+      "decision_key": "soccer austin colorado rapids 2026 08 02|totals|totals over 1 5|1.5",
+      "edge_pp": 5.0,
+      "ev_pct": 27.199,
+      "hard_xg": false,
+      "kickoff_utc": "2026-08-02T01:30:00+00:00",
+      "market_probability": 0.652759,
+      "match_key": "soccer|austin|colorado rapids|2026-08-02",
+      "model_probability": 0.702759,
+      "movement_ok": true,
+      "observation_id": "26c8d7cb5397162c5b4c101d718b0f6f20ef039e",
+      "odds": 1.81,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "quality": 98.957,
+      "risk_adjusted_utility": 62.943,
+      "run_id": "30726272382",
+      "snapshot_at_utc": "2026-08-02T01:09:38.925494+00:00",
+      "xg_sources": [
+        "controlled_consensus_rescue",
+        "market_implied_or_proxy"
+      ]
     }
   ],
   "policy": "select_max_two_daily_near_misses_track_price_and_settle_via_shadow_bets",
   "publication_contract_relaxed": false,
   "rejection_counts": {
-    "daily_cap_reached": 1
+    "bookmaker_quorum_below_accumulation_min": 1,
+    "quality_below_accumulation_min": 5
   },
   "runtime_shadow_persistence": {
     "added": 0,
@@ -463,8 +504,8 @@
     "telegram_publication_enabled": false
   },
   "runtime_shadow_source": {
-    "focused_shadow_rows": 8,
-    "settled_focused_shadow_rows": 6,
+    "focused_shadow_rows": 9,
+    "settled_focused_shadow_rows": 8,
     "state_path": ".data/state.json",
     "status": "ok"
   },
@@ -543,6 +584,66 @@
         "market_implied_or_proxy"
       ]
     },
+    "soccer austin colorado rapids 2026 08 02|totals|totals over 1 5|1.5": {
+      "away_team": "Austin FC",
+      "blockers": [
+        "hard_xg_missing"
+      ],
+      "bookmakers": [
+        "betfair",
+        "unibet"
+      ],
+      "books_count": 2,
+      "closing_odds_candidate": 1.81,
+      "closing_price_finalized": false,
+      "closing_price_status": "kickoff_not_reached",
+      "closing_snapshot_at_utc": "2026-08-02T01:09:38.925494+00:00",
+      "clv_pct": null,
+      "confidence": 76.775,
+      "conservative_ev_pct": 11.814,
+      "conservative_probability": 0.617759,
+      "context_sources": [
+        "espn",
+        "sstats"
+      ],
+      "decision_key": "soccer austin colorado rapids 2026 08 02|totals|totals over 1 5|1.5",
+      "distinct_pre_kickoff_snapshots": 1,
+      "edge_pp": 5.0,
+      "ev_pct": 27.199,
+      "family": "totals",
+      "hard_xg": false,
+      "home_team": "Colorado Rapids",
+      "kickoff_utc": "2026-08-02T01:30:00+00:00",
+      "latest_snapshot_at_utc": "2026-08-02T01:09:38.925494+00:00",
+      "league_name": "MLS",
+      "market_probability": 0.652759,
+      "match_key": "soccer|austin|colorado rapids|2026-08-02",
+      "model_probability": 0.702759,
+      "movement_ok": true,
+      "odds": 1.81,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "point": 1.5,
+      "publication_contract_relaxed": false,
+      "published": false,
+      "quality": 98.957,
+      "result": "pending",
+      "risk_adjusted_utility": 62.943,
+      "selected_at_utc": "2026-08-02T01:09:38.925494+00:00",
+      "selection": "Больше 1.5",
+      "selection_key": "totals over 1 5",
+      "selection_mode": "accumulation",
+      "settled": false,
+      "snapshot_at_utc": "2026-08-02T01:09:38.925494+00:00",
+      "snapshots": 1,
+      "telegram_sent": false,
+      "xg_sources": [
+        "controlled_consensus_rescue",
+        "market_implied_or_proxy"
+      ]
+    },
     "soccer cuba usa 2026 08 01|totals|totals under 3 5|3.5": {
       "away_team": "Cuba U20",
       "blockers": [
@@ -572,6 +673,7 @@
       "edge_pp": 3.227,
       "ev_pct": 8.159,
       "family": "totals",
+      "flat_unit_pnl": -1.0,
       "hard_xg": false,
       "home_team": "USA U20",
       "kickoff_utc": "2026-08-01T02:00:00+00:00",
@@ -589,13 +691,24 @@
       "publication_contract_relaxed": false,
       "published": false,
       "quality": 81.931,
-      "result": "pending",
+      "result": "lost",
       "risk_adjusted_utility": 29.849,
       "selected_at_utc": "2026-08-01T01:10:20.273852+00:00",
       "selection": "Меньше 3.5",
       "selection_key": "totals under 3 5",
       "selection_mode": "accumulation",
-      "settled": false,
+      "settled": true,
+      "settlement": {
+        "final_away_goals": 0.0,
+        "final_home_goals": 5.0,
+        "fingerprint": "soccer|cuba|usa|2026-08-01|totals|under||3.5|2026-08-01T02:00:00+00:00",
+        "note": "USA U20 5:0 Cuba U20",
+        "outcome": "lost",
+        "pnl": -1.0,
+        "result_orientation": "direct",
+        "settled_at": "2026-08-02T01:05:23.237863+00:00",
+        "source": "sstats"
+      },
       "snapshot_at_utc": "2026-08-01T01:10:20.273852+00:00",
       "snapshots": 1,
       "telegram_sent": false,
@@ -1080,6 +1193,7 @@
       "edge_pp": 3.227,
       "ev_pct": 8.159,
       "family": "totals",
+      "flat_unit_pnl": -1.0,
       "hard_xg": false,
       "home_team": "USA U20",
       "kickoff_utc": "2026-08-01T02:00:00+00:00",
@@ -1097,13 +1211,24 @@
       "publication_contract_relaxed": false,
       "published": false,
       "quality": 81.931,
-      "result": "pending",
+      "result": "lost",
       "risk_adjusted_utility": 29.849,
       "selected_at_utc": "2026-08-01T01:11:32.852791+00:00",
       "selection": "Меньше 3.5",
       "selection_key": "under",
       "selection_mode": "accumulation",
-      "settled": false,
+      "settled": true,
+      "settlement": {
+        "final_away_goals": 0.0,
+        "final_home_goals": 5.0,
+        "fingerprint": "soccer|usa_u20|cuba_u20|2026-08-01|totals|under||3.5|2026-08-01T02:00:00+00:00",
+        "note": "USA U20 5:0 Cuba U20",
+        "outcome": "lost",
+        "pnl": -1.0,
+        "result_orientation": "direct",
+        "settled_at": "2026-08-02T01:05:23.237863+00:00",
+        "source": "sstats"
+      },
       "snapshot_at_utc": "2026-08-01T01:11:32.852791+00:00",
       "snapshots": 1,
       "telegram_sent": false,
@@ -1119,18 +1244,18 @@
   "strict_selected_this_run": 0,
   "summary": {
     "decisions_with_clv": 1,
-    "hit_rate_ex_push_pct": 16.667,
-    "lost_or_half_lost": 5,
+    "hit_rate_ex_push_pct": 12.5,
+    "lost_or_half_lost": 7,
     "mean_clv_pct": 8.0,
-    "observations": 10,
-    "profit_units_flat_1u": -4.12,
+    "observations": 11,
+    "profit_units_flat_1u": -6.12,
     "push_or_void": 0,
-    "selected_decisions": 9,
-    "settled": 6,
+    "selected_decisions": 10,
+    "settled": 8,
     "won_or_half_won": 1,
-    "yield_pct_flat_1u": -68.667
+    "yield_pct_flat_1u": -76.5
   },
   "telegram_publication_enabled": false,
-  "updated_at_utc": "2026-08-01T23:11:08.101218+00:00",
+  "updated_at_utc": "2026-08-02T01:10:42.295600+00:00",
   "version": "focused_alpha_accumulation_v3_valid_clv"
 }
