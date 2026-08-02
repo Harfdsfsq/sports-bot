@@ -9,11 +9,12 @@
   "bottlenecks": [
     "2plus_context_below_bookmaker_quorum",
     "bzzoiro_secondary_offers_zero",
-    "sstats_team_form_zero"
+    "sstats_team_form_zero",
+    "sportlogic_no_fixtures_or_matches"
   ],
   "bzzoiro_context_gap": {
     "install": {
-      "created_at_utc": "2026-08-02T21:03:37.962917+00:00",
+      "created_at_utc": "2026-08-02T23:04:08.435271+00:00",
       "ignore_plan_default": true,
       "match_limit": 300,
       "max_requests": 180,
@@ -79,7 +80,7 @@
         "odds_resources": 0,
         "provider": "bzzoiro_v2",
         "report_metrics_repaired": true,
-        "report_metrics_repaired_at_utc": "2026-08-02T19:10:50.091489+00:00",
+        "report_metrics_repaired_at_utc": "2026-08-02T21:09:48.632570+00:00",
         "requests": 0,
         "stats_resources": 0,
         "target_matches": 23,
@@ -88,17 +89,17 @@
       "status": "ran"
     }
   },
-  "created_at_utc": "2026-08-02T21:08:31.751384+00:00",
+  "created_at_utc": "2026-08-02T23:13:01.656207+00:00",
   "guards": {
     "price_integrity_removed_total": 0,
     "timing_deferred_total": 0
   },
   "inventory": {
-    "matches_total": 300,
-    "ready_for_model": 201,
-    "with_1plus_context": 201,
-    "with_2plus_bookmakers": 173,
-    "with_2plus_context": 23
+    "matches_total": 58,
+    "ready_for_model": 22,
+    "with_1plus_context": 22,
+    "with_2plus_bookmakers": 16,
+    "with_2plus_context": 4
   },
   "max_policy_installed": true,
   "near_window_0_4h": {},
@@ -109,39 +110,50 @@
     "If bzzoiro_secondary_offers_zero persists, keep Bzzoiro as context/confirmation, not price source, until comparison odds parse is fixed."
   ],
   "odds_api_snapshot": {
-    "matches_count": 15,
-    "rows_count": 673,
-    "same_side_2plus_books": 14
+    "matches_count": 75,
+    "rows_count": 1853,
+    "same_side_2plus_books": 38
   },
   "providers": {
     "bzzoiro": {
-      "contexts": 0,
+      "contexts": 4,
+      "contexts_total_effective": 4,
       "errors": 0,
-      "events": 0,
-      "overlap": 27,
-      "requests": 0,
-      "secondary_offers_added": 0
+      "events": 488,
+      "events_total_effective": 488,
+      "overlap": 15,
+      "requests": 4,
+      "requests_total_effective": 4,
+      "secondary_offers_added": 0,
+      "v2_contexts": 4,
+      "v2_errors": 0,
+      "v2_events": 488,
+      "v2_lineups_resources": 0,
+      "v2_odds_resources": 0,
+      "v2_prediction_resources": 0,
+      "v2_requests": 4,
+      "v2_stats_resources": 0
     },
     "odds_api_io": {
-      "auth_failed": false,
-      "books_2plus": 0,
+      "auth_failed": true,
+      "books_2plus": 14,
       "bootstrap_errors": 0,
-      "bootstrap_events_fetched": 438,
-      "bootstrap_matches_built": 331,
-      "errors": 0,
-      "events_req": 5,
-      "matched": 0,
-      "odds_req": 0,
-      "offers": 0,
+      "bootstrap_events_fetched": 328,
+      "bootstrap_matches_built": 241,
+      "errors": 2,
+      "events_req": 4,
+      "matched": 16,
+      "odds_req": 5,
+      "offers": 731,
       "plan_restricted": false
     },
     "sportlogic": {
       "diagnosis": "active_odds_stale_only_no_current_fixture",
       "enabled": true,
       "errors": 0,
-      "fixtures": 50,
-      "fixtures_fetched": 50,
-      "games_fetched": 50,
+      "fixtures": 0,
+      "fixtures_fetched": 0,
+      "games_fetched": 0,
       "matched": 0,
       "odds_discovery_detail_limit_effective": 0,
       "odds_discovery_fixtures": 0,
@@ -151,21 +163,19 @@
       "odds_discovery_rows": 0,
       "odds_requests": 0,
       "offers": 0,
-      "requests": 3,
+      "requests": 6,
       "runtime_error": "",
-      "sample_dates": [
-        "2026-05-02"
-      ],
-      "stale_sample": true
+      "sample_dates": [],
+      "stale_sample": false
     },
     "sstats": {
-      "contexts": 0,
-      "deep_enriched": 48,
+      "contexts": 14,
+      "deep_enriched": 34,
       "deep_status": "fresh",
       "direct_contexts": 0,
       "errors": 0,
-      "requests": 0,
-      "rows": 0,
+      "requests": 15,
+      "rows": 11735,
       "runtime_patch": "",
       "team_form_contexts": 0
     }
