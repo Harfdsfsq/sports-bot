@@ -2,23 +2,34 @@
   "api": {
     "bzzoiro": {
       "contexts": 0,
+      "contexts_total_effective": 6,
       "errors": 0,
-      "events": 0,
+      "events": 446,
+      "events_total_effective": 446,
       "overlap": 1,
       "requests": 4,
-      "secondary_offers_added": 0
+      "requests_total_effective": 25,
+      "secondary_offers_added": 0,
+      "v2_contexts": 6,
+      "v2_errors": 0,
+      "v2_events": 18,
+      "v2_lineups_resources": 6,
+      "v2_odds_resources": 6,
+      "v2_prediction_resources": 0,
+      "v2_requests": 25,
+      "v2_stats_resources": 6
     },
     "odds_api_io": {
       "auth_failed": true,
-      "books_2plus": 27,
+      "books_2plus": 28,
       "bootstrap_errors": 0,
-      "bootstrap_events_fetched": 314,
-      "bootstrap_matches_built": 228,
+      "bootstrap_events_fetched": 313,
+      "bootstrap_matches_built": 225,
       "errors": 8,
       "events_req": 4,
-      "matched": 78,
+      "matched": 72,
       "odds_req": 17,
-      "offers": 1254,
+      "offers": 1259,
       "plan_restricted": false
     },
     "sportlogic": {
@@ -43,56 +54,209 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 4,
+      "contexts": 12,
       "deep_enriched": 34,
       "deep_status": "fresh",
       "direct_contexts": 0,
       "errors": 0,
-      "requests": 2,
+      "requests": 1,
       "rows": 11126,
       "runtime_patch": "",
       "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 2.4082923690478006,
-    "fallback_age_min": 0.0001734018325805664,
-    "run_log_age_min": 1.8625263571739197,
-    "signal_stack_age_min": 2.417667349179586
+    "debug_age_min": 2.8333072861035666,
+    "fallback_age_min": 0.00026797850926717123,
+    "run_log_age_min": 2.474283174673716,
+    "signal_stack_age_min": 2.8454670190811155
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 1,
     "bzzoiro_secondary_offers_added": 0,
     "day_inventory_total": 185,
-    "day_inventory_with_context": 161,
+    "day_inventory_with_context": 162,
     "day_inventory_with_odds": 183,
-    "matches_seen": 6,
-    "matches_with_2plus_books": 27,
-    "matches_with_context": 4,
-    "matches_with_offers": 2,
-    "odds_offers_primary": 1254,
-    "ready_for_model": 161,
+    "matches_seen": 13,
+    "matches_with_2plus_books": 28,
+    "matches_with_context": 12,
+    "matches_with_offers": 10,
+    "odds_offers_primary": 1259,
+    "ready_for_model": 162,
     "secondary_combinations": {
       "bzzoiro": 2,
       "bzzoiro+odds_api_io": 1,
-      "odds_api_io": 63
+      "odds_api_io": 61
     }
   },
-  "created_at_utc": "2026-08-03T11:13:36.669238+00:00",
+  "created_at_utc": "2026-08-03T13:14:20.814514+00:00",
   "diagnostics": {
     "a_tier_publication_diagnostics": {
-      "created_at_utc": "2026-08-03T11:13:36.660730+00:00",
+      "created_at_utc": "2026-08-03T13:14:20.800562+00:00",
       "duplicates_removed": 0,
-      "evaluated_rows": 0,
+      "evaluated_rows": 3,
       "plain_explanation": [
-        "No explicit tier_a_* blockers found in fallback report; main A-tier likely stops before fallback candidate export: raw candidate generation/quality produced no publishable A pick."
+        "A-tier publication score is below min on many candidates.",
+        "Some candidates still have fewer than the A-tier confirmation/context minimum."
       ],
-      "quality_score_sources": {},
+      "quality_score_sources": {
+        "raw_missing": 3
+      },
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
-      "tier_a_blocker_counts": {},
-      "top_a_tier_blocked_samples": [],
-      "unique_evaluated_rows": 0
+      "tier_a_blocker_counts": {
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 3,
+        "tier_a_odds_sources_below_min:1/2": 3,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 3
+      },
+      "top_a_tier_blocked_samples": [
+        {
+          "a_tier_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation"
+          ],
+          "away_team": "FK Babrungas Plunge",
+          "books_count": 2,
+          "candidate_source": "latest_rescue_candidates",
+          "commence_time": "2026-08-03T15:00:00+00:00",
+          "confidence": 71.112,
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 4,
+          "daily_cap_reasons": [],
+          "dedupe_key": "2026-08-03|lithuania 1 lyga|fk transinvest b|fk babrungas plunge|totals|under|2.5",
+          "edge_pp": 3.286,
+          "ev_pct": 7.804,
+          "family": "totals",
+          "home_team": "FK Transinvest B",
+          "league_name": "Lithuania - 1 Lyga",
+          "match_key": "soccer|fk_transinvest_b|fk_babrungas_plunge|2026-08-03",
+          "odds": 2.375,
+          "odds_sources_count": 1,
+          "other_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation",
+            "tier_b_quality_below_min",
+            "tier_b_market_implied_xg_not_hard_confirmation",
+            "tier_b_hard_context_required_for_proxy_quality",
+            "tier_c_quality_below_min",
+            "tier_c_market_implied_xg_not_hard_confirmation"
+          ],
+          "point": 2.5,
+          "publication_score": 21.246,
+          "quality_score": 0.0,
+          "quality_score_source": "raw_missing",
+          "rank": 1,
+          "selection": "Меньше",
+          "shadow_score": -21.89,
+          "status_without_daily_cap": "blocked_by_other_guards",
+          "tier": null
+        },
+        {
+          "a_tier_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_confirmation_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation"
+          ],
+          "away_team": "MC Alger",
+          "books_count": 2,
+          "candidate_source": "latest_rescue_candidates",
+          "commence_time": "2026-08-03T15:00:00+00:00",
+          "confidence": 67.381,
+          "confirmation_sources": [],
+          "confirmation_sources_count": 1,
+          "daily_cap_reasons": [],
+          "dedupe_key": "2026-08-03|club friendlies|al shabab|mc alger|totals|over|2.5",
+          "edge_pp": 5.142,
+          "ev_pct": 9.512,
+          "family": "totals",
+          "home_team": "Al-Shabab",
+          "league_name": "Club Friendlies",
+          "match_key": "soccer|al_shabab|mc_alger|2026-08-03",
+          "odds": 1.85,
+          "odds_sources_count": 1,
+          "other_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_confirmation_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation",
+            "tier_b_quality_below_min",
+            "tier_b_market_implied_xg_not_hard_confirmation",
+            "tier_b_hard_context_required_for_proxy_quality",
+            "tier_b_low_quality_competition_requires_a_tier",
+            "tier_c_quality_below_min",
+            "tier_c_market_implied_xg_not_hard_confirmation"
+          ],
+          "point": 2.5,
+          "publication_score": 24.723,
+          "quality_score": 0.0,
+          "quality_score_source": "raw_missing",
+          "rank": 2,
+          "selection": "Больше",
+          "shadow_score": -22.891,
+          "status_without_daily_cap": "blocked_by_other_guards",
+          "tier": null
+        },
+        {
+          "a_tier_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_canonical_edge_below_min",
+            "tier_a_publication_score_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation"
+          ],
+          "away_team": "MC Alger",
+          "books_count": 2,
+          "candidate_source": "latest_rescue_candidates",
+          "commence_time": "2026-08-03T15:00:00+00:00",
+          "confidence": 72.034,
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 5,
+          "daily_cap_reasons": [],
+          "dedupe_key": "2026-08-03|club friendlies|al shabab|mc alger|totals|under|2.5",
+          "edge_pp": 1.593,
+          "ev_pct": 3.186,
+          "family": "totals",
+          "home_team": "Al-Shabab",
+          "league_name": "Club Friendlies",
+          "match_key": "soccer|al_shabab|mc_alger|2026-08-03",
+          "odds": 2.0,
+          "odds_sources_count": 1,
+          "other_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_canonical_edge_below_min",
+            "tier_a_publication_score_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation",
+            "tier_b_quality_below_min",
+            "tier_b_canonical_edge_below_min",
+            "tier_b_publication_score_below_min",
+            "tier_b_market_implied_xg_not_hard_confirmation",
+            "tier_b_hard_context_required_for_proxy_quality",
+            "tier_b_low_quality_competition_requires_a_tier",
+            "tier_c_quality_below_min"
+          ],
+          "point": 2.5,
+          "publication_score": 12.55,
+          "quality_score": 0.0,
+          "quality_score_source": "raw_missing",
+          "rank": 3,
+          "selection": "Меньше",
+          "shadow_score": -59.434,
+          "status_without_daily_cap": "blocked_by_other_guards",
+          "tier": null
+        }
+      ],
+      "unique_evaluated_rows": 3
     },
     "ab_tier_bookmaker_contract_policy": {
       "contract": {
@@ -135,7 +299,7 @@
           "max_picks_per_run": 3
         }
       },
-      "created_at_utc": "2026-08-03T11:11:50.548927+00:00",
+      "created_at_utc": "2026-08-03T13:11:59.683026+00:00",
       "env": {
         "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": "3",
         "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE": "67.0",
@@ -207,8 +371,8 @@
     "bzzoiro_overlap_bridge": {
       "bzzoiro_offer_rows": 0,
       "bzzoiro_unique_offer_matches": 0,
-      "created_at_utc": "2026-08-03T11:12:45.519703+00:00",
-      "odds_reference_aliases": 314,
+      "created_at_utc": "2026-08-03T13:13:13.871740+00:00",
+      "odds_reference_aliases": 305,
       "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
       "overlap_match_rows": 0,
       "overlap_same_bucket_rows": 0,
@@ -221,23 +385,68 @@
       "unique_overlap_match_count": 0,
       "unique_overlap_same_bucket_match_count": 0
     },
-    "bzzoiro_v2": {},
+    "bzzoiro_v2": {
+      "contexts_built": 6,
+      "enabled": true,
+      "errors": 0,
+      "events_fetched": 18,
+      "lineups_resources": 6,
+      "metadata_resources": 6,
+      "odds_resources": 6,
+      "requests": 25,
+      "stats_resources": 6,
+      "target_matches": 64
+    },
     "controlled_fallback_shadow_ranking": {
       "blocked_by_daily_cap_and_other_guards": 0,
       "blocked_only_by_daily_cap": 0,
-      "created_at_utc": "2026-08-03T11:13:36.660712+00:00",
+      "created_at_utc": "2026-08-03T13:14:20.800264+00:00",
       "daily_cap_blocked_unique_rows": 0,
       "duplicates_removed": 0,
-      "evaluated_rows": 0,
+      "evaluated_rows": 3,
       "published": false,
-      "reason_counts": {},
-      "reason_counts_without_daily_cap": {},
+      "reason_counts": {
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 3,
+        "tier_a_odds_sources_below_min:1/2": 3,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 3,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_hard_context_required_for_proxy_quality": 3,
+        "tier_b_low_quality_competition_requires_a_tier": 2,
+        "tier_b_market_implied_xg_not_hard_confirmation": 3,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 3,
+        "tier_c_canonical_edge_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 3,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 3
+      },
+      "reason_counts_without_daily_cap": {
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 3,
+        "tier_a_odds_sources_below_min:1/2": 3,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 3,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_hard_context_required_for_proxy_quality": 3,
+        "tier_b_low_quality_competition_requires_a_tier": 2,
+        "tier_b_market_implied_xg_not_hard_confirmation": 3,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 3,
+        "tier_c_canonical_edge_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 3,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 3
+      },
       "report_status": "no_viable_controlled_fallback",
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
       "top_blocked_after_daily_cap_removed": [],
       "top_would_publish_without_daily_cap": [],
-      "unique_evaluated_rows": 0
+      "unique_evaluated_rows": 3
     },
     "coverage_truth": {
       "counts": {
@@ -246,14 +455,14 @@
         "matches_b_tier_watch_ready": 5,
         "matches_missing_context_2plus": 180,
         "matches_missing_odds_source_2plus": 156,
-        "matches_missing_price_2plus": 66,
-        "matches_ready_for_model": 136,
+        "matches_missing_price_2plus": 82,
+        "matches_ready_for_model": 137,
         "matches_ready_for_publish": 5,
         "matches_total": 185,
         "matches_with_2plus_context_sources": 5,
         "matches_with_2plus_odds_sources": 29,
-        "matches_with_2plus_price_confirmations": 119,
-        "matches_with_context": 150,
+        "matches_with_2plus_price_confirmations": 103,
+        "matches_with_context": 151,
         "matches_with_odds": 168
       },
       "source": {
@@ -263,33 +472,33 @@
           "matches_b_tier_watch_ready": 5,
           "matches_missing_context_2plus": 180,
           "matches_missing_odds_source_2plus": 156,
-          "matches_missing_price_2plus": 66,
-          "matches_ready_for_model": 136,
+          "matches_missing_price_2plus": 82,
+          "matches_ready_for_model": 137,
           "matches_ready_for_publish": 5,
           "matches_total": 185,
           "matches_with_2plus_context_sources": 5,
           "matches_with_2plus_odds_sources": 29,
-          "matches_with_2plus_price_confirmations": 119,
-          "matches_with_context": 150,
+          "matches_with_2plus_price_confirmations": 103,
+          "matches_with_context": 151,
           "matches_with_odds": 168
         },
         "csv": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.csv",
         "json": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-        "updated_at_utc": "2026-08-03T11:13:35.993613+00:00"
+        "updated_at_utc": "2026-08-03T13:14:19.943787+00:00"
       }
     },
     "fresh_b_cover_diagnostics": {
-      "active_b_cover_rows": 213,
-      "active_b_cover_with_any_current_offer_match": 121,
-      "active_b_cover_without_current_offer_match": 92,
-      "b_cover_rows": 265,
-      "b_cover_with_any_current_offer_match": 121,
-      "b_cover_without_current_offer_match": 144,
+      "active_b_cover_rows": 205,
+      "active_b_cover_with_any_current_offer_match": 119,
+      "active_b_cover_without_current_offer_match": 86,
+      "b_cover_rows": 266,
+      "b_cover_with_any_current_offer_match": 119,
+      "b_cover_without_current_offer_match": 147,
       "bzzoiro_overlap_bridge": {
         "bzzoiro_offer_rows": 0,
         "bzzoiro_unique_offer_matches": 0,
-        "created_at_utc": "2026-08-03T11:12:45.519703+00:00",
-        "odds_reference_aliases": 314,
+        "created_at_utc": "2026-08-03T13:13:13.871740+00:00",
+        "odds_reference_aliases": 305,
         "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
         "overlap_match_rows": 0,
         "overlap_same_bucket_rows": 0,
@@ -302,15 +511,15 @@
         "unique_overlap_match_count": 0,
         "unique_overlap_same_bucket_match_count": 0
       },
-      "created_at_utc": "2026-08-03T11:12:45.512126+00:00",
+      "created_at_utc": "2026-08-03T13:13:13.861544+00:00",
       "current_market_bucket_book_count_histogram": {
-        "1": 946,
-        "2": 118,
-        "3": 1
+        "1": 952,
+        "2": 117,
+        "3": 2
       },
-      "current_market_buckets_totals_spreads": 1065,
+      "current_market_buckets_totals_spreads": 1071,
       "current_market_bzzoiro_buckets_totals_spreads": 13,
-      "fallback_candidates_seen": 0,
+      "fallback_candidates_seen": 3,
       "fallback_low_confidence_candidates": 0,
       "fallback_low_edge_candidates": 0,
       "fallback_low_ev_candidates": 0,
@@ -321,45 +530,44 @@
       "fallback_status": "no_viable_controlled_fallback",
       "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
       "inventory_rows": 299,
-      "offer_rows_seen": 3489,
+      "offer_rows_seen": 3600,
       "offer_source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 979,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 1260,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1250
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 987,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 1358,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1255
       },
-      "promotion_considered_b_cover_rows": 65,
+      "promotion_considered_b_cover_rows": 55,
       "promotion_promoted_count": 24,
       "promotion_reason_counts": {
         "promoted": 24,
-        "promotion_skip_duplicate_candidate": 21,
-        "promotion_skip_edge_below_min": 6,
-        "promotion_skip_no_offer_bucket": 25,
-        "promotion_skip_odds_above_max": 34,
-        "promotion_skip_odds_below_min": 37,
-        "promotion_skip_price_outlier": 14
+        "promotion_skip_duplicate_candidate": 9,
+        "promotion_skip_no_offer_bucket": 27,
+        "promotion_skip_odds_above_max": 27,
+        "promotion_skip_odds_below_min": 27,
+        "promotion_skip_price_outlier": 10
       }
     },
     "github_actions": {
       "repository": "Harfdsfsq/sports-bot",
       "run_attempt": "1",
-      "run_id": "30807808865",
+      "run_id": "30815981570",
       "workflow": "run-bot"
     },
     "inventory_bookmaker_backfill": {
-      "accepted_context_rows": 685,
-      "accepted_offer_rows": 4977,
-      "changed_inventory_rows": 117,
-      "context_2plus_after": 203,
-      "created_at_utc": "2026-08-03T11:12:59.289748+00:00",
+      "accepted_context_rows": 808,
+      "accepted_offer_rows": 5169,
+      "changed_inventory_rows": 116,
+      "context_2plus_after": 199,
+      "created_at_utc": "2026-08-03T13:13:34.027055+00:00",
       "examples": [
         {
           "after_books": 11,
-          "away_team": "FC Dynamo Barnaul",
-          "before_books": 11,
+          "away_team": "Ms Hapoel Kiryat Yam",
+          "before_books": 4,
           "context_sources_count": 4,
-          "home_team": "FC Chelyabinsk 2",
-          "match_key": "soccer|chelyabinsk 2|dynamo barnaul|2026-08-03",
-          "odds_sources_count": 11,
+          "home_team": "Maccabi Bney Reine",
+          "match_key": "soccer|maccabi bney reine|ms hapoel kiryat yam|2026-08-03",
+          "odds_sources_count": 5,
           "sample": [
             {
               "bookmaker": "bet365",
@@ -381,6 +589,14 @@
               "bookmaker": "bet365",
               "family": "totals",
               "point": "2.5",
+              "price": 2.05,
+              "selection": "under",
+              "source": "unknown"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
               "price": 2.1,
               "selection": "over",
               "source": "sstatsform"
@@ -392,16 +608,18 @@
               "price": 1.8,
               "selection": "under",
               "source": "sstatsform"
-            },
-            {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
             }
           ]
+        },
+        {
+          "after_books": 0,
+          "away_team": "Ik Sirius",
+          "before_books": 0,
+          "context_sources_count": 2,
+          "home_team": "Halmstads",
+          "match_key": "soccer|halmstads|ik sirius|2026-08-03",
+          "odds_sources_count": 0,
+          "sample": []
         },
         {
           "after_books": 1,
@@ -423,14 +641,55 @@
           ]
         },
         {
-          "after_books": 0,
-          "away_team": "Ik Sirius",
+          "after_books": 3,
+          "away_team": "York City",
           "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "Halmstads",
-          "match_key": "soccer|halmstads|ik sirius|2026-08-03",
-          "odds_sources_count": 0,
-          "sample": []
+          "context_sources_count": 1,
+          "home_team": "Crawley Town",
+          "match_key": "soccer|crawley town|york city|2026-08-03",
+          "odds_sources_count": 2,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": "",
+              "price": 1.666,
+              "selection": "york city",
+              "source": "oddsapiio"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": "",
+              "price": 4.0,
+              "selection": "draw",
+              "source": "oddsapiio"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": "",
+              "price": 4.75,
+              "selection": "crawley town",
+              "source": "oddsapiio"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "dnb",
+              "point": "",
+              "price": 1.285,
+              "selection": "york city",
+              "source": "oddsapiio"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "dnb",
+              "point": "",
+              "price": 3.5,
+              "selection": "crawley town",
+              "source": "oddsapiio"
+            }
+          ]
         },
         {
           "after_books": 1,
@@ -484,64 +743,64 @@
           ]
         },
         {
-          "after_books": 3,
-          "away_team": "York City",
+          "after_books": 2,
+          "away_team": "Spartak Varna",
           "before_books": 0,
           "context_sources_count": 1,
-          "home_team": "Crawley Town",
-          "match_key": "soccer|crawley town|york city|2026-08-03",
-          "odds_sources_count": 2,
+          "home_team": "Lokomotiv Plovdiv",
+          "match_key": "soccer|lokomotiv plovdiv|spartak varna|2026-08-03",
+          "odds_sources_count": 1,
           "sample": [
             {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "",
-              "price": 1.7,
-              "selection": "york city",
-              "source": "oddsapiio"
+              "bookmaker": "pinnacle",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.84,
+              "selection": "under",
+              "source": "unknown"
             },
             {
               "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "",
-              "price": 4.0,
-              "selection": "draw",
-              "source": "oddsapiio"
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
             },
             {
               "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "",
-              "price": 4.75,
-              "selection": "crawley town",
-              "source": "oddsapiio"
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
             },
             {
               "bookmaker": "bet365",
-              "family": "dnb",
-              "point": "",
-              "price": 1.25,
-              "selection": "york city",
-              "source": "oddsapiio"
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
             },
             {
               "bookmaker": "bet365",
-              "family": "dnb",
-              "point": "",
-              "price": 3.75,
-              "selection": "crawley town",
-              "source": "oddsapiio"
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
             }
           ]
         },
         {
-          "after_books": 4,
-          "away_team": "Ms Hapoel Kiryat Yam",
-          "before_books": 1,
+          "after_books": 11,
+          "away_team": "FC Ararat Yerevan 2",
+          "before_books": 11,
           "context_sources_count": 4,
-          "home_team": "Maccabi Bney Reine",
-          "match_key": "soccer|maccabi bney reine|ms hapoel kiryat yam|2026-08-03",
-          "odds_sources_count": 3,
+          "home_team": "FC Ararati Araks",
+          "match_key": "soccer|ararat yerevan 2|ararati araks|2026-08-03",
+          "odds_sources_count": 11,
           "sample": [
             {
               "bookmaker": "bet365",
@@ -550,6 +809,22 @@
               "price": 1.2,
               "selection": "under",
               "source": "dayinventory"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.7,
+              "selection": "under",
+              "source": "unknown"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.05,
+              "selection": "under",
+              "source": "unknown"
             },
             {
               "bookmaker": "bet365",
@@ -566,7 +841,171 @@
               "price": 1.8,
               "selection": "under",
               "source": "sstatsform"
+            }
+          ]
+        },
+        {
+          "after_books": 11,
+          "away_team": "FF Jaro Akademia",
+          "before_books": 11,
+          "context_sources_count": 2,
+          "home_team": "VPS Akatemia",
+          "match_key": "soccer|ff jaro akademia|vps akatemia|2026-08-03",
+          "odds_sources_count": 11,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": "2.5",
+              "price": 2.4,
+              "selection": "over",
+              "source": "dayinventory"
             },
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": "2.25",
+              "price": 19.0,
+              "selection": "under",
+              "source": "dayinventory"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": "-1.75",
+              "price": 1.25,
+              "selection": "over",
+              "source": "dayinventory"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": "3.25",
+              "price": 1.363,
+              "selection": "under",
+              "source": "dayinventory"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "h2h",
+              "point": "1.5",
+              "price": 5.5,
+              "selection": "drukpa",
+              "source": "dayinventory"
+            }
+          ]
+        },
+        {
+          "after_books": 11,
+          "away_team": "JK Tallinna Kalev",
+          "before_books": 4,
+          "context_sources_count": 4,
+          "home_team": "Viimsi JK",
+          "match_key": "soccer|jk tallinna kalev|viimsi jk|2026-08-03",
+          "odds_sources_count": 5,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "3.5",
+              "price": 1.2,
+              "selection": "under",
+              "source": "dayinventory"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.7,
+              "selection": "under",
+              "source": "unknown"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.05,
+              "selection": "under",
+              "source": "unknown"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.1,
+              "selection": "over",
+              "source": "sstatsform"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.8,
+              "selection": "under",
+              "source": "sstatsform"
+            }
+          ]
+        },
+        {
+          "after_books": 11,
+          "away_team": "SF Grei",
+          "before_books": 11,
+          "context_sources_count": 4,
+          "home_team": "KFUM 2",
+          "match_key": "soccer|kfum 2|sf grei|2026-08-03",
+          "odds_sources_count": 11,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "3.5",
+              "price": 1.2,
+              "selection": "under",
+              "source": "dayinventory"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.7,
+              "selection": "under",
+              "source": "unknown"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.05,
+              "selection": "under",
+              "source": "unknown"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.1,
+              "selection": "over",
+              "source": "sstatsform"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.8,
+              "selection": "under",
+              "source": "sstatsform"
+            }
+          ]
+        },
+        {
+          "after_books": 6,
+          "away_team": "",
+          "before_books": 0,
+          "context_sources_count": 1,
+          "home_team": "",
+          "match_key": "soccer|crawley town|york city|2026-08-03",
+          "odds_sources_count": 2,
+          "sample": [
             {
               "bookmaker": "10bet",
               "family": "totals",
@@ -576,37 +1015,10 @@
               "source": "sstatsform"
             },
             {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 4,
-          "away_team": "Spartak Varna",
-          "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "Lokomotiv Plovdiv",
-          "match_key": "soccer|lokomotiv plovdiv|spartak varna|2026-08-03",
-          "odds_sources_count": 3,
-          "sample": [
-            {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.01,
-              "selection": "over",
-              "source": "unknown"
-            },
-            {
-              "bookmaker": "pinnacle",
+              "bookmaker": "betway",
               "family": "totals",
               "point": "1.5",
-              "price": 3.51,
+              "price": 4.0,
               "selection": "under",
               "source": "bzzoiro"
             },
@@ -614,229 +1026,25 @@
               "bookmaker": "bet365",
               "family": "totals",
               "point": "2.5",
-              "price": 2.0,
-              "selection": "over",
-              "source": "bzzoiro"
-            },
-            {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.847,
+              "price": 2.05,
               "selection": "under",
               "source": "bzzoiro"
             },
             {
-              "bookmaker": "888sport",
+              "bookmaker": "betano",
               "family": "totals",
-              "point": "3.5",
-              "price": 3.5,
+              "point": "2.5",
+              "price": 1.78,
               "selection": "over",
               "source": "bzzoiro"
-            }
-          ]
-        },
-        {
-          "after_books": 4,
-          "away_team": "JK Tallinna Kalev",
-          "before_books": 2,
-          "context_sources_count": 4,
-          "home_team": "Viimsi JK",
-          "match_key": "soccer|jk tallinna kalev|viimsi jk|2026-08-03",
-          "odds_sources_count": 4,
-          "sample": [
+            },
             {
-              "bookmaker": "bet365",
+              "bookmaker": "10bet",
               "family": "totals",
               "point": "3.5",
-              "price": 1.2,
-              "selection": "under",
-              "source": "dayinventory"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.7,
-              "selection": "under",
-              "source": "unknown"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
+              "price": 2.95,
               "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.8,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 11,
-          "away_team": "IFK Varnamo",
-          "before_books": 11,
-          "context_sources_count": 4,
-          "home_team": "Orebro SK",
-          "match_key": "soccer|ifk varnamo|orebro sk|2026-08-03",
-          "odds_sources_count": 11,
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "3.5",
-              "price": 1.2,
-              "selection": "under",
-              "source": "dayinventory"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.7,
-              "selection": "under",
-              "source": "unknown"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.8,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 11,
-          "away_team": "PFC Lokomotiv Plovdiv",
-          "before_books": 11,
-          "context_sources_count": 4,
-          "home_team": "FK Spartak 1918 Varna",
-          "match_key": "soccer|pfc lokomotiv plovdiv|spartak 1918 varna|2026-08-03",
-          "odds_sources_count": 11,
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "3.5",
-              "price": 1.2,
-              "selection": "under",
-              "source": "dayinventory"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.7,
-              "selection": "under",
-              "source": "unknown"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.8,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 11,
-          "away_team": "FC Farul Constanta",
-          "before_books": 11,
-          "context_sources_count": 4,
-          "home_team": "Fotbal Club FCSB",
-          "match_key": "soccer|farul constanta|fotbal fcsb|2026-08-03",
-          "odds_sources_count": 11,
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "3.5",
-              "price": 1.2,
-              "selection": "under",
-              "source": "dayinventory"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.7,
-              "selection": "under",
-              "source": "unknown"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.8,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
+              "source": "bzzoiro"
             }
           ]
         },
@@ -895,30 +1103,31 @@
       "fuzzy_matched_inventory_rows": 0,
       "inventory_path_used": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-08-03.json",
       "inventory_rows": 299,
-      "mapping_gap_after": 27,
+      "mapping_gap_after": 35,
       "matched_inventory_rows": 293,
       "normalized_2plus_after": 213,
       "normalized_2plus_before": 181,
-      "raw_2plus_matches": 240,
-      "raw_groups": 2150,
-      "scanned_dicts": 73976,
+      "raw_2plus_matches": 248,
+      "raw_groups": 2216,
+      "scanned_dicts": 76749,
       "source_counts": {
         "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-13/195257-context-observations.json": 1406,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/111111-context-observations.json": 4,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/111111-line-snapshots.json": 1425,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/131130-context-observations.json": 12,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/131130-line-snapshots.json": 1543,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 24,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json": 4,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-cohort.json": 186,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-evidence.json": 198,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1250,
-        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 53,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/2026-08-03.json": 256,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/current.json": 256,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/latest.json": 256,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/today.json": 256,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json": 12,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-cohort.json": 195,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-evidence.json": 200,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1255,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 6,
+        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 124,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/2026-08-03.json": 271,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/current.json": 271,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/latest.json": 271,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/today.json": 271,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 24,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-08-03.json": 32,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/latest.json": 32
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-08-03.json": 46,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/latest.json": 46
       },
       "target_date": "2026-08-03"
     },
@@ -938,7 +1147,7 @@
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/latest.json",
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/today.json"
       ],
-      "created_at_utc": "2026-08-03T11:13:22.702099+00:00",
+      "created_at_utc": "2026-08-03T13:14:02.843134+00:00",
       "existing_before": 296,
       "highwater_paths": [
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/best-day-inventory-highwater.json",
@@ -990,25 +1199,27 @@
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/largest.json": 191,
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json": 296,
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json": 296,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/111111-consensus-lines.json": 1073,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/111111-context-observations.json": 4,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/111111-line-snapshots.json": 1425,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/111111-match-serving.json": 6,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/111111-matches.json": 6,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-autonomous-coverage-matrix.json": 6,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/131130-consensus-lines.json": 1083,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/131130-context-observations.json": 12,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/131130-line-snapshots.json": 1543,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/131130-match-serving.json": 13,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-03/131130-matches.json": 13,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-autonomous-coverage-matrix.json": 13,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-autonomous-prediction-ledger.json": 3,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 1073,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json": 4,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 1083,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json": 12,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-prepublish-guard.json": 1,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-coverage-planner.json": 6,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-coverage-planner.json": 13,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-cohort.json": 185,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json": 296,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-inventory-provider-gap-audit.json": 292,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 1425,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-data-coverage-matches.json": 2,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-serving.json": 6,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-matches.json": 6,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-inventory-provider-gap-audit.json": 298,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 1543,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-data-coverage-matches.json": 12,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-data-near-miss.json": 2,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-serving.json": 13,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-matches.json": 13,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-provider-day-discovery-canonical-pool.json": 52,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 3,
         "/home/runner/work/sports-bot/sports-bot/.data/inventory_guard/best-day-inventory.json": 191
       },
       "status": "partial_known_rows_only",
@@ -1018,28 +1229,28 @@
       "target_timezone": "Europe/Moscow"
     },
     "main_run_lifecycle": {
-      "age_minutes": 8.82,
+      "age_minutes": 10.19,
       "current": true,
-      "debug_started_at_utc": "2026-08-03T11:08:47.878126+00:00",
+      "debug_started_at_utc": "2026-08-03T13:08:13.622253+00:00",
       "failed": false,
       "failure_detail": "",
       "failure_reason": "",
       "fresh_debug": true,
       "github_run_attempt": "1",
-      "github_run_id": "30807808865",
+      "github_run_id": "30815981570",
       "present": true,
       "process_status": null,
       "stale_debug_removed_at_start": true,
-      "started_at_utc": "2026-08-03T11:04:47.388476+00:00",
+      "started_at_utc": "2026-08-03T13:04:09.567446+00:00",
       "status": "running",
       "step_status_text": "run bot ok",
       "timed_out": false
     },
     "odds_api_io_offer_snapshot": {
-      "matches_count": 64,
-      "matches_with_2plus_books_any_market": 27,
+      "matches_count": 62,
+      "matches_with_2plus_books_any_market": 28,
       "matches_with_2plus_books_same_side_market": 27,
-      "rows_count": 1250,
+      "rows_count": 1255,
       "status": "ok"
     },
     "progressive_core_coverage": {
@@ -1065,34 +1276,34 @@
       "counts": {
         "all_context_1plus": 7,
         "all_context_2plus": 5,
-        "all_odds_1plus": 15,
+        "all_odds_1plus": 28,
         "all_odds_2plus": 7,
         "context_1plus": 7,
         "context_2plus": 5,
         "core_context_1plus": 7,
         "core_context_2plus": 5,
-        "core_odds_1plus": 15,
+        "core_odds_1plus": 28,
         "core_odds_2plus": 7,
         "core_ready_2plus_both": 5,
-        "matches_tracked": 19,
-        "odds_1plus": 15,
+        "matches_tracked": 32,
+        "odds_1plus": 28,
         "odds_2plus": 7,
         "ready_2plus_both": 5,
-        "window_0_12h": 6,
+        "window_0_12h": 13,
         "window_0_12h_core_ready_2plus_both": 0,
         "window_0_12h_ready_2plus_both": 0,
-        "window_0_4h": 6,
+        "window_0_4h": 13,
         "window_0_4h_core_ready_2plus_both": 0,
         "window_0_4h_ready_2plus_both": 0
       },
-      "gap_sample_size": 6
+      "gap_sample_size": 13
     },
     "provider_coverage_routing": {
-      "active_provider_eligible_rows": 132,
-      "model_targets": 81,
-      "provider_targets": 132,
+      "active_provider_eligible_rows": 123,
+      "model_targets": 76,
+      "provider_targets": 123,
       "publication_scope_widened": false,
-      "role_assignments": 355
+      "role_assignments": 343
     },
     "publication_ledger_sync": {
       "bets": {
@@ -1114,43 +1325,43 @@
         "text_import_rows": 0,
         "unique_published_bets": 91
       },
-      "created_at_utc": "2026-08-03T11:12:44.533432+00:00",
+      "created_at_utc": "2026-08-03T13:13:12.554607+00:00",
       "phase": "default",
       "runs": {
         "run_appended": true,
-        "run_ledger_rows": 482
+        "run_ledger_rows": 483
       }
     },
     "rescue_xg_confirmation_enrichment": {
-      "candidates_seen": 98,
-      "confirmation_added": 7,
-      "context_keys": 10,
-      "context_pairs": 6,
-      "created_at_utc": "2026-08-03T11:12:43.464450+00:00",
+      "candidates_seen": 106,
+      "confirmation_added": 15,
+      "context_keys": 25,
+      "context_pairs": 13,
+      "created_at_utc": "2026-08-03T13:13:09.883443+00:00",
       "examples": [
         {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 1.596,
-          "expected_home": 1.361,
-          "match": "Hjk — Sjk",
-          "source": "sstats_form"
+          "context_path": "market_probability_from_candidate",
+          "expected_away": 1.488,
+          "expected_home": 1.488,
+          "match": "Al-Shabab — MC Alger",
+          "source": "market_implied_total_xg"
         },
         {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 0.729,
-          "expected_home": 1.256,
-          "match": "Crawley Town — York City",
-          "source": "sstats_form"
+          "context_path": "market_probability_from_candidate",
+          "expected_away": 1.466,
+          "expected_home": 1.466,
+          "match": "FK Transinvest B — FK Babrungas Plunge",
+          "source": "market_implied_total_xg"
         },
         {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 1.628,
-          "expected_home": 1.923,
-          "match": "Lokomotiv Plovdiv — Spartak Varna",
-          "source": "sstats_form"
+          "context_path": "market_probability_from_candidate",
+          "expected_away": 1.523,
+          "expected_home": 1.523,
+          "match": "FK Inter Bratislava — MSK Zilina B",
+          "source": "market_implied_total_xg"
         }
       ],
-      "market_implied_xg_added": 1,
+      "market_implied_xg_added": 6,
       "missing_context_match": 91,
       "note": "Uses real context first; market-implied xG is neutral totals sanity only and does not bypass value/price/movement guards.",
       "touched_files": [
@@ -1243,8 +1454,8 @@
   },
   "funnel": {
     "candidates_before_quality": 0,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "fallback_candidates_seen": 3,
+    "fallback_evaluated": 3,
     "fallback_published": false,
     "fallback_published_count": 0,
     "fallback_status": "no_viable_controlled_fallback",
@@ -1254,7 +1465,7 @@
       "cumulative_sent_pending_count": 14,
       "cumulative_sent_picks_count": 90,
       "current_run_anchor_source": "latest-main-run-lifecycle.json",
-      "current_run_anchor_utc": "2026-08-03T11:03:47.388476+00:00",
+      "current_run_anchor_utc": "2026-08-03T13:03:09.567446+00:00",
       "current_run_scope_enforced": true,
       "current_run_sent_picks_count": 0,
       "debug_counter_declared": true,
@@ -1267,19 +1478,19 @@
       "ignored_cumulative_sent_picks_count": 90,
       "ignored_ledger_sent_pending_count": 14,
       "main_run_lifecycle": {
-        "age_minutes": 8.82,
+        "age_minutes": 10.19,
         "current": true,
-        "debug_started_at_utc": "2026-08-03T11:08:47.878126+00:00",
+        "debug_started_at_utc": "2026-08-03T13:08:13.622253+00:00",
         "failed": false,
         "failure_detail": "",
         "failure_reason": "",
         "fresh_debug": true,
         "github_run_attempt": "1",
-        "github_run_id": "30807808865",
+        "github_run_id": "30815981570",
         "present": true,
         "process_status": null,
         "stale_debug_removed_at_start": true,
-        "started_at_utc": "2026-08-03T11:04:47.388476+00:00",
+        "started_at_utc": "2026-08-03T13:04:09.567446+00:00",
         "status": "running",
         "step_status_text": "run bot ok",
         "timed_out": false
@@ -1305,164 +1516,639 @@
     "windowed_publish_blocked": 8
   },
   "line_guard": {
-    "dropped": 6,
-    "dropped_final": 6,
-    "final_pre_kickoff_checks": 8,
-    "kept": 1,
-    "no_more_regular_run_before_kickoff": 6,
-    "seen": 23,
+    "dropped": 10,
+    "dropped_final": 10,
+    "final_pre_kickoff_checks": 14,
+    "kept": 5,
+    "no_more_regular_run_before_kickoff": 10,
+    "seen": 31,
     "waiting_next_run": 0
   },
   "reasons": [
     {
-      "count": 6,
+      "count": 10,
       "reason": "line_movement_guard_dropped",
       "reason_ru": "line movement guard снял кандидата"
     },
     {
+      "count": 3,
+      "reason": "tier_a_quality_below_min",
+      "reason_ru": "tier a quality below min"
+    },
+    {
+      "count": 3,
+      "reason": "tier_a_odds_sources_below_min:1/2",
+      "reason_ru": "tier a odds sources below min:1/2"
+    },
+    {
+      "count": 3,
+      "reason": "tier_a_market_implied_xg_not_hard_confirmation",
+      "reason_ru": "tier a market implied xg not hard confirmation"
+    },
+    {
+      "count": 3,
+      "reason": "tier_b_quality_below_min",
+      "reason_ru": "tier b quality below min"
+    },
+    {
+      "count": 3,
+      "reason": "tier_b_market_implied_xg_not_hard_confirmation",
+      "reason_ru": "tier b market implied xg not hard confirmation"
+    },
+    {
+      "count": 3,
+      "reason": "tier_b_hard_context_required_for_proxy_quality",
+      "reason_ru": "tier b hard context required for proxy quality"
+    },
+    {
+      "count": 3,
+      "reason": "tier_c_quality_below_min",
+      "reason_ru": "tier c quality below min"
+    },
+    {
+      "count": 3,
+      "reason": "tier_c_market_implied_xg_not_hard_confirmation",
+      "reason_ru": "tier c market implied xg not hard confirmation"
+    },
+    {
+      "count": 2,
+      "reason": "tier_b_low_quality_competition_requires_a_tier",
+      "reason_ru": "tier b low quality competition requires a tier"
+    },
+    {
       "count": 1,
-      "reason": "odds_api_io_auth_failed",
-      "reason_ru": "odds-api.io auth failed: invalid API key"
+      "reason": "tier_a_canonical_edge_below_min",
+      "reason_ru": "tier a canonical edge below min"
+    },
+    {
+      "count": 1,
+      "reason": "tier_a_publication_score_below_min",
+      "reason_ru": "tier a publication score below min"
     }
   ],
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "MC Alger",
+        "away_team_ru": "MC Алгер",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-08-03T15:00:00+00:00",
+        "commence_time_display": "03.08.2026 18:00 MSK",
+        "family": "totals",
+        "home_team": "Al-Shabab",
+        "home_team_ru": "Ал-Шабаб",
+        "league_name": "Club Friendlies",
+        "league_name_ru": "Клуб Фриендлиес",
+        "match_key": "soccer|al_shabab|mc_alger|2026-08-03",
+        "metrics": {
+          "adjusted_probability": 0.51593,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 1.593,
+          "canonical_ev_pct": 3.186,
+          "confidence": 72.034,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 5,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 0.96,
+          "market_probability": 0.506329,
+          "model_probability": 0.51593,
+          "odds": 2.0,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 12.55,
+          "quality_reasons": [],
+          "quality_score": 0.0,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "selected_implied_probability": 0.5,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-03T13:09:20.131090+00:00",
+            "current_bookmaker": "Unibet",
+            "current_price": 2.0,
+            "matching_offers": 2,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 0.0,
+            "selected_bookmaker": "unibet",
+            "selected_price": 2.0,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-03T13:13:09.889479+00:00",
+                "current_odds": 2.0,
+                "key": "soccer|al_shabab|mc_alger|2026-08-03|totals|under|2.5|unibet",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": true,
+                "passed": true,
+                "reasons": [],
+                "status": "publish_now_no_next_cron"
+              }
+            ],
+            "matching_entries": 1
+          },
+          "sources_count": 5,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 2,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.975,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 2,
+            "same_market_side_line_only": true,
+            "selected_price": 2.0,
+            "selected_vs_median_deviation_pct": 1.266
+          },
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 0.958,
+            "xg_direction_evaluated": false,
+            "xg_direction_ok": true,
+            "xg_hard_confirmation": false,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 0.958,
+            "xg_model_optimism_gap_pp": 0.958,
+            "xg_probability": 0.506348,
+            "xg_probability_pct": 50.635,
+            "xg_source": "market_implied_total_xg",
+            "xg_total": 2.648
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_canonical_edge_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_market_implied_xg_not_hard_confirmation",
+          "tier_b_hard_context_required_for_proxy_quality",
+          "tier_b_low_quality_competition_requires_a_tier",
+          "tier_c_quality_below_min",
+          "tier_c_canonical_edge_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "reject_reasons_ru": [
+          "качество ниже минимума уровня A",
+          "запас value ниже минимума уровня A",
+          "уровень A: publication score below min",
+          "уровень A: odds sources below min:1/2",
+          "уровень A: market implied xg not hard confirmation",
+          "качество ниже минимума уровня B",
+          "запас value ниже минимума уровня B",
+          "уровень B: publication score below min",
+          "уровень B: market implied xg not hard confirmation",
+          "уровень B: hard context required for proxy quality",
+          "уровень B: low quality competition requires a tier",
+          "качество ниже минимума уровня C",
+          "запас value ниже минимума уровня C",
+          "уровень C: publication score below min",
+          "уровень C: market implied xg not hard confirmation"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "MC Alger",
+        "away_team_ru": "MC Алгер",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-08-03T15:00:00+00:00",
+        "commence_time_display": "03.08.2026 18:00 MSK",
+        "family": "totals",
+        "home_team": "Al-Shabab",
+        "home_team_ru": "Ал-Шабаб",
+        "league_name": "Club Friendlies",
+        "league_name_ru": "Клуб Фриендлиес",
+        "match_key": "soccer|al_shabab|mc_alger|2026-08-03",
+        "metrics": {
+          "adjusted_probability": 0.591959,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 5.142,
+          "canonical_ev_pct": 9.512,
+          "confidence": 67.381,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 2.053,
+          "market_probability": 0.571429,
+          "model_probability": 0.591959,
+          "odds": 1.85,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 24.723,
+          "quality_reasons": [],
+          "quality_score": 0.0,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "selected_implied_probability": 0.540541,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-03T13:09:20.131090+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 1.85,
+            "matching_offers": 2,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 0.0,
+            "selected_bookmaker": "bet365",
+            "selected_price": 1.85,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-03T13:13:09.889479+00:00",
+                "current_odds": 1.85,
+                "key": "soccer|al_shabab|mc_alger|2026-08-03|totals|over|2.5|bet365",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": true,
+                "passed": true,
+                "reasons": [],
+                "status": "movement_confirmed"
+              }
+            ],
+            "matching_entries": 1
+          },
+          "sources_count": 1,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 2,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.75,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 2,
+            "same_market_side_line_only": true,
+            "selected_price": 1.85,
+            "selected_vs_median_deviation_pct": 5.714
+          },
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 2.055,
+            "xg_direction_evaluated": false,
+            "xg_direction_ok": true,
+            "xg_hard_confirmation": false,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 2.055,
+            "xg_model_optimism_gap_pp": 2.055,
+            "xg_probability": 0.571411,
+            "xg_probability_pct": 57.141,
+            "xg_source": "market_implied_total_xg",
+            "xg_total": 2.976
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_b_market_implied_xg_not_hard_confirmation",
+          "tier_b_hard_context_required_for_proxy_quality",
+          "tier_b_low_quality_competition_requires_a_tier",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "reject_reasons_ru": [
+          "качество ниже минимума уровня A",
+          "уровень A: odds sources below min:1/2",
+          "уровень A: confirmation sources below min:1/2",
+          "уровень A: market implied xg not hard confirmation",
+          "качество ниже минимума уровня B",
+          "уровень B: market implied xg not hard confirmation",
+          "уровень B: hard context required for proxy quality",
+          "уровень B: low quality competition requires a tier",
+          "качество ниже минимума уровня C",
+          "уровень C: market implied xg not hard confirmation"
+        ],
+        "selection": "Больше",
+        "tier": null
+      },
+      {
+        "away_team": "FK Babrungas Plunge",
+        "away_team_ru": "Бабрунгас Плунге",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-08-03T15:00:00+00:00",
+        "commence_time_display": "03.08.2026 18:00 MSK",
+        "family": "totals",
+        "home_team": "FK Transinvest B",
+        "home_team_ru": "Трансинвест B",
+        "league_name": "Lithuania - 1 Lyga",
+        "league_name_ru": "Литуаниа - 1 Лига",
+        "match_key": "soccer|fk_transinvest_b|fk_babrungas_plunge|2026-08-03",
+        "metrics": {
+          "adjusted_probability": 0.453911,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 3.286,
+          "canonical_ev_pct": 7.804,
+          "confidence": 71.112,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 4,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.532,
+          "market_probability": 0.438596,
+          "model_probability": 0.453911,
+          "odds": 2.375,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 21.246,
+          "quality_reasons": [],
+          "quality_score": 0.0,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "selected_implied_probability": 0.421053,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-03T13:09:20.131090+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 2.35,
+            "matching_offers": 3,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 1.064,
+            "selected_bookmaker": "bet365",
+            "selected_price": 2.375,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-03T13:13:09.889479+00:00",
+                "current_odds": 2.375,
+                "key": "soccer|fk_transinvest_b|fk_babrungas_plunge|2026-08-03|totals|under|2.5|bet365",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": true,
+                "passed": true,
+                "reasons": [],
+                "status": "publish_now_no_next_cron"
+              }
+            ],
+            "matching_entries": 1
+          },
+          "sources_count": 4,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 2,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 2.3275,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 2,
+            "same_market_side_line_only": true,
+            "selected_price": 2.375,
+            "selected_vs_median_deviation_pct": 2.041
+          },
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 1.531,
+            "xg_direction_evaluated": false,
+            "xg_direction_ok": true,
+            "xg_hard_confirmation": false,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 1.531,
+            "xg_model_optimism_gap_pp": 1.531,
+            "xg_probability": 0.438596,
+            "xg_probability_pct": 43.86,
+            "xg_source": "market_implied_total_xg",
+            "xg_total": 2.932
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_b_market_implied_xg_not_hard_confirmation",
+          "tier_b_hard_context_required_for_proxy_quality",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "reject_reasons_ru": [
+          "качество ниже минимума уровня A",
+          "уровень A: odds sources below min:1/2",
+          "уровень A: market implied xg not hard confirmation",
+          "качество ниже минимума уровня B",
+          "уровень B: market implied xg not hard confirmation",
+          "уровень B: hard context required for proxy quality",
+          "качество ниже минимума уровня C",
+          "уровень C: market implied xg not hard confirmation"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      }
+    ],
     "top_priority_matches": [
       {
-        "away_team": "Ms Hapoel Kiryat Yam",
-        "home_team": "Maccabi Bney Reine",
-        "kickoff_utc": "2026-08-03T12:00:00+00:00",
-        "league_name": "",
-        "match_key": "soccer|maccabi bney reine|ms hapoel kiryat yam|2026-08-03",
-        "minutes_to_kickoff": 47.28,
+        "away_team": "Grotta",
+        "home_team": "IF Vestri",
+        "kickoff_utc": "2026-08-03T14:00:00+00:00",
+        "league_name": "Iceland - 1 deild",
+        "match_key": "soccer|grotta|if vestri|2026-08-03",
+        "minutes_to_kickoff": 46.84,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.241,
+        "priority": 144.388,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-03T09:12:42.115486+00:00",
-          "latest_useful_run_at_utc": "2026-08-03T11:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-03T13:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Paro FC",
-        "home_team": "Drukpa",
-        "kickoff_utc": "2026-08-03T12:00:00+00:00",
-        "league_name": "Bhutan - Premier League",
-        "match_key": "soccer|drukpa|paro|2026-08-03",
-        "minutes_to_kickoff": 47.28,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.241,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-03T11:12:40.688740+00:00",
-          "latest_useful_run_at_utc": "2026-08-03T11:40:00+00:00",
+          "last_odds_refresh_utc": "2026-08-03T13:13:05.729613+00:00",
+          "latest_useful_run_at_utc": "2026-08-03T13:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-03T13:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-03T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "S Nderjyske Fodbold",
-        "home_team": "Odense Boldklub",
-        "kickoff_utc": "2026-08-03T12:00:00+00:00",
-        "league_name": "Danish Superliga",
-        "match_key": "soccer|odense boldklub|s nderjyske fodbold|2026-08-03",
-        "minutes_to_kickoff": 47.28,
+        "away_team": "FC Kamaz Naberezhnye Chelny",
+        "home_team": "FK Ufa",
+        "kickoff_utc": "2026-08-03T14:00:00+00:00",
+        "league_name": "Russia - 1. Liga",
+        "match_key": "soccer|kamaz naberezhnye chelny|ufa|2026-08-03",
+        "minutes_to_kickoff": 46.84,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.241,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-03T11:12:40.690505+00:00",
-          "latest_useful_run_at_utc": "2026-08-03T11:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-03T13:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Dundee",
-        "home_team": "Celtic",
-        "kickoff_utc": "2026-08-03T12:00:00+00:00",
-        "league_name": "Scottish Premiership",
-        "match_key": "soccer|celtic|dundee|2026-08-03",
-        "minutes_to_kickoff": 47.28,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.241,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-02T21:09:24.414641+00:00",
-          "latest_useful_run_at_utc": "2026-08-03T11:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-03T13:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Goa",
-        "home_team": "Karbi Anglong Morning Star FC",
-        "kickoff_utc": "2026-08-03T12:30:00+00:00",
-        "league_name": "India - Durand Cup, Group F",
-        "match_key": "soccer|goa|karbi anglong morning star|2026-08-03",
-        "minutes_to_kickoff": 77.28,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.241,
+        "priority": 144.388,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": "2026-08-02T23:14:16.867645+00:00",
-          "latest_useful_run_at_utc": "2026-08-03T12:10:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-03T13:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-03T13:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-03T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "LNZ Cherkasy",
-        "home_team": "FSC Bukovyna Chernivtsi",
-        "kickoff_utc": "2026-08-03T12:30:00+00:00",
-        "league_name": "Ukraine - Premier League",
-        "match_key": "soccer|fsc bukovyna chernivtsi|lnz cherkasy|2026-08-03",
-        "minutes_to_kickoff": 77.28,
+        "away_team": "FK Termez Surkhon",
+        "home_team": "FK Kokand 1912",
+        "kickoff_utc": "2026-08-03T14:30:00+00:00",
+        "league_name": "Uzbekistan - Superliga",
+        "match_key": "soccer|kokand 1912|termez surkhon|2026-08-03",
+        "minutes_to_kickoff": 76.84,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.241,
+        "priority": 134.388,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-03T11:12:40.690585+00:00",
-          "latest_useful_run_at_utc": "2026-08-03T12:10:00+00:00",
+          "last_odds_refresh_utc": "2026-08-03T13:13:06.157114+00:00",
+          "latest_useful_run_at_utc": "2026-08-03T14:10:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-03T13:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-03T15:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "MC Alger",
+        "home_team": "Al-Shabab",
+        "kickoff_utc": "2026-08-03T15:00:00+00:00",
+        "league_name": "Club Friendlies",
+        "match_key": "2026-08-03|al shabab|mc alger",
+        "minutes_to_kickoff": 106.84,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 124.388,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-08-03T13:13:06.157216+00:00",
+          "latest_useful_run_at_utc": "2026-08-03T14:40:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-08-03T15:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "FF Jaro Akademia",
+        "home_team": "VPS Akatemia",
+        "kickoff_utc": "2026-08-03T15:00:00+00:00",
+        "league_name": "Finland - Kakkonen, Group C",
+        "match_key": "soccer|ff jaro akademia|vps akatemia|2026-08-03",
+        "minutes_to_kickoff": 106.84,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 124.388,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-08-03T13:13:06.156544+00:00",
+          "latest_useful_run_at_utc": "2026-08-03T14:40:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-08-03T15:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Ogre United",
+        "home_team": "FK Auda Riga",
+        "kickoff_utc": "2026-08-03T15:00:00+00:00",
+        "league_name": "Latvia - Virsliga",
+        "match_key": "soccer|auda riga|ogre united|2026-08-03",
+        "minutes_to_kickoff": 106.84,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 124.388,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-08-03T13:13:06.157425+00:00",
+          "latest_useful_run_at_utc": "2026-08-03T14:40:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-08-03T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       }
@@ -1471,7 +2157,7 @@
   "status": "lines_but_no_raw_candidates",
   "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 4767,
+  "text_length": 6128,
   "top_reason": "odds_api_io_auth_failed",
   "version": "harizon-telegram-report-v12-effective-blockers"
 }
