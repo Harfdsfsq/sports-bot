@@ -2,8 +2,8 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 6,
+      "rows_seen": 6,
       "rows_stale": 0
     },
     "debug": {
@@ -25,9 +25,9 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 3,
+      "rows_seen": 3,
       "rows_stale": 0
     }
   },
@@ -35,18 +35,26 @@
     "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 18,
-    "controlled_candidates_seen": null,
+    "contexts_built": 59,
+    "controlled_candidates_seen": 3,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 0,
-    "matches_seen": 19,
-    "matches_with_offers": 19
+    "coverage_candidates_current_date": 3,
+    "matches_seen": 53,
+    "matches_with_offers": 53
   },
-  "created_at": "2026-08-03T21:10:19.100279+00:00",
-  "family_counts": {},
-  "matches_with_candidates": 0,
-  "missing_data_flags": {},
+  "created_at": "2026-08-03T23:13:25.625250+00:00",
+  "family_counts": {
+    "totals": 3
+  },
+  "matches_with_candidates": 3,
+  "missing_data_flags": {
+    "confidence_below_micro_c": 3,
+    "edge_below_micro_c": 2,
+    "ev_below_micro_c": 2,
+    "single_context_source": 2,
+    "single_odds_source": 3
+  },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -59,7 +67,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 0,
+  "positive_near_miss_count": 3,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -68,11 +76,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 19,
+      "events_matched": 52,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 576,
+      "offers_parsed": 1484,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -91,7 +99,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 45,
+      "offers_parsed": 18,
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": null,
@@ -111,11 +119,11 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 267,
+      "matches_built": 278,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 3,
+      "response_errors": 11,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -126,11 +134,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 408,
+      "events_fetched": 417,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 267,
+      "matches_built": 278,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -142,8 +150,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 18,
-      "direct_event_contexts_built": 18,
+      "contexts_built": 59,
+      "direct_event_contexts_built": 59,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -171,7 +179,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 45,
+      "offers_parsed": 51,
       "provider": "v2_primary",
       "rate_limited": null,
       "response_errors": 0,
@@ -238,7 +246,7 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
-      "response_errors": 3,
+      "response_errors": 11,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -300,6 +308,27 @@
       "matches_built": null,
       "offers_parsed": null,
       "provider": "bzzoiro",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "espn",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -392,20 +421,20 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": false,
+      "api_key_present": 2,
+      "budget_exhausted": 0,
       "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
-      "events_matched": 0,
+      "events_matched": null,
       "fixtures_fetched": 0,
       "gap_flags": [
         "no_useful_rows",
         "parser_or_payload_shape_issue"
       ],
       "matches_built": 0,
-      "offers_parsed": 0,
+      "offers_parsed": null,
       "provider": "sportlogic",
       "rate_limited": false,
       "response_errors": 0,
@@ -480,10 +509,170 @@
   "provider_status_counts": {
     "broken_or_unavailable": 1,
     "low_overlap_or_matching_issue": 2,
-    "no_data": 11,
+    "no_data": 12,
     "working": 6
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "tier_a_confirmation_sources_below_min:1/2": 1,
+    "tier_a_odds_sources_below_min:1/2": 1,
+    "tier_a_quality_below_min": 1,
+    "tier_b_quality_below_min": 1,
+    "tier_c_quality_below_min": 1
+  },
   "target_date": "2026-08-04",
-  "top_near_miss": []
+  "top_near_miss": [
+    {
+      "away_team": "Deportes Copiapo",
+      "best_candidate": {
+        "adjusted_probability": 0.596748,
+        "books_count": 2,
+        "canonical_edge_pp": 4.88,
+        "canonical_ev_pct": 8.907,
+        "confidence": 67.108,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.825,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_b_quality_below_min",
+          "tier_c_quality_below_min"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 67.108,
+      "best_edge_pp": 4.88,
+      "best_ev_pct": 8.907,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-04T00:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Deportes Temuco",
+      "league_name": "Chile - Liga de Ascenso",
+      "match_key": "soccer|deportes_temuco|deportes_copiapo|2026-08-04",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Herrera FC",
+      "best_candidate": {
+        "adjusted_probability": 0.573965,
+        "books_count": 2,
+        "canonical_edge_pp": 3.342,
+        "canonical_ev_pct": 6.184,
+        "confidence": 65.883,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 65.883,
+      "best_edge_pp": 3.342,
+      "best_ev_pct": 6.184,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-04T01:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "CA Independiente de La Chorrera",
+      "league_name": "Panama - Liga Panamena de Futbol, Apertura",
+      "match_key": "soccer|ca_independiente_de_la_chorrera|herrera_fc|2026-08-04",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Delfin SC",
+      "best_candidate": {
+        "adjusted_probability": 0.513107,
+        "books_count": 2,
+        "canonical_edge_pp": 2.53,
+        "canonical_ev_pct": 5.187,
+        "confidence": 65.434,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.05,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 65.434,
+      "best_edge_pp": 2.53,
+      "best_ev_pct": 5.187,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-04T00:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "LDU Quito",
+      "league_name": "Ecuador - Serie A",
+      "match_key": "soccer|ldu_quito|delfin_sc|2026-08-04",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    }
+  ]
 }
