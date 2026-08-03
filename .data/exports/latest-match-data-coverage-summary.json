@@ -8,9 +8,9 @@
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 18,
-      "rows_seen": 60,
-      "rows_stale": 42
+      "rows_kept": 0,
+      "rows_seen": 41,
+      "rows_stale": 41
     },
     "lifecycle": {
       "files_present": 0,
@@ -35,29 +35,18 @@
     "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 3,
+    "contexts_built": 18,
     "controlled_candidates_seen": null,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 9,
-    "matches_seen": 5,
-    "matches_with_offers": 3
+    "coverage_candidates_current_date": 0,
+    "matches_seen": 19,
+    "matches_with_offers": 19
   },
-  "created_at": "2026-08-03T19:11:25.030173+00:00",
-  "family_counts": {
-    "h2h": 1,
-    "spreads": 6,
-    "totals": 2
-  },
-  "matches_with_candidates": 3,
-  "missing_data_flags": {
-    "confidence_below_micro_c": 9,
-    "edge_below_micro_c": 9,
-    "ev_below_micro_c": 9,
-    "single_book": 9,
-    "single_context_source": 9,
-    "single_odds_source": 9
-  },
+  "created_at": "2026-08-03T21:10:19.100279+00:00",
+  "family_counts": {},
+  "matches_with_candidates": 0,
+  "missing_data_flags": {},
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -79,11 +68,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 3,
+      "events_matched": 19,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 44,
+      "offers_parsed": 576,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -94,16 +83,16 @@
     {
       "api_key_present": null,
       "budget_exhausted": null,
-      "contexts_built": 1,
-      "direct_event_contexts_built": 1,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 18,
+      "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": null,
-      "provider": "bzzoiro_v2",
+      "offers_parsed": 45,
+      "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": null,
       "rows_fetched": null,
@@ -122,11 +111,11 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 271,
+      "matches_built": 267,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 1,
+      "response_errors": 3,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -137,11 +126,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 414,
+      "events_fetched": 408,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 271,
+      "matches_built": 267,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -153,39 +142,83 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 3,
-      "direct_event_contexts_built": 3,
+      "contexts_built": 18,
+      "direct_event_contexts_built": 18,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "raw_stats",
+      "provider": "sstats",
       "rate_limited": null,
       "response_errors": 0,
-      "rows_fetched": 17,
+      "rows_fetched": null,
       "status_category": "working",
-      "team_form_contexts_built": 0
+      "team_form_contexts_built": null
     },
     {
       "api_key_present": null,
       "budget_exhausted": null,
-      "contexts_built": 3,
-      "direct_event_contexts_built": 3,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
+      "events_fetched": 0,
+      "events_matched": 0,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": null,
-      "provider": "v1_empty_prediction_fallback",
+      "offers_parsed": 45,
+      "provider": "v2_primary",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 100,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "low_overlap_or_matching_failed"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "odds_feed",
       "rate_limited": null,
       "response_errors": null,
       "rows_fetched": null,
-      "status_category": "working",
+      "status_category": "low_overlap_or_matching_issue",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 100,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "low_overlap_or_matching_failed"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "secondary_odds_rescue",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "low_overlap_or_matching_issue",
       "team_form_contexts_built": null
     },
     {
@@ -205,7 +238,7 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
-      "response_errors": 1,
+      "response_errors": 3,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -269,27 +302,6 @@
       "provider": "bzzoiro",
       "rate_limited": null,
       "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "bzzoiro_odds",
-      "rate_limited": null,
-      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -444,27 +456,6 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": 0,
-      "events_matched": 0,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "v2_primary",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
       "api_key_present": true,
       "budget_exhausted": false,
       "contexts_built": 0,
@@ -484,36 +475,15 @@
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": false,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "disabled_by_config"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "disabled_by_config",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 1,
-    "disabled_by_config": 1,
-    "no_data": 13,
+    "low_overlap_or_matching_issue": 2,
+    "no_data": 11,
     "working": 6
   },
   "reject_reason_counts_from_rows": {},
-  "target_date": "2026-08-03",
+  "target_date": "2026-08-04",
   "top_near_miss": []
 }

@@ -1,8 +1,8 @@
 # run-bot discovery-first prepare
 status: ok_budget_limited
 mode: runbot_discovery_first_prepare_v5_full_bounded
-created_at_utc: 2026-08-03T19:07:12.277726+00:00
-duration_seconds: 178.11
+created_at_utc: 2026-08-03T21:06:41.669897+00:00
+duration_seconds: 162.51
 budget_seconds: 210.0
 
 ## Steps
@@ -13,23 +13,22 @@ budget_seconds: 210.0
   - reason: discovery_budget_reserve
 - merge_discovery_pool_into_inventory: skipped {}
   - reason: discovery_missing_or_budget_reserve
-- post_merge_sstats_crosswalk_v2: ok {"mode": "sstats_crosswalk_probe_v2_full_matched", "matched": 147, "match_rate_pct": 49.0}
-- apply_sstats_crosswalk_ids_to_inventory: ok {"mode": "sstats_crosswalk_inventory_apply_v1", "status": "ok", "inventory_matches": 300, "matched_rows_seen": 147, "applied": 147}
-- apply_sstats_deep_inventory_enrichment_v4: skipped {}
-  - reason: discovery_budget_reserve
+- post_merge_sstats_crosswalk_v2: ok {"mode": "sstats_crosswalk_probe_v2_full_matched", "matched": 31, "match_rate_pct": 70.45}
+- apply_sstats_crosswalk_ids_to_inventory: ok {"mode": "sstats_crosswalk_inventory_apply_v1", "status": "ok", "inventory_matches": 44, "matched_rows_seen": 31, "applied": 31}
+- apply_sstats_deep_inventory_enrichment_v4: ok {"mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "crosswalk_matched": 31, "request_count": 76, "enriched_matches": 31}
 - target_bzzoiro_v2_inventory_gaps: ok {"type": "int"}
 - semantic_inventory_dedupe_final: ok {"type": "int"}
 - target_expand_final: ok {"type": "int"}
-- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 300, "matches": 300, "fixture_2plus_sources": 153, "odds_2plus_sources": 180, "context_2plus_sources": 186, "ready_for_model": 239, "ready_for_publish": 163}
+- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 44, "matches": 44, "fixture_2plus_sources": 29, "odds_2plus_sources": 3, "context_2plus_sources": 3, "ready_for_model": 29, "ready_for_publish": 3}
 - inventory_provider_gap_audit: ok {"type": "int"}
 
 ## Final
-- inventory_matches: 300
-- semantic_unique_matches: 291
+- inventory_matches: 44
+- semantic_unique_matches: 36
 - semantic_duplicate_rows: 0
-- matrix_matches: 300
-- fixture_2plus_sources: 153
-- odds_2plus_sources: 180
-- context_2plus_sources: 186
-- ready_for_model: 239
-- ready_for_publish: 163
+- matrix_matches: 44
+- fixture_2plus_sources: 29
+- odds_2plus_sources: 3
+- context_2plus_sources: 3
+- ready_for_model: 29
+- ready_for_publish: 3
