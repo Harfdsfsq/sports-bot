@@ -1,8 +1,8 @@
 # run-bot discovery-first prepare
 status: ok_budget_limited
 mode: runbot_discovery_first_prepare_v5_full_bounded
-created_at_utc: 2026-08-03T05:07:09.847065+00:00
-duration_seconds: 176.65
+created_at_utc: 2026-08-03T07:07:32.294772+00:00
+duration_seconds: 203.95
 budget_seconds: 210.0
 
 ## Steps
@@ -15,12 +15,12 @@ budget_seconds: 210.0
   - reason: discovery_missing_or_budget_reserve
 - post_merge_sstats_crosswalk_v2: ok {"mode": "sstats_crosswalk_probe_v2_full_matched", "matched": 144, "match_rate_pct": 49.66}
 - apply_sstats_crosswalk_ids_to_inventory: ok {"mode": "sstats_crosswalk_inventory_apply_v1", "status": "ok", "inventory_matches": 290, "matched_rows_seen": 144, "applied": 144}
-- apply_sstats_deep_inventory_enrichment_v4: skipped {}
+- apply_sstats_deep_inventory_enrichment_v4: ok {"mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "crosswalk_matched": 144, "request_count": 100, "enriched_matches": 34}
+- target_bzzoiro_v2_inventory_gaps: skipped {}
   - reason: discovery_budget_reserve
-- target_bzzoiro_v2_inventory_gaps: ok {"type": "int"}
 - semantic_inventory_dedupe_final: ok {"type": "int"}
 - target_expand_final: ok {"type": "int"}
-- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 290, "matches": 290, "fixture_2plus_sources": 143, "odds_2plus_sources": 152, "context_2plus_sources": 171, "ready_for_model": 239, "ready_for_publish": 171}
+- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 290, "matches": 290, "fixture_2plus_sources": 143, "odds_2plus_sources": 153, "context_2plus_sources": 172, "ready_for_model": 240, "ready_for_publish": 172}
 - inventory_provider_gap_audit: ok {"type": "int"}
 
 ## Final
@@ -29,7 +29,7 @@ budget_seconds: 210.0
 - semantic_duplicate_rows: 0
 - matrix_matches: 290
 - fixture_2plus_sources: 143
-- odds_2plus_sources: 152
-- context_2plus_sources: 171
-- ready_for_model: 239
-- ready_for_publish: 171
+- odds_2plus_sources: 153
+- context_2plus_sources: 172
+- ready_for_model: 240
+- ready_for_publish: 172
