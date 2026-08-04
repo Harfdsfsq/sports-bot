@@ -572,12 +572,54 @@
         "controlled_consensus_rescue",
         "market_implied_or_proxy"
       ]
+    },
+    {
+      "blockers": [
+        "conservative_ev_below_min",
+        "odds_sources_below_2",
+        "hard_xg_missing"
+      ],
+      "bookmakers": [
+        "bet365",
+        "unibet"
+      ],
+      "books_count": 2,
+      "confidence": 70.967,
+      "conservative_ev_pct": 0.0,
+      "conservative_probability": 0.434783,
+      "context_sources": [
+        "bzzoiro",
+        "sstats",
+        "sstatsform"
+      ],
+      "decision_key": "soccer atert bissen f91 dudelange 2026 08 04|totals|totals under 2 5|2.5",
+      "edge_pp": 2.796,
+      "ev_pct": 6.834,
+      "hard_xg": false,
+      "kickoff_utc": "2026-08-04T18:00:00+00:00",
+      "market_probability": 0.436533,
+      "match_key": "soccer|atert bissen|f91 dudelange|2026-08-04",
+      "model_probability": 0.464496,
+      "movement_ok": true,
+      "observation_id": "03088f22f97e95a36ba7563d9ac89730e8ddc978",
+      "odds": 2.3,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "quality": 79.455,
+      "risk_adjusted_utility": 34.884,
+      "run_id": "30931879112",
+      "snapshot_at_utc": "2026-08-04T17:08:43.553586+00:00",
+      "xg_sources": [
+        "controlled_consensus_rescue",
+        "market_implied_or_proxy"
+      ]
     }
   ],
   "policy": "select_max_two_daily_near_misses_track_price_and_settle_via_shadow_bets",
   "publication_contract_relaxed": false,
   "rejection_counts": {
-    "quality_below_accumulation_min": 8
+    "daily_cap_reached": 1
   },
   "runtime_shadow_persistence": {
     "added": 0,
@@ -588,7 +630,7 @@
     "telegram_publication_enabled": false
   },
   "runtime_shadow_source": {
-    "focused_shadow_rows": 11,
+    "focused_shadow_rows": 12,
     "settled_focused_shadow_rows": 10,
     "state_path": ".data/state.json",
     "status": "ok"
@@ -735,6 +777,68 @@
         "source": "sstats"
       },
       "snapshot_at_utc": "2026-08-02T09:09:53.110852+00:00",
+      "snapshots": 1,
+      "telegram_sent": false,
+      "xg_sources": [
+        "controlled_consensus_rescue",
+        "market_implied_or_proxy"
+      ]
+    },
+    "soccer atert bissen f91 dudelange 2026 08 04|totals|totals under 2 5|2.5": {
+      "away_team": "F91 Dudelange",
+      "blockers": [
+        "conservative_ev_below_min",
+        "odds_sources_below_2",
+        "hard_xg_missing"
+      ],
+      "bookmakers": [
+        "bet365",
+        "unibet"
+      ],
+      "books_count": 2,
+      "closing_odds_candidate": 2.3,
+      "closing_price_finalized": false,
+      "closing_price_status": "kickoff_not_reached",
+      "closing_snapshot_at_utc": "2026-08-04T17:08:43.553586+00:00",
+      "clv_pct": null,
+      "confidence": 70.967,
+      "conservative_ev_pct": 0.0,
+      "conservative_probability": 0.434783,
+      "context_sources": [
+        "bzzoiro",
+        "sstats",
+        "sstatsform"
+      ],
+      "decision_key": "soccer atert bissen f91 dudelange 2026 08 04|totals|totals under 2 5|2.5",
+      "distinct_pre_kickoff_snapshots": 1,
+      "edge_pp": 2.796,
+      "ev_pct": 6.834,
+      "family": "totals",
+      "hard_xg": false,
+      "home_team": "Atert Bissen",
+      "kickoff_utc": "2026-08-04T18:00:00+00:00",
+      "latest_snapshot_at_utc": "2026-08-04T17:08:43.553586+00:00",
+      "league_name": "Luxembourg - Division Nationale",
+      "market_probability": 0.436533,
+      "match_key": "soccer|atert bissen|f91 dudelange|2026-08-04",
+      "model_probability": 0.464496,
+      "movement_ok": true,
+      "odds": 2.3,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "point": 2.5,
+      "publication_contract_relaxed": false,
+      "published": false,
+      "quality": 79.455,
+      "result": "pending",
+      "risk_adjusted_utility": 34.884,
+      "selected_at_utc": "2026-08-04T17:08:43.553586+00:00",
+      "selection": "Меньше 2.5",
+      "selection_key": "totals under 2 5",
+      "selection_mode": "accumulation",
+      "settled": false,
+      "snapshot_at_utc": "2026-08-04T17:08:43.553586+00:00",
       "snapshots": 1,
       "telegram_sent": false,
       "xg_sources": [
@@ -1348,7 +1452,7 @@
       "books_count": 2,
       "closing_odds_candidate": 2.0,
       "closing_price_finalized": false,
-      "closing_price_status": "kickoff_not_reached",
+      "closing_price_status": "insufficient_distinct_snapshots",
       "closing_snapshot_at_utc": "2026-08-04T15:09:57.456846+00:00",
       "clv_pct": null,
       "confidence": 70.822,
@@ -1480,15 +1584,15 @@
     "hit_rate_ex_push_pct": 20.0,
     "lost_or_half_lost": 8,
     "mean_clv_pct": 8.0,
-    "observations": 13,
+    "observations": 14,
     "profit_units_flat_1u": -6.23,
     "push_or_void": 0,
-    "selected_decisions": 12,
+    "selected_decisions": 13,
     "settled": 10,
     "won_or_half_won": 2,
     "yield_pct_flat_1u": -62.3
   },
   "telegram_publication_enabled": false,
-  "updated_at_utc": "2026-08-04T15:10:36.729293+00:00",
+  "updated_at_utc": "2026-08-04T17:09:24.862319+00:00",
   "version": "focused_alpha_accumulation_v3_valid_clv"
 }
