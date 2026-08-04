@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 8,
-      "rows_seen": 8,
+      "rows_kept": 0,
+      "rows_seen": 0,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 35,
-      "rows_seen": 84,
-      "rows_stale": 49
+      "rows_kept": 0,
+      "rows_seen": 81,
+      "rows_stale": 81
     },
     "lifecycle": {
       "files_present": 0,
@@ -25,39 +25,28 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 1,
-      "rows_kept": 3,
-      "rows_seen": 3,
+      "files_present": 0,
+      "rows_kept": 0,
+      "rows_seen": 0,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 26,
+    "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 0,
-    "controlled_candidates_seen": 4,
+    "contexts_built": 63,
+    "controlled_candidates_seen": null,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 19,
-    "matches_seen": 3,
-    "matches_with_offers": 3
+    "coverage_candidates_current_date": 0,
+    "matches_seen": 63,
+    "matches_with_offers": 63
   },
-  "created_at": "2026-08-04T19:09:26.972247+00:00",
-  "family_counts": {
-    "h2h": 1,
-    "spreads": 4,
-    "totals": 14
-  },
-  "matches_with_candidates": 10,
-  "missing_data_flags": {
-    "confidence_below_micro_c": 18,
-    "edge_below_micro_c": 19,
-    "ev_below_micro_c": 14,
-    "single_book": 9,
-    "single_context_source": 10,
-    "single_odds_source": 17
-  },
+  "created_at": "2026-08-04T21:15:56.562913+00:00",
+  "family_counts": {},
+  "matches_with_candidates": 0,
+  "missing_data_flags": {},
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -70,7 +59,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 8,
+  "positive_near_miss_count": 0,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -79,14 +68,33 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 3,
+      "events_matched": 62,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 72,
+      "offers_parsed": 1541,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 32,
+      "provider": "bzzoiro_odds",
+      "rate_limited": null,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -103,11 +111,11 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 303,
+      "matches_built": 309,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 1,
+      "response_errors": 11,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -118,14 +126,94 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 441,
+      "events_fetched": 452,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 303,
+      "matches_built": 309,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 63,
+      "direct_event_contexts_built": 63,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 5,
+      "direct_event_contexts_built": 5,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors"
+      ],
+      "matches_built": null,
+      "offers_parsed": 32,
+      "provider": "v2_primary",
+      "rate_limited": null,
+      "response_errors": 1,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 5,
+      "direct_event_contexts_built": 5,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
+      "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
@@ -153,25 +241,24 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": null,
+      "api_key_present": null,
+      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": 0,
+      "enabled": true,
+      "events_fetched": 100,
       "events_matched": 0,
       "fixtures_fetched": null,
       "gap_flags": [
-        "rate_limited",
-        "no_useful_rows"
+        "low_overlap_or_matching_failed"
       ],
       "matches_built": null,
       "offers_parsed": 0,
-      "provider": "odds_api1",
-      "rate_limited": true,
-      "response_errors": null,
+      "provider": "secondary_odds_rescue",
+      "rate_limited": null,
+      "response_errors": 0,
       "rows_fetched": null,
-      "status_category": "rate_limited",
+      "status_category": "low_overlap_or_matching_issue",
       "team_form_contexts_built": null
     },
     {
@@ -191,29 +278,7 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
-      "response_errors": 1,
-      "rows_fetched": null,
-      "status_category": "broken_or_unavailable",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": false,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": 100,
-      "events_matched": 0,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors",
-        "low_overlap_or_matching_failed"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "secondary_odds_rescue",
-      "rate_limited": null,
-      "response_errors": 1,
+      "response_errors": 11,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -261,29 +326,8 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "bzzoiro",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
       "api_key_present": null,
-      "budget_exhausted": null,
+      "budget_exhausted": true,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -291,11 +335,12 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [
+        "budget_exhausted",
         "no_useful_rows"
       ],
       "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "bzzoiro_odds",
+      "offers_parsed": null,
+      "provider": "bzzoiro",
       "rate_limited": null,
       "response_errors": null,
       "rows_fetched": null,
@@ -319,27 +364,6 @@
       "provider": "espn",
       "rate_limited": null,
       "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": 0,
-      "events_matched": 0,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "free_live_football_data",
-      "rate_limited": null,
-      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -431,42 +455,22 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": null,
+      "budget_exhausted": false,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": 0,
+      "enabled": true,
+      "events_fetched": null,
       "events_matched": 0,
-      "fixtures_fetched": null,
+      "fixtures_fetched": 0,
       "gap_flags": [
-        "no_useful_rows"
+        "no_useful_rows",
+        "parser_or_payload_shape_issue"
       ],
-      "matches_built": null,
+      "matches_built": 0,
       "offers_parsed": 0,
-      "provider": "sportapi7",
-      "rate_limited": null,
-      "response_errors": null,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": 0,
-      "events_matched": 0,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "sportsbook_api",
-      "rate_limited": null,
-      "response_errors": null,
+      "provider": "sportlogic",
+      "rate_limited": false,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -491,487 +495,15 @@
       "rows_fetched": 0,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": 0,
-      "events_matched": 0,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "v2_primary",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": false,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "disabled_by_config"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "disabled_by_config",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
-    "broken_or_unavailable": 2,
-    "disabled_by_config": 1,
-    "low_overlap_or_matching_issue": 1,
-    "no_data": 16,
-    "rate_limited": 1,
-    "working": 3
+    "broken_or_unavailable": 1,
+    "low_overlap_or_matching_issue": 2,
+    "no_data": 10,
+    "working": 8
   },
-  "reject_reason_counts_from_rows": {
-    "market_sanity_totals_xg_contradiction": 1,
-    "post_calibration_edge_guard": 1
-  },
-  "target_date": "2026-08-04",
-  "top_near_miss": [
-    {
-      "away_team": "AS Roma",
-      "best_candidate": {
-        "adjusted_probability": 0.393909,
-        "books_count": 2,
-        "canonical_edge_pp": 3.027,
-        "canonical_ev_pct": 14.234,
-        "confidence": 75.723,
-        "confirmation_sources_count": 9,
-        "context_sources_count": 9,
-        "family": "totals",
-        "odds": 2.9,
-        "odds_sources_count": 6,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
-        "reject_reasons": [
-          "market_sanity_totals_xg_contradiction"
-        ],
-        "selection": "Меньше",
-        "sources_count": 6
-      },
-      "best_confidence": 75.723,
-      "best_edge_pp": 3.027,
-      "best_ev_pct": 14.234,
-      "books_max": 3,
-      "candidate_count": 2,
-      "commence_time": "2026-08-04T18:00:00+00:00",
-      "confirmation_sources_max": 9,
-      "context_sources_max": 9,
-      "controlled_count": 0,
-      "families": {
-        "totals": 2
-      },
-      "home_team": "Newport County",
-      "league_name": "Club Friendlies",
-      "match_key": "soccer|newport_county|as_roma|2026-08-04",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 2
-      },
-      "odds_sources_max": 6,
-      "origins": {
-        ".logs/debug-last-run.json": 2
-      },
-      "reject_reasons": {
-        "market_sanity_totals_xg_contradiction": 1
-      },
-      "sources_max": 6
-    },
-    {
-      "away_team": "FC Victoria Rosport",
-      "best_candidate": {
-        "adjusted_probability": 0.536963,
-        "books_count": 2,
-        "canonical_edge_pp": 2.806,
-        "canonical_ev_pct": 10.077,
-        "confidence": 69.99,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
-        "family": "totals",
-        "odds": 2.05,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 69.99,
-      "best_edge_pp": 2.806,
-      "best_ev_pct": 10.077,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-04T18:00:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "FC Una Strassen",
-      "league_name": "Luxembourg - Division Nationale",
-      "match_key": "soccer|fc_una_strassen|fc_victoria_rosport|2026-08-04",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Hampton & Richmond Borough",
-      "best_candidate": {
-        "adjusted_probability": 0.587024,
-        "books_count": 2,
-        "canonical_edge_pp": 3.07,
-        "canonical_ev_pct": 10.067,
-        "confidence": 70.04,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 1.875,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 70.04,
-      "best_edge_pp": 3.07,
-      "best_ev_pct": 10.067,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-04T18:45:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Raynes Park Vale",
-      "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "soccer|raynes_park_vale|hampton_richmond_borough|2026-08-04",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Breidablik Kopavogur",
-      "best_candidate": {
-        "adjusted_probability": 0.591477,
-        "books_count": 2,
-        "canonical_edge_pp": 2.968,
-        "canonical_ev_pct": 9.423,
-        "confidence": 69.767,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
-        "family": "totals",
-        "odds": 1.85,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 1
-      },
-      "best_confidence": 69.767,
-      "best_edge_pp": 2.968,
-      "best_ev_pct": 9.423,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-04T18:30:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Thor Akureyri",
-      "league_name": "Iceland - Efsta deild",
-      "match_key": "soccer|thor_akureyri|breidablik_kopavogur|2026-08-04",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Independiente Rivadavia de Mendoza Reserve",
-      "best_candidate": {
-        "adjusted_probability": 0.538386,
-        "books_count": 2,
-        "canonical_edge_pp": 3.839,
-        "canonical_ev_pct": 7.677,
-        "confidence": 69.555,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 2.0,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 69.555,
-      "best_edge_pp": 3.839,
-      "best_ev_pct": 7.677,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-04T20:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Boca Juniors",
-      "league_name": "Argentina - Primera LPF, Reserves, Apertura, Playoffs",
-      "match_key": "soccer|boca_juniors|independiente_rivadavia_de_mendoza_reserve|2026-08-04",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Ivory Coast",
-      "best_candidate": {
-        "adjusted_probability": 0.556196,
-        "books_count": 2,
-        "canonical_edge_pp": 3.672,
-        "canonical_ev_pct": 7.068,
-        "confidence": 69.28,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 1.925,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 1
-      },
-      "best_confidence": 69.28,
-      "best_edge_pp": 3.672,
-      "best_ev_pct": 7.068,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-04T20:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Tanzania",
-      "league_name": "International - Africa Cup of Nations, Women, Group B",
-      "match_key": "soccer|tanzania|ivory_coast|2026-08-04",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "South Africa",
-      "best_candidate": {
-        "adjusted_probability": 0.52236,
-        "books_count": 2,
-        "canonical_edge_pp": 2.236,
-        "canonical_ev_pct": 4.472,
-        "confidence": 68.112,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 2.0,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 68.112,
-      "best_edge_pp": 2.236,
-      "best_ev_pct": 4.472,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-04T20:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Burkina Faso",
-      "league_name": "International - Africa Cup of Nations, Women, Group B",
-      "match_key": "soccer|burkina_faso|south_africa|2026-08-04",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Independiente Rivadavia de Mendoza Reserve",
-      "best_candidate": {
-        "adjusted_probability": 0.52315,
-        "books_count": 2,
-        "canonical_edge_pp": 0.905,
-        "canonical_ev_pct": 3.322,
-        "confidence": 71.041,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 1.975,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
-        "reject_reasons": [
-          "post_calibration_edge_guard"
-        ],
-        "selection": "Больше 2.5",
-        "sources_count": 1
-      },
-      "best_confidence": 71.041,
-      "best_edge_pp": 0.905,
-      "best_ev_pct": 3.322,
-      "books_max": 2,
-      "candidate_count": 5,
-      "commence_time": "2026-08-04T20:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 1,
-        "totals": 4
-      },
-      "home_team": "Boca Juniors",
-      "league_name": "Argentina - Primera LPF, Reserves, Apertura, Playoffs",
-      "match_key": "soccer|boca juniors|independiente rivadavia mendoza reserves|2026-08-04",
-      "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 5,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {
-        "post_calibration_edge_guard": 1
-      },
-      "sources_max": 1
-    }
-  ]
+  "reject_reason_counts_from_rows": {},
+  "target_date": "2026-08-05",
+  "top_near_miss": []
 }
