@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 12,
+      "rows_seen": 12,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 81,
-      "rows_stale": 81
+      "rows_kept": 39,
+      "rows_seen": 116,
+      "rows_stale": 77
     },
     "lifecycle": {
       "files_present": 0,
@@ -25,28 +25,40 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 3,
+      "rows_seen": 3,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 0,
+    "candidates_before_quality": 27,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 63,
-    "controlled_candidates_seen": null,
-    "controlled_published": false,
-    "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 0,
-    "matches_seen": 63,
-    "matches_with_offers": 63
+    "contexts_built": 31,
+    "controlled_candidates_seen": 4,
+    "controlled_published": true,
+    "controlled_status": "published",
+    "coverage_candidates_current_date": 23,
+    "matches_seen": 11,
+    "matches_with_offers": 10
   },
-  "created_at": "2026-08-04T21:15:56.562913+00:00",
-  "family_counts": {},
-  "matches_with_candidates": 0,
-  "missing_data_flags": {},
+  "created_at": "2026-08-04T23:13:30.433337+00:00",
+  "family_counts": {
+    "btts": 1,
+    "dnb": 2,
+    "spreads": 14,
+    "totals": 6
+  },
+  "matches_with_candidates": 11,
+  "missing_data_flags": {
+    "confidence_below_micro_c": 23,
+    "edge_below_micro_c": 20,
+    "ev_below_micro_c": 18,
+    "single_book": 17,
+    "single_context_source": 17,
+    "single_odds_source": 22
+  },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -59,7 +71,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 0,
+  "positive_near_miss_count": 6,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -68,11 +80,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 62,
+      "events_matched": 54,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 1541,
+      "offers_parsed": 1318,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -91,7 +103,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 32,
+      "offers_parsed": 45,
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": null,
@@ -111,7 +123,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 309,
+      "matches_built": 312,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -126,11 +138,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 452,
+      "events_fetched": 454,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 309,
+      "matches_built": 312,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -142,8 +154,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 63,
-      "direct_event_contexts_built": 63,
+      "contexts_built": 31,
+      "direct_event_contexts_built": 31,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -163,18 +175,20 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 5,
-      "direct_event_contexts_built": 5,
+      "contexts_built": 6,
+      "direct_event_contexts_built": 6,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "response_errors"
+      ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "stats",
       "rate_limited": null,
-      "response_errors": 0,
+      "response_errors": 1,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -188,14 +202,12 @@
       "events_fetched": 0,
       "events_matched": 0,
       "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors"
-      ],
+      "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 32,
+      "offers_parsed": 79,
       "provider": "v2_primary",
       "rate_limited": null,
-      "response_errors": 1,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -203,18 +215,20 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 5,
-      "direct_event_contexts_built": 5,
+      "contexts_built": 6,
+      "direct_event_contexts_built": 6,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "response_errors"
+      ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "weather",
       "rate_limited": null,
-      "response_errors": 0,
+      "response_errors": 1,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -241,24 +255,47 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": false,
-      "contexts_built": null,
+      "api_key_present": 2,
+      "budget_exhausted": 0,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 100,
-      "events_matched": 0,
-      "fixtures_fetched": null,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": 100,
       "gap_flags": [
-        "low_overlap_or_matching_failed"
+        "low_overlap_or_matching_failed",
+        "parser_or_payload_shape_issue"
       ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "secondary_odds_rescue",
-      "rate_limited": null,
+      "matches_built": 0,
+      "offers_parsed": null,
+      "provider": "sportlogic",
+      "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "low_overlap_or_matching_issue",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "rate_limited",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "odds_api1",
+      "rate_limited": true,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "rate_limited",
       "team_form_contexts_built": null
     },
     {
@@ -279,6 +316,28 @@
       "provider": "account2",
       "rate_limited": false,
       "response_errors": 11,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 100,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "low_overlap_or_matching_failed"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "secondary_odds_rescue",
+      "rate_limited": null,
+      "response_errors": 1,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -326,23 +385,22 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": true,
-      "contexts_built": null,
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [
-        "budget_exhausted",
         "no_useful_rows"
       ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "bzzoiro",
       "rate_limited": null,
-      "response_errors": null,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -364,6 +422,27 @@
       "provider": "espn",
       "rate_limited": null,
       "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "free_live_football_data",
+      "rate_limited": null,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -455,22 +534,42 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
+      "budget_exhausted": null,
+      "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
+      "enabled": null,
+      "events_fetched": 0,
       "events_matched": 0,
-      "fixtures_fetched": 0,
+      "fixtures_fetched": null,
       "gap_flags": [
-        "no_useful_rows",
-        "parser_or_payload_shape_issue"
+        "no_useful_rows"
       ],
-      "matches_built": 0,
+      "matches_built": null,
       "offers_parsed": 0,
-      "provider": "sportlogic",
-      "rate_limited": false,
-      "response_errors": 0,
+      "provider": "sportapi7",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "sportsbook_api",
+      "rate_limited": null,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -498,12 +597,298 @@
     }
   ],
   "provider_status_counts": {
-    "broken_or_unavailable": 1,
+    "broken_or_unavailable": 2,
     "low_overlap_or_matching_issue": 2,
-    "no_data": 10,
+    "no_data": 12,
+    "rate_limited": 1,
     "working": 8
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "quality_high_odds_edge_guard": 1
+  },
   "target_date": "2026-08-05",
-  "top_near_miss": []
+  "top_near_miss": [
+    {
+      "away_team": "Atlas FC",
+      "best_candidate": {
+        "adjusted_probability": 0.341249,
+        "books_count": 2,
+        "canonical_edge_pp": 4.506,
+        "canonical_ev_pct": 16.025,
+        "confidence": 67.001,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "dnb",
+        "odds": 3.4,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": null,
+        "reject_reasons": [
+          "quality_high_odds_edge_guard"
+        ],
+        "selection": "Atlas FC (0)",
+        "sources_count": 1
+      },
+      "best_confidence": 67.001,
+      "best_edge_pp": 4.506,
+      "best_ev_pct": 16.025,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-04T23:45:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "dnb": 1
+      },
+      "home_team": "Columbus Crew",
+      "league_name": "International Clubs - Leagues Cup, Group Stage",
+      "match_key": "soccer|atlas|columbus crew|2026-08-04",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "quality_high_odds_edge_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Curico Unido",
+      "best_candidate": {
+        "adjusted_probability": 0.44481,
+        "books_count": 2,
+        "canonical_edge_pp": 3.755,
+        "canonical_ev_pct": 13.427,
+        "confidence": 64.164,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "dnb",
+        "odds": 2.55,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": null,
+        "reject_reasons": [],
+        "selection": "Curico Unido (0)",
+        "sources_count": 1
+      },
+      "best_confidence": 64.164,
+      "best_edge_pp": 3.755,
+      "best_ev_pct": 13.427,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-04T23:30:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "dnb": 1
+      },
+      "home_team": "Universidad de Concepcion",
+      "league_name": "Chile - Copa Chile, Group F",
+      "match_key": "soccer|curico unido|universidad concepcion|2026-08-04",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "",
+      "best_candidate": {
+        "adjusted_probability": 0.496628,
+        "books_count": 2,
+        "canonical_edge_pp": 6.477,
+        "canonical_ev_pct": 11.741,
+        "confidence": 67.828,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 2.25,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 67.828,
+      "best_edge_pp": 6.477,
+      "best_ev_pct": 11.741,
+      "books_max": 2,
+      "candidate_count": 3,
+      "commence_time": "",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 2,
+        "totals": 1
+      },
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|juarez|minnesota united|2026-08-05",
+      "missing_flags": {
+        "confidence_below_micro_c": 3,
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 2,
+        "single_book": 2,
+        "single_context_source": 2,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 3
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "FC Juarez",
+      "best_candidate": {
+        "adjusted_probability": 0.496628,
+        "books_count": 2,
+        "canonical_edge_pp": 6.477,
+        "canonical_ev_pct": 11.741,
+        "confidence": 67.828,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
+        "family": "totals",
+        "odds": 2.25,
+        "odds_sources_count": 1,
+        "origin": "latest_rescue_candidates",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 67.828,
+      "best_edge_pp": 6.477,
+      "best_ev_pct": 11.741,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-05T00:30:00+00:00",
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Minnesota United FC",
+      "league_name": "International Clubs - Leagues Cup, Group Stage",
+      "match_key": "soccer|minnesota_united_fc|fc_juarez|2026-08-05",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "latest_rescue_candidates": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "CD Real Tomayapo",
+      "best_candidate": {
+        "adjusted_probability": 0.38212,
+        "books_count": 2,
+        "canonical_edge_pp": 3.429,
+        "canonical_ev_pct": 9.859,
+        "confidence": 67.537,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.875,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 67.537,
+      "best_edge_pp": 3.429,
+      "best_ev_pct": 9.859,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-05T00:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Guabira Montero",
+      "league_name": "Bolivia - Division Profesional",
+      "match_key": "soccer|guabira_montero|cd_real_tomayapo|2026-08-05",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "CD Luis Angel Firpo Usulutan",
+      "best_candidate": {
+        "adjusted_probability": 0.636444,
+        "books_count": 2,
+        "canonical_edge_pp": 1.916,
+        "canonical_ev_pct": 3.104,
+        "confidence": 68.997,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.62,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 68.997,
+      "best_edge_pp": 1.916,
+      "best_ev_pct": 3.104,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-05T00:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "CD Plaza Amador Panama City",
+      "league_name": "International Clubs - CONCACAF Central American Cup, Group A",
+      "match_key": "soccer|cd_plaza_amador_panama_city|cd_luis_angel_firpo_usulutan|2026-08-05",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    }
+  ]
 }
