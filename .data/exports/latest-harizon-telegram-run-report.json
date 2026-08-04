@@ -6,7 +6,7 @@
       "errors": 0,
       "events": 280,
       "events_total_effective": 280,
-      "overlap": 2,
+      "overlap": 5,
       "requests": 3,
       "requests_total_effective": 3,
       "secondary_offers_added": 0,
@@ -21,15 +21,15 @@
     },
     "odds_api_io": {
       "auth_failed": true,
-      "books_2plus": 20,
+      "books_2plus": 29,
       "bootstrap_errors": 0,
-      "bootstrap_events_fetched": 443,
-      "bootstrap_matches_built": 305,
-      "errors": 8,
+      "bootstrap_events_fetched": 445,
+      "bootstrap_matches_built": 306,
+      "errors": 10,
       "events_req": 5,
-      "matched": 80,
-      "odds_req": 17,
-      "offers": 924,
+      "matched": 93,
+      "odds_req": 21,
+      "offers": 1132,
       "plan_restricted": false
     },
     "sportlogic": {
@@ -54,9 +54,9 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 18,
-      "deep_enriched": 34,
-      "deep_status": "fresh",
+      "contexts": 33,
+      "deep_enriched": 0,
+      "deep_status": "current_run_skipped",
       "direct_contexts": 0,
       "errors": 0,
       "requests": 1,
@@ -66,114 +66,78 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 2.5990461111068726,
-    "fallback_age_min": 0.0002772847811381022,
-    "run_log_age_min": 2.255706266562144,
-    "signal_stack_age_min": 2.610156269868215
+    "debug_age_min": 4.238789772987365,
+    "fallback_age_min": 0.00025693575541178387,
+    "run_log_age_min": 3.849411499500275,
+    "signal_stack_age_min": 4.250052603085836
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 2,
+    "bzzoiro_odds_overlap_with_odds_api_io": 5,
     "bzzoiro_secondary_offers_added": 0,
-    "day_inventory_total": 151,
-    "day_inventory_with_context": 140,
-    "day_inventory_with_odds": 149,
-    "matches_seen": 7,
-    "matches_with_2plus_books": 20,
-    "matches_with_context": 18,
-    "matches_with_offers": 3,
-    "odds_offers_primary": 924,
-    "ready_for_model": 140,
+    "day_inventory_total": 298,
+    "day_inventory_with_context": 163,
+    "day_inventory_with_odds": 282,
+    "matches_seen": 3,
+    "matches_with_2plus_books": 29,
+    "matches_with_context": 33,
+    "matches_with_offers": 0,
+    "odds_offers_primary": 1132,
+    "ready_for_model": 163,
     "secondary_combinations": {
-      "bzzoiro": 8,
-      "bzzoiro+odds_api_io": 2,
-      "odds_api_io": 32
+      "bzzoiro": 1,
+      "bzzoiro+odds_api_io": 5,
+      "odds_api_io": 39
     }
   },
-  "created_at_utc": "2026-08-04T11:13:40.101654+00:00",
+  "created_at_utc": "2026-08-04T13:15:48.595678+00:00",
   "diagnostics": {
     "a_tier_publication_diagnostics": {
-      "created_at_utc": "2026-08-04T11:13:40.087401+00:00",
+      "created_at_utc": "2026-08-04T13:15:48.582457+00:00",
       "duplicates_removed": 0,
-      "evaluated_rows": 2,
-      "plain_explanation": [],
+      "evaluated_rows": 3,
+      "plain_explanation": [
+        "A-tier publication score is below min on many candidates.",
+        "Some candidates still have fewer than the A-tier confirmation/context minimum."
+      ],
       "quality_score_sources": {
-        "raw_missing": 2
+        "raw_missing": 3
       },
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
       "tier_a_blocker_counts": {
-        "tier_a_market_implied_xg_not_hard_confirmation": 1,
-        "tier_a_odds_sources_below_min:1/2": 2,
-        "tier_a_quality_below_min": 2
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 3,
+        "tier_a_odds_sources_below_min:1/2": 3,
+        "tier_a_publication_score_below_min": 2,
+        "tier_a_quality_below_min": 3
       },
       "top_a_tier_blocked_samples": [
-        {
-          "a_tier_reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_odds_sources_below_min:1/2"
-          ],
-          "away_team": "Almería",
-          "books_count": 2,
-          "candidate_source": "latest_rescue_candidates",
-          "commence_time": "2026-08-04T12:00:00+00:00",
-          "confidence": 74.569,
-          "confirmation_sources": [
-            "bzzoiro",
-            "sstats"
-          ],
-          "confirmation_sources_count": 6,
-          "daily_cap_reasons": [],
-          "dedupe_key": "2026-08-04|club friendlies|al nassr|almer a|totals|under|2.5",
-          "edge_pp": 4.251,
-          "ev_pct": 8.821,
-          "family": "totals",
-          "home_team": "Al-Nassr",
-          "league_name": "Club Friendlies",
-          "match_key": "soccer|al_nassr|almer_a|2026-08-04",
-          "odds": 2.075,
-          "odds_sources_count": 1,
-          "other_reasons": [
-            "tier_a_quality_below_min",
-            "tier_a_odds_sources_below_min:1/2",
-            "tier_b_quality_below_min",
-            "tier_b_low_quality_competition_requires_a_tier",
-            "tier_c_quality_below_min"
-          ],
-          "point": 2.5,
-          "publication_score": 24.346,
-          "quality_score": 0.0,
-          "quality_score_source": "raw_missing",
-          "rank": 1,
-          "selection": "Меньше",
-          "shadow_score": 1.851,
-          "status_without_daily_cap": "blocked_by_other_guards",
-          "tier": null
-        },
         {
           "a_tier_reasons": [
             "tier_a_quality_below_min",
             "tier_a_odds_sources_below_min:1/2",
             "tier_a_market_implied_xg_not_hard_confirmation"
           ],
-          "away_team": "Thailand",
+          "away_team": "Slavia Tu Kosice",
           "books_count": 2,
           "candidate_source": "latest_rescue_candidates",
-          "commence_time": "2026-08-04T13:00:00+00:00",
-          "confidence": 72.783,
+          "commence_time": "2026-08-04T15:00:00+00:00",
+          "confidence": 72.524,
           "confirmation_sources": [
             "bzzoiro",
             "sstats"
           ],
-          "confirmation_sources_count": 5,
+          "confirmation_sources_count": 4,
           "daily_cap_reasons": [],
-          "dedupe_key": "2026-08-04|international asean championship group b|philippines|thailand|totals|under|2.5",
-          "edge_pp": 4.901,
-          "ev_pct": 11.518,
+          "dedupe_key": "2026-08-04|slovakia slovensky pohar|fk povazska sokol|slavia tu kosice|totals|under|4.5",
+          "edge_pp": 5.612,
+          "ev_pct": 10.943,
           "family": "totals",
-          "home_team": "Philippines",
-          "league_name": "International - ASEAN Championship, Group B",
-          "match_key": "soccer|philippines|thailand|2026-08-04",
-          "odds": 2.35,
+          "home_team": "FK Povazska Sokol",
+          "league_name": "Slovakia - Slovensky Pohar",
+          "match_key": "soccer|fk_povazska_sokol|slavia_tu_kosice|2026-08-04",
+          "odds": 1.95,
           "odds_sources_count": 1,
           "other_reasons": [
             "tier_a_quality_below_min",
@@ -185,18 +149,120 @@
             "tier_c_quality_below_min",
             "tier_c_market_implied_xg_not_hard_confirmation"
           ],
-          "point": 2.5,
-          "publication_score": 28.749,
+          "point": 4.5,
+          "publication_score": 29.508,
+          "quality_score": 0.0,
+          "quality_score_source": "raw_missing",
+          "rank": 1,
+          "selection": "Меньше",
+          "shadow_score": -14.986,
+          "status_without_daily_cap": "blocked_by_other_guards",
+          "tier": null
+        },
+        {
+          "a_tier_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_publication_score_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation"
+          ],
+          "away_team": "Slavia Tu Kosice",
+          "books_count": 2,
+          "candidate_source": "latest_rescue_candidates",
+          "commence_time": "2026-08-04T15:00:00+00:00",
+          "confidence": 69.454,
+          "confirmation_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "confirmation_sources_count": 4,
+          "daily_cap_reasons": [],
+          "dedupe_key": "2026-08-04|slovakia slovensky pohar|fk povazska sokol|slavia tu kosice|totals|over|4.5",
+          "edge_pp": 2.145,
+          "ev_pct": 4.119,
+          "family": "totals",
+          "home_team": "FK Povazska Sokol",
+          "league_name": "Slovakia - Slovensky Pohar",
+          "match_key": "soccer|fk_povazska_sokol|slavia_tu_kosice|2026-08-04",
+          "odds": 1.92,
+          "odds_sources_count": 1,
+          "other_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_publication_score_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation",
+            "tier_b_quality_below_min",
+            "tier_b_publication_score_below_min",
+            "tier_b_market_implied_xg_not_hard_confirmation",
+            "tier_b_hard_context_required_for_proxy_quality",
+            "tier_c_quality_below_min",
+            "tier_c_publication_score_below_min",
+            "tier_c_market_implied_xg_not_hard_confirmation"
+          ],
+          "point": 4.5,
+          "publication_score": 14.728,
           "quality_score": 0.0,
           "quality_score_source": "raw_missing",
           "rank": 2,
+          "selection": "Больше",
+          "shadow_score": -42.785,
+          "status_without_daily_cap": "blocked_by_other_guards",
+          "tier": null
+        },
+        {
+          "a_tier_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_canonical_edge_below_min",
+            "tier_a_publication_score_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_confirmation_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation"
+          ],
+          "away_team": "Aktobe",
+          "books_count": 2,
+          "candidate_source": "latest_rescue_candidates",
+          "commence_time": "2026-08-04T14:00:00+00:00",
+          "confidence": 67.835,
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "daily_cap_reasons": [],
+          "dedupe_key": "2026-08-04|international clubs uefa champions league women qualification|breidablik kopavogur|aktobe|totals|under|2.5",
+          "edge_pp": 1.641,
+          "ev_pct": 3.855,
+          "family": "totals",
+          "home_team": "Breidablik Kopavogur",
+          "league_name": "International Clubs - UEFA Champions League, Women, Qualification",
+          "match_key": "soccer|breidablik_kopavogur|aktobe|2026-08-04",
+          "odds": 2.35,
+          "odds_sources_count": 1,
+          "other_reasons": [
+            "tier_a_quality_below_min",
+            "tier_a_canonical_edge_below_min",
+            "tier_a_publication_score_below_min",
+            "tier_a_odds_sources_below_min:1/2",
+            "tier_a_confirmation_sources_below_min:1/2",
+            "tier_a_market_implied_xg_not_hard_confirmation",
+            "tier_b_quality_below_min",
+            "tier_b_canonical_edge_below_min",
+            "tier_b_publication_score_below_min",
+            "tier_b_market_implied_xg_not_hard_confirmation",
+            "tier_b_hard_context_required_for_proxy_quality",
+            "tier_b_low_quality_competition_requires_a_tier"
+          ],
+          "point": 2.5,
+          "publication_score": 11.215,
+          "quality_score": 0.0,
+          "quality_score_source": "raw_missing",
+          "rank": 3,
           "selection": "Меньше",
-          "shadow_score": -15.301,
+          "shadow_score": -64.164,
           "status_without_daily_cap": "blocked_by_other_guards",
           "tier": null
         }
       ],
-      "unique_evaluated_rows": 2
+      "unique_evaluated_rows": 3
     },
     "ab_tier_bookmaker_contract_policy": {
       "contract": {
@@ -239,7 +305,7 @@
           "max_picks_per_run": 3
         }
       },
-      "created_at_utc": "2026-08-04T11:11:30.951826+00:00",
+      "created_at_utc": "2026-08-04T13:12:05.868884+00:00",
       "env": {
         "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": "3",
         "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE": "67.0",
@@ -311,8 +377,8 @@
     "bzzoiro_overlap_bridge": {
       "bzzoiro_offer_rows": 0,
       "bzzoiro_unique_offer_matches": 0,
-      "created_at_utc": "2026-08-04T11:12:42.161182+00:00",
-      "odds_reference_aliases": 180,
+      "created_at_utc": "2026-08-04T13:14:43.838951+00:00",
+      "odds_reference_aliases": 219,
       "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
       "overlap_match_rows": 0,
       "overlap_same_bucket_rows": 0,
@@ -328,8 +394,8 @@
     "bzzoiro_v2": {
       "api_key_present": true,
       "api_version": "v2",
-      "candidate_publish_window_targets": 7,
-      "combo_with_odds_api_io": 2,
+      "candidate_publish_window_targets": 3,
+      "combo_with_odds_api_io": 5,
       "contexts_built": 0,
       "contexts_built_from_batch_prediction": 0,
       "coverage_horizon_days": 2,
@@ -342,14 +408,14 @@
       "enabled": true,
       "errors": 0,
       "event_matches": 0,
-      "event_rejected_no_quality": 61,
+      "event_rejected_no_quality": 55,
       "events_fetched": 280,
       "explicit_empty_assignment_respected": false,
-      "focused_alpha_model_targets": 7,
-      "full_day_coverage_pool": 110,
-      "full_day_coverage_targets": 85,
-      "full_horizon_coverage_pool": 110,
-      "full_horizon_coverage_targets": 85,
+      "focused_alpha_model_targets": 3,
+      "full_day_coverage_pool": 154,
+      "full_day_coverage_targets": 79,
+      "full_horizon_coverage_pool": 154,
+      "full_horizon_coverage_targets": 79,
       "http_statuses": [
         200,
         200,
@@ -362,8 +428,8 @@
       "matched_exact": 0,
       "matched_fuzzy": 0,
       "matched_loose": 0,
-      "matches_after_plan": 85,
-      "matches_before_plan": 85,
+      "matches_after_plan": 79,
+      "matches_before_plan": 79,
       "metric_contexts_enhanced": 0,
       "mode": "batch_predictions_first_detail_on_gap",
       "odds_resources": 0,
@@ -403,98 +469,112 @@
           "span_days": 4
         }
       ],
-      "secondary_offer_matches": 10,
+      "secondary_offer_matches": 6,
       "secondary_offers_added": 0,
       "stats_resources": 0
     },
     "controlled_fallback_shadow_ranking": {
       "blocked_by_daily_cap_and_other_guards": 0,
       "blocked_only_by_daily_cap": 0,
-      "created_at_utc": "2026-08-04T11:13:40.087196+00:00",
+      "created_at_utc": "2026-08-04T13:15:48.582145+00:00",
       "daily_cap_blocked_unique_rows": 0,
       "duplicates_removed": 0,
-      "evaluated_rows": 2,
+      "evaluated_rows": 3,
       "published": false,
       "reason_counts": {
-        "tier_a_market_implied_xg_not_hard_confirmation": 1,
-        "tier_a_odds_sources_below_min:1/2": 2,
-        "tier_a_quality_below_min": 2,
-        "tier_b_hard_context_required_for_proxy_quality": 1,
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 3,
+        "tier_a_odds_sources_below_min:1/2": 3,
+        "tier_a_publication_score_below_min": 2,
+        "tier_a_quality_below_min": 3,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_hard_context_required_for_proxy_quality": 3,
         "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_b_market_implied_xg_not_hard_confirmation": 1,
-        "tier_b_quality_below_min": 2,
-        "tier_c_market_implied_xg_not_hard_confirmation": 1,
-        "tier_c_quality_below_min": 2
+        "tier_b_market_implied_xg_not_hard_confirmation": 3,
+        "tier_b_publication_score_below_min": 2,
+        "tier_b_quality_below_min": 3,
+        "tier_c_canonical_edge_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 3,
+        "tier_c_publication_score_below_min": 2,
+        "tier_c_quality_below_min": 3
       },
       "reason_counts_without_daily_cap": {
-        "tier_a_market_implied_xg_not_hard_confirmation": 1,
-        "tier_a_odds_sources_below_min:1/2": 2,
-        "tier_a_quality_below_min": 2,
-        "tier_b_hard_context_required_for_proxy_quality": 1,
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 3,
+        "tier_a_odds_sources_below_min:1/2": 3,
+        "tier_a_publication_score_below_min": 2,
+        "tier_a_quality_below_min": 3,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_hard_context_required_for_proxy_quality": 3,
         "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_b_market_implied_xg_not_hard_confirmation": 1,
-        "tier_b_quality_below_min": 2,
-        "tier_c_market_implied_xg_not_hard_confirmation": 1,
-        "tier_c_quality_below_min": 2
+        "tier_b_market_implied_xg_not_hard_confirmation": 3,
+        "tier_b_publication_score_below_min": 2,
+        "tier_b_quality_below_min": 3,
+        "tier_c_canonical_edge_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 3,
+        "tier_c_publication_score_below_min": 2,
+        "tier_c_quality_below_min": 3
       },
       "report_status": "no_viable_controlled_fallback",
       "source_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-report.json",
       "status": "ok",
       "top_blocked_after_daily_cap_removed": [],
       "top_would_publish_without_daily_cap": [],
-      "unique_evaluated_rows": 2
+      "unique_evaluated_rows": 3
     },
     "coverage_truth": {
       "counts": {
         "matches_a_tier_coverage_ready": 0,
         "matches_b_tier_watch_only_not_a_tier": 0,
         "matches_b_tier_watch_ready": 0,
-        "matches_missing_context_2plus": 150,
-        "matches_missing_odds_source_2plus": 121,
-        "matches_missing_price_2plus": 62,
-        "matches_ready_for_model": 95,
+        "matches_missing_context_2plus": 297,
+        "matches_missing_odds_source_2plus": 265,
+        "matches_missing_price_2plus": 190,
+        "matches_ready_for_model": 112,
         "matches_ready_for_publish": 0,
-        "matches_total": 151,
+        "matches_total": 298,
         "matches_with_2plus_context_sources": 1,
-        "matches_with_2plus_odds_sources": 30,
-        "matches_with_2plus_price_confirmations": 89,
-        "matches_with_context": 124,
-        "matches_with_odds": 120
+        "matches_with_2plus_odds_sources": 33,
+        "matches_with_2plus_price_confirmations": 108,
+        "matches_with_context": 146,
+        "matches_with_odds": 248
       },
       "source": {
         "counts": {
           "matches_a_tier_coverage_ready": 0,
           "matches_b_tier_watch_only_not_a_tier": 0,
           "matches_b_tier_watch_ready": 0,
-          "matches_missing_context_2plus": 150,
-          "matches_missing_odds_source_2plus": 121,
-          "matches_missing_price_2plus": 62,
-          "matches_ready_for_model": 95,
+          "matches_missing_context_2plus": 297,
+          "matches_missing_odds_source_2plus": 265,
+          "matches_missing_price_2plus": 190,
+          "matches_ready_for_model": 112,
           "matches_ready_for_publish": 0,
-          "matches_total": 151,
+          "matches_total": 298,
           "matches_with_2plus_context_sources": 1,
-          "matches_with_2plus_odds_sources": 30,
-          "matches_with_2plus_price_confirmations": 89,
-          "matches_with_context": 124,
-          "matches_with_odds": 120
+          "matches_with_2plus_odds_sources": 33,
+          "matches_with_2plus_price_confirmations": 108,
+          "matches_with_context": 146,
+          "matches_with_odds": 248
         },
         "csv": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.csv",
         "json": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-        "updated_at_utc": "2026-08-04T11:13:39.409231+00:00"
+        "updated_at_utc": "2026-08-04T13:15:47.671774+00:00"
       }
     },
     "fresh_b_cover_diagnostics": {
-      "active_b_cover_rows": 185,
-      "active_b_cover_with_any_current_offer_match": 79,
-      "active_b_cover_without_current_offer_match": 106,
-      "b_cover_rows": 218,
-      "b_cover_with_any_current_offer_match": 79,
-      "b_cover_without_current_offer_match": 139,
+      "active_b_cover_rows": 123,
+      "active_b_cover_with_any_current_offer_match": 37,
+      "active_b_cover_without_current_offer_match": 86,
+      "b_cover_rows": 163,
+      "b_cover_with_any_current_offer_match": 37,
+      "b_cover_without_current_offer_match": 126,
       "bzzoiro_overlap_bridge": {
         "bzzoiro_offer_rows": 0,
         "bzzoiro_unique_offer_matches": 0,
-        "created_at_utc": "2026-08-04T11:12:42.161182+00:00",
-        "odds_reference_aliases": 180,
+        "created_at_utc": "2026-08-04T13:14:43.838951+00:00",
+        "odds_reference_aliases": 219,
         "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
         "overlap_match_rows": 0,
         "overlap_same_bucket_rows": 0,
@@ -507,15 +587,15 @@
         "unique_overlap_match_count": 0,
         "unique_overlap_same_bucket_match_count": 0
       },
-      "created_at_utc": "2026-08-04T11:12:42.151464+00:00",
+      "created_at_utc": "2026-08-04T13:14:43.830644+00:00",
       "current_market_bucket_book_count_histogram": {
-        "1": 697,
-        "2": 118,
-        "3": 2
+        "1": 844,
+        "2": 149,
+        "3": 5
       },
-      "current_market_buckets_totals_spreads": 817,
-      "current_market_bzzoiro_buckets_totals_spreads": 39,
-      "fallback_candidates_seen": 2,
+      "current_market_buckets_totals_spreads": 998,
+      "current_market_bzzoiro_buckets_totals_spreads": 24,
+      "fallback_candidates_seen": 3,
       "fallback_low_confidence_candidates": 0,
       "fallback_low_edge_candidates": 0,
       "fallback_low_ev_candidates": 0,
@@ -525,597 +605,327 @@
       "fallback_single_source_candidates": 0,
       "fallback_status": "no_viable_controlled_fallback",
       "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json",
-      "inventory_rows": 266,
-      "offer_rows_seen": 2536,
+      "inventory_rows": 296,
+      "offer_rows_seen": 3051,
       "offer_source_counts": {
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 679,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 945,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 912
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 802,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 1137,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1112
       },
-      "promotion_considered_b_cover_rows": 84,
+      "promotion_considered_b_cover_rows": 102,
       "promotion_promoted_count": 24,
       "promotion_reason_counts": {
         "promoted": 24,
-        "promotion_skip_duplicate_candidate": 20,
-        "promotion_skip_edge_below_min": 3,
-        "promotion_skip_no_offer_bucket": 48,
-        "promotion_skip_odds_above_max": 48,
-        "promotion_skip_odds_below_min": 33,
-        "promotion_skip_price_outlier": 14
+        "promotion_skip_duplicate_candidate": 22,
+        "promotion_skip_edge_below_min": 29,
+        "promotion_skip_no_offer_bucket": 58,
+        "promotion_skip_odds_above_max": 53,
+        "promotion_skip_odds_below_min": 53,
+        "promotion_skip_price_outlier": 22
       }
     },
     "github_actions": {
       "repository": "Harfdsfsq/sports-bot",
       "run_attempt": "1",
-      "run_id": "30903022941",
+      "run_id": "30911723952",
       "workflow": "run-bot"
     },
     "inventory_bookmaker_backfill": {
-      "accepted_context_rows": 805,
-      "accepted_offer_rows": 4105,
+      "accepted_context_rows": 782,
+      "accepted_offer_rows": 4385,
       "changed_inventory_rows": 119,
-      "context_2plus_after": 180,
-      "created_at_utc": "2026-08-04T11:12:55.252931+00:00",
+      "context_2plus_after": 158,
+      "created_at_utc": "2026-08-04T13:15:00.044387+00:00",
       "examples": [
         {
-          "after_books": 10,
-          "away_team": "CA Talleres",
-          "before_books": 1,
-          "context_sources_count": 4,
-          "home_team": "Club Atlético Platense",
-          "match_key": "2026-08-03|atl tico platense|ca talleres",
-          "odds_sources_count": 4,
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 3.1,
-              "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.0,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.0,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.875,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "unibet",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.571,
-              "selection": "under",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 10,
-          "away_team": "Dinamo City",
-          "before_books": 3,
-          "context_sources_count": 6,
-          "home_team": "Auda",
-          "match_key": "soccer|auda|dinamo city|2026-08-04",
-          "odds_sources_count": 4,
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 3.1,
-              "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.0,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.0,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.875,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "unibet",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.571,
-              "selection": "under",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 2,
-          "away_team": "Newport County",
+          "after_books": 1,
+          "away_team": "Bentonit Ijevan",
           "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "As Roma",
-          "match_key": "soccer|as roma|newport county|2026-08-04",
-          "odds_sources_count": 2,
+          "context_sources_count": 1,
+          "home_team": "Hayq",
+          "match_key": "2026-08-04|hayq|bentonit ijevan",
+          "odds_sources_count": 1,
           "sample": [
             {
-              "bookmaker": "novibet",
+              "bookmaker": "bet365",
               "family": "totals",
-              "point": "3.5",
-              "price": 1.9,
-              "selection": "over",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
               "source": "unknown"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "3.5",
-              "price": 13.0,
-              "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "3.5",
-              "price": 13.0,
-              "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "3.5",
-              "price": 13.0,
-              "selection": "over",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "3.5",
-              "price": 13.0,
-              "selection": "over",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 2,
-          "away_team": "Royale Union Saint Gilloise",
-          "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "Bod Glimt",
-          "match_key": "soccer|bod glimt|royale union saint gilloise|2026-08-04",
-          "odds_sources_count": 2,
-          "sample": [
-            {
-              "bookmaker": "novibet",
-              "family": "totals",
-              "point": "3.5",
-              "price": 2.6,
-              "selection": "over",
-              "source": "unknown"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.1,
-              "selection": "under",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 2,
-          "away_team": "Hapoel Be Er Sheva",
-          "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "Crvena Zvezda",
-          "match_key": "soccer|crvena zvezda|hapoel be er sheva|2026-08-04",
-          "odds_sources_count": 2,
-          "sample": [
-            {
-              "bookmaker": "betano",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.75,
-              "selection": "over",
-              "source": "unknown"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 4.1,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 4.1,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 4.1,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 4.1,
-              "selection": "under",
-              "source": "sstatsform"
             }
           ]
         },
         {
           "after_books": 1,
-          "away_team": "Villarreal B",
+          "away_team": "Al-Hilal Omdurman",
           "before_books": 0,
           "context_sources_count": 1,
-          "home_team": "Eldense",
-          "match_key": "soccer|eldense|villarreal b|2026-08-04",
+          "home_team": "Gor Mahia FC",
+          "match_key": "2026-08-04|gor mahia|al hilal omdurman",
+          "odds_sources_count": 1,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
+            }
+          ]
+        },
+        {
+          "after_books": 1,
+          "away_team": "Arema FC",
+          "before_books": 0,
+          "context_sources_count": 1,
+          "home_team": "Persebaya Surabaya",
+          "match_key": "2026-08-04|persebaya surabaya|arema",
+          "odds_sources_count": 1,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
+            }
+          ]
+        },
+        {
+          "after_books": 1,
+          "away_team": "Andranik",
+          "before_books": 0,
+          "context_sources_count": 1,
+          "home_team": "Ararat II",
+          "match_key": "2026-08-04|ararat|andranik",
           "odds_sources_count": 1,
           "sample": [
             {
               "bookmaker": "bet365",
               "family": "h2h",
-              "point": "-0.25",
-              "price": 2.2,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "-0.25",
-              "price": 2.2,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "-0.25",
-              "price": 2.2,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "-0.25",
-              "price": 2.2,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "-0.25",
-              "price": 2.2,
-              "selection": "under",
-              "source": "sstatsform"
-            }
-          ]
-        },
-        {
-          "after_books": 4,
-          "away_team": "Levski Sofia",
-          "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "Kairat Almaty",
-          "match_key": "soccer|kairat almaty|levski sofia|2026-08-04",
-          "odds_sources_count": 3,
-          "sample": [
-            {
-              "bookmaker": "novibet",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.68,
-              "selection": "under",
-              "source": "unknown"
-            },
-            {
-              "bookmaker": "betway",
-              "family": "totals",
               "point": "1.5",
-              "price": 3.0,
+              "price": 7.5,
               "selection": "under",
-              "source": "bzzoiro"
-            },
-            {
-              "bookmaker": "pinnacle",
-              "family": "totals",
-              "point": "2.5",
-              "price": 2.27,
-              "selection": "over",
-              "source": "bzzoiro"
-            },
-            {
-              "bookmaker": "novibet",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.68,
-              "selection": "under",
-              "source": "bzzoiro"
-            },
-            {
-              "bookmaker": "betsson",
-              "family": "totals",
-              "point": "3.5",
-              "price": 4.25,
-              "selection": "over",
-              "source": "bzzoiro"
-            }
-          ]
-        },
-        {
-          "after_books": 2,
-          "away_team": "Larne",
-          "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "Iberia 1999",
-          "match_key": "soccer|iberia 1999|larne|2026-08-04",
-          "odds_sources_count": 2,
-          "sample": [
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "",
-              "price": 3.0,
-              "selection": "larne fc",
-              "source": "oddsapiio"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "",
-              "price": 3.2,
-              "selection": "draw",
-              "source": "oddsapiio"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "h2h",
-              "point": "1999",
-              "price": 2.1,
-              "selection": "fc iberia 1999",
-              "source": "oddsapiio"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": "",
-              "price": 2.25,
-              "selection": "larne fc",
-              "source": "oddsapiio"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "dnb",
-              "point": "1999",
-              "price": 1.571,
-              "selection": "fc iberia 1999",
               "source": "oddsapiio"
             }
           ]
-        },
-        {
-          "after_books": 0,
-          "away_team": "Norwich City",
-          "before_books": 0,
-          "context_sources_count": 1,
-          "home_team": "Cambridge United",
-          "match_key": "soccer|cambridge united|norwich city|2026-08-04",
-          "odds_sources_count": 0,
-          "sample": []
         },
         {
           "after_books": 1,
-          "away_team": "Shamrock Rovers",
+          "away_team": "Ararat-Armenia II",
           "before_books": 0,
           "context_sources_count": 1,
-          "home_team": "Kf Egnatia",
-          "match_key": "soccer|kf egnatia|shamrock rovers|2026-08-04",
+          "home_team": "Pyunik II",
+          "match_key": "2026-08-04|pyunik|ararat armenia",
           "odds_sources_count": 1,
           "sample": [
             {
               "bookmaker": "bet365",
               "family": "totals",
               "point": "2.5",
-              "price": 1.9,
+              "price": 1.85,
               "selection": "under",
-              "source": "oddsapiio"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.9,
-              "selection": "under",
-              "source": "oddsapiio"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.9,
-              "selection": "under",
-              "source": "oddsapiio"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.9,
-              "selection": "under",
-              "source": "oddsapiio"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 1.9,
-              "selection": "under",
-              "source": "oddsapiio"
+              "source": "unknown"
             }
           ]
         },
         {
-          "after_books": 0,
-          "away_team": "Waltham Abbey",
+          "after_books": 1,
+          "away_team": "Malmo FF U21",
           "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "Leyton Orient",
-          "match_key": "soccer|leyton orient|waltham abbey|2026-08-04",
-          "odds_sources_count": 0,
-          "sample": []
+          "context_sources_count": 1,
+          "home_team": "Helsingborgs IF U21",
+          "match_key": "2026-08-04|helsingborgs if|malmo ff",
+          "odds_sources_count": 1,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
+            }
+          ]
+        },
+        {
+          "after_books": 1,
+          "away_team": "Sportivo San Lorenzo Reserve",
+          "before_books": 0,
+          "context_sources_count": 1,
+          "home_team": "Sportivo Trinidense Reserve",
+          "match_key": "2026-08-04|sportivo trinidense reserve|sportivo san lorenzo reserve",
+          "odds_sources_count": 1,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
+            }
+          ]
+        },
+        {
+          "after_books": 1,
+          "away_team": "SV Dinamo Helfort 15",
+          "before_books": 0,
+          "context_sources_count": 1,
+          "home_team": "Rapid Wien II",
+          "match_key": "2026-08-04|rapid wien|sv dinamo helfort 15",
+          "odds_sources_count": 1,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
+            }
+          ]
+        },
+        {
+          "after_books": 10,
+          "away_team": "Racing Club Montevideo",
+          "before_books": 1,
+          "context_sources_count": 5,
+          "home_team": "Central Espanol Reserve",
+          "match_key": "2026-08-04|central espanol reserve|racing montevideo",
+          "odds_sources_count": 5,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 3.1,
+              "selection": "over",
+              "source": "sstatsform"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.0,
+              "selection": "under",
+              "source": "sstatsform"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 2.0,
+              "selection": "under",
+              "source": "sstatsform"
+            },
+            {
+              "bookmaker": "unibet",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.571,
+              "selection": "under",
+              "source": "sstatsform"
+            },
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 4.1,
+              "selection": "under",
+              "source": "sstatsform"
+            }
+          ]
+        },
+        {
+          "after_books": 1,
+          "away_team": "Nacional Asunción Reserve",
+          "before_books": 0,
+          "context_sources_count": 1,
+          "home_team": "Deportivo Recoleta Reserve",
+          "match_key": "2026-08-04|deportivo recoleta reserve|nacional asunci n reserve",
+          "odds_sources_count": 1,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
+            }
+          ]
+        },
+        {
+          "after_books": 1,
+          "away_team": "Enskede IK",
+          "before_books": 0,
+          "context_sources_count": 1,
+          "home_team": "FC Djursholm",
+          "match_key": "2026-08-04|djursholm|enskede ik",
+          "odds_sources_count": 1,
+          "sample": [
+            {
+              "bookmaker": "bet365",
+              "family": "totals",
+              "point": "2.5",
+              "price": 1.85,
+              "selection": "under",
+              "source": "unknown"
+            }
+          ]
         },
         {
           "after_books": 2,
-          "away_team": "Sparta Praha",
-          "before_books": 0,
-          "context_sources_count": 2,
-          "home_team": "Olympique Lyonnais",
-          "match_key": "soccer|olympique lyonnais|sparta praha|2026-08-04",
-          "odds_sources_count": 2,
+          "away_team": "Rijnsburgse Boys",
+          "before_books": 2,
+          "context_sources_count": 1,
+          "home_team": "VV Noordwijk",
+          "match_key": "2026-08-04|vv noordwijk|rijnsburgse boys",
+          "odds_sources_count": 1,
           "sample": [
             {
-              "bookmaker": "betsson",
-              "family": "totals",
-              "point": "3.5",
-              "price": 2.92,
-              "selection": "over",
-              "source": "unknown"
-            },
-            {
               "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 3.2,
+              "family": "h2h",
+              "point": "1.5",
+              "price": 7.5,
               "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 3.2,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 3.2,
-              "selection": "under",
-              "source": "sstatsform"
-            },
-            {
-              "bookmaker": "bet365",
-              "family": "totals",
-              "point": "2.5",
-              "price": 3.2,
-              "selection": "under",
-              "source": "sstatsform"
+              "source": "oddsapiio"
             }
           ]
         }
       ],
       "fuzzy_matched_inventory_rows": 0,
       "inventory_path_used": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-08-04.json",
-      "inventory_rows": 266,
-      "mapping_gap_after": 16,
-      "matched_inventory_rows": 262,
-      "normalized_2plus_after": 188,
-      "normalized_2plus_before": 147,
-      "raw_2plus_matches": 204,
-      "raw_groups": 2088,
-      "scanned_dicts": 69236,
+      "inventory_rows": 296,
+      "mapping_gap_after": 90,
+      "matched_inventory_rows": 296,
+      "normalized_2plus_after": 176,
+      "normalized_2plus_before": 175,
+      "raw_2plus_matches": 266,
+      "raw_groups": 2426,
+      "scanned_dicts": 82110,
       "source_counts": {
         "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-06-13/195257-context-observations.json": 1406,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/111103-context-observations.json": 18,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/111103-line-snapshots.json": 1042,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/131134-context-observations.json": 33,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/131134-line-snapshots.json": 1220,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-b-cover-candidate-gap-report.json": 24,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json": 18,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json": 33,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-cohort.json": 178,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-evidence.json": 182,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 912,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 4,
-        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 94,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/2026-08-04.json": 238,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/current.json": 238,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/latest.json": 238,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/today.json": 238,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-evidence.json": 212,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json": 1112,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 6,
+        "/home/runner/work/sports-bot/sports-bot/.logs/debug-last-run.json": 90,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/2026-08-04.json": 179,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/current.json": 178,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/latest.json": 178,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/today.json": 178,
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/latest-b-cover-candidate-gap-report.json": 24,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-08-04.json": 28,
-        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/latest.json": 28
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/2026-08-04.json": 58,
+        "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/line_history/latest.json": 58
       },
       "target_date": "2026-08-04"
     },
@@ -1135,8 +945,8 @@
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/latest.json",
         "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/today.json"
       ],
-      "created_at_utc": "2026-08-04T11:13:24.009741+00:00",
-      "existing_before": 266,
+      "created_at_utc": "2026-08-04T13:15:31.157560+00:00",
+      "existing_before": 294,
       "highwater_paths": [
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/best-day-inventory-highwater.json",
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/highwater.json",
@@ -1149,7 +959,7 @@
         "/home/runner/work/sports-bot/sports-bot/.data/inventory_guard/best-day-inventory.json"
       ],
       "horizon_days": 2,
-      "matches_after": 279,
+      "matches_after": 300,
       "mode": "horizon_inventory_expand_v4_semantic_artifact_aliases",
       "no_shrink_applied": false,
       "parse_errors": [
@@ -1159,86 +969,88 @@
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T050126Z.json",
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-run-bot-step-status.json"
       ],
-      "rows_collected": 279,
-      "selected_from_collected": 279,
+      "rows_collected": 490,
+      "selected_from_collected": 300,
       "semantic_dedupe_key": "date_home_away_first",
       "source_counts": {
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-08-03-highwater.json": 38,
         "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-08-03.json": 30,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-08-04-highwater.json": 165,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-08-04.json": 266,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/best-day-inventory-highwater.json": 165,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/coverage_candidate_pool/2026-08-04.json": 150,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/current.json": 266,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/daily-coverage-cohort-2026-08-04.json": 150,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/highwater.json": 165,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/largest.json": 165,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/latest.json": 266,
-        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json": 266,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-08-04-highwater.json": 274,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-08-04.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/best-day-inventory-highwater.json": 274,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/coverage_candidate_pool/2026-08-04.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/current.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/daily-coverage-cohort-2026-08-04.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/highwater.json": 274,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/largest.json": 274,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/latest.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json": 296,
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-08-03-highwater.json": 38,
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-08-03.json": 30,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-08-04-highwater.json": 165,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-08-04.json": 266,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/best-day-inventory-highwater.json": 165,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/coverage_candidate_pool/2026-08-04.json": 151,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json": 266,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/daily-coverage-cohort-2026-08-04.json": 151,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/highwater.json": 165,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/largest.json": 165,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json": 266,
-        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json": 266,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/111103-consensus-lines.json": 779,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/111103-context-observations.json": 18,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/111103-line-snapshots.json": 1042,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/111103-match-serving.json": 7,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/111103-matches.json": 7,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-autonomous-coverage-matrix.json": 7,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-autonomous-prediction-ledger.json": 2,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 779,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json": 18,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-08-04-highwater.json": 274,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-08-04.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/best-day-inventory-highwater.json": 274,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/coverage_candidate_pool/2026-08-04.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/daily-coverage-cohort-2026-08-04.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/highwater.json": 274,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/largest.json": 274,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/131134-consensus-lines.json": 904,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/131134-context-observations.json": 33,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/131134-line-snapshots.json": 1220,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/131134-match-serving.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/2026-08-04/131134-matches.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-autonomous-coverage-matrix.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-autonomous-prediction-ledger.json": 4,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-consensus-lines.json": 904,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json": 33,
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-controlled-fallback-prepublish-guard.json": 1,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-coverage-planner.json": 7,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-cohort.json": 151,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json": 266,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-inventory-provider-gap-audit.json": 278,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 1042,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-data-coverage-matches.json": 4,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-data-near-miss.json": 2,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-serving.json": 7,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-matches.json": 7,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-provider-day-discovery-canonical-pool.json": 33,
-        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 2,
-        "/home/runner/work/sports-bot/sports-bot/.data/inventory_guard/best-day-inventory.json": 165
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-coverage-planner.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-cohort.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json": 296,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-inventory-provider-gap-audit.json": 300,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-line-snapshots.json": 1220,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-live-source-quorum-report.json": 2,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-data-coverage-matches.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-data-near-miss.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-match-serving.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-matches.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-provider-day-discovery-canonical-pool.json": 359,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json": 3,
+        "/home/runner/work/sports-bot/sports-bot/.data/exports/provider-day-discovery-canonical-pool.json": 359,
+        "/home/runner/work/sports-bot/sports-bot/.data/inventory_guard/best-day-inventory.json": 274
       },
-      "status": "partial_known_rows_only",
+      "status": "ok_target_met",
       "target": 300,
       "target_date": "2026-08-04",
-      "target_shortfall": 21,
+      "target_shortfall": 0,
       "target_timezone": "Europe/Moscow"
     },
     "main_run_lifecycle": {
-      "age_minutes": 9.52,
+      "age_minutes": 11.52,
       "current": true,
-      "debug_started_at_utc": "2026-08-04T11:07:38.862546+00:00",
+      "debug_started_at_utc": "2026-08-04T13:07:35.439029+00:00",
       "failed": false,
       "failure_detail": "",
       "failure_reason": "",
       "fresh_debug": true,
       "github_run_attempt": "1",
-      "github_run_id": "30903022941",
+      "github_run_id": "30911723952",
       "present": true,
       "process_status": null,
       "stale_debug_removed_at_start": true,
-      "started_at_utc": "2026-08-04T11:04:09.081300+00:00",
+      "started_at_utc": "2026-08-04T13:04:17.440540+00:00",
       "status": "running",
       "step_status_text": "run bot ok",
       "timed_out": false
     },
     "odds_api_io_offer_snapshot": {
-      "matches_count": 34,
-      "matches_with_2plus_books_any_market": 20,
-      "matches_with_2plus_books_same_side_market": 20,
-      "rows_count": 912,
+      "matches_count": 44,
+      "matches_with_2plus_books_any_market": 29,
+      "matches_with_2plus_books_same_side_market": 29,
+      "rows_count": 1112,
       "status": "ok"
     },
     "progressive_core_coverage": {
@@ -1262,36 +1074,36 @@
         "reason": "disabled or zero-budget providers are excluded from the active core contract"
       },
       "counts": {
-        "all_context_1plus": 7,
+        "all_context_1plus": 8,
         "all_context_2plus": 0,
-        "all_odds_1plus": 15,
+        "all_odds_1plus": 18,
         "all_odds_2plus": 2,
-        "context_1plus": 7,
+        "context_1plus": 8,
         "context_2plus": 0,
-        "core_context_1plus": 7,
+        "core_context_1plus": 8,
         "core_context_2plus": 0,
-        "core_odds_1plus": 15,
+        "core_odds_1plus": 18,
         "core_odds_2plus": 2,
         "core_ready_2plus_both": 0,
-        "matches_tracked": 16,
-        "odds_1plus": 15,
+        "matches_tracked": 19,
+        "odds_1plus": 18,
         "odds_2plus": 2,
         "ready_2plus_both": 0,
-        "window_0_12h": 7,
+        "window_0_12h": 3,
         "window_0_12h_core_ready_2plus_both": 0,
         "window_0_12h_ready_2plus_both": 0,
-        "window_0_4h": 7,
+        "window_0_4h": 3,
         "window_0_4h_core_ready_2plus_both": 0,
         "window_0_4h_ready_2plus_both": 0
       },
-      "gap_sample_size": 7
+      "gap_sample_size": 3
     },
     "provider_coverage_routing": {
-      "active_provider_eligible_rows": 117,
-      "model_targets": 71,
-      "provider_targets": 117,
+      "active_provider_eligible_rows": 238,
+      "model_targets": 66,
+      "provider_targets": 238,
       "publication_scope_widened": false,
-      "role_assignments": 335
+      "role_assignments": 384
     },
     "publication_ledger_sync": {
       "bets": {
@@ -1313,84 +1125,42 @@
         "text_import_rows": 0,
         "unique_published_bets": 91
       },
-      "created_at_utc": "2026-08-04T11:12:40.754805+00:00",
+      "created_at_utc": "2026-08-04T13:14:42.424457+00:00",
       "phase": "default",
       "runs": {
         "run_appended": true,
-        "run_ledger_rows": 494
+        "run_ledger_rows": 495
       }
     },
     "rescue_xg_confirmation_enrichment": {
-      "candidates_seen": 106,
-      "confirmation_added": 9,
-      "context_keys": 25,
-      "context_pairs": 7,
-      "created_at_utc": "2026-08-04T11:12:38.996826+00:00",
+      "candidates_seen": 99,
+      "confirmation_added": 2,
+      "context_keys": 36,
+      "context_pairs": 3,
+      "created_at_utc": "2026-08-04T13:14:40.243313+00:00",
       "examples": [
         {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 1.865,
-          "expected_home": 2.297,
-          "match": "As Roma — Newport County",
-          "source": "sstats_form"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 2.287,
-          "expected_home": 1.624,
-          "match": "Bod Glimt — Royale Union Saint Gilloise",
-          "source": "sstats_form"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 2.801,
-          "expected_home": 1.164,
-          "match": "Crvena Zvezda — Hapoel Be Er Sheva",
-          "source": "sstats_form"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 1.405,
-          "expected_home": 1.827,
-          "match": "Kairat Almaty — Levski Sofia",
-          "source": "sstats_form"
-        },
-        {
           "context_path": "market_probability_from_candidate",
-          "expected_away": 1.1647,
-          "expected_home": 1.1647,
-          "match": "Iberia 1999 — Larne",
-          "source": "market_implied_total_xg"
-        },
-        {
-          "context_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-context-observations.json",
-          "expected_away": 2.001,
-          "expected_home": 1.811,
-          "match": "Olympique Lyonnais — Sparta Praha",
-          "source": "sstats_form"
-        },
-        {
-          "context_path": "market_probability_from_candidate",
-          "expected_away": 1.4316,
-          "expected_home": 1.4316,
-          "match": "Philippines — Thailand",
+          "expected_away": 2.4186,
+          "expected_home": 2.4186,
+          "match": "FK Povazska Sokol — Slavia Tu Kosice",
           "source": "market_implied_total_xg"
         },
         {
           "context_path": "market_probability_from_candidate",
-          "expected_away": 1.3632,
-          "expected_home": 1.3632,
-          "match": "FC Pyunik Yerevan 2 — FC Ararat-Armenia 2",
+          "expected_away": 2.2163,
+          "expected_home": 2.2163,
+          "match": "FK Povazska Sokol — Slavia Tu Kosice",
           "source": "market_implied_total_xg"
         }
       ],
-      "market_implied_xg_added": 5,
-      "missing_context_match": 95,
+      "market_implied_xg_added": 3,
+      "missing_context_match": 97,
       "note": "Uses real context first; market-implied xG is neutral totals sanity only and does not bypass value/price/movement guards.",
       "touched_files": [
         "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json"
       ],
-      "xg_added": 8
+      "xg_added": 2
     },
     "sportlogic": {
       "diagnosis": "active_odds_stale_only_no_current_fixture",
@@ -1477,8 +1247,8 @@
   },
   "funnel": {
     "candidates_before_quality": 0,
-    "fallback_candidates_seen": 2,
-    "fallback_evaluated": 2,
+    "fallback_candidates_seen": 3,
+    "fallback_evaluated": 3,
     "fallback_published": false,
     "fallback_published_count": 0,
     "fallback_status": "no_viable_controlled_fallback",
@@ -1488,7 +1258,7 @@
       "cumulative_sent_pending_count": 14,
       "cumulative_sent_picks_count": 90,
       "current_run_anchor_source": "latest-main-run-lifecycle.json",
-      "current_run_anchor_utc": "2026-08-04T11:03:09.081300+00:00",
+      "current_run_anchor_utc": "2026-08-04T13:03:17.440540+00:00",
       "current_run_scope_enforced": true,
       "current_run_sent_picks_count": 0,
       "debug_counter_declared": true,
@@ -1501,19 +1271,19 @@
       "ignored_cumulative_sent_picks_count": 90,
       "ignored_ledger_sent_pending_count": 14,
       "main_run_lifecycle": {
-        "age_minutes": 9.52,
+        "age_minutes": 11.52,
         "current": true,
-        "debug_started_at_utc": "2026-08-04T11:07:38.862546+00:00",
+        "debug_started_at_utc": "2026-08-04T13:07:35.439029+00:00",
         "failed": false,
         "failure_detail": "",
         "failure_reason": "",
         "fresh_debug": true,
         "github_run_attempt": "1",
-        "github_run_id": "30903022941",
+        "github_run_id": "30911723952",
         "present": true,
         "process_status": null,
         "stale_debug_removed_at_start": true,
-        "started_at_utc": "2026-08-04T11:04:09.081300+00:00",
+        "started_at_utc": "2026-08-04T13:04:17.440540+00:00",
         "status": "running",
         "step_status_text": "run bot ok",
         "timed_out": false
@@ -1539,95 +1309,100 @@
     "windowed_publish_blocked": 8
   },
   "line_guard": {
-    "dropped": 11,
-    "dropped_final": 11,
+    "dropped": 4,
+    "dropped_final": 4,
     "final_pre_kickoff_checks": 9,
     "kept": 4,
-    "no_more_regular_run_before_kickoff": 8,
-    "seen": 31,
+    "no_more_regular_run_before_kickoff": 6,
+    "seen": 24,
     "waiting_next_run": 0
   },
   "reasons": [
     {
-      "count": 11,
+      "count": 4,
       "reason": "line_movement_guard_dropped",
       "reason_ru": "line movement guard снял кандидата"
     },
     {
-      "count": 2,
+      "count": 3,
       "reason": "tier_a_quality_below_min",
       "reason_ru": "tier a quality below min"
     },
     {
-      "count": 2,
+      "count": 3,
       "reason": "tier_a_odds_sources_below_min:1/2",
       "reason_ru": "tier a odds sources below min:1/2"
     },
     {
-      "count": 2,
-      "reason": "tier_b_quality_below_min",
-      "reason_ru": "tier b quality below min"
-    },
-    {
-      "count": 2,
-      "reason": "tier_c_quality_below_min",
-      "reason_ru": "tier c quality below min"
-    },
-    {
-      "count": 1,
-      "reason": "tier_b_low_quality_competition_requires_a_tier",
-      "reason_ru": "tier b low quality competition requires a tier"
-    },
-    {
-      "count": 1,
+      "count": 3,
       "reason": "tier_a_market_implied_xg_not_hard_confirmation",
       "reason_ru": "tier a market implied xg not hard confirmation"
     },
     {
-      "count": 1,
+      "count": 3,
+      "reason": "tier_b_quality_below_min",
+      "reason_ru": "tier b quality below min"
+    },
+    {
+      "count": 3,
       "reason": "tier_b_market_implied_xg_not_hard_confirmation",
       "reason_ru": "tier b market implied xg not hard confirmation"
     },
     {
-      "count": 1,
+      "count": 3,
       "reason": "tier_b_hard_context_required_for_proxy_quality",
       "reason_ru": "tier b hard context required for proxy quality"
     },
     {
-      "count": 1,
+      "count": 3,
+      "reason": "tier_c_quality_below_min",
+      "reason_ru": "tier c quality below min"
+    },
+    {
+      "count": 3,
       "reason": "tier_c_market_implied_xg_not_hard_confirmation",
       "reason_ru": "tier c market implied xg not hard confirmation"
     },
     {
-      "count": 1,
-      "reason": "odds_api_io_auth_failed",
-      "reason_ru": "odds-api.io auth failed: invalid API key"
+      "count": 2,
+      "reason": "tier_a_publication_score_below_min",
+      "reason_ru": "tier a publication score below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_b_publication_score_below_min",
+      "reason_ru": "tier b publication score below min"
+    },
+    {
+      "count": 2,
+      "reason": "tier_c_publication_score_below_min",
+      "reason_ru": "tier c publication score below min"
     }
   ],
   "samples": {
     "fallback_evaluated": [
       {
-        "away_team": "Almería",
-        "away_team_ru": "Алмерíа",
+        "away_team": "Slavia Tu Kosice",
+        "away_team_ru": "Славиа Ту Косике",
         "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-08-04T12:00:00+00:00",
-        "commence_time_display": "04.08.2026 15:00 MSK",
+        "commence_time": "2026-08-04T15:00:00+00:00",
+        "commence_time_display": "04.08.2026 18:00 MSK",
         "family": "totals",
-        "home_team": "Al-Nassr",
-        "home_team_ru": "Ал-Насср",
-        "league_name": "Club Friendlies",
-        "league_name_ru": "Клуб Фриендлиес",
-        "match_key": "soccer|al_nassr|almer_a|2026-08-04",
+        "home_team": "FK Povazska Sokol",
+        "home_team_ru": "Повазска Сокол",
+        "league_name": "Slovakia - Slovensky Pohar",
+        "league_name_ru": "Словакиа - Словенски Похар",
+        "match_key": "soccer|fk_povazska_sokol|slavia_tu_kosice|2026-08-04",
         "metrics": {
-          "adjusted_probability": 0.524439,
+          "adjusted_probability": 0.542288,
           "books_count": 2,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 4.251,
-          "canonical_ev_pct": 8.821,
-          "confidence": 74.569,
+          "canonical_edge_pp": 2.145,
+          "canonical_ev_pct": 4.119,
+          "confidence": 69.454,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -1640,16 +1415,16 @@
             "bzzoiro",
             "sstats"
           ],
-          "confirmation_sources_count": 6,
+          "confirmation_sources_count": 4,
           "dnb_sanity": {
             "enabled": false,
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 1.939,
-          "market_probability": 0.505051,
-          "model_probability": 0.524439,
-          "odds": 2.075,
+          "market_edge_pp": 1.178,
+          "market_probability": 0.530504,
+          "model_probability": 0.542288,
+          "odds": 1.92,
           "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
             "applies": false,
@@ -1658,29 +1433,29 @@
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 24.346,
+          "publication_score": 14.728,
           "quality_reasons": [],
           "quality_score": 0.0,
           "quality_score_raw": 0.0,
           "quality_score_source": "raw_missing",
-          "selected_implied_probability": 0.481928,
+          "selected_implied_probability": 0.520833,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-04T11:08:55.830394+00:00",
-            "current_bookmaker": "Bet365",
-            "current_price": 2.075,
-            "matching_offers": 3,
+            "created_at_utc": "2026-08-04T13:08:55.496034+00:00",
+            "current_bookmaker": "Unibet",
+            "current_price": 1.92,
+            "matching_offers": 2,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
             "price_diff_pct": 0.0,
-            "selected_bookmaker": "bet365",
-            "selected_price": 2.075,
+            "selected_bookmaker": "unibet",
+            "selected_price": 1.92,
             "stale": false
           },
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-04T11:12:39.001062+00:00",
-                "current_odds": 2.075,
-                "key": "soccer|al_nassr|almer_a|2026-08-04|totals|under|2.5|bet365",
+                "captured_at_utc": "2026-08-04T13:14:40.249281+00:00",
+                "current_odds": 1.92,
+                "key": "soccer|fk_povazska_sokol|slavia_tu_kosice|2026-08-04|totals|over|4.5|unibet",
                 "line_move_pct": 0.0,
                 "no_more_cron_before_kickoff": true,
                 "passed": true,
@@ -1690,75 +1465,87 @@
             ],
             "matching_entries": 1
           },
-          "sources_count": 6,
+          "sources_count": 4,
           "tier_b_bookmaker_quorum": {
             "books_count": 2,
             "enabled": true,
             "max_deviation_pct": 8.0,
-            "median_price": 2.0275,
+            "median_price": 1.885,
             "mode": "bookmaker_quorum",
             "odds_sources_count": 1,
             "priced_books_count": 2,
             "same_market_side_line_only": true,
-            "selected_price": 2.075,
-            "selected_vs_median_deviation_pct": 2.343
+            "selected_price": 1.92,
+            "selected_vs_median_deviation_pct": 1.857
           },
           "xg_sanity": {
             "enabled": true,
-            "xg_abs_gap_pp": 1.323,
-            "xg_direction_evaluated": true,
+            "xg_abs_gap_pp": 1.18,
+            "xg_direction_evaluated": false,
             "xg_direction_ok": true,
-            "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 1.323,
-            "xg_model_gap_pp": -1.323,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.537672,
-            "xg_probability_pct": 53.767,
-            "xg_source": "home_away",
-            "xg_total": 2.524
+            "xg_hard_confirmation": false,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 1.18,
+            "xg_model_optimism_gap_pp": 1.18,
+            "xg_probability": 0.530492,
+            "xg_probability_pct": 53.049,
+            "xg_source": "market_implied_total_xg",
+            "xg_total": 4.837
           }
         },
         "ok": false,
-        "point": 2.5,
+        "point": 4.5,
         "reject_reasons": [
           "tier_a_quality_below_min",
+          "tier_a_publication_score_below_min",
           "tier_a_odds_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
           "tier_b_quality_below_min",
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min"
+          "tier_b_publication_score_below_min",
+          "tier_b_market_implied_xg_not_hard_confirmation",
+          "tier_b_hard_context_required_for_proxy_quality",
+          "tier_c_quality_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
         ],
         "reject_reasons_ru": [
           "качество ниже минимума уровня A",
+          "уровень A: publication score below min",
           "уровень A: odds sources below min:1/2",
+          "уровень A: market implied xg not hard confirmation",
           "качество ниже минимума уровня B",
-          "уровень B: low quality competition requires a tier",
-          "качество ниже минимума уровня C"
+          "уровень B: publication score below min",
+          "уровень B: market implied xg not hard confirmation",
+          "уровень B: hard context required for proxy quality",
+          "качество ниже минимума уровня C",
+          "уровень C: publication score below min",
+          "уровень C: market implied xg not hard confirmation"
         ],
-        "selection": "Меньше",
+        "selection": "Больше",
         "tier": null
       },
       {
-        "away_team": "Thailand",
-        "away_team_ru": "Тайланд",
+        "away_team": "Aktobe",
+        "away_team_ru": "Актобе",
         "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-08-04T13:00:00+00:00",
-        "commence_time_display": "04.08.2026 16:00 MSK",
+        "commence_time": "2026-08-04T14:00:00+00:00",
+        "commence_time_display": "04.08.2026 17:00 MSK",
         "family": "totals",
-        "home_team": "Philippines",
-        "home_team_ru": "Филиппинес",
-        "league_name": "International - ASEAN Championship, Group B",
-        "league_name_ru": "Интернатионал - Асин Чемпионшип, Груп B",
-        "match_key": "soccer|philippines|thailand|2026-08-04",
+        "home_team": "Breidablik Kopavogur",
+        "home_team_ru": "Брейдаблик Копавогур",
+        "league_name": "International Clubs - UEFA Champions League, Women, Qualification",
+        "league_name_ru": "Интернатионал Клубс - UEFA Чампионс Лигуе, Уомен, Квалификатион",
+        "match_key": "soccer|breidablik_kopavogur|aktobe|2026-08-04",
         "metrics": {
-          "adjusted_probability": 0.474545,
+          "adjusted_probability": 0.441938,
           "books_count": 2,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 4.901,
-          "canonical_ev_pct": 11.518,
-          "confidence": 72.783,
+          "canonical_edge_pp": 1.641,
+          "canonical_ev_pct": 3.855,
+          "confidence": 67.835,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -1768,18 +1555,17 @@
             "weather_supports_under": false
           },
           "confirmation_sources": [
-            "bzzoiro",
             "sstats"
           ],
-          "confirmation_sources_count": 5,
+          "confirmation_sources_count": 1,
           "dnb_sanity": {
             "enabled": false,
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 2.0,
-          "market_probability": 0.454545,
-          "model_probability": 0.474545,
+          "market_edge_pp": 0.716,
+          "market_probability": 0.434783,
+          "model_probability": 0.441938,
           "odds": 2.35,
           "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
@@ -1789,14 +1575,14 @@
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 28.749,
+          "publication_score": 11.215,
           "quality_reasons": [],
           "quality_score": 0.0,
           "quality_score_raw": 0.0,
           "quality_score_source": "raw_missing",
           "selected_implied_probability": 0.425532,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-04T11:08:55.830394+00:00",
+            "created_at_utc": "2026-08-04T13:08:55.496034+00:00",
             "current_bookmaker": "Bet365",
             "current_price": 2.35,
             "matching_offers": 3,
@@ -1809,9 +1595,9 @@
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-04T11:12:39.001062+00:00",
+                "captured_at_utc": "2026-08-04T13:14:40.249281+00:00",
                 "current_odds": 2.35,
-                "key": "soccer|philippines|thailand|2026-08-04|totals|under|2.5|bet365",
+                "key": "soccer|breidablik_kopavogur|aktobe|2026-08-04|totals|under|2.5|bet365",
                 "line_move_pct": 0.0,
                 "no_more_cron_before_kickoff": true,
                 "passed": true,
@@ -1821,36 +1607,189 @@
             ],
             "matching_entries": 1
           },
-          "sources_count": 5,
+          "sources_count": 1,
           "tier_b_bookmaker_quorum": {
             "books_count": 2,
             "enabled": true,
             "max_deviation_pct": 8.0,
-            "median_price": 2.275,
+            "median_price": 2.3,
             "mode": "bookmaker_quorum",
             "odds_sources_count": 1,
             "priced_books_count": 2,
             "same_market_side_line_only": true,
             "selected_price": 2.35,
-            "selected_vs_median_deviation_pct": 3.297
+            "selected_vs_median_deviation_pct": 2.174
           },
           "xg_sanity": {
             "enabled": true,
-            "xg_abs_gap_pp": 2.002,
+            "xg_abs_gap_pp": 0.713,
             "xg_direction_evaluated": false,
             "xg_direction_ok": true,
             "xg_hard_confirmation": false,
             "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 2.002,
-            "xg_model_optimism_gap_pp": 2.002,
-            "xg_probability": 0.454526,
-            "xg_probability_pct": 45.453,
+            "xg_model_gap_pp": 0.713,
+            "xg_model_optimism_gap_pp": 0.713,
+            "xg_probability": 0.434804,
+            "xg_probability_pct": 43.48,
             "xg_source": "market_implied_total_xg",
-            "xg_total": 2.863
+            "xg_total": 2.949
           }
         },
         "ok": false,
         "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_canonical_edge_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_market_implied_xg_not_hard_confirmation",
+          "tier_b_hard_context_required_for_proxy_quality",
+          "tier_b_low_quality_competition_requires_a_tier",
+          "tier_c_quality_below_min",
+          "tier_c_canonical_edge_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "reject_reasons_ru": [
+          "качество ниже минимума уровня A",
+          "запас value ниже минимума уровня A",
+          "уровень A: publication score below min",
+          "уровень A: odds sources below min:1/2",
+          "уровень A: confirmation sources below min:1/2",
+          "уровень A: market implied xg not hard confirmation",
+          "качество ниже минимума уровня B",
+          "запас value ниже минимума уровня B",
+          "уровень B: publication score below min",
+          "уровень B: market implied xg not hard confirmation",
+          "уровень B: hard context required for proxy quality",
+          "уровень B: low quality competition requires a tier",
+          "качество ниже минимума уровня C",
+          "запас value ниже минимума уровня C",
+          "уровень C: publication score below min",
+          "уровень C: market implied xg not hard confirmation"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "Slavia Tu Kosice",
+        "away_team_ru": "Славиа Ту Косике",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-08-04T15:00:00+00:00",
+        "commence_time_display": "04.08.2026 18:00 MSK",
+        "family": "totals",
+        "home_team": "FK Povazska Sokol",
+        "home_team_ru": "Повазска Сокол",
+        "league_name": "Slovakia - Slovensky Pohar",
+        "league_name_ru": "Словакиа - Словенски Похар",
+        "match_key": "soccer|fk_povazska_sokol|slavia_tu_kosice|2026-08-04",
+        "metrics": {
+          "adjusted_probability": 0.568937,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 5.612,
+          "canonical_ev_pct": 10.943,
+          "confidence": 72.524,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "confirmation_sources_count": 4,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 2.398,
+          "market_probability": 0.544959,
+          "model_probability": 0.568937,
+          "odds": 1.95,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 29.508,
+          "quality_reasons": [],
+          "quality_score": 0.0,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "selected_implied_probability": 0.512821,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-04T13:08:55.496034+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 1.95,
+            "matching_offers": 2,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 0.0,
+            "selected_bookmaker": "bet365",
+            "selected_price": 1.95,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-04T13:14:40.249281+00:00",
+                "current_odds": 1.95,
+                "key": "soccer|fk_povazska_sokol|slavia_tu_kosice|2026-08-04|totals|under|4.5|bet365",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": true,
+                "passed": true,
+                "reasons": [],
+                "status": "publish_now_no_next_cron"
+              }
+            ],
+            "matching_entries": 1
+          },
+          "sources_count": 4,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 2,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.835,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 2,
+            "same_market_side_line_only": true,
+            "selected_price": 1.95,
+            "selected_vs_median_deviation_pct": 6.267
+          },
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 2.399,
+            "xg_direction_evaluated": false,
+            "xg_direction_ok": true,
+            "xg_hard_confirmation": false,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 2.399,
+            "xg_model_optimism_gap_pp": 2.399,
+            "xg_probability": 0.544943,
+            "xg_probability_pct": 54.494,
+            "xg_source": "market_implied_total_xg",
+            "xg_total": 4.433
+          }
+        },
+        "ok": false,
+        "point": 4.5,
         "reject_reasons": [
           "tier_a_quality_below_min",
           "tier_a_odds_sources_below_min:1/2",
@@ -1877,149 +1816,149 @@
     ],
     "top_priority_matches": [
       {
-        "away_team": "Genoa",
-        "home_team": "Bournemouth",
-        "kickoff_utc": "2026-08-04T12:00:00+00:00",
+        "away_team": "UNFP Selection",
+        "home_team": "Lorient",
+        "kickoff_utc": "2026-08-04T14:00:00+00:00",
         "league_name": "Club Friendlies",
-        "match_key": "soccer|bournemouth|genoa|2026-08-04",
-        "minutes_to_kickoff": 47.35,
+        "match_key": "2026-08-04|lorient|unfp selection",
+        "minutes_to_kickoff": 45.33,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.217,
+        "priority": 144.89,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-04T09:13:13.824274+00:00",
-          "latest_useful_run_at_utc": "2026-08-04T11:40:00+00:00",
+          "last_odds_refresh_utc": "2026-08-02T21:09:24.414641+00:00",
+          "latest_useful_run_at_utc": "2026-08-04T13:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-04T13:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-04T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Bg Pathum United",
-        "home_team": "Aston Villa",
-        "kickoff_utc": "2026-08-04T12:00:00+00:00",
-        "league_name": "Club Friendlies",
-        "match_key": "soccer|aston villa|bg pathum united|2026-08-04",
-        "minutes_to_kickoff": 47.35,
+        "away_team": "Scafatese Calcio 1922",
+        "home_team": "Teramo Calcio",
+        "kickoff_utc": "2026-08-04T15:00:00+00:00",
+        "league_name": "International Clubs - Club Friendly Games",
+        "match_key": "2026-08-04|teramo calcio|scafatese calcio 1922",
+        "minutes_to_kickoff": 105.33,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.217,
+        "priority": 140.89,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-03T21:09:55.989022+00:00",
-          "latest_useful_run_at_utc": "2026-08-04T11:40:00+00:00",
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-08-04T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-04T13:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-04T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Almería",
-        "home_team": "Al-Nassr",
-        "kickoff_utc": "2026-08-04T12:00:00+00:00",
+        "away_team": "Cambridge United",
+        "home_team": "Norwich City",
+        "kickoff_utc": "2026-08-04T15:00:00+00:00",
         "league_name": "Club Friendlies",
-        "match_key": "soccer|al nassr|almeria|2026-08-04",
-        "minutes_to_kickoff": 47.35,
+        "match_key": "2026-08-04|norwich city|cambridge united",
+        "minutes_to_kickoff": 105.33,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.217,
+        "priority": 124.89,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-04T11:12:35.677775+00:00",
-          "latest_useful_run_at_utc": "2026-08-04T11:40:00+00:00",
+          "last_odds_refresh_utc": "2026-08-02T21:09:24.414641+00:00",
+          "latest_useful_run_at_utc": "2026-08-04T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-04T13:00:00+00:00",
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-08-04T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Dinamo City",
-        "home_team": "Auda",
-        "kickoff_utc": "2026-08-04T12:00:00+00:00",
-        "league_name": "Conference League",
-        "match_key": "soccer|auda|dinamo city|2026-08-04",
-        "minutes_to_kickoff": 47.35,
+        "away_team": "AFC Chindia Targoviste",
+        "home_team": "Stinta Poli Timisoara",
+        "kickoff_utc": "2026-08-04T15:00:00+00:00",
+        "league_name": "Romania - Liga 2",
+        "match_key": "soccer|chindia targoviste|stinta poli timisoara|2026-08-04",
+        "minutes_to_kickoff": 105.33,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.217,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-04T11:12:35.677909+00:00",
-          "latest_useful_run_at_utc": "2026-08-04T11:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-04T13:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "PFC Terdu",
-        "home_team": "Fardu Ferghana",
-        "kickoff_utc": "2026-08-04T12:30:00+00:00",
-        "league_name": "Uzbekistan - Pro Liga",
-        "match_key": "soccer|fardu ferghana|pfc terdu|2026-08-04",
-        "minutes_to_kickoff": 77.35,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.217,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-04T11:12:35.678134+00:00",
-          "latest_useful_run_at_utc": "2026-08-04T12:10:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-04T13:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Bentonit",
-        "home_team": "FC Hayq",
-        "kickoff_utc": "2026-08-04T13:00:00+00:00",
-        "league_name": "Armenia - First League",
-        "match_key": "soccer|bentonit|hayq|2026-08-04",
-        "minutes_to_kickoff": 107.35,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 124.217,
+        "priority": 124.89,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": "2026-08-03T23:12:49.374199+00:00",
-          "latest_useful_run_at_utc": "2026-08-04T12:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-04T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-04T13:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-04T15:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Slavia Tu Kosice",
+        "home_team": "FK Povazska Sokol",
+        "kickoff_utc": "2026-08-04T15:00:00+00:00",
+        "league_name": "Slovakia - Slovensky Pohar",
+        "match_key": "soccer|povazska sokol|slavia tu kosice|2026-08-04",
+        "minutes_to_kickoff": 105.33,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 124.89,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-08-04T13:14:36.450552+00:00",
+          "latest_useful_run_at_utc": "2026-08-04T14:40:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-08-04T15:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "MFK Kezmarok",
+        "home_team": "SK Harichovce",
+        "kickoff_utc": "2026-08-04T15:00:00+00:00",
+        "league_name": "Slovakia - Slovensky Pohar",
+        "match_key": "soccer|mfk kezmarok|sk harichovce|2026-08-04",
+        "minutes_to_kickoff": 105.33,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 124.89,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-08-04T13:14:36.450658+00:00",
+          "latest_useful_run_at_utc": "2026-08-04T14:40:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-08-04T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       }
     ]
   },
-  "status": "lines_but_no_raw_candidates",
-  "status_ru": "🟠 линии есть, raw-кандидатов нет",
+  "status": "no_lines",
+  "status_ru": "🔴 нет свежих линий",
   "telegram_sent": true,
-  "text_length": 5731,
+  "text_length": 6127,
   "top_reason": "odds_api_io_auth_failed",
   "version": "harizon-telegram-report-v12-effective-blockers"
 }
