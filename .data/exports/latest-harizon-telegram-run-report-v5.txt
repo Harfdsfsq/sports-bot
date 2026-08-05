@@ -1,86 +1,84 @@
 🧾 HARIZON — понятный отчёт по запуску
-✅ прогноз опубликован
-• Главная причина: опубликовано fallback-пайплайном
+🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
+• Главная причина: odds-api.io auth failed: invalid API key
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 351/300; status ok_target_met). Runtime rows processed: 11 (это не размер inventory).
-• Очередь provider-enrichment: 244 активных матчей; model scope 55; назначений по ролям 390. Очередь сбора не расширяет публикационный scope.
-• 1+ линия: 98/300 (32%) | 1+ контекст: 81/300 (27%)
-• 2+ букмекера: 55/300 (18%)
-• Raw 2+ букмекера odds-api.io current snapshot: 30 | normalized cumulative inventory: 55.
-• Odds-api offer snapshot: rows 1318, matches 54, same-side 2+ books 30
-• 2+ независимых источника линий: 13/300 (4%) — strict metric для A/B-tier.
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 351/300; status ok_target_met). Runtime rows processed: 3 (это не размер inventory).
+• Очередь provider-enrichment: 247 активных матчей; model scope 52; назначений по ролям 386. Очередь сбора не расширяет публикационный scope.
+• 1+ линия: 112/300 (37%) | 1+ контекст: 114/300 (38%)
+• 2+ букмекера: 65/300 (21%)
+• Raw 2+ букмекера odds-api.io current snapshot: 11 | normalized cumulative inventory: 65.
+• Odds-api offer snapshot: rows 684, matches 36, same-side 2+ books 11
+• 2+ независимых источника линий: 18/300 (6%) — strict metric для A/B-tier.
 • 2+ независимых контекста: 0/300 (0%)
-• Готово для модели: 49/300 (16%)
+• Готово для модели: 69/300 (23%)
 
 • Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются. До полного 300/300 осталось: 300.
 
 🏷️ A/B-tier публикация
 • A-tier coverage-ready: 0/300 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier coverage-ready: 0/300 | fallback опубликовано: 1
+• B-tier coverage-ready: 0/300 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
 • Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста: 0/300; B-cover: 0/300.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
-• Ledger: unique published 91; pending 15; duplicates removed 365; policy semantic match market selection point kickoff.
+• Ledger: unique published 93; pending 17; duplicates removed 372; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 11 | матчей без следующего регулярного run: 9
-• Line guard: увидел 24, оставил 8, снял 0
+• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 4
+• Line guard: увидел 21, оставил 4, снял 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/27
-• Quality прошло: 1 | publishable: 0 | опубликовано: 1
-• Controlled fallback: seen 4 | evaluated 4 | published 1
+• Raw/candidates before quality: 0/26
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 3 | evaluated 3 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 5, odds req 23; смэтчил матчей 101; offers 1397; 2+ букмекера 30; ошибок 11.
-• Bzzoiro: direct req 3, v2 req 3; v2 ctx 0; batch odds rows 135; matches with offers 8; secondary offers 79; 2+ source matches 8; ошибок 0.
-• SStats: запросы 3; сырых строк 12223; контекстов 31; deep-enriched 47; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled_runtime; запросы 5; rows 100; current fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag active_odds_stale_only_no_current_fixture.
+• odds-api.io: events req 5, odds req 21; смэтчил матчей 94; offers 772; 2+ букмекера 11; ошибок 10.
+• Bzzoiro: direct req 3, v2 req 0; v2 ctx 0; batch odds rows 123; matches with offers 8; secondary offers 88; 2+ source matches 8; ошибок 0.
+• SStats: запросы 14; сырых строк 11918; контекстов 27; deep-enriched 57; team-form 0; direct 0; ошибок 0.
+• SportLogic: disabled_by_env; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.
 • Комбинации источников линий: odds_api_io: 53, bzzoiro+odds_api_io: 9, bzzoiro: 1
 
 🚫 Почему не опубликовано
-• odds below global min: 1 (9%)
-• tier a quality below min: 1 (9%)
-• tier a confirmation sources below min:1/2: 1 (9%)
-• tier a market implied xg not hard confirmation: 1 (9%)
-• tier b quality below min: 1 (9%)
-• tier b market implied xg not hard confirmation: 1 (9%)
-• tier b hard context required for proxy quality: 1 (9%)
-• tier c quality below min: 1 (9%)
-• Диагностика legacy odds-source: 1 — не заменяет обязательные 2+ odds-source
+• tier a confirmation sources below min:1/2: 2 (13%)
+• tier a market implied xg not hard confirmation: 2 (13%)
+• tier b market implied xg not hard confirmation: 2 (13%)
+• tier c market implied xg not hard confirmation: 2 (13%)
+• odds below global min: 1 (7%)
+• tier a quality below min: 1 (7%)
+• tier a publication score below min: 1 (7%)
+• tier b quality below min: 1 (7%)
+• Диагностика legacy odds-source: 2 — не заменяет обязательные 2+ odds-source
 
 🔎 Проверенные reserve-кандидаты
-1. CD Plaza Amador Panama City — CD Luis Angel Firpo Usulutan | Меньше @1.62 | EV +3.1% | edge +1.9 п.п. | q 0.0
+1. Diriangen FC Diriamba — Liga Deportiva Alajuelense | Больше @1.68 | EV +7.7% | edge +4.6 п.п. | q 0.0
    • причина: odds below global min
-2. Guabira Montero — CD Real Tomayapo | Меньше @2.88 | EV +9.9% | edge +3.4 п.п. | q 0.0
-   • причина: tier a quality below min, tier a confirmation sources below min:1/2, tier a market implied xg not hard confirmation, tier b quality below min
-3. Minnesota United FC — FC Juarez | Меньше @2.25 | EV +11.7% | edge +5.2 п.п. | q 76.2
-4. Columbus Crew — Atlas FC | Atlas FC (0) @3.40 | EV +16.0% | edge +4.7 п.п. | q 78.4
-   • причина: family not allowed:dnb, odds above global max, semantic current exact market price missing
-   • xG sanity: missing (family_not_total)
+2. Antigua GFC — Real Esteli FC | Больше @2.00 | EV +5.3% | edge +2.7 п.п. | q 0.0
+   • причина: tier a quality below min, tier a publication score below min, tier a confirmation sources below min:1/2, tier a market implied xg not hard confirmation
+3. Diriangen FC Diriamba — Liga Deportiva Alajuelense | Меньше 2.5 @2.38 | EV +10.7% | edge +4.5 п.п. | q 74.7
+   • причина: tier a confirmation sources below min:1/2, tier a market implied xg not hard confirmation, tier b bookmaker quorum price outlier:9.83>8.00, tier b market implied xg not hard confirmation
 
 🧯 Диагностика новых стопоров
 • Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/2 book/1 context.
 • Shadow ranking after daily cap: clean 0; daily+other 0; duplicates removed 0; top: нет clean-кандидатов после снятия daily cap.
-• Effective blockers without daily cap: family_not_allowed:dnb 1; odds_above_global_max 1; odds_below_global_min 1; semantic_current_exact_market_price_missing 1; tier_a_confirmation_sources_below_min:1/2 1.
-• A-tier blockers: tier_a_confirmation_sources_below_min:1/2 1; tier_a_market_implied_xg_not_hard_confirmation 1; tier_a_odds_sources_below_min:1/2 1; tier_a_quality_below_min 1; quality sources raw 2; raw_missing 2.
+• Effective blockers without daily cap: tier_a_confirmation_sources_below_min:1/2 2; tier_a_market_implied_xg_not_hard_confirmation 2; tier_a_odds_sources_below_min:1/2 2; tier_b_market_implied_xg_not_hard_confirmation 2; tier_c_market_implied_xg_not_hard_confirmation 2.
+• A-tier blockers: tier_a_confirmation_sources_below_min:1/2 2; tier_a_market_implied_xg_not_hard_confirmation 2; tier_a_odds_sources_below_min:1/2 2; tier_a_publication_score_below_min 1; tier_a_quality_below_min 1; quality sources raw_missing 2; raw 1.
 • Inventory target-expand stage: 351/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 232; normalized 118→100; gap after 132.
-• Bzzoiro runtime merge: offers 79; matches with offers 8; 2+ source matches 8; batch rows 135; requests 4; errors 0.
-• Fresh B-cover diagnostic: rows 90; with current offer 44; without current offer 46; active 81; active with offer 44; fresh buckets 1135; single-source candidates 1; missing xG candidates 1.
-• Fresh promotion: promoted 10; top skips promotion_skip_edge_below_min 94; promotion_skip_odds_above_max 76; promotion_skip_odds_below_min 69; promotion_skip_no_offer_bucket 59; promotion_skip_price_outlier 26.
-• Rescue xG/confirmation enrichment: candidates 99; xG added 2; confirmation added 8; missing context match 91.
+• Bookmaker mapping repair: raw 2+ 100; normalized 146→130; gap after 0.
+• Bzzoiro runtime merge: offers 88; matches with offers 8; 2+ source matches 8; batch rows 123; requests 4; errors 0.
+• Fresh B-cover diagnostic: rows 129; with current offer 27; without current offer 102; active 105; active with offer 27; fresh buckets 604; single-source candidates 0; missing xG candidates 0.
+• Fresh promotion: promoted 6; top skips promotion_skip_no_offer_bucket 99; promotion_skip_edge_below_min 93; promotion_skip_odds_below_min 39; promotion_skip_odds_above_max 37; promotion_skip_price_outlier 13.
+• Rescue xG/confirmation enrichment: candidates 98; xG added 2; confirmation added 5; missing context match 93.
 
 📌 Что это значит
-• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
+• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 30958511739
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/30958511739
-• Artifact: run-bot-30958511739
+• Run ID: 30965098402
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/30965098402
+• Artifact: run-bot-30965098402
 • workflow run-bot, attempt 1
