@@ -278,4 +278,33 @@ def apply(*, force: bool = True) -> dict[str, Any]:
     return payload
 
 
-__all__ = ["POLICY", "apply"]
+def complete_lifecycle(status: str, summary: dict[str, Any] | None = None, error: str | None = None) -> dict[str, Any]:
+    """Mark the main prediction process as finished for report/fallback readers."""
+    existing = _read(RUN_LIFECYCLE)
+    if existing and not _same_run(existing):
+        return {"status": "skipped_different_github_run"}
+    payload = dict(existing)
+    payload.update(
+        {
+            "status": str(status or "unknown"),
+            "finished_at_utc": datetime.now(UTC).isoformat(),
+            "github_run_id": os.getenv("GITHUB_RUN_ID") or payload.get("github_run_id"),
+            "github_run_attempt": os.getenv("GITHUB_RUN_ATTEMPT") or payload.get("github_run_attempt"),
+            "owner": "focused_alpha_runtime_contract",
+        }
+    )
+    if isinstance(summary, dict):
+        payload["summary"] = {
+            "matches_seen": int(summary.get("matches_seen") or 0),
+            "matches_with_offers": int(summary.get("matches_with_offers") or 0),
+            "contexts_built": int(summary.get("contexts_built") or 0),
+            "candidates_raw": int(summary.get("candidates_raw") or 0),
+            "published_to_telegram": int(summary.get("published_to_telegram") or 0),
+        }
+    if error:
+        payload["error"] = str(error)
+    _write(RUN_LIFECYCLE, payload)
+    return payload
+
+
+__all__ = ["POLICY", "apply", "complete_lifecycle"]

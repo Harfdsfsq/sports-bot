@@ -1769,7 +1769,16 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     debug = load_json(".logs/debug-last-run.json", {})
     rescue_payload = load_json(".data/exports/latest-rescue-candidates.json", [])
     artifact_rescue_payload = load_json("artifacts/run-bot/latest-rescue-candidates.json", [])
-    reference = newest_timestamp(run_summary, debug, rescue_payload, artifact_rescue_payload) or now
+    b_cover_promotion_payload = load_json(".data/exports/latest-b-cover-value-promotion.json", {})
+    a_cover_promotion_payload = load_json(".data/exports/latest-a-cover-value-promotion.json", {})
+    reference = newest_timestamp(
+        run_summary,
+        debug,
+        rescue_payload,
+        artifact_rescue_payload,
+        b_cover_promotion_payload,
+        a_cover_promotion_payload,
+    ) or now
 
     def row_in_current_window(row: dict[str, Any]) -> bool:
         if not filter_by_time or not env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True):
@@ -1795,7 +1804,14 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
         if not payload_is_usable(source, rows):
             return
         if isinstance(rows, dict):
-            rows_iter = rows.get("candidates") or rows.get("rows") or rows.get("items") or []
+            rows_iter = (
+                rows.get("candidates")
+                or rows.get("rows")
+                or rows.get("items")
+                or rows.get("sample")
+                or rows.get("selected_all")
+                or []
+            )
         else:
             rows_iter = rows
         if not isinstance(rows_iter, list):
@@ -1817,6 +1833,12 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
 
     add_rows("latest_rescue_candidates", rescue_payload)
     add_rows("artifact_rescue_candidates", artifact_rescue_payload)
+    # Promotion diagnostics are written immediately before guarded fallback and
+    # can survive cases where the main rescue file was later overwritten by an
+    # empty runner export. Treat them as a read-only pool source; normal time,
+    # duplicate, movement, value, xG and price-integrity guards still run below.
+    add_rows("b_cover_value_promotion", b_cover_promotion_payload)
+    add_rows("a_cover_value_promotion", a_cover_promotion_payload)
     if isinstance(debug, dict) and (not env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True) or is_payload_fresh(debug, reference)):
         add_rows("debug_candidates_before_quality", debug.get("candidates_before_quality") or [])
         add_rows("debug_candidates_after_quality", debug.get("candidates_after_quality") or [])
