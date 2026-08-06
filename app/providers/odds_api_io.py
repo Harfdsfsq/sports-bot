@@ -33,6 +33,57 @@ class OddsApiIoProvider:
         }
         self._account_requests_used: dict[str, int] = defaultdict(int)
 
+    def _cooldown_path(self) -> Path:
+        raw = str(os.getenv("ODDS_API_IO_COOLDOWN_PATH") or "").strip()
+        if raw:
+            return Path(raw)
+        return Path(".data/provider_cooldowns/odds_api_io.json")
+
+    def _cooldown_until(self) -> datetime | None:
+        path = self._cooldown_path()
+        if not path.exists():
+            return None
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            raw_until = payload.get("cooldown_until")
+            until = parse_datetime(raw_until)
+        except Exception:
+            return None
+        if until <= datetime.now(UTC):
+            return None
+        return until
+
+    def _activate_auth_cooldown(self) -> None:
+        minutes = max(
+            60,
+            int(float(os.getenv("ODDS_API_IO_AUTH_ERROR_COOLDOWN_MINUTES") or 1440)),
+        )
+        until = datetime.now(UTC) + timedelta(minutes=minutes)
+        payload = {
+            "cooldown_until": until.isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "reason": "auth_error",
+        }
+        try:
+            path = self._cooldown_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
+    def _cooldown_stats(self) -> dict[str, Any]:
+        cooldown_until = self._cooldown_until()
+        if cooldown_until is None:
+            return {}
+        return {
+            "cooldown_active": True,
+            "cooldown_until": cooldown_until.isoformat(),
+            "stop_reason": "cooldown_active",
+            "last_body_preview": f"odds-api.io cooldown active until {cooldown_until.isoformat()}",
+        }
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -57,6 +108,10 @@ class OddsApiIoProvider:
         preview: dict[str, Any] = {"sample_events": [], "sample_matches": []}
         api_key = getattr(self.settings, "odds_api_io_key", None)
         if not api_key:
+            return [], stats, preview
+        cooldown = self._cooldown_stats()
+        if cooldown:
+            stats.update(cooldown)
             return [], stats, preview
 
         now = datetime.now(UTC)
@@ -230,6 +285,10 @@ class OddsApiIoProvider:
         preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
 
         if not accounts:
+            return {}, stats, preview
+        cooldown = self._cooldown_stats()
+        if cooldown:
+            stats.update(cooldown)
             return {}, stats, preview
         event_account = accounts[0]
         api_key = str(event_account["api_key"])
@@ -607,6 +666,8 @@ class OddsApiIoProvider:
         account_stats.setdefault("fallback_bookmakers", fallback_books)
         account_stats.setdefault("effective_bookmakers", target_books)
         account_stats.setdefault("http_statuses", [])
+        if bool(account_stats.get("auth_error")):
+            return []
         if bool(account_stats.get("plan_restriction")):
             return []
         request_books = str(account_stats.get("effective_bookmakers") or target_books)
@@ -709,6 +770,8 @@ class OddsApiIoProvider:
         stats["auth_error"] = True
         stats["auth_status_code"] = status_code
         stats["stop_reason"] = "auth_error"
+        if account_name is None:
+            self._activate_auth_cooldown()
         if account_name:
             account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
             account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1

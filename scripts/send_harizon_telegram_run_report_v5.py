@@ -394,6 +394,15 @@ def provider_plan_restricted(row: dict[str, Any]) -> bool:
 def provider_auth_failed(row: dict[str, Any]) -> bool:
     if provider_plan_restricted(row):
         return False
+    useful_counts = (
+        as_int(row.get("offers_parsed")),
+        as_int(row.get("events_matched")),
+        as_int(row.get("events_fetched")),
+        as_int(row.get("matches_built")),
+        as_int(row.get("matches_with_2plus_books")),
+    )
+    if any(value > 0 for value in useful_counts):
+        return False
     if bool(row.get("auth_error")):
         return True
     statuses: list[int] = []

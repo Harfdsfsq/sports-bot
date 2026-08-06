@@ -45,7 +45,8 @@ class _OddsResponse:
         return self._payload
 
 
-def test_odds_api_io_stops_event_paging_on_auth_error(monkeypatch):
+def test_odds_api_io_stops_event_paging_on_auth_error(tmp_path, monkeypatch):
+    monkeypatch.setenv("ODDS_API_IO_COOLDOWN_PATH", str(tmp_path / "odds-api-cooldown.json"))
     calls: list[dict] = []
 
     class FakeAsyncClient:
@@ -86,6 +87,18 @@ def test_report_detects_odds_api_io_auth_failure_from_statuses():
     assert provider_auth_failed({"event_http_statuses": [401]}) is True
     assert provider_auth_failed({"last_body_preview": '{"error":"You need to provide a valid apiKey"}'}) is True
     assert provider_auth_failed({"event_http_statuses": [200], "last_body_preview": "ok"}) is False
+
+
+def test_report_treats_partial_odds_api_io_auth_as_degraded_not_failed():
+    row = {
+        "auth_error": True,
+        "odds_http_statuses": [200, 401],
+        "offers_parsed": 663,
+        "events_matched": 73,
+        "last_body_preview": '{"error":"You need to provide a valid apiKey"}',
+    }
+
+    assert provider_auth_failed(row) is False
 
 
 def test_report_does_not_call_paid_plan_restriction_an_invalid_key():
@@ -251,6 +264,101 @@ def test_odds_api_io_stops_restricted_account_after_fallback_is_rejected():
     assert calls == ["Betfair Exchange,Sbobet", "William Hill,Betway"]
     assert stats["accounts"]["account2"]["plan_restriction"] is True
     assert stats["response_errors"] == 1
+
+
+def test_odds_api_io_stops_auth_failed_account_after_first_rejection(tmp_path, monkeypatch):
+    monkeypatch.setenv("ODDS_API_IO_COOLDOWN_PATH", str(tmp_path / "odds-api-cooldown.json"))
+    calls: list[str] = []
+
+    class FakeClient:
+        async def get(self, _url, params=None):
+            calls.append(str((params or {}).get("eventIds") or ""))
+            return _OddsResponse(401, {"error": "invalid API key"})
+
+    provider = OddsApiIoProvider(
+        Settings(
+            _env_file=None,
+            odds_api_io_key_2="bad-key-2",
+            odds_api_io_per_run_max=10,
+        )
+    )
+    stats = {
+        "accounts": {},
+        "odds_requests": 0,
+        "response_errors": 0,
+        "odds_http_statuses": [],
+        "payload_shapes": [],
+    }
+
+    first = asyncio.run(
+        provider._fetch_odds_multi_chunk(
+            FakeClient(),
+            "bad-key-2",
+            [101],
+            "Betfair Exchange,Sbobet",
+            stats,
+            account_name="account2",
+            fallback_books="William Hill,Betway",
+        )
+    )
+    second = asyncio.run(
+        provider._fetch_odds_multi_chunk(
+            FakeClient(),
+            "bad-key-2",
+            [102],
+            "Betfair Exchange,Sbobet",
+            stats,
+            account_name="account2",
+            fallback_books="William Hill,Betway",
+        )
+    )
+
+    assert first == []
+    assert second == []
+    assert calls == ["101"]
+    assert stats["accounts"]["account2"]["auth_error"] is True
+    assert stats["response_errors"] == 1
+
+
+def test_odds_api_io_full_auth_failure_activates_cooldown(tmp_path, monkeypatch):
+    cooldown_path = tmp_path / "odds-api-cooldown.json"
+    monkeypatch.setenv("ODDS_API_IO_COOLDOWN_PATH", str(cooldown_path))
+    monkeypatch.setenv("ODDS_API_IO_AUTH_ERROR_COOLDOWN_MINUTES", "60")
+    calls: list[dict] = []
+
+    class FakeAsyncClient:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, params=None):
+            calls.append({"url": url, "params": dict(params or {})})
+            return _FakeOddsApiIoResponse()
+
+    monkeypatch.setattr("app.providers.odds_api_io.httpx.AsyncClient", FakeAsyncClient)
+    settings = Settings(
+        _env_file=None,
+        odds_api_io_key="bad-key",
+        odds_api_io_per_run_max=20,
+        odds_api_io_max_pages_per_sport=10,
+    )
+    provider = OddsApiIoProvider(settings)
+
+    matches, stats, _preview = asyncio.run(provider.fetch_matches())
+    second_matches, second_stats, _second_preview = asyncio.run(provider.fetch_matches())
+
+    assert matches == []
+    assert second_matches == []
+    assert len(calls) == 1
+    assert stats["auth_error"] is True
+    assert cooldown_path.exists()
+    assert second_stats["cooldown_active"] is True
+    assert second_stats["event_requests"] == 0
 
 
 def test_probability_helpers_accept_percent_strings():
