@@ -103,11 +103,11 @@ def test_inventory_workflow_uses_core_rule_providers():
 def test_run_bot_workflow_uses_rules_b_tier_and_sportlogic():
     workflow = Path(".github/workflows/run-bot.yml").read_text(encoding="utf-8")
     assert 'PUBLISH_TIER_B_MIN_ODDS_SOURCES: "1"' in workflow
-    assert 'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "1"' in workflow
+    assert 'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "2"' in workflow
     assert 'DAY_INVENTORY_FORCE_FULL_300: "true"' in workflow
     assert 'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "1"' in workflow
-    assert 'CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES: "1"' in workflow
-    assert 'CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES: "1"' in workflow
+    assert 'CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES: "2"' in workflow
+    assert 'CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES: "2"' in workflow
     assert 'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"' in workflow
     assert 'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM: "false"' in workflow
     assert 'SPORTLOGIC_ENABLED: "true"' in workflow

@@ -27,7 +27,7 @@ def test_quota_policy_is_strict_and_per_account(monkeypatch, tmp_path) -> None:
     assert os.environ["PUBLISH_TIER_A_MIN_ODDS_SOURCES"] == "2"
     assert os.environ["PUBLISH_TIER_A_MIN_CONTEXT_SOURCES"] == "2"
     assert os.environ["PUBLISH_TIER_B_MIN_ODDS_SOURCES"] == "1"
-    assert os.environ["PUBLISH_TIER_B_MIN_CONTEXT_SOURCES"] == "1"
+    assert os.environ["PUBLISH_TIER_B_MIN_CONTEXT_SOURCES"] == "2"
     assert os.environ["API_COVERAGE_MIN_EXACT_BOOKS"] == "2"
 
     persisted = json.loads((tmp_path / "quota.json").read_text(encoding="utf-8"))

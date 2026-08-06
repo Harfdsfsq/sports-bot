@@ -22,7 +22,7 @@ def test_setdefault_env_does_not_clobber_existing_values(monkeypatch):
 def test_preflight_defaults_match_rules_b_tier_contract():
     assert SAFE_RUNTIME_DEFAULTS["MIN_BOOKS_PUBLISH"] == "2"
     assert SAFE_RUNTIME_DEFAULTS["PUBLISH_MIN_ODDS_SOURCES"] == "1"
-    assert SAFE_RUNTIME_DEFAULTS["PUBLISH_MIN_CONTEXT_SOURCES"] == "1"
+    assert SAFE_RUNTIME_DEFAULTS["PUBLISH_MIN_CONTEXT_SOURCES"] == "2"
     assert SAFE_RUNTIME_DEFAULTS["CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM"] == "false"
     assert SAFE_RUNTIME_DEFAULTS["CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM"] == "false"
 

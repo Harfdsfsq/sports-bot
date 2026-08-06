@@ -16,13 +16,13 @@ def test_rules_b_tier_can_publish_after_final_line_check(
         str(tmp_path / "line-movement.json"),
     )
     monkeypatch.setenv("PUBLISH_MIN_ODDS_SOURCES", "1")
-    monkeypatch.setenv("PUBLISH_MIN_CONTEXT_SOURCES", "1")
+    monkeypatch.setenv("PUBLISH_MIN_CONTEXT_SOURCES", "2")
     monkeypatch.setenv("PUBLISH_MIN_BOOKS", "2")
     monkeypatch.setenv("PUBLISH_TIER_A_MIN_ODDS_SOURCES", "2")
     monkeypatch.setenv("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", "2")
     monkeypatch.setenv("PUBLISH_TIER_A_MIN_BOOKS", "2")
     monkeypatch.setenv("PUBLISH_TIER_B_MIN_ODDS_SOURCES", "1")
-    monkeypatch.setenv("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", "1")
+    monkeypatch.setenv("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", "2")
     monkeypatch.setenv("PUBLISH_TIER_B_MIN_BOOKS", "2")
 
     now = datetime(2026, 7, 30, 15, tzinfo=UTC)
@@ -52,7 +52,7 @@ def test_rules_b_tier_can_publish_after_final_line_check(
         source_summary={
             "sources": ["odds_api_io"],
             "books": ["Bet365", "Unibet"],
-            "context_sources": ["sstats"],
+            "context_sources": ["sstats", "bzzoiro"],
         },
         raw_bucket_offers=[
             {
@@ -76,7 +76,7 @@ def test_rules_b_tier_can_publish_after_final_line_check(
     settings = SimpleNamespace(
         line_movement_next_run_minutes=120,
         min_sources_publish=1,
-        min_context_sources_publish=1,
+        min_context_sources_publish=2,
         min_books_publish=2,
     )
 
@@ -86,5 +86,5 @@ def test_rules_b_tier_can_publish_after_final_line_check(
     assert decision.tier == "B"
     assert decision.report["odds_sources_count"] == 1
     assert decision.report["bookmakers_or_price_confirmations_count"] == 2
-    assert decision.report["context_sources_count"] == 1
+    assert decision.report["context_sources_count"] == 2
     assert decision.report["line_movement"]["status"] == "publish_now_no_next_cron"

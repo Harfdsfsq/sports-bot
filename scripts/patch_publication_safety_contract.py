@@ -10,7 +10,7 @@ weak reserve candidates from becoming real Telegram picks:
 * market-implied xG may replace a fake placeholder for diagnostics, but it is not
   accepted as hard xG confirmation for Telegram publication;
 * A-tier requires 2+ independent line/odds sources and 2+ context
-  confirmations; B-tier keeps the regulated 1 odds / 2 books / 1 context
+  confirmations; B-tier keeps the regulated 1 odds / 2 books / 2 contexts
   contract;
 * B-tier proxy/promotion rows need hard context evidence;
 * reserve/youth/friendly-style rows are not allowed through B-tier;

@@ -116,7 +116,7 @@ def build_payload() -> dict[str, Any]:
     diag['workflow_env_contract'] = {
         'a_tier_min_books': _as_int(_policy_tier(policy, 'A').get('min_bookmakers')) or 2,
         'b_tier_min_books': _as_int(_policy_tier(policy, 'B').get('min_bookmakers')) or _as_int(_policy_env(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS')) or 1,
-        'b_tier_min_context': _as_int(_policy_tier(policy, 'B').get('min_context_sources')) or _as_int(_policy_env(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES')) or 1,
+        'b_tier_min_context': _as_int(_policy_tier(policy, 'B').get('min_context_sources')) or _as_int(_policy_env(policy, 'CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES')) or 2,
         'sportlogic_enabled': _env_bool('SPORTLOGIC_ENABLED', _env_bool('ENABLE_SPORTLOGIC', False)),
         'day_inventory_sportlogic_enabled': _env_bool('DAY_INVENTORY_ENABLE_SPORTLOGIC', False),
     }

@@ -1494,7 +1494,7 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
                 1,
                 env_int(
                     "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES",
-                    env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 1),
+                    env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 2),
                 ),
             )
             min_price = max(2, env_int("PUBLISH_TIER_B_MIN_BOOKS", 2))

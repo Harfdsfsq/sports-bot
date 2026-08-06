@@ -67,7 +67,7 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     tier_a_context = max(hard_context, _env_int("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", hard_context, hard_context))
     tier_a_odds = max(hard_odds, _env_int("PUBLISH_TIER_A_MIN_ODDS_SOURCES", hard_odds, hard_odds))
     tier_b_books = max(2, _env_int("PUBLISH_TIER_B_MIN_BOOKS", 2, 1))
-    tier_b_context = max(1, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", 1, 1))
+    tier_b_context = max(2, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", 2, 1))
     tier_b_odds = max(1, _env_int("PUBLISH_TIER_B_MIN_ODDS_SOURCES", 1, 1))
 
     movement = evaluate_and_record_line_movement(candidate, settings, now=now)

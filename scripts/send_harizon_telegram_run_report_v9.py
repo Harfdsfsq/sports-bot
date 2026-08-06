@@ -166,7 +166,7 @@ def _rewrite_contract_lines(text: str, counts: dict[str, int]) -> str:
             out.append(f"• B-tier 1+ line/1+ bookmaker/1+ context coverage: {counts['b_cover']} | fallback опубликовано: {counts['fallback_published']}")
             continue
         if "b-tier =" in lower:
-            out.append("  B-tier = 1+ линия/odds-source + 1+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.")
+            out.append("  B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 2+ контекста + движение линии + value.")
             continue
         if "a-tier =" in lower:
             out.append("  A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.")

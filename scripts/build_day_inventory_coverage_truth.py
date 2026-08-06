@@ -167,7 +167,7 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
     a_min_context = max(2, as_int(os.getenv('PUBLISH_TIER_A_MIN_CONTEXT_SOURCES'), min_context))
     a_min_price = max(2, as_int(os.getenv('PUBLISH_TIER_A_MIN_BOOKS'), min_odds))
     b_min_odds = max(1, as_int(os.getenv('PUBLISH_TIER_B_MIN_ODDS_SOURCES'), 1))
-    b_min_context = max(1, as_int(os.getenv('PUBLISH_TIER_B_MIN_CONTEXT_SOURCES'), 1))
+    b_min_context = max(2, as_int(os.getenv('PUBLISH_TIER_B_MIN_CONTEXT_SOURCES'), 2))
     b_min_price = max(2, as_int(os.getenv('PUBLISH_TIER_B_MIN_BOOKS'), 2))
 
     tier_a_missing: list[str] = []

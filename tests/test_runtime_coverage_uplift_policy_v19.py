@@ -19,7 +19,7 @@ def test_coverage_uplift_preserves_ab_contract() -> None:
     assert "'PUBLISH_TIER_A_MIN_ODDS_SOURCES': '2'" in text
     assert "'PUBLISH_TIER_A_MIN_CONTEXT_SOURCES': '2'" in text
     assert "'PUBLISH_TIER_B_MIN_ODDS_SOURCES': '1'" in text
-    assert "'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES': '1'" in text
+    assert "'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES': '2'" in text
     assert "'CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS': 'false'" in text
 
 

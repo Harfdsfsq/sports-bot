@@ -22,8 +22,8 @@ CONTRACT_ENV = {
     'PUBLISH_COVERAGE_TIER_MODE': 'hybrid_public_a_controlled_b',
     'PUBLISH_MIN_BOOKS': '1',
     'MIN_BOOKS_PUBLISH': '1',
-    'PUBLISH_MIN_CONTEXT_SOURCES': '1',
-    'MIN_CONTEXT_SOURCES_PUBLISH': '1',
+    'PUBLISH_MIN_CONTEXT_SOURCES': '2',
+    'MIN_CONTEXT_SOURCES_PUBLISH': '2',
     'PUBLISH_MIN_ODDS_SOURCES': '1',
     'MIN_SOURCES_PUBLISH': '1',
     'PUBLISH_TIER_A_MIN_ODDS_SOURCES': '2',
@@ -37,8 +37,8 @@ CONTRACT_ENV = {
     'CONTROLLED_FALLBACK_TIER_B_WATCH_ONLY': 'false',
     'CONTROLLED_FALLBACK_TIER_B_PUBLISH_ENABLED': 'true',
     'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '1',
-    'CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES': '1',
-    'CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES': '1',
+    'CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES': '2',
+    'CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES': '2',
     'CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM': 'false',
@@ -109,7 +109,7 @@ def main() -> int:
                 'mode': 'controlled_public_fallback',
                 'min_odds_sources': 1,
                 'min_bookmakers': 2,
-                'min_context_sources': 1,
+                'min_context_sources': 2,
                 'same_market_bookmaker_quorum': True,
             },
             'top_bundle': {
@@ -130,7 +130,7 @@ def main() -> int:
         'env': CONTRACT_ENV,
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-    print('Applied HARIZON A/B contract: A=2 odds/2 books/2 contexts; B=1 odds/2 books/1 context.')
+    print('Applied HARIZON A/B contract: A=2 odds/2 books/2 contexts; B=1 odds/2 books/2 contexts.')
     return 0
 
 
