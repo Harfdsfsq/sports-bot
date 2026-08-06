@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 12,
+      "rows_seen": 12,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 109,
-      "rows_stale": 109
+      "rows_kept": 54,
+      "rows_seen": 120,
+      "rows_stale": 66
     },
     "lifecycle": {
       "files_present": 0,
@@ -25,28 +25,40 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 3,
+      "rows_seen": 3,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 0,
+    "candidates_before_quality": 26,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 3,
-    "controlled_candidates_seen": null,
+    "contexts_built": 101,
+    "controlled_candidates_seen": 6,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 0,
-    "matches_seen": 71,
-    "matches_with_offers": 71
+    "coverage_candidates_current_date": 30,
+    "matches_seen": 12,
+    "matches_with_offers": 11
   },
-  "created_at": "2026-08-06T21:37:45.827554+00:00",
-  "family_counts": {},
-  "matches_with_candidates": 0,
-  "missing_data_flags": {},
+  "created_at": "2026-08-06T23:13:58.163585+00:00",
+  "family_counts": {
+    "dnb": 4,
+    "h2h": 3,
+    "spreads": 14,
+    "totals": 9
+  },
+  "matches_with_candidates": 10,
+  "missing_data_flags": {
+    "confidence_below_micro_c": 30,
+    "edge_below_micro_c": 28,
+    "ev_below_micro_c": 28,
+    "single_book": 26,
+    "single_context_source": 29,
+    "single_odds_source": 30
+  },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -59,7 +71,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 0,
+  "positive_near_miss_count": 3,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -68,11 +80,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 69,
+      "events_matched": 66,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 1604,
+      "offers_parsed": 1404,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -83,8 +95,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": null,
-      "contexts_built": 3,
-      "direct_event_contexts_built": 3,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -110,7 +122,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 21,
+      "offers_parsed": 7,
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": null,
@@ -183,6 +195,46 @@
       "contexts_built": 3,
       "direct_event_contexts_built": 3,
       "enabled": true,
+      "events_fetched": 36,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "raw_stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 100,
+      "direct_event_contexts_built": 100,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 8,
+      "direct_event_contexts_built": 8,
+      "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
@@ -199,6 +251,25 @@
     {
       "api_key_present": null,
       "budget_exhausted": null,
+      "contexts_built": 3,
+      "direct_event_contexts_built": 3,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "v1_empty_prediction_fallback",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -207,7 +278,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 36,
+      "offers_parsed": 43,
       "provider": "v2_primary",
       "rate_limited": null,
       "response_errors": 0,
@@ -218,8 +289,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 3,
-      "direct_event_contexts_built": 3,
+      "contexts_built": 8,
+      "direct_event_contexts_built": 8,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -256,24 +327,25 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": false,
+      "api_key_present": true,
+      "budget_exhausted": null,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": 100,
+      "enabled": null,
+      "events_fetched": 0,
       "events_matched": 0,
       "fixtures_fetched": null,
       "gap_flags": [
-        "low_overlap_or_matching_failed"
+        "rate_limited",
+        "no_useful_rows"
       ],
       "matches_built": null,
       "offers_parsed": 0,
-      "provider": "secondary_odds_rescue",
-      "rate_limited": null,
-      "response_errors": 0,
+      "provider": "odds_api1",
+      "rate_limited": true,
+      "response_errors": null,
       "rows_fetched": null,
-      "status_category": "low_overlap_or_matching_issue",
+      "status_category": "rate_limited",
       "team_form_contexts_built": null
     },
     {
@@ -293,6 +365,28 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
+      "response_errors": 1,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 100,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "low_overlap_or_matching_failed"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "secondary_odds_rescue",
+      "rate_limited": null,
       "response_errors": 1,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
@@ -341,22 +435,22 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
+      "api_key_present": true,
       "budget_exhausted": null,
-      "contexts_built": 0,
+      "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
       "fixtures_fetched": null,
       "gap_flags": [
         "no_useful_rows"
       ],
       "matches_built": null,
-      "offers_parsed": null,
-      "provider": "espn",
+      "offers_parsed": 0,
+      "provider": "free_live_football_data",
       "rate_limited": null,
-      "response_errors": 0,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -427,22 +521,42 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
+      "budget_exhausted": null,
+      "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
+      "enabled": null,
+      "events_fetched": 0,
       "events_matched": 0,
-      "fixtures_fetched": 0,
+      "fixtures_fetched": null,
       "gap_flags": [
-        "no_useful_rows",
-        "parser_or_payload_shape_issue"
+        "no_useful_rows"
       ],
-      "matches_built": 0,
+      "matches_built": null,
       "offers_parsed": 0,
-      "provider": "sportlogic",
-      "rate_limited": false,
-      "response_errors": 0,
+      "provider": "sportapi7",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "sportsbook_api",
+      "rate_limited": null,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -467,37 +581,186 @@
       "rows_fetched": 0,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": false,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "disabled_by_config"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "disabled_by_config",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
-    "broken_or_unavailable": 1,
-    "disabled_by_config": 1,
-    "low_overlap_or_matching_issue": 2,
-    "no_data": 8,
-    "working": 9
+    "broken_or_unavailable": 2,
+    "low_overlap_or_matching_issue": 1,
+    "no_data": 9,
+    "rate_limited": 1,
+    "working": 12
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "post_calibration_edge_guard": 1,
+    "semantic_line_movement_not_publishable:current_ev_below_floor:1.6<2.9": 1,
+    "semantic_line_movement_not_publishable:current_ev_below_floor:2.1<2.9": 1,
+    "semantic_selected_book_current_price_missing": 1,
+    "semantic_selected_price_not_current:2.350/1.950": 1,
+    "semantic_selected_price_not_current:2.400/1.300": 1
+  },
   "target_date": "2026-08-07",
-  "top_near_miss": []
+  "top_near_miss": [
+    {
+      "away_team": "Mexico",
+      "best_candidate": {
+        "adjusted_probability": 0.647813,
+        "books_count": 2,
+        "canonical_edge_pp": 5.958,
+        "canonical_ev_pct": 10.128,
+        "confidence": 67.658,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.7,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 71.74,
+      "best_edge_pp": 5.958,
+      "best_ev_pct": 10.128,
+      "books_max": 2,
+      "candidate_count": 6,
+      "commence_time": "2026-08-07T00:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
+      "families": {
+        "dnb": 1,
+        "h2h": 1,
+        "spreads": 1,
+        "totals": 3
+      },
+      "home_team": "Colombia",
+      "league_name": "International - Cen. American and Carib. Games, Women, KO Stage",
+      "match_key": "soccer|colombia|mexico|2026-08-07",
+      "missing_flags": {
+        "confidence_below_micro_c": 6,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 5,
+        "single_book": 4,
+        "single_context_source": 5,
+        "single_odds_source": 6
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 4,
+        "controlled": 1,
+        "rescue": 1
+      },
+      "reject_reasons": {
+        "post_calibration_edge_guard": 1,
+        "semantic_line_movement_not_publishable:current_ev_below_floor:2.1<2.9": 1,
+        "semantic_selected_book_current_price_missing": 1,
+        "semantic_selected_price_not_current:2.350/1.950": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Independiente Valle Del Cauca",
+      "best_candidate": {
+        "adjusted_probability": 0.570289,
+        "books_count": 2,
+        "canonical_edge_pp": 5.081,
+        "canonical_ev_pct": 9.781,
+        "confidence": 70.501,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.925,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 70.501,
+      "best_edge_pp": 5.081,
+      "best_ev_pct": 9.781,
+      "books_max": 2,
+      "candidate_count": 2,
+      "commence_time": "2026-08-07T01:10:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Real Cartagena FC",
+      "league_name": "Colombia - Torneo DIMAYOR, Clausura",
+      "match_key": "soccer|real_cartagena_fc|independiente_valle_del_cauca|2026-08-07",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 2,
+        "single_odds_source": 2
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Mexico",
+      "best_candidate": {
+        "adjusted_probability": 0.42316,
+        "books_count": 1,
+        "canonical_edge_pp": 0.649,
+        "canonical_ev_pct": 1.558,
+        "confidence": 65.001,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.4,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 1.5,
+        "reject_reasons": [
+          "semantic_selected_price_not_current:2.400/1.300",
+          "semantic_line_movement_not_publishable:current_ev_below_floor:1.6<2.9"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 65.001,
+      "best_edge_pp": 0.649,
+      "best_ev_pct": 1.558,
+      "books_max": 1,
+      "candidate_count": 1,
+      "commence_time": "2026-08-07T00:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Colombia",
+      "league_name": "International - Cen. American and Carib. Games, Women, KO Stage",
+      "match_key": "2026-08-07|colombia|mexico",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "semantic_line_movement_not_publishable:current_ev_below_floor:1.6<2.9": 1,
+        "semantic_selected_price_not_current:2.400/1.300": 1
+      },
+      "sources_max": 1
+    }
+  ]
 }
