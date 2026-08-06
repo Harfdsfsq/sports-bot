@@ -135,29 +135,42 @@ def test_odds_api_io_keeps_valid_second_account_bookmakers(monkeypatch):
         "Betway",
     ]
     assert accounts[1]["bookmakers"] == "Betfair Exchange,Sbobet"
-    assert accounts[1]["fallback_bookmakers"] == "William Hill,Betway"
+    assert accounts[1]["fallback_bookmakers"] == ""
 
 
-def test_odds_api_io_recovers_plan_restricted_account_with_recreational_books():
+def test_odds_api_io_account_bookmakers_are_hard_scoped(monkeypatch):
+    monkeypatch.setenv("ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK", "William Hill,Betway")
+    settings = Settings(
+        _env_file=None,
+        odds_api_io_key="key-1",
+        odds_api_io_key_2="key-2",
+        odds_api_io_bookmakers=["Bet365", "Unibet", "Betfair Exchange", "Sbobet"],
+        odds_api_io_bookmakers_account1=["Bet365", "Betfair Exchange"],
+        odds_api_io_bookmakers_account2=["Unibet", "SBOBET"],
+    )
+
+    accounts = OddsApiIoProvider(settings)._odds_accounts()
+
+    assert accounts[0]["bookmakers"] == "Bet365"
+    assert accounts[1]["bookmakers"] == "Sbobet"
+    assert accounts[1]["fallback_bookmakers"] == ""
+
+
+def test_odds_api_io_rejects_unapproved_entitlement_fallback_books():
     calls: list[str] = []
-    responses = [
-        _OddsResponse(
-            403,
-            {
-                "error": (
-                    "Betfair Exchange is a sharp or exchange book, and those "
-                    "are only available on our paid plans"
-                )
-            },
-        ),
-        _OddsResponse(200, [{"id": 101, "bookmakers": {}}]),
-        _OddsResponse(200, [{"id": 102, "bookmakers": {}}]),
-    ]
 
     class FakeClient:
         async def get(self, _url, params=None):
             calls.append(str((params or {}).get("bookmakers") or ""))
-            return responses.pop(0)
+            return _OddsResponse(
+                403,
+                {
+                    "error": (
+                        "Betfair Exchange is a sharp or exchange book, and those "
+                        "are only available on our paid plans"
+                    )
+                },
+            )
 
     provider = OddsApiIoProvider(
         Settings(
@@ -185,29 +198,14 @@ def test_odds_api_io_recovers_plan_restricted_account_with_recreational_books():
             fallback_books="William Hill,Betway",
         )
     )
-    second = asyncio.run(
-        provider._fetch_odds_multi_chunk(
-            FakeClient(),
-            "key-2",
-            [102],
-            "Betfair Exchange,Sbobet",
-            stats,
-            account_name="account2",
-            fallback_books="William Hill,Betway",
-        )
-    )
 
-    assert [row["id"] for row in first + second] == [101, 102]
-    assert calls == [
-        "Betfair Exchange,Sbobet",
-        "William Hill,Betway",
-        "William Hill,Betway",
-    ]
-    assert stats["response_errors"] == 0
+    assert first == []
+    assert calls == ["Betfair Exchange,Sbobet"]
+    assert stats["response_errors"] == 1
     assert stats["plan_restriction_responses"] == 1
-    assert stats["plan_restriction_recovered"] is True
-    assert stats["accounts"]["account2"]["entitlement_fallback_used"] is True
-    assert provider_plan_restricted(stats) is False
+    assert stats["accounts"]["account2"]["plan_restriction"] is True
+    assert stats["accounts"]["account2"]["fallback_bookmakers"] == ""
+    assert provider_plan_restricted(stats) is True
     assert provider_auth_failed(stats) is False
 
 
@@ -261,7 +259,7 @@ def test_odds_api_io_stops_restricted_account_after_fallback_is_rejected():
 
     assert first == []
     assert second == []
-    assert calls == ["Betfair Exchange,Sbobet", "William Hill,Betway"]
+    assert calls == ["Betfair Exchange,Sbobet"]
     assert stats["accounts"]["account2"]["plan_restriction"] is True
     assert stats["response_errors"] == 1
 
@@ -359,6 +357,63 @@ def test_odds_api_io_full_auth_failure_activates_cooldown(tmp_path, monkeypatch)
     assert cooldown_path.exists()
     assert second_stats["cooldown_active"] is True
     assert second_stats["event_requests"] == 0
+
+
+def test_odds_api_io_account_quota_blocks_second_hourly_request(tmp_path, monkeypatch):
+    monkeypatch.setenv(
+        "ODDS_API_IO_ACCOUNT_QUOTA_STATE_PATH",
+        str(tmp_path / "odds-api-account-quota.json"),
+    )
+    monkeypatch.setenv("ODDS_API_IO_ACCOUNT_HOURLY_LIMIT", "1")
+    monkeypatch.setenv("ODDS_API_IO_ACCOUNT_DAILY_LIMIT", "500")
+    calls: list[str] = []
+
+    class FakeClient:
+        async def get(self, _url, params=None):
+            calls.append(str((params or {}).get("eventIds") or ""))
+            return _OddsResponse(200, [{"id": 101, "bookmakers": {}}])
+
+    provider = OddsApiIoProvider(
+        Settings(
+            _env_file=None,
+            odds_api_io_key_2="key-2",
+            odds_api_io_per_run_max=10,
+        )
+    )
+    stats = {
+        "accounts": {},
+        "odds_requests": 0,
+        "response_errors": 0,
+        "odds_http_statuses": [],
+        "payload_shapes": [],
+    }
+
+    first = asyncio.run(
+        provider._fetch_odds_multi_chunk(
+            FakeClient(),
+            "key-2",
+            [101],
+            "Betfair Exchange,Sbobet",
+            stats,
+            account_name="account2",
+        )
+    )
+    second = asyncio.run(
+        provider._fetch_odds_multi_chunk(
+            FakeClient(),
+            "key-2",
+            [102],
+            "Betfair Exchange,Sbobet",
+            stats,
+            account_name="account2",
+        )
+    )
+
+    assert [row["id"] for row in first] == [101]
+    assert second == []
+    assert calls == ["101"]
+    assert stats["accounts"]["account2"]["quota_exhausted"] is True
+    assert stats["accounts"]["account2"]["quota_stop_reason"] == "hourly_quota_exhausted:1/1"
 
 
 def test_probability_helpers_accept_percent_strings():

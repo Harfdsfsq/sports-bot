@@ -21,6 +21,11 @@ from app.utils import (
 
 
 class OddsApiIoProvider:
+    ACCOUNT_BOOKMAKER_ALLOWLIST = {
+        "account1": ("Bet365", "Unibet"),
+        "account2": ("Betfair Exchange", "Sbobet"),
+    }
+
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.base_url = "https://api.odds-api.io/v3"
@@ -32,6 +37,119 @@ class OddsApiIoProvider:
             "account2": max(0, int(float(os.getenv("ODDS_API_IO_ACCOUNT2_PER_RUN_MAX") or 0))),
         }
         self._account_requests_used: dict[str, int] = defaultdict(int)
+
+    def _account_quota_path(self) -> Path:
+        raw = str(os.getenv("ODDS_API_IO_ACCOUNT_QUOTA_STATE_PATH") or "").strip()
+        if raw:
+            return Path(raw)
+        return Path(".data/odds_api_io_account_quota_state.json")
+
+    def _account_quota_enabled(self) -> bool:
+        raw = str(os.getenv("ODDS_API_IO_ACCOUNT_QUOTA_ENABLED", "true")).strip().lower()
+        return raw not in {"0", "false", "no", "off"}
+
+    def _account_quota_limit(self, account_name: str, scope: str) -> int:
+        suffix = "HOURLY_LIMIT" if scope == "hour" else "DAILY_LIMIT"
+        default = 100 if scope == "hour" else 500
+        account_key = str(account_name or "").upper()
+        env_names = (
+            f"ODDS_API_IO_{account_key}_{suffix}",
+            f"ODDS_API_IO_ACCOUNT_{suffix}",
+        )
+        for name in env_names:
+            raw = str(os.getenv(name) or "").strip()
+            if not raw:
+                continue
+            try:
+                return max(0, int(float(raw)))
+            except Exception:
+                continue
+        return default
+
+    def _load_account_quota_state(self) -> dict[str, Any]:
+        path = self._account_quota_path()
+        try:
+            if path.exists() and path.stat().st_size <= 1048576:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    return payload
+        except Exception:
+            pass
+        return {"providers": {}}
+
+    def _write_account_quota_state(self, state: dict[str, Any]) -> None:
+        try:
+            path = self._account_quota_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            state["updated_at"] = datetime.now(UTC).isoformat()
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            tmp.write_text(
+                json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            tmp.replace(path)
+        except Exception:
+            pass
+
+    def _quota_row(
+        self,
+        state: dict[str, Any],
+        account_name: str,
+        now: datetime,
+    ) -> dict[str, Any]:
+        provider_key = f"odds_api_io_{account_name}"
+        providers = state.setdefault("providers", {})
+        row = providers.setdefault(provider_key, {})
+        hour_key = now.strftime("%Y-%m-%dT%H")
+        day_key = now.strftime("%Y-%m-%d")
+        if str(row.get("hour_window") or "") != hour_key:
+            row["hour_window"] = hour_key
+            row["hour_used"] = 0
+        if str(row.get("day") or "") != day_key:
+            row["day"] = day_key
+            row["day_used"] = 0
+        return row
+
+    def _account_quota_allows(
+        self,
+        account_name: str,
+    ) -> tuple[bool, str | None, dict[str, Any]]:
+        if not account_name or not self._account_quota_enabled():
+            return True, None, {}
+        now = datetime.now(UTC)
+        hourly_limit = self._account_quota_limit(account_name, "hour")
+        daily_limit = self._account_quota_limit(account_name, "day")
+        state = self._load_account_quota_state()
+        row = self._quota_row(state, account_name, now)
+        row["hourly_limit"] = hourly_limit
+        row["daily_limit"] = daily_limit
+        if hourly_limit <= 0:
+            self._write_account_quota_state(state)
+            return False, "hourly_limit_zero", row
+        if daily_limit <= 0:
+            self._write_account_quota_state(state)
+            return False, "daily_limit_zero", row
+        if int(row.get("hour_used") or 0) >= hourly_limit:
+            self._write_account_quota_state(state)
+            return False, f"hourly_quota_exhausted:{row.get('hour_used')}/{hourly_limit}", row
+        if int(row.get("day_used") or 0) >= daily_limit:
+            self._write_account_quota_state(state)
+            return False, f"daily_quota_exhausted:{row.get('day_used')}/{daily_limit}", row
+        self._write_account_quota_state(state)
+        return True, None, row
+
+    def _record_account_quota(self, account_name: str) -> None:
+        if not account_name or not self._account_quota_enabled():
+            return
+        now = datetime.now(UTC)
+        state = self._load_account_quota_state()
+        row = self._quota_row(state, account_name, now)
+        row["hourly_limit"] = self._account_quota_limit(account_name, "hour")
+        row["daily_limit"] = self._account_quota_limit(account_name, "day")
+        row["hour_used"] = int(row.get("hour_used") or 0) + 1
+        row["day_used"] = int(row.get("day_used") or 0) + 1
+        row["last_request_at"] = now.isoformat()
+        self._write_account_quota_state(state)
 
     def _cooldown_path(self) -> Path:
         raw = str(os.getenv("ODDS_API_IO_COOLDOWN_PATH") or "").strip()
@@ -661,6 +779,22 @@ class OddsApiIoProvider:
     ) -> list[dict[str, Any]]:
         if not event_ids:
             return []
+        default_books = list(
+            self.ACCOUNT_BOOKMAKER_ALLOWLIST.get(
+                str(account_name or ""),
+                self.ACCOUNT_BOOKMAKER_ALLOWLIST["account1"],
+            )
+        )
+        target_books = self._bookmakers_param_for_account(
+            account_name,
+            target_books,
+            default_books,
+        )
+        fallback_books = self._bookmakers_param_for_account(
+            account_name,
+            fallback_books,
+            [],
+        )
         account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
         account_stats.setdefault("bookmakers", target_books)
         account_stats.setdefault("fallback_bookmakers", fallback_books)
@@ -829,26 +963,50 @@ class OddsApiIoProvider:
                 account_stats["request_limit"] = limit
                 account_stats["requests_used"] = used
                 return False
+            allowed, reason, quota_row = self._account_quota_allows(account_name)
+            account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
+            account_stats["hourly_limit"] = int(quota_row.get("hourly_limit") or self._account_quota_limit(account_name, "hour"))
+            account_stats["daily_limit"] = int(quota_row.get("daily_limit") or self._account_quota_limit(account_name, "day"))
+            account_stats["hour_used"] = int(quota_row.get("hour_used") or 0)
+            account_stats["day_used"] = int(quota_row.get("day_used") or 0)
+            if not allowed:
+                stats["budget_exhausted"] = True
+                stats["quota_exhausted"] = True
+                stats["stop_reason"] = reason or "account_quota_exhausted"
+                account_stats["budget_exhausted"] = True
+                account_stats["quota_exhausted"] = True
+                account_stats["quota_stop_reason"] = reason or "account_quota_exhausted"
+                return False
         return True
 
     def _record_request(self, account_name: str | None = None) -> None:
         self._requests_used += 1
         if account_name:
             self._account_requests_used[account_name] = int(self._account_requests_used.get(account_name, 0) or 0) + 1
+            self._record_account_quota(account_name)
 
     def _bookmakers_param(self) -> str:
         return ",".join(account["bookmakers"] for account in self._odds_accounts()) or "Bet365,Unibet"
 
-    def _bookmakers_param_from_values(self, preferred: list[str], fallback: list[str]) -> str:
+    @staticmethod
+    def _split_bookmakers(value: str | list[str] | tuple[str, ...]) -> list[str]:
+        if isinstance(value, (list, tuple)):
+            raw_items = value
+        else:
+            raw_items = str(value or "").split(",")
+        return [str(item or "").strip() for item in raw_items if str(item or "").strip()]
+
+    def _bookmakers_param_from_values(
+        self,
+        preferred: list[str],
+        fallback: list[str],
+        allowed_names: tuple[str, ...],
+    ) -> str:
         values: list[str] = []
         allowed = {
-            "bet365": "Bet365",
-            "unibet": "Unibet",
-            "betfair": "Betfair Exchange",
-            "betfairexchange": "Betfair Exchange",
-            "sbobet": "Sbobet",
-            "williamhill": "William Hill",
-            "betway": "Betway",
+            normalize_bookmaker_name(item): item
+            for item in allowed_names
+            if str(item or "").strip()
         }
         for item in preferred:
             raw = str(item or "").strip()
@@ -859,28 +1017,34 @@ class OddsApiIoProvider:
                 values.append(value)
         return ",".join(values or fallback)
 
+    def _bookmakers_param_for_account(
+        self,
+        account_name: str,
+        preferred: str | list[str] | tuple[str, ...],
+        fallback: list[str] | None = None,
+    ) -> str:
+        allowed = self.ACCOUNT_BOOKMAKER_ALLOWLIST.get(
+            str(account_name or ""),
+            self.ACCOUNT_BOOKMAKER_ALLOWLIST["account1"],
+        )
+        return self._bookmakers_param_from_values(
+            self._split_bookmakers(preferred),
+            list(fallback or []),
+            allowed,
+        )
+
     def _odds_accounts(self) -> list[dict[str, str]]:
         account1_key = str(getattr(self.settings, "odds_api_io_key", "") or "").strip()
         account2_key = str(getattr(self.settings, "odds_api_io_key_2", "") or "").strip()
-        account1_books = self._bookmakers_param_from_values(
-            list(getattr(self.settings, "odds_api_io_bookmakers_account1", []) or [])
-            or list(getattr(self.settings, "odds_api_io_bookmakers", []) or []),
+        account1_books = self._bookmakers_param_for_account(
+            "account1",
+            list(getattr(self.settings, "odds_api_io_bookmakers_account1", []) or []),
             ["Bet365", "Unibet"],
         )
-        account2_books = self._bookmakers_param_from_values(
+        account2_books = self._bookmakers_param_for_account(
+            "account2",
             list(getattr(self.settings, "odds_api_io_bookmakers_account2", []) or []),
             ["Betfair Exchange", "Sbobet"],
-        )
-        account2_fallback_books = self._bookmakers_param_from_values(
-            list(
-                getattr(
-                    self.settings,
-                    "odds_api_io_bookmakers_account2_fallback",
-                    [],
-                )
-                or []
-            ),
-            ["William Hill", "Betway"],
         )
         accounts: list[dict[str, str]] = []
         if account1_key:
@@ -891,7 +1055,7 @@ class OddsApiIoProvider:
                     "name": "account2",
                     "api_key": account2_key,
                     "bookmakers": account2_books,
-                    "fallback_bookmakers": account2_fallback_books,
+                    "fallback_bookmakers": "",
                 }
             )
         return accounts
