@@ -1488,12 +1488,28 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
 
     if env_bool("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", False):
         truth = load_day_inventory_truth_row(candidate)
-        min_odds = env_int("PUBLISH_MIN_ODDS_SOURCES", env_int("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES", 2))
-        min_context = env_int("PUBLISH_MIN_CONTEXT_SOURCES", env_int("CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES", 2))
-        min_price = env_int("PUBLISH_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_MIN_BOOKS", 2))
+        if tier_name == "B":
+            min_odds = max(1, env_int("PUBLISH_TIER_B_MIN_ODDS_SOURCES", 1))
+            min_context = max(
+                1,
+                env_int(
+                    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES",
+                    env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 1),
+                ),
+            )
+            min_price = max(2, env_int("PUBLISH_TIER_B_MIN_BOOKS", 2))
+        else:
+            min_odds = env_int("PUBLISH_MIN_ODDS_SOURCES", env_int("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES", 2))
+            min_context = env_int("PUBLISH_MIN_CONTEXT_SOURCES", env_int("CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES", 2))
+            min_price = env_int("PUBLISH_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_MIN_BOOKS", 2))
         if truth is None:
             reasons.append("strict_truth_missing_row")
         else:
+            weighted_ok = False
+            if tier_name == "B":
+                weighted_ok, weighted_reasons = tier_b_weighted_single_line_contract(candidate, metrics, truth)
+                if not weighted_ok:
+                    metrics.setdefault("tier_b_weighted_single_line", {})["strict_truth_reasons"] = weighted_reasons
             odds_count = int(truth.get("odds_sources_count") or 0)
             context_count = int(truth.get("context_sources_count") or 0)
             price_count = int(truth.get("price_confirmations") or truth.get("books_count") or 0)
@@ -1507,6 +1523,9 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
             for item in missing:
                 text = str(item or "").strip()
                 if text:
+                    if tier_name == "B" and weighted_ok and text == "independent_odds_sources":
+                        metrics.setdefault("tier_b_weighted_single_line", {})["strict_truth_missing_overridden"] = text
+                        continue
                     reasons.append(f"strict_truth_missing:{text}")
 
     if env_bool("CONTROLLED_FALLBACK_REJECT_QUALITY_REASONS_FOR_TELEGRAM", True):
@@ -1596,6 +1615,83 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
         reasons.append("final_ev_below_min")
 
     return reasons
+
+
+def tier_b_weighted_single_line_contract(
+    candidate: dict[str, Any],
+    metrics: dict[str, Any],
+    truth: dict[str, Any] | None = None,
+) -> tuple[bool, list[str]]:
+    """Allow Tier B to use one line provider only when other evidence is stronger.
+
+    odds-api.io account1/account2 are one API provider, even when they provide
+    multiple bookmakers. For free-account operation we do not require a second
+    API line source for Tier B, but the missing source must be compensated by
+    bookmaker quorum, real context, value margin and hard xG sanity.
+    """
+    enabled = env_bool("CONTROLLED_FALLBACK_TIER_B_WEIGHTED_SINGLE_LINE_ENABLED", True)
+    details: dict[str, Any] = {"enabled": enabled, "passed": False}
+    metrics["tier_b_weighted_single_line"] = details
+    if not enabled:
+        return False, ["tier_b_weighted_single_line_disabled"]
+
+    truth = truth or {}
+    odds_count = max(as_int(metrics.get("odds_sources_count"), 0), as_int(truth.get("odds_sources_count"), 0))
+    books_count = max(
+        as_int(metrics.get("books_count"), 0),
+        as_int(truth.get("price_confirmations"), 0),
+        as_int(truth.get("books_count"), 0),
+    )
+    context_count = max(
+        as_int(metrics.get("confirmation_sources_count"), 0),
+        as_int(truth.get("context_sources_count"), 0),
+    )
+    min_context = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_CONTEXT_SOURCES", 2))
+    min_confidence = env_float("CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_CONFIDENCE", 76.0)
+    min_quality = env_float("CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_QUALITY", 78.0)
+    min_edge = env_float("CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_EDGE_PP", 4.0)
+    min_ev = env_float("CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_EV_PCT", 7.0)
+
+    details.update({
+        "odds_sources_count": odds_count,
+        "books_count": books_count,
+        "context_sources_count": context_count,
+        "min_context_sources": min_context,
+        "min_confidence": min_confidence,
+        "min_quality": min_quality,
+        "min_edge_pp": min_edge,
+        "min_ev_pct": min_ev,
+    })
+    reasons: list[str] = []
+    if odds_count < 1:
+        reasons.append(f"tier_b_weighted_odds_sources_below_min:{odds_count}/1")
+    if books_count < 2:
+        reasons.append(f"tier_b_weighted_books_below_min:{books_count}/2")
+    if context_count < min_context:
+        reasons.append(f"tier_b_weighted_context_sources_below_min:{context_count}/{min_context}")
+    if float(metrics.get("confidence") or 0.0) < min_confidence:
+        reasons.append("tier_b_weighted_confidence_below_min")
+    if float(metrics.get("quality_score") or 0.0) < min_quality:
+        reasons.append("tier_b_weighted_quality_below_min")
+    if float(metrics.get("canonical_edge_pp") or 0.0) < min_edge:
+        reasons.append("tier_b_weighted_edge_below_min")
+    if float(metrics.get("canonical_ev_pct") or 0.0) < min_ev:
+        reasons.append("tier_b_weighted_ev_below_min")
+
+    if env_bool("CONTROLLED_FALLBACK_TIER_B_WEIGHTED_REQUIRE_XG_HARD_CONFIRMATION", True):
+        fam = family_norm(candidate)
+        if fam in {"totals", "teamtotals"}:
+            xg = metrics.get("xg_sanity") or {}
+            if not bool(xg.get("enabled")):
+                reasons.append("tier_b_weighted_missing_xg_sanity")
+            elif not bool(xg.get("xg_hard_confirmation", False)):
+                reasons.append("tier_b_weighted_xg_not_hard_confirmation")
+            elif not bool(xg.get("xg_direction_ok", True)):
+                reasons.append("tier_b_weighted_xg_direction_conflict")
+
+    details["reasons"] = reasons
+    details["passed"] = not reasons
+    return not reasons, reasons
 
 
 def final_edge_tolerance_allowed(candidate: dict[str, Any], metrics: dict[str, Any], min_edge: float, min_ev: float) -> bool:

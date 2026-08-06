@@ -73,7 +73,7 @@ def enable_policy(monkeypatch):
     monkeypatch.setenv("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_QUALITY", "78.0")
 
 
-def test_tier_b_blocks_single_line_source_even_with_strong_context(monkeypatch):
+def test_tier_b_allows_weighted_single_line_source_with_strong_context(monkeypatch):
     workspace = isolated_workspace(monkeypatch, "single-line-strong-context")
     enable_policy(monkeypatch)
     write_truth(workspace, base_truth())
@@ -82,10 +82,10 @@ def test_tier_b_blocks_single_line_source_even_with_strong_context(monkeypatch):
     metrics = candidate_metrics(candidate)
     reasons = final_publish_guard_reasons(candidate, metrics, "уровень B")
 
-    assert "strict_truth_missing:independent_odds_sources" in reasons
-    assert "strict_truth_odds_sources_below_min:1/2" in reasons
-    assert "line_source_mode" not in metrics
-    assert "strict_truth_single_line_context_override" not in metrics
+    assert "strict_truth_missing:independent_odds_sources" not in reasons
+    assert not [reason for reason in reasons if str(reason).startswith("strict_truth_odds_sources_below_min")]
+    assert metrics["tier_b_weighted_single_line"]["passed"] is True
+    assert metrics["tier_b_weighted_single_line"]["strict_truth_missing_overridden"] == "independent_odds_sources"
 
 
 def test_tier_a_still_blocks_single_line_source(monkeypatch):
@@ -111,6 +111,7 @@ def test_tier_b_blocks_single_line_when_context_is_weak(monkeypatch):
     metrics = candidate_metrics(candidate)
     reasons = final_publish_guard_reasons(candidate, metrics, "уровень B")
 
-    assert "strict_truth_context_sources_below_min:1/2" in reasons
     assert "strict_truth_missing:independent_odds_sources" in reasons
     assert "strict_truth_missing:context_sources" in reasons
+    assert metrics["tier_b_weighted_single_line"]["passed"] is False
+    assert "tier_b_weighted_context_sources_below_min:1/2" in metrics["tier_b_weighted_single_line"]["reasons"]

@@ -86,7 +86,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS_ACCOUNT2"),
     )
     odds_api_io_bookmakers_account2_fallback: CsvList = Field(
-        default_factory=lambda: ["William Hill", "Betway"],
+        default_factory=list,
         validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK"),
     )
     bookies_api_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("BOOKIES_API_SPORTS"))
