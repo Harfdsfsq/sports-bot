@@ -1,53 +1,53 @@
 {
   "budget_limited": true,
   "budget_seconds": 210.0,
-  "created_at_utc": "2026-08-05T21:06:49.743277+00:00",
-  "duration_seconds": 192.1,
+  "created_at_utc": "2026-08-06T05:06:54.041758+00:00",
+  "duration_seconds": 159.36,
   "final": {
-    "context_2plus_sources": 2,
-    "fixture_2plus_sources": 67,
-    "inventory_matches": 175,
-    "matrix_matches": 175,
-    "odds_2plus_sources": 2,
-    "ready_for_model": 26,
-    "ready_for_publish": 2,
+    "context_2plus_sources": 156,
+    "fixture_2plus_sources": 172,
+    "inventory_matches": 300,
+    "matrix_matches": 300,
+    "odds_2plus_sources": 163,
+    "ready_for_model": 213,
+    "ready_for_publish": 133,
     "semantic_duplicate_rows": 0,
-    "semantic_unique_matches": 166
+    "semantic_unique_matches": 300
   },
   "mode": "runbot_discovery_first_prepare_v5_full_bounded",
   "previous_full_prepare": {
-    "age_minutes": 117.13,
-    "created_at_utc": "2026-08-05T19:06:30.137955+00:00",
+    "age_minutes": 117.92,
+    "created_at_utc": "2026-08-06T03:06:19.486044+00:00",
     "full_checkpoint": {
-      "age_minutes": 475.35,
+      "age_minutes": 477.42,
       "checkpoint_path": ".data/exports/latest-runbot-discovery-first-full-prepare.json",
-      "created_at_utc": "2026-08-05T13:08:16.424743+00:00",
+      "created_at_utc": "2026-08-05T21:06:49.743277+00:00",
       "mode": "runbot_discovery_first_prepare_v5_full_bounded",
       "refresh_interval_minutes": 360,
       "reusable": false,
       "source": "last_successful_full_checkpoint",
       "status": "ok_budget_limited",
-      "target_date": "2026-08-05"
+      "target_date": "2026-08-06"
     },
     "mode": "runbot_discovery_first_prepare_v5_incremental_reuse",
     "refresh_interval_minutes": 360,
     "reusable": false,
     "source": "latest_prepare_fallback",
     "status": "ok",
-    "target_date": "2026-08-05"
+    "target_date": "2026-08-06"
   },
   "status": "ok_budget_limited",
   "steps": [
     {
-      "duration_seconds": 58.76,
+      "duration_seconds": 0.16,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
-        "status": "rebuilt_below_target"
+        "status": "skipped_sufficient_inventory"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.24,
+      "duration_seconds": 0.77,
       "name": "semantic_inventory_dedupe_pre",
       "result_summary": {
         "type": "int"
@@ -55,7 +55,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 26.78,
+      "duration_seconds": 30.22,
       "name": "target_expand_pre_discovery",
       "result_summary": {
         "type": "int"
@@ -63,11 +63,16 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 93.58,
       "name": "provider_day_discovery_canonical_pool_v2",
-      "reason": "discovery_budget_reserve",
-      "result_summary": {},
-      "status": "skipped"
+      "result_summary": {
+        "canonical_matches": 515,
+        "canonical_with_2plus_primary_sources": 99,
+        "canonical_with_all_3_primary_sources": 45,
+        "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon",
+        "status": "ok"
+      },
+      "status": "ok"
     },
     {
       "duration_seconds": 0.0,
@@ -77,38 +82,33 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 19.03,
+      "duration_seconds": 32.92,
       "name": "post_merge_sstats_crosswalk_v2",
       "result_summary": {
-        "match_rate_pct": 65.71,
-        "matched": 115,
+        "match_rate_pct": 56.0,
+        "matched": 168,
         "mode": "sstats_crosswalk_probe_v2_full_matched"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.15,
+      "duration_seconds": 0.41,
       "name": "apply_sstats_crosswalk_ids_to_inventory",
       "result_summary": {
-        "applied": 115,
-        "inventory_matches": 175,
-        "matched_rows_seen": 115,
+        "applied": 168,
+        "inventory_matches": 300,
+        "matched_rows_seen": 168,
         "mode": "sstats_crosswalk_inventory_apply_v1",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 60.77,
+      "duration_seconds": 0.0,
       "name": "apply_sstats_deep_inventory_enrichment_v4",
-      "result_summary": {
-        "crosswalk_matched": 115,
-        "enriched_matches": 34,
-        "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority",
-        "request_count": 100,
-        "status": "ok"
-      },
-      "status": "ok"
+      "reason": "discovery_budget_reserve",
+      "result_summary": {},
+      "status": "skipped"
     },
     {
       "duration_seconds": 0.0,
@@ -118,7 +118,7 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.39,
+      "duration_seconds": 0.42,
       "name": "semantic_inventory_dedupe_final",
       "result_summary": {
         "type": "int"
@@ -126,30 +126,29 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 25.76,
+      "duration_seconds": 0.0,
       "name": "target_expand_final",
-      "result_summary": {
-        "type": "int"
-      },
-      "status": "ok"
+      "reason": "inventory_already_at_or_above_target:300/300",
+      "result_summary": {},
+      "status": "skipped"
     },
     {
-      "duration_seconds": 0.05,
+      "duration_seconds": 0.09,
       "name": "build_source_aware_coverage_matrix",
       "result_summary": {
-        "context_2plus_sources": 2,
-        "fixture_2plus_sources": 67,
-        "matches": 175,
-        "matrix_matches": 175,
-        "odds_2plus_sources": 2,
-        "ready_for_model": 26,
-        "ready_for_publish": 2,
+        "context_2plus_sources": 156,
+        "fixture_2plus_sources": 172,
+        "matches": 300,
+        "matrix_matches": 300,
+        "odds_2plus_sources": 163,
+        "ready_for_model": 213,
+        "ready_for_publish": 133,
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.03,
+      "duration_seconds": 0.09,
       "name": "inventory_provider_gap_audit",
       "result_summary": {
         "type": "int"
