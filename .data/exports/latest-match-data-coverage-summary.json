@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 2,
-      "rows_seen": 2,
+      "rows_kept": 6,
+      "rows_seen": 6,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 24,
-      "rows_seen": 79,
-      "rows_stale": 55
+      "rows_kept": 13,
+      "rows_seen": 67,
+      "rows_stale": 54
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 1,
-      "rows_seen": 1,
+      "rows_kept": 3,
+      "rows_seen": 3,
       "rows_stale": 0
     }
   },
@@ -35,27 +35,27 @@
     "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 37,
-    "controlled_candidates_seen": 1,
+    "contexts_built": 47,
+    "controlled_candidates_seen": 3,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 13,
-    "matches_seen": 4,
-    "matches_with_offers": 10
+    "coverage_candidates_current_date": 9,
+    "matches_seen": 2,
+    "matches_with_offers": 11
   },
-  "created_at": "2026-08-06T09:14:14.980537+00:00",
+  "created_at": "2026-08-06T09:37:04.729699+00:00",
   "family_counts": {
-    "spreads": 8,
+    "spreads": 4,
     "totals": 5
   },
-  "matches_with_candidates": 5,
+  "matches_with_candidates": 3,
   "missing_data_flags": {
-    "confidence_below_micro_c": 12,
-    "edge_below_micro_c": 13,
-    "ev_below_micro_c": 12,
-    "single_book": 12,
-    "single_context_source": 12,
-    "single_odds_source": 12
+    "confidence_below_micro_c": 8,
+    "edge_below_micro_c": 9,
+    "ev_below_micro_c": 8,
+    "single_book": 6,
+    "single_context_source": 6,
+    "single_odds_source": 6
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -82,7 +82,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 496,
+      "offers_parsed": 480,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -101,7 +101,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 89,
+      "offers_parsed": 98,
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": null,
@@ -121,7 +121,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 618,
+      "matches_built": 619,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -136,11 +136,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 894,
+      "events_fetched": 897,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 618,
+      "matches_built": 619,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -171,8 +171,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 23,
-      "direct_event_contexts_built": 23,
+      "contexts_built": 43,
+      "direct_event_contexts_built": 43,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -230,25 +230,24 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": null,
+      "api_key_present": null,
+      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": 0,
+      "enabled": true,
+      "events_fetched": 100,
       "events_matched": 0,
       "fixtures_fetched": null,
       "gap_flags": [
-        "rate_limited",
-        "no_useful_rows"
+        "low_overlap_or_matching_failed"
       ],
       "matches_built": null,
       "offers_parsed": 0,
-      "provider": "odds_api1",
-      "rate_limited": true,
-      "response_errors": null,
+      "provider": "secondary_odds_rescue",
+      "rate_limited": null,
+      "response_errors": 0,
       "rows_fetched": null,
-      "status_category": "rate_limited",
+      "status_category": "low_overlap_or_matching_issue",
       "team_form_contexts_built": null
     },
     {
@@ -275,22 +274,46 @@
     },
     {
       "api_key_present": null,
-      "budget_exhausted": false,
-      "contexts_built": null,
+      "budget_exhausted": true,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": 100,
-      "events_matched": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [
         "response_errors",
-        "low_overlap_or_matching_failed"
+        "budget_exhausted",
+        "no_useful_rows"
       ],
       "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "secondary_odds_rescue",
+      "offers_parsed": null,
+      "provider": "clubelo",
       "rate_limited": null,
-      "response_errors": 1,
+      "response_errors": 3,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": true,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "budget_exhausted",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "gnews",
+      "rate_limited": null,
+      "response_errors": 3,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -338,22 +361,23 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": 0,
+      "api_key_present": null,
+      "budget_exhausted": true,
+      "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [
+        "budget_exhausted",
         "no_useful_rows"
       ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "bzzoiro",
       "rate_limited": null,
-      "response_errors": 0,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -418,6 +442,27 @@
       "provider": "futrixmetrics",
       "rate_limited": null,
       "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "odds_api1",
+      "rate_limited": null,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -571,57 +616,65 @@
     }
   ],
   "provider_status_counts": {
-    "broken_or_unavailable": 2,
-    "low_overlap_or_matching_issue": 1,
-    "no_data": 13,
-    "rate_limited": 1,
+    "broken_or_unavailable": 3,
+    "low_overlap_or_matching_issue": 2,
+    "no_data": 14,
     "working": 7
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "market_sanity_totals_xg_contradiction": 1
+  },
   "target_date": "2026-08-06",
   "top_near_miss": [
     {
       "away_team": "Fraser Park FC",
       "best_candidate": {
-        "adjusted_probability": 0.393635,
+        "adjusted_probability": 0.408635,
         "books_count": 2,
-        "canonical_edge_pp": 3.649,
-        "canonical_ev_pct": 10.218,
-        "confidence": 75.198,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
+        "canonical_edge_pp": 3.128,
+        "canonical_ev_pct": 14.418,
+        "confidence": 75.873,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
         "family": "totals",
         "odds": 2.8,
         "odds_sources_count": 4,
-        "origin": "rescue",
+        "origin": ".logs/debug-last-run.json",
         "point": 2.5,
-        "reject_reasons": [],
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
         "selection": "Меньше",
         "sources_count": 4
       },
-      "best_confidence": 75.198,
-      "best_edge_pp": 3.649,
-      "best_ev_pct": 10.218,
+      "best_confidence": 75.873,
+      "best_edge_pp": 3.128,
+      "best_ev_pct": 14.418,
       "books_max": 2,
-      "candidate_count": 1,
+      "candidate_count": 3,
       "commence_time": "2026-08-06T10:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
       "controlled_count": 0,
       "families": {
-        "totals": 1
+        "totals": 3
       },
       "home_team": "Granville Rage",
       "league_name": "Australia - NSW League Two",
       "match_key": "soccer|granville_rage|fraser_park_fc|2026-08-06",
       "missing_flags": {
-        "edge_below_micro_c": 1
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 2
       },
       "odds_sources_max": 4,
       "origins": {
-        "rescue": 1
+        ".logs/debug-last-run.json": 1,
+        "rescue": 2
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
       "sources_max": 4
     }
   ]
