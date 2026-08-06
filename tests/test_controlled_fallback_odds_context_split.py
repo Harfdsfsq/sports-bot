@@ -204,7 +204,7 @@ def test_market_implied_xg_is_not_reported_as_direction_conflict(monkeypatch):
     assert "xg_direction_conflict" not in pcf.hard_reject_reasons(candidate, metrics, {})
 
 
-def test_b_tier_contract_is_not_raised_by_legacy_a_tier_env(monkeypatch):
+def test_b_tier_contract_uses_single_odds_source_but_two_contexts(monkeypatch):
     monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
     monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", "2")
     monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", "2")
@@ -221,7 +221,25 @@ def test_b_tier_contract_is_not_raised_by_legacy_a_tier_env(monkeypatch):
     reasons = pcf.tier_reasons("B", candidate, metrics)
 
     assert not [reason for reason in reasons if "odds_sources_below_min" in reason]
-    assert not [reason for reason in reasons if "confirmation_sources_below_min" in reason]
+    assert "tier_b_confirmation_sources_below_min:1/2" in reasons
+
+
+def test_b_tier_default_requires_two_contexts(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    monkeypatch.delenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", raising=False)
+    monkeypatch.delenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", raising=False)
+    candidate = _candidate()
+    candidate["books_count"] = 2
+    candidate["source_summary"]["publish_coverage_contract"]["odds_sources"] = ["odds_api_io"]
+    candidate["source_summary"]["publish_coverage_contract"]["odds_sources_count"] = 1
+    candidate["source_summary"]["context_sources"] = ["sstats"]
+    candidate["source_summary"]["publish_coverage_contract"]["context_sources"] = ["sstats"]
+    candidate["source_summary"]["publish_coverage_contract"]["context_sources_count"] = 1
+
+    metrics = pcf.candidate_metrics(candidate)
+    reasons = pcf.tier_reasons("B", candidate, metrics)
+
+    assert "tier_b_confirmation_sources_below_min:1/2" in reasons
 
 
 def test_safety_patch_applies_two_plus_global_flag_only_to_a_tier(monkeypatch):

@@ -1376,7 +1376,7 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
             reasons.append("tier_a_proxy_quality_not_allowed")
 
     # HARIZON rules: A-tier is strict 2/2/2; B-tier is 1 odds/line source,
-    # 2 bookmakers/price confirmations, and 1 context/confirmation.
+    # 2 bookmakers/price confirmations, and 2 context/confirmation sources.
     if tier == "A":
         if env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES", True):
             min_odds_sources = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2)
@@ -1388,7 +1388,7 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     elif tier == "B":
         if env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES", True):
             # HARIZON's B-tier contract is invariant: one independent line
-            # source, two same-market bookmakers, and one real context source.
+            # source, two same-market bookmakers, and two real context sources.
             # Legacy coverage installers may still export A-tier values here;
             # do not let those late env writes silently turn B into A.
             min_odds_sources = 1
@@ -1397,7 +1397,10 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
         min_books = 2
         if int(metrics.get("books_count") or 0) < min_books:
             reasons.append(f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}")
-        min_confirmations = 1
+        min_confirmations = env_int(
+            "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES",
+            env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 2),
+        )
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
             reasons.append(f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
         reasons.extend(_bookmaker_quorum_price_guard(candidate, metrics))

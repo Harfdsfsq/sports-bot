@@ -188,6 +188,67 @@ def test_zilina_current_price_and_confirmed_movement_pass(
     assert guard.semantic_integrity_reasons(candidate, {}) == []
 
 
+def test_missing_selected_book_reports_current_price_and_not_publishable_reason(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    kickoff = "2026-08-06T23:00:00+00:00"
+    offers = [
+        _offer("SC Corinthians SP", "SC Internacional RS", kickoff, "Unibet", 2.30),
+    ]
+    key = "soccer|corinthians sp|internacional rs|2026-08-06|totals|over|2.5|bet365"
+    lines = {
+        key: {
+            "last_snapshot": {
+                "match_key": "soccer|corinthians sp|internacional rs|2026-08-06",
+                "home_team": "SC Corinthians SP",
+                "away_team": "SC Internacional RS",
+                "kickoff_utc": kickoff,
+                "captured_at_utc": datetime.now(UTC).isoformat(),
+                "family": "totals",
+                "selection": "Больше 2.5",
+                "selection_key": "over",
+                "point": 2.5,
+                "bookmaker": "bet365",
+                "odds": 2.60,
+            },
+            "last_guard": {
+                "line_movement_lifecycle_status": "not_publishable",
+                "passed": False,
+                "final_pre_kickoff_check": True,
+                "no_more_cron_before_kickoff": True,
+                "current_odds": 2.60,
+                "line_move_pct": 0.0,
+                "reasons": ["current_edge_below_floor:1.4<1.4"],
+            },
+        }
+    }
+    _reset(monkeypatch, tmp_path, offers, lines)
+    candidate = {
+        "match_key": "soccer|corinthians sp|internacional rs|2026-08-06",
+        "home_team": "SC Corinthians SP",
+        "away_team": "SC Internacional RS",
+        "commence_time": kickoff,
+        "family": "totals",
+        "selection": "Больше 2.5",
+        "point": 2.5,
+        "bookmaker": "bet365",
+        "metrics": {"odds": 2.60},
+    }
+
+    diagnostics: dict[str, Any] = {}
+    reasons = guard.semantic_integrity_reasons(candidate, diagnostics)
+
+    assert "semantic_selected_book_current_price_missing" in reasons
+    assert "semantic_selected_price_not_current:2.600/2.300" in reasons
+    assert "semantic_line_movement_failed" not in reasons
+    assert "semantic_line_movement_not_publishable:current_edge_below_floor:1.4<1.4" in reasons
+    price_guard = diagnostics["semantic_current_price_guard"]
+    assert price_guard["selected_book_missing_from_current_snapshot"] is True
+    assert price_guard["current_bookmaker"] == "Unibet"
+    assert price_guard["current_price"] == 2.3
+
+
 def test_match_total_does_not_use_team_total_price(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

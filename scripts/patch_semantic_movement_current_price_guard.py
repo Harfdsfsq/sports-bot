@@ -297,9 +297,19 @@ def _book(value: Any) -> str:
 
 
 def _price(row: dict[str, Any]) -> float:
-    for key in ("price", "odds", "decimal_odds", "selected_odds"):
+    for key in ("price", "odds", "decimal_odds", "selected_odds", "price_used_for_ev"):
         try:
             value = row.get(key)
+            if value not in (None, ""):
+                price = float(str(value).replace(",", "."))
+                if price > 1.0 and math.isfinite(price):
+                    return price
+        except Exception:
+            continue
+    metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+    for key in ("odds", "selected_odds", "price_used_for_ev", "selected_price"):
+        try:
+            value = metrics.get(key)
             if value not in (None, ""):
                 price = float(str(value).replace(",", "."))
                 if price > 1.0 and math.isfinite(price):
@@ -477,6 +487,37 @@ def semantic_integrity_reasons(
         selected = _price(candidate)
         if selected_book and not book_offers:
             reasons.append("semantic_selected_book_current_price_missing")
+            selected = _price(candidate)
+            if selected > 1.0 and offers:
+                current = max(offers, key=_price)
+                current_price = _price(current)
+                absolute_tolerance = max(
+                    0.0,
+                    _env_float("CONTROLLED_FALLBACK_CURRENT_PRICE_ABS_TOLERANCE", 0.03),
+                )
+                percent_tolerance = max(
+                    0.0,
+                    _env_float("CONTROLLED_FALLBACK_CURRENT_PRICE_PCT_TOLERANCE", 1.5),
+                )
+                difference = abs(selected - current_price)
+                difference_pct = (
+                    difference / current_price * 100.0 if current_price > 0 else 999.0
+                )
+                if difference > absolute_tolerance and difference_pct > percent_tolerance:
+                    reasons.append(
+                        f"semantic_selected_price_not_current:{selected:.3f}/{current_price:.3f}"
+                    )
+                offer_diagnostics.update(
+                    {
+                        "selected_bookmaker": selected_book,
+                        "selected_price": round(selected, 4),
+                        "selected_book_missing_from_current_snapshot": True,
+                        "current_price": round(current_price, 4),
+                        "current_bookmaker": current.get("bookmaker")
+                        or current.get("book"),
+                        "price_diff_pct": round(difference_pct, 3),
+                    }
+                )
         elif book_offers and selected > 1.0:
             current = max(book_offers, key=_price)
             current_price = _price(current)
@@ -542,7 +583,7 @@ def semantic_integrity_reasons(
                 "confirmed",
                 "passed",
             }
-            is_failed = status in {"movement_failed", "not_publishable", "failed"}
+            is_failed = status in {"movement_failed", "failed"}
             no_more = bool(guard.get("no_more_cron_before_kickoff")) or bool(
                 guard.get("final_pre_kickoff_check")
             )
@@ -572,6 +613,27 @@ def semantic_integrity_reasons(
             reasons.append("semantic_line_movement_alias_conflict")
         elif failed:
             reasons.append("semantic_line_movement_failed")
+        elif any(
+            str(item.get("guard", {}).get("line_movement_lifecycle_status") or "")
+            .strip()
+            .lower()
+            == "not_publishable"
+            for item in recent
+        ):
+            blocked_reasons: list[str] = []
+            for item in recent:
+                guard = item.get("guard", {}) if isinstance(item, dict) else {}
+                status = str(guard.get("line_movement_lifecycle_status") or "").strip().lower()
+                if status != "not_publishable":
+                    continue
+                for reason in guard.get("reasons") or []:
+                    text = str(reason or "").strip()
+                    if text:
+                        blocked_reasons.append(text)
+            if blocked_reasons:
+                reasons.append(f"semantic_line_movement_not_publishable:{blocked_reasons[0]}")
+            else:
+                reasons.append("semantic_line_movement_not_publishable")
         elif unresolved_final:
             reasons.append("semantic_line_movement_unconfirmed_final")
         elif require_movement and not passed:
