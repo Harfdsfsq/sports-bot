@@ -12,7 +12,6 @@ from typing import Any
 MODULES = [
     'app.services.provider_smoke_repair_env_guard',
     'app.services.runtime_provider_budget_guard',
-    'app.services.provider_semantic_health_runtime_patch',
     'app.services.core_coverage_quota_runtime_override',
     'app.services.free_context_runtime_enrichment',
     'app.services.api_matching_quality_runtime_guard',
@@ -72,6 +71,7 @@ MODULES = [
     'app.services.api_coverage_consensus_runtime_patch',
     'app.services.odds_api_io_account_source_split_patch',
     'app.services.quality_consensus_safe_relief_patch',
+    'app.services.quality_data_missing_runtime_patch',
     'app.services.source_matrix_amplifier_runtime_patch',
     'app.services.bzzoiro_odds_comparison_bridge_patch',
     # Re-assert the final provider behavior after all legacy Bzzoiro/cache wrappers.
