@@ -7,7 +7,7 @@ appears when raw quality inputs are absent. The latter must be visible as a data
 problem and must never become an accidental publication path.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 MARKER = "_harizon_quality_data_missing_guard_v1"
@@ -62,7 +62,7 @@ def mark_quality_data_missing(candidate: Any) -> None:
     quality["quality_score"] = None
     quality["quality_score_source"] = "raw_missing"
     quality["reasons"] = list(dict.fromkeys(list(quality.get("reasons") or []) + ["quality_data_missing"]))
-    quality["marked_at"] = datetime.utcnow().isoformat() + "Z"
+    quality["marked_at"] = datetime.now(UTC).isoformat()
     diagnostics["quality"] = quality
     candidate.diagnostics = diagnostics
     reasons = list(getattr(candidate, "reasons", []) or [])
@@ -102,5 +102,5 @@ def install() -> dict[str, Any]:
         return passed, rejections, debug
 
     setattr(wrapped, MARKER, True)
-    PredictionQualityService.apply_to_candidates = wrapped
+    PredictionQualityService.apply_to_candidates = wrapped  # type: ignore[method-assign]
     return {"status": "installed"}
