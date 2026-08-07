@@ -215,6 +215,20 @@ def score_match_identity(
     fuzzy_tolerance_hours: float = 8.0,
 ) -> MatchScore:
     reasons: list[str] = []
+    ref_provider = str(reference.provider or "").strip().casefold()
+    cand_provider = str(candidate.provider or "").strip().casefold()
+    ref_event_id = str(reference.provider_event_id or "").strip()
+    cand_event_id = str(candidate.provider_event_id or "").strip()
+
+    # Provider event IDs are stronger than names and fuzzy time matching.  A
+    # conflicting ID from the same provider must never be rescued by a fuzzy
+    # name score; otherwise one provider event can be attached to another match.
+    if ref_provider and cand_provider and ref_provider == cand_provider:
+        if ref_event_id and cand_event_id and ref_event_id == cand_event_id:
+            return MatchScore(100.0, "exact", ["provider_event_id_exact"])
+        if ref_event_id and cand_event_id and ref_event_id != cand_event_id:
+            return MatchScore(0.0, "reject", ["provider_event_id_conflict"])
+
     ref_flags = _tag_flags(reference.home + " " + reference.away, reference.league)
     cand_flags = _tag_flags(candidate.home + " " + candidate.away, candidate.league)
     hard_conflicts = {"women", "youth", "reserve", "simulated"}
@@ -266,11 +280,28 @@ def identity_from_match(match: Any, provider: str | None = None) -> MatchIdentit
 
 
 def best_identity_match(reference: MatchIdentity, candidates: list[MatchIdentity]) -> tuple[MatchIdentity | None, MatchScore]:
-    best: MatchIdentity | None = None
-    best_score = MatchScore(0.0, "reject", ["no_candidates"])
-    for candidate in candidates:
-        scored = score_match_identity(reference, candidate)
-        if scored.score > best_score.score:
-            best = candidate
-            best_score = scored
+    scored_candidates: list[tuple[MatchIdentity, MatchScore]] = [
+        (candidate, score_match_identity(reference, candidate)) for candidate in candidates
+    ]
+    scored_candidates.sort(key=lambda item: item[1].score, reverse=True)
+    if not scored_candidates:
+        return None, MatchScore(0.0, "reject", ["no_candidates"])
+
+    best, best_score = scored_candidates[0]
+    if best_score.quality == "reject":
+        return None, best_score
+
+    # A fuzzy/strong winner must be materially better than the runner-up.  This
+    # prevents same-team or same-league fixtures from being assigned greedily
+    # when the provider omitted a stable event ID.
+    if "provider_event_id_exact" not in best_score.reasons and len(scored_candidates) > 1:
+        second_score = scored_candidates[1][1]
+        margin = best_score.score - second_score.score
+        if second_score.quality != "reject" and margin < 5.0:
+            return None, MatchScore(
+                score=best_score.score,
+                quality="reject",
+                reasons=[f"ambiguous_identity_margin:{margin:.3f}", "best_candidate_rejected"],
+                swapped=best_score.swapped,
+            )
     return best, best_score
