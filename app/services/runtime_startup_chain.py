@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__
 
 """Central runtime patch chain for the main HARIZON run.
 
@@ -12,6 +12,7 @@ from typing import Any
 MODULES = [
     'app.services.provider_smoke_repair_env_guard',
     'app.services.runtime_provider_budget_guard',
+    'app.services.provider_semantic_health_runtime_patch',
     'app.services.core_coverage_quota_runtime_override',
     'app.services.free_context_runtime_enrichment',
     'app.services.api_matching_quality_runtime_guard',
