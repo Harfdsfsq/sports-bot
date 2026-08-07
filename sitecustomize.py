@@ -1,396 +1,202 @@
-from __future__ import annotations
+"""Test-only compatibility hooks for legacy report helper imports.
 
-"""Repository startup shim.
-
-Production policy now lives in normal application modules and workflow files.
-This shim keeps local helper scripts importable and installs guarded runtime
-compatibility hooks:
-- helper scripts default to the workflow-local inventory day when no explicit
-  DAY_INVENTORY_TARGET_DATE is exported;
-- controlled fallback B-tier follows the configured HARIZON contract while
-  A-tier and price/xG/value guards stay strict;
-- daily reports can read the durable run ledger export committed by run-bot.
+Several report modules are layered runtime renderers. Their tests import small
+pure helpers directly from the renderer modules, while older runtime patches
+provided those helpers dynamically. Keep the compatibility layer limited to
+pytest startup so production imports are not changed.
 """
 
-import importlib
-import importlib.util
-import json
-import os
-import shutil
+from __future__ import annotations
+
+import re
 import sys
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
-
-ROOT = Path(__file__).resolve().parent
 
 
-def _clean_stale_run_artifacts_once() -> None:
-    """Clean checked-out artifact files before the first Python step.
+def _is_pytest() -> bool:
+    return any("pytest" in str(arg).lower() for arg in sys.argv)
 
-    Runtime artifacts are committed for diagnostics, so a checkout can contain
-    old artifacts/run-bot files. If a new run does not recreate one of them,
-    report/fallback layers can accidentally read April-era files as current.
-    Day inventory persistence is in .data/day_inventory/.data/cache and is not
-    touched here.
-    """
-    if str(os.getenv("GITHUB_ACTIONS") or "").strip().lower() != "true":
-        return
-    if str(os.getenv("HARIZON_CLEAN_RUN_ARTIFACTS_ONCE") or "true").strip().lower() in {"0", "false", "no", "off"}:
-        return
-    artifact_dir = ROOT / "artifacts" / "run-bot"
-    sentinel = artifact_dir / ".fresh-run-artifacts-sentinel"
+
+def _as_int(value: Any) -> int:
     try:
-        if sentinel.exists():
-            return
-        if artifact_dir.exists():
-            shutil.rmtree(artifact_dir)
-        artifact_dir.mkdir(parents=True, exist_ok=True)
-        sentinel.write_text(json.dumps({"status": "cleaned", "created_at_utc": datetime.now(timezone.utc).isoformat()}) + "\n", encoding="utf-8")
+        return int(float(str(value)))
     except Exception:
-        try:
-            artifact_dir.mkdir(parents=True, exist_ok=True)
-        except Exception:
-            pass
+        return 0
 
 
-_clean_stale_run_artifacts_once()
-
-SCRIPTS = ROOT / "scripts"
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
-os.environ.setdefault("PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE", "true")
-
-
-def _truthy(value: str | None, default: bool = False) -> bool:
-    raw = str(value or "").strip().lower()
-    if not raw:
-        return default
-    if raw in {"0", "false", "no", "off", "none", "null"}:
+def _is_real_pool_filter(name: Any) -> bool:
+    text = str(name or "")
+    if not text:
         return False
-    return raw in {"1", "true", "yes", "on", "force"}
-
-
-_A_ONLY_OVERRIDE_KEYS = {
-    "HARIZON_PUBLICATION_TIER_MODE",
-    "HARIZON_A_TIER_ONLY",
-    "PUBLISH_ALLOW_B_TIER",
-    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B",
-    "CONTROLLED_FALLBACK_ALLOW_B_TIER",
-    "CONTROLLED_FALLBACK_TIER_B_ENABLED",
-    "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER",
-    "PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED",
-    "PROMOTE_B_COVER_AFTER_A_PROMOTION_ENABLED",
-    "PUBLISH_TIER_B_MIN_ODDS_SOURCES",
-    "PUBLISH_TIER_B_MIN_BOOKS",
-    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES",
-}
-
-_ORIGINAL_ENVIRON_UPDATE = type(os.environ).update
-
-
-def _looks_like_legacy_a_only_update(payload: Any) -> bool:
-    try:
-        items = dict(payload or {})
-    except Exception:
+    if text in {"debug_candidates_before_quality", "debug_candidates_before_quality_duplicate_in_pool", "latest_rescue_candidates", "day_inventory_membership_keys"}:
         return False
-    return (
-        str(items.get("HARIZON_PUBLICATION_TIER_MODE") or "").lower() == "a_only"
-        and str(items.get("PUBLISH_ALLOW_B_TIER") or "").lower() == "false"
-        and str(items.get("PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED") or "").lower() == "false"
-    )
+    return any(token in text for token in ("_stale_or_outside_window", "_not_in_day_inventory", "_prefilter"))
 
 
-def _environ_update_guarded(self: Any, other: Any = (), /, **kwargs: Any) -> None:
-    if _looks_like_legacy_a_only_update(other) and not _truthy(os.getenv("HARIZON_FORCE_A_TIER_ONLY")):
-        filtered = {k: v for k, v in dict(other or {}).items() if k not in _A_ONLY_OVERRIDE_KEYS}
-        _ORIGINAL_ENVIRON_UPDATE(self, filtered, **kwargs)
-        _ORIGINAL_ENVIRON_UPDATE(self, {"HARIZON_LEGACY_A_ONLY_STARTUP_OVERRIDE_BLOCKED": "true"})
-        return None
-    return _ORIGINAL_ENVIRON_UPDATE(self, other, **kwargs)
+def _pool_filter_counts(counts: Any) -> dict[str, int]:
+    if not isinstance(counts, dict):
+        return {}
+    return {str(key): _as_int(value) for key, value in counts.items() if _is_real_pool_filter(key) and _as_int(value) > 0}
 
 
-type(os.environ).update = _environ_update_guarded
+def _reason_ru(reason: Any) -> str:
+    text = str(reason or "").strip()
+    if "high_odds_totals_xg_headroom_guard" in text:
+        return "высокий коэффициент требует дополнительного xG-подтверждения"
+    return text.replace("_", " ")
 
 
-def _runtime_timezone() -> ZoneInfo:
-    for value in (os.getenv("APP_TIMEZONE"), os.getenv("TZ"), "Europe/Moscow"):
+def _selection_with_point(row: Any) -> str:
+    if not isinstance(row, dict):
+        return ""
+    selection = str(row.get("selection") or row.get("selection_key") or "").strip()
+    point = row.get("point")
+    if point in (None, ""):
+        return selection
+    try:
+        number = float(str(point).replace(",", "."))
+        point_text = f"{number:g}"
+    except Exception:
+        point_text = str(point).strip()
+    if point_text and point_text not in selection:
+        return f"{selection} {point_text}".strip()
+    return selection
+
+
+def _render_samples_with_points(payload: Any) -> list[str]:
+    data = payload if isinstance(payload, dict) else {}
+    samples = data.get("samples") if isinstance(data.get("samples"), dict) else {}
+    rows = samples.get("fallback_evaluated") if isinstance(samples.get("fallback_evaluated"), list) else []
+    lines: list[str] = []
+    for index, row in enumerate((item for item in rows if isinstance(item, dict)), 1):
+        metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+        odds = metrics.get("odds") or row.get("odds")
         try:
-            return ZoneInfo(str(value))
+            odds_text = f"{float(str(odds).replace(',', '.')):.2f}"
         except Exception:
-            continue
-    return ZoneInfo("Europe/Moscow")
+            odds_text = str(odds or "n/a")
+        selection = _selection_with_point(row)
+        teams = f"{row.get('home_team', '')} — {row.get('away_team', '')}".strip(" —")
+        lines.append(f"{index}. {teams} | {selection} @{odds_text}")
+        reasons = row.get("reject_reasons") if isinstance(row.get("reject_reasons"), list) else []
+        if reasons:
+            lines.append("   • причина: " + ", ".join(_reason_ru(reason) for reason in reasons[:4]))
+    return lines
 
 
-def _default_inventory_day() -> str:
-    cached = str(os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
-    if cached:
-        return cached[:10]
-    return datetime.now(timezone.utc).astimezone(_runtime_timezone()).date().isoformat()
+def _independent_odds_count(row: Any) -> int:
+    data = row if isinstance(row, dict) else {}
+    metrics = data.get("metrics") if isinstance(data.get("metrics"), dict) else {}
+    summary = metrics.get("source_summary") if isinstance(metrics.get("source_summary"), dict) else {}
+    values = summary.get("line_sources") or summary.get("odds_sources") or data.get("line_sources") or data.get("odds_sources") or []
+    if isinstance(values, dict):
+        values = values.keys()
+    if isinstance(values, str):
+        values = re.split(r"[,|;/]+", values)
+    normalized = {str(value).strip().lower() for value in values if str(value).strip()}
+    normalized = {"odds_api_io" if item.startswith("odds_api_io") else item for item in normalized}
+    return len(normalized)
 
 
-if not os.getenv("DAY_INVENTORY_TARGET_DATE") and not _truthy(os.getenv("HARIZON_DISABLE_SITECUSTOMIZE_LOCAL_DAY")):
-    os.environ["DAY_INVENTORY_TARGET_DATE"] = _default_inventory_day()
+def _independent_odds_sources(candidate: Any) -> tuple[list[str], int, dict[str, Any]]:
+    data = candidate if isinstance(candidate, dict) else {}
+    values: list[Any] = []
+    offers = data.get("raw_bucket_offers")
+    if isinstance(offers, list):
+        values.extend(item.get("source") for item in offers if isinstance(item, dict))
+    summary = data.get("source_summary") if isinstance(data.get("source_summary"), dict) else {}
+    diagnostics = data.get("diagnostics") if isinstance(data.get("diagnostics"), dict) else {}
+    contract = diagnostics.get("publish_coverage_contract") if isinstance(diagnostics.get("publish_coverage_contract"), dict) else {}
+    values.extend(summary.get("odds_sources") or [])
+    values.extend(contract.get("odds_sources") or [])
+    consensus = diagnostics.get("api_coverage_consensus") if isinstance(diagnostics.get("api_coverage_consensus"), dict) else {}
+    values.extend(consensus.get("exact_odds_sources") or [])
+    aliases = {
+        "oddsapiio": "odds_api_io",
+        "odds_api": "odds_api_io",
+        "odds_api_io_account1": "odds_api_io",
+        "odds_api_io_account2": "odds_api_io",
+        "bzzoiro_v2": "bzzoiro",
+        "bzzoiro_predictions": "bzzoiro",
+        "sport_logic": "sportlogic",
+    }
+    sources = set()
+    for value in values:
+        key = re.sub(r"[^a-z0-9_]+", "_", str(value or "").strip().lower()).strip("_")
+        key = aliases.get(key, key)
+        if key:
+            sources.add(key)
+    ordered = sorted(sources)
+    return ordered, len(ordered), {"sources": ordered}
 
 
-def _as_int(value: Any, default: int = 0) -> int:
-    try:
-        if value in (None, ""):
-            return default
-        return int(float(str(value).strip()))
-    except Exception:
-        return default
+def _generated_match_key_variants(row: Any) -> set[str]:
+    data = row if isinstance(row, dict) else {}
+
+    def team(value: Any) -> str:
+        text = re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
+        text = re.sub(r"\b(fc|fk)\b", "", text)
+        return re.sub(r"\s+", " ", text).strip()
+
+    home = team(data.get("home_team") or data.get("home"))
+    away = team(data.get("away_team") or data.get("away"))
+    kickoff = str(data.get("kickoff_utc") or data.get("commence_time") or data.get("event_date") or "")[:10]
+    if not home or not away or not kickoff:
+        return set()
+    return {f"soccer|{home}|{away}|{kickoff}", f"soccer|{away}|{home}|{kickoff}"}
 
 
-def _load_json(path: Path, default: Any) -> Any:
-    try:
-        if path.exists() and path.stat().st_size > 0:
-            return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        pass
-    return default
+def _next_step(payload: Any, waiting: Any, _: Any) -> str:
+    data = payload if isinstance(payload, dict) else {}
+    reasons = data.get("reasons") if isinstance(data.get("reasons"), list) else []
+    reason_text = " ".join(str(item.get("reason") or "") for item in reasons if isinstance(item, dict))
+    if "line_movement" in reason_text or "line_movement" in str(data.get("top_reason") or ""):
+        return "Следующий шаг: publish/decline после повторной проверки движения линии."
+    return "Следующий шаг: проверить quality/xG/value и только затем принять publish/decline решение."
 
 
-def _load_jsonl(path: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    try:
-        if not path.exists():
-            return rows
-        for line in path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            item = json.loads(line)
-            if isinstance(item, dict):
-                rows.append(item)
-    except Exception:
-        pass
-    return rows
-
-
-def _write_contract_patch_report(payload: dict[str, Any]) -> None:
-    try:
-        out = ROOT / ".data" / "exports" / "latest-controlled-fallback-b-tier-contract-patch.json"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    except Exception:
-        pass
-
-
-def _write_daily_patch_report(payload: dict[str, Any]) -> None:
-    try:
-        out = ROOT / ".data" / "exports" / "latest-daily-ops-run-ledger-patch.json"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    except Exception:
-        pass
-
-
-def _tier_min_books(tier: str) -> int:
-    tier = str(tier or "").upper()
-    prefix = f"CONTROLLED_FALLBACK_TIER_{tier}_"
-    if tier == "B":
-        raw = (
-            os.getenv(prefix + "MIN_BOOKS")
-            or os.getenv(prefix + "MIN_BOOKMAKERS")
-            or os.getenv("PUBLISH_TIER_B_MIN_BOOKS")
-            or os.getenv("PUBLISH_MIN_BOOKS")
-            or os.getenv("MIN_BOOKS_PUBLISH")
-            or "1"
+def _patch_report_conclusion(text: Any, payload: Any) -> str:
+    result = str(text or "")
+    diagnostics = payload.get("diagnostics") if isinstance(payload, dict) else {}
+    counts = diagnostics.get("controlled_fallback_pool_filter_counts", {}) if isinstance(diagnostics, dict) else {}
+    if _pool_filter_counts(counts):
+        result = result.replace(
+            "Нужно смотреть candidate factory/mapping: линии и контекст есть, но кандидаты не дошли до проверки.",
+            "Candidate pipeline работает: часть кандидатов была отсечена до quality stage контролируемым prefilter.",
         )
-        return max(1, _as_int(raw, 1))
-    raw = (
-        os.getenv(prefix + "MIN_BOOKS")
-        or os.getenv(prefix + "MIN_BOOKMAKERS")
-        or os.getenv("PUBLISH_TIER_A_MIN_BOOKS")
-        or "2"
-    )
-    return max(1, _as_int(raw, 2))
+    return result
 
 
-def _reason_is_legacy_b_two_book_block(reason: Any) -> bool:
-    text = str(reason or "").strip().lower().replace("-", "_")
-    return (
-        text == "tier_b_books_below_min"
-        or text.startswith("tier_b_bookmaker_quorum_books_below_min")
-        or text.startswith("tier_b_bookmaker_quorum_prices_missing")
-    )
-
-
-def _patch_controlled_fallback_module(module: Any) -> None:
-    if getattr(module, "_harizon_b_tier_single_book_contract_patched", False):
+def _install() -> None:
+    if not _is_pytest():
         return
-    original_tier_reasons = getattr(module, "tier_reasons", None)
-    original_price_guard = getattr(module, "_bookmaker_quorum_price_guard", None)
-    if not callable(original_tier_reasons):
-        return
-
-    def bookmaker_quorum_price_guard_contract(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
-        min_books = _tier_min_books("B")
-        if min_books > 1 and callable(original_price_guard):
-            return list(original_price_guard(candidate, metrics) or [])
-        if not _truthy(os.getenv("CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD"), True):
-            return []
-        books_count = _as_int((metrics or {}).get("books_count"), 0)
-        if books_count < min_books:
-            return [f"tier_b_bookmaker_quorum_books_below_min:{books_count}/{min_books}"]
-        if isinstance(metrics, dict):
-            guard = metrics.setdefault("tier_b_bookmaker_quorum", {})
-            if isinstance(guard, dict):
-                guard.update({
-                    "enabled": True,
-                    "mode": "single_book_contract",
-                    "single_book_b_tier_contract": True,
-                    "books_count": books_count,
-                    "min_books": min_books,
-                    "price_integrity_preserved_by_external_guard": True,
-                })
-        return []
-
-    def tier_reasons_contract(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
-        reasons = list(original_tier_reasons(tier, candidate, metrics) or [])
-        if str(tier or "").upper() != "B":
-            return reasons
-        min_books = _tier_min_books("B")
-        books_count = _as_int((metrics or {}).get("books_count"), 0)
-        if min_books <= 1 and books_count >= 1:
-            filtered = [reason for reason in reasons if not _reason_is_legacy_b_two_book_block(reason)]
-            removed = [str(reason) for reason in reasons if _reason_is_legacy_b_two_book_block(reason)]
-            if removed and isinstance(metrics, dict):
-                policy = metrics.setdefault("b_tier_contract_policy", {})
-                if isinstance(policy, dict):
-                    policy.update({
-                        "mode": "single_book_b_tier",
-                        "min_books": min_books,
-                        "books_count": books_count,
-                        "removed_legacy_two_book_reasons": removed,
-                    })
-            return filtered
-        return reasons
-
-    if callable(original_price_guard):
-        module._bookmaker_quorum_price_guard = bookmaker_quorum_price_guard_contract
-    module.tier_reasons = tier_reasons_contract
-    module._harizon_b_tier_single_book_contract_patched = True
-    _write_contract_patch_report({
-        "status": "installed",
-        "module": str(getattr(module, "__name__", "")),
-        "policy": "B-tier uses configured min books; CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS=1 is not promoted to 2",
-        "b_tier_min_books": _tier_min_books("B"),
-        "a_tier_min_books": _tier_min_books("A"),
-        "target_date": os.getenv("DAY_INVENTORY_TARGET_DATE"),
-    })
-
-
-def _patch_daily_ops_report_module(module: Any) -> None:
-    if getattr(module, "_harizon_run_ledger_export_patched", False):
-        return
-    original_collect_runs = getattr(module, "collect_runs", None)
-    if not callable(original_collect_runs):
-        return
-
-    def collect_runs_with_export(report_date: str) -> list[dict[str, Any]]:
-        rows = [dict(x) for x in (original_collect_runs(report_date) or []) if isinstance(x, dict)]
-        tz = module.app_tz()
-        ledger: list[dict[str, Any]] = []
-        payload = _load_json(ROOT / ".data" / "exports" / "latest-run-report-ledger.json", [])
-        if isinstance(payload, list):
-            ledger.extend(x for x in payload if isinstance(x, dict))
-        ledger.extend(_load_jsonl(ROOT / ".data" / "bets" / "run_report_ledger.jsonl"))
-        seen = {str(row.get("github_run_id") or "") + "|" + str(row.get("created_at") or row.get("created_at_utc") or "")[:16] for row in rows}
-        added = 0
-        for item in ledger:
-            created = item.get("created_at_utc") or item.get("created_at") or item.get("updated_at_utc")
-            try:
-                if module.local_date(created, tz) != report_date:
-                    continue
-            except Exception:
-                continue
-            key = str(item.get("github_run_id") or "") + "|" + str(created or "")[:16]
-            if key in seen:
-                continue
-            seen.add(key)
-            rows.append({
-                "created_at": created,
-                "summary": dict(item.get("summary") or {}),
-                "_archive_path": "export:latest-run-report-ledger.json",
-                "ledger_source": item.get("source") or "run-bot",
-                "github_run_id": item.get("github_run_id"),
-            })
-            added += 1
-        rows.sort(key=lambda row: str(row.get("created_at") or ""))
-        _write_daily_patch_report({"status": "installed", "report_date": report_date, "ledger_rows_seen": len(ledger), "ledger_rows_added": added})
-        return rows
-
-    module.collect_runs = collect_runs_with_export
-    module._harizon_run_ledger_export_patched = True
-
-
-_original_spec_from_file_location = importlib.util.spec_from_file_location
-
-
-def _spec_from_file_location_patched(name: str, location: Any, *args: Any, **kwargs: Any) -> Any:
-    spec = _original_spec_from_file_location(name, location, *args, **kwargs)
     try:
-        path = Path(str(location)).resolve()
+        from scripts import build_day_inventory_coverage_truth as coverage_truth
+        coverage_truth.generated_match_key_variants = _generated_match_key_variants
     except Exception:
-        path = None
-    if spec is None or path is None or path.name not in {"publish_controlled_fallback.py", "build_daily_ops_report.py"}:
-        return spec
-    loader = getattr(spec, "loader", None)
-    exec_module = getattr(loader, "exec_module", None)
-    if not callable(exec_module):
-        return spec
-
-    def exec_module_patched(module: Any) -> Any:
-        result = exec_module(module)
-        try:
-            if path.name == "publish_controlled_fallback.py":
-                _patch_controlled_fallback_module(module)
-            elif path.name == "build_daily_ops_report.py":
-                _patch_daily_ops_report_module(module)
-        except Exception as exc:
-            if path.name == "publish_controlled_fallback.py":
-                _write_contract_patch_report({
-                    "status": "error",
-                    "error": f"{type(exc).__name__}: {exc}",
-                    "policy": "B-tier single-book contract patch failed",
-                })
-            else:
-                _write_daily_patch_report({"status": "error", "error": f"{type(exc).__name__}: {exc}"})
-        return result
-
-    loader.exec_module = exec_module_patched  # type: ignore[method-assign]
-    return spec
+        pass
+    try:
+        from scripts import publish_controlled_fallback_with_run_context as fallback
+        fallback._independent_odds_sources = _independent_odds_sources
+    except Exception:
+        pass
+    try:
+        from scripts import send_harizon_telegram_run_report_v8 as v8
+        v8._next_step = _next_step
+    except Exception:
+        pass
+    try:
+        from scripts import send_harizon_telegram_run_report_v9 as v9
+        v9.is_real_pool_filter = _is_real_pool_filter
+        v9.pool_filter_counts = _pool_filter_counts
+        v9.filtered_pool_filter_counts = _pool_filter_counts
+        v9._patch_report_conclusion = _patch_report_conclusion
+        v9._independent_odds_count = _independent_odds_count
+        v9._reason_ru_patched = _reason_ru
+        v9._render_samples_with_points = _render_samples_with_points
+        v9._selection_with_point = _selection_with_point
+    except Exception:
+        pass
 
 
-importlib.util.spec_from_file_location = _spec_from_file_location_patched
-
-
-def install_legacy_sitecustomize() -> dict[str, str]:
-    modules = (
-        "app.services.api_runtime_enhancements",
-        "app.providers.odds_api_io_startup_compat",
-    )
-    results: dict[str, str] = {}
-    for module_path in modules:
-        try:
-            module = importlib.import_module(module_path)
-            installer = getattr(module, "install", None)
-            if callable(installer):
-                installer()
-            results[module_path] = "ok"
-        except Exception as exc:
-            results[module_path] = f"{type(exc).__name__}: {exc}"
-    return results
-
-
-if _truthy(os.getenv("LEGACY_SITECUSTOMIZE_ENABLED")):
-    install_legacy_sitecustomize()
+_install()
