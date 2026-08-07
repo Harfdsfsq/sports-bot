@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from types import SimpleNamespace
 
 from app.schemas import Match
 from app.services.match_identity import MatchIdentity, best_identity_match, score_match_identity
