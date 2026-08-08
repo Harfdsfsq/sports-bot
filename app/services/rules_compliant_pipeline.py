@@ -40,6 +40,11 @@ RULES_ENV_DEFAULTS = {
     "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
     "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_CONTEXT_SOURCES": "1",
     "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_REQUIRE_XG_HARD_CONFIRMATION": "false",
+    "CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER": "true",
+    "CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT": "false",
+    "CONTROLLED_FALLBACK_ALLOW_CURRENT_BOOK_SUBSTITUTION": "true",
+    "CONTROLLED_FALLBACK_CURRENT_PRICE_ABS_TOLERANCE": "0.05",
+    "CONTROLLED_FALLBACK_CURRENT_PRICE_PCT_TOLERANCE": "2.5",
     "LINE_MOVEMENT_CRON_INTERVAL_MINUTES": "120",
     "LINE_MOVEMENT_CRON_ANCHOR_MINUTE": "0",
     "LINE_MOVEMENT_CRON_TIMEZONE": "Europe/Moscow",
@@ -57,10 +62,7 @@ RULES_ENV_DEFAULTS = {
 def _apply_rules_env_defaults() -> dict[str, str]:
     applied: dict[str, str] = {}
     for key, value in RULES_ENV_DEFAULTS.items():
-        current = os.getenv(key)
-        # These are the business-rule contract values; override workflow overlays
-        # that still carry the old stricter B=2-context / 2h scope settings.
-        if current != value:
+        if os.getenv(key) != value:
             os.environ[key] = value
             applied[key] = value
     return applied
@@ -224,16 +226,7 @@ def _candidate_get(candidate: Any, field: str, default: Any = None) -> Any:
 
 
 def _candidate_value_score(candidate: Any) -> float:
-    return (
-        _float(_candidate_get(candidate, "publication_score"), 0.0) * 2.0
-        + _float(_candidate_get(candidate, "ev_pct"), 0.0) * 3.0
-        + _float(_candidate_get(candidate, "edge_pct"), 0.0) * 2.0
-        + _float(_candidate_get(candidate, "confidence"), 0.0) * 0.1
-    )
-
-
-def _candidate_match_key(candidate: Any) -> str:
-    return str(_candidate_get(candidate, "match_key") or "")
+    return _float(_candidate_get(candidate, "publication_score"), 0.0) * 2.0 + _float(_candidate_get(candidate, "ev_pct"), 0.0) * 3.0 + _float(_candidate_get(candidate, "edge_pct"), 0.0) * 2.0 + _float(_candidate_get(candidate, "confidence"), 0.0) * 0.1
 
 
 def _provider_conflict(candidate: Any) -> tuple[bool, list[str]]:
@@ -288,11 +281,9 @@ def _write_audit(summary: dict[str, Any]) -> None:
 
 def _patch_day_inventory() -> dict[str, Any]:
     from app.services.day_inventory import DayInventoryStore
-
     if getattr(DayInventoryStore, "_rules_compliant_inventory_installed", False):
         return {"installed": True, "already_installed": True, "target": "DayInventoryStore"}
     original_build_payload = DayInventoryStore.build_payload
-
     def build_payload_rules(self: Any, *, local_date: str, matches: list[Any], source_meta: dict[str, Any] | None = None, existing: dict[str, Any] | None = None) -> dict[str, Any]:
         payload = original_build_payload(self, local_date=local_date, matches=matches, source_meta=source_meta, existing=existing)
         rows = [dict(row) for row in (payload.get("matches") or []) if isinstance(row, dict)]
@@ -316,7 +307,6 @@ def _patch_day_inventory() -> dict[str, Any]:
         payload["counts"] = counts
         payload["rules_policy"] = {"enabled": True, "top_inventory_limit": max_matches, "time_buckets": BUCKET_ORDER, "ranking": "nearest_window_league_coverage_score"}
         return payload
-
     DayInventoryStore.build_payload = build_payload_rules
     DayInventoryStore._rules_compliant_inventory_installed = True
     return {"installed": True, "target": "DayInventoryStore.build_payload"}
@@ -324,12 +314,10 @@ def _patch_day_inventory() -> dict[str, Any]:
 
 def _patch_coverage_planner() -> dict[str, Any]:
     from app.services.coverage_planner import CoveragePlanner
-
     if getattr(CoveragePlanner, "_rules_compliant_planner_installed", False):
         return {"installed": True, "already_installed": True, "target": "CoveragePlanner"}
     original_priority = CoveragePlanner._priority
     original_select = CoveragePlanner.select_context_targets
-
     def priority_rules(self: Any, row: Any) -> float:
         base = float(original_priority(self, row) or 0.0)
         bucket = assign_time_bucket(getattr(row, "hours_to_kickoff", 9999.0))
@@ -338,7 +326,6 @@ def _patch_coverage_planner() -> dict[str, Any]:
         context_gap = max(0, int(getattr(self, "min_context_sources", 1) or 1) - len(getattr(row, "context_sources", set()) or set()))
         books_gap = max(0, int(getattr(self, "min_books", 2) or 2) - len(getattr(row, "books", set()) or set()))
         return min(200.0, base + nearest_bonus + context_gap * 10.0 + odds_gap * 8.0 + books_gap * 4.0)
-
     def select_context_targets_rules(self: Any, matches: list[Any], offers_by_match: dict[str, list[Any]] | None, now_utc: datetime, market_signals_by_match: dict[str, dict[str, Any]] | None = None):
         selected, summary = original_select(self, matches, offers_by_match, now_utc, market_signals_by_match)
         selected = sorted(selected, key=lambda m: (_bucket_rank(assign_time_bucket(_match_hours(m, now_utc))), -_match_league_score(self.settings, getattr(m, "league_name", ""))))
@@ -349,7 +336,6 @@ def _patch_coverage_planner() -> dict[str, Any]:
             summary["selected_time_bucket_counts"] = {bucket: int(bucket_counts.get(bucket, 0)) for bucket in BUCKET_ORDER}
             summary["nearest_bucket_first"] = True
         return selected, summary
-
     CoveragePlanner._priority = priority_rules
     CoveragePlanner.select_context_targets = select_context_targets_rules
     CoveragePlanner._rules_compliant_planner_installed = True
@@ -359,15 +345,12 @@ def _patch_coverage_planner() -> dict[str, Any]:
 def _patch_runner() -> dict[str, Any]:
     from app.services.runner import PredictionRunner
     from app.services.line_movement_state import evaluate_and_record_line_movement
-
     if getattr(PredictionRunner, "_rules_compliant_runner_installed", False):
         return {"installed": True, "already_installed": True, "target": "PredictionRunner"}
-
     original_filter = PredictionRunner._filter_publishable_candidates
     original_select = PredictionRunner._select_publishable_candidates
     original_fetch_weather = PredictionRunner._fetch_weather_contexts
     original_run_once = PredictionRunner.run_once
-
     def filter_publishable_rules(self: Any, candidates: list[Any]) -> list[Any]:
         base = original_filter(self, candidates)
         now = datetime.now(UTC)
@@ -408,46 +391,27 @@ def _patch_runner() -> dict[str, Any]:
                 continue
             out.append(candidate)
         return out
-
     def select_publishable_rules(self: Any, candidates: list[Any]) -> list[Any]:
         now = datetime.now(UTC)
         for candidate in candidates:
             _annotate_candidate_bucket(candidate, now)
         ranked = sorted(candidates, key=lambda c: (_bucket_rank(str((_candidate_get(c, "source_summary", {}) or {}).get("time_bucket") or "24h+")), -_candidate_value_score(c)))
         return original_select(self, ranked)
-
     async def fetch_weather_contexts_rules(self: Any, matches: list[Any], base_contexts: dict[str, Any]):
         if not _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True):
             return await original_fetch_weather(self, matches, base_contexts)
-        # At the main context stage there is no value shortlist yet. Per rules,
-        # weather/news are final enrichment, not broad inventory enrichment.
         return await original_fetch_weather(self, [], base_contexts)
-
     async def run_once_rules(self: Any):
         summary = await original_run_once(self)
         audit = getattr(self, "_rules_compliance_runtime", {}) if isinstance(getattr(self, "_rules_compliance_runtime", {}), dict) else {}
         line_counter = audit.get("line_movement")
         if isinstance(line_counter, Counter):
             line_counter = dict(line_counter)
-        rules_summary = {
-            "enabled": True,
-            "created_at_utc": datetime.now(UTC).isoformat(),
-            "inventory_top_300": True,
-            "time_buckets": BUCKET_ORDER,
-            "nearest_bucket_first": True,
-            "line_context_minimum_checked": True,
-            "new_candidates_saved_before_publish": True,
-            "line_movement_rechecked": True,
-            "final_enrichment_only_for_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True),
-            "published_only_after_final_check": True,
-            "runtime": {**audit, "line_movement": line_counter or {}},
-            "published": int((summary or {}).get("published_to_telegram") or (summary or {}).get("published") or 0) if isinstance(summary, dict) else 0,
-        }
+        rules_summary = {"enabled": True, "created_at_utc": datetime.now(UTC).isoformat(), "inventory_top_300": True, "time_buckets": BUCKET_ORDER, "nearest_bucket_first": True, "line_context_minimum_checked": True, "new_candidates_saved_before_publish": True, "line_movement_rechecked": True, "final_enrichment_only_for_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True), "published_only_after_final_check": True, "runtime": {**audit, "line_movement": line_counter or {}}, "published": int((summary or {}).get("published_to_telegram") or (summary or {}).get("published") or 0) if isinstance(summary, dict) else 0}
         if isinstance(summary, dict):
             summary["rules_compliance"] = rules_summary
         _write_audit(rules_summary)
         return summary
-
     PredictionRunner._filter_publishable_candidates = filter_publishable_rules
     PredictionRunner._select_publishable_candidates = select_publishable_rules
     PredictionRunner._fetch_weather_contexts = fetch_weather_contexts_rules
@@ -460,17 +424,5 @@ def install() -> dict[str, Any]:
     if not _truthy(os.getenv("RULES_COMPLIANT_PIPELINE_ENABLED"), True):
         return {"installed": False, "reason": "disabled_by_env"}
     applied_env = _apply_rules_env_defaults()
-    results = {
-        "env_overrides": applied_env,
-        "day_inventory": _patch_day_inventory(),
-        "coverage_planner": _patch_coverage_planner(),
-        "runner": _patch_runner(),
-        "policy": {
-            "top_inventory_limit": _int(os.getenv("DAILY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES"), 300),
-            "time_buckets": BUCKET_ORDER,
-            "final_enrichment_only_for_value_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True),
-            "b_tier_context_sources": _int(os.getenv("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES"), 1),
-            "publish_window_hours": _int(os.getenv("PUBLISH_WINDOW_HOURS"), 24),
-        },
-    }
+    results = {"env_overrides": applied_env, "day_inventory": _patch_day_inventory(), "coverage_planner": _patch_coverage_planner(), "runner": _patch_runner(), "policy": {"top_inventory_limit": _int(os.getenv("DAILY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES"), 300), "time_buckets": BUCKET_ORDER, "final_enrichment_only_for_value_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True), "b_tier_context_sources": _int(os.getenv("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES"), 1), "publish_window_hours": _int(os.getenv("PUBLISH_WINDOW_HOURS"), 24)}}
     return {"installed": True, "results": results}
