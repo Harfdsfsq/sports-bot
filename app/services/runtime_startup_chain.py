@@ -83,6 +83,10 @@ MODULES = [
     # exact provider hints into real Offer rows, then diagnose the final buckets.
     'app.services.bzzoiro_exact_offer_bridge_patch',
     'app.services.candidate_factory_runtime_diagnostics',
+    # Final mandatory business rules from RULES.txt. This must stay after legacy
+    # wrappers so publication cannot bypass top-300, bucket priority, lifecycle,
+    # provider-conflict and final-enrichment gates.
+    'app.services.rules_compliant_pipeline',
 ]
 
 

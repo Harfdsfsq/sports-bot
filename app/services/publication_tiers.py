@@ -42,7 +42,13 @@ def _env_int(name: str, default: int, minimum: int = 0) -> int:
 
 
 def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | None = None) -> PublicationTierDecision:
-    """Classify a candidate by the HARIZON publication contract."""
+    """Classify a candidate by the RULES.txt A/B publication contract.
+
+    B-tier is intentionally allowed with one independent line/odds source and one
+    context source, but still requires two bookmakers/price confirmations and a
+    successful lifecycle line-movement decision. A-tier requires two independent
+    odds/line sources and two context confirmations.
+    """
 
     now = (now or datetime.now(UTC)).astimezone(UTC)
     coverage = sync_candidate_publish_coverage(candidate, settings)
@@ -63,11 +69,11 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     hard_odds = publish_min_odds_sources(settings)
     hard_books = publish_min_books(settings)
     hard_context = publish_min_context_sources(settings)
-    tier_a_books = max(hard_books, _env_int("PUBLISH_TIER_A_MIN_BOOKS", hard_books, hard_books))
-    tier_a_context = max(hard_context, _env_int("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", hard_context, hard_context))
-    tier_a_odds = max(hard_odds, _env_int("PUBLISH_TIER_A_MIN_ODDS_SOURCES", hard_odds, hard_odds))
-    tier_b_books = max(2, _env_int("PUBLISH_TIER_B_MIN_BOOKS", 2, 1))
-    tier_b_context = max(2, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", 2, 1))
+    tier_a_books = max(2, _env_int("PUBLISH_TIER_A_MIN_BOOKS", max(hard_books, 2), 2))
+    tier_a_context = max(2, _env_int("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", max(hard_context, 2), 2))
+    tier_a_odds = max(2, _env_int("PUBLISH_TIER_A_MIN_ODDS_SOURCES", max(hard_odds, 2), 2))
+    tier_b_books = max(2, _env_int("PUBLISH_TIER_B_MIN_BOOKS", 2, 2))
+    tier_b_context = max(1, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", 1, 1))
     tier_b_odds = max(1, _env_int("PUBLISH_TIER_B_MIN_ODDS_SOURCES", 1, 1))
 
     movement = evaluate_and_record_line_movement(candidate, settings, now=now)
@@ -77,6 +83,7 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
             "min_independent_odds_sources": tier_a_odds,
             "min_bookmakers_or_price_confirmations": tier_a_books,
             "min_context_sources": tier_a_context,
+            "requires_movement_confirmed": True,
         },
         "B": {
             "min_independent_odds_sources": tier_b_odds,
