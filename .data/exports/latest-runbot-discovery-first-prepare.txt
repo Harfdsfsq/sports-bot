@@ -1,8 +1,8 @@
 # run-bot discovery-first prepare
 status: ok
 mode: runbot_discovery_first_prepare_v5_incremental_reuse
-created_at_utc: 2026-08-08T10:17:33.545138+00:00
-duration_seconds: 72.81
+created_at_utc: 2026-08-08T10:32:37.658113+00:00
+duration_seconds: 78.21
 budget_seconds: 210.0
 
 ## Steps
@@ -14,13 +14,13 @@ budget_seconds: 210.0
 - merge_discovery_pool_into_inventory: skipped {}
   - reason: fresh_same_day_full_prepare_reused
 - apply_cached_sstats_crosswalk_ids: ok {"mode": "sstats_crosswalk_inventory_apply_v1", "status": "ok", "inventory_matches": 300, "matched_rows_seen": 263, "applied": 263}
-- apply_sstats_deep_inventory_enrichment_v4: ok {"mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "crosswalk_matched": 263, "request_count": 80, "enriched_matches": 24}
+- apply_sstats_deep_inventory_enrichment_v4: ok {"mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "crosswalk_matched": 263, "request_count": 62, "enriched_matches": 24}
 - target_bzzoiro_v2_inventory_gaps: skipped {}
   - reason: incremental_mode_runner_provider_refresh
 - semantic_inventory_dedupe_final: ok {"type": "int"}
 - target_expand_final: skipped {}
   - reason: inventory_already_at_or_above_target:300/300
-- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 300, "matches": 300, "fixture_2plus_sources": 268, "odds_2plus_sources": 22, "context_2plus_sources": 0, "ready_for_model": 49, "ready_for_publish": 22}
+- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 300, "matches": 300, "fixture_2plus_sources": 268, "odds_2plus_sources": 90, "context_2plus_sources": 1, "ready_for_model": 287, "ready_for_publish": 36}
 - inventory_provider_gap_audit: ok {"type": "int"}
 
 ## Final
@@ -29,7 +29,7 @@ budget_seconds: 210.0
 - semantic_duplicate_rows: 0
 - matrix_matches: 300
 - fixture_2plus_sources: 268
-- odds_2plus_sources: 22
-- context_2plus_sources: 0
-- ready_for_model: 49
-- ready_for_publish: 22
+- odds_2plus_sources: 90
+- context_2plus_sources: 1
+- ready_for_model: 287
+- ready_for_publish: 36
