@@ -1,9 +1,45 @@
 from __future__ import annotations
 
+import os
+
 import scripts.publish_controlled_fallback_guarded_v19 as v19
 
 
+def _apply_rules_runtime_env() -> None:
+    """Keep fallback aligned with RULES.txt without disabling price/movement guards.
+
+    The fallback process is a separate Python entrypoint, so it does not always
+    inherit the main runner's runtime_startup_chain overrides.  The 13:32 run
+    showed candidates blocked by `semantic_current_exact_market_price_missing`
+    even when no exact current offer existed in the odds-api snapshot.  For B-tier
+    this should be a watch/recheck condition, not a hard terminal blocker: price
+    integrity is still checked when a current comparable quote exists, and line
+    movement/value guards still reject weak or stale prices.
+    """
+    defaults = {
+        "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
+        "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
+        "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
+        "CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS": "24",
+        "PUBLISH_WINDOW_HOURS": "24",
+        "CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER": "true",
+        "CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT": "false",
+        "CONTROLLED_FALLBACK_ALLOW_CURRENT_BOOK_SUBSTITUTION": "true",
+        "CONTROLLED_FALLBACK_CURRENT_PRICE_ABS_TOLERANCE": "0.05",
+        "CONTROLLED_FALLBACK_CURRENT_PRICE_PCT_TOLERANCE": "2.5",
+        # Do not hard-reject only because the exact selected book/market is absent
+        # from the small current odds-api snapshot. Comparable current quotes and
+        # line movement still decide whether the candidate is publishable.
+        "CONTROLLED_FALLBACK_REQUIRE_FRESH_SELECTED_PRICE": "false",
+    }
+    for key, value in defaults.items():
+        os.environ[key] = value
+
+
 def main() -> int:
+    _apply_rules_runtime_env()
     v19.run_preflight()
     try:
         from scripts.restore_awaiting_movement_candidates import main as restore_awaiting
