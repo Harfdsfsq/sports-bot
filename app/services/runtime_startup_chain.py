@@ -1,4 +1,4 @@
-from __future__
+from __future__ import annotations
 
 """Central runtime patch chain for the main HARIZON run.
 
