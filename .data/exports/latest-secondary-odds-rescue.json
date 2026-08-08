@@ -1,17 +1,46 @@
 {
-  "base_offers": 270,
-  "created_at_utc": "2026-08-08T10:05:08.289859+00:00",
+  "base_offers": 569,
+  "created_at_utc": "2026-08-08T10:18:48.142571+00:00",
   "enabled": true,
   "executed": true,
   "http_statuses": [
-    200
+    400,
+    400,
+    200,
+    403,
+    429,
+    404,
+    404
   ],
   "installed": true,
-  "last_error": null,
-  "last_url": "https://odds-feed.p.rapidapi.com/api/v1/events?sport=football&per_page=100",
+  "last_error": "http_status=404",
+  "last_url": "https://free-api-live-football-data.p.rapidapi.com/football-matches?date=2026-08-08",
   "matches_with_offers_added": 0,
   "offers_added": 0,
   "providers": {
+    "free_live_football_data": {
+      "api_key_present": true,
+      "errors": 1,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "host": "free-api-live-football-data.p.rapidapi.com",
+      "last_status": 404,
+      "offers_parsed": 0,
+      "requests": 1,
+      "requests_delta": 1
+    },
+    "odds_api1": {
+      "api_key_present": true,
+      "errors": 2,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "host": "odds-api1.p.rapidapi.com",
+      "last_status": 403,
+      "offers_parsed": 0,
+      "rate_limited": true,
+      "requests": 2,
+      "requests_delta": 2
+    },
     "odds_feed": {
       "api_key_present": true,
       "errors": 0,
@@ -21,28 +50,36 @@
       "offers_parsed": 0,
       "requests": 1,
       "requests_delta": 1
+    },
+    "sportapi7": {
+      "api_key_present": true,
+      "errors": 1,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "host": "sportapi7.p.rapidapi.com",
+      "last_status": 404,
+      "offers_parsed": 0,
+      "requests": 1,
+      "requests_delta": 1
+    },
+    "sportsbook_api": {
+      "api_key_present": true,
+      "errors": 2,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "host": "sportsbook-api2.p.rapidapi.com",
+      "last_status": 400,
+      "offers_parsed": 0,
+      "requests": 2,
+      "requests_delta": 2
     }
   },
-  "requests": 1,
-  "response_errors": 0,
+  "requests": 7,
+  "response_errors": 1,
   "sample_offers": [],
   "skipped": false,
   "source_counts": {},
   "target_match_sample": [
-    {
-      "away": "Real Avilés",
-      "commence_time": "2026-08-08T10:30:00+00:00",
-      "home": "Rayo Cantabria",
-      "league": "Club Friendlies",
-      "match_key": "soccer|rayo cantabria|real aviles|2026-08-08"
-    },
-    {
-      "away": "Incheon United",
-      "commence_time": "2026-08-08T10:30:00+00:00",
-      "home": "Gangwon FC",
-      "league": "K League 1",
-      "match_key": "soccer|gangwon|incheon united|2026-08-08"
-    },
     {
       "away": "Shanghai Shenhua",
       "commence_time": "2026-08-08T11:00:00+00:00",
@@ -100,23 +137,37 @@
       "match_key": "soccer|dalian yingbo|liaoning tieren|2026-08-08"
     },
     {
-      "away": "Wuhan Three Towns",
-      "commence_time": "2026-08-08T11:35:00+00:00",
-      "home": "Zhejiang",
-      "league": "Chinese Super League",
-      "match_key": "soccer|wuhan three towns|zhejiang|2026-08-08"
-    },
-    {
       "away": "Barnet",
       "commence_time": "2026-08-08T12:00:00+00:00",
       "home": "Cambridge United",
       "league": "Carabao Cup",
       "match_key": "soccer|barnet|cambridge united|2026-08-08"
+    },
+    {
+      "away": "Chengdu Rongcheng",
+      "commence_time": "2026-08-08T12:00:00+00:00",
+      "home": "Yunnan Yukun",
+      "league": "Chinese Super League",
+      "match_key": "soccer|chengdu rongcheng|yunnan yukun|2026-08-08"
+    },
+    {
+      "away": "Pontevedra CF",
+      "commence_time": "2026-08-08T12:00:00+00:00",
+      "home": "CD Estradense",
+      "league": "Club Friendlies",
+      "match_key": "soccer|estradense|pontevedra|2026-08-08"
+    },
+    {
+      "away": "AC Milan",
+      "commence_time": "2026-08-08T12:00:00+00:00",
+      "home": "Chelsea",
+      "league": "Club Friendlies",
+      "match_key": "soccer|chelsea|milan|2026-08-08"
     }
   ],
-  "target_matches": 14,
+  "target_matches": 13,
   "trigger_mode": "odds_api_io_empty_or_thin",
   "trigger_provider": "bzzoiro",
-  "trigger_reason": "odds_api_io_empty_or_thin:primary_offers:270>=80",
+  "trigger_reason": "odds_api_io_empty_or_thin:primary_offers:569>=80",
   "wrapper_active": true
 }
