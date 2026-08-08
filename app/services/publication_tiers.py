@@ -42,8 +42,6 @@ def _env_int(name: str, default: int, minimum: int = 0) -> int:
 
 
 def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | None = None) -> PublicationTierDecision:
-    """Classify a candidate by the HARIZON publication contract."""
-
     now = (now or datetime.now(UTC)).astimezone(UTC)
     coverage = sync_candidate_publish_coverage(candidate, settings)
     report = dict(coverage.report)
@@ -57,33 +55,23 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
         books_count,
         _as_int(getattr(candidate, "price_sources_count", 0), 0),
     )
-
     price_or_bookmaker_count = max(books_count, price_count)
 
     hard_odds = publish_min_odds_sources(settings)
     hard_books = publish_min_books(settings)
     hard_context = publish_min_context_sources(settings)
-    tier_a_books = max(hard_books, _env_int("PUBLISH_TIER_A_MIN_BOOKS", hard_books, hard_books))
-    tier_a_context = max(hard_context, _env_int("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", hard_context, hard_context))
-    tier_a_odds = max(hard_odds, _env_int("PUBLISH_TIER_A_MIN_ODDS_SOURCES", hard_odds, hard_odds))
-    tier_b_books = max(2, _env_int("PUBLISH_TIER_B_MIN_BOOKS", 2, 1))
-    tier_b_context = max(2, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", 2, 1))
+    tier_a_books = max(2, _env_int("PUBLISH_TIER_A_MIN_BOOKS", max(hard_books, 2), 2))
+    tier_a_context = max(2, _env_int("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", max(hard_context, 2), 2))
+    tier_a_odds = max(2, _env_int("PUBLISH_TIER_A_MIN_ODDS_SOURCES", max(hard_odds, 2), 2))
+    tier_b_books = max(2, _env_int("PUBLISH_TIER_B_MIN_BOOKS", 2, 2))
+    tier_b_context = max(1, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", 1, 1))
     tier_b_odds = max(1, _env_int("PUBLISH_TIER_B_MIN_ODDS_SOURCES", 1, 1))
 
     movement = evaluate_and_record_line_movement(candidate, settings, now=now)
     report["line_movement"] = movement
     report["tier_thresholds"] = {
-        "A": {
-            "min_independent_odds_sources": tier_a_odds,
-            "min_bookmakers_or_price_confirmations": tier_a_books,
-            "min_context_sources": tier_a_context,
-        },
-        "B": {
-            "min_independent_odds_sources": tier_b_odds,
-            "min_bookmakers_or_price_confirmations": tier_b_books,
-            "min_context_sources": tier_b_context,
-            "requires_movement_confirmed": True,
-        },
+        "A": {"min_independent_odds_sources": tier_a_odds, "min_bookmakers_or_price_confirmations": tier_a_books, "min_context_sources": tier_a_context, "requires_movement_confirmed": True},
+        "B": {"min_independent_odds_sources": tier_b_odds, "min_bookmakers_or_price_confirmations": tier_b_books, "min_context_sources": tier_b_context, "requires_movement_confirmed": True},
     }
     report["price_sources_count"] = price_count
     report["bookmakers_or_price_confirmations_count"] = price_or_bookmaker_count
@@ -105,12 +93,7 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
         tier = "A_wait" if is_a else "B_wait" if is_b else "blocked"
         passed = False
         if not is_b:
-            reasons.append(
-                "insufficient_tier_b_coverage:"
-                f"odds_sources={odds_count}/{tier_b_odds};"
-                f"bookmakers={price_or_bookmaker_count}/{tier_b_books};"
-                f"context={context_count}/{tier_b_context}"
-            )
+            reasons.append(f"insufficient_tier_b_coverage:odds_sources={odds_count}/{tier_b_odds};bookmakers={price_or_bookmaker_count}/{tier_b_books};context={context_count}/{tier_b_context}")
         elif is_a and not movement_ready:
             reasons.append(f"tier_a_line_movement_not_ready:{movement_status}")
         elif is_b and not movement_ready:

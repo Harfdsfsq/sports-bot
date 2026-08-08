@@ -74,15 +74,11 @@ MODULES = [
     'app.services.quality_data_missing_runtime_patch',
     'app.services.source_matrix_amplifier_runtime_patch',
     'app.services.bzzoiro_odds_comparison_bridge_patch',
-    # Re-assert the final provider behavior after all legacy Bzzoiro/cache wrappers.
     'app.services.strict_coverage_runtime_repair',
-    # Keep this after odds-api provider/account patches so it snapshots the final
-    # parsed Offer rows that CandidateFactory will really receive.
     'app.services.odds_api_io_offer_snapshot_runtime_patch',
-    # CandidateFactory wrappers must stay last and in this order: first materialize
-    # exact provider hints into real Offer rows, then diagnose the final buckets.
     'app.services.bzzoiro_exact_offer_bridge_patch',
     'app.services.candidate_factory_runtime_diagnostics',
+    'app.services.rules_compliant_pipeline',
 ]
 
 
