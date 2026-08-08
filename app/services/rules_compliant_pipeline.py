@@ -1,16 +1,6 @@
 from __future__ import annotations
 
-"""Rules-compliant runtime policy for the prediction pipeline.
-
-This module makes the production run follow the attached operating rules without
-requiring a broad runner rewrite:
-- keep a decision-focused top-300 daily inventory;
-- assign the required 0-4/4-8/... time buckets everywhere possible;
-- rank provider/context work nearest-window first;
-- enforce the line-movement lifecycle before Telegram publication;
-- limit low-priority final enrichment to real value candidates when enabled;
-- export a rules-compliance audit after every run.
-"""
+"""Rules-compliant runtime policy for the prediction pipeline."""
 
 import json
 import os
@@ -23,6 +13,57 @@ from app.utils import ensure_utc
 
 UTC = timezone.utc
 BUCKET_ORDER = ["0-4h", "4-8h", "8-12h", "12-16h", "16-20h", "20-24h", "24h+"]
+
+RULES_ENV_DEFAULTS = {
+    "DAILY_INVENTORY_MAX_MATCHES": "300",
+    "DAY_INVENTORY_MAX_MATCHES": "300",
+    "DAY_INVENTORY_RUN_MATCH_LIMIT": "300",
+    "ANALYSIS_MATCH_CAP_PER_RUN": "300",
+    "MAX_MATCHES_FOR_ODDS_FETCH": "300",
+    "PUBLISH_WINDOW_HOURS": "24",
+    "CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS": "24",
+    "PUBLISH_MIN_BOOKS": "2",
+    "MIN_BOOKS_PUBLISH": "2",
+    "PUBLISH_MIN_ODDS_SOURCES": "1",
+    "MIN_SOURCES_PUBLISH": "1",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "1",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "1",
+    "PUBLISH_TIER_A_MIN_BOOKS": "2",
+    "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_BOOKS": "2",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
+    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
+    "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_CONTEXT_SOURCES": "1",
+    "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_REQUIRE_XG_HARD_CONFIRMATION": "false",
+    "LINE_MOVEMENT_CRON_INTERVAL_MINUTES": "120",
+    "LINE_MOVEMENT_CRON_ANCHOR_MINUTE": "0",
+    "LINE_MOVEMENT_CRON_TIMEZONE": "Europe/Moscow",
+    "LINE_MOVEMENT_USE_SCHEDULED_CRON": "true",
+    "FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES": "true",
+    "FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT": "0",
+    "RULES_MAX_PROVIDER_DISPERSION_PCT": "8.5",
+    "FORCE_PUBLISH_WHEN_EMPTY_ENABLED": "false",
+    "QUALITY_EMERGENCY_PUBLISH_ENABLED": "false",
+    "QUALITY_LAST_RESORT_PUBLISH_ENABLED": "false",
+    "REPUBLISH_SEEN_CANDIDATES_WHEN_EMPTY": "false",
+}
+
+
+def _apply_rules_env_defaults() -> dict[str, str]:
+    applied: dict[str, str] = {}
+    for key, value in RULES_ENV_DEFAULTS.items():
+        current = os.getenv(key)
+        # These are the business-rule contract values; override workflow overlays
+        # that still carry the old stricter B=2-context / 2h scope settings.
+        if current != value:
+            os.environ[key] = value
+            applied[key] = value
+    return applied
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -378,17 +419,9 @@ def _patch_runner() -> dict[str, Any]:
     async def fetch_weather_contexts_rules(self: Any, matches: list[Any], base_contexts: dict[str, Any]):
         if not _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True):
             return await original_fetch_weather(self, matches, base_contexts)
-        candidate_keys: set[str] = set()
-        for candidate in getattr(self, "_rules_latest_candidate_shortlist", []) or []:
-            key = _candidate_match_key(candidate)
-            if key:
-                candidate_keys.add(key)
-        if candidate_keys:
-            matches = [match for match in matches if getattr(match, "match_key", "") in candidate_keys]
-        else:
-            limit = max(0, _int(os.getenv("FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT"), 0))
-            matches = sorted(matches, key=lambda m: _bucket_rank(assign_time_bucket(_match_hours(m, datetime.now(UTC)))))[:limit]
-        return await original_fetch_weather(self, matches, base_contexts)
+        # At the main context stage there is no value shortlist yet. Per rules,
+        # weather/news are final enrichment, not broad inventory enrichment.
+        return await original_fetch_weather(self, [], base_contexts)
 
     async def run_once_rules(self: Any):
         summary = await original_run_once(self)
@@ -426,7 +459,9 @@ def _patch_runner() -> dict[str, Any]:
 def install() -> dict[str, Any]:
     if not _truthy(os.getenv("RULES_COMPLIANT_PIPELINE_ENABLED"), True):
         return {"installed": False, "reason": "disabled_by_env"}
+    applied_env = _apply_rules_env_defaults()
     results = {
+        "env_overrides": applied_env,
         "day_inventory": _patch_day_inventory(),
         "coverage_planner": _patch_coverage_planner(),
         "runner": _patch_runner(),
@@ -434,6 +469,8 @@ def install() -> dict[str, Any]:
             "top_inventory_limit": _int(os.getenv("DAILY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES"), 300),
             "time_buckets": BUCKET_ORDER,
             "final_enrichment_only_for_value_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True),
+            "b_tier_context_sources": _int(os.getenv("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES"), 1),
+            "publish_window_hours": _int(os.getenv("PUBLISH_WINDOW_HOURS"), 24),
         },
     }
     return {"installed": True, "results": results}
