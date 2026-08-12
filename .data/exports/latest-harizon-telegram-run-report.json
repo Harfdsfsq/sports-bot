@@ -1,4 +1,9 @@
 {
+  "a_tier_enrichment": {
+    "bzzoiro_odds_target_count": 80,
+    "context_projection_target_count": 80,
+    "high_value_recheck_target_count": 1
+  },
   "api": {
     "bzzoiro": {
       "contexts": 0,
@@ -10,12 +15,12 @@
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 17,
+      "books_2plus": 7,
       "errors": 1,
       "events_req": 0,
-      "matched": 106,
+      "matched": 102,
       "odds_req": 12,
-      "offers": 845,
+      "offers": 640,
       "plan_restricted": true
     },
     "sportlogic": {
@@ -29,7 +34,7 @@
       "requests": 0
     },
     "sstats": {
-      "contexts": 1,
+      "contexts": 40,
       "deep_enriched": 0,
       "errors": 0,
       "requests": 3,
@@ -37,37 +42,37 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 2.9763254364331564,
-    "fallback_age_min": 0.12474627494812011,
-    "run_log_age_min": 2.410826849937439,
-    "signal_stack_age_min": 11.983248873551686
+    "debug_age_min": 3.6518707394599916,
+    "fallback_age_min": 0.14115745623906453,
+    "run_log_age_min": 3.2693329493204755,
+    "signal_stack_age_min": 11.943044968446095
   },
   "coverage": {
-    "b_tier_coverage_ready": 159,
+    "b_tier_coverage_ready": 169,
     "bzzoiro_odds_overlap_with_odds_api_io": 0,
     "bzzoiro_secondary_offers_added": 0,
     "day_inventory_total": 300,
-    "day_inventory_with_context": 206,
-    "day_inventory_with_odds": 232,
-    "matches_seen": 32,
-    "matches_with_2plus_books": 17,
-    "matches_with_context": 1,
-    "matches_with_offers": 28,
-    "odds_offers_primary": 845,
-    "ready_for_model": 138,
+    "day_inventory_with_context": 215,
+    "day_inventory_with_odds": 233,
+    "matches_seen": 43,
+    "matches_with_2plus_books": 7,
+    "matches_with_context": 40,
+    "matches_with_offers": 15,
+    "odds_offers_primary": 640,
+    "ready_for_model": 148,
     "secondary_combinations": {
       "bzzoiro": 1,
       "odds_api_io": 52
     }
   },
-  "created_at_utc": "2026-08-12T13:53:50.508055+00:00",
+  "created_at_utc": "2026-08-12T14:12:46.091495+00:00",
   "diagnostic_repairs": {
     "reserve_quality_samples_patched": 5
   },
   "funnel": {
     "candidates_before_quality": 24,
-    "fallback_candidates_seen": 31,
-    "fallback_evaluated": 31,
+    "fallback_candidates_seen": 9,
+    "fallback_evaluated": 9,
     "fallback_published": false,
     "fallback_published_count": 0,
     "fallback_status": "no_viable_controlled_fallback",
@@ -81,112 +86,273 @@
     },
     "main_pipeline_published": false,
     "main_pipeline_published_count": 0,
-    "passed_candidates": 0,
+    "passed_candidates": 1,
     "publish_filter_blocked": 0,
     "publish_filter_input": 0,
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 0,
+    "raw_candidates": 1,
     "windowed_audit_candidates": 8,
     "windowed_publish_allowed": 0,
     "windowed_publish_blocked": 8
   },
   "line_guard": {
-    "dropped": 20,
-    "dropped_final": 20,
-    "final_pre_kickoff_checks": 111,
-    "kept": 5,
-    "no_more_regular_run_before_kickoff": 81,
-    "seen": 41,
+    "dropped": 7,
+    "dropped_final": 7,
+    "final_pre_kickoff_checks": 91,
+    "kept": 1,
+    "no_more_regular_run_before_kickoff": 50,
+    "seen": 24,
     "waiting_next_run": 0
   },
   "reasons": [
     {
-      "count": 24,
-      "reason": "semantic_line_movement_failed",
-      "reason_ru": "semantic line movement failed"
-    },
-    {
-      "count": 20,
+      "count": 7,
       "reason": "line_movement_guard_dropped",
       "reason_ru": "line movement guard снял кандидата"
     },
     {
-      "count": 9,
+      "count": 5,
+      "reason": "semantic_line_movement_failed",
+      "reason_ru": "semantic line movement failed"
+    },
+    {
+      "count": 3,
       "reason": "odds_below_global_min",
       "reason_ru": "odds below global min"
     },
     {
-      "count": 3,
-      "reason": "duplicate_state:bets",
-      "reason_ru": "duplicate state:bets"
-    },
-    {
-      "count": 3,
-      "reason": "duplicate_persisted_fallback_sent_index",
-      "reason_ru": "duplicate persisted fallback sent index"
-    },
-    {
-      "count": 3,
+      "count": 2,
       "reason": "semantic_line_movement_not_confirmed",
       "reason_ru": "semantic line movement not confirmed"
     },
     {
-      "count": 2,
-      "reason": "xg_direction_conflict",
-      "reason_ru": "направление ставки конфликтует с xG"
+      "count": 1,
+      "reason": "tier_a_quality_below_min",
+      "reason_ru": "tier a quality below min"
     },
     {
       "count": 1,
-      "reason": "current_price_recheck_value_lost:-8.6/-4.7",
-      "reason_ru": "current price recheck value lost:-8.6/-4.7"
+      "reason": "tier_a_publication_score_below_min",
+      "reason_ru": "tier a publication score below min"
     },
     {
       "count": 1,
-      "reason": "controlled_fallback_daily_limit_reached:3/3",
-      "reason_ru": "controlled fallback daily limit reached:3/3"
+      "reason": "tier_a_odds_sources_below_min:1/2",
+      "reason_ru": "tier a odds sources below min:1/2"
     },
     {
       "count": 1,
-      "reason": "current_price_recheck_value_lost:-1.5/-0.9",
-      "reason_ru": "current price recheck value lost:-1.5/-0.9"
+      "reason": "tier_a_confirmation_sources_below_min:1/2",
+      "reason_ru": "tier a confirmation sources below min:1/2"
     },
     {
       "count": 1,
-      "reason": "semantic_line_movement_alias_repaired_for_b_tier",
-      "reason_ru": "semantic line movement alias repaired for b tier"
+      "reason": "tier_a_market_implied_xg_not_hard_confirmation",
+      "reason_ru": "tier a market implied xg not hard confirmation"
     },
     {
       "count": 1,
-      "reason": "current_price_recheck_value_lost:-2.8/-1.3",
-      "reason_ru": "current price recheck value lost:-2.8/-1.3"
+      "reason": "tier_b_low_quality_competition_requires_a_tier",
+      "reason_ru": "tier b low quality competition requires a tier"
+    },
+    {
+      "count": 1,
+      "reason": "tier_c_quality_below_min",
+      "reason_ru": "tier c quality below min"
+    },
+    {
+      "count": 1,
+      "reason": "tier_c_market_implied_xg_not_hard_confirmation",
+      "reason_ru": "tier c market implied xg not hard confirmation"
     }
   ],
   "samples": {
     "fallback_evaluated": [
       {
-        "away_team": "Sanatatea Cluj",
-        "away_team_ru": "Санатати Клудж",
-        "candidate_source": "awaiting_movement_lifecycle",
-        "commence_time": "2026-08-12T14:30:00+00:00",
-        "commence_time_display": "12.08.2026 17:30 MSK",
+        "away_team": "Anorthosis Famagusta",
+        "away_team_ru": "Анортосис Фамагуста",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-08-12T16:00:00+00:00",
+        "commence_time_display": "12.08.2026 19:00 MSK",
         "family": "totals",
-        "home_team": "ACS Cil Blaj",
-        "home_team_ru": "ACS Кил Бладж",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "league_name_ru": "Романиа - Купа Романией, Кнокут Стаге",
-        "match_key": "2026-08-12|acs cil blaj|sanatatea cluj",
+        "home_team": "Nea Salamina Famagusta",
+        "home_team_ru": "Ни Саламина Фамагуста",
+        "league_name": "International Clubs - Club Friendly Games",
+        "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+        "match_key": "soccer|nea_salamina_famagusta|anorthosis_famagusta|2026-08-12",
         "metrics": {
-          "adjusted_probability": 0.505,
+          "adjusted_probability": 0.565206,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 3.889,
+          "canonical_ev_pct": 7.389,
+          "confidence": 69.425,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.575,
+          "market_probability": 0.549451,
+          "model_probability": 0.565206,
+          "odds": 1.9,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 19.776,
+          "quality_reasons": [],
+          "quality_score": 71.9,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "reserve_quality_components": {
+            "books": 2,
+            "confidence": 69.425,
+            "confirmations": 1,
+            "edge_pp": 3.889,
+            "ev_pct": 7.389,
+            "league_reliability": {
+              "league": "international clubs - club friendly games",
+              "reasons": [
+                "low_quality_or_youth_segment"
+              ],
+              "score": 42.0
+            },
+            "odds": 1.9,
+            "odds_sources": 1,
+            "weather_modifier": {
+              "available": false,
+              "reasons": [],
+              "totals_under_bias_pp": 0.0
+            }
+          },
+          "reserve_quality_score": 71.9,
+          "selected_implied_probability": 0.526316,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-12T14:05:36.535915+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 1.9,
+            "matching_offers": 2,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 0.0,
+            "selected_book_missing_from_current_snapshot": false,
+            "selected_book_repaired_with_current_book": false,
+            "selected_bookmaker": "bet365",
+            "selected_price": 1.9,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-12T14:10:54.688705+00:00",
+                "current_odds": 1.9,
+                "key": "soccer|nea_salamina_famagusta|anorthosis_famagusta|2026-08-12|totals|under|2.5|bet365",
+                "line_move_pct": 1.333,
+                "no_more_cron_before_kickoff": false,
+                "passed": true,
+                "reasons": [],
+                "status": "movement_confirmed"
+              }
+            ],
+            "matching_entries": 1
+          },
+          "sources_count": 1,
+          "tier_b_bookmaker_quorum": {
+            "books_count": 2,
+            "enabled": true,
+            "max_deviation_pct": 8.0,
+            "median_price": 1.82,
+            "mode": "bookmaker_quorum",
+            "odds_sources_count": 1,
+            "priced_books_count": 2,
+            "same_market_side_line_only": true,
+            "selected_price": 1.9,
+            "selected_vs_median_deviation_pct": 4.396
+          },
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 1.574,
+            "xg_direction_evaluated": false,
+            "xg_direction_ok": true,
+            "xg_hard_confirmation": false,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 1.574,
+            "xg_model_optimism_gap_pp": 1.574,
+            "xg_probability": 0.549469,
+            "xg_probability_pct": 54.947,
+            "xg_source": "market_implied_total_xg",
+            "xg_total": 2.478
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_low_quality_competition_requires_a_tier",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "reject_reasons_ru": [
+          "качество ниже минимума уровня A",
+          "уровень A: publication score below min",
+          "уровень A: odds sources below min:1/2",
+          "уровень A: confirmation sources below min:1/2",
+          "уровень A: market implied xg not hard confirmation",
+          "уровень B: low quality competition requires a tier",
+          "качество ниже минимума уровня C",
+          "уровень C: market implied xg not hard confirmation"
+        ],
+        "reserve_quality_score": 71.9,
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "MFK Karvina",
+        "away_team_ru": "MFK Карвина",
+        "candidate_source": "awaiting_movement_lifecycle",
+        "commence_time": "2026-08-12T15:00:00+00:00",
+        "commence_time_display": "12.08.2026 18:00 MSK",
+        "family": "totals",
+        "home_team": "FC Brumov",
+        "home_team_ru": "Брумов",
+        "league_name": "Czechia - Czech Cup",
+        "league_name_ru": "Кзечиа - Кзеч Кубок",
+        "match_key": "2026-08-12|brumov|mfk karvina",
+        "metrics": {
+          "adjusted_probability": 0.589181,
           "books_count": 1,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 0.5,
-          "canonical_ev_pct": 1.0,
-          "confidence": 69.25,
+          "canonical_edge_pp": 0.439,
+          "canonical_ev_pct": 0.75,
+          "confidence": 67.637,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -197,32 +363,24 @@
           },
           "confirmation_sources": [
             "bzzoiro",
-            "controlledfallback",
-            "dayinventory",
-            "inventory_context",
-            "model_xg",
+            "oddsapiio",
             "sstats",
-            "sstatsform",
-            "unknown"
+            "sstatsform"
           ],
-          "confirmation_sources_count": 8,
+          "confirmation_sources_count": 4,
           "context_sources": [
             "bzzoiro",
-            "controlledfallback",
-            "dayinventory",
-            "inventory_context",
-            "model_xg",
+            "oddsapiio",
             "sstats",
-            "sstatsform",
-            "unknown"
+            "sstatsform"
           ],
-          "context_sources_count": 8,
+          "context_sources_count": 4,
           "current_price_recheck": {
-            "current_price": 1.81,
-            "model_probability_from_selected_ev": 0.505,
-            "recalculated_edge_pp": -4.75,
-            "recalculated_ev_pct": -8.59,
-            "selected_price": 2.0,
+            "current_price": 1.48,
+            "model_probability_from_selected_ev": 0.58918,
+            "recalculated_edge_pp": -8.65,
+            "recalculated_ev_pct": -12.8,
+            "selected_price": 1.71,
             "status": "value_lost_after_current_price_recheck"
           },
           "dnb_sanity": {
@@ -230,10 +388,10 @@
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 0.5,
-          "market_probability": 0.5,
-          "model_probability": 0.505,
-          "odds": 2.0,
+          "market_edge_pp": 0.439,
+          "market_probability": 0.584795,
+          "model_probability": 0.589181,
+          "odds": 1.71,
           "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
             "applies": false,
@@ -242,26 +400,25 @@
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 6.65,
+          "publication_score": 6.24,
           "quality_reasons": [],
-          "quality_score": 58.3,
+          "quality_score": 50.6,
           "quality_score_raw": 0.0,
           "quality_score_source": "raw_missing",
           "reserve_quality_components": {
             "books": 1,
-            "confidence": 69.25,
-            "confirmations": 5,
-            "edge_pp": 0.5,
-            "ev_pct": 1.0,
+            "confidence": 67.637,
+            "confirmations": 3,
+            "edge_pp": 0.439,
+            "ev_pct": 0.75,
             "league_reliability": {
-              "league": "romania - cupa romaniei, knockout stage",
+              "league": "czechia - czech cup",
               "reasons": [
-                "cup_or_knockout_volatility",
-                "medium_reliability_region"
+                "cup_or_knockout_volatility"
               ],
-              "score": 55.0
+              "score": 57.0
             },
-            "odds": 2.0,
+            "odds": 1.71,
             "odds_sources": 1,
             "weather_modifier": {
               "available": false,
@@ -269,91 +426,99 @@
               "totals_under_bias_pp": 0.0
             }
           },
-          "reserve_quality_score": 58.3,
-          "selected_implied_probability": 0.5,
+          "reserve_quality_score": 50.6,
+          "selected_implied_probability": 0.584795,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T13:48:46.457301+00:00",
+            "created_at_utc": "2026-08-12T14:05:36.535915+00:00",
             "current_bookmaker": "Unibet",
-            "current_price": 1.81,
-            "matching_offers": 2,
+            "current_price": 1.48,
+            "matching_offers": 1,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "price_diff_pct": 10.497,
+            "price_diff_pct": 15.541,
             "selected_book_missing_from_current_snapshot": false,
             "selected_book_repaired_with_current_book": false,
             "selected_bookmaker": "unibet",
-            "selected_price": 2.0,
+            "selected_price": 1.71,
             "stale": false
           },
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-12T12:47:51.801215+00:00",
-                "current_odds": 1.88,
-                "key": "soccer|acs_cil_blaj|sanatatea_cluj|2026-08-12|totals|under|2.5|unibet",
-                "line_move_pct": -6.0,
+                "captured_at_utc": "2026-08-12T11:38:10.720127+00:00",
+                "current_odds": 1.71,
+                "key": "soccer|fc_brumov|mfk_karvina|2026-08-12|totals|over|3.5|unibet",
+                "line_move_pct": 0.0,
                 "no_more_cron_before_kickoff": false,
                 "passed": false,
                 "reasons": [
                   "current_ev_below_floor:1.0<2.9",
-                  "current_edge_below_floor:0.5<1.4"
+                  "current_edge_below_floor:0.6<1.4"
                 ],
                 "status": "movement_failed"
               }
             ],
             "matching_entries": 1
           },
-          "sources_count": 5,
+          "sources_count": 3,
           "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 2.692,
+            "enabled": false,
+            "proxy_default_xg_guard": {
+              "enabled": true,
+              "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
+              "requires_hard_xg_or_non_default_pair": true
+            },
+            "reason": "proxy_default_1_1_xg_placeholder",
+            "xg_abs_gap_pp": 44.63,
             "xg_direction_evaluated": true,
-            "xg_direction_ok": true,
+            "xg_direction_ok": false,
             "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 2.692,
-            "xg_model_gap_pp": -2.692,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.531916,
-            "xg_probability_pct": 53.192,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 44.63,
+            "xg_model_optimism_gap_pp": 44.63,
+            "xg_probability": 0.142877,
+            "xg_probability_pct": 14.288,
             "xg_source": "home_away",
-            "xg_total": 2.547
+            "xg_total": 2.0
           }
         },
         "ok": false,
-        "point": 2.5,
+        "point": 3.5,
         "reject_reasons": [
-          "current_price_recheck_value_lost:-8.6/-4.7",
+          "odds_below_global_min",
+          "current_price_recheck_value_lost:-12.8/-8.6",
           "semantic_line_movement_failed"
         ],
         "reject_reasons_ru": [
-          "current price recheck value lost:-8.6/-4.7",
+          "коэффициент ниже общего минимума",
+          "current price recheck value lost:-12.8/-8.6",
           "semantic line movement failed"
         ],
-        "reserve_quality_score": 58.3,
-        "selection": "Меньше",
+        "reserve_quality_score": 50.6,
+        "selection": "Больше",
         "tier": null
       },
       {
-        "away_team": "Asc Olimpic Zarnesti",
-        "away_team_ru": "Аск Олимпик Зарнести",
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-08-12T14:30:00+00:00",
-        "commence_time_display": "12.08.2026 17:30 MSK",
+        "away_team": "Real Ávila CF",
+        "away_team_ru": "Рил Áвила",
+        "candidate_source": "awaiting_movement_lifecycle",
+        "commence_time": "2026-08-12T15:30:00+00:00",
+        "commence_time_display": "12.08.2026 18:30 MSK",
         "family": "totals",
-        "home_team": "CSM Corona Brasov",
-        "home_team_ru": "CSM Корона Брасов",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "league_name_ru": "Романиа - Купа Романией, Кнокут Стаге",
-        "match_key": "soccer|csm_corona_brasov|asc_olimpic_zarnesti|2026-08-12",
+        "home_team": "Atlético Tordesillas",
+        "home_team_ru": "Атлéтико Тордесиллас",
+        "league_name": "Club Friendlies",
+        "league_name_ru": "Клуб Фриендлиес",
+        "match_key": "soccer|atletico tordesillas|real avila|2026-08-12",
         "metrics": {
-          "adjusted_probability": 0.444255,
-          "books_count": 2,
+          "adjusted_probability": 0.448196,
+          "books_count": 1,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 4.425,
-          "canonical_ev_pct": 11.064,
-          "confidence": 75.579,
+          "canonical_edge_pp": 2.266,
+          "canonical_ev_pct": 5.326,
+          "confidence": 65.197,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -366,16 +531,21 @@
             "bzzoiro",
             "sstats"
           ],
-          "confirmation_sources_count": 8,
+          "confirmation_sources_count": 2,
+          "context_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "context_sources_count": 2,
           "dnb_sanity": {
             "enabled": false,
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 1.872,
-          "market_probability": 0.425532,
-          "model_probability": 0.444255,
-          "odds": 2.5,
+          "market_edge_pp": 0.96,
+          "market_probability": 0.438596,
+          "model_probability": 0.448196,
+          "odds": 2.35,
           "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
             "applies": false,
@@ -384,26 +554,23 @@
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 27.274,
+          "publication_score": 14.058,
           "quality_reasons": [],
-          "quality_score": 92.4,
+          "quality_score": 65.9,
           "quality_score_raw": 0.0,
           "quality_score_source": "raw_missing",
           "reserve_quality_components": {
-            "books": 2,
-            "confidence": 75.579,
-            "confirmations": 8,
-            "edge_pp": 4.425,
-            "ev_pct": 11.064,
+            "books": 1,
+            "confidence": 65.197,
+            "confirmations": 2,
+            "edge_pp": 2.266,
+            "ev_pct": 5.326,
             "league_reliability": {
-              "league": "romania - cupa romaniei, knockout stage",
-              "reasons": [
-                "cup_or_knockout_volatility",
-                "medium_reliability_region"
-              ],
-              "score": 55.0
+              "league": "club friendlies",
+              "reasons": [],
+              "score": 64.0
             },
-            "odds": 2.5,
+            "odds": 2.35,
             "odds_sources": 1,
             "weather_modifier": {
               "available": false,
@@ -411,378 +578,74 @@
               "totals_under_bias_pp": 0.0
             }
           },
-          "reserve_quality_score": 92.4,
-          "selected_implied_probability": 0.4,
+          "reserve_quality_score": 65.9,
+          "selected_implied_probability": 0.425532,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T13:48:46.457301+00:00",
-            "current_bookmaker": "Bet365",
-            "current_price": 2.5,
-            "matching_offers": 3,
+            "created_at_utc": "2026-08-12T14:05:36.535915+00:00",
+            "matching_offers": 0,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "price_diff_pct": 0.0,
-            "selected_book_missing_from_current_snapshot": false,
-            "selected_book_repaired_with_current_book": false,
-            "selected_bookmaker": "bet365",
-            "selected_price": 2.5,
             "stale": false
           },
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-12T13:52:18.491002+00:00",
-                "current_odds": 2.5,
-                "key": "soccer|csm_corona_brasov|asc_olimpic_zarnesti|2026-08-12|totals|under|2.5|bet365",
-                "line_move_pct": 5.263,
-                "no_more_cron_before_kickoff": true,
-                "passed": true,
-                "reasons": [],
-                "status": "movement_confirmed"
-              }
-            ],
-            "matching_entries": 1
-          },
-          "sources_count": 8,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 3.195,
-            "xg_direction_evaluated": true,
-            "xg_direction_ok": true,
-            "xg_direction_probability_support_override": {
-              "adjusted_probability_pct": 44.425,
-              "implied_probability_pct": 40.0,
-              "max_model_over_xg_pp": 0.75,
-              "min_support_edge_pp": 1.0,
-              "reason": "xg_probability_supports_selected_price_and_model_not_over_xg",
-              "used": true,
-              "xg_probability_pct": 47.62
-            },
-            "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 3.195,
-            "xg_model_gap_pp": -3.195,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.476203,
-            "xg_probability_pct": 47.62,
-            "xg_source": "home_away",
-            "xg_total": 2.772
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "duplicate_state:bets",
-          "duplicate_persisted_fallback_sent_index"
-        ],
-        "reject_reasons_ru": [
-          "duplicate state:bets",
-          "duplicate persisted fallback sent index"
-        ],
-        "reserve_quality_score": 92.4,
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "FK Varnsdorf",
-        "away_team_ru": "Варнсдорф",
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-08-12T15:00:00+00:00",
-        "commence_time_display": "12.08.2026 18:00 MSK",
-        "family": "totals",
-        "home_team": "Brandys Nad Labem",
-        "home_team_ru": "Брандис Над Лабем",
-        "league_name": "Czechia - Czech Cup",
-        "league_name_ru": "Кзечиа - Кзеч Кубок",
-        "match_key": "soccer|brandys_nad_labem|fk_varnsdorf|2026-08-12",
-        "metrics": {
-          "adjusted_probability": 0.561028,
-          "books_count": 2,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 5.47,
-          "canonical_ev_pct": 10.803,
-          "confidence": 67.961,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [],
-          "confirmation_sources_count": 1,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 1.976,
-          "market_probability": 0.541272,
-          "model_probability": 0.561028,
-          "odds": 1.975,
-          "odds_sources_count": 1,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 26.863,
-          "quality_reasons": [],
-          "quality_score": 84.0,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "reserve_quality_components": {
-            "books": 2,
-            "confidence": 67.961,
-            "confirmations": 1,
-            "edge_pp": 5.47,
-            "ev_pct": 10.803,
-            "league_reliability": {
-              "league": "czechia - czech cup",
-              "reasons": [
-                "cup_or_knockout_volatility"
-              ],
-              "score": 57.0
-            },
-            "odds": 1.975,
-            "odds_sources": 1,
-            "weather_modifier": {
-              "available": false,
-              "reasons": [],
-              "totals_under_bias_pp": 0.0
-            }
-          },
-          "reserve_quality_score": 84.0,
-          "selected_implied_probability": 0.506329,
-          "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T13:48:46.457301+00:00",
-            "current_bookmaker": "Bet365",
-            "current_price": 1.975,
-            "matching_offers": 2,
-            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "price_diff_pct": 0.0,
-            "selected_book_missing_from_current_snapshot": false,
-            "selected_book_repaired_with_current_book": false,
-            "selected_bookmaker": "bet365",
-            "selected_price": 1.975,
-            "stale": false
-          },
-          "semantic_line_movement_guard": {
-            "entries": [
-              {
-                "captured_at_utc": "2026-08-12T13:52:18.491002+00:00",
-                "current_odds": 1.975,
-                "key": "soccer|brandys_nad_labem|fk_varnsdorf|2026-08-12|totals|under|3.5|bet365",
+                "captured_at_utc": "2026-08-12T08:41:16.163712+00:00",
+                "current_odds": 2.35,
+                "key": "soccer|sda_tordesillas|real_avila_cf|2026-08-12|totals|over|1.5|unibet",
                 "line_move_pct": 0.0,
-                "no_more_cron_before_kickoff": true,
-                "passed": true,
-                "reasons": [],
-                "status": "movement_confirmed"
+                "no_more_cron_before_kickoff": false,
+                "passed": false,
+                "reasons": [
+                  "needs_next_cron_line_movement_recheck"
+                ],
+                "status": "awaiting_next_run"
               }
             ],
             "matching_entries": 2
           },
-          "sources_count": 1,
-          "tier_b_bookmaker_quorum": {
-            "books_count": 2,
-            "enabled": true,
-            "max_deviation_pct": 8.0,
-            "median_price": 1.8475,
-            "mode": "bookmaker_quorum",
-            "odds_sources_count": 1,
-            "priced_books_count": 2,
-            "same_market_side_line_only": true,
-            "selected_price": 1.975,
-            "selected_vs_median_deviation_pct": 6.901
-          },
+          "sources_count": 2,
           "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 1.977,
-            "xg_direction_evaluated": false,
-            "xg_direction_ok": true,
-            "xg_hard_confirmation": false,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 1.977,
-            "xg_model_optimism_gap_pp": 1.977,
-            "xg_probability": 0.541257,
-            "xg_probability_pct": 54.126,
-            "xg_source": "market_implied_total_xg",
-            "xg_total": 3.479
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
           }
         },
         "ok": false,
-        "point": 3.5,
+        "point": 1.5,
         "reject_reasons": [
-          "controlled_fallback_daily_limit_reached:3/3"
+          "semantic_line_movement_not_confirmed"
         ],
         "reject_reasons_ru": [
-          "controlled fallback daily limit reached:3/3"
+          "semantic line movement not confirmed"
         ],
-        "reserve_quality_score": 84.0,
-        "selection": "Меньше",
-        "tier": "уровень B"
-      },
-      {
-        "away_team": "CS Sporting Liesti",
-        "away_team_ru": "CS Спортинг Лиести",
-        "candidate_source": "latest_rescue_candidates",
-        "commence_time": "2026-08-12T14:30:00+00:00",
-        "commence_time_display": "12.08.2026 17:30 MSK",
-        "family": "totals",
-        "home_team": "Csm Adjud 1946",
-        "home_team_ru": "Ксм Адджуд 1946",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "league_name_ru": "Романиа - Купа Романией, Кнокут Стаге",
-        "match_key": "soccer|csm_adjud_1946|cs_sporting_liesti|2026-08-12",
-        "metrics": {
-          "adjusted_probability": 0.500332,
-          "books_count": 2,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 2.414,
-          "canonical_ev_pct": 5.07,
-          "confidence": 65.381,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [],
-          "confirmation_sources_count": 1,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 1.014,
-          "market_probability": 0.490196,
-          "model_probability": 0.500332,
-          "odds": 2.1,
-          "odds_sources_count": 1,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 14.158,
-          "quality_reasons": [],
-          "quality_score": 65.6,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "reserve_quality_components": {
-            "books": 2,
-            "confidence": 65.381,
-            "confirmations": 1,
-            "edge_pp": 2.414,
-            "ev_pct": 5.07,
-            "league_reliability": {
-              "league": "romania - cupa romaniei, knockout stage",
-              "reasons": [
-                "cup_or_knockout_volatility",
-                "medium_reliability_region"
-              ],
-              "score": 55.0
-            },
-            "odds": 2.1,
-            "odds_sources": 1,
-            "weather_modifier": {
-              "available": false,
-              "reasons": [],
-              "totals_under_bias_pp": 0.0
-            }
-          },
-          "reserve_quality_score": 65.6,
-          "selected_implied_probability": 0.47619,
-          "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T13:48:46.457301+00:00",
-            "current_bookmaker": "Bet365",
-            "current_price": 2.1,
-            "matching_offers": 3,
-            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "price_diff_pct": 0.0,
-            "selected_book_missing_from_current_snapshot": false,
-            "selected_book_repaired_with_current_book": false,
-            "selected_bookmaker": "bet365",
-            "selected_price": 2.1,
-            "stale": false
-          },
-          "semantic_line_movement_guard": {
-            "entries": [
-              {
-                "captured_at_utc": "2026-08-12T13:52:18.491002+00:00",
-                "current_odds": 2.1,
-                "key": "soccer|csm_adjud_1946|cs_sporting_liesti|2026-08-12|totals|under|2.5|bet365",
-                "line_move_pct": 0.0,
-                "no_more_cron_before_kickoff": true,
-                "passed": true,
-                "reasons": [],
-                "status": "movement_confirmed"
-              }
-            ],
-            "matching_entries": 1
-          },
-          "sources_count": 1,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 1.013,
-            "xg_direction_evaluated": false,
-            "xg_direction_ok": true,
-            "xg_hard_confirmation": false,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 1.013,
-            "xg_model_optimism_gap_pp": 1.013,
-            "xg_probability": 0.490201,
-            "xg_probability_pct": 49.02,
-            "xg_source": "market_implied_total_xg",
-            "xg_total": 2.714
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "duplicate_state:bets",
-          "duplicate_persisted_fallback_sent_index"
-        ],
-        "reject_reasons_ru": [
-          "duplicate state:bets",
-          "duplicate persisted fallback sent index"
-        ],
-        "reserve_quality_score": 65.6,
-        "selection": "Меньше",
+        "reserve_quality_score": 65.9,
+        "selection": "Больше",
         "tier": null
       },
       {
-        "away_team": "CS Concordia Chiajna",
-        "away_team_ru": "CS Конкордиа Чиаджна",
+        "away_team": "Debreceni VSC",
+        "away_team_ru": "Дебрекени VSC",
         "candidate_source": "awaiting_movement_lifecycle",
-        "commence_time": "2026-08-12T14:30:00+00:00",
-        "commence_time_display": "12.08.2026 17:30 MSK",
+        "commence_time": "2026-08-12T16:00:00+00:00",
+        "commence_time_display": "12.08.2026 19:00 MSK",
         "family": "totals",
-        "home_team": "ACS Progresul Mogosoaia",
-        "home_team_ru": "ACS Прогресул Могосоайа",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "league_name_ru": "Романиа - Купа Романией, Кнокут Стаге",
-        "match_key": "2026-08-12|acs progresul mogosoaia|cs concordia chiajna",
+        "home_team": "FC København",
+        "home_team_ru": "Кøбенхавн",
+        "league_name": "Conference League",
+        "league_name_ru": "Конференке Лигуе",
+        "match_key": "soccer|debreceni vsc|k benhavn|2026-08-12",
         "metrics": {
-          "adjusted_probability": 0.577018,
+          "adjusted_probability": 0.678141,
           "books_count": 2,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 2.146,
-          "canonical_ev_pct": 3.863,
-          "confidence": 72.338,
+          "canonical_edge_pp": 5.895,
+          "canonical_ev_pct": 9.52,
+          "confidence": 68.884,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -793,29 +656,27 @@
           },
           "confirmation_sources": [
             "bzzoiro",
+            "inventory_context",
             "model_xg",
-            "oddsapiio",
-            "sstats",
-            "sstatsform"
+            "sstats"
           ],
-          "confirmation_sources_count": 5,
+          "confirmation_sources_count": 4,
           "context_sources": [
             "bzzoiro",
+            "inventory_context",
             "model_xg",
-            "oddsapiio",
-            "sstats",
-            "sstatsform"
+            "sstats"
           ],
-          "context_sources_count": 5,
+          "context_sources_count": 4,
           "dnb_sanity": {
             "enabled": false,
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 1.205,
-          "market_probability": 0.564972,
-          "model_probability": 0.577018,
-          "odds": 1.8,
+          "market_edge_pp": 2.455,
+          "market_probability": 0.653595,
+          "model_probability": 0.678141,
+          "odds": 1.615,
           "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
             "applies": false,
@@ -824,26 +685,23 @@
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 14.435,
+          "publication_score": 27.337,
           "quality_reasons": [],
-          "quality_score": 70.0,
+          "quality_score": 73.5,
           "quality_score_raw": 0.0,
           "quality_score_source": "raw_missing",
           "reserve_quality_components": {
             "books": 2,
-            "confidence": 72.338,
-            "confirmations": 4,
-            "edge_pp": 2.146,
-            "ev_pct": 3.863,
+            "confidence": 68.884,
+            "confirmations": 2,
+            "edge_pp": 5.895,
+            "ev_pct": 9.52,
             "league_reliability": {
-              "league": "romania - cupa romaniei, knockout stage",
-              "reasons": [
-                "cup_or_knockout_volatility",
-                "medium_reliability_region"
-              ],
-              "score": 55.0
+              "league": "conference league",
+              "reasons": [],
+              "score": 64.0
             },
-            "odds": 1.8,
+            "odds": 1.615,
             "odds_sources": 1,
             "weather_modifier": {
               "available": false,
@@ -851,29 +709,35 @@
               "totals_under_bias_pp": 0.0
             }
           },
-          "reserve_quality_score": 70.0,
-          "selected_implied_probability": 0.555556,
+          "reserve_quality_score": 73.5,
+          "selected_implied_probability": 0.619195,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T13:48:46.457301+00:00",
-            "current_bookmaker": "Bet365",
-            "current_price": 1.8,
-            "matching_offers": 2,
+            "created_at_utc": "2026-08-12T14:05:36.535915+00:00",
+            "matching_offers": 0,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "price_diff_pct": 0.0,
-            "selected_book_missing_from_current_snapshot": false,
-            "selected_book_repaired_with_current_book": false,
-            "selected_bookmaker": "bet365",
-            "selected_price": 1.8,
             "stale": false
           },
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-12T13:52:18.491002+00:00",
-                "current_odds": 1.8,
-                "key": "soccer|acs_progresul_mogosoaia|cs_concordia_chiajna|2026-08-12|totals|over|2.5|bet365",
+                "captured_at_utc": "2026-08-12T14:09:10.141133+00:00",
+                "current_odds": 1.615,
+                "key": "soccer|debreceni vsc|k benhavn|2026-08-12|totals|totals|under|3.5||3.5|bet365",
                 "line_move_pct": 0.0,
-                "no_more_cron_before_kickoff": true,
+                "no_more_cron_before_kickoff": false,
+                "passed": false,
+                "reasons": [
+                  "current_edge_below_floor:1.1<1.4",
+                  "needs_next_cron_line_movement_recheck"
+                ],
+                "status": "awaiting_next_run"
+              },
+              {
+                "captured_at_utc": "2026-08-12T14:10:54.688705+00:00",
+                "current_odds": 1.615,
+                "key": "soccer|fc_k_benhavn|debreceni_vsc|2026-08-12|totals|under|3.5|bet365",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": false,
                 "passed": false,
                 "reasons": [
                   "current_ev_below_floor:1.0<2.9",
@@ -882,9 +746,143 @@
                 "status": "movement_failed"
               }
             ],
+            "matching_entries": 2
+          },
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 3.5,
+        "reject_reasons": [
+          "odds_below_global_min",
+          "semantic_line_movement_failed"
+        ],
+        "reject_reasons_ru": [
+          "коэффициент ниже общего минимума",
+          "semantic line movement failed"
+        ],
+        "reserve_quality_score": 73.5,
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "Scm Ramnicu Valcea",
+        "away_team_ru": "Скм Рамнику Валки",
+        "candidate_source": "awaiting_movement_lifecycle",
+        "commence_time": "2026-08-12T17:00:00+00:00",
+        "commence_time_display": "12.08.2026 20:00 MSK",
+        "family": "totals",
+        "home_team": "Csm Targu Jiu",
+        "home_team_ru": "Ксм Таргу Джиу",
+        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
+        "league_name_ru": "Романиа - Купа Романией, Кнокут Стаге",
+        "match_key": "2026-08-12|csm targu jiu|scm ramnicu valcea",
+        "metrics": {
+          "adjusted_probability": 0.560403,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 3.409,
+          "canonical_ev_pct": 6.477,
+          "confidence": 69.014,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "inventory_context",
+            "model_xg",
+            "sstats"
+          ],
+          "confirmation_sources_count": 3,
+          "context_sources": [
+            "inventory_context",
+            "model_xg",
+            "sstats"
+          ],
+          "context_sources_count": 3,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 1.395,
+          "market_probability": 0.546448,
+          "model_probability": 0.560403,
+          "odds": 1.9,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 17.766,
+          "quality_reasons": [],
+          "quality_score": 71.9,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "reserve_quality_components": {
+            "books": 2,
+            "confidence": 69.014,
+            "confirmations": 1,
+            "edge_pp": 3.409,
+            "ev_pct": 6.477,
+            "league_reliability": {
+              "league": "romania - cupa romaniei, knockout stage",
+              "reasons": [
+                "cup_or_knockout_volatility",
+                "medium_reliability_region"
+              ],
+              "score": 55.0
+            },
+            "odds": 1.9,
+            "odds_sources": 1,
+            "weather_modifier": {
+              "available": false,
+              "reasons": [],
+              "totals_under_bias_pp": 0.0
+            }
+          },
+          "reserve_quality_score": 71.9,
+          "selected_implied_probability": 0.526316,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-12T14:05:36.535915+00:00",
+            "matching_offers": 0,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-12T09:13:12.546170+00:00",
+                "current_odds": 1.9,
+                "key": "soccer|csm_targu_jiu|scm_ramnicu_valcea|2026-08-12|totals|under|3.5|bet365",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": false,
+                "passed": false,
+                "reasons": [
+                  "needs_next_cron_line_movement_recheck"
+                ],
+                "status": "awaiting_next_run"
+              }
+            ],
             "matching_entries": 1
           },
-          "sources_count": 4,
+          "sources_count": 1,
           "xg_sanity": {
             "enabled": false,
             "proxy_default_xg_guard": {
@@ -893,48 +891,48 @@
               "requires_hard_xg_or_non_default_pair": true
             },
             "reason": "proxy_default_1_1_xg_placeholder",
-            "xg_abs_gap_pp": 25.369,
+            "xg_abs_gap_pp": 29.672,
             "xg_direction_evaluated": true,
             "xg_direction_ok": false,
             "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 25.369,
-            "xg_model_optimism_gap_pp": 25.369,
-            "xg_probability": 0.323324,
-            "xg_probability_pct": 32.332,
+            "xg_model_conservative_gap_pp": 29.672,
+            "xg_model_gap_pp": -29.672,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.857123,
+            "xg_probability_pct": 85.712,
             "xg_source": "home_away",
             "xg_total": 2.0
           }
         },
         "ok": false,
-        "point": 2.5,
+        "point": 3.5,
         "reject_reasons": [
-          "semantic_line_movement_failed"
+          "semantic_line_movement_not_confirmed"
         ],
         "reject_reasons_ru": [
-          "semantic line movement failed"
+          "semantic line movement not confirmed"
         ],
-        "reserve_quality_score": 70.0,
-        "selection": "Больше",
+        "reserve_quality_score": 71.9,
+        "selection": "Меньше",
         "tier": null
       }
     ],
     "top_priority_matches": [
       {
-        "away_team": "Costa Brava de General Pico",
-        "home_team": "Fadep",
-        "kickoff_utc": "2026-08-12T14:30:00+00:00",
-        "league_name": "Argentina - Torneo Federal A, Relegation Round, Group B",
-        "match_key": "2026-08-12|fadep|costa brava general pico",
-        "minutes_to_kickoff": 37.69,
+        "away_team": "FK Loko Prague",
+        "home_team": "FC Rokycany",
+        "kickoff_utc": "2026-08-12T15:00:00+00:00",
+        "league_name": "Czechia - Czech Cup",
+        "match_key": "2026-08-12|rokycany|loko prague",
+        "minutes_to_kickoff": 49.09,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.436,
+        "priority": 159.637,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T14:10:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
@@ -944,20 +942,20 @@
         }
       },
       {
-        "away_team": "CS Afumati",
-        "home_team": "AFC Dunarea 2005 Calarasi",
-        "kickoff_utc": "2026-08-12T14:30:00+00:00",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "match_key": "2026-08-12|afc dunarea 2005 calarasi|cs afumati",
-        "minutes_to_kickoff": 37.69,
+        "away_team": "SK Zapy",
+        "home_team": "FK Hermanuv Mestec",
+        "kickoff_utc": "2026-08-12T15:00:00+00:00",
+        "league_name": "Czechia - Czech Cup",
+        "match_key": "2026-08-12|hermanuv mestec|sk zapy",
+        "minutes_to_kickoff": 49.09,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.436,
+        "priority": 159.637,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T14:10:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
@@ -967,20 +965,20 @@
         }
       },
       {
-        "away_team": "ACS FC Bacau",
-        "home_team": "AFC Viitorul Onesti",
-        "kickoff_utc": "2026-08-12T14:30:00+00:00",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "match_key": "2026-08-12|afc viitorul onesti|acs bacau",
-        "minutes_to_kickoff": 37.69,
+        "away_team": "FC Goa",
+        "home_team": "Arkadag FK",
+        "kickoff_utc": "2026-08-12T15:00:00+00:00",
+        "league_name": "International Clubs - AFC Champions League Two, Qualification",
+        "match_key": "2026-08-12|arkadag|goa",
+        "minutes_to_kickoff": 49.09,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.436,
+        "priority": 159.637,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T14:10:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
@@ -990,20 +988,20 @@
         }
       },
       {
-        "away_team": "Asa Targu Mures",
-        "home_team": "CS Gheorgheni",
-        "kickoff_utc": "2026-08-12T14:30:00+00:00",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "match_key": "2026-08-12|cs gheorgheni|asa targu mures",
-        "minutes_to_kickoff": 37.69,
+        "away_team": "FK Tj Sokol Brezovica",
+        "home_team": "FK 05 Levoca",
+        "kickoff_utc": "2026-08-12T15:00:00+00:00",
+        "league_name": "Slovakia - Slovensky Pohar",
+        "match_key": "2026-08-12|05 levoca|tj sokol brezovica",
+        "minutes_to_kickoff": 49.09,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.436,
+        "priority": 159.637,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T14:10:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
@@ -1013,46 +1011,46 @@
         }
       },
       {
-        "away_team": "AFC Hermannstadt",
-        "home_team": "CSC 1599 Selimbar",
-        "kickoff_utc": "2026-08-12T14:30:00+00:00",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "match_key": "2026-08-12|csc 1599 selimbar|afc hermannstadt",
-        "minutes_to_kickoff": 37.69,
+        "away_team": "FC Vysocina Jihlava",
+        "home_team": "FC Slovan Havlickuv Brod",
+        "kickoff_utc": "2026-08-12T15:00:00+00:00",
+        "league_name": "Czechia - Czech Cup",
+        "match_key": "soccer|slovan havlickuv brod|vysocina jihlava|2026-08-12",
+        "minutes_to_kickoff": 49.09,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.436,
+        "priority": 151.637,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T14:10:00+00:00",
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-08-12T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
+          "needs_context_refresh": true,
           "needs_odds_refresh": true,
           "next_scheduled_run_at_utc": "2026-08-12T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "CS Minerul Lupeni",
-        "home_team": "CSM Jiul Petrosani",
-        "kickoff_utc": "2026-08-12T14:30:00+00:00",
-        "league_name": "Romania - Cupa Romaniei, Knockout Stage",
-        "match_key": "2026-08-12|csm jiul petrosani|cs minerul lupeni",
-        "minutes_to_kickoff": 37.69,
+        "away_team": "Tj Sokol Lanzhot",
+        "home_team": "FC Sparta Brno",
+        "kickoff_utc": "2026-08-12T15:00:00+00:00",
+        "league_name": "Czechia - Czech Cup",
+        "match_key": "soccer|sparta brno|tj sokol lanzhot|2026-08-12",
+        "minutes_to_kickoff": 49.09,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.436,
+        "priority": 151.637,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T14:10:00+00:00",
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-08-12T14:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
+          "needs_context_refresh": true,
           "needs_odds_refresh": true,
           "next_scheduled_run_at_utc": "2026-08-12T15:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
@@ -1060,10 +1058,10 @@
       }
     ]
   },
-  "status": "lines_but_no_raw_candidates",
-  "status_ru": "🟠 линии есть, raw-кандидатов нет",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 2742,
+  "text_length": 2851,
   "top_reason": "line_movement_guard_dropped",
   "version": "harizon-telegram-report-v6-standalone-single-source"
 }
