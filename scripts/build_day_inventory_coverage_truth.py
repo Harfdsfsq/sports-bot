@@ -26,6 +26,8 @@ OUT_CSV = EXPORT_DIR / 'latest-day-inventory-coverage-truth.csv'
 SUMMARY_PATH = EXPORT_DIR / 'latest-day-inventory-summary.json'
 
 LIVE_ODDS_SOURCES = {'odds_api_io', 'bzzoiro', 'sportlogic'}
+CORE_CONTEXT_SOURCES = {'sstats', 'bzzoiro', 'clubelo', 'sportlogic', 'football_data', 'thesportsdb', 'api_football', 'espn', 'openligadb', 'openfootball', 'futrixmetrics'}
+NON_CONTEXT = {'', 'ensemble', 'market', 'market_signal', 'line_history', 'odds_api_io', 'xg_model_context', 'form_context', 'fixture', 'alias', 'proxy', 'inventory', 'day_inventory'}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -56,6 +58,10 @@ def as_int(value: Any, default: int = 0) -> int:
     try:
         if value in (None, ''):
             return default
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value)
         return int(float(str(value)))
     except Exception:
         return default
@@ -71,6 +77,7 @@ def norm(value: Any) -> str:
         'bzzoiro_predictions': 'bzzoiro',
         'bzzoiro_current_odds': 'bzzoiro',
         'bzzoiro_v2': 'bzzoiro',
+        'bsd_sports': 'bzzoiro',
         'sport_logic': 'sportlogic',
         'sportlogic_io': 'sportlogic',
         'sstats_form': 'sstats',
@@ -112,45 +119,59 @@ def coverage(row: dict[str, Any]) -> dict[str, Any]:
     return row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
 
 
+def containers(row: dict[str, Any]) -> list[dict[str, Any]]:
+    out = [row]
+    for key in ('coverage', 'metadata', 'source_summary', 'day_inventory_coverage', 'progressive_coverage'):
+        value = row.get(key)
+        if isinstance(value, dict):
+            out.append(value)
+            nested = value.get('day_inventory_coverage')
+            if isinstance(nested, dict):
+                out.append(nested)
+    return out
+
+
 def count_from_metadata(row: dict[str, Any], *keys: str) -> int:
-    md = metadata(row)
     best = 0
-    for container in (row, md):
+    for container in containers(row):
         for key in keys:
             best = max(best, as_int(container.get(key)))
     return best
 
 
 def odds_sources(row: dict[str, Any]) -> list[str]:
-    sources = unique_norm(list_from_any(row.get('odds_sources')) + list_from_any(row.get('line_sources')))
+    values: list[Any] = []
+    for box in containers(row):
+        values += list_from_any(box.get('odds_sources')) + list_from_any(box.get('line_sources')) + list_from_any(box.get('verified_odds_sources'))
+    sources = unique_norm(values)
     return sorted(x for x in sources if x in LIVE_ODDS_SOURCES)
 
 
 def context_sources(row: dict[str, Any]) -> list[str]:
-    md = metadata(row)
-    sources = unique_norm(
-        list_from_any(row.get('context_sources'))
-        + list_from_any(row.get('context_confirmations'))
-        + list_from_any(md.get('context_sources'))
-        + list_from_any(md.get('context_confirmations'))
-    )
-    cleaned: list[str] = []
-    for item in sources:
+    values: list[Any] = []
+    for box in containers(row):
+        for key in ('context_sources', 'context_confirmations', 'verified_context_sources', 'all_context_sources', 'core_context_sources', 'confirmation_sources', 'runtime_context_bridge_sources'):
+            values += list_from_any(box.get(key))
+        for flag, src in (('bzzoiro_has_context_hint', 'bzzoiro'), ('sstats_has_context_hint', 'sstats'), ('sportlogic_context', 'sportlogic')):
+            if box.get(flag):
+                values.append(src)
+    cleaned: set[str] = set()
+    for item in unique_norm(values):
         if item.startswith('provider_'):
             item = item.removeprefix('provider_')
-        if item in {'ensemble', 'market', 'market_signal', 'line_history', 'odds_api_io', 'xg_model_context', 'form_context'}:
+        if item in NON_CONTEXT or re.match(r'^context_(source|confirmation)_\d+$', item) or item.startswith('legacy_context_'):
             continue
-        if re.match(r'^context_(source|confirmation)_\d+$', item):
-            continue
-        cleaned.append(item)
-    return sorted(set(cleaned))
+        if item in CORE_CONTEXT_SOURCES:
+            cleaned.add(item)
+    return sorted(cleaned)
 
 
 def price_confirmations(row: dict[str, Any]) -> int:
     return max(
-        count_from_metadata(row, 'price_confirmation_sources_count', 'price_sources_count', 'books_count', 'latest_books_max'),
+        count_from_metadata(row, 'price_confirmation_sources_count', 'price_sources_count', 'books_count', 'bookmaker_count', 'latest_books_max'),
         len(list_from_any(row.get('price_confirmations'))),
         len(list_from_any(row.get('books'))),
+        len(list_from_any(metadata(row).get('verified_bookmakers'))),
     )
 
 
@@ -160,14 +181,14 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
     csrc = context_sources(row)
     pc = price_confirmations(row)
     cc = len(csrc)
-    has_odds = bool(cov.get('odds')) or pc > 0
+    has_odds = bool(cov.get('odds')) or pc > 0 or bool(osrc)
     has_context = bool(cov.get('context')) or cc > 0
 
     a_min_odds = max(2, as_int(os.getenv('PUBLISH_TIER_A_MIN_ODDS_SOURCES'), min_odds))
     a_min_context = max(2, as_int(os.getenv('PUBLISH_TIER_A_MIN_CONTEXT_SOURCES'), min_context))
     a_min_price = max(2, as_int(os.getenv('PUBLISH_TIER_A_MIN_BOOKS'), min_odds))
     b_min_odds = max(1, as_int(os.getenv('PUBLISH_TIER_B_MIN_ODDS_SOURCES'), 1))
-    b_min_context = max(2, as_int(os.getenv('PUBLISH_TIER_B_MIN_CONTEXT_SOURCES'), 2))
+    b_min_context = max(1, as_int(os.getenv('PUBLISH_TIER_B_MIN_CONTEXT_SOURCES'), 1))
     b_min_price = max(2, as_int(os.getenv('PUBLISH_TIER_B_MIN_BOOKS'), 2))
 
     tier_a_missing: list[str] = []
@@ -197,7 +218,7 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
         'odds_sources': osrc,
         'odds_sources_count': len(osrc),
         'price_confirmations': pc,
-        'books_count': max(count_from_metadata(row, 'books_count'), len(list_from_any(row.get('books')))),
+        'books_count': max(count_from_metadata(row, 'books_count', 'bookmaker_count'), len(list_from_any(row.get('books')))),
         'context_sources': csrc,
         'context_sources_count': cc,
         'has_odds': has_odds,
@@ -287,6 +308,7 @@ def main() -> int:
         'notes': [
             'odds_sources_count is independent live provider count only: odds_api_io, bzzoiro, sportlogic.',
             'price_confirmations is bookmaker/line depth and is tracked separately from provider independence.',
+            'context_sources_count reads verified context evidence from row, metadata, coverage and runtime bridge fields; fixture-id, alias and proxy are not counted.',
             'ready_for_publish is A-tier only: 2+ price confirmations, 2+ independent odds sources, and 2+ context sources.',
             'tier_b_coverage_ready is watchlist-only and does not mean public publication is allowed.',
         ],

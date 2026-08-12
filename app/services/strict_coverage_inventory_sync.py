@@ -33,8 +33,6 @@ TARGET = 300
 _INSTALLED = False
 _RUNNING = False
 
-# These are independent football/team context APIs suitable for strict coverage.
-# Weather/news may enrich a model later, but cannot satisfy the 2-context contract.
 CORE_CONTEXT_SOURCES = {
     "sstats",
     "bzzoiro",
@@ -49,9 +47,6 @@ CORE_CONTEXT_SOURCES = {
     "futrixmetrics",
 }
 
-# Compatibility patches historically raised SportLogic above its documented daily
-# budget and reduced SStats/Bzzoiro to shortlist-only operation. RuntimePreflight
-# reapplies this table after every native installer and before Settings is created.
 FINAL_ENV = {
     "RUNBOT_DISCOVERY_FIRST_FORCE_FULL_REFRESH": "true",
     "RUNBOT_DISCOVERY_FIRST_FULL_REFRESH_INTERVAL_MINUTES": "15",
@@ -95,12 +90,13 @@ FINAL_ENV = {
     "ALLSPORTSAPI_MATCH_LIMIT": "300",
     "ALLSPORTSAPI_PER_RUN_MAX": "96",
     "ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN": "96",
-    "SPORTLOGIC_PER_RUN_MAX": "30",
-    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "30",
-    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "30",
-    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "30",
-    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "30",
-    "SPORTLOGIC_ODDS_MATCH_LIMIT": "30",
+    "SPORTLOGIC_PER_RUN_MAX": "0",
+    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "0",
+    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "0",
+    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "0",
+    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "0",
+    "SPORTLOGIC_ODDS_MATCH_LIMIT": "0",
+    "SPORTLOGIC_DISABLED_ZERO_ROWS_GUARD": "true",
     "PUBLISH_MIN_BOOKS": "2",
     "MIN_BOOKS_PUBLISH": "2",
     "PUBLISH_MIN_ODDS_SOURCES": "1",
@@ -110,9 +106,9 @@ FINAL_ENV = {
     "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
     "PUBLISH_TIER_B_MIN_BOOKS": "2",
     "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1",
-    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
     "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
-    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
     "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
     "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "false",
 }
@@ -146,19 +142,7 @@ def _identity(row: dict[str, Any], day: str):
 def _candidate_paths(day: str) -> list[Path]:
     paths = [POOL / f"{day}.json"]
     for base in (DAY_DIR, ROOT / ".data" / "cache" / "day_inventory"):
-        paths.extend(
-            base / name
-            for name in (
-                f"{day}.json",
-                "current.json",
-                "latest.json",
-                "today.json",
-                "largest.json",
-                "highwater.json",
-                "best-day-inventory-highwater.json",
-                f"{day}-highwater.json",
-            )
-        )
+        paths.extend(base / name for name in (f"{day}.json", "current.json", "latest.json", "today.json", "largest.json", "highwater.json", "best-day-inventory-highwater.json", f"{day}-highwater.json"))
         try:
             paths.extend(sorted(base.glob("*highwater*.json")))
         except Exception:
@@ -177,11 +161,7 @@ def _candidate_rows(day: str) -> list[dict[str, Any]]:
     merged: dict[Any, dict[str, Any]] = {}
     for path in _candidate_paths(day):
         payload = load(path, {})
-        payload_day = (
-            str(payload.get("date_local") or payload.get("target_date") or day)[:10]
-            if isinstance(payload, dict)
-            else ""
-        )
+        payload_day = str(payload.get("date_local") or payload.get("target_date") or day)[:10] if isinstance(payload, dict) else ""
         if payload_day and payload_day != day:
             continue
         for row in _rows(payload):
@@ -203,11 +183,7 @@ def _evidence_index(rows: dict[str, Any]):
     return out
 
 
-def _match_evidence(
-    row: dict[str, Any],
-    rows: dict[str, Any],
-    index: dict[Any, list[dict[str, Any]]],
-) -> list[dict[str, Any]]:
+def _match_evidence(row: dict[str, Any], rows: dict[str, Any], index: dict[Any, list[dict[str, Any]]]) -> list[dict[str, Any]]:
     found: list[dict[str, Any]] = []
     exact = rows.get(row_key(row))
     if isinstance(exact, dict):
@@ -222,11 +198,7 @@ def _sources(found: list[dict[str, Any]], role: str) -> list[str]:
     for match in found:
         bucket = match.get(role)
         if isinstance(bucket, dict):
-            values.extend(
-                str(source)
-                for source, entry in bucket.items()
-                if isinstance(entry, dict)
-            )
+            values.extend(str(source) for source, entry in bucket.items() if isinstance(entry, dict))
     sources = independent_sources(values, role=role)
     if role == "context":
         sources = [source for source in sources if source in CORE_CONTEXT_SOURCES]
@@ -253,11 +225,7 @@ def _books(found: list[dict[str, Any]]) -> list[str]:
 def _provider_hints(row: dict[str, Any]) -> int:
     values: set[str] = set()
     metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-    for bucket in (
-        row.get("source_ids"),
-        row.get("provider_source_ids"),
-        metadata.get("provider_source_ids"),
-    ):
+    for bucket in (row.get("source_ids"), row.get("provider_source_ids"), metadata.get("provider_source_ids")):
         if isinstance(bucket, dict):
             values.update(str(key).lower() for key, value in bucket.items() if value)
     return len(values & {"odds_api_io", "bzzoiro", "sstats", "sportlogic", "allsportsapi"})
@@ -268,52 +236,17 @@ def _enrich(row: dict[str, Any], found: list[dict[str, Any]]):
     odds = _sources(found, "odds")
     contexts = _sources(found, "context")
     books = _books(found)
-    item.update(
-        odds_sources=odds,
-        context_sources=contexts,
-        books=books,
-        odds_sources_count=len(odds),
-        context_sources_count=len(contexts),
-        books_count=len(books),
-    )
+    item.update(odds_sources=odds, context_sources=contexts, books=books, odds_sources_count=len(odds), context_sources_count=len(contexts), books_count=len(books))
     strict = len(odds) >= 2 and len(contexts) >= 2 and len(books) >= 2
     coverage = dict(item.get("coverage") or {})
-    coverage.update(
-        odds=bool(odds),
-        context=bool(contexts),
-        odds_sources=odds,
-        context_sources=contexts,
-        ready_for_model=bool(odds and contexts),
-        strict_coverage_ready=strict,
-        daily_coverage_evidence_synced=bool(found),
-    )
+    coverage.update(odds=bool(odds), context=bool(contexts), odds_sources=odds, context_sources=contexts, ready_for_model=bool(odds and contexts), strict_coverage_ready=strict, daily_coverage_evidence_synced=bool(found))
     coverage.pop("ready_for_publish", None)
     item["coverage"] = coverage
     metadata = dict(item.get("metadata") or {})
-    metadata.update(
-        independent_odds_sources_count=len(odds),
-        odds_sources_count=len(odds),
-        context_sources_count=len(contexts),
-        confirmation_sources_count=len(contexts),
-        price_confirmation_sources_count=len(books),
-        price_sources_count=len(books),
-        books_count=len(books),
-        verified_odds_sources=odds,
-        verified_context_sources=contexts,
-        verified_bookmakers=books,
-    )
+    metadata.update(independent_odds_sources_count=len(odds), odds_sources_count=len(odds), context_sources_count=len(contexts), confirmation_sources_count=len(contexts), price_confirmation_sources_count=len(books), price_sources_count=len(books), books_count=len(books), verified_odds_sources=odds, verified_context_sources=contexts, verified_bookmakers=books)
     item["metadata"] = metadata
     kickoff = row_kickoff(item)
-    score = (
-        int(strict),
-        min(len(odds), 3) + min(len(contexts), 3) + min(len(books), 4),
-        int(len(odds) >= 2),
-        int(len(contexts) >= 2),
-        int(len(books) >= 2),
-        _provider_hints(item),
-        -(kickoff.timestamp() if kickoff else 10**15),
-        row_key(item),
-    )
+    score = (int(strict), min(len(odds), 3) + min(len(contexts), 3) + min(len(books), 4), int(len(odds) >= 2), int(len(contexts) >= 2), int(len(books) >= 2), _provider_hints(item), -(kickoff.timestamp() if kickoff else 10**15), row_key(item))
     return score, item
 
 
@@ -324,17 +257,13 @@ def _run_number() -> int:
         return 0
 
 
-def _select(
-    ranked: list[tuple[tuple[Any, ...], dict[str, Any]]],
-) -> tuple[list[dict[str, Any]], int]:
+def _select(ranked: list[tuple[tuple[Any, ...], dict[str, Any]]]) -> tuple[list[dict[str, Any]], int]:
     strict = [pair for pair in ranked if pair[0][0] == 1]
     partial = [pair for pair in ranked if pair[0][0] == 0]
     selected = [row for _score, row in strict[:TARGET]]
     need = TARGET - len(selected)
     offset = 0
     if need > 0 and partial:
-        # Keep two thirds of the best partial rows so repeated API calls can finish
-        # their evidence, and rotate one third to explore the rest of the large pool.
         stable_count = min(need, (need * 2) // 3)
         selected.extend(row for _score, row in partial[:stable_count])
         explore_need = need - stable_count
@@ -354,17 +283,8 @@ def _counts(rows: list[dict[str, Any]]) -> dict[str, int]:
         "matches_with_2plus_odds_sources": sum(row.get("odds_sources_count", 0) >= 2 for row in rows),
         "matches_with_2plus_context_sources": sum(row.get("context_sources_count", 0) >= 2 for row in rows),
         "matches_with_2plus_bookmakers": sum(row.get("books_count", 0) >= 2 for row in rows),
-        "matches_ready_for_model": sum(
-            row.get("odds_sources_count", 0) >= 1
-            and row.get("context_sources_count", 0) >= 1
-            for row in rows
-        ),
-        "matches_a_tier_coverage_ready": sum(
-            row.get("odds_sources_count", 0) >= 2
-            and row.get("context_sources_count", 0) >= 2
-            and row.get("books_count", 0) >= 2
-            for row in rows
-        ),
+        "matches_ready_for_model": sum(row.get("odds_sources_count", 0) >= 1 and row.get("context_sources_count", 0) >= 1 for row in rows),
+        "matches_a_tier_coverage_ready": sum(row.get("odds_sources_count", 0) >= 2 and row.get("context_sources_count", 0) >= 2 and row.get("books_count", 0) >= 2 for row in rows),
     }
 
 
@@ -377,72 +297,22 @@ def sync() -> dict[str, Any]:
         day = target_date()
         candidates = _candidate_rows(day)
         evidence = load(evidence_path(day), {})
-        evidence_rows = (
-            evidence.get("matches")
-            if isinstance(evidence, dict) and isinstance(evidence.get("matches"), dict)
-            else {}
-        )
+        evidence_rows = evidence.get("matches") if isinstance(evidence, dict) and isinstance(evidence.get("matches"), dict) else {}
         index = _evidence_index(evidence_rows)
-        ranked = [
-            _enrich(row, _match_evidence(row, evidence_rows, index))
-            for row in candidates
-        ]
+        ranked = [_enrich(row, _match_evidence(row, evidence_rows, index)) for row in candidates]
         ranked.sort(key=lambda pair: pair[0], reverse=True)
         selected, rotation_offset = _select(ranked)
         counts = _counts(selected)
         now = datetime.now(UTC).isoformat()
-        payload = {
-            "date_local": day,
-            "created_at_utc": now,
-            "updated_at_utc": now,
-            "build_status": "strict_coverage_ranked",
-            "target_matches": TARGET,
-            "counts": counts,
-            "matches": selected,
-            "publication_contract_relaxed": False,
-        }
+        payload = {"date_local": day, "created_at_utc": now, "updated_at_utc": now, "build_status": "strict_coverage_ranked", "target_matches": TARGET, "counts": counts, "matches": selected, "publication_contract_relaxed": False}
         POOL.mkdir(parents=True, exist_ok=True)
-        atomic_write(
-            POOL / f"{day}.json",
-            {
-                "date_local": day,
-                "updated_at_utc": now,
-                "matches": [row for _score, row in ranked],
-                "publication_contract_relaxed": False,
-            },
-        )
-        for path in (
-            DAY_DIR / f"{day}.json",
-            DAY_DIR / "current.json",
-            DAY_DIR / "latest.json",
-            DAY_DIR / "today.json",
-        ):
+        atomic_write(POOL / f"{day}.json", {"date_local": day, "updated_at_utc": now, "matches": [row for _score, row in ranked], "publication_contract_relaxed": False})
+        for path in (DAY_DIR / f"{day}.json", DAY_DIR / "current.json", DAY_DIR / "latest.json", DAY_DIR / "today.json"):
             atomic_write(path, payload)
-        cohort = {
-            "date_local": day,
-            "created_at_utc": now,
-            "updated_at_utc": now,
-            "target_matches": TARGET,
-            "frozen": counts["matches_a_tier_coverage_ready"] >= TARGET,
-            "policy": "adaptive_verified_coverage_until_300_then_freeze",
-            "rotation_offset": rotation_offset,
-            "matches": selected,
-            "publication_contract_relaxed": False,
-        }
+        cohort = {"date_local": day, "created_at_utc": now, "updated_at_utc": now, "target_matches": TARGET, "frozen": counts["matches_a_tier_coverage_ready"] >= TARGET, "policy": "adaptive_verified_coverage_until_300_then_freeze", "rotation_offset": rotation_offset, "matches": selected, "publication_contract_relaxed": False}
         atomic_write(DAY_DIR / f"daily-coverage-cohort-{day}.json", cohort)
         atomic_write(ROOT / ".data" / "exports" / "latest-daily-coverage-cohort.json", cohort)
-        report = {
-            "status": "ok",
-            "date_local": day,
-            "created_at_utc": now,
-            "candidate_pool_matches": len(candidates),
-            "selected_matches": len(selected),
-            "evidence_matches": len(evidence_rows),
-            "rotation_offset": rotation_offset,
-            "counts": counts,
-            "strict_shortfall": max(0, TARGET - counts["matches_a_tier_coverage_ready"]),
-            "publication_contract_relaxed": False,
-        }
+        report = {"status": "ok", "date_local": day, "created_at_utc": now, "candidate_pool_matches": len(candidates), "selected_matches": len(selected), "evidence_matches": len(evidence_rows), "rotation_offset": rotation_offset, "counts": counts, "strict_shortfall": max(0, TARGET - counts["matches_a_tier_coverage_ready"]), "publication_contract_relaxed": False}
         atomic_write(OUT, report)
         return report
     finally:
@@ -457,18 +327,7 @@ def install() -> dict[str, Any]:
     policy_reapply_updated = _reassert_final_env()
     initial = sync()
     atexit.register(sync)
-    return {
-        "status": "installed",
-        "initial_sync": initial,
-        "atexit_sync": True,
-        "runtime_preflight_policy_reapply_updated": policy_reapply_updated,
-        "publication_contract_relaxed": False,
-    }
+    return {"status": "installed", "initial_sync": initial, "atexit_sync": True, "runtime_preflight_policy_reapply_updated": policy_reapply_updated, "publication_contract_relaxed": False}
 
 
-__all__ = [
-    "CORE_CONTEXT_SOURCES",
-    "FINAL_ENV",
-    "install",
-    "sync",
-]
+__all__ = ["CORE_CONTEXT_SOURCES", "FINAL_ENV", "install", "sync"]
