@@ -1,83 +1,51 @@
-🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: odds below global min
+🧾 HARIZON run report v6 — единая фактическая сводка
+• Итог: 🟡 кандидаты есть, quality/value не пропустили
+• Главная причина: line movement guard снял кандидата
 
-📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 3 (это не размер inventory).
-• Очередь provider-enrichment: 242 активных матчей; model scope 94; назначений по ролям 406. Очередь сбора не расширяет публикационный scope.
-• 1+ линия: 224/300 (74%) | 1+ контекст: 182/300 (60%)
-• 2+ букмекера: 145/300 (48%)
-• Raw 2+ букмекера odds-api.io current snapshot: 24 | normalized cumulative inventory: 145.
-• Odds-api offer snapshot: rows 1183, matches 57, same-side 2+ books 24
-• 2+ независимых источника линий: 14/300 (4%) — strict metric для A-tier.
-• 2+ независимых контекста: 4/300 (1%)
-• Готово для модели: 110/300 (36%)
-
-🏷️ A/B-tier публикация
-• A-tier coverage-ready: 0/300 | main опубликовано: 0
-  A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier coverage-ready: 145/300 | fallback опубликовано: 0
-  B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 4 матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до 145 матчей.
-• A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
-• 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
-• Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
-• Ledger: unique published 99; pending 21; duplicates removed 396; policy semantic match market selection point kickoff.
-
-🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 26 | матчей без следующего регулярного run: 0
-• Line guard: увидел 42, оставил 5, отложил 2, снял 19
+📦 Покрытие
+• Матчи в run: 11 | day inventory: 300
+• С линиями: 11 | с контекстом: 0 | ready model: 192
+• odds-api.io offers: 944 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 22 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Source combinations: odds_api_io: 52, bzzoiro: 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 3/24
-• Quality прошло: 3 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 36 | evaluated 36 | published 0
+• Raw/candidates before quality: 3 / 24
+• Passed quality: 3 | publishable: 0 | опубликовано: 0
+• Main pipeline: published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 35 | evaluated 35 | published False (0)
+• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
-📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 7, odds req 12; смэтчил матчей 107; offers 1192; 2+ букмекера 24; ошибок 1.
-• Bzzoiro: direct req 2, v2 req 2; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 3; сырых строк 12965; контекстов 0; deep-enriched 14; team-form 0; direct 0; ошибок 0.
-• SportLogic: disabled_by_env; запросы 0; rows 0; current fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.
-• Комбинации источников линий: odds_api_io: 52, bzzoiro: 1
+🛡️ Pre-publish / line movement
+• Final pre-kickoff checks: 75 | no next regular run: 0
+• Line guard: seen 43 | kept 2 | dropped 25
+
+📡 Core API
+• odds_api_io: events req 0, odds req 12, matched 106, offers 944, 2+ books 22, err 1, auth_failed False
+• sstats: req 2, ctx 0, rows 12965, err 0, deep enriched 0
+• bzzoiro: req 2, ctx 0, events 177, secondary offers 0, overlap odds-api.io 0, err 0
+• sportlogic: enabled True, req 30, odds req 0, matched 0, offers 0, err 30
 
 🚫 Почему не опубликовано
-• semantic line movement failed: 24 (31%)
-• line movement guard снял кандидата: 19 (24%)
-• odds below global min: 10 (13%)
-• semantic line movement not confirmed: 5 (6%)
-• controlled fallback daily limit reached:3/3: 4 (5%)
+• semantic line movement failed: 23 (28%)
+• line movement guard снял кандидата: 23 (28%)
+• odds below global min: 9 (11%)
+• semantic line movement unconfirmed final: 5 (6%)
+• направление ставки конфликтует с xG: 4 (5%)
 • duplicate state:bets: 3 (4%)
 • duplicate persisted fallback sent index: 3 (4%)
-• направление ставки конфликтует с xG: 2 (3%)
+• semantic line movement not confirmed: 3 (4%)
 
 🔎 Проверенные reserve-кандидаты
-1. ACS Cil Blaj — Sanatatea Cluj | Меньше @2.00 | EV +1.0% | edge +0.5 п.п. | q 0.0
-   • причина: semantic selected price not current:2.000/1.810, semantic line movement not confirmed
-2. AS Usv Iasi — Cetatea 1932 Suceava | Меньше @2.75 | EV +12.3% | edge +4.5 п.п. | q 0.0
-   • причина: направление ставки конфликтует с xG, semantic selected price not current:2.750/2.500
-3. FK Slavoj Cesky Krumlov — FK Kraluv Dvur | Меньше @2.70 | EV +10.0% | edge +3.7 п.п. | q 0.0
-   • причина: controlled fallback daily limit reached:3/3
-4. MFK Trutnov — SK Benatky Nad Jizerou | Меньше @2.35 | EV +5.5% | edge +2.4 п.п. | q 0.0
-   • причина: controlled fallback daily limit reached:3/3
+1. Csm Adjud 1946 — CS Sporting Liesti | Меньше @2.10 | EV +5.3% | edge +2.5 п.п. | q 68.4 reserve
+   • reject: duplicate state:bets, duplicate persisted fallback sent index
+2. Brandys Nad Labem — FK Varnsdorf | Меньше @2.88 | EV +5.4% | edge +1.9 п.п. | q 72.1 reserve
+   • reject: tier a quality below min, tier a canonical edge below min, tier a publication score below min
+3. East Bengal FC — Al Arabi | Меньше @1.75 | EV +1.0% | edge +0.6 п.п. | q 63.0 reserve
+   • reject: semantic selected price not current:1.750/2.050, semantic line movement failed
+4. Lyngby U19 — FC Copenhagen U19 | Меньше @2.00 | EV +1.0% | edge +0.5 п.п. | q 53.9 reserve
+   • reject: semantic selected price not current:2.000/1.950, semantic line movement failed
 
-🧯 Диагностика новых стопоров
-• Active A/B contract: A=2 odds/2 books/2 context; B=1 odds/2 book/1 context.
-• Shadow ranking after daily cap: clean 3; daily+other 1; duplicates removed 0; top: CS Timisul Sag — ACSM Resita Меньше 2.5 EV +10.5% edge +4.0pp; FK Slavoj Cesky Krumlov — FK Kraluv Dvur Меньше 2.5 EV +10.0% edge +3.7pp; MFK Trutnov — SK Benatky Nad Jizerou Меньше 2.5 EV +5.5% edge +2.4pp.
-• Effective blockers without daily cap: semantic_line_movement_failed 24; odds_below_global_min 10; semantic_line_movement_not_confirmed 5; duplicate_persisted_fallback_sent_index 3; duplicate_state:bets 3.
-• A-tier blockers: n/a; quality sources raw_missing 33; raw 3; note A-tier stops before fallback tier checks: no raw/model publishable candidate passed value/quality/movement..
-• Inventory target-expand stage: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 236; normalized 295→218; gap after 18.
-• Bzzoiro overlap bridge: offers 0; match-overlap 0; same-bucket overlap 0.
-• Fresh B-cover diagnostic: rows 201; with current offer 51; without current offer 150; active 168; active with offer 51; fresh buckets 1193; single-source candidates 0; missing xG candidates 0.
-• Fresh promotion: promoted 24; top skips promotion_skip_odds_below_min 47; promotion_skip_edge_below_min 31; promotion_skip_odds_above_max 22; promotion_skip_no_offer_bucket 21; promotion_skip_price_outlier 18.
-• Rescue xG/confirmation enrichment: candidates 125; xG added 1; confirmation added 2; missing context match 123.
-
-📌 Что это значит
-• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
-• Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
-
-🔗 GitHub Actions
-• Run ID: 31595847754
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/31595847754
-• Artifact: run-bot-31595847754
-• workflow run-bot, attempt 1
+📌 Вывод
+• Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards.
+• Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
