@@ -3,10 +3,10 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 43 | day inventory: 300
-• С линиями: 15 | с контекстом: 40 | ready model: 231
-• odds-api.io offers: 640 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 7 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 47 | day inventory: 300
+• С линиями: 26 | с контекстом: 40 | ready model: 226
+• odds-api.io offers: 614 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 4 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 52, bzzoiro: 1
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 1.
@@ -14,40 +14,41 @@
 • Raw/candidates before quality: 1 / 24
 • Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 9 | evaluated 9 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 18 | evaluated 18 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 91 | no next regular run: 50
-• Line guard: seen 24 | kept 1 | dropped 7
+• Final pre-kickoff checks: 94 | no next regular run: 51
+• Line guard: seen 37 | kept 2 | dropped 19
 
+• Bzzoiro targeted odds: targets 80; events 0; matched 0; offers 0; 2-source promoted 0; diag no_bzzoiro_events_or_odds_artifact.
 📡 Core API
-• odds_api_io: events req 0, odds req 12, matched 102, offers 640, 2+ books 7, err 1, auth_failed False
+• odds_api_io: events req 0, odds req 11, matched 96, offers 614, 2+ books 4, err 1, auth_failed False
 • sstats: req 3, ctx 40, rows 12964, err 0, deep enriched 0
 • bzzoiro: req 2, ctx 0, events 177, secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: реально плохое движение 5; движение не подтверждено 2; коэффициент ниже минимума 3.
+• Line movement breakdown: реально плохое движение 13; движение не подтверждено 1; финальная проверка не подтвердила 3; коэффициент ниже минимума 5.
 🚫 Почему не опубликовано
-• line movement guard снял кандидата: 7 (28%)
-• semantic line movement failed: 5 (20%)
-• odds below global min: 3 (12%)
-• semantic line movement not confirmed: 2 (8%)
-• tier a quality below min: 1 (4%)
-• tier a publication score below min: 1 (4%)
-• tier a odds sources below min:1/2: 1 (4%)
-• tier a confirmation sources below min:1/2: 1 (4%)
+• controlled fallback daily limit reached:3/3: 18 (27%)
+• line movement guard снял кандидата: 14 (21%)
+• semantic line movement failed: 13 (20%)
+• odds below global min: 5 (8%)
+• кандидат ждёт следующий cron для второго снимка линии: 5 (8%)
+• price integrity:high main total price without external snapshot confirmation: 4 (6%)
+• semantic line movement unconfirmed final: 3 (5%)
+• current price recheck value lost:-12.8/-8.6: 1 (2%)
 
 🔎 Проверенные reserve-кандидаты
-1. Nea Salamina Famagusta — Anorthosis Famagusta | Меньше @1.90 | EV +7.4% | edge +3.9 п.п. | q 71.9 reserve
-   • reject: tier a quality below min, tier a publication score below min, tier a odds sources below min:1/2
+1. Brandys Nad Labem — FK Varnsdorf | Больше @1.92 | EV +4.7% | edge +2.4 п.п. | q 67.5 reserve
+   • reject: controlled fallback daily limit reached:3/3
 2. FC Brumov — MFK Karvina | Больше @1.71 | EV +0.8% | edge +0.4 п.п. | q 50.6 reserve
-   • reject: odds below global min, current price recheck value lost:-12.8/-8.6, semantic line movement failed
+   • reject: odds below global min, controlled fallback daily limit reached:3/3, current price recheck value lost:-12.8/-8.6
 3. Atlético Tordesillas — Real Ávila CF | Больше @2.35 | EV +5.3% | edge +2.3 п.п. | q 65.9 reserve
-   • reject: semantic line movement not confirmed
+   • reject: controlled fallback daily limit reached:3/3, semantic line movement not confirmed
 4. FC København — Debreceni VSC | Меньше @1.61 | EV +9.5% | edge +5.9 п.п. | q 73.5 reserve
-   • reject: odds below global min, semantic line movement failed
+   • reject: odds below global min, controlled fallback daily limit reached:3/3, semantic line movement failed
 
 📌 Вывод
-• Главный текущий стопор: line movement/freshness/current-price и уже опубликованные дубликаты; A-tier требует targeted Bzzoiro odds overlap + второго context-source.
+• Главный текущий стопор: line movement/freshness/current-price; A-tier теперь упирается в фактическое исполнение Bzzoiro targeted odds и 2-source overlap.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
