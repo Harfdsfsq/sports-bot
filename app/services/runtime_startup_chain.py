@@ -10,6 +10,7 @@ because installer reports overwrite build-time diagnostics.
 from typing import Any
 
 MODULES = [
+    'app.services.unified_provider_match_identity_runtime',
     'app.services.provider_smoke_repair_env_guard',
     'app.services.runtime_provider_budget_guard',
     'app.services.core_coverage_quota_runtime_override',
