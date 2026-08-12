@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-"""Central runtime patch chain for the main HARIZON run.
-
-Keep this out of report/fallback Python processes. Those processes read artifacts
-created by the production run and must not reinstall model/provider wrappers,
-because installer reports overwrite build-time diagnostics.
-"""
-
 from typing import Any
 
 MODULES = [
     'app.services.unified_provider_match_identity_runtime',
+    'app.services.bzzoiro_artifact_persistence_runtime_patch',
     'app.services.provider_smoke_repair_env_guard',
     'app.services.runtime_provider_budget_guard',
     'app.services.core_coverage_quota_runtime_override',
@@ -81,7 +75,6 @@ MODULES = [
     'app.services.context_coverage_bridge_runtime',
     'app.services.candidate_factory_runtime_diagnostics',
     'app.services.rules_compliant_pipeline',
-    # Last writer: legacy modules above may re-enable old B-tier/SportLogic env.
     'app.services.production_contract_runtime_guard',
 ]
 
