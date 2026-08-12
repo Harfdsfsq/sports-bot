@@ -5,16 +5,6 @@ from typing import Any
 
 
 def _force_runtime_publication_contract() -> None:
-    """Final contract for the separate guarded-fallback process.
-
-    The main run and workflow write a lot of legacy env values. This script runs
-    in a new Python process, so we enforce the intended testable publication
-    contract here as the last writer before candidate evaluation:
-      * A-tier remains strict: 2 odds / 2 books / 2 context.
-      * B-tier is testable but still safe: 1 odds / 2 books / 1 context.
-      * price-integrity, value, movement, dedupe and market-family guards remain.
-      * SportLogic stays disabled while the endpoint returns zero rows.
-    """
     overrides = {
         "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
         "PUBLISH_TIER_A_MIN_BOOKS": "2",
@@ -41,6 +31,7 @@ def _force_runtime_publication_contract() -> None:
         "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "4.0",
         "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "2.3",
         "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "4.0",
+        "DAY_INVENTORY_ENABLE_SPORTLOGIC": "false",
         "ENABLE_SPORTLOGIC": "false",
         "SPORTLOGIC_ENABLED": "false",
         "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "false",
@@ -81,13 +72,6 @@ def _int(value: Any, default: int = 0) -> int:
 
 
 def _b_tier_testing_floor(metrics: dict[str, Any]) -> bool:
-    """Whether a B-tier candidate is good enough for test publication.
-
-    This does not bypass movement/price/current-line/dedupe/family guards. It only
-    prevents old proxy-quality/publication-score floors from rejecting otherwise
-    testable B-tier value candidates whose q is raw_missing/0 because quality data
-    was not produced for the reserve path.
-    """
     books = max(_int(metrics.get("books_count")), _int(metrics.get("bookmaker_count")))
     odds_sources = max(_int(metrics.get("odds_sources_count")), _int(metrics.get("line_sources_count")), _int(metrics.get("sources_count")))
     ctx = max(_int(metrics.get("context_sources_count")), _int(metrics.get("confirmation_sources_count")))
@@ -104,9 +88,7 @@ def _install_b_tier_testing_relief(base: Any) -> None:
 
     def wrapped(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
         reasons = list(old(tier, candidate, metrics) or [])
-        if str(tier or "").strip().upper() != "B":
-            return reasons
-        if not _b_tier_testing_floor(metrics):
+        if str(tier or "").strip().upper() != "B" or not _b_tier_testing_floor(metrics):
             return reasons
         removable_exact = {
             "tier_b_quality_below_min",
@@ -118,7 +100,6 @@ def _install_b_tier_testing_relief(base: Any) -> None:
             r = str(reason)
             if r in removable_exact:
                 continue
-            # The actual B contract is 1 context; strip legacy 2-context remnants.
             if r.startswith("tier_b_context_sources_below_min") or r.startswith("tier_b_confirmation_sources_below_min"):
                 continue
             filtered.append(reason)
@@ -131,7 +112,6 @@ def _install_b_tier_testing_relief(base: Any) -> None:
 def _apply_focused_alpha_policy() -> None:
     try:
         from app.services.focused_alpha_runtime_policy import apply
-
         apply(force=True)
     except Exception:
         pass
@@ -139,14 +119,12 @@ def _apply_focused_alpha_policy() -> None:
 
 
 def _repair_runtime_artifacts_before_fallback() -> None:
-    """Make fallback evaluate repaired current-run evidence, not stale raw rows."""
-    steps = (
+    for module_name, function_name in (
         ("scripts.bridge_runtime_context_coverage", "main"),
         ("scripts.build_day_inventory_coverage_truth", "main"),
         ("scripts.replace_rescue_proxy_placeholder_xg", "main"),
         ("scripts.day_inventory_cumulative_coverage", "main"),
-    )
-    for module_name, function_name in steps:
+    ):
         try:
             module = __import__(module_name, fromlist=[function_name])
             fn = getattr(module, function_name, None)
@@ -161,10 +139,8 @@ def _repair_runtime_artifacts_before_fallback() -> None:
 def _build_focused_alpha_decisions() -> None:
     try:
         from scripts.build_focused_alpha_decisions_v2 import main as build_decisions
-
         build_decisions()
         from app.services.focused_alpha_learning_ledger import update_learning_ledger
-
         update_learning_ledger()
     except Exception:
         pass
@@ -176,7 +152,6 @@ def main() -> int:
     _apply_focused_alpha_policy()
     try:
         from scripts import apply_controlled_fallback_performance_policy
-
         apply_controlled_fallback_performance_policy.main()
     except Exception:
         pass
@@ -192,10 +167,14 @@ def main() -> int:
         from scripts.patch_publication_safety_contract import install as install_publication_safety_contract
         from scripts.patch_reserved_slot_expiring_candidate import install as install_reserved_slot_expiry_override
         from scripts.patch_same_match_total_conflict_guard import install as install_same_match_total_conflict_guard
+        from scripts.patch_semantic_line_movement_alias_relief import install as install_semantic_line_alias_relief
+        from scripts.patch_semantic_movement_current_price_guard import install as install_semantic_movement_current_price_guard
         from scripts.patch_tier_a_strict_policy import install as install_tier_a_strict_policy
 
         install_tier_a_strict_policy(v18.base)
         install_publication_safety_contract(v18.base)
+        install_semantic_movement_current_price_guard(v18.base)
+        install_semantic_line_alias_relief(v18.base)
         _install_b_tier_testing_relief(v18.base)
         install_semantic_ledger_daily_count(v18)
         install_reserved_slot_expiry_override(v18)
@@ -214,7 +193,6 @@ def main() -> int:
     _force_runtime_publication_contract()
 
     from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
-
     code = int(v20_main() or 0)
     _build_focused_alpha_decisions()
     return code
