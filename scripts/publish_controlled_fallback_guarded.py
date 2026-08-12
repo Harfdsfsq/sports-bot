@@ -31,6 +31,8 @@ def _force_runtime_publication_contract() -> None:
         "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "4.0",
         "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "2.3",
         "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "4.0",
+        "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": "3",
+        "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "3",
         "DAY_INVENTORY_ENABLE_SPORTLOGIC": "false",
         "ENABLE_SPORTLOGIC": "false",
         "SPORTLOGIC_ENABLED": "false",
@@ -85,16 +87,11 @@ def _install_b_tier_testing_relief(base: Any) -> None:
     old = getattr(base, "tier_reasons", None)
     if not callable(old) or getattr(base, "_b_tier_testing_relief_installed", False):
         return
-
     def wrapped(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
         reasons = list(old(tier, candidate, metrics) or [])
         if str(tier or "").strip().upper() != "B" or not _b_tier_testing_floor(metrics):
             return reasons
-        removable_exact = {
-            "tier_b_quality_below_min",
-            "tier_b_publication_score_below_min",
-            "tier_b_market_implied_xg_not_hard_confirmation",
-        }
+        removable_exact = {"tier_b_quality_below_min", "tier_b_publication_score_below_min", "tier_b_market_implied_xg_not_hard_confirmation"}
         filtered: list[str] = []
         for reason in reasons:
             r = str(reason)
@@ -104,7 +101,6 @@ def _install_b_tier_testing_relief(base: Any) -> None:
                 continue
             filtered.append(reason)
         return filtered
-
     base.tier_reasons = wrapped
     base._b_tier_testing_relief_installed = True
 
@@ -119,17 +115,10 @@ def _apply_focused_alpha_policy() -> None:
 
 
 def _repair_runtime_artifacts_before_fallback() -> None:
-    for module_name, function_name in (
-        ("scripts.bridge_runtime_context_coverage", "main"),
-        ("scripts.build_day_inventory_coverage_truth", "main"),
-        ("scripts.replace_rescue_proxy_placeholder_xg", "main"),
-        ("scripts.day_inventory_cumulative_coverage", "main"),
-    ):
+    for module_name, function_name in (("scripts.bridge_runtime_context_coverage", "main"), ("scripts.build_day_inventory_coverage_truth", "main"), ("scripts.replace_rescue_proxy_placeholder_xg", "main"), ("scripts.day_inventory_cumulative_coverage", "main")):
         try:
-            module = __import__(module_name, fromlist=[function_name])
-            fn = getattr(module, function_name, None)
-            if callable(fn):
-                fn()
+            module = __import__(module_name, fromlist=[function_name]); fn = getattr(module, function_name, None)
+            if callable(fn): fn()
         except SystemExit:
             pass
         except Exception:
@@ -147,9 +136,7 @@ def _build_focused_alpha_decisions() -> None:
 
 
 def main() -> int:
-    _force_runtime_publication_contract()
-    _repair_runtime_artifacts_before_fallback()
-    _apply_focused_alpha_policy()
+    _force_runtime_publication_contract(); _repair_runtime_artifacts_before_fallback(); _apply_focused_alpha_policy()
     try:
         from scripts import apply_controlled_fallback_performance_policy
         apply_controlled_fallback_performance_policy.main()
@@ -158,6 +145,7 @@ def main() -> int:
     _force_runtime_publication_contract()
     try:
         import scripts.publish_controlled_fallback_guarded_v18 as v18
+        from scripts.harizon_production_quality_layer import install as install_quality_layer
         from scripts.patch_daily_cap_after_quality import install as install_daily_cap_after_quality
         from scripts.patch_daily_slot_bundle_cap import install as install_daily_slot_bundle_cap
         from scripts.patch_daily_slot_semantic_ledger_count import install as install_semantic_ledger_daily_count
@@ -170,11 +158,11 @@ def main() -> int:
         from scripts.patch_semantic_line_movement_alias_relief import install as install_semantic_line_alias_relief
         from scripts.patch_semantic_movement_current_price_guard import install as install_semantic_movement_current_price_guard
         from scripts.patch_tier_a_strict_policy import install as install_tier_a_strict_policy
-
         install_tier_a_strict_policy(v18.base)
         install_publication_safety_contract(v18.base)
         install_semantic_movement_current_price_guard(v18.base)
         install_semantic_line_alias_relief(v18.base)
+        install_quality_layer(v18.base)
         _install_b_tier_testing_relief(v18.base)
         install_semantic_ledger_daily_count(v18)
         install_reserved_slot_expiry_override(v18)
@@ -186,12 +174,7 @@ def main() -> int:
         install_focused_alpha_rank(v18.base)
     except Exception:
         pass
-
-    _apply_focused_alpha_policy()
-    _repair_runtime_artifacts_before_fallback()
-    _build_focused_alpha_decisions()
-    _force_runtime_publication_contract()
-
+    _apply_focused_alpha_policy(); _repair_runtime_artifacts_before_fallback(); _build_focused_alpha_decisions(); _force_runtime_publication_contract()
     from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
     code = int(v20_main() or 0)
     _build_focused_alpha_decisions()
