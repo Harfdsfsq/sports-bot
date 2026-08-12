@@ -1,53 +1,53 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🟠 линии есть, raw-кандидатов нет
+• Итог: 🟡 кандидаты есть, quality/value не пропустили
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 37 | day inventory: 300
-• С линиями: 11 | с контекстом: 41 | ready model: 228
-• odds-api.io offers: 852 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 6 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 32 | day inventory: 300
+• С линиями: 18 | с контекстом: 26 | ready model: 232
+• odds-api.io offers: 1123 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 9 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 52, bzzoiro: 1
 
-• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 1.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 24
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 2 / 27
+• Passed quality: 2 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 18 | evaluated 18 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 19 | evaluated 19 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 54 | no next regular run: 0
-• Line guard: seen 40 | kept 1 | dropped 23
+• Final pre-kickoff checks: 57 | no next regular run: 0
+• Line guard: seen 39 | kept 6 | dropped 17
 
 • Bzzoiro targeted odds: targets 80; events 0; matched 0; offers 0; 2-source promoted 0; diag no_bzzoiro_events_or_odds_artifact.
 📡 Core API
-• odds_api_io: events req 0, odds req 11, matched 98, offers 852, 2+ books 6, err 1, auth_failed False
-• sstats: req 3, ctx 40, rows 12964, err 0, deep enriched 0
+• odds_api_io: events req 0, odds req 6, matched 43, offers 1123, 2+ books 9, err 1, auth_failed False
+• sstats: req 3, ctx 26, rows 12964, err 0, deep enriched 0
 • bzzoiro: req 2, ctx 0, events 177, secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: реально плохое движение 11; движение не подтверждено 1; финальная проверка не подтвердила 5; коэффициент ниже минимума 4.
+• Line movement breakdown: реально плохое движение 8; финальная проверка не подтвердила 6; коэффициент ниже минимума 7; конфликт направления с xG 1.
 🚫 Почему не опубликовано
-• controlled fallback daily limit reached:3/3: 18 (26%)
-• line movement guard снял кандидата: 16 (24%)
-• semantic line movement failed: 11 (16%)
-• кандидат ждёт следующий cron для второго снимка линии: 7 (10%)
-• semantic line movement unconfirmed final: 5 (7%)
-• odds below global min: 4 (6%)
-• price integrity:high main total price without external snapshot confirmation: 3 (4%)
-• current price recheck value lost:44.1/19.6: 1 (1%)
+• controlled fallback daily limit reached:3/3: 19 (30%)
+• line movement guard снял кандидата: 10 (16%)
+• semantic line movement failed: 8 (12%)
+• odds below global min: 7 (11%)
+• кандидат ждёт следующий cron для второго снимка линии: 7 (11%)
+• semantic line movement unconfirmed final: 6 (9%)
+• quality bad historical segment guard: 2 (3%)
+• направление ставки конфликтует с xG: 1 (2%)
 
 🔎 Проверенные reserve-кандидаты
-1. Madureira RJ — AA Portuguesa RJ | Меньше @1.61 | EV +3.4% | edge +2.1 п.п. | q 62.1 reserve
-   • reject: odds below global min, controlled fallback daily limit reached:3/3, current price recheck value lost:44.1/19.6
-2. Atlético Tordesillas — Real Ávila CF | Больше @2.35 | EV +5.3% | edge +2.3 п.п. | q 65.9 reserve
-   • reject: controlled fallback daily limit reached:3/3, semantic line movement not confirmed
-3. FC København — Debreceni VSC | Меньше @1.61 | EV +9.5% | edge +5.9 п.п. | q 73.5 reserve
-   • reject: odds below global min, controlled fallback daily limit reached:3/3, semantic line movement failed
-4. Pro Patria Busto Arsizio — AC Gozzano | Меньше @1.82 | EV +1.0% | edge +0.5 п.п. | q 58.1 reserve
-   • reject: controlled fallback daily limit reached:3/3, semantic line movement failed
+1. Nova Iguacu RJ — Olaria RJ | Больше @2.25 | EV +4.0% | edge +1.8 п.п. | q 64.0 reserve
+   • reject: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира, controlled fallback daily limit reached:3/3
+2. CAS Defensores de Belgrano — Douglas Haig | Больше @2.62 | EV +4.8% | edge +1.8 п.п. | q 62.8 reserve
+   • reject: controlled fallback daily limit reached:3/3
+3. Nottingham Forest — Bayer Leverkusen | Больше @2.50 | EV +4.3% | edge +1.7 п.п. | q 59.4 reserve
+   • reject: controlled fallback daily limit reached:3/3
+4. Hamilton Academical FC — Celtic Glasgow B | Меньше @1.95 | EV +6.3% | edge +3.2 п.п. | q 70.5 reserve
+   • reject: controlled fallback daily limit reached:3/3
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; A-tier теперь упирается в фактическое исполнение Bzzoiro targeted odds и 2-source overlap.
