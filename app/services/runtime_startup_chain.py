@@ -81,6 +81,8 @@ MODULES = [
     'app.services.context_coverage_bridge_runtime',
     'app.services.candidate_factory_runtime_diagnostics',
     'app.services.rules_compliant_pipeline',
+    # Last writer: legacy modules above may re-enable old B-tier/SportLogic env.
+    'app.services.production_contract_runtime_guard',
 ]
 
 
