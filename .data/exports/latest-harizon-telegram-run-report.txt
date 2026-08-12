@@ -3,53 +3,53 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 19 | day inventory: 300
-• С линиями: 10 | с контекстом: 8 | ready model: 237
-• odds-api.io offers: 590 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 5 | 2-source overlap Bzzoiro+odds-api.io: 0
-• Source combinations: odds_api_io: 52, bzzoiro: 1
+• Матчи в run: 6 | day inventory: 142
+• С линиями: 4 | с контекстом: 43 | ready model: 45
+• odds-api.io offers: 4129 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 38 | 2-source overlap Bzzoiro+odds-api.io: 37
+• Source combinations: bzzoiro+odds_api_io: 37, odds_api_io: 8, bzzoiro: 2
 
-• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 8; context projection targets 42; high-value recheck 3.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 4 / 28
-• Passed quality: 4 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 1 / 1
+• Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 19 | evaluated 19 | published False (0)
-• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
+• Controlled fallback: status no_viable_controlled_fallback | seen 12 | evaluated 12 | published False (0)
+• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 1
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 31 | no next regular run: 31
-• Line guard: seen 34 | kept 8 | dropped 10
+• Final pre-kickoff checks: 6 | no next regular run: 5
+• Line guard: seen 40 | kept 0 | dropped 24
 
-• Bzzoiro targeted odds: targets 80; events 12; matched 0; offers 0; 2-source promoted 0; diag preview_events_only_no_full_rows.
-• Bzzoiro source trace: aggregate events 177; persisted rows 3; targeted events 12; diag aggregate_count_with_preview_sample_only.
+• Bzzoiro targeted odds: targets 8; events 1318; matched 5; offers 0; 2-source promoted 0; diag preview_events_only_no_full_rows.
+• Bzzoiro source trace: aggregate events 0; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
 📡 Core API
-• odds_api_io: events req 0, odds req 3, matched 15, offers 590, 2+ books 5, err 1, auth_failed False
-• sstats: req 3, ctx 8, rows 12964, err 0, deep enriched 0
-• bzzoiro: req 2, ctx 0, events 177 (aggregate; persisted rows 3; trace aggregate_count_with_preview_sample_only), secondary offers 0, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 6, matched 49, offers 4129, 2+ books 38, err 1, auth_failed False
+• sstats: req 16, ctx 43, rows 13234, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 0 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 0, overlap odds-api.io 37, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: реально плохое движение 10; финальная проверка не подтвердила 1; коэффициент ниже минимума 4; конфликт направления с xG 1.
+• Line movement breakdown: движение не подтверждено 12; коэффициент ниже минимума 3.
 🚫 Почему не опубликовано
-• controlled fallback daily limit reached:3/3: 19 (34%)
-• semantic line movement failed: 10 (18%)
-• line movement guard снял кандидата: 10 (18%)
-• odds below global min: 4 (7%)
-• quality bad historical segment guard: 4 (7%)
-• price integrity:high main total price without external snapshot confirmation: 2 (4%)
-• family not allowed:dnb: 2 (4%)
-• направление ставки конфликтует с xG: 1 (2%)
+• кандидат ждёт следующий cron для второго снимка линии: 20 (30%)
+• controlled fallback next regular run before kickoff: 12 (18%)
+• controlled fallback missing line recheck: 12 (18%)
+• semantic line movement not confirmed: 12 (18%)
+• line movement guard снял кандидата: 4 (6%)
+• odds below global min: 3 (5%)
+• current price recheck value lost:4.2/1.5: 1 (2%)
+• current price recheck value lost:4.4/2.0: 1 (2%)
 
 🔎 Проверенные reserve-кандидаты
-1. Nottingham Forest — Bayer Leverkusen | Меньше @2.35 | EV +9.2% | edge +3.9 п.п. | q 76.0 reserve
-   • reject: направление ставки конфликтует с xG, controlled fallback daily limit reached:3/3
-2. Hamilton Academical FC — Celtic Glasgow B | Больше @1.90 | EV +3.8% | edge +2.0 п.п. | q 62.8 reserve
-   • reject: controlled fallback daily limit reached:3/3
-3. Deportes Magallanes — CD Cobreloa Calama | Больше @1.82 | EV +6.1% | edge +3.3 п.п. | q 74.0 reserve
-   • reject: controlled fallback daily limit reached:3/3, semantic line movement alias conflict
-4. Hamilton Academical FC — Celtic Glasgow B | Больше @3.00 | EV +5.9% | edge +2.0 п.п. | q 53.9 reserve
-   • reject: controlled fallback daily limit reached:3/3
+1. Deportes Antofagasta — Santiago Wanderers | Больше @2.90 | EV +2.1% | edge +0.7 п.п. | q 55.6 reserve
+   • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement not confirmed
+2. FC Tobol — FK Partizan | Больше @2.90 | EV +9.8% | edge +3.4 п.п. | q 82.9 reserve
+   • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, current price recheck value lost:4.2/1.5
+3. Ilves — HNK Rijeka | Меньше @1.77 | EV +1.6% | edge +0.9 п.п. | q 66.1 reserve
+   • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement not confirmed
+4. Abha — Al-Hazem | Меньше @1.85 | EV +5.1% | edge +2.7 п.п. | q 71.6 reserve
+   • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement not confirmed
 
 📌 Вывод
-• Главный текущий стопор: line movement/freshness/current-price; по A-tier теперь разделяем Bzzoiro aggregate events и persisted rows для targeted matching.
+• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality не разрешили публикацию.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
