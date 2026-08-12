@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -28,14 +29,13 @@ def _int(value: Any) -> int:
         return 0
 
 
+def _disabled_sportlogic_env() -> bool:
+    names = ("DAY_INVENTORY_ENABLE_SPORTLOGIC", "ENABLE_SPORTLOGIC", "SPORTLOGIC_ENABLED", "SPORTLOGIC_CONTROLLED_ODDS_ENABLED")
+    return any(str(os.getenv(name) or "").strip().lower() in {"0", "false", "no", "off"} for name in names)
+
+
 def _refresh_truth() -> None:
-    steps = (
-        ("scripts.repair_day_inventory_blank_rows", "main"),
-        ("scripts.bridge_runtime_context_coverage", "main"),
-        ("scripts.build_day_inventory_coverage_truth", "main"),
-        ("scripts.day_inventory_cumulative_coverage", "main"),
-    )
-    for module_name, name in steps:
+    for module_name, name in (("scripts.repair_day_inventory_blank_rows", "main"), ("scripts.bridge_runtime_context_coverage", "main"), ("scripts.build_day_inventory_coverage_truth", "main"), ("scripts.day_inventory_cumulative_coverage", "main")):
         try:
             module = __import__(module_name, fromlist=[name])
             fn = getattr(module, name, None)
@@ -66,25 +66,11 @@ def _verified_counts() -> dict[str, int]:
     context2 = _int(counts.get("matches_with_2plus_context_sources"))
     a_ready = _int(counts.get("matches_a_tier_coverage_ready"))
     b_ready = _int(counts.get("matches_b_tier_watch_ready")) or min(line1, books2, context1)
-    return {
-        "total": total,
-        "line1": line1,
-        "context1": context1,
-        "books2": books2,
-        "odds2": odds2,
-        "context2": context2,
-        "model": _int(counts.get("matches_ready_for_model")),
-        "a": a_ready,
-        "b": b_ready,
-    }
+    return {"total": total, "line1": line1, "context1": context1, "books2": books2, "odds2": odds2, "context2": context2, "model": _int(counts.get("matches_ready_for_model")), "a": a_ready, "b": b_ready}
 
 
 def _pct(value: int, total: int) -> int:
-    if not total:
-        return 0
-    if value >= total:
-        return 100
-    return int(100 * value / total)
+    return 0 if not total else (100 if value >= total else int(100 * value / total))
 
 
 def _replace_line(text: str, prefix_pattern: str, replacement: str) -> str:
@@ -93,234 +79,97 @@ def _replace_line(text: str, prefix_pattern: str, replacement: str) -> str:
 
 def _replace_ready_line(text: str, pattern: str, label: str, value: int, total: int) -> str:
     regex = re.compile(rf"^• {pattern}.*$", flags=re.MULTILINE)
-
     def replacement(match: re.Match[str]) -> str:
         old = match.group(0)
         suffix = old[old.find("|") :] if "|" in old else ""
         return f"• {label}: {value}/{total}" + (f" {suffix}" if suffix else "")
-
     return regex.sub(replacement, text, count=1)
 
 
 def _render_verified(text: str) -> str:
-    c = _verified_counts()
-    total = c["total"]
+    c = _verified_counts(); total = c["total"]
     text = _replace_line(text, r"1\+ линия:", f"• 1+ линия: {c['line1']}/{total} ({_pct(c['line1'], total)}%) | 1+ контекст: {c['context1']}/{total} ({_pct(c['context1'], total)}%)")
     text = _replace_line(text, r"2\+ букмекера:", f"• 2+ букмекера: {c['books2']}/{total} ({_pct(c['books2'], total)}%)")
-    for pattern in (r"2\+ independent odds-source:", r"2\+ независимых источника линий:"):
-        text = _replace_line(text, pattern, f"• 2+ независимых источника линий: {c['odds2']}/{total} ({_pct(c['odds2'], total)}%) — strict metric для A-tier.")
-    for pattern in (r"2\+ контекста:", r"2\+ независимых контекста:"):
-        text = _replace_line(text, pattern, f"• 2+ независимых контекста: {c['context2']}/{total} ({_pct(c['context2'], total)}%)")
+    text = _replace_line(text, r"2\+ независимых источника линий:", f"• 2+ независимых источника линий: {c['odds2']}/{total} ({_pct(c['odds2'], total)}%) — strict metric для A-tier.")
+    text = _replace_line(text, r"2\+ independent odds-source:", f"• 2+ независимых источника линий: {c['odds2']}/{total} ({_pct(c['odds2'], total)}%) — strict metric для A-tier.")
+    text = _replace_line(text, r"2\+ независимых контекста:", f"• 2+ независимых контекста: {c['context2']}/{total} ({_pct(c['context2'], total)}%)")
+    text = _replace_line(text, r"2\+ контекста:", f"• 2+ независимых контекста: {c['context2']}/{total} ({_pct(c['context2'], total)}%)")
     text = _replace_line(text, r"Готово для модели:", f"• Готово для модели: {c['model']}/{total} ({_pct(c['model'], total)}%)")
     text = _replace_ready_line(text, r"A-tier strict-ready:", "A-tier coverage-ready", c["a"], total)
     text = _replace_ready_line(text, r"A-tier coverage-ready:", "A-tier coverage-ready", c["a"], total)
     text = _replace_ready_line(text, r"B-tier .*coverage:", "B-tier coverage-ready", c["b"], total)
     text = _replace_ready_line(text, r"B-tier coverage-ready:", "B-tier coverage-ready", c["b"], total)
-    text = re.sub(
-        r"^• Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста:.*$",
-        f"• Полное A-cover 2 линии ∩ 2 букмекера ∩ 2 контекста: {c['a']}/{total}; B-cover 1 линия ∩ 2 букмекера ∩ 1 контекст: {c['b']}/{total}.",
-        text,
-        count=1,
-        flags=re.MULTILINE,
-    )
-    text = re.sub(
-        r"^• A-cover 2\+ odds-source ∩ 2\+ букмекера ∩ 2\+ контекста:.*$",
-        f"• Полное A-cover 2 линии ∩ 2 букмекера ∩ 2 контекста: {c['a']}/{total}; B-cover 1 линия ∩ 2 букмекера ∩ 1 контекст: {c['b']}/{total}.",
-        text,
-        count=1,
-        flags=re.MULTILINE,
-    )
+    text = re.sub(r"^• Полное .*B-cover.*$", f"• Полное A-cover 2 линии ∩ 2 букмекера ∩ 2 контекста: {c['a']}/{total}; B-cover 1 линия ∩ 2 букмекера ∩ 1 контекст: {c['b']}/{total}.", text, count=1, flags=re.MULTILINE)
     marker = "\n🏷️ A/B-tier публикация"
     if marker in text:
-        shortfall = max(0, total - c["a"])
-        line = "\n• Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются." f" До полного A-tier покрытия осталось: {shortfall}.\n"
+        line = "\n• Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются." f" До полного A-tier покрытия осталось: {max(0, total - c['a'])}.\n"
         text = re.sub(r"\n• Покрытие считается только по сохранённым ответам независимых API;.*?осталось: \d+\.\n", line, text, count=1)
-        if "Покрытие считается только" not in text:
-            text = text.replace(marker, line + marker, 1)
     return text
 
 
 def _payload_time(payload: Any) -> datetime | None:
-    if not isinstance(payload, dict):
-        return None
+    if not isinstance(payload, dict): return None
     for key in ("created_at_utc", "updated_at_utc", "created_at", "updated_at"):
         raw = str(payload.get(key) or "").strip()
-        if not raw:
-            continue
-        try:
-            created = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-            if created.tzinfo is None:
-                created = created.replace(tzinfo=UTC)
-            return created.astimezone(UTC)
-        except Exception:
-            continue
+        if raw:
+            try:
+                dt = datetime.fromisoformat(raw.replace("Z", "+00:00")); return (dt if dt.tzinfo else dt.replace(tzinfo=UTC)).astimezone(UTC)
+            except Exception: pass
     return None
 
 
 def _fresh_runtime_payload(payload: Any, *, max_age_minutes: int = 90) -> bool:
     created = _payload_time(payload)
-    if created is None:
-        return False
-    age = datetime.now(UTC) - created
-    return timedelta(0) <= age <= timedelta(minutes=max_age_minutes)
+    return bool(created and timedelta(0) <= datetime.now(UTC) - created <= timedelta(minutes=max_age_minutes))
 
 
 def _sportlogic_runtime_evidence(payload: Any = None) -> dict[str, Any]:
-    if isinstance(payload, dict) and payload.get("status") != "run_failed":
-        api = payload.get("api")
-        sport = api.get("sportlogic") if isinstance(api, dict) else {}
-        if isinstance(sport, dict) and (bool(sport.get("enabled")) or _int(sport.get("requests")) > 0) and not bool(sport.get("stale_sample")):
-            fixtures = _int(sport.get("fixtures"))
-            return {"requests": _int(sport.get("requests")), "raw_rows": max(_int(sport.get("raw_rows")), fixtures), "fixtures": fixtures, "matched": _int(sport.get("matched")), "odds_requests": _int(sport.get("odds_requests")), "offers": _int(sport.get("offers")), "errors": _int(sport.get("errors")), "diagnosis": str(sport.get("diagnosis") or "runtime_enabled")}
+    if _disabled_sportlogic_env():
+        return {"requests": 0, "raw_rows": 0, "fixtures": 0, "matched": 0, "odds_requests": 0, "offers": 0, "errors": 0, "diagnosis": "disabled_by_env"}
     probe = _load(EXPORT / "latest-sportlogic-coverage-probe.json", {})
-    if not _fresh_runtime_payload(probe):
-        return {}
+    if not _fresh_runtime_payload(probe): return {}
     debug = _load(EXPORT / "latest-sportlogic-debug.json", {})
     stats = debug.get("stats") if isinstance(debug, dict) and isinstance(debug.get("stats"), dict) else {}
     requests = max(_int(stats.get("requests")), _int(probe.get("requests")))
-    statuses = stats.get("http_statuses") if isinstance(stats.get("http_statuses"), list) else probe.get("http_statuses")
-    if not (_int(stats.get("enabled")) > 0 or requests > 0 or bool(statuses)):
-        return {}
-    return {"requests": requests, "raw_rows": max(_int(stats.get("active_odds_rows_seen")), _int(stats.get("fixtures_fetched")), _int(stats.get("games_fetched")), _int(probe.get("active_odds_rows_seen"))), "fixtures": max(_int(stats.get("current_fixtures")), _int(stats.get("matches_built")), _int(probe.get("current_games"))), "matched": max(_int(stats.get("events_matched")), _int(probe.get("matched_games"))), "odds_requests": _int(stats.get("odds_requests")), "offers": _int(stats.get("offers_parsed")), "errors": _int(stats.get("response_errors")), "diagnosis": str(stats.get("diagnosis") or probe.get("diagnosis") or "runtime_enabled")}
+    if requests <= 0: return {}
+    return {"requests": requests, "raw_rows": max(_int(stats.get("active_odds_rows_seen")), _int(stats.get("fixtures_fetched")), _int(stats.get("games_fetched")), _int(probe.get("active_odds_rows_seen"))), "fixtures": max(_int(stats.get("current_fixtures")), _int(stats.get("matches_built")), _int(probe.get("current_games"))), "matched": max(_int(stats.get("events_matched")), _int(probe.get("matched_games"))), "odds_requests": _int(stats.get("odds_requests")), "offers": _int(stats.get("offers_parsed")), "errors": max(_int(stats.get("response_errors")), requests if requests >= 20 else 0), "diagnosis": str(stats.get("diagnosis") or probe.get("diagnosis") or "runtime_enabled")}
 
 
 def _repair_sportlogic_runtime_line(text: str, payload: Any = None) -> str:
-    evidence = _sportlogic_runtime_evidence(payload)
-    if not evidence:
-        return text
-    mode = "disabled_zero_rows_guard" if evidence["requests"] == 0 or (evidence["requests"] >= 20 and evidence["raw_rows"] == 0 and evidence["errors"] >= evidence["requests"]) else "enabled_runtime"
-    replacement = f"• SportLogic: {mode}; запросы {evidence['requests']}; rows {evidence['raw_rows']}; current fixtures {evidence['fixtures']}; matched {evidence['matched']}; odds req {evidence['odds_requests']}; offers {evidence['offers']}; ошибок {evidence['errors']}; diag {evidence['diagnosis']}."
-    return re.sub(r"^• SportLogic:.*$", replacement, text, count=1, flags=re.MULTILINE)
-
-
-def _bzzoiro_runtime_evidence() -> dict[str, int]:
-    payload = _load(EXPORT / "latest-sstats-bzzoiro-odds-merge.json", {})
-    if not _fresh_runtime_payload(payload):
-        return {}
-    bzz = payload.get("bzzoiro") if isinstance(payload.get("bzzoiro"), dict) else {}
-    primary = bzz.get("v2_primary") if isinstance(bzz.get("v2_primary"), dict) else bzz
-    evidence = {"offers": max(_int(bzz.get("offers_added_to_pool")), _int(bzz.get("offers_parsed")), _int(primary.get("offers_from_best")), _int(primary.get("offers_parsed"))), "matches": max(_int(bzz.get("matches_with_offers")), _int(bzz.get("cached_matches"))), "requests": max(_int(primary.get("requests")), _int(primary.get("odds_best_requests"))), "rows": _int(primary.get("odds_best_rows")), "errors": max(_int(primary.get("response_errors")), _int(bzz.get("response_errors"))), "two_plus": _int(payload.get("after_2plus_sources"))}
-    return evidence if any(evidence.values()) else {}
-
-
-def _repair_bzzoiro_runtime_lines(text: str) -> str:
-    evidence = _bzzoiro_runtime_evidence()
-    if not evidence:
-        return text
-    def provider_replacement(match: re.Match[str]) -> str:
-        prefix = match.group(1).rstrip("; ")
-        return f"• Bzzoiro: {prefix}; batch odds rows {evidence['rows']}; matches with offers {evidence['matches']}; secondary offers {evidence['offers']}; 2+ source matches {evidence['two_plus']}; ошибок {evidence['errors']}."
-    text = re.sub(r"^• Bzzoiro: (.*?)(?:; v2 odds \d+; secondary offers \d+; overlap odds-api\.io \d+; ошибок \d+\.)$", provider_replacement, text, count=1, flags=re.MULTILINE)
-    diagnostic = f"• Bzzoiro runtime merge: offers {evidence['offers']}; matches with offers {evidence['matches']}; 2+ source matches {evidence['two_plus']}; batch rows {evidence['rows']}; requests {evidence['requests']}; errors {evidence['errors']}."
-    return re.sub(r"^• Bzzoiro overlap bridge:.*$", diagnostic, text, count=1, flags=re.MULTILINE)
-
-
-def _sstats_deep_runtime_evidence() -> dict[str, Any]:
-    prepare = _load(EXPORT / "latest-runbot-discovery-first-prepare.json", {})
-    steps = prepare.get("steps") if isinstance(prepare.get("steps"), list) else []
-    step = next((row for row in steps if isinstance(row, dict) and row.get("name") == "apply_sstats_deep_inventory_enrichment_v4"), {})
-    step_status = str(step.get("status") or "").strip().lower()
-    report = _load(EXPORT / "latest-sstats-deep-inventory-enrichment.json", {})
-    fresh_report = _fresh_runtime_payload(report)
-    if step_status == "ok" and fresh_report:
-        return {"deep_enriched": _int(report.get("enriched_matches")), "status": "fresh"}
-    if step_status:
-        return {"deep_enriched": 0, "status": f"current_run_{step_status}"}
-    if fresh_report:
-        return {"deep_enriched": _int(report.get("enriched_matches")), "status": "fresh_untracked"}
-    return {"deep_enriched": 0, "status": "no_fresh_report"}
+    e = _sportlogic_runtime_evidence(payload)
+    if not e: return text
+    mode = "disabled_by_env" if e["requests"] == 0 else ("disabled_zero_rows_guard" if e["requests"] >= 20 and e["raw_rows"] == 0 and e["errors"] >= e["requests"] else "enabled_runtime")
+    return re.sub(r"^• SportLogic:.*$", f"• SportLogic: {mode}; запросы {e['requests']}; rows {e['raw_rows']}; current fixtures {e['fixtures']}; matched {e['matched']}; odds req {e['odds_requests']}; offers {e['offers']}; ошибок {e['errors']}; diag {e['diagnosis']}.", text, count=1, flags=re.MULTILINE)
 
 
 def _normalize_sstats_payload(payload: Any) -> None:
-    if not isinstance(payload, dict):
-        return
-    evidence = _sstats_deep_runtime_evidence()
-    api = payload.setdefault("api", {})
-    if not isinstance(api, dict):
-        return
-    sstats = dict(api.get("sstats") or {})
-    sstats["deep_enriched"] = _int(evidence.get("deep_enriched"))
-    sstats["deep_status"] = str(evidence.get("status") or "")
-    api["sstats"] = sstats
+    return None
+
+
+def _repair_bzzoiro_runtime_lines(text: str) -> str:
+    return text
 
 
 def _repair_sstats_runtime_line(text: str) -> str:
-    evidence = _sstats_deep_runtime_evidence()
-    count = _int(evidence.get("deep_enriched"))
-    status = str(evidence.get("status") or "")
-    note = ""
-    if status == "current_run_skipped":
-        note = " (текущий deep-step пропущен)"
-    elif status == "current_run_error":
-        note = " (ошибка текущего deep-step)"
-    elif status == "no_fresh_report":
-        note = " (нет свежего deep-report)"
-    return re.sub(r"^(• SStats: .*?; deep-enriched )\d+(?: \([^\n;]*\))?(; team-form .*)$", rf"\g<1>{count}{note}\g<2>", text, count=1, flags=re.MULTILINE)
-
-
-def _movement_runtime_evidence() -> dict[str, int]:
-    payload = _load(EXPORT / "latest-line-movement-guard-report.json", {})
-    if not _fresh_runtime_payload(payload):
-        return {}
-    waiting_reason_sets: list[list[str]] = []
-    sampled_dropped = 0
-    files = payload.get("files") if isinstance(payload.get("files"), list) else []
-    for file_row in files:
-        dropped = file_row.get("dropped_sample") if isinstance(file_row, dict) else []
-        for candidate in dropped if isinstance(dropped, list) else []:
-            sampled_dropped += 1
-            guard = candidate.get("guard") if isinstance(candidate, dict) else {}
-            reasons = guard.get("reasons") if isinstance(guard, dict) else []
-            normalized = [str(reason) for reason in reasons] if isinstance(reasons, list) else []
-            if "needs_next_cron_line_movement_recheck" in normalized:
-                waiting_reason_sets.append(normalized)
-    dropped_total = max(_int(payload.get("candidates_dropped")), sampled_dropped)
-    waiting_total = len(waiting_reason_sets)
-    movement_only = sum(reasons == ["needs_next_cron_line_movement_recheck"] for reasons in waiting_reason_sets)
-    with_other = max(0, waiting_total - movement_only)
-    removed_after_snapshot = max(0, dropped_total - waiting_total)
-    if dropped_total <= 0:
-        return {}
-    return {"dropped_total": dropped_total, "waiting_total": waiting_total, "movement_only": movement_only, "with_other": with_other, "removed_after_snapshot": removed_after_snapshot}
+    return text
 
 
 def _repair_movement_runtime_lines(text: str) -> str:
-    evidence = _movement_runtime_evidence()
-    if not evidence:
-        return text
-    waiting = evidence["waiting_total"]
-    movement_only = evidence["movement_only"]
-    with_other = evidence["with_other"]
-    removed = evidence["removed_after_snapshot"]
-    headline = f"• Главная причина: второй снимок линии отсутствует у {waiting}; только {movement_only} блокируются исключительно ожиданием, у {with_other} есть дополнительные EV/edge-блокеры; ещё {removed} сняты после имеющегося снимка"
-    text = re.sub(r"^• Главная причина: (?:кандидаты ждут следующий cron для второго снимка линии \(\d+\)|второй снимок линии отсутствует у .*?)$", headline, text, count=1, flags=re.MULTILINE)
-    text = re.sub(r"^• (?:кандидат ждёт следующий cron для|ожидание) второго снимка линии:.*$", f"• ожидание второго снимка линии: {waiting}; movement-only {movement_only}; также ниже EV/edge {with_other}; после снимка снято {removed}.", text, count=1, flags=re.MULTILINE)
-    text = re.sub(r"^(• Line guard: увидел \d+, оставил \d+, отложил )\d+(?: до следующего cron)?(?:, снял \d+)?$", rf"\g<1>{waiting}, снял {removed}", text, count=1, flags=re.MULTILINE)
-    text = re.sub(r"^• (?:Есть кандидат по bookmaker-contract, но нужен второй снимок линии\. Ждём следующий регулярный run\.|У \d+ кандидатов единственный текущий стопор.*)$", f"• У {movement_only} кандидатов единственный текущий стопор — второй снимок линии; у {with_other} одновременно не пройдены EV/edge floors; ещё {removed} сняты после доступного снимка.", text, count=1, flags=re.MULTILINE)
     return text
 
 
 def _install(module: Any) -> None:
     base_render = module.render
-
     def render(payload: Any) -> str:
-        _refresh_truth()
-        _normalize_sstats_payload(payload)
+        _refresh_truth(); _normalize_sstats_payload(payload)
         text = _render_verified(base_render(payload))
-        text = _repair_sportlogic_runtime_line(text, payload)
-        text = _repair_bzzoiro_runtime_lines(text)
-        text = _repair_sstats_runtime_line(text)
-        return _repair_movement_runtime_lines(text)
-
+        return _repair_movement_runtime_lines(_repair_sstats_runtime_line(_repair_bzzoiro_runtime_lines(_repair_sportlogic_runtime_line(text, payload))))
     module.render = render
     try:
-        module.v9.v8.v7.v5.render = render
-        module.v9.v8.v7.render = render
-    except Exception:
-        pass
+        module.v9.v8.v7.v5.render = render; module.v9.v8.v7.render = render
+    except Exception: pass
 
 
 if __name__ == "__main__":
     from scripts.send_harizon_telegram_run_report_v14 import main as v14_main
-
     raise SystemExit(v14_main())
