@@ -1,11 +1,5 @@
 from __future__ import annotations
 
-"""Report-only repairs for production HARIZON diagnostics.
-
-Publication logic is untouched. This layer repairs Telegram diagnostics so the
-report does not contradict runtime policy or day-inventory coverage truth.
-"""
-
 import json
 import os
 import re
@@ -42,35 +36,7 @@ def _int(value: Any) -> int:
 
 
 def _disabled_sportlogic_env() -> bool:
-    names = (
-        "DAY_INVENTORY_ENABLE_SPORTLOGIC",
-        "ENABLE_SPORTLOGIC",
-        "SPORTLOGIC_ENABLED",
-        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED",
-    )
-    return any(str(os.getenv(name) or "").strip().lower() in {"0", "false", "no", "off"} for name in names)
-
-
-def _payload_time(payload: Any) -> datetime | None:
-    if not isinstance(payload, dict):
-        return None
-    for key in ("created_at_utc", "updated_at_utc", "created_at", "updated_at"):
-        raw = str(payload.get(key) or "").strip()
-        if not raw:
-            continue
-        try:
-            parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=UTC)
-            return parsed.astimezone(UTC)
-        except Exception:
-            pass
-    return None
-
-
-def _fresh(payload: Any, minutes: int = 120) -> bool:
-    created = _payload_time(payload)
-    return bool(created and timedelta(0) <= datetime.now(UTC) - created <= timedelta(minutes=minutes))
+    return any(str(os.getenv(n) or "").strip().lower() in {"0", "false", "no", "off"} for n in ("DAY_INVENTORY_ENABLE_SPORTLOGIC", "ENABLE_SPORTLOGIC", "SPORTLOGIC_ENABLED", "SPORTLOGIC_CONTROLLED_ODDS_ENABLED"))
 
 
 def _truth_counts() -> dict[str, int]:
@@ -121,31 +87,12 @@ def patch_text_quality(text: str, payload: dict[str, Any]) -> str:
     for idx, row in enumerate(evaluated[:6], 1):
         metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
         q = _reserve_quality_from_metrics(metrics)
-        if q <= 0:
-            continue
-        text = re.sub(rf"(^\s*{idx}\. .*? \| q )0\.0\b", rf"\g<1>{q:.1f} reserve", text, count=1, flags=re.MULTILINE)
+        if q > 0:
+            text = re.sub(rf"(^\s*{idx}\. .*? \| q )0\.0\b", rf"\g<1>{q:.1f} reserve", text, count=1, flags=re.MULTILINE)
     return text
 
 
-def _bzzoiro_runtime() -> dict[str, int]:
-    for path in (EXPORT / "latest-sstats-bzzoiro-odds-merge.json", EXPORT / "latest-secondary-provider-matching.json", EXPORT / "latest-signal-stack-runtime.json"):
-        payload = _load(path, {})
-        if not isinstance(payload, dict):
-            continue
-        bzz = payload.get("bzzoiro") if isinstance(payload.get("bzzoiro"), dict) else payload
-        offers = max(_int(bzz.get("offers_added_to_pool")), _int(bzz.get("offers_parsed")), _int(bzz.get("secondary_offers_added")), _int(payload.get("bzzoiro_secondary_offers_added")))
-        matches = max(_int(bzz.get("matches_with_offers")), _int(bzz.get("cached_matches")), _int(payload.get("matches_with_offers")))
-        two_plus = max(_int(payload.get("after_2plus_sources")), _int(bzz.get("two_plus_source_matches")), _int(bzz.get("combo_with_odds_api_io")))
-        rows = max(_int(bzz.get("odds_best_rows")), _int(bzz.get("batch_odds_rows")))
-        req = max(_int(bzz.get("requests")), _int(bzz.get("odds_best_requests")), _int(payload.get("requests")))
-        err = max(_int(bzz.get("errors")), _int(bzz.get("response_errors")))
-        if any((offers, matches, two_plus, rows, req, err)):
-            return {"offers": offers, "matches": matches, "two_plus": two_plus, "rows": rows, "requests": req, "errors": err}
-    return {}
-
-
 def patch_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    # Make the single-payload report reflect the production env and verified day inventory.
     if _disabled_sportlogic_env():
         api = payload.setdefault("api", {})
         if isinstance(api, dict):
@@ -157,48 +104,53 @@ def patch_payload(payload: dict[str, Any]) -> dict[str, Any]:
         coverage["day_inventory_with_odds"] = counts.get("matches_with_odds", coverage.get("day_inventory_with_odds", 0))
         coverage["day_inventory_with_context"] = counts.get("matches_with_context", coverage.get("day_inventory_with_context", 0))
         coverage["ready_for_model"] = counts.get("matches_ready_for_model", coverage.get("ready_for_model", 0))
-        coverage["b_tier_coverage_ready"] = counts.get("matches_b_tier_watch_ready", 0) or min(
-            _int(coverage.get("day_inventory_with_odds")),
-            counts.get("matches_with_2plus_price_confirmations", 0),
-            _int(coverage.get("day_inventory_with_context")),
-        )
+        coverage["b_tier_coverage_ready"] = counts.get("matches_b_tier_watch_ready", 0) or min(_int(coverage.get("day_inventory_with_odds")), counts.get("matches_with_2plus_price_confirmations", 0), _int(coverage.get("day_inventory_with_context")))
     return payload
 
 
 def patch_runtime_lines(text: str) -> str:
     if _disabled_sportlogic_env():
-        text = re.sub(
-            r"^• sportlogic:.*$",
-            "• sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0",
-            text,
-            count=1,
-            flags=re.MULTILINE,
-        )
-        text = re.sub(
-            r"^• SportLogic:.*$",
-            "• SportLogic: disabled_by_env; запросы 0; rows 0; current fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.",
-            text,
-            count=1,
-            flags=re.MULTILINE,
-        )
-    bzz = _bzzoiro_runtime()
-    if bzz:
-        replacement = f"• Bzzoiro runtime merge: offers {bzz['offers']}; matches with offers {bzz['matches']}; 2+ source matches {bzz['two_plus']}; batch rows {bzz['rows']}; requests {bzz['requests']}; errors {bzz['errors']}."
-        text = re.sub(r"^• Bzzoiro overlap bridge:.*$", replacement, text, count=1, flags=re.MULTILINE)
+        text = re.sub(r"^• sportlogic:.*$", "• sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0", text, count=1, flags=re.MULTILINE)
+        text = re.sub(r"^• SportLogic:.*$", "• SportLogic: disabled_by_env; запросы 0; rows 0; current fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.", text, count=1, flags=re.MULTILINE)
     def repl(match: re.Match[str]) -> str:
         raw = _int(match.group(1)); before = _int(match.group(2)); after = _int(match.group(3)); gap = _int(match.group(4))
         if after < before or gap > 0:
             return f"• Bookmaker mapping repair: raw 2+ {raw}; normalized diagnostic stale/incomplete ({before}→{after}); фактический B-cover см. выше; gap after {gap}."
         return match.group(0)
-    text = re.sub(r"^• Bookmaker mapping repair: raw 2\+ (\d+); normalized (\d+)→(\d+); gap after (\d+)\.$", repl, text, count=1, flags=re.MULTILINE)
+    return re.sub(r"^• Bookmaker mapping repair: raw 2\+ (\d+); normalized (\d+)→(\d+); gap after (\d+)\.$", repl, text, count=1, flags=re.MULTILINE)
+
+
+def patch_line_diagnostics(text: str) -> str:
+    diag = _load(EXPORT / "latest-line-movement-diagnostics.json", {})
+    counts = diag.get("class_counts") if isinstance(diag, dict) and isinstance(diag.get("class_counts"), dict) else {}
+    if not counts:
+        return text
+    order = ["actual_bad_movement", "selected_price_not_current", "line_snapshot_alias_or_missing", "line_snapshot_pending_or_alias", "not_confirmed", "unconfirmed_final", "missing_second_snapshot", "odds_below_min", "duplicate", "xg_direction_conflict"]
+    labels = {
+        "actual_bad_movement": "реально плохое движение",
+        "selected_price_not_current": "выбранный коэффициент уже не текущий",
+        "line_snapshot_alias_or_missing": "нет/alias mismatch snapshot линии",
+        "line_snapshot_pending_or_alias": "pending/alias snapshot",
+        "not_confirmed": "движение не подтверждено",
+        "unconfirmed_final": "финальная проверка не подтвердила",
+        "missing_second_snapshot": "нет второго снимка",
+        "odds_below_min": "коэффициент ниже минимума",
+        "duplicate": "дубликат",
+        "xg_direction_conflict": "конфликт направления с xG",
+    }
+    parts = [f"{labels[k]} {int(counts.get(k) or 0)}" for k in order if int(counts.get(k) or 0) > 0]
+    if not parts:
+        return text
+    line = "• Line movement breakdown: " + "; ".join(parts[:8]) + "."
+    if "🚫 Почему не опубликовано" in text:
+        text = text.replace("🚫 Почему не опубликовано", line + "\n🚫 Почему не опубликовано", 1)
     return text
 
 
 def patch_conclusion(text: str) -> str:
-    if "controlled fallback daily limit reached" in text or "daily limit reached" in text:
-        text = re.sub(r"^• Главный технический bottleneck:.*$", "• Главный текущий стопор: дневной cap/дубликаты и line movement; независимые odds-source важны для A-tier, но B-tier уже работает без 2-source odds.", text, count=1, flags=re.MULTILINE)
-    else:
-        text = re.sub(r"^• Главный технический bottleneck: мало матчей с 2 independent odds sources\..*$", "• Главный технический bottleneck сейчас: semantic line movement и freshness/current-price; 2 independent odds sources остаются целью для A-tier, но не блокируют B-tier.", text, count=1, flags=re.MULTILINE)
+    replacement = "• Главный текущий стопор: line movement/freshness/current-price и уже опубликованные дубликаты; 2 independent odds-source — цель для A-tier, но не блок B-tier."
+    text = re.sub(r"^• Главный технический bottleneck:.*$", replacement, text, count=1, flags=re.MULTILINE)
+    text = re.sub(r"^• Главный текущий стопор:.*$", replacement, text, count=1, flags=re.MULTILINE)
     return text
 
 
@@ -207,6 +159,7 @@ def patch(payload: dict[str, Any], text: str) -> tuple[dict[str, Any], str]:
     payload = patch_payload(payload)
     text = patch_text_quality(text, payload)
     text = patch_runtime_lines(text)
+    text = patch_line_diagnostics(text)
     text = patch_conclusion(text)
     return payload, text
 

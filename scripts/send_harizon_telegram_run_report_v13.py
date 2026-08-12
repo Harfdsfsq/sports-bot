@@ -30,6 +30,7 @@ def _refresh_truth() -> None:
         ("scripts.build_day_inventory_coverage_truth", "main"),
         ("scripts.day_inventory_cumulative_coverage", "main"),
         ("scripts.harizon_learning_report", "main"),
+        ("scripts.harizon_line_movement_diagnostics", "main"),
     ):
         try:
             module = __import__(module_name, fromlist=[name])
