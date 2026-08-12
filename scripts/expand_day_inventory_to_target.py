@@ -350,6 +350,16 @@ def write_highwater(payload: dict[str, Any], day: str) -> list[str]:
     return changed
 
 
+def _target_status(selected_count: int, collected_count: int, target: int) -> str:
+    if selected_count >= target:
+        return "ok_target_met"
+    if collected_count >= target:
+        return "ok_target_met_after_alias_repair"
+    if selected_count > 0:
+        return "partial_known_rows_only_provider_shortfall"
+    return "no_known_rows"
+
+
 def main() -> int:
     day = target_date()
     days = horizon_days()
@@ -382,12 +392,12 @@ def main() -> int:
     payload["inventory_horizon_days"] = days
     payload["target_matches"] = target
     payload["target_expand_updated_at_utc"] = datetime.now(UTC).isoformat()
-    payload["target_expand_status"] = "ok_target_met" if len(selected) >= target else "partial_known_rows_only"
+    payload["target_expand_status"] = _target_status(len(selected), len(rows), target)
     changed_paths = write_aliases(payload, day)
     highwater_paths_written = write_highwater(payload, day)
     report = {
         "created_at_utc": datetime.now(UTC).isoformat(),
-        "mode": "horizon_inventory_expand_v4_semantic_artifact_aliases",
+        "mode": "horizon_inventory_expand_v5_semantic_artifact_aliases_status_truth",
         "target_date": day,
         "horizon_days": days,
         "target": target,

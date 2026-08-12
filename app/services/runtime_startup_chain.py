@@ -79,6 +79,7 @@ MODULES = [
     'app.services.odds_api_io_offer_snapshot_runtime_patch',
     'app.services.bzzoiro_exact_offer_bridge_patch',
     'app.services.max_coverage_api_matching_patch',
+    'app.services.context_coverage_bridge_runtime',
     'app.services.candidate_factory_runtime_diagnostics',
     'app.services.rules_compliant_pipeline',
 ]
