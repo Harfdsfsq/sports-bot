@@ -6,71 +6,31 @@ from typing import Any
 
 def _force_runtime_publication_contract() -> None:
     overrides = {
-        "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
-        "PUBLISH_TIER_A_MIN_BOOKS": "2",
-        "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
-        "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1",
-        "PUBLISH_TIER_B_MIN_BOOKS": "2",
-        "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
-        "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
-        "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
-        "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
-        "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
-        "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "false",
-        "CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER": "true",
-        "CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS": "true",
-        "CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT": "false",
-        "CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS": "true",
-        "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_REQUIRE_XG_HARD_CONFIRMATION": "false",
-        "CONTROLLED_FALLBACK_BASE_TIER_B_MIN_PUBLICATION_SCORE": "12.0",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": "12.0",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "2.3",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "4.0",
-        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "2.3",
-        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "4.0",
-        "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": "3",
-        "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "3",
-        "DAY_INVENTORY_ENABLE_SPORTLOGIC": "false",
-        "ENABLE_SPORTLOGIC": "false",
-        "SPORTLOGIC_ENABLED": "false",
-        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "false",
-        "SPORTLOGIC_BROAD_FALLBACK_ENABLED": "false",
-        "SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED": "false",
-        "SPORTLOGIC_PER_RUN_MAX": "0",
-        "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "0",
-        "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "0",
-        "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "0",
-        "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "0",
-        "SPORTLOGIC_MATCH_LIMIT": "0",
-        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "0",
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": "0",
-        "SPORTLOGIC_DISABLED_ZERO_ROWS_GUARD": "true",
+        "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2", "PUBLISH_TIER_A_MIN_BOOKS": "2", "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
+        "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1", "PUBLISH_TIER_B_MIN_BOOKS": "2", "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
+        "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1", "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1", "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2", "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1", "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "1",
+        "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false", "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "false",
+        "CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER": "true", "CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS": "true",
+        "CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT": "false", "CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS": "true", "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_REQUIRE_XG_HARD_CONFIRMATION": "false",
+        "CONTROLLED_FALLBACK_BASE_TIER_B_MIN_PUBLICATION_SCORE": "12.0", "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": "12.0", "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "2.3", "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "4.0", "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "2.3", "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "4.0",
+        "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": "3", "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "3",
+        "A_TIER_TARGETED_ENRICHMENT_ENABLED": "true", "BZZOIRO_CONTEXT_MATCH_LIMIT": "280", "BZZOIRO_ODDS_MATCH_LIMIT": "280", "SSTATS_CONTEXT_MATCH_LIMIT": "300",
+        "DAY_INVENTORY_ENABLE_SPORTLOGIC": "false", "ENABLE_SPORTLOGIC": "false", "SPORTLOGIC_ENABLED": "false", "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "false", "SPORTLOGIC_PER_RUN_MAX": "0", "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "0", "SPORTLOGIC_MATCH_LIMIT": "0", "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "0", "SPORTLOGIC_ODDS_MATCH_LIMIT": "0", "SPORTLOGIC_DISABLED_ZERO_ROWS_GUARD": "true",
     }
-    for key, value in overrides.items():
-        os.environ[key] = value
+    for k, v in overrides.items(): os.environ[k] = v
 
 
-def _num(value: Any, default: float = 0.0) -> float:
+def _num(v: Any, d: float = 0.0) -> float:
+    try: return float(str(v).replace(",", ".")) if v not in (None, "") else d
+    except Exception: return d
+
+
+def _int(v: Any, d: int = 0) -> int:
     try:
-        if value in (None, ""):
-            return default
-        return float(str(value).replace(",", "."))
-    except Exception:
-        return default
-
-
-def _int(value: Any, default: int = 0) -> int:
-    try:
-        if value in (None, ""):
-            return default
-        if isinstance(value, (list, tuple, set, dict)):
-            return len(value)
-        return int(float(str(value).replace(",", ".")))
-    except Exception:
-        return default
+        if isinstance(v, (list, tuple, set, dict)): return len(v)
+        return int(float(str(v).replace(",", "."))) if v not in (None, "") else d
+    except Exception: return d
 
 
 def _b_tier_testing_floor(metrics: dict[str, Any]) -> bool:
@@ -85,67 +45,57 @@ def _b_tier_testing_floor(metrics: dict[str, Any]) -> bool:
 
 def _install_b_tier_testing_relief(base: Any) -> None:
     old = getattr(base, "tier_reasons", None)
-    if not callable(old) or getattr(base, "_b_tier_testing_relief_installed", False):
-        return
+    if not callable(old) or getattr(base, "_b_tier_testing_relief_installed", False): return
     def wrapped(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
         reasons = list(old(tier, candidate, metrics) or [])
-        if str(tier or "").strip().upper() != "B" or not _b_tier_testing_floor(metrics):
-            return reasons
-        removable_exact = {"tier_b_quality_below_min", "tier_b_publication_score_below_min", "tier_b_market_implied_xg_not_hard_confirmation"}
-        filtered: list[str] = []
+        if str(tier or "").strip().upper() != "B" or not _b_tier_testing_floor(metrics): return reasons
+        filtered = []
         for reason in reasons:
             r = str(reason)
-            if r in removable_exact:
-                continue
-            if r.startswith("tier_b_context_sources_below_min") or r.startswith("tier_b_confirmation_sources_below_min"):
-                continue
+            if r in {"tier_b_quality_below_min", "tier_b_publication_score_below_min", "tier_b_market_implied_xg_not_hard_confirmation"}: continue
+            if r.startswith("tier_b_context_sources_below_min") or r.startswith("tier_b_confirmation_sources_below_min"): continue
             filtered.append(reason)
         return filtered
-    base.tier_reasons = wrapped
-    base._b_tier_testing_relief_installed = True
+    base.tier_reasons = wrapped; base._b_tier_testing_relief_installed = True
 
 
 def _apply_focused_alpha_policy() -> None:
     try:
-        from app.services.focused_alpha_runtime_policy import apply
-        apply(force=True)
-    except Exception:
-        pass
+        from app.services.focused_alpha_runtime_policy import apply; apply(force=True)
+    except Exception: pass
     _force_runtime_publication_contract()
 
 
+def _run_step(module_name: str, function_name: str = "main") -> None:
+    try:
+        module = __import__(module_name, fromlist=[function_name]); fn = getattr(module, function_name, None)
+        if callable(fn): fn()
+    except SystemExit: pass
+    except Exception: pass
+
+
 def _repair_runtime_artifacts_before_fallback() -> None:
-    for module_name, function_name in (("scripts.bridge_runtime_context_coverage", "main"), ("scripts.build_day_inventory_coverage_truth", "main"), ("scripts.replace_rescue_proxy_placeholder_xg", "main"), ("scripts.day_inventory_cumulative_coverage", "main")):
-        try:
-            module = __import__(module_name, fromlist=[function_name]); fn = getattr(module, function_name, None)
-            if callable(fn): fn()
-        except SystemExit:
-            pass
-        except Exception:
-            pass
+    for module_name in ("scripts.bridge_runtime_context_coverage", "scripts.build_day_inventory_coverage_truth", "scripts.harizon_a_tier_coverage_plan", "scripts.replace_rescue_proxy_placeholder_xg", "scripts.day_inventory_cumulative_coverage"):
+        _run_step(module_name)
 
 
 def _build_focused_alpha_decisions() -> None:
     try:
-        from scripts.build_focused_alpha_decisions_v2 import main as build_decisions
-        build_decisions()
-        from app.services.focused_alpha_learning_ledger import update_learning_ledger
-        update_learning_ledger()
-    except Exception:
-        pass
+        from scripts.build_focused_alpha_decisions_v2 import main as build_decisions; build_decisions()
+        from app.services.focused_alpha_learning_ledger import update_learning_ledger; update_learning_ledger()
+    except Exception: pass
 
 
 def main() -> int:
     _force_runtime_publication_contract(); _repair_runtime_artifacts_before_fallback(); _apply_focused_alpha_policy()
     try:
-        from scripts import apply_controlled_fallback_performance_policy
-        apply_controlled_fallback_performance_policy.main()
-    except Exception:
-        pass
+        from scripts import apply_controlled_fallback_performance_policy; apply_controlled_fallback_performance_policy.main()
+    except Exception: pass
     _force_runtime_publication_contract()
     try:
         import scripts.publish_controlled_fallback_guarded_v18 as v18
         from scripts.harizon_production_quality_layer import install as install_quality_layer
+        from scripts.patch_current_price_recheck_value import install as install_current_price_recheck
         from scripts.patch_daily_cap_after_quality import install as install_daily_cap_after_quality
         from scripts.patch_daily_slot_bundle_cap import install as install_daily_slot_bundle_cap
         from scripts.patch_daily_slot_semantic_ledger_count import install as install_semantic_ledger_daily_count
@@ -158,28 +108,12 @@ def main() -> int:
         from scripts.patch_semantic_line_movement_alias_relief import install as install_semantic_line_alias_relief
         from scripts.patch_semantic_movement_current_price_guard import install as install_semantic_movement_current_price_guard
         from scripts.patch_tier_a_strict_policy import install as install_tier_a_strict_policy
-        install_tier_a_strict_policy(v18.base)
-        install_publication_safety_contract(v18.base)
-        install_semantic_movement_current_price_guard(v18.base)
-        install_semantic_line_alias_relief(v18.base)
-        install_quality_layer(v18.base)
-        _install_b_tier_testing_relief(v18.base)
-        install_semantic_ledger_daily_count(v18)
-        install_reserved_slot_expiry_override(v18)
-        install_daily_slot_bundle_cap(v18)
-        install_display_line_count_safe(v18.base)
-        install_same_match_total_conflict_guard(v18.base)
-        install_fallback_current_run_only(v18.base)
-        install_daily_cap_after_quality(v18)
-        install_focused_alpha_rank(v18.base)
-    except Exception:
-        pass
+        install_tier_a_strict_policy(v18.base); install_publication_safety_contract(v18.base); install_semantic_movement_current_price_guard(v18.base); install_current_price_recheck(v18.base); install_semantic_line_alias_relief(v18.base); install_quality_layer(v18.base); _install_b_tier_testing_relief(v18.base)
+        install_semantic_ledger_daily_count(v18); install_reserved_slot_expiry_override(v18); install_daily_slot_bundle_cap(v18); install_display_line_count_safe(v18.base); install_same_match_total_conflict_guard(v18.base); install_fallback_current_run_only(v18.base); install_daily_cap_after_quality(v18); install_focused_alpha_rank(v18.base)
+    except Exception: pass
     _apply_focused_alpha_policy(); _repair_runtime_artifacts_before_fallback(); _build_focused_alpha_decisions(); _force_runtime_publication_contract()
     from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
     code = int(v20_main() or 0)
-    _build_focused_alpha_decisions()
-    return code
+    _build_focused_alpha_decisions(); return code
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+if __name__ == "__main__": raise SystemExit(main())
