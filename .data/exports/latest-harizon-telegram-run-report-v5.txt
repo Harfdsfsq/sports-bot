@@ -3,10 +3,10 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 22 | day inventory: 300
-• С линиями: 16 | с контекстом: 0 | ready model: 193
-• odds-api.io offers: 727 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 15 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 32 | day inventory: 300
+• С линиями: 28 | с контекстом: 1 | ready model: 222
+• odds-api.io offers: 845 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 17 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 52, bzzoiro: 1
 
 🧪 Воронка кандидатов
@@ -17,35 +17,35 @@
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 87 | no next regular run: 82
-• Line guard: seen 40 | kept 2 | dropped 22
+• Final pre-kickoff checks: 111 | no next regular run: 81
+• Line guard: seen 41 | kept 5 | dropped 20
 
 📡 Core API
-• odds_api_io: events req 0, odds req 12, matched 101, offers 727, 2+ books 15, err 1, auth_failed False
-• sstats: req 3, ctx 0, rows 12964, err 0, deep enriched 0
+• odds_api_io: events req 0, odds req 12, matched 106, offers 845, 2+ books 17, err 1, auth_failed False
+• sstats: req 3, ctx 1, rows 12964, err 0, deep enriched 0
 • bzzoiro: req 2, ctx 0, events 177, secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: реально плохое движение 25; движение не подтверждено 3; коэффициент ниже минимума 9; дубликат 3; конфликт направления с xG 2.
+• Line movement breakdown: реально плохое движение 24; движение не подтверждено 3; коэффициент ниже минимума 9; дубликат 3; конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• semantic line movement failed: 25 (33%)
-• line movement guard снял кандидата: 22 (29%)
-• odds below global min: 9 (12%)
-• semantic line movement not confirmed: 3 (4%)
+• semantic line movement failed: 24 (35%)
+• line movement guard снял кандидата: 20 (29%)
+• odds below global min: 9 (13%)
 • duplicate state:bets: 3 (4%)
 • duplicate persisted fallback sent index: 3 (4%)
-• price integrity:high main total price without external snapshot confirmation: 2 (3%)
+• semantic line movement not confirmed: 3 (4%)
 • направление ставки конфликтует с xG: 2 (3%)
+• current price recheck value lost:-8.6/-4.7: 1 (1%)
 
 🔎 Проверенные reserve-кандидаты
-1. FK Slavoj Cesky Krumlov — FK Kraluv Dvur | Меньше @2.85 | EV +4.5% | edge +1.6 п.п. | q 56.4 reserve
-   • reject: price integrity:high main total price without external snapshot confirmation
-2. ACS Cil Blaj — Sanatatea Cluj | Меньше @2.00 | EV +1.0% | edge +0.5 п.п. | q 58.3 reserve
+1. ACS Cil Blaj — Sanatatea Cluj | Меньше @2.00 | EV +1.0% | edge +0.5 п.п. | q 58.3 reserve
    • reject: current price recheck value lost:-8.6/-4.7, semantic line movement failed
-3. Lyngby U19 — FC Copenhagen U19 | Меньше @2.00 | EV +1.0% | edge +0.5 п.п. | q 53.9 reserve
-   • reject: current price recheck value lost:-7.8/-4.3, semantic line movement failed
-4. ACS Progresul Mogosoaia — CS Concordia Chiajna | Больше @1.80 | EV +3.9% | edge +2.1 п.п. | q 70.0 reserve
-   • reject: semantic line movement failed
+2. CSM Corona Brasov — Asc Olimpic Zarnesti | Меньше @2.50 | EV +11.1% | edge +4.4 п.п. | q 92.4 reserve
+   • reject: duplicate state:bets, duplicate persisted fallback sent index
+3. Brandys Nad Labem — FK Varnsdorf | Меньше @1.98 | EV +10.8% | edge +5.5 п.п. | q 84.0 reserve
+   • reject: controlled fallback daily limit reached:3/3
+4. Csm Adjud 1946 — CS Sporting Liesti | Меньше @2.10 | EV +5.1% | edge +2.4 п.п. | q 65.6 reserve
+   • reject: duplicate state:bets, duplicate persisted fallback sent index
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price и уже опубликованные дубликаты; 2 independent odds-source — цель для A-tier, но не блок B-tier.
