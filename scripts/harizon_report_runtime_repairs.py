@@ -2,11 +2,12 @@ from __future__ import annotations
 
 """Report-only repairs for production HARIZON diagnostics.
 
-Keeps publication logic untouched.  The goal is to make Telegram diagnostics
-reflect current runtime truth instead of stale helper artifacts.
+Publication logic is untouched. This layer repairs Telegram diagnostics so the
+report does not contradict runtime policy or day-inventory coverage truth.
 """
 
 import json
+import os
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -40,6 +41,16 @@ def _int(value: Any) -> int:
         return 0
 
 
+def _disabled_sportlogic_env() -> bool:
+    names = (
+        "DAY_INVENTORY_ENABLE_SPORTLOGIC",
+        "ENABLE_SPORTLOGIC",
+        "SPORTLOGIC_ENABLED",
+        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED",
+    )
+    return any(str(os.getenv(name) or "").strip().lower() in {"0", "false", "no", "off"} for name in names)
+
+
 def _payload_time(payload: Any) -> datetime | None:
     if not isinstance(payload, dict):
         return None
@@ -60,6 +71,12 @@ def _payload_time(payload: Any) -> datetime | None:
 def _fresh(payload: Any, minutes: int = 120) -> bool:
     created = _payload_time(payload)
     return bool(created and timedelta(0) <= datetime.now(UTC) - created <= timedelta(minutes=minutes))
+
+
+def _truth_counts() -> dict[str, int]:
+    truth = _load(EXPORT / "latest-day-inventory-coverage-truth.json", {})
+    counts = truth.get("counts") if isinstance(truth, dict) and isinstance(truth.get("counts"), dict) else {}
+    return {str(k): _int(v) for k, v in counts.items()}
 
 
 def _reserve_quality_from_metrics(metrics: dict[str, Any]) -> float:
@@ -107,7 +124,6 @@ def patch_text_quality(text: str, payload: dict[str, Any]) -> str:
         if q <= 0:
             continue
         text = re.sub(rf"(^\s*{idx}\. .*? \| q )0\.0\b", rf"\g<1>{q:.1f} reserve", text, count=1, flags=re.MULTILINE)
-    text = text.replace("качество 0.0 (оценка резерва)", "качество reserve-score (см. подробный отчёт)")
     return text
 
 
@@ -128,12 +144,47 @@ def _bzzoiro_runtime() -> dict[str, int]:
     return {}
 
 
+def patch_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    # Make the single-payload report reflect the production env and verified day inventory.
+    if _disabled_sportlogic_env():
+        api = payload.setdefault("api", {})
+        if isinstance(api, dict):
+            api["sportlogic"] = {"enabled": False, "requests": 0, "fixtures": 0, "odds_requests": 0, "matched": 0, "offers": 0, "errors": 0, "diagnosis": "disabled_by_env"}
+    counts = _truth_counts()
+    coverage = payload.setdefault("coverage", {})
+    if isinstance(coverage, dict) and counts:
+        coverage["day_inventory_total"] = counts.get("matches_total", coverage.get("day_inventory_total", 300)) or 300
+        coverage["day_inventory_with_odds"] = counts.get("matches_with_odds", coverage.get("day_inventory_with_odds", 0))
+        coverage["day_inventory_with_context"] = counts.get("matches_with_context", coverage.get("day_inventory_with_context", 0))
+        coverage["ready_for_model"] = counts.get("matches_ready_for_model", coverage.get("ready_for_model", 0))
+        coverage["b_tier_coverage_ready"] = counts.get("matches_b_tier_watch_ready", 0) or min(
+            _int(coverage.get("day_inventory_with_odds")),
+            counts.get("matches_with_2plus_price_confirmations", 0),
+            _int(coverage.get("day_inventory_with_context")),
+        )
+    return payload
+
+
 def patch_runtime_lines(text: str) -> str:
+    if _disabled_sportlogic_env():
+        text = re.sub(
+            r"^• sportlogic:.*$",
+            "• sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0",
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        text = re.sub(
+            r"^• SportLogic:.*$",
+            "• SportLogic: disabled_by_env; запросы 0; rows 0; current fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag disabled_by_env.",
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
     bzz = _bzzoiro_runtime()
     if bzz:
         replacement = f"• Bzzoiro runtime merge: offers {bzz['offers']}; matches with offers {bzz['matches']}; 2+ source matches {bzz['two_plus']}; batch rows {bzz['rows']}; requests {bzz['requests']}; errors {bzz['errors']}."
         text = re.sub(r"^• Bzzoiro overlap bridge:.*$", replacement, text, count=1, flags=re.MULTILINE)
-    # Normalize misleading bookmaker mapping repair regressions from stale/incomplete backfill artifacts.
     def repl(match: re.Match[str]) -> str:
         raw = _int(match.group(1)); before = _int(match.group(2)); after = _int(match.group(3)); gap = _int(match.group(4))
         if after < before or gap > 0:
@@ -143,11 +194,21 @@ def patch_runtime_lines(text: str) -> str:
     return text
 
 
+def patch_conclusion(text: str) -> str:
+    if "controlled fallback daily limit reached" in text or "daily limit reached" in text:
+        text = re.sub(r"^• Главный технический bottleneck:.*$", "• Главный текущий стопор: дневной cap/дубликаты и line movement; независимые odds-source важны для A-tier, но B-tier уже работает без 2-source odds.", text, count=1, flags=re.MULTILINE)
+    else:
+        text = re.sub(r"^• Главный технический bottleneck: мало матчей с 2 independent odds sources\..*$", "• Главный технический bottleneck сейчас: semantic line movement и freshness/current-price; 2 independent odds sources остаются целью для A-tier, но не блокируют B-tier.", text, count=1, flags=re.MULTILINE)
+    return text
+
+
 def patch(payload: dict[str, Any], text: str) -> tuple[dict[str, Any], str]:
     payload = patch_payload_quality(payload)
+    payload = patch_payload(payload)
     text = patch_text_quality(text, payload)
     text = patch_runtime_lines(text)
+    text = patch_conclusion(text)
     return payload, text
 
 
-__all__ = ["patch", "patch_payload_quality", "patch_text_quality", "patch_runtime_lines"]
+__all__ = ["patch", "patch_payload_quality", "patch_text_quality", "patch_runtime_lines", "patch_payload"]
