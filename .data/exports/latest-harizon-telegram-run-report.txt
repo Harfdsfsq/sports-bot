@@ -3,52 +3,52 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 3 | day inventory: 142
-• С линиями: 2 | с контекстом: 6 | ready model: 83
-• odds-api.io offers: 405 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 3 | 2-source overlap Bzzoiro+odds-api.io: 2
-• Source combinations: odds_api_io: 7, bzzoiro: 2, bzzoiro+odds_api_io: 2
+• Матчи в run: 1 | day inventory: 300
+• С линиями: 1 | с контекстом: 60 | ready model: 74
+• odds-api.io offers: 54 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 0 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Source combinations: bzzoiro: 13, odds_api_io: 2
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 2.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 0
+• Raw/candidates before quality: 0 / 1
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 17 | evaluated 17 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 21 | evaluated 21 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 5 | no next regular run: 4
-• Line guard: seen 31 | kept 0 | dropped 15
+• Final pre-kickoff checks: 17 | no next regular run: 0
+• Line guard: seen 27 | kept 0 | dropped 11
 
-• Bzzoiro targeted odds: targets 80; events 1318; matched 50; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro source trace: aggregate events 328; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
+• Bzzoiro targeted odds: targets 80; events 1318; matched 47; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro source trace: aggregate events 0; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
 📡 Core API
-• odds_api_io: events req 0, odds req 3, matched 13, offers 405, 2+ books 3, err 1, auth_failed False
-• sstats: req 3, ctx 2, rows 13234, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 328 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 0, overlap odds-api.io 2, err 0
+• odds_api_io: events req 1, odds req 0, matched 0, offers 54, 2+ books 0, err 1, auth_failed False
+• sstats: req 3, ctx 59, rows 13234, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 0 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: реально плохое движение 6; движение не подтверждено 11; коэффициент ниже минимума 7.
+• Line movement breakdown: реально плохое движение 9; движение не подтверждено 10; финальная проверка не подтвердила 2; коэффициент ниже минимума 9; конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• controlled fallback next regular run before kickoff: 17 (23%)
-• controlled fallback missing line recheck: 17 (23%)
-• semantic line movement not confirmed: 11 (15%)
-• кандидат ждёт следующий cron для второго снимка линии: 9 (12%)
-• odds below global min: 7 (9%)
-• semantic line movement failed: 6 (8%)
-• line movement guard снял кандидата: 6 (8%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (1%)
+• controlled fallback next regular run before kickoff: 21 (24%)
+• controlled fallback missing line recheck: 21 (24%)
+• semantic line movement not confirmed: 10 (11%)
+• semantic line movement failed: 9 (10%)
+• odds below global min: 9 (10%)
+• line movement guard снял кандидата: 7 (8%)
+• кандидат ждёт следующий cron для второго снимка линии: 4 (5%)
+• направление ставки конфликтует с xG: 2 (2%)
 
 🔎 Проверенные reserve-кандидаты
-1. Deportes Antofagasta — Santiago Wanderers | Больше @2.90 | EV +2.1% | edge +0.7 п.п. | q 55.6 reserve
+1. Deportes Antofagasta — Santiago Wanderers | Больше @2.90 | EV +2.1% | edge +0.7 п.п. | q 52.1 reserve
    • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement not confirmed
-2. FC Tobol — FK Partizan | Больше @2.90 | EV +9.8% | edge +3.4 п.п. | q 82.9 reserve
-   • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement failed
-3. Ilves — HNK Rijeka | Меньше @1.77 | EV +1.6% | edge +0.9 п.п. | q 66.1 reserve
-   • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement failed
-4. Abha — Al-Hazem | Меньше @1.85 | EV +5.1% | edge +2.7 п.п. | q 71.6 reserve
+2. Deportes Antofagasta — Santiago Wanderers | Больше @1.80 | EV +2.3% | edge +1.3 п.п. | q 64.7 reserve
    • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement not confirmed
+3. FC Tobol — FK Partizan | Больше @2.90 | EV +9.8% | edge +3.4 п.п. | q 79.4 reserve
+   • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement not confirmed
+4. Ilves — HNK Rijeka | Меньше @1.77 | EV +1.6% | edge +0.9 п.п. | q 62.6 reserve
+   • reject: controlled fallback next regular run before kickoff, controlled fallback missing line recheck, semantic line movement failed
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; по A-tier теперь разделяем Bzzoiro aggregate events и persisted rows для targeted matching.
