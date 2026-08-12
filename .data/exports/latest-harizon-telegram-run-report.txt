@@ -1,51 +1,52 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🟠 линии есть, raw-кандидатов нет
+• Итог: 🟡 кандидаты есть, quality/value не пропустили
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 11 | day inventory: 300
+• Матчи в run: 22 | day inventory: 300
 • С линиями: 11 | с контекстом: 0 | ready model: 193
-• odds-api.io offers: 935 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 22 | 2-source overlap Bzzoiro+odds-api.io: 0
+• odds-api.io offers: 636 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 14 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 52, bzzoiro: 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 24
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 1 / 24
+• Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 33 | evaluated 33 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 31 | evaluated 31 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 75 | no next regular run: 75
-• Line guard: seen 40 | kept 4 | dropped 20
+• Final pre-kickoff checks: 86 | no next regular run: 82
+• Line guard: seen 40 | kept 0 | dropped 24
 
 📡 Core API
-• odds_api_io: events req 0, odds req 12, matched 106, offers 935, 2+ books 22, err 1, auth_failed False
-• sstats: req 1, ctx 0, rows 12965, err 0, deep enriched 0
+• odds_api_io: events req 0, odds req 12, matched 101, offers 636, 2+ books 14, err 1, auth_failed False
+• sstats: req 3, ctx 0, rows 12964, err 0, deep enriched 0
 • bzzoiro: req 2, ctx 0, events 177, secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
+• Line movement breakdown: реально плохое движение 26; выбранный коэффициент уже не текущий 6; движение не подтверждено 3; коэффициент ниже минимума 8; дубликат 3; конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• semantic line movement failed: 26 (36%)
-• line movement guard снял кандидата: 20 (27%)
-• odds below global min: 9 (12%)
+• semantic line movement failed: 26 (35%)
+• line movement guard снял кандидата: 24 (32%)
+• odds below global min: 8 (11%)
+• semantic line movement not confirmed: 3 (4%)
 • duplicate state:bets: 3 (4%)
 • duplicate persisted fallback sent index: 3 (4%)
-• semantic line movement not confirmed: 3 (4%)
 • направление ставки конфликтует с xG: 2 (3%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 2 (3%)
+• semantic selected price not current:2.000/1.825: 1 (1%)
 
 🔎 Проверенные reserve-кандидаты
-1. ACS Cil Blaj — Sanatatea Cluj | Меньше @2.00 | EV +1.0% | edge +0.5 п.п. | q 58.3 reserve
-   • reject: semantic selected price not current:2.000/1.810, semantic line movement failed
-2. CS Timisul Sag — ACSM Resita | Меньше @2.62 | EV +4.9% | edge +1.9 п.п. | q 61.2 reserve
-   • reject: semantic line movement unconfirmed final
-3. Csm Adjud 1946 — CS Sporting Liesti | Меньше @2.10 | EV +5.1% | edge +2.4 п.п. | q 65.6 reserve
-   • reject: duplicate state:bets, duplicate persisted fallback sent index
-4. Brandys Nad Labem — FK Varnsdorf | Меньше @1.98 | EV +11.6% | edge +5.9 п.п. | q 96.4 reserve
-   • reject: controlled fallback daily limit reached:3/3
+1. Lyngby U19 — FC Copenhagen U19 | Меньше @2.00 | EV +1.0% | edge +0.5 п.п. | q 53.9 reserve
+   • reject: semantic selected price not current:2.000/1.825, semantic line movement failed
+2. ACS Progresul Mogosoaia — CS Concordia Chiajna | Больше @1.80 | EV +3.9% | edge +2.1 п.п. | q 70.0 reserve
+   • reject: semantic line movement failed
+3. AS Usv Iasi — Cetatea 1932 Suceava | Меньше @1.80 | EV +6.8% | edge +3.8 п.п. | q 73.6 reserve
+   • reject: semantic selected price not current:1.800/1.660, semantic line movement failed
+4. Cso Baicoi — AFC Metalul Buzau | Больше @1.57 | EV +2.0% | edge +1.3 п.п. | q 46.3 reserve
+   • reject: odds below global min, semantic line movement failed
 
 📌 Вывод
-• Главный текущий стопор: дневной cap/дубликаты и line movement; независимые odds-source важны для A-tier, но B-tier уже работает без 2-source odds.
+• Главный текущий стопор: line movement/freshness/current-price и уже опубликованные дубликаты; 2 independent odds-source — цель для A-tier, но не блок B-tier.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.

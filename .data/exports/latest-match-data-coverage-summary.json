@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 66,
-      "rows_seen": 66,
+      "rows_kept": 62,
+      "rows_seen": 62,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 74,
-      "rows_seen": 121,
-      "rows_stale": 47
+      "rows_kept": 57,
+      "rows_seen": 103,
+      "rows_stale": 46
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 26,
-      "rows_seen": 26,
+      "rows_kept": 22,
+      "rows_seen": 22,
       "rows_stale": 0
     }
   },
@@ -36,27 +36,27 @@
     "candidates_publishable": 0,
     "candidates_raw": 0,
     "contexts_built": 0,
-    "controlled_candidates_seen": 33,
+    "controlled_candidates_seen": 31,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 66,
-    "matches_seen": 11,
+    "coverage_candidates_current_date": 57,
+    "matches_seen": 22,
     "matches_with_offers": 11
   },
-  "created_at": "2026-08-12T13:02:20.669252+00:00",
+  "created_at": "2026-08-12T13:17:17.081099+00:00",
   "family_counts": {
-    "h2h": 4,
-    "spreads": 13,
-    "totals": 49
+    "h2h": 2,
+    "spreads": 10,
+    "totals": 45
   },
-  "matches_with_candidates": 42,
+  "matches_with_candidates": 37,
   "missing_data_flags": {
-    "confidence_below_micro_c": 64,
-    "edge_below_micro_c": 63,
-    "ev_below_micro_c": 61,
-    "single_book": 45,
-    "single_context_source": 40,
-    "single_odds_source": 46
+    "confidence_below_micro_c": 55,
+    "edge_below_micro_c": 55,
+    "ev_below_micro_c": 52,
+    "single_book": 36,
+    "single_context_source": 31,
+    "single_odds_source": 38
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -70,7 +70,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 30,
+  "positive_near_miss_count": 29,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -79,11 +79,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 46,
+      "events_matched": 32,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 935,
+      "offers_parsed": 636,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -103,7 +103,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 408,
+      "matches_built": 413,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -118,11 +118,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 681,
+      "events_fetched": 689,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 408,
+      "matches_built": 413,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -648,9 +648,11 @@
     "working": 3
   },
   "reject_reason_counts_from_rows": {
-    "odds_below_global_min": 3,
-    "semantic_line_movement_failed": 4,
-    "semantic_line_movement_not_publishable:current_ev_below_floor:0.9<2.9": 1,
+    "bad_historical_segment_guard": 1,
+    "duplicate_persisted_fallback_sent_index": 2,
+    "duplicate_state:bets": 2,
+    "odds_below_global_min": 2,
+    "semantic_line_movement_failed": 7,
     "semantic_selected_price_not_current:1.571/1.480": 1,
     "xg_direction_conflict": 1
   },
@@ -699,48 +701,6 @@
       "sources_max": 3
     },
     {
-      "away_team": "FK Varnsdorf",
-      "best_candidate": {
-        "adjusted_probability": 0.565088,
-        "books_count": 2,
-        "canonical_edge_pp": 5.876,
-        "canonical_ev_pct": 11.605,
-        "confidence": 75.822,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
-        "family": "totals",
-        "odds": 1.975,
-        "odds_sources_count": 7,
-        "origin": "rescue",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 7
-      },
-      "best_confidence": 75.822,
-      "best_edge_pp": 5.876,
-      "best_ev_pct": 11.605,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-12T15:00:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Brandys Nad Labem",
-      "league_name": "Czechia - Czech Cup",
-      "match_key": "soccer|brandys_nad_labem|fk_varnsdorf|2026-08-12",
-      "missing_flags": {},
-      "odds_sources_max": 7,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 7
-    },
-    {
       "away_team": "Asc Olimpic Zarnesti",
       "best_candidate": {
         "adjusted_probability": 0.0,
@@ -786,6 +746,54 @@
       },
       "reject_reasons": {},
       "sources_max": 0
+    },
+    {
+      "away_team": "FK Varnsdorf",
+      "best_candidate": {
+        "adjusted_probability": 0.561688,
+        "books_count": 2,
+        "canonical_edge_pp": 2.042,
+        "canonical_ev_pct": 10.933,
+        "confidence": 75.669,
+        "confirmation_sources_count": 8,
+        "context_sources_count": 8,
+        "family": "totals",
+        "odds": 1.975,
+        "odds_sources_count": 7,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.5,
+        "reject_reasons": [
+          "bad_historical_segment_guard"
+        ],
+        "selection": "Меньше",
+        "sources_count": 7
+      },
+      "best_confidence": 75.669,
+      "best_edge_pp": 2.042,
+      "best_ev_pct": 10.933,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-12T15:00:00+00:00",
+      "confirmation_sources_max": 8,
+      "context_sources_max": 8,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Brandys Nad Labem",
+      "league_name": "Czechia - Czech Cup",
+      "match_key": "soccer|brandys_nad_labem|fk_varnsdorf|2026-08-12",
+      "missing_flags": {
+        "edge_below_micro_c": 1
+      },
+      "odds_sources_max": 7,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
+      },
+      "sources_max": 7
     },
     {
       "away_team": "Debreceni VSC",
@@ -923,7 +931,7 @@
         "controlled": 1
       },
       "reject_reasons": {
-        "semantic_line_movement_not_publishable:current_ev_below_floor:0.9<2.9": 1,
+        "semantic_line_movement_failed": 1,
         "xg_direction_conflict": 1
       },
       "sources_max": 1
