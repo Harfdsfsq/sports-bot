@@ -15,7 +15,8 @@ def _force_runtime_publication_contract() -> None:
         "CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT": "false", "CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS": "true", "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_REQUIRE_XG_HARD_CONFIRMATION": "false",
         "CONTROLLED_FALLBACK_BASE_TIER_B_MIN_PUBLICATION_SCORE": "12.0", "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": "12.0", "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "2.3", "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "4.0", "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "2.3", "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "4.0",
         "CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED": "3", "CONTROLLED_FALLBACK_DAILY_MAX_B_TIER": "3",
-        "A_TIER_TARGETED_ENRICHMENT_ENABLED": "true", "BZZOIRO_CONTEXT_MATCH_LIMIT": "280", "BZZOIRO_ODDS_MATCH_LIMIT": "280", "SSTATS_CONTEXT_MATCH_LIMIT": "300",
+        "A_TIER_TARGETED_ENRICHMENT_ENABLED": "true", "BZZOIRO_TARGETED_ODDS_CONFIRMATION_ENABLED": "true", "SSTATS_TARGETED_CONTEXT_PROJECTION_ENABLED": "true", "HIGH_VALUE_FAST_RECHECK_ENABLED": "true",
+        "BZZOIRO_CONTEXT_MATCH_LIMIT": "300", "BZZOIRO_ODDS_MATCH_LIMIT": "300", "BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT": "220", "SSTATS_CONTEXT_MATCH_LIMIT": "320", "SSTATS_DEEP_CONTEXT_MATCH_LIMIT": "80",
         "DAY_INVENTORY_ENABLE_SPORTLOGIC": "false", "ENABLE_SPORTLOGIC": "false", "SPORTLOGIC_ENABLED": "false", "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "false", "SPORTLOGIC_PER_RUN_MAX": "0", "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "0", "SPORTLOGIC_MATCH_LIMIT": "0", "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "0", "SPORTLOGIC_ODDS_MATCH_LIMIT": "0", "SPORTLOGIC_DISABLED_ZERO_ROWS_GUARD": "true",
     }
     for k, v in overrides.items(): os.environ[k] = v
@@ -75,7 +76,7 @@ def _apply_focused_alpha_policy() -> None:
 
 
 def _repair_runtime_artifacts_before_fallback() -> None:
-    for module_name in ("scripts.bridge_runtime_context_coverage", "scripts.build_day_inventory_coverage_truth", "scripts.harizon_a_tier_coverage_plan", "scripts.harizon_a_tier_targeted_enrichment_queue", "scripts.project_sstats_context_into_candidates", "scripts.replace_rescue_proxy_placeholder_xg", "scripts.day_inventory_cumulative_coverage"):
+    for module_name in ("scripts.bridge_runtime_context_coverage", "scripts.build_day_inventory_coverage_truth", "scripts.harizon_a_tier_coverage_plan", "scripts.harizon_a_tier_targeted_enrichment_queue", "scripts.apply_a_tier_targeted_provider_env", "scripts.project_sstats_context_into_candidates", "scripts.replace_rescue_proxy_placeholder_xg", "scripts.day_inventory_cumulative_coverage"):
         _run_step(module_name)
 
 

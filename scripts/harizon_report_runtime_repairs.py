@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -105,6 +104,9 @@ def patch_payload(payload: dict[str, Any]) -> dict[str, Any]:
         coverage["day_inventory_with_context"] = counts.get("matches_with_context", coverage.get("day_inventory_with_context", 0))
         coverage["ready_for_model"] = counts.get("matches_ready_for_model", coverage.get("ready_for_model", 0))
         coverage["b_tier_coverage_ready"] = counts.get("matches_b_tier_watch_ready", 0) or min(_int(coverage.get("day_inventory_with_odds")), counts.get("matches_with_2plus_price_confirmations", 0), _int(coverage.get("day_inventory_with_context")))
+    queue = _load(EXPORT / "latest-a-tier-targeted-enrichment-queue.json", {})
+    if isinstance(queue, dict):
+        payload.setdefault("a_tier_enrichment", queue.get("summary") or {})
     return payload
 
 
@@ -123,32 +125,29 @@ def patch_runtime_lines(text: str) -> str:
 def patch_line_diagnostics(text: str) -> str:
     diag = _load(EXPORT / "latest-line-movement-diagnostics.json", {})
     counts = diag.get("class_counts") if isinstance(diag, dict) and isinstance(diag.get("class_counts"), dict) else {}
-    if not counts:
+    if counts:
+        order = ["actual_bad_movement", "selected_price_not_current", "line_snapshot_alias_or_missing", "line_snapshot_pending_or_alias", "not_confirmed", "unconfirmed_final", "missing_second_snapshot", "odds_below_min", "duplicate", "xg_direction_conflict"]
+        labels = {"actual_bad_movement":"реально плохое движение","selected_price_not_current":"выбранный коэффициент уже не текущий","line_snapshot_alias_or_missing":"нет/alias mismatch snapshot линии","line_snapshot_pending_or_alias":"pending/alias snapshot","not_confirmed":"движение не подтверждено","unconfirmed_final":"финальная проверка не подтвердила","missing_second_snapshot":"нет второго снимка","odds_below_min":"коэффициент ниже минимума","duplicate":"дубликат","xg_direction_conflict":"конфликт направления с xG"}
+        parts = [f"{labels[k]} {int(counts.get(k) or 0)}" for k in order if int(counts.get(k) or 0) > 0]
+        if parts and "Line movement breakdown" not in text:
+            text = text.replace("🚫 Почему не опубликовано", "• Line movement breakdown: " + "; ".join(parts[:8]) + ".\n🚫 Почему не опубликовано", 1)
+    return text
+
+
+def patch_a_tier_summary(text: str) -> str:
+    queue = _load(EXPORT / "latest-a-tier-targeted-enrichment-queue.json", {})
+    summary = queue.get("summary") if isinstance(queue, dict) and isinstance(queue.get("summary"), dict) else {}
+    if not summary:
         return text
-    order = ["actual_bad_movement", "selected_price_not_current", "line_snapshot_alias_or_missing", "line_snapshot_pending_or_alias", "not_confirmed", "unconfirmed_final", "missing_second_snapshot", "odds_below_min", "duplicate", "xg_direction_conflict"]
-    labels = {
-        "actual_bad_movement": "реально плохое движение",
-        "selected_price_not_current": "выбранный коэффициент уже не текущий",
-        "line_snapshot_alias_or_missing": "нет/alias mismatch snapshot линии",
-        "line_snapshot_pending_or_alias": "pending/alias snapshot",
-        "not_confirmed": "движение не подтверждено",
-        "unconfirmed_final": "финальная проверка не подтвердила",
-        "missing_second_snapshot": "нет второго снимка",
-        "odds_below_min": "коэффициент ниже минимума",
-        "duplicate": "дубликат",
-        "xg_direction_conflict": "конфликт направления с xG",
-    }
-    parts = [f"{labels[k]} {int(counts.get(k) or 0)}" for k in order if int(counts.get(k) or 0) > 0]
-    if not parts:
-        return text
-    line = "• Line movement breakdown: " + "; ".join(parts[:8]) + "."
-    if "🚫 Почему не опубликовано" in text:
-        text = text.replace("🚫 Почему не опубликовано", line + "\n🚫 Почему не опубликовано", 1)
+    bzz = _int(summary.get("bzzoiro_odds_target_count")); ctx = _int(summary.get("context_projection_target_count")); rech = _int(summary.get("high_value_recheck_target_count"))
+    line = f"• A-tier enrichment queue: Bzzoiro odds targets {bzz}; context projection targets {ctx}; high-value recheck {rech}."
+    if "A-tier enrichment queue" not in text:
+        text = text.replace("🧪 Воронка кандидатов", line + "\n🧪 Воронка кандидатов", 1)
     return text
 
 
 def patch_conclusion(text: str) -> str:
-    replacement = "• Главный текущий стопор: line movement/freshness/current-price и уже опубликованные дубликаты; 2 independent odds-source — цель для A-tier, но не блок B-tier."
+    replacement = "• Главный текущий стопор: line movement/freshness/current-price и уже опубликованные дубликаты; A-tier требует targeted Bzzoiro odds overlap + второго context-source."
     text = re.sub(r"^• Главный технический bottleneck:.*$", replacement, text, count=1, flags=re.MULTILINE)
     text = re.sub(r"^• Главный текущий стопор:.*$", replacement, text, count=1, flags=re.MULTILINE)
     return text
@@ -160,8 +159,8 @@ def patch(payload: dict[str, Any], text: str) -> tuple[dict[str, Any], str]:
     text = patch_text_quality(text, payload)
     text = patch_runtime_lines(text)
     text = patch_line_diagnostics(text)
+    text = patch_a_tier_summary(text)
     text = patch_conclusion(text)
     return payload, text
-
 
 __all__ = ["patch", "patch_payload_quality", "patch_text_quality", "patch_runtime_lines", "patch_payload"]
