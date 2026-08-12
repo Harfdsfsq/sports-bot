@@ -23,7 +23,6 @@ MODULES = [
     'app.services.bzzoiro_direct_fetch_final_guard',
     'app.services.signal_stack_runtime_patch',
     'app.services.odds_movement_cache_bridge_patch',
-    'app.services.sportlogic_query_runtime_guard',
     'app.services.api_runtime_enhancements',
     'app.services.secondary_odds_rescue_runtime_patch',
     'app.services.day_inventory_extra_fixture_sources',
