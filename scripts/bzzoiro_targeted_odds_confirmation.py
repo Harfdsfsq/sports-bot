@@ -20,6 +20,14 @@ def _write(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True); path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
 
 
+def _num(v: Any) -> float | None:
+    try:
+        if v in (None, ''): return None
+        x = float(str(v).replace(',', '.'))
+        return x if x > 1.0 else None
+    except Exception: return None
+
+
 def _norm(s: Any) -> str:
     text = str(s or '').lower(); text = re.sub(r'[^a-zа-я0-9]+', ' ', text, flags=re.I).strip()
     stop = {'fc','cf','sc','afc','fk','csm','cs','club','u19','u21','ii','b','ac','as'}
@@ -57,8 +65,31 @@ def _away(row: dict[str, Any]) -> Any:
     return row.get('away_team') or row.get('away') or row.get('awayName') or row.get('team_away') or row.get('awayTeam') or row.get('event_away')
 
 
-def _offers(row: dict[str, Any]) -> Any:
-    return row.get('offers') or row.get('odds') or row.get('markets') or row.get('prices') or row.get('bookmakers') or []
+def _event_offers(row: dict[str, Any]) -> list[dict[str, Any]]:
+    raw = row.get('raw') if isinstance(row.get('raw'), dict) else row
+    offers: list[dict[str, Any]] = []
+    def add(family: str, selection: str, price: Any, point: float | None = None) -> None:
+        p = _num(price)
+        if p is not None:
+            offers.append({'source':'bzzoiro','bookmaker':'bzzoiro-event','family':family,'selection':selection,'price':p,'point':point})
+    add('h2h','Home', raw.get('odds_home') or raw.get('home_odds') or raw.get('home_win_odds'))
+    add('h2h','Draw', raw.get('odds_draw') or raw.get('draw_odds'))
+    add('h2h','Away', raw.get('odds_away') or raw.get('away_odds') or raw.get('away_win_odds'))
+    for point, suffixes in ((1.5,('15','1_5')), (2.5,('25','2_5')), (3.5,('35','3_5'))):
+        for suffix in suffixes:
+            add('totals','Over', raw.get(f'odds_over_{suffix}') or raw.get(f'over_{suffix}_goals'), point)
+            add('totals','Under', raw.get(f'odds_under_{suffix}') or raw.get(f'under_{suffix}_goals'), point)
+    nested = row.get('offers') or raw.get('offers') or raw.get('odds') or raw.get('markets') or raw.get('prices') or raw.get('bookmakers')
+    if isinstance(nested, list):
+        offers.extend([x for x in nested if isinstance(x, dict)])
+    elif isinstance(nested, dict):
+        # compact odds dict
+        add('h2h','Home', nested.get('home_win') or nested.get('home'))
+        add('h2h','Draw', nested.get('draw'))
+        add('h2h','Away', nested.get('away_win') or nested.get('away'))
+        add('totals','Over', nested.get('over_25_goals') or nested.get('over_2_5'), 2.5)
+        add('totals','Under', nested.get('under_25_goals') or nested.get('under_2_5'), 2.5)
+    return offers
 
 
 def _candidate_bzzoiro_artifacts() -> list[Path]:
@@ -66,12 +97,12 @@ def _candidate_bzzoiro_artifacts() -> list[Path]:
     return [EXPORT / n for n in names if (EXPORT / n).exists()]
 
 
-def _extract_events() -> tuple[list[dict[str, Any]], list[str], bool]:
-    out: list[dict[str, Any]] = []; scanned: list[str] = []; preview_only = False
+def _extract_events() -> tuple[list[dict[str, Any]], list[str], bool, bool]:
+    out: list[dict[str, Any]] = []; scanned: list[str] = []; any_preview = False; any_full = False
     for path in _candidate_bzzoiro_artifacts():
         scanned.append(path.name); payload = _load(path, {})
-        if isinstance(payload, dict) and payload.get('preview_only'):
-            preview_only = True
+        if isinstance(payload, dict) and payload.get('preview_only'): any_preview = True
+        if isinstance(payload, dict) and payload.get('event_count') and not payload.get('preview_only'): any_full = True
         roots = [payload]
         if isinstance(payload, dict):
             for k in ('bzzoiro','data','events','matches','odds','rows'):
@@ -80,15 +111,8 @@ def _extract_events() -> tuple[list[dict[str, Any]], list[str], bool]:
             for row in _rows(root):
                 home, away = _home(row), _away(row)
                 if not (home and away): continue
-                offers = _offers(row)
-                out.append({'artifact': path.name, 'home_team': home, 'away_team': away, 'kickoff': row.get('kickoff') or row.get('commence_time') or row.get('start_time') or row.get('event_date'), 'offers': offers, 'raw': row})
-    return out, scanned, preview_only
-
-
-def _offer_count(offers: Any) -> int:
-    if isinstance(offers, list): return len(offers)
-    if isinstance(offers, dict): return sum(_offer_count(v) for v in offers.values()) or len(offers)
-    return 0
+                out.append({'artifact': path.name, 'home_team': home, 'away_team': away, 'kickoff': row.get('kickoff') or row.get('commence_time') or row.get('start_time') or row.get('event_date'), 'offers': _event_offers(row), 'raw': row})
+    return out, scanned, any_preview, any_full
 
 
 def _best_event(target: dict[str, Any], events: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, float]:
@@ -103,31 +127,26 @@ def _best_event(target: dict[str, Any], events: list[dict[str, Any]]) -> tuple[d
 
 def main() -> int:
     try:
-        from scripts.persist_bzzoiro_runtime_artifacts import main as persist
-        persist()
+        from scripts.persist_bzzoiro_runtime_artifacts import main as persist; persist()
     except Exception: pass
     try:
-        from scripts.trace_bzzoiro_report_source import main as trace
-        trace()
+        from scripts.trace_bzzoiro_report_source import main as trace; trace()
     except Exception: pass
-    targets = _targets(); events, scanned, preview_only = _extract_events(); confirmations: list[dict[str, Any]] = []
+    targets = _targets(); events, scanned, any_preview, any_full = _extract_events(); confirmations: list[dict[str, Any]] = []
     matched = offers = 0
     for target in targets:
         ev, score = _best_event(target, events)
         if not ev or score < 0.58: continue
-        matched += 1; cnt = _offer_count(ev.get('offers')); offers += cnt
-        confirmations.append({'match_key': target.get('match_key'), 'home_team': target.get('home_team'), 'away_team': target.get('away_team'), 'target_odds_sources': target.get('odds_sources'), 'matched_bzzoiro_home': ev.get('home_team'), 'matched_bzzoiro_away': ev.get('away_team'), 'match_score': round(score,3), 'offers': cnt, 'artifact': ev.get('artifact'), 'source': 'bzzoiro', 'promotes_to_2source': bool(cnt > 0 and int(target.get('odds_sources') or 0) < 2)})
+        matched += 1; ev_offers = ev.get('offers') if isinstance(ev.get('offers'), list) else [] ; cnt = len(ev_offers); offers += cnt
+        confirmations.append({'match_key': target.get('match_key'), 'home_team': target.get('home_team'), 'away_team': target.get('away_team'), 'target_odds_sources': target.get('odds_sources'), 'matched_bzzoiro_home': ev.get('home_team'), 'matched_bzzoiro_away': ev.get('away_team'), 'match_score': round(score,3), 'offers': cnt, 'sample_offers': ev_offers[:6], 'artifact': ev.get('artifact'), 'source': 'bzzoiro', 'promotes_to_2source': bool(cnt > 0 and int(target.get('odds_sources') or 0) < 2)})
     promoted = sum(1 for c in confirmations if c.get('promotes_to_2source'))
-    persist_report = _load(EXPORT/'latest-bzzoiro-runtime-artifact-persistence.json', {})
-    if targets and not events:
-        diagnosis = 'no_bzzoiro_events_or_odds_artifact'
-    elif preview_only:
-        diagnosis = 'preview_events_only_no_full_rows'
-    elif matched and not offers:
-        diagnosis = 'matched_without_offers'
-    else:
-        diagnosis = 'ok'
-    payload = {'status':'ok','created_at_utc':datetime.now(UTC).isoformat(),'targets':len(targets),'bzzoiro_events_seen':len(events),'events_preview_only': preview_only,'matched_events':matched,'offers':offers,'two_source_promoted':promoted,'confirmations':confirmations[:80],'scanned_artifacts':scanned,'persistence':persist_report,'publication_contract_relaxed':False,'diagnosis':diagnosis}
-    _write(OUT, payload); print(json.dumps({k:payload[k] for k in ('targets','bzzoiro_events_seen','events_preview_only','matched_events','offers','two_source_promoted','diagnosis')}, ensure_ascii=False)); return 0
+    if targets and not events: diagnosis = 'no_bzzoiro_events_or_odds_artifact'
+    elif any_full and matched and not offers: diagnosis = 'matched_full_events_without_parseable_offers'
+    elif any_full: diagnosis = 'full_events_available'
+    elif any_preview: diagnosis = 'preview_events_only_no_full_rows'
+    elif matched and not offers: diagnosis = 'matched_without_offers'
+    else: diagnosis = 'ok'
+    payload = {'status':'ok','created_at_utc':datetime.now(UTC).isoformat(),'targets':len(targets),'bzzoiro_events_seen':len(events),'events_preview_only': bool(any_preview and not any_full),'events_full_available': any_full,'matched_events':matched,'offers':offers,'two_source_promoted':promoted,'confirmations':confirmations[:80],'scanned_artifacts':scanned,'publication_contract_relaxed':False,'diagnosis':diagnosis}
+    _write(OUT, payload); print(json.dumps({k:payload[k] for k in ('targets','bzzoiro_events_seen','events_full_available','matched_events','offers','two_source_promoted','diagnosis')}, ensure_ascii=False)); return 0
 
 if __name__ == '__main__': raise SystemExit(main())
