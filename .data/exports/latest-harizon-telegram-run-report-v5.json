@@ -2,34 +2,38 @@
   "a_tier_enrichment": {
     "bzzoiro_odds_target_count": 80,
     "bzzoiro_targeted": {
-      "bzzoiro_events_seen": 0,
-      "diagnosis": "no_bzzoiro_events_or_odds_artifact",
+      "bzzoiro_events_seen": 12,
+      "diagnosis": "preview_events_only_no_full_rows",
       "matched_events": 0,
       "offers": 0,
       "targets": 80,
       "two_source_promoted": 0
     },
     "bzzoiro_trace": {
-      "diagnosis": "aggregate_count_without_persisted_rows",
-      "persisted_event_rows": 0,
-      "persisted_events_diagnosis": "only_aggregate_report_count_available",
+      "debug_preview_rows": 3,
+      "diagnosis": "aggregate_count_with_preview_sample_only",
+      "persisted_event_rows": 3,
+      "persisted_events_diagnosis": "persisted_from_debug_source_previews_limited_sample",
+      "persisted_events_preview_only": true,
       "persisted_offer_rows": 0,
       "publication_contract_relaxed": false,
       "scanned_sources": [
-        ".logs/debug-last-run.json"
+        ".logs/debug-last-run.json",
+        ".logs/debug-last-run.json/source_previews.bzzoiro",
+        ".data/exports/latest-bzzoiro-events.json"
       ],
       "source_stats_contexts": 0,
       "source_stats_errors": 0,
       "source_stats_events_fetched": 177,
       "source_stats_requests": 2,
       "status": "ok",
-      "targeted_diagnosis": "no_bzzoiro_events_or_odds_artifact",
-      "targeted_events_seen": 0,
+      "targeted_diagnosis": "preview_events_only_no_full_rows",
+      "targeted_events_seen": 12,
       "targeted_matched_events": 0,
       "targeted_offers": 0
     },
     "context_projection_target_count": 80,
-    "high_value_recheck_target_count": 2
+    "high_value_recheck_target_count": 0
   },
   "api": {
     "bzzoiro": {
@@ -42,12 +46,12 @@
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 7,
+      "books_2plus": 5,
       "errors": 1,
       "events_req": 0,
-      "matched": 30,
-      "odds_req": 4,
-      "offers": 763,
+      "matched": 15,
+      "odds_req": 3,
+      "offers": 590,
       "plan_restricted": true
     },
     "sportlogic": {
@@ -61,7 +65,7 @@
       "requests": 0
     },
     "sstats": {
-      "contexts": 17,
+      "contexts": 8,
       "deep_enriched": 0,
       "errors": 0,
       "requests": 3,
@@ -69,34 +73,34 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 3.2158007343610127,
-    "fallback_age_min": 0.15707926352818807,
-    "run_log_age_min": 2.808840270837148,
-    "signal_stack_age_min": 10.077366201082866
+    "debug_age_min": 2.591626938184102,
+    "fallback_age_min": 0.11571677525838216,
+    "run_log_age_min": 1.9958548267682394,
+    "signal_stack_age_min": 8.381478997071584
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 0,
     "bzzoiro_secondary_offers_added": 0,
     "day_inventory_total": 300,
-    "day_inventory_with_context": 228,
-    "day_inventory_with_odds": 289,
-    "matches_seen": 28,
-    "matches_with_2plus_books": 7,
-    "matches_with_context": 17,
-    "matches_with_offers": 14,
-    "odds_offers_primary": 763,
-    "ready_for_model": 228,
+    "day_inventory_with_context": 237,
+    "day_inventory_with_odds": 288,
+    "matches_seen": 19,
+    "matches_with_2plus_books": 5,
+    "matches_with_context": 8,
+    "matches_with_offers": 10,
+    "odds_offers_primary": 590,
+    "ready_for_model": 237,
     "secondary_combinations": {
       "bzzoiro": 1,
       "odds_api_io": 52
     }
   },
-  "created_at_utc": "2026-08-12T17:34:05.477426+00:00",
+  "created_at_utc": "2026-08-12T17:50:03.833899+00:00",
   "diagnostic_repairs": {
     "reserve_quality_samples_patched": 5
   },
   "funnel": {
-    "candidates_before_quality": 26,
+    "candidates_before_quality": 28,
     "fallback_candidates_seen": 19,
     "fallback_evaluated": 19,
     "fallback_published": false,
@@ -112,24 +116,24 @@
     },
     "main_pipeline_published": false,
     "main_pipeline_published_count": 0,
-    "passed_candidates": 2,
+    "passed_candidates": 4,
     "publish_filter_blocked": 0,
     "publish_filter_input": 0,
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 2,
+    "raw_candidates": 4,
     "windowed_audit_candidates": 8,
     "windowed_publish_allowed": 0,
     "windowed_publish_blocked": 8
   },
   "line_guard": {
-    "dropped": 14,
-    "dropped_final": 14,
-    "final_pre_kickoff_checks": 43,
-    "kept": 5,
-    "no_more_regular_run_before_kickoff": 43,
-    "seen": 35,
+    "dropped": 10,
+    "dropped_final": 10,
+    "final_pre_kickoff_checks": 31,
+    "kept": 8,
+    "no_more_regular_run_before_kickoff": 31,
+    "seen": 34,
     "waiting_next_run": 0
   },
   "reasons": [
@@ -139,19 +143,24 @@
       "reason_ru": "controlled fallback daily limit reached:3/3"
     },
     {
-      "count": 14,
-      "reason": "line_movement_guard_dropped",
-      "reason_ru": "line movement guard снял кандидата"
-    },
-    {
-      "count": 11,
+      "count": 10,
       "reason": "semantic_line_movement_failed",
       "reason_ru": "semantic line movement failed"
     },
     {
-      "count": 5,
+      "count": 10,
+      "reason": "line_movement_guard_dropped",
+      "reason_ru": "line movement guard снял кандидата"
+    },
+    {
+      "count": 4,
       "reason": "odds_below_global_min",
       "reason_ru": "odds below global min"
+    },
+    {
+      "count": 4,
+      "reason": "quality_bad_historical_segment_guard",
+      "reason_ru": "quality bad historical segment guard"
     },
     {
       "count": 2,
@@ -164,24 +173,9 @@
       "reason_ru": "family not allowed:dnb"
     },
     {
-      "count": 2,
-      "reason": "quality_bad_historical_segment_guard",
-      "reason_ru": "quality bad historical segment guard"
-    },
-    {
       "count": 1,
-      "reason": "current_price_recheck_value_lost:3.2/1.3",
-      "reason_ru": "current price recheck value lost:3.2/1.3"
-    },
-    {
-      "count": 1,
-      "reason": "current_price_recheck_value_lost:-0.8/-0.3",
-      "reason_ru": "current price recheck value lost:-0.8/-0.3"
-    },
-    {
-      "count": 1,
-      "reason": "current_price_recheck_value_lost:-4.9/-2.7",
-      "reason_ru": "current price recheck value lost:-4.9/-2.7"
+      "reason": "xg_direction_conflict",
+      "reason_ru": "направление ставки конфликтует с xG"
     },
     {
       "count": 1,
@@ -190,8 +184,18 @@
     },
     {
       "count": 1,
+      "reason": "current_price_recheck_value_lost:-0.8/-0.3",
+      "reason_ru": "current price recheck value lost:-0.8/-0.3"
+    },
+    {
+      "count": 1,
       "reason": "semantic_line_movement_unconfirmed_final",
       "reason_ru": "semantic line movement unconfirmed final"
+    },
+    {
+      "count": 1,
+      "reason": "current_price_recheck_value_lost:-2.4/-1.4",
+      "reason_ru": "current price recheck value lost:-2.4/-1.4"
     }
   ],
   "samples": {
@@ -209,15 +213,15 @@
         "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
         "match_key": "soccer|nottingham_forest|bayer_leverkusen|2026-08-12",
         "metrics": {
-          "adjusted_probability": 0.433659,
-          "books_count": 3,
+          "adjusted_probability": 0.464841,
+          "books_count": 2,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 3.043,
-          "canonical_ev_pct": 7.547,
-          "confidence": 69.796,
+          "canonical_edge_pp": 3.931,
+          "canonical_ev_pct": 9.238,
+          "confidence": 68.757,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -230,24 +234,15 @@
             "sstats"
           ],
           "confirmation_sources_count": 2,
-          "current_price_recheck": {
-            "current_price": 2.38,
-            "drift_pct": 4.2,
-            "model_probability_from_selected_ev": 0.43366,
-            "recalculated_edge_pp": 1.35,
-            "recalculated_ev_pct": 3.21,
-            "selected_price": 2.48,
-            "status": "value_lost_after_current_price_recheck"
-          },
           "dnb_sanity": {
             "enabled": false,
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 1.349,
-          "market_probability": 0.420168,
-          "model_probability": 0.433659,
-          "odds": 2.48,
+          "market_edge_pp": 1.641,
+          "market_probability": 0.44843,
+          "model_probability": 0.464841,
+          "odds": 2.35,
           "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
             "applies": false,
@@ -256,17 +251,17 @@
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 20.566,
+          "publication_score": 23.085,
           "quality_reasons": [],
-          "quality_score": 74.2,
+          "quality_score": 76.0,
           "quality_score_raw": 0.0,
           "quality_score_source": "raw_missing",
           "reserve_quality_components": {
-            "books": 3,
-            "confidence": 69.796,
+            "books": 2,
+            "confidence": 68.757,
             "confirmations": 2,
-            "edge_pp": 3.043,
-            "ev_pct": 7.547,
+            "edge_pp": 3.931,
+            "ev_pct": 9.238,
             "league_reliability": {
               "league": "international clubs - club friendly games",
               "reasons": [
@@ -274,7 +269,7 @@
               ],
               "score": 42.0
             },
-            "odds": 2.48,
+            "odds": 2.35,
             "odds_sources": 1,
             "weather_modifier": {
               "available": false,
@@ -282,27 +277,27 @@
               "totals_under_bias_pp": 0.0
             }
           },
-          "reserve_quality_score": 74.2,
-          "selected_implied_probability": 0.403226,
+          "reserve_quality_score": 76.0,
+          "selected_implied_probability": 0.425532,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T17:28:51.818158+00:00",
-            "current_bookmaker": "Unibet",
-            "current_price": 2.38,
+            "created_at_utc": "2026-08-12T17:46:33.641954+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 2.3,
             "matching_offers": 2,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "price_diff_pct": 4.202,
-            "selected_book_missing_from_current_snapshot": true,
-            "selected_book_repaired_with_current_book": true,
-            "selected_bookmaker": "betsson",
-            "selected_price": 2.48,
+            "price_diff_pct": 2.174,
+            "selected_book_missing_from_current_snapshot": false,
+            "selected_book_repaired_with_current_book": false,
+            "selected_bookmaker": "bet365",
+            "selected_price": 2.35,
             "stale": false
           },
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-12T17:32:24.695975+00:00",
-                "current_odds": 2.48,
-                "key": "soccer|nottingham_forest|bayer_leverkusen|2026-08-12|totals|over|3.5|betsson",
+                "captured_at_utc": "2026-08-12T17:48:51.439135+00:00",
+                "current_odds": 2.35,
+                "key": "soccer|nottingham_forest|bayer_leverkusen|2026-08-12|totals|under|2.5|bet365",
                 "line_move_pct": 0.0,
                 "no_more_cron_before_kickoff": true,
                 "passed": true,
@@ -315,31 +310,31 @@
           "sources_count": 2,
           "xg_sanity": {
             "enabled": true,
-            "xg_abs_gap_pp": 2.906,
+            "xg_abs_gap_pp": 12.357,
             "xg_direction_evaluated": true,
-            "xg_direction_ok": true,
+            "xg_direction_ok": false,
             "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 2.906,
-            "xg_model_gap_pp": -2.906,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.46272,
-            "xg_probability_pct": 46.272,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 12.357,
+            "xg_model_optimism_gap_pp": 12.357,
+            "xg_probability": 0.341266,
+            "xg_probability_pct": 34.127,
             "xg_source": "sstats_form",
-            "xg_total": 3.497
+            "xg_total": 3.392
           }
         },
         "ok": false,
-        "point": 3.5,
+        "point": 2.5,
         "reject_reasons": [
-          "controlled_fallback_daily_limit_reached:3/3",
-          "current_price_recheck_value_lost:3.2/1.3"
+          "xg_direction_conflict",
+          "controlled_fallback_daily_limit_reached:3/3"
         ],
         "reject_reasons_ru": [
-          "controlled fallback daily limit reached:3/3",
-          "current price recheck value lost:3.2/1.3"
+          "направление ставки конфликтует с xG",
+          "controlled fallback daily limit reached:3/3"
         ],
-        "reserve_quality_score": 74.2,
-        "selection": "Больше",
+        "reserve_quality_score": 76.0,
+        "selection": "Меньше",
         "tier": null
       },
       {
@@ -420,7 +415,7 @@
           "reserve_quality_score": 62.8,
           "selected_implied_probability": 0.526316,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T17:28:51.818158+00:00",
+            "created_at_utc": "2026-08-12T17:46:33.641954+00:00",
             "current_bookmaker": "Bet365",
             "current_price": 1.9,
             "matching_offers": 2,
@@ -435,7 +430,7 @@
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-12T17:32:24.695975+00:00",
+                "captured_at_utc": "2026-08-12T17:48:51.439135+00:00",
                 "current_odds": 1.9,
                 "key": "soccer|hamilton_academical_fc|celtic_glasgow_b|2026-08-12|totals|over|3.5|bet365",
                 "line_move_pct": 0.0,
@@ -488,15 +483,15 @@
         "league_name_ru": "Чили - Лига де Аскенсо",
         "match_key": "soccer|deportes_magallanes|cd_cobreloa_calama|2026-08-12",
         "metrics": {
-          "adjusted_probability": 0.531458,
+          "adjusted_probability": 0.582813,
           "books_count": 2,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 5.527,
-          "canonical_ev_pct": 11.606,
-          "confidence": 69.823,
+          "canonical_edge_pp": 3.336,
+          "canonical_ev_pct": 6.072,
+          "confidence": 67.332,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -512,10 +507,10 @@
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 1.995,
-          "market_probability": 0.511509,
-          "model_probability": 0.531458,
-          "odds": 2.1,
+          "market_edge_pp": 1.463,
+          "market_probability": 0.568182,
+          "model_probability": 0.582813,
+          "odds": 1.82,
           "odds_sources_count": 1,
           "proxy_single_source_thresholds": {
             "applies": false,
@@ -524,23 +519,23 @@
             "min_edge_pp": 8.0,
             "min_ev_pct": 15.0
           },
-          "publication_score": 29.001,
+          "publication_score": 18.255,
           "quality_reasons": [],
-          "quality_score": 88.8,
+          "quality_score": 74.0,
           "quality_score_raw": 0.0,
           "quality_score_source": "raw_missing",
           "reserve_quality_components": {
             "books": 2,
-            "confidence": 69.823,
+            "confidence": 67.332,
             "confirmations": 2,
-            "edge_pp": 5.527,
-            "ev_pct": 11.606,
+            "edge_pp": 3.336,
+            "ev_pct": 6.072,
             "league_reliability": {
               "league": "chile - liga de ascenso",
               "reasons": [],
               "score": 64.0
             },
-            "odds": 2.1,
+            "odds": 1.82,
             "odds_sources": 1,
             "weather_modifier": {
               "available": false,
@@ -548,331 +543,37 @@
               "totals_under_bias_pp": 0.0
             }
           },
-          "reserve_quality_score": 88.8,
-          "selected_implied_probability": 0.47619,
+          "reserve_quality_score": 74.0,
+          "selected_implied_probability": 0.549451,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T17:28:51.818158+00:00",
-            "current_bookmaker": "Bet365",
-            "current_price": 2.1,
+            "created_at_utc": "2026-08-12T17:46:33.641954+00:00",
+            "current_bookmaker": "Unibet",
+            "current_price": 1.82,
             "matching_offers": 2,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
             "price_diff_pct": 0.0,
             "selected_book_missing_from_current_snapshot": false,
             "selected_book_repaired_with_current_book": false,
-            "selected_bookmaker": "bet365",
-            "selected_price": 2.1,
+            "selected_bookmaker": "unibet",
+            "selected_price": 1.82,
             "stale": false
           },
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-12T17:32:24.695975+00:00",
-                "current_odds": 2.1,
-                "key": "soccer|deportes_magallanes|cd_cobreloa_calama|2026-08-12|totals|under|2.5|bet365",
+                "captured_at_utc": "2026-08-12T17:48:51.439135+00:00",
+                "current_odds": 1.82,
+                "key": "soccer|deportes_magallanes|cd_cobreloa_calama|2026-08-12|totals|over|2.5|unibet",
                 "line_move_pct": 0.0,
                 "no_more_cron_before_kickoff": true,
                 "passed": true,
                 "reasons": [],
                 "status": "movement_confirmed"
-              }
-            ],
-            "matching_entries": 2
-          },
-          "sources_count": 2,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 1.993,
-            "xg_direction_evaluated": false,
-            "xg_direction_ok": true,
-            "xg_hard_confirmation": false,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 1.993,
-            "xg_model_optimism_gap_pp": 1.993,
-            "xg_probability": 0.511523,
-            "xg_probability_pct": 51.152,
-            "xg_source": "market_implied_total_xg",
-            "xg_total": 2.628
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "controlled_fallback_daily_limit_reached:3/3"
-        ],
-        "reject_reasons_ru": [
-          "controlled fallback daily limit reached:3/3"
-        ],
-        "reserve_quality_score": 88.8,
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "CA Juventud Unida Universitario San Luis",
-        "away_team_ru": "Джувентуд Унида Университарио Сан Луис",
-        "candidate_source": "awaiting_movement_lifecycle",
-        "commence_time": "2026-08-12T18:00:00+00:00",
-        "commence_time_display": "12.08.2026 21:00 MSK",
-        "family": "totals",
-        "home_team": "Guillermo Brown",
-        "home_team_ru": "Гуиллермо Броун",
-        "league_name": "Argentina - Torneo Federal A, Relegation Round, Group B",
-        "league_name_ru": "Аргентина - Торнео Федерал A, Релегатион Рунд, Груп B",
-        "match_key": "2026-08-12|guillermo brown|ca juventud unida universitario san luis",
-        "metrics": {
-          "adjusted_probability": 0.573864,
-          "books_count": 1,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 0.568,
-          "canonical_ev_pct": 1.0,
-          "confidence": 69.25,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "bzzoiro",
-            "dayinventory",
-            "model_xg",
-            "sstats",
-            "sstats_form",
-            "sstatsform",
-            "unknown"
-          ],
-          "confirmation_sources_count": 7,
-          "context_sources": [
-            "bzzoiro",
-            "dayinventory",
-            "model_xg",
-            "sstats",
-            "sstats_form",
-            "sstatsform",
-            "unknown"
-          ],
-          "context_sources_count": 7,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "line_sources_count": 2,
-          "market_edge_pp": 0.568,
-          "market_probability": 0.568182,
-          "model_probability": 0.573864,
-          "odds": 1.76,
-          "odds_sources_count": 2,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 6.786,
-          "quality_reasons": [],
-          "quality_score": 62.0,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "reserve_quality_components": {
-            "books": 1,
-            "confidence": 69.25,
-            "confirmations": 6,
-            "edge_pp": 0.568,
-            "ev_pct": 1.0,
-            "league_reliability": {
-              "league": "argentina - torneo federal a, relegation round, group b",
-              "reasons": [],
-              "score": 64.0
-            },
-            "odds": 1.76,
-            "odds_sources": 1,
-            "weather_modifier": {
-              "available": false,
-              "reasons": [],
-              "totals_under_bias_pp": 0.0
-            }
-          },
-          "reserve_quality_score": 62.0,
-          "selected_implied_probability": 0.568182,
-          "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T17:28:51.818158+00:00",
-            "matching_offers": 0,
-            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "stale": false
-          },
-          "semantic_line_movement_guard": {
-            "entries": [
+              },
               {
-                "captured_at_utc": "2026-08-12T17:32:24.695975+00:00",
-                "current_odds": 1.76,
-                "key": "soccer|guillermo_brown|ca_juventud_unida_universitario_san_luis|2026-08-12|totals|under|0.5|unibet",
-                "line_move_pct": 0.0,
-                "no_more_cron_before_kickoff": true,
-                "passed": false,
-                "reasons": [
-                  "current_ev_below_floor:1.0<2.9",
-                  "current_edge_below_floor:0.6<1.4"
-                ],
-                "status": "movement_failed"
-              }
-            ],
-            "matching_entries": 1
-          },
-          "sources_count": 6,
-          "xg_sanity": {
-            "enabled": false,
-            "proxy_default_xg_guard": {
-              "enabled": true,
-              "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
-              "requires_hard_xg_or_non_default_pair": true
-            },
-            "reason": "proxy_default_1_1_xg_placeholder",
-            "xg_abs_gap_pp": 43.853,
-            "xg_direction_evaluated": true,
-            "xg_direction_ok": false,
-            "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 43.853,
-            "xg_model_optimism_gap_pp": 43.853,
-            "xg_probability": 0.135335,
-            "xg_probability_pct": 13.534,
-            "xg_source": "home_away",
-            "xg_total": 2.0
-          }
-        },
-        "ok": false,
-        "point": 0.5,
-        "reject_reasons": [
-          "controlled_fallback_daily_limit_reached:3/3",
-          "semantic_line_movement_failed"
-        ],
-        "reject_reasons_ru": [
-          "controlled fallback daily limit reached:3/3",
-          "semantic line movement failed"
-        ],
-        "reserve_quality_score": 62.0,
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "Cultural Leonesa",
-        "away_team_ru": "Културал Леонеса",
-        "candidate_source": "awaiting_movement_lifecycle",
-        "commence_time": "2026-08-12T18:15:00+00:00",
-        "commence_time_display": "12.08.2026 21:15 MSK",
-        "family": "totals",
-        "home_team": "Zamora CF",
-        "home_team_ru": "Замора",
-        "league_name": "Club Friendlies",
-        "league_name_ru": "Клуб Фриендлиес",
-        "match_key": "soccer|cultural leonesa|zamora|2026-08-12",
-        "metrics": {
-          "adjusted_probability": 0.553425,
-          "books_count": 1,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 0.548,
-          "canonical_ev_pct": 1.0,
-          "confidence": 69.25,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "bzzoiro",
-            "controlledfallback",
-            "dayinventory",
-            "oddsapiio",
-            "sstats",
-            "sstatsform",
-            "unknown"
-          ],
-          "confirmation_sources_count": 7,
-          "context_sources": [
-            "bzzoiro",
-            "controlledfallback",
-            "dayinventory",
-            "oddsapiio",
-            "sstats",
-            "sstatsform",
-            "unknown"
-          ],
-          "context_sources_count": 7,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "line_sources_count": 2,
-          "market_edge_pp": 0.548,
-          "market_probability": 0.547945,
-          "model_probability": 0.553425,
-          "odds": 1.825,
-          "odds_sources_count": 2,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 6.746,
-          "quality_reasons": [],
-          "quality_score": 62.9,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "reserve_quality_components": {
-            "books": 1,
-            "confidence": 69.25,
-            "confirmations": 7,
-            "edge_pp": 0.548,
-            "ev_pct": 1.0,
-            "league_reliability": {
-              "league": "club friendlies",
-              "reasons": [],
-              "score": 64.0
-            },
-            "odds": 1.825,
-            "odds_sources": 1,
-            "weather_modifier": {
-              "available": false,
-              "reasons": [],
-              "totals_under_bias_pp": 0.0
-            }
-          },
-          "reserve_quality_score": 62.9,
-          "selected_implied_probability": 0.547945,
-          "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T17:28:51.818158+00:00",
-            "current_bookmaker": "Bet365",
-            "current_price": 1.825,
-            "matching_offers": 1,
-            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "price_diff_pct": 0.0,
-            "selected_book_missing_from_current_snapshot": false,
-            "selected_book_repaired_with_current_book": false,
-            "selected_bookmaker": "bet365",
-            "selected_price": 1.825,
-            "stale": false
-          },
-          "semantic_line_movement_guard": {
-            "entries": [
-              {
-                "captured_at_utc": "2026-08-12T17:32:24.695975+00:00",
-                "current_odds": 1.825,
-                "key": "soccer|zamora_cf|cultural_leonesa|2026-08-12|totals|under|2.5|bet365",
+                "captured_at_utc": "2026-08-12T17:48:51.439135+00:00",
+                "current_odds": 2.02,
+                "key": "soccer|magallanes|cobreloa|2026-08-12|totals|over|2.5|unibet",
                 "line_move_pct": 0.0,
                 "no_more_cron_before_kickoff": true,
                 "passed": false,
@@ -883,61 +584,336 @@
                 "status": "movement_failed"
               }
             ],
-            "matching_entries": 1
+            "matching_entries": 3
           },
-          "sources_count": 7,
+          "sources_count": 2,
           "xg_sanity": {
-            "enabled": false,
-            "proxy_default_xg_guard": {
-              "enabled": true,
-              "reason": "1.00:1.00 xG from proxy/promotion source is not hard xG evidence",
-              "requires_hard_xg_or_non_default_pair": true
-            },
-            "reason": "proxy_default_1_1_xg_placeholder",
-            "xg_abs_gap_pp": 12.325,
-            "xg_direction_evaluated": true,
-            "xg_direction_ok": false,
-            "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 12.325,
-            "xg_model_gap_pp": -12.325,
-            "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.676676,
-            "xg_probability_pct": 67.668,
-            "xg_source": "home_away",
-            "xg_total": 2.0
+            "enabled": true,
+            "xg_abs_gap_pp": 1.462,
+            "xg_direction_evaluated": false,
+            "xg_direction_ok": true,
+            "xg_hard_confirmation": false,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 1.462,
+            "xg_model_optimism_gap_pp": 1.462,
+            "xg_probability": 0.568197,
+            "xg_probability_pct": 56.82,
+            "xg_source": "market_implied_total_xg",
+            "xg_total": 2.962
           }
         },
         "ok": false,
         "point": 2.5,
         "reject_reasons": [
           "controlled_fallback_daily_limit_reached:3/3",
-          "semantic_line_movement_failed"
+          "semantic_line_movement_alias_conflict"
         ],
         "reject_reasons_ru": [
           "controlled fallback daily limit reached:3/3",
-          "semantic line movement failed"
+          "semantic line movement alias conflict"
         ],
-        "reserve_quality_score": 62.9,
-        "selection": "Меньше",
+        "reserve_quality_score": 74.0,
+        "selection": "Больше",
+        "tier": null
+      },
+      {
+        "away_team": "Celtic Glasgow B",
+        "away_team_ru": "Келтик Гласгоу B",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-08-12T18:45:00+00:00",
+        "commence_time_display": "12.08.2026 21:45 MSK",
+        "family": "totals",
+        "home_team": "Hamilton Academical FC",
+        "home_team_ru": "Хамилтон Академикал",
+        "league_name": "Scotland - Challenge Cup",
+        "league_name_ru": "Скотланд - Чалленге Кубок",
+        "match_key": "soccer|hamilton_academical_fc|celtic_glasgow_b|2026-08-12",
+        "metrics": {
+          "adjusted_probability": 0.352919,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 1.959,
+          "canonical_ev_pct": 5.876,
+          "confidence": 65.744,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "market_edge_pp": 0.809,
+          "market_probability": 0.344828,
+          "model_probability": 0.352919,
+          "odds": 3.0,
+          "odds_sources_count": 1,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 14.174,
+          "quality_reasons": [],
+          "quality_score": 53.9,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "reserve_quality_components": {
+            "books": 2,
+            "confidence": 65.744,
+            "confirmations": 1,
+            "edge_pp": 1.959,
+            "ev_pct": 5.876,
+            "league_reliability": {
+              "league": "scotland - challenge cup",
+              "reasons": [
+                "cup_or_knockout_volatility"
+              ],
+              "score": 57.0
+            },
+            "odds": 3.0,
+            "odds_sources": 1,
+            "weather_modifier": {
+              "available": false,
+              "reasons": [],
+              "totals_under_bias_pp": 0.0
+            }
+          },
+          "reserve_quality_score": 53.9,
+          "selected_implied_probability": 0.333333,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-12T17:46:33.641954+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 3.0,
+            "matching_offers": 2,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 0.0,
+            "selected_book_missing_from_current_snapshot": false,
+            "selected_book_repaired_with_current_book": false,
+            "selected_bookmaker": "bet365",
+            "selected_price": 3.0,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-12T17:48:51.439135+00:00",
+                "current_odds": 3.0,
+                "key": "soccer|hamilton_academical_fc|celtic_glasgow_b|2026-08-12|totals|over|4.5|bet365",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": true,
+                "passed": true,
+                "reasons": [],
+                "status": "movement_confirmed"
+              }
+            ],
+            "matching_entries": 1
+          },
+          "sources_count": 1,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 0.811,
+            "xg_direction_evaluated": false,
+            "xg_direction_ok": true,
+            "xg_hard_confirmation": false,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 0.811,
+            "xg_model_optimism_gap_pp": 0.811,
+            "xg_probability": 0.344809,
+            "xg_probability_pct": 34.481,
+            "xg_source": "market_implied_total_xg",
+            "xg_total": 3.865
+          }
+        },
+        "ok": false,
+        "point": 4.5,
+        "reject_reasons": [
+          "controlled_fallback_daily_limit_reached:3/3"
+        ],
+        "reject_reasons_ru": [
+          "controlled fallback daily limit reached:3/3"
+        ],
+        "reserve_quality_score": 53.9,
+        "selection": "Больше",
+        "tier": null
+      },
+      {
+        "away_team": "Bayer Leverkusen",
+        "away_team_ru": "Байер Леверкузен",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-08-12T18:45:00+00:00",
+        "commence_time_display": "12.08.2026 21:45 MSK",
+        "family": "totals",
+        "home_team": "Nottingham Forest",
+        "home_team_ru": "Ноттингхам Форест",
+        "league_name": "International Clubs - Club Friendly Games",
+        "league_name_ru": "Интернатионал Клубс - Клуб Фриендли Гамес",
+        "match_key": "soccer|nottingham_forest|bayer_leverkusen|2026-08-12",
+        "metrics": {
+          "adjusted_probability": 0.441579,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 3.835,
+          "canonical_ev_pct": 9.512,
+          "confidence": 70.152,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [
+            "bzzoiro",
+            "odds_api_io"
+          ],
+          "market_edge_pp": 2.141,
+          "market_probability": 0.420168,
+          "model_probability": 0.433659,
+          "odds": 2.48,
+          "odds_sources_count": 2,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 22.913,
+          "quality_reasons": [],
+          "quality_score": 65.923,
+          "quality_score_raw": 65.923,
+          "quality_score_source": "raw",
+          "reserve_quality_components": {
+            "books": 3,
+            "confidence": 70.152,
+            "confirmations": 1,
+            "edge_pp": 3.835,
+            "ev_pct": 9.512,
+            "league_reliability": {
+              "league": "international clubs - club friendly games",
+              "reasons": [
+                "low_quality_or_youth_segment"
+              ],
+              "score": 42.0
+            },
+            "odds": 2.48,
+            "odds_sources": 2,
+            "weather_modifier": {
+              "available": false,
+              "reasons": [],
+              "totals_under_bias_pp": 0.0
+            }
+          },
+          "reserve_quality_score": 81.6,
+          "selected_implied_probability": 0.403226,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-12T17:46:33.641954+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 2.5,
+            "matching_offers": 2,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 0.8,
+            "selected_book_missing_from_current_snapshot": true,
+            "selected_book_repaired_with_current_book": true,
+            "selected_bookmaker": "betsson",
+            "selected_price": 2.48,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-12T17:48:51.439135+00:00",
+                "current_odds": 2.48,
+                "key": "soccer|nottingham_forest|bayer_leverkusen|2026-08-12|totals|over|3.5|betsson",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": true,
+                "passed": true,
+                "reasons": [],
+                "status": "movement_confirmed"
+              },
+              {
+                "captured_at_utc": "2026-08-12T17:47:28.006444+00:00",
+                "current_odds": 2.48,
+                "key": "soccer|nottingham_forest|bayer_leverkusen|2026-08-12|totals|totals|over|3.5||3.5|betsson",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": true,
+                "passed": true,
+                "reasons": [],
+                "status": "movement_confirmed"
+              }
+            ],
+            "matching_entries": 2
+          },
+          "sources_count": 1,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 2.114,
+            "xg_direction_evaluated": true,
+            "xg_direction_ok": true,
+            "xg_hard_confirmation": true,
+            "xg_model_conservative_gap_pp": 2.114,
+            "xg_model_gap_pp": -2.114,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.46272,
+            "xg_probability_pct": 46.272,
+            "xg_source": "sstats_form",
+            "xg_total": 3.497
+          }
+        },
+        "ok": false,
+        "point": 3.5,
+        "reject_reasons": [
+          "controlled_fallback_daily_limit_reached:3/3"
+        ],
+        "reject_reasons_ru": [
+          "controlled fallback daily limit reached:3/3"
+        ],
+        "reserve_quality_score": 81.6,
+        "selection": "Больше",
         "tier": null
       }
     ],
     "top_priority_matches": [
       {
-        "away_team": "CDC Nicanor Otamendi",
-        "home_team": "Deportivo Rincon",
-        "kickoff_utc": "2026-08-12T18:00:00+00:00",
+        "away_team": "CD Argentino Monte Maiz",
+        "home_team": "Club Cipolletti",
+        "kickoff_utc": "2026-08-12T18:30:00+00:00",
         "league_name": "Argentina - Torneo Federal A, Relegation Round, Group B",
-        "match_key": "2026-08-12|deportivo rincon|cdc nicanor otamendi",
-        "minutes_to_kickoff": 27.59,
+        "match_key": "2026-08-12|cipolletti|argentino monte maiz",
+        "minutes_to_kickoff": 41.14,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 166.804,
+        "priority": 162.286,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T17:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T18:10:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
@@ -947,89 +923,20 @@
         }
       },
       {
-        "away_team": "CSD Amatitlán",
-        "home_team": "FC Santa Lucía Cotzumalguapa",
-        "kickoff_utc": "2026-08-12T18:00:00+00:00",
-        "league_name": "Guatemala - Primera Division de Ascenso",
-        "match_key": "2026-08-12|santa luc a cotzumalguapa|csd amatitl n",
-        "minutes_to_kickoff": 27.59,
+        "away_team": "CD Argentino Monte Maiz",
+        "home_team": "Club Cipolletti",
+        "kickoff_utc": "2026-08-12T18:30:00+00:00",
+        "league_name": "Argentina - Torneo Federal A, Relegation Round, Group B",
+        "match_key": "soccer|argentino monte maiz|cipolletti|2026-08-12",
+        "minutes_to_kickoff": 41.14,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 166.804,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T17:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-12T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "CD Atletico Paso",
-        "home_team": "CD Mensajero",
-        "kickoff_utc": "2026-08-12T18:00:00+00:00",
-        "league_name": "International Clubs - Club Friendly Games",
-        "match_key": "2026-08-12|mensajero|atletico paso",
-        "minutes_to_kickoff": 27.59,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 166.804,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T17:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-12T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Bavois",
-        "home_team": "Juventus Zurich",
-        "kickoff_utc": "2026-08-12T18:00:00+00:00",
-        "league_name": "Switzerland - Promotion League",
-        "match_key": "2026-08-12|juventus zurich|bavois",
-        "minutes_to_kickoff": 27.59,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 166.804,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T17:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-12T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Bavois",
-        "home_team": "Juventus Zurich",
-        "kickoff_utc": "2026-08-12T18:00:00+00:00",
-        "league_name": "Switzerland - Promotion League",
-        "match_key": "soccer|bavois|juventus zurich|2026-08-12",
-        "minutes_to_kickoff": 27.59,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 166.804,
+        "priority": 162.286,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-08-12T17:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T18:10:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
@@ -1039,24 +946,93 @@
         }
       },
       {
-        "away_team": "Coruxo FC",
-        "home_team": "CD Estradense",
-        "kickoff_utc": "2026-08-12T18:00:00+00:00",
-        "league_name": "International Clubs - Club Friendly Games",
-        "match_key": "2026-08-12|estradense|coruxo",
-        "minutes_to_kickoff": 27.59,
+        "away_team": "Bom Jesus EC",
+        "home_team": "Crixas EC GO",
+        "kickoff_utc": "2026-08-12T18:30:00+00:00",
+        "league_name": "Brazil - Goiano, 2. Divisao",
+        "match_key": "2026-08-12|crixas ec go|bom jesus ec",
+        "minutes_to_kickoff": 41.14,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 158.804,
+        "priority": 162.286,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T17:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T18:10:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-08-12T19:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Bom Jesus EC",
+        "home_team": "Crixas EC GO",
+        "kickoff_utc": "2026-08-12T18:30:00+00:00",
+        "league_name": "Brazil - Goiano, 2. Divisao",
+        "match_key": "soccer|bom jesus|crixas go|2026-08-12",
+        "minutes_to_kickoff": 41.14,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 162.286,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-08-12T18:10:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-08-12T19:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Cadiz CF Mirandilla",
+        "home_team": "UD Tomares",
+        "kickoff_utc": "2026-08-12T18:30:00+00:00",
+        "league_name": "International Clubs - Club Friendly Games",
+        "match_key": "2026-08-12|ud tomares|cadiz mirandilla",
+        "minutes_to_kickoff": 41.14,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 154.286,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-08-12T07:50:39.573772+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T18:10:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-08-12T19:00:00+00:00",
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Cultural Leonesa",
+        "home_team": "Zamora CF",
+        "kickoff_utc": "2026-08-12T18:15:00+00:00",
+        "league_name": "Club Friendlies",
+        "match_key": "soccer|cultural leonesa|zamora|2026-08-12",
+        "minutes_to_kickoff": 26.14,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 151.286,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "has_next_regular_run_before_kickoff": false,
+          "last_odds_refresh_utc": "2026-08-12T17:47:30.440534+00:00",
+          "latest_useful_run_at_utc": "2026-08-12T17:55:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
           "next_scheduled_run_at_utc": "2026-08-12T19:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
@@ -1066,7 +1042,7 @@
   "status": "candidates_but_quality_rejected",
   "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 3247,
+  "text_length": 3258,
   "top_reason": "line_movement_guard_dropped",
   "version": "harizon-telegram-report-v6-standalone-single-source"
 }
