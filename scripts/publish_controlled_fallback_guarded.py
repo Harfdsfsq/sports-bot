@@ -59,6 +59,14 @@ def _install_b_tier_testing_relief(base: Any) -> None:
     base.tier_reasons = wrapped; base._b_tier_testing_relief_installed = True
 
 
+def _run_step(module_name: str) -> None:
+    try:
+        module = __import__(module_name, fromlist=["main"]); fn = getattr(module, "main", None)
+        if callable(fn): fn()
+    except SystemExit: pass
+    except Exception: pass
+
+
 def _apply_focused_alpha_policy() -> None:
     try:
         from app.services.focused_alpha_runtime_policy import apply; apply(force=True)
@@ -66,16 +74,8 @@ def _apply_focused_alpha_policy() -> None:
     _force_runtime_publication_contract()
 
 
-def _run_step(module_name: str, function_name: str = "main") -> None:
-    try:
-        module = __import__(module_name, fromlist=[function_name]); fn = getattr(module, function_name, None)
-        if callable(fn): fn()
-    except SystemExit: pass
-    except Exception: pass
-
-
 def _repair_runtime_artifacts_before_fallback() -> None:
-    for module_name in ("scripts.bridge_runtime_context_coverage", "scripts.build_day_inventory_coverage_truth", "scripts.harizon_a_tier_coverage_plan", "scripts.replace_rescue_proxy_placeholder_xg", "scripts.day_inventory_cumulative_coverage"):
+    for module_name in ("scripts.bridge_runtime_context_coverage", "scripts.build_day_inventory_coverage_truth", "scripts.harizon_a_tier_coverage_plan", "scripts.harizon_a_tier_targeted_enrichment_queue", "scripts.project_sstats_context_into_candidates", "scripts.replace_rescue_proxy_placeholder_xg", "scripts.day_inventory_cumulative_coverage"):
         _run_step(module_name)
 
 

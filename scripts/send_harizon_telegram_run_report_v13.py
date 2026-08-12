@@ -19,7 +19,7 @@ def _load_v5() -> Any:
 
 
 def _refresh_truth() -> None:
-    for module_name in ("scripts.repair_day_inventory_blank_rows", "scripts.bridge_runtime_context_coverage", "scripts.build_day_inventory_coverage_truth", "scripts.harizon_a_tier_coverage_plan", "scripts.day_inventory_cumulative_coverage", "scripts.harizon_learning_report", "scripts.harizon_line_movement_diagnostics"):
+    for module_name in ("scripts.repair_day_inventory_blank_rows", "scripts.bridge_runtime_context_coverage", "scripts.build_day_inventory_coverage_truth", "scripts.harizon_a_tier_coverage_plan", "scripts.harizon_a_tier_targeted_enrichment_queue", "scripts.project_sstats_context_into_candidates", "scripts.day_inventory_cumulative_coverage", "scripts.harizon_learning_report", "scripts.harizon_line_movement_diagnostics"):
         try:
             module = __import__(module_name, fromlist=["main"]); fn = getattr(module, "main", None)
             if callable(fn): fn()
