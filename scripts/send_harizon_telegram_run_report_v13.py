@@ -59,17 +59,23 @@ def _verified_counts() -> dict[str, int]:
     truth = _load(EXPORT / "latest-day-inventory-coverage-truth.json", {})
     counts = truth.get("counts") if isinstance(truth, dict) and isinstance(truth.get("counts"), dict) else {}
     total = _int(counts.get("matches_total")) or 300
+    line1 = _int(counts.get("matches_with_odds"))
+    context1 = _int(counts.get("matches_with_context"))
+    books2 = _int(counts.get("matches_with_2plus_price_confirmations"))
+    odds2 = _int(counts.get("matches_with_2plus_odds_sources"))
+    context2 = _int(counts.get("matches_with_2plus_context_sources"))
+    a_ready = _int(counts.get("matches_a_tier_coverage_ready"))
+    b_ready = _int(counts.get("matches_b_tier_watch_ready")) or min(line1, books2, context1)
     return {
         "total": total,
-        "line1": _int(counts.get("matches_with_odds")),
-        "context1": _int(counts.get("matches_with_context")),
-        "books2": _int(counts.get("matches_with_2plus_price_confirmations")),
-        "odds2": _int(counts.get("matches_with_2plus_odds_sources")),
-        "context2": _int(counts.get("matches_with_2plus_context_sources")),
+        "line1": line1,
+        "context1": context1,
+        "books2": books2,
+        "odds2": odds2,
+        "context2": context2,
         "model": _int(counts.get("matches_ready_for_model")),
-        "a": _int(counts.get("matches_a_tier_coverage_ready")),
-        "b": _int(counts.get("matches_b_tier_watch_ready"))
-        or _int(counts.get("matches_a_tier_coverage_ready")),
+        "a": a_ready,
+        "b": b_ready,
     }
 
 
@@ -99,12 +105,7 @@ def _replace_ready_line(text: str, pattern: str, label: str, value: int, total: 
 def _render_verified(text: str) -> str:
     c = _verified_counts()
     total = c["total"]
-    text = _replace_line(
-        text,
-        r"1\+ линия:",
-        f"• 1+ линия: {c['line1']}/{total} ({_pct(c['line1'], total)}%) | "
-        f"1+ контекст: {c['context1']}/{total} ({_pct(c['context1'], total)}%)",
-    )
+    text = _replace_line(text, r"1\+ линия:", f"• 1+ линия: {c['line1']}/{total} ({_pct(c['line1'], total)}%) | 1+ контекст: {c['context1']}/{total} ({_pct(c['context1'], total)}%)")
     text = _replace_line(text, r"2\+ букмекера:", f"• 2+ букмекера: {c['books2']}/{total} ({_pct(c['books2'], total)}%)")
     for pattern in (r"2\+ independent odds-source:", r"2\+ независимых источника линий:"):
         text = _replace_line(text, pattern, f"• 2+ независимых источника линий: {c['odds2']}/{total} ({_pct(c['odds2'], total)}%) — strict metric для A-tier.")
@@ -116,8 +117,15 @@ def _render_verified(text: str) -> str:
     text = _replace_ready_line(text, r"B-tier .*coverage:", "B-tier coverage-ready", c["b"], total)
     text = _replace_ready_line(text, r"B-tier coverage-ready:", "B-tier coverage-ready", c["b"], total)
     text = re.sub(
+        r"^• Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста:.*$",
+        f"• Полное A-cover 2 линии ∩ 2 букмекера ∩ 2 контекста: {c['a']}/{total}; B-cover 1 линия ∩ 2 букмекера ∩ 1 контекст: {c['b']}/{total}.",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    text = re.sub(
         r"^• A-cover 2\+ odds-source ∩ 2\+ букмекера ∩ 2\+ контекста:.*$",
-        f"• Полное покрытие 2 линии ∩ 2 букмекера ∩ 2 контекста: {c['a']}/{total}; B-cover: {c['b']}/{total}.",
+        f"• Полное A-cover 2 линии ∩ 2 букмекера ∩ 2 контекста: {c['a']}/{total}; B-cover 1 линия ∩ 2 букмекера ∩ 1 контекст: {c['b']}/{total}.",
         text,
         count=1,
         flags=re.MULTILINE,
@@ -125,11 +133,7 @@ def _render_verified(text: str) -> str:
     marker = "\n🏷️ A/B-tier публикация"
     if marker in text:
         shortfall = max(0, total - c["a"])
-        line = (
-            "\n• Покрытие считается только по сохранённым ответам независимых API; "
-            "fixture-id, alias и proxy не засчитываются."
-            f" До полного A-tier покрытия осталось: {shortfall}.\n"
-        )
+        line = "\n• Покрытие считается только по сохранённым ответам независимых API; fixture-id, alias и proxy не засчитываются." f" До полного A-tier покрытия осталось: {shortfall}.\n"
         text = re.sub(r"\n• Покрытие считается только по сохранённым ответам независимых API;.*?осталось: \d+\.\n", line, text, count=1)
         if "Покрытие считается только" not in text:
             text = text.replace(marker, line + marker, 1)
@@ -185,7 +189,7 @@ def _repair_sportlogic_runtime_line(text: str, payload: Any = None) -> str:
     if not evidence:
         return text
     mode = "disabled_zero_rows_guard" if evidence["requests"] == 0 or (evidence["requests"] >= 20 and evidence["raw_rows"] == 0 and evidence["errors"] >= evidence["requests"]) else "enabled_runtime"
-    replacement = (f"• SportLogic: {mode}; запросы {evidence['requests']}; rows {evidence['raw_rows']}; current fixtures {evidence['fixtures']}; matched {evidence['matched']}; odds req {evidence['odds_requests']}; offers {evidence['offers']}; ошибок {evidence['errors']}; diag {evidence['diagnosis']}.")
+    replacement = f"• SportLogic: {mode}; запросы {evidence['requests']}; rows {evidence['raw_rows']}; current fixtures {evidence['fixtures']}; matched {evidence['matched']}; odds req {evidence['odds_requests']}; offers {evidence['offers']}; ошибок {evidence['errors']}; diag {evidence['diagnosis']}."
     return re.sub(r"^• SportLogic:.*$", replacement, text, count=1, flags=re.MULTILINE)
 
 
@@ -203,11 +207,9 @@ def _repair_bzzoiro_runtime_lines(text: str) -> str:
     evidence = _bzzoiro_runtime_evidence()
     if not evidence:
         return text
-
     def provider_replacement(match: re.Match[str]) -> str:
         prefix = match.group(1).rstrip("; ")
         return f"• Bzzoiro: {prefix}; batch odds rows {evidence['rows']}; matches with offers {evidence['matches']}; secondary offers {evidence['offers']}; 2+ source matches {evidence['two_plus']}; ошибок {evidence['errors']}."
-
     text = re.sub(r"^• Bzzoiro: (.*?)(?:; v2 odds \d+; secondary offers \d+; overlap odds-api\.io \d+; ошибок \d+\.)$", provider_replacement, text, count=1, flags=re.MULTILINE)
     diagnostic = f"• Bzzoiro runtime merge: offers {evidence['offers']}; matches with offers {evidence['matches']}; 2+ source matches {evidence['two_plus']}; batch rows {evidence['rows']}; requests {evidence['requests']}; errors {evidence['errors']}."
     return re.sub(r"^• Bzzoiro overlap bridge:.*$", diagnostic, text, count=1, flags=re.MULTILINE)

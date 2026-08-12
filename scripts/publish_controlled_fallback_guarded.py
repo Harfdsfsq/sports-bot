@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 
 def _force_runtime_publication_contract() -> None:
     """Final contract for the separate guarded-fallback process.
 
-    The main run and workflow write a lot of legacy env values.  This script runs
+    The main run and workflow write a lot of legacy env values. This script runs
     in a new Python process, so we enforce the intended testable publication
     contract here as the last writer before candidate evaluation:
       * A-tier remains strict: 2 odds / 2 books / 2 context.
       * B-tier is testable but still safe: 1 odds / 2 books / 1 context.
-      * price-integrity, value, quality, xG sanity, movement and dedupe guards
-        remain enabled.
+      * price-integrity, value, movement, dedupe and market-family guards remain.
       * SportLogic stays disabled while the endpoint returns zero rows.
     """
     overrides = {
@@ -35,6 +35,12 @@ def _force_runtime_publication_contract() -> None:
         "CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT": "false",
         "CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS": "true",
         "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_REQUIRE_XG_HARD_CONFIRMATION": "false",
+        "CONTROLLED_FALLBACK_BASE_TIER_B_MIN_PUBLICATION_SCORE": "12.0",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": "12.0",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "2.3",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "4.0",
+        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "2.3",
+        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "4.0",
         "ENABLE_SPORTLOGIC": "false",
         "SPORTLOGIC_ENABLED": "false",
         "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "false",
@@ -52,6 +58,74 @@ def _force_runtime_publication_contract() -> None:
     }
     for key, value in overrides.items():
         os.environ[key] = value
+
+
+def _num(value: Any, default: float = 0.0) -> float:
+    try:
+        if value in (None, ""):
+            return default
+        return float(str(value).replace(",", "."))
+    except Exception:
+        return default
+
+
+def _int(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ""):
+            return default
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value)
+        return int(float(str(value).replace(",", ".")))
+    except Exception:
+        return default
+
+
+def _b_tier_testing_floor(metrics: dict[str, Any]) -> bool:
+    """Whether a B-tier candidate is good enough for test publication.
+
+    This does not bypass movement/price/current-line/dedupe/family guards. It only
+    prevents old proxy-quality/publication-score floors from rejecting otherwise
+    testable B-tier value candidates whose q is raw_missing/0 because quality data
+    was not produced for the reserve path.
+    """
+    books = max(_int(metrics.get("books_count")), _int(metrics.get("bookmaker_count")))
+    odds_sources = max(_int(metrics.get("odds_sources_count")), _int(metrics.get("line_sources_count")), _int(metrics.get("sources_count")))
+    ctx = max(_int(metrics.get("context_sources_count")), _int(metrics.get("confirmation_sources_count")))
+    ev = max(_num(metrics.get("canonical_ev_pct")), _num(metrics.get("ev_pct")))
+    edge = max(_num(metrics.get("canonical_edge_pp")), _num(metrics.get("edge_pp")))
+    odds = _num(metrics.get("odds"), 0.0)
+    return books >= 2 and odds_sources >= 1 and ctx >= 1 and ev >= 4.0 and edge >= 2.3 and 1.70 <= odds <= 2.70
+
+
+def _install_b_tier_testing_relief(base: Any) -> None:
+    old = getattr(base, "tier_reasons", None)
+    if not callable(old) or getattr(base, "_b_tier_testing_relief_installed", False):
+        return
+
+    def wrapped(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+        reasons = list(old(tier, candidate, metrics) or [])
+        if str(tier or "").strip().upper() != "B":
+            return reasons
+        if not _b_tier_testing_floor(metrics):
+            return reasons
+        removable_exact = {
+            "tier_b_quality_below_min",
+            "tier_b_publication_score_below_min",
+            "tier_b_market_implied_xg_not_hard_confirmation",
+        }
+        filtered: list[str] = []
+        for reason in reasons:
+            r = str(reason)
+            if r in removable_exact:
+                continue
+            # The actual B contract is 1 context; strip legacy 2-context remnants.
+            if r.startswith("tier_b_context_sources_below_min") or r.startswith("tier_b_confirmation_sources_below_min"):
+                continue
+            filtered.append(reason)
+        return filtered
+
+    base.tier_reasons = wrapped
+    base._b_tier_testing_relief_installed = True
 
 
 def _apply_focused_alpha_policy() -> None:
@@ -122,6 +196,7 @@ def main() -> int:
 
         install_tier_a_strict_policy(v18.base)
         install_publication_safety_contract(v18.base)
+        _install_b_tier_testing_relief(v18.base)
         install_semantic_ledger_daily_count(v18)
         install_reserved_slot_expiry_override(v18)
         install_daily_slot_bundle_cap(v18)
