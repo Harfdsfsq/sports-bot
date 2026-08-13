@@ -1,22 +1,22 @@
 {
   "budget_limited": false,
   "budget_seconds": 210.0,
-  "created_at_utc": "2026-08-13T07:06:33.660830+00:00",
-  "duration_seconds": 122.17,
+  "created_at_utc": "2026-08-13T09:06:12.162927+00:00",
+  "duration_seconds": 97.35,
   "final": {
     "context_2plus_sources": 5,
-    "fixture_2plus_sources": 203,
-    "inventory_matches": 325,
+    "fixture_2plus_sources": 206,
+    "inventory_matches": 300,
     "matrix_matches": 300,
-    "odds_2plus_sources": 105,
-    "ready_for_model": 184,
+    "odds_2plus_sources": 117,
+    "ready_for_model": 198,
     "ready_for_publish": 19,
     "semantic_duplicate_rows": 0,
-    "semantic_unique_matches": 325
+    "semantic_unique_matches": 300
   },
   "mode": "runbot_discovery_first_prepare_v5_incremental_reuse",
   "previous_full_prepare": {
-    "age_minutes": 117.6,
+    "age_minutes": 237.66,
     "checkpoint_path": ".data/exports/latest-runbot-discovery-first-full-prepare.json",
     "created_at_utc": "2026-08-13T05:06:55.320790+00:00",
     "mode": "runbot_discovery_first_prepare_v5_full_bounded",
@@ -29,7 +29,7 @@
   "status": "ok",
   "steps": [
     {
-      "duration_seconds": 0.13,
+      "duration_seconds": 0.15,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
         "status": "skipped_sufficient_inventory"
@@ -37,7 +37,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.81,
+      "duration_seconds": 0.89,
       "name": "semantic_inventory_dedupe_pre",
       "result_summary": {
         "type": "int"
@@ -45,12 +45,11 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 31.45,
+      "duration_seconds": 0.0,
       "name": "target_expand_pre_discovery",
-      "result_summary": {
-        "type": "int"
-      },
-      "status": "ok"
+      "reason": "inventory_already_at_or_above_target:300/300",
+      "result_summary": {},
+      "status": "skipped"
     },
     {
       "duration_seconds": 0.0,
@@ -67,11 +66,11 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.51,
+      "duration_seconds": 0.53,
       "name": "apply_cached_sstats_crosswalk_ids",
       "result_summary": {
         "applied": 152,
-        "inventory_matches": 325,
+        "inventory_matches": 300,
         "matched_rows_seen": 152,
         "mode": "sstats_crosswalk_inventory_apply_v1",
         "status": "ok"
@@ -79,13 +78,13 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 87.95,
+      "duration_seconds": 94.18,
       "name": "apply_sstats_deep_inventory_enrichment_v4",
       "result_summary": {
         "crosswalk_matched": 152,
-        "enriched_matches": 49,
+        "enriched_matches": 59,
         "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority",
-        "request_count": 150,
+        "request_count": 149,
         "status": "ok"
       },
       "status": "ok"
@@ -98,7 +97,7 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.39,
+      "duration_seconds": 0.41,
       "name": "semantic_inventory_dedupe_final",
       "result_summary": {
         "type": "int"
@@ -108,27 +107,27 @@
     {
       "duration_seconds": 0.0,
       "name": "target_expand_final",
-      "reason": "inventory_already_at_or_above_target:325/300",
+      "reason": "inventory_already_at_or_above_target:300/300",
       "result_summary": {},
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.09,
+      "duration_seconds": 0.1,
       "name": "build_source_aware_coverage_matrix",
       "result_summary": {
         "context_2plus_sources": 5,
-        "fixture_2plus_sources": 203,
+        "fixture_2plus_sources": 206,
         "matches": 300,
         "matrix_matches": 300,
-        "odds_2plus_sources": 105,
-        "ready_for_model": 184,
+        "odds_2plus_sources": 117,
+        "ready_for_model": 198,
         "ready_for_publish": 19,
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.1,
+      "duration_seconds": 0.11,
       "name": "inventory_provider_gap_audit",
       "result_summary": {
         "type": "int"
