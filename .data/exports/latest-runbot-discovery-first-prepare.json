@@ -1,43 +1,53 @@
 {
-  "budget_limited": false,
+  "budget_limited": true,
   "budget_seconds": 210.0,
-  "created_at_utc": "2026-08-13T19:06:05.781177+00:00",
-  "duration_seconds": 96.16,
+  "created_at_utc": "2026-08-13T21:07:18.638297+00:00",
+  "duration_seconds": 214.74,
   "final": {
-    "context_2plus_sources": 5,
-    "fixture_2plus_sources": 218,
+    "context_2plus_sources": 2,
+    "fixture_2plus_sources": 70,
     "inventory_matches": 300,
     "matrix_matches": 300,
-    "odds_2plus_sources": 119,
-    "ready_for_model": 197,
-    "ready_for_publish": 19,
+    "odds_2plus_sources": 3,
+    "ready_for_model": 65,
+    "ready_for_publish": 2,
     "semantic_duplicate_rows": 0,
     "semantic_unique_matches": 300
   },
-  "mode": "runbot_discovery_first_prepare_v5_incremental_reuse",
+  "mode": "runbot_discovery_first_prepare_v5_full_bounded",
   "previous_full_prepare": {
-    "age_minutes": 357.34,
-    "checkpoint_path": ".data/exports/latest-runbot-discovery-first-full-prepare.json",
-    "created_at_utc": "2026-08-13T13:07:09.024448+00:00",
-    "mode": "runbot_discovery_first_prepare_v5_full_bounded",
+    "age_minutes": 117.64,
+    "created_at_utc": "2026-08-13T19:06:05.781177+00:00",
+    "full_checkpoint": {
+      "age_minutes": 476.58,
+      "checkpoint_path": ".data/exports/latest-runbot-discovery-first-full-prepare.json",
+      "created_at_utc": "2026-08-13T13:07:09.024448+00:00",
+      "mode": "runbot_discovery_first_prepare_v5_full_bounded",
+      "refresh_interval_minutes": 360,
+      "reusable": false,
+      "source": "last_successful_full_checkpoint",
+      "status": "ok_budget_limited",
+      "target_date": "2026-08-13"
+    },
+    "mode": "runbot_discovery_first_prepare_v5_incremental_reuse",
     "refresh_interval_minutes": 360,
-    "reusable": true,
-    "source": "last_successful_full_checkpoint",
-    "status": "ok_budget_limited",
+    "reusable": false,
+    "source": "latest_prepare_fallback",
+    "status": "ok",
     "target_date": "2026-08-13"
   },
-  "status": "ok",
+  "status": "ok_budget_limited",
   "steps": [
     {
-      "duration_seconds": 0.17,
+      "duration_seconds": 49.12,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
-        "status": "skipped_sufficient_inventory"
+        "status": "rebuilt_below_target"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.97,
+      "duration_seconds": 0.27,
       "name": "semantic_inventory_dedupe_pre",
       "result_summary": {
         "type": "int"
@@ -45,46 +55,57 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 28.59,
       "name": "target_expand_pre_discovery",
-      "reason": "inventory_already_at_or_above_target:300/300",
-      "result_summary": {},
-      "status": "skipped"
+      "result_summary": {
+        "type": "int"
+      },
+      "status": "ok"
     },
     {
       "duration_seconds": 0.0,
       "name": "provider_day_discovery_canonical_pool_v2",
-      "reason": "fresh_same_day_full_prepare_reused",
+      "reason": "discovery_budget_reserve",
       "result_summary": {},
       "status": "skipped"
     },
     {
       "duration_seconds": 0.0,
       "name": "merge_discovery_pool_into_inventory",
-      "reason": "fresh_same_day_full_prepare_reused",
+      "reason": "discovery_missing_or_budget_reserve",
       "result_summary": {},
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.58,
-      "name": "apply_cached_sstats_crosswalk_ids",
+      "duration_seconds": 44.66,
+      "name": "post_merge_sstats_crosswalk_v2",
       "result_summary": {
-        "applied": 155,
+        "match_rate_pct": 61.67,
+        "matched": 185,
+        "mode": "sstats_crosswalk_probe_v2_full_matched"
+      },
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 0.27,
+      "name": "apply_sstats_crosswalk_ids_to_inventory",
+      "result_summary": {
+        "applied": 185,
         "inventory_matches": 300,
-        "matched_rows_seen": 155,
+        "matched_rows_seen": 185,
         "mode": "sstats_crosswalk_inventory_apply_v1",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 92.82,
+      "duration_seconds": 91.24,
       "name": "apply_sstats_deep_inventory_enrichment_v4",
       "result_summary": {
-        "crosswalk_matched": 155,
-        "enriched_matches": 58,
+        "crosswalk_matched": 185,
+        "enriched_matches": 64,
         "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority",
-        "request_count": 150,
+        "request_count": 160,
         "status": "ok"
       },
       "status": "ok"
@@ -92,12 +113,12 @@
     {
       "duration_seconds": 0.0,
       "name": "target_bzzoiro_v2_inventory_gaps",
-      "reason": "incremental_mode_runner_provider_refresh",
+      "reason": "discovery_budget_reserve",
       "result_summary": {},
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.41,
+      "duration_seconds": 0.2,
       "name": "semantic_inventory_dedupe_final",
       "result_summary": {
         "type": "int"
@@ -112,22 +133,22 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.09,
+      "duration_seconds": 0.08,
       "name": "build_source_aware_coverage_matrix",
       "result_summary": {
-        "context_2plus_sources": 5,
-        "fixture_2plus_sources": 218,
+        "context_2plus_sources": 2,
+        "fixture_2plus_sources": 70,
         "matches": 300,
         "matrix_matches": 300,
-        "odds_2plus_sources": 119,
-        "ready_for_model": 197,
-        "ready_for_publish": 19,
+        "odds_2plus_sources": 3,
+        "ready_for_model": 65,
+        "ready_for_publish": 2,
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.09,
+      "duration_seconds": 0.06,
       "name": "inventory_provider_gap_audit",
       "result_summary": {
         "type": "int"
@@ -135,5 +156,5 @@
       "status": "ok"
     }
   ],
-  "target_date": "2026-08-13"
+  "target_date": "2026-08-14"
 }
