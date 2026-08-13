@@ -1050,7 +1050,10 @@
   "policy": "select_max_two_daily_near_misses_track_price_and_settle_via_shadow_bets",
   "publication_contract_relaxed": false,
   "rejection_counts": {
-    "daily_cap_reached": 1
+    "bookmaker_quorum_below_accumulation_min": 16,
+    "edge_below_accumulation_min": 12,
+    "odds_outside_accumulation_window": 1,
+    "quality_below_accumulation_min": 17
   },
   "runtime_shadow_persistence": {
     "added": 0,
@@ -1062,7 +1065,7 @@
   },
   "runtime_shadow_source": {
     "focused_shadow_rows": 20,
-    "settled_focused_shadow_rows": 18,
+    "settled_focused_shadow_rows": 19,
     "state_path": ".data/state.json",
     "status": "ok"
   },
@@ -2400,6 +2403,7 @@
       "edge_pp": 2.141,
       "ev_pct": 9.512,
       "family": "totals",
+      "flat_unit_pnl": -1.0,
       "hard_xg": true,
       "home_team": "Nottingham Forest",
       "kickoff_utc": "2026-08-12T18:45:00+00:00",
@@ -2418,13 +2422,24 @@
       "publication_contract_relaxed": false,
       "published": false,
       "quality": 65.923,
-      "result": "pending",
+      "result": "lost",
       "risk_adjusted_utility": 50.778,
       "selected_at_utc": "2026-08-12T17:48:16.646359+00:00",
       "selection": "Больше",
       "selection_key": "totals over 3 5",
       "selection_mode": "accumulation",
-      "settled": false,
+      "settled": true,
+      "settlement": {
+        "final_away_goals": 1.0,
+        "final_home_goals": 2.0,
+        "fingerprint": "soccer|nottingham_forest|bayer_leverkusen|2026-08-12|totals|over||3.5|2026-08-12T18:45:00+00:00",
+        "note": "Nottingham Forest 2:1 Bayer Leverkusen",
+        "outcome": "lost",
+        "pnl": -1.0,
+        "result_orientation": "direct",
+        "settled_at": "2026-08-13T01:06:38.890858+00:00",
+        "source": "sstats"
+      },
       "snapshot_at_utc": "2026-08-12T17:48:16.646359+00:00",
       "snapshots": 1,
       "telegram_sent": false,
@@ -2739,18 +2754,18 @@
   "strict_selected_this_run": 0,
   "summary": {
     "decisions_with_clv": 1,
-    "hit_rate_ex_push_pct": 27.778,
-    "lost_or_half_lost": 13,
+    "hit_rate_ex_push_pct": 26.316,
+    "lost_or_half_lost": 14,
     "mean_clv_pct": 8.0,
     "observations": 24,
-    "profit_units_flat_1u": -7.93,
+    "profit_units_flat_1u": -8.93,
     "push_or_void": 0,
     "selected_decisions": 23,
-    "settled": 18,
+    "settled": 19,
     "won_or_half_won": 5,
-    "yield_pct_flat_1u": -44.056
+    "yield_pct_flat_1u": -47.0
   },
   "telegram_publication_enabled": false,
-  "updated_at_utc": "2026-08-12T23:14:02.967093+00:00",
+  "updated_at_utc": "2026-08-13T01:13:42.676640+00:00",
   "version": "focused_alpha_accumulation_v3_valid_clv"
 }

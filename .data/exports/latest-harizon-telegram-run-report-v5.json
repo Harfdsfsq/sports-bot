@@ -1,7 +1,7 @@
 {
   "a_tier_enrichment": {
     "bzzoiro_detail": {
-      "created_at_utc": "2026-08-12T23:12:02.938655+00:00",
+      "created_at_utc": "2026-08-13T01:11:08.658347+00:00",
       "details": [],
       "diagnosis": "no_matched_event_ids",
       "events_with_offers": 0,
@@ -15,7 +15,7 @@
     "bzzoiro_targeted": {
       "bzzoiro_events_seen": 1318,
       "diagnosis": "matched_full_events_without_parseable_offers",
-      "matched_events": 24,
+      "matched_events": 43,
       "odds_detail": null,
       "offers": 0,
       "targets": 80,
@@ -41,11 +41,11 @@
       "status": "ok",
       "targeted_diagnosis": "matched_full_events_without_parseable_offers",
       "targeted_events_seen": 1318,
-      "targeted_matched_events": 24,
+      "targeted_matched_events": 43,
       "targeted_offers": 0
     },
     "context_projection_target_count": 80,
-    "high_value_recheck_target_count": 2
+    "high_value_recheck_target_count": 3
   },
   "api": {
     "bzzoiro": {
@@ -58,13 +58,13 @@
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 0,
+      "books_2plus": 32,
       "errors": 1,
-      "events_req": 1,
-      "matched": 0,
-      "odds_req": 0,
-      "offers": 106,
-      "plan_restricted": false
+      "events_req": 0,
+      "matched": 87,
+      "odds_req": 10,
+      "offers": 3870,
+      "plan_restricted": true
     },
     "sportlogic": {
       "diagnosis": "disabled_by_env",
@@ -77,37 +77,37 @@
       "requests": 0
     },
     "sstats": {
-      "contexts": 8,
+      "contexts": 2,
       "deep_enriched": 0,
       "errors": 0,
-      "requests": 3,
-      "rows": 13234
+      "requests": 11,
+      "rows": 4225
     }
   },
   "artifacts": {
-    "debug_age_min": 5.209067499637603,
-    "fallback_age_min": 0.14843720595041912,
-    "run_log_age_min": 4.8267818252245585,
-    "signal_stack_age_min": 14.14155524969101
+    "debug_age_min": 6.365372594197591,
+    "fallback_age_min": 0.1549948811531067,
+    "run_log_age_min": 5.957483685016632,
+    "signal_stack_age_min": 14.397694325447082
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 0,
     "bzzoiro_secondary_offers_added": 0,
     "day_inventory_total": 300,
-    "day_inventory_with_context": 171,
-    "day_inventory_with_odds": 114,
-    "matches_seen": 8,
-    "matches_with_2plus_books": 0,
-    "matches_with_context": 8,
-    "matches_with_offers": 4,
-    "odds_offers_primary": 106,
-    "ready_for_model": 81,
+    "day_inventory_with_context": 179,
+    "day_inventory_with_odds": 142,
+    "matches_seen": 5,
+    "matches_with_2plus_books": 32,
+    "matches_with_context": 2,
+    "matches_with_offers": 5,
+    "odds_offers_primary": 3870,
+    "ready_for_model": 103,
     "secondary_combinations": {
       "bzzoiro": 13,
       "odds_api_io": 2
     }
   },
-  "created_at_utc": "2026-08-12T23:16:34.217726+00:00",
+  "created_at_utc": "2026-08-13T01:16:42.922909+00:00",
   "diagnostic_repairs": {
     "reserve_quality_samples_patched": 5
   },
@@ -122,7 +122,7 @@
     "main_pipeline_publication_counter_diagnostics": {
       "counter_inconsistent": false,
       "ignored_ledger_sent_pending_count": 0,
-      "sent_pending_count": 20,
+      "sent_pending_count": 14,
       "sent_picks_count": 98,
       "summary_has_publication_counters": true
     },
@@ -140,75 +140,37 @@
     "windowed_publish_blocked": 8
   },
   "line_guard": {
-    "dropped": 10,
+    "dropped": 23,
     "dropped_final": 10,
-    "final_pre_kickoff_checks": 27,
-    "kept": 0,
+    "final_pre_kickoff_checks": 13,
+    "kept": 1,
     "last_chance_relief": {
-      "blocked_by_hard_guard": 2,
-      "created_at_utc": "2026-08-12T23:14:00.912292+00:00",
-      "floor_passed": 2,
+      "blocked_by_hard_guard": 5,
+      "created_at_utc": "2026-08-13T01:13:40.462378+00:00",
+      "floor_passed": 3,
       "publication_contract_relaxed": false,
       "relieved": 0,
       "samples": [
         {
-          "away": "Santiago Wanderers",
+          "away": "Al-Ahli",
           "floor": false,
           "hard": false,
-          "home": "Deportes Antofagasta",
+          "home": "Al Diriyah",
           "missing": false,
           "no_next": false,
           "reasons": [
-            "semantic_line_movement_not_confirmed"
-          ]
-        },
-        {
-          "away": "Santiago Wanderers",
-          "floor": false,
-          "hard": false,
-          "home": "Deportes Antofagasta",
-          "missing": false,
-          "no_next": false,
-          "reasons": [
-            "semantic_line_movement_failed"
-          ]
-        },
-        {
-          "away": "Santiago Wanderers",
-          "floor": false,
-          "hard": true,
-          "home": "Deportes Antofagasta",
-          "missing": false,
-          "no_next": false,
-          "reasons": [
-            "odds_below_global_min",
-            "xg_direction_conflict",
-            "xg_probability_gap_hard_reject",
-            "semantic_line_movement_unconfirmed_final"
-          ]
-        },
-        {
-          "away": "CR Flamengo",
-          "floor": false,
-          "hard": true,
-          "home": "Cruzeiro EC",
-          "missing": false,
-          "no_next": false,
-          "reasons": [
-            "odds_below_global_min",
-            "xg_direction_conflict",
-            "xg_probability_gap_hard_reject",
-            "semantic_line_movement_failed"
+            "odds_below_global_min"
           ]
         },
         {
           "away": "FK Partizan",
           "floor": false,
-          "hard": false,
+          "hard": true,
           "home": "FC Tobol",
           "missing": false,
           "no_next": false,
           "reasons": [
+            "current_price_recheck_value_lost:-4.0/-1.5",
             "semantic_line_movement_not_confirmed"
           ]
         },
@@ -248,11 +210,12 @@
         {
           "away": "Ferencváros TC",
           "floor": false,
-          "hard": false,
+          "hard": true,
           "home": "Górnik Zabrze",
           "missing": false,
           "no_next": false,
           "reasons": [
+            "current_price_recheck_value_lost:-15.2/-8.0",
             "semantic_line_movement_not_confirmed"
           ]
         },
@@ -286,7 +249,7 @@
           "missing": false,
           "no_next": false,
           "reasons": [
-            "semantic_line_movement_failed"
+            "semantic_line_movement_not_confirmed"
           ]
         },
         {
@@ -349,53 +312,95 @@
           ]
         },
         {
-          "away": "Al-Ahli",
-          "floor": false,
-          "hard": false,
-          "home": "Al Diriyah",
-          "missing": false,
-          "no_next": false,
-          "reasons": [
-            "odds_below_global_min",
-            "semantic_line_movement_not_confirmed"
-          ]
-        },
-        {
           "away": "HJK",
           "floor": false,
-          "hard": false,
+          "hard": true,
           "home": "Motherwell",
           "missing": false,
           "no_next": false,
           "reasons": [
             "odds_below_global_min",
+            "price_integrity:external_snapshot_bookmaker_median_outlier",
+            "current_price_recheck_value_alive_but_drift_too_high:118.8/31.7",
             "semantic_line_movement_failed"
           ]
         },
         {
           "away": "Jagiellonia Białystok",
           "floor": false,
-          "hard": false,
+          "hard": true,
           "home": "Rangers",
           "missing": false,
           "no_next": false,
           "reasons": [
             "odds_below_global_min",
+            "current_price_recheck_value_alive_but_drift_too_high:73.2/26.6",
             "semantic_line_movement_failed"
+          ]
+        },
+        {
+          "away": "Shamrock Rovers",
+          "floor": false,
+          "hard": true,
+          "home": "KF Egnatia",
+          "missing": false,
+          "no_next": false,
+          "reasons": [
+            "price_integrity:external_snapshot_bookmaker_median_outlier",
+            "current_price_recheck_value_alive_but_drift_too_high:96.6/24.1",
+            "semantic_line_movement_failed"
+          ]
+        },
+        {
+          "away": "Riga FC",
+          "floor": false,
+          "hard": false,
+          "home": "WKW ETO FC Gyor",
+          "missing": false,
+          "no_next": false,
+          "reasons": [
+            "semantic_line_movement_not_confirmed"
+          ]
+        },
+        {
+          "away": "Bohemians Dublin FC",
+          "floor": true,
+          "hard": false,
+          "home": "FC Midtjylland",
+          "missing": false,
+          "no_next": false,
+          "reasons": [
+            "semantic_line_movement_not_confirmed"
+          ]
+        },
+        {
+          "away": "RKS Rakow Czestochowa",
+          "floor": false,
+          "hard": false,
+          "home": "Hammarby IF",
+          "missing": false,
+          "no_next": false,
+          "reasons": [
+            "semantic_line_movement_not_confirmed"
           ]
         }
       ],
       "seen": 21
     },
-    "no_more_regular_run_before_kickoff": 27,
-    "seen": 26,
-    "waiting_next_run": 0
+    "no_more_regular_run_before_kickoff": 13,
+    "seen": 40,
+    "waiting_next_run": 13
   },
   "reasons": [
     {
-      "count": 12,
-      "reason": "semantic_line_movement_failed",
-      "reason_ru": "semantic line movement failed"
+      "count": 13,
+      "reason": "line_movement_guard_waiting_next_run",
+      "reason_ru": "кандидат ждёт следующий cron для второго снимка линии"
+    },
+    {
+      "count": 11,
+      "reason": "semantic_line_movement_not_confirmed",
+      "reason_ru": "semantic line movement not confirmed"
     },
     {
       "count": 10,
@@ -404,54 +409,74 @@
     },
     {
       "count": 9,
+      "reason": "semantic_line_movement_failed",
+      "reason_ru": "semantic line movement failed"
+    },
+    {
+      "count": 7,
       "reason": "odds_below_global_min",
       "reason_ru": "odds below global min"
     },
     {
-      "count": 8,
-      "reason": "semantic_line_movement_not_confirmed",
-      "reason_ru": "semantic line movement not confirmed"
-    },
-    {
       "count": 2,
-      "reason": "xg_direction_conflict",
-      "reason_ru": "направление ставки конфликтует с xG"
-    },
-    {
-      "count": 2,
-      "reason": "xg_probability_gap_hard_reject",
-      "reason_ru": "модель слишком оптимистична относительно xG-ориентира"
+      "reason": "price_integrity:external_snapshot_bookmaker_median_outlier",
+      "reason_ru": "price integrity:external snapshot bookmaker median outlier"
     },
     {
       "count": 1,
-      "reason": "semantic_line_movement_unconfirmed_final",
-      "reason_ru": "semantic line movement unconfirmed final"
+      "reason": "current_price_recheck_value_lost:-4.0/-1.5",
+      "reason_ru": "current price recheck value lost:-4.0/-1.5"
+    },
+    {
+      "count": 1,
+      "reason": "current_price_recheck_value_lost:-15.2/-8.0",
+      "reason_ru": "current price recheck value lost:-15.2/-8.0"
+    },
+    {
+      "count": 1,
+      "reason": "current_price_recheck_value_alive_but_drift_too_high:118.8/31.7",
+      "reason_ru": "current price recheck value alive but drift too high:118.8/31.7"
+    },
+    {
+      "count": 1,
+      "reason": "current_price_recheck_value_alive_but_drift_too_high:73.2/26.6",
+      "reason_ru": "current price recheck value alive but drift too high:73.2/26.6"
+    },
+    {
+      "count": 1,
+      "reason": "current_price_recheck_value_alive_but_drift_too_high:96.6/24.1",
+      "reason_ru": "current price recheck value alive but drift too high:96.6/24.1"
+    },
+    {
+      "count": 1,
+      "reason": "odds_api_io_plan_restricted",
+      "reason_ru": "odds-api.io: выбранные букмекеры недоступны на текущем тарифе"
     }
   ],
   "samples": {
     "fallback_evaluated": [
       {
-        "away_team": "Santiago Wanderers",
-        "away_team_ru": "Сантиаго Уандерерс",
+        "away_team": "Al-Ahli",
+        "away_team_ru": "Ал-Ахли",
         "candidate_source": "awaiting_movement_lifecycle",
-        "commence_time": "2026-08-13T00:30:00+00:00",
-        "commence_time_display": "13.08.2026 03:30 MSK",
+        "commence_time": "2026-08-13T18:00:00+00:00",
+        "commence_time_display": "13.08.2026 21:00 MSK",
         "family": "totals",
-        "home_team": "Deportes Antofagasta",
-        "home_team_ru": "Депортес Антофагаста",
-        "league_name": "Chile Primera B",
-        "league_name_ru": "Чиле Примера B",
-        "match_key": "soccer|deportes antofagasta|santiago wanderers|2026-08-13",
+        "home_team": "Al Diriyah",
+        "home_team_ru": "Ал Дирииах",
+        "league_name": "Saudi Pro League",
+        "league_name_ru": "Сауди Про-лига",
+        "match_key": "soccer|al ahli|al diriyah|2026-08-13",
         "metrics": {
-          "adjusted_probability": 0.351924,
+          "adjusted_probability": 0.590607,
           "books_count": 2,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": 0.71,
-          "canonical_ev_pct": 2.058,
-          "confidence": 65.526,
+          "canonical_edge_pp": 1.157,
+          "canonical_ev_pct": 1.998,
+          "confidence": 69.999,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -461,15 +486,15 @@
             "weather_supports_under": false
           },
           "confirmation_sources": [
+            "bzzoiro",
             "model_xg",
-            "sstats",
-            "thesportsdb"
+            "sstats"
           ],
           "confirmation_sources_count": 3,
           "context_sources": [
+            "bzzoiro",
             "model_xg",
-            "sstats",
-            "thesportsdb"
+            "sstats"
           ],
           "context_sources_count": 3,
           "dnb_sanity": {
@@ -477,11 +502,12 @@
             "reason": "family_not_dnb"
           },
           "line_sources": [],
-          "market_edge_pp": 0.41,
-          "market_probability": 0.347826,
-          "model_probability": 0.351924,
-          "odds": 2.9,
-          "odds_sources_count": 0,
+          "line_sources_count": 2,
+          "market_edge_pp": 0.769,
+          "market_probability": 0.58292,
+          "model_probability": 0.590607,
+          "odds": 1.727,
+          "odds_sources_count": 2,
           "proxy_single_source_thresholds": {
             "applies": false,
             "enabled": true,
@@ -491,21 +517,21 @@
           },
           "publication_score": 0.0,
           "quality_reasons": [],
-          "quality_score": 52.1,
+          "quality_score": 56.4,
           "quality_score_raw": 0.0,
           "quality_score_source": "raw_missing",
           "reserve_quality_components": {
             "books": 2,
-            "confidence": 65.526,
-            "confirmations": 2,
-            "edge_pp": 0.71,
-            "ev_pct": 2.058,
+            "confidence": 69.999,
+            "confirmations": 3,
+            "edge_pp": 1.157,
+            "ev_pct": 1.998,
             "league_reliability": {
-              "league": "chile primera b",
+              "league": "saudi pro league",
               "reasons": [],
               "score": 64.0
             },
-            "odds": 2.9,
+            "odds": 1.727,
             "odds_sources": 0,
             "weather_modifier": {
               "available": false,
@@ -513,10 +539,10 @@
               "totals_under_bias_pp": 0.0
             }
           },
-          "reserve_quality_score": 52.1,
-          "selected_implied_probability": 0.344828,
+          "reserve_quality_score": 56.4,
+          "selected_implied_probability": 0.579039,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T23:06:48.368704+00:00",
+            "created_at_utc": "2026-08-13T01:07:06.835636+00:00",
             "matching_offers": 0,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
             "stale": false
@@ -524,23 +550,19 @@
           "semantic_line_movement_guard": {
             "entries": [
               {
-                "captured_at_utc": "2026-08-12T21:51:15.292887+00:00",
-                "current_odds": 2.9,
-                "key": "soccer|deportes_antofagasta|santiago_wanderers|2026-08-13|totals|over|3.5|unibet",
+                "captured_at_utc": "2026-08-13T01:13:26.855788+00:00",
+                "current_odds": 1.727,
+                "key": "soccer|al_diriyah|al_ahli|2026-08-13|totals|under|3.5|betway",
                 "line_move_pct": 0.0,
                 "no_more_cron_before_kickoff": false,
-                "passed": false,
-                "reasons": [
-                  "current_ev_below_floor:2.1<2.9",
-                  "current_edge_below_floor:0.7<1.4",
-                  "needs_next_cron_line_movement_recheck"
-                ],
-                "status": "awaiting_next_run"
+                "passed": true,
+                "reasons": [],
+                "status": "movement_confirmed"
               }
             ],
             "matching_entries": 1
           },
-          "sources_count": 2,
+          "sources_count": 3,
           "xg_sanity": {
             "enabled": false,
             "reason": "missing_xg",
@@ -552,430 +574,12 @@
         "ok": false,
         "point": 3.5,
         "reject_reasons": [
-          "semantic_line_movement_not_confirmed"
+          "odds_below_global_min"
         ],
         "reject_reasons_ru": [
-          "semantic line movement not confirmed"
+          "коэффициент ниже общего минимума"
         ],
-        "reserve_quality_score": 52.1,
-        "selection": "Больше",
-        "tier": null
-      },
-      {
-        "away_team": "Santiago Wanderers",
-        "away_team_ru": "Сантиаго Уандерерс",
-        "candidate_source": "awaiting_movement_lifecycle",
-        "commence_time": "2026-08-13T00:30:00+00:00",
-        "commence_time_display": "13.08.2026 03:30 MSK",
-        "family": "totals",
-        "home_team": "Deportes Antofagasta",
-        "home_team_ru": "Депортес Антофагаста",
-        "league_name": "Chile Primera B",
-        "league_name_ru": "Чиле Примера B",
-        "match_key": "soccer|deportes antofagasta|santiago wanderers|2026-08-13",
-        "metrics": {
-          "adjusted_probability": 0.568135,
-          "books_count": 2,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 1.258,
-          "canonical_ev_pct": 2.264,
-          "confidence": 70.119,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "model_xg",
-            "sstats",
-            "thesportsdb"
-          ],
-          "confirmation_sources_count": 3,
-          "context_sources": [
-            "model_xg",
-            "sstats",
-            "thesportsdb"
-          ],
-          "context_sources_count": 3,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 0.791,
-          "market_probability": 0.560224,
-          "model_probability": 0.568135,
-          "odds": 1.8,
-          "odds_sources_count": 0,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 0.0,
-          "quality_reasons": [],
-          "quality_score": 61.2,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "reserve_quality_components": {
-            "books": 2,
-            "confidence": 70.119,
-            "confirmations": 3,
-            "edge_pp": 1.258,
-            "ev_pct": 2.264,
-            "league_reliability": {
-              "league": "chile primera b",
-              "reasons": [],
-              "score": 64.0
-            },
-            "odds": 1.8,
-            "odds_sources": 0,
-            "weather_modifier": {
-              "available": false,
-              "reasons": [],
-              "totals_under_bias_pp": 0.0
-            }
-          },
-          "reserve_quality_score": 61.2,
-          "selected_implied_probability": 0.555556,
-          "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T23:06:48.368704+00:00",
-            "matching_offers": 0,
-            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "stale": false
-          },
-          "semantic_line_movement_guard": {
-            "entries": [
-              {
-                "captured_at_utc": "2026-08-12T23:13:55.420725+00:00",
-                "current_odds": 1.8,
-                "key": "soccer|deportes_antofagasta|santiago_wanderers|2026-08-13|totals|over|2.5|bet365",
-                "line_move_pct": 0.0,
-                "no_more_cron_before_kickoff": true,
-                "passed": false,
-                "reasons": [
-                  "current_ev_below_floor:0.9<2.9",
-                  "current_edge_below_floor:0.5<1.4"
-                ],
-                "status": "movement_failed"
-              }
-            ],
-            "matching_entries": 1
-          },
-          "sources_count": 3,
-          "xg_sanity": {
-            "enabled": false,
-            "reason": "missing_xg",
-            "xg_away_raw": null,
-            "xg_home_raw": null,
-            "xg_source": "invalid_or_missing"
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "semantic_line_movement_failed"
-        ],
-        "reject_reasons_ru": [
-          "semantic line movement failed"
-        ],
-        "reserve_quality_score": 61.2,
-        "selection": "Больше",
-        "tier": null
-      },
-      {
-        "away_team": "Santiago Wanderers",
-        "away_team_ru": "Сантиаго Уандерерс",
-        "candidate_source": "awaiting_movement_lifecycle",
-        "commence_time": "2026-08-13T00:30:00+00:00",
-        "commence_time_display": "13.08.2026 03:30 MSK",
-        "family": "totals",
-        "home_team": "Deportes Antofagasta",
-        "home_team_ru": "Депортес Антофагаста",
-        "league_name": "Chile Primera B",
-        "league_name_ru": "Чиле Примера B",
-        "match_key": "soccer|deportes antofagasta|santiago wanderers|2026-08-13",
-        "metrics": {
-          "adjusted_probability": 0.629688,
-          "books_count": 1,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 0.469,
-          "canonical_ev_pct": 0.75,
-          "confidence": 67.638,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "model_xg",
-            "sstats",
-            "thesportsdb"
-          ],
-          "confirmation_sources_count": 3,
-          "context_sources": [
-            "model_xg",
-            "sstats",
-            "thesportsdb"
-          ],
-          "context_sources_count": 3,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "market_edge_pp": 0.469,
-          "market_probability": 0.625,
-          "model_probability": 0.629688,
-          "odds": 1.6,
-          "odds_sources_count": 1,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 6.3,
-          "quality_reasons": [],
-          "quality_score": 44.2,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "reserve_quality_components": {
-            "books": 1,
-            "confidence": 67.638,
-            "confirmations": 3,
-            "edge_pp": 0.469,
-            "ev_pct": 0.75,
-            "league_reliability": {
-              "league": "chile primera b",
-              "reasons": [],
-              "score": 64.0
-            },
-            "odds": 1.6,
-            "odds_sources": 1,
-            "weather_modifier": {
-              "available": false,
-              "reasons": [],
-              "totals_under_bias_pp": 0.0
-            }
-          },
-          "reserve_quality_score": 44.2,
-          "selected_implied_probability": 0.625,
-          "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T23:06:48.368704+00:00",
-            "matching_offers": 0,
-            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "stale": false
-          },
-          "semantic_line_movement_guard": {
-            "entries": [
-              {
-                "captured_at_utc": "2026-08-12T22:31:33.521644+00:00",
-                "current_odds": 1.6,
-                "key": "soccer|deportes_antofagasta|santiago_wanderers|2026-08-13|totals|under|3.0|bet365",
-                "line_move_pct": 0.0,
-                "no_more_cron_before_kickoff": false,
-                "passed": false,
-                "reasons": [
-                  "current_ev_below_floor:0.8<2.9",
-                  "current_edge_below_floor:0.5<1.4",
-                  "needs_next_cron_line_movement_recheck"
-                ],
-                "status": "awaiting_next_run"
-              }
-            ],
-            "matching_entries": 1
-          },
-          "sources_count": 3,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 34.796,
-            "xg_direction_evaluated": true,
-            "xg_direction_ok": false,
-            "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 34.796,
-            "xg_model_optimism_gap_pp": 34.796,
-            "xg_probability": 0.281729,
-            "xg_probability_pct": 28.173,
-            "xg_source": "home_away",
-            "xg_total": 3.722
-          }
-        },
-        "ok": false,
-        "point": 3.0,
-        "reject_reasons": [
-          "odds_below_global_min",
-          "xg_direction_conflict",
-          "xg_probability_gap_hard_reject",
-          "semantic_line_movement_unconfirmed_final"
-        ],
-        "reject_reasons_ru": [
-          "коэффициент ниже общего минимума",
-          "направление ставки конфликтует с xG",
-          "модель слишком оптимистична относительно xG-ориентира",
-          "semantic line movement unconfirmed final"
-        ],
-        "reserve_quality_score": 44.2,
-        "selection": "Меньше",
-        "tier": null
-      },
-      {
-        "away_team": "CR Flamengo",
-        "away_team_ru": "CR Фламенго",
-        "candidate_source": "awaiting_movement_lifecycle",
-        "commence_time": "2026-08-13T00:30:00+00:00",
-        "commence_time_display": "13.08.2026 03:30 MSK",
-        "family": "totals",
-        "home_team": "Cruzeiro EC",
-        "home_team_ru": "Крузейро EC",
-        "league_name": "Copa Libertadores",
-        "league_name_ru": "Копа Либертадорес",
-        "match_key": "soccer|cr flamengo|cruzeiro|2026-08-13",
-        "metrics": {
-          "adjusted_probability": 0.615079,
-          "books_count": 1,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": 0.458,
-          "canonical_ev_pct": 0.75,
-          "confidence": 67.638,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": false,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "bzzoiro",
-            "espn",
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "context_sources": [
-            "bzzoiro",
-            "espn",
-            "sstats"
-          ],
-          "context_sources_count": 3,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "line_sources": [],
-          "line_sources_count": 2,
-          "market_edge_pp": 0.458,
-          "market_probability": 0.610501,
-          "model_probability": 0.615079,
-          "odds": 1.638,
-          "odds_sources_count": 2,
-          "proxy_single_source_thresholds": {
-            "applies": false,
-            "enabled": true,
-            "min_confidence": 78.0,
-            "min_edge_pp": 8.0,
-            "min_ev_pct": 15.0
-          },
-          "publication_score": 6.278,
-          "quality_reasons": [],
-          "quality_score": 44.2,
-          "quality_score_raw": 0.0,
-          "quality_score_source": "raw_missing",
-          "reserve_quality_components": {
-            "books": 1,
-            "confidence": 67.638,
-            "confirmations": 3,
-            "edge_pp": 0.458,
-            "ev_pct": 0.75,
-            "league_reliability": {
-              "league": "copa libertadores",
-              "reasons": [],
-              "score": 64.0
-            },
-            "odds": 1.638,
-            "odds_sources": 1,
-            "weather_modifier": {
-              "available": false,
-              "reasons": [],
-              "totals_under_bias_pp": 0.0
-            }
-          },
-          "reserve_quality_score": 44.2,
-          "selected_implied_probability": 0.610501,
-          "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T23:06:48.368704+00:00",
-            "matching_offers": 0,
-            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-            "stale": false
-          },
-          "semantic_line_movement_guard": {
-            "entries": [
-              {
-                "captured_at_utc": "2026-08-12T23:13:55.420725+00:00",
-                "current_odds": 1.638,
-                "key": "soccer|cruzeiro_ec|cr_flamengo|2026-08-13|totals|under|2.5|1xbet",
-                "line_move_pct": 0.0,
-                "no_more_cron_before_kickoff": true,
-                "passed": false,
-                "reasons": [
-                  "current_ev_below_floor:1.0<2.9",
-                  "current_edge_below_floor:0.6<1.4"
-                ],
-                "status": "movement_failed"
-              }
-            ],
-            "matching_entries": 1
-          },
-          "sources_count": 3,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 22.294,
-            "xg_direction_evaluated": true,
-            "xg_direction_ok": false,
-            "xg_hard_confirmation": true,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 22.294,
-            "xg_model_optimism_gap_pp": 22.294,
-            "xg_probability": 0.39214,
-            "xg_probability_pct": 39.214,
-            "xg_source": "home_away",
-            "xg_total": 3.142
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "odds_below_global_min",
-          "xg_direction_conflict",
-          "xg_probability_gap_hard_reject",
-          "semantic_line_movement_failed"
-        ],
-        "reject_reasons_ru": [
-          "коэффициент ниже общего минимума",
-          "направление ставки конфликтует с xG",
-          "модель слишком оптимистична относительно xG-ориентира",
-          "semantic line movement failed"
-        ],
-        "reserve_quality_score": 44.2,
+        "reserve_quality_score": 56.4,
         "selection": "Меньше",
         "tier": null
       },
@@ -1025,6 +629,15 @@
             "sstats"
           ],
           "context_sources_count": 5,
+          "current_price_recheck": {
+            "current_price": 2.75,
+            "drift_pct": 5.45,
+            "model_probability_from_selected_ev": 0.34897,
+            "recalculated_edge_pp": -1.47,
+            "recalculated_ev_pct": -4.03,
+            "selected_price": 2.9,
+            "status": "value_lost_after_current_price_recheck"
+          },
           "dnb_sanity": {
             "enabled": false,
             "reason": "family_not_dnb"
@@ -1070,9 +683,16 @@
           "reserve_quality_score": 58.5,
           "selected_implied_probability": 0.344828,
           "semantic_current_price_guard": {
-            "created_at_utc": "2026-08-12T23:06:48.368704+00:00",
-            "matching_offers": 0,
+            "created_at_utc": "2026-08-13T01:07:06.835636+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 2.75,
+            "matching_offers": 2,
             "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 5.455,
+            "selected_book_missing_from_current_snapshot": false,
+            "selected_book_repaired_with_current_book": false,
+            "selected_bookmaker": "bet365",
+            "selected_price": 2.9,
             "stale": false
           },
           "semantic_line_movement_guard": {
@@ -1119,152 +739,560 @@
         "ok": false,
         "point": 3.5,
         "reject_reasons": [
+          "current_price_recheck_value_lost:-4.0/-1.5",
           "semantic_line_movement_not_confirmed"
         ],
         "reject_reasons_ru": [
+          "current price recheck value lost:-4.0/-1.5",
           "semantic line movement not confirmed"
         ],
         "reserve_quality_score": 58.5,
         "selection": "Больше",
         "tier": null
+      },
+      {
+        "away_team": "HNK Rijeka",
+        "away_team_ru": "HNK Риджека",
+        "candidate_source": "awaiting_movement_lifecycle",
+        "commence_time": "2026-08-13T16:00:00+00:00",
+        "commence_time_display": "13.08.2026 19:00 MSK",
+        "family": "totals",
+        "home_team": "Ilves",
+        "home_team_ru": "Илвес",
+        "league_name": "Conference League",
+        "league_name_ru": "Конференке Лигуе",
+        "match_key": "soccer|hnk rijeka|ilves|2026-08-13",
+        "metrics": {
+          "adjusted_probability": 0.572347,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 0.897,
+          "canonical_ev_pct": 1.592,
+          "confidence": 71.616,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "clubelo",
+            "model_xg",
+            "sstats"
+          ],
+          "confirmation_sources_count": 4,
+          "context_sources": [
+            "bzzoiro",
+            "clubelo",
+            "model_xg",
+            "sstats"
+          ],
+          "context_sources_count": 4,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "line_sources_count": 2,
+          "market_edge_pp": 0.738,
+          "market_probability": 0.564972,
+          "model_probability": 0.572347,
+          "odds": 1.775,
+          "odds_sources_count": 2,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 0.0,
+          "quality_reasons": [],
+          "quality_score": 62.6,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "reserve_quality_components": {
+            "books": 3,
+            "confidence": 71.616,
+            "confirmations": 3,
+            "edge_pp": 0.897,
+            "ev_pct": 1.592,
+            "league_reliability": {
+              "league": "conference league",
+              "reasons": [],
+              "score": 64.0
+            },
+            "odds": 1.775,
+            "odds_sources": 0,
+            "weather_modifier": {
+              "available": false,
+              "reasons": [],
+              "totals_under_bias_pp": 0.0
+            }
+          },
+          "reserve_quality_score": 62.6,
+          "selected_implied_probability": 0.56338,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-13T01:07:06.835636+00:00",
+            "current_bookmaker": "Unibet",
+            "current_price": 1.77,
+            "matching_offers": 2,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 0.282,
+            "selected_book_missing_from_current_snapshot": false,
+            "selected_book_repaired_with_current_book": false,
+            "selected_bookmaker": "",
+            "selected_price": 1.775,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-13T01:13:26.855788+00:00",
+                "current_odds": 1.775,
+                "key": "soccer|ilves|hnk_rijeka|2026-08-13|totals|under|2.5|betway",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": false,
+                "passed": false,
+                "reasons": [
+                  "current_ev_below_floor:1.0<2.9",
+                  "current_edge_below_floor:0.6<1.4"
+                ],
+                "status": "movement_failed"
+              }
+            ],
+            "matching_entries": 1
+          },
+          "sources_count": 3,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "semantic_line_movement_failed"
+        ],
+        "reject_reasons_ru": [
+          "semantic line movement failed"
+        ],
+        "reserve_quality_score": 62.6,
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "Al-Hazem",
+        "away_team_ru": "Ал-Хазем",
+        "candidate_source": "awaiting_movement_lifecycle",
+        "commence_time": "2026-08-13T16:15:00+00:00",
+        "commence_time_display": "13.08.2026 19:15 MSK",
+        "family": "totals",
+        "home_team": "Abha",
+        "home_team_ru": "Абха",
+        "league_name": "Saudi Pro League",
+        "league_name_ru": "Сауди Про-лига",
+        "match_key": "soccer|abha|al hazem|2026-08-13",
+        "metrics": {
+          "adjusted_probability": 0.567932,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.739,
+          "canonical_ev_pct": 5.067,
+          "confidence": 69.88,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "context_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "context_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "line_sources_count": 2,
+          "market_edge_pp": 1.238,
+          "market_probability": 0.555556,
+          "model_probability": 0.567932,
+          "odds": 1.85,
+          "odds_sources_count": 2,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 0.0,
+          "quality_reasons": [],
+          "quality_score": 68.1,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "reserve_quality_components": {
+            "books": 2,
+            "confidence": 69.88,
+            "confirmations": 2,
+            "edge_pp": 2.739,
+            "ev_pct": 5.067,
+            "league_reliability": {
+              "league": "saudi pro league",
+              "reasons": [],
+              "score": 64.0
+            },
+            "odds": 1.85,
+            "odds_sources": 0,
+            "weather_modifier": {
+              "available": false,
+              "reasons": [],
+              "totals_under_bias_pp": 0.0
+            }
+          },
+          "reserve_quality_score": 68.1,
+          "selected_implied_probability": 0.540541,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-13T01:07:06.835636+00:00",
+            "current_bookmaker": "Bet365",
+            "current_price": 1.825,
+            "matching_offers": 2,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "price_diff_pct": 1.37,
+            "selected_book_missing_from_current_snapshot": false,
+            "selected_book_repaired_with_current_book": false,
+            "selected_bookmaker": "",
+            "selected_price": 1.85,
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-12T21:51:15.292887+00:00",
+                "current_odds": 1.85,
+                "key": "soccer|abha|al_hazem|2026-08-13|totals|under|2.5|bet365",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": false,
+                "passed": false,
+                "reasons": [
+                  "needs_next_cron_line_movement_recheck"
+                ],
+                "status": "awaiting_next_run"
+              }
+            ],
+            "matching_entries": 1
+          },
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "semantic_line_movement_not_confirmed"
+        ],
+        "reject_reasons_ru": [
+          "semantic line movement not confirmed"
+        ],
+        "reserve_quality_score": 68.1,
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "FK Jablonec",
+        "away_team_ru": "Джаблонек",
+        "candidate_source": "awaiting_movement_lifecycle",
+        "commence_time": "2026-08-13T16:30:00+00:00",
+        "commence_time_display": "13.08.2026 19:30 MSK",
+        "family": "totals",
+        "home_team": "RFS",
+        "home_team_ru": "RFS",
+        "league_name": "Conference League",
+        "league_name_ru": "Конференке Лигуе",
+        "match_key": "soccer|jablonec|rfs|2026-08-13",
+        "metrics": {
+          "adjusted_probability": 0.492439,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 0.463,
+          "canonical_ev_pct": 0.95,
+          "confidence": 69.528,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "model_xg",
+            "sstats"
+          ],
+          "confirmation_sources_count": 3,
+          "context_sources": [
+            "bzzoiro",
+            "model_xg",
+            "sstats"
+          ],
+          "context_sources_count": 3,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "line_sources": [],
+          "line_sources_count": 2,
+          "market_edge_pp": 0.463,
+          "market_probability": 0.487805,
+          "model_probability": 0.492439,
+          "odds": 2.05,
+          "odds_sources_count": 2,
+          "proxy_single_source_thresholds": {
+            "applies": false,
+            "enabled": true,
+            "min_confidence": 78.0,
+            "min_edge_pp": 8.0,
+            "min_ev_pct": 15.0
+          },
+          "publication_score": 0.0,
+          "quality_reasons": [],
+          "quality_score": 56.7,
+          "quality_score_raw": 0.0,
+          "quality_score_source": "raw_missing",
+          "reserve_quality_components": {
+            "books": 2,
+            "confidence": 69.528,
+            "confirmations": 3,
+            "edge_pp": 0.463,
+            "ev_pct": 0.95,
+            "league_reliability": {
+              "league": "conference league",
+              "reasons": [],
+              "score": 64.0
+            },
+            "odds": 2.05,
+            "odds_sources": 0,
+            "weather_modifier": {
+              "available": false,
+              "reasons": [],
+              "totals_under_bias_pp": 0.0
+            }
+          },
+          "reserve_quality_score": 56.7,
+          "selected_implied_probability": 0.487805,
+          "semantic_current_price_guard": {
+            "created_at_utc": "2026-08-13T01:07:06.835636+00:00",
+            "matching_offers": 0,
+            "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
+            "stale": false
+          },
+          "semantic_line_movement_guard": {
+            "entries": [
+              {
+                "captured_at_utc": "2026-08-13T01:13:26.855788+00:00",
+                "current_odds": 2.05,
+                "key": "soccer|rfs|fk_jablonec|2026-08-13|totals|under|2.5|bet365",
+                "line_move_pct": 0.0,
+                "no_more_cron_before_kickoff": false,
+                "passed": false,
+                "reasons": [
+                  "current_ev_below_floor:0.8<2.9",
+                  "current_edge_below_floor:0.4<1.4"
+                ],
+                "status": "movement_failed"
+              }
+            ],
+            "matching_entries": 2
+          },
+          "sources_count": 3,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg",
+            "xg_away_raw": null,
+            "xg_home_raw": null,
+            "xg_source": "invalid_or_missing"
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "semantic_line_movement_failed"
+        ],
+        "reject_reasons_ru": [
+          "semantic line movement failed"
+        ],
+        "reserve_quality_score": 56.7,
+        "selection": "Меньше",
+        "tier": null
       }
     ],
     "top_priority_matches": [
       {
-        "away_team": "RB Do Norte AM",
-        "home_team": "Operario AM",
-        "kickoff_utc": "2026-08-13T00:00:00+00:00",
-        "league_name": "Brazil - Amazonense, Serie B",
-        "match_key": "2026-08-13|operario am|rb do norte am",
-        "minutes_to_kickoff": 46.08,
+        "away_team": "Nueva Santa Rosa CDF",
+        "home_team": "CD Mictlán",
+        "kickoff_utc": "2026-08-13T02:00:00+00:00",
+        "league_name": "Guatemala - Primera Division de Ascenso",
+        "match_key": "2026-08-13|mictl n|nueva santa rosa cdf",
+        "minutes_to_kickoff": 46.55,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.641,
+        "priority": 160.483,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-08-12T23:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-13T01:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-13T01:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-13T03:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Auckland City FC",
-        "home_team": "AS Tiga Sport",
-        "kickoff_utc": "2026-08-13T00:00:00+00:00",
-        "league_name": "International Clubs - OFC Champions League, Group A",
-        "match_key": "2026-08-13|as tiga sport|auckland city",
-        "minutes_to_kickoff": 46.08,
+        "away_team": "Deportivo Coatepeque",
+        "home_team": "Quiche FC",
+        "kickoff_utc": "2026-08-13T02:00:00+00:00",
+        "league_name": "Guatemala - Primera Division, Apertura, Group A",
+        "match_key": "2026-08-13|quiche|deportivo coatepeque",
+        "minutes_to_kickoff": 46.55,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.641,
+        "priority": 160.483,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-08-12T23:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-13T01:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-13T01:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-13T03:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "CA Sol de America de Formosa",
-        "home_team": "CA Sarmiento de la Banda",
-        "kickoff_utc": "2026-08-13T00:30:00+00:00",
-        "league_name": "Argentina - Torneo Federal A, Relegation Round, Group B",
-        "match_key": "2026-08-13|ca sarmiento banda|ca sol america formosa",
-        "minutes_to_kickoff": 76.08,
+        "away_team": "FC Dallas",
+        "home_team": "Deportivo Toluca FC",
+        "kickoff_utc": "2026-08-13T02:00:00+00:00",
+        "league_name": "International Clubs - Leagues Cup, Group Stage",
+        "match_key": "2026-08-13|deportivo toluca|dallas",
+        "minutes_to_kickoff": 46.55,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 150.641,
+        "priority": 160.483,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-08-13T00:10:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-13T01:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-13T01:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-13T03:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Greenville Triumph",
-        "home_team": "Forward Madison",
-        "kickoff_utc": "2026-08-13T00:00:00+00:00",
-        "league_name": "American USL League One",
-        "match_key": "soccer|forward madison|greenville triumph|2026-08-13",
-        "minutes_to_kickoff": 46.08,
+        "away_team": "FC Dallas",
+        "home_team": "Deportivo Toluca FC",
+        "kickoff_utc": "2026-08-13T02:00:00+00:00",
+        "league_name": "International Clubs - Leagues Cup, Group Stage",
+        "match_key": "soccer|dallas|toluca|2026-08-13",
+        "minutes_to_kickoff": 46.55,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.641,
+        "priority": 144.483,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-12T23:11:24.466471+00:00",
-          "latest_useful_run_at_utc": "2026-08-12T23:40:00+00:00",
+          "last_odds_refresh_utc": "2026-08-13T01:10:24.333905+00:00",
+          "latest_useful_run_at_utc": "2026-08-13T01:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-13T01:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-13T03:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Kimberley de Mar Del Plata",
-        "home_team": "CSB Atenas",
-        "kickoff_utc": "2026-08-13T00:00:00+00:00",
-        "league_name": "Argentina - Torneo Federal A, Relegation Round, Group B",
-        "match_key": "2026-08-13|csb atenas|kimberley mar del plata",
-        "minutes_to_kickoff": 46.08,
+        "away_team": "AS Venus",
+        "home_team": "Central Coast Honiara",
+        "kickoff_utc": "2026-08-13T03:00:00+00:00",
+        "league_name": "International Clubs - OFC Champions League, Group A",
+        "match_key": "2026-08-13|central coast honiara|as venus",
+        "minutes_to_kickoff": 106.55,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.641,
+        "priority": 140.483,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-08-12T23:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-13T02:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-13T01:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-13T03:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Unidos do Alvorada AM",
-        "home_team": "Nacional Fast Clube AM",
-        "kickoff_utc": "2026-08-13T00:00:00+00:00",
-        "league_name": "Brazil - Amazonense, Serie B",
-        "match_key": "2026-08-13|nacional fast clube am|unidos do alvorada am",
-        "minutes_to_kickoff": 46.08,
+        "away_team": "Club Puebla",
+        "home_team": "San Diego FC",
+        "kickoff_utc": "2026-08-13T02:15:00+00:00",
+        "league_name": "International Clubs - Leagues Cup, Group Stage",
+        "match_key": "2026-08-13|san diego|puebla",
+        "minutes_to_kickoff": 61.55,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.641,
+        "priority": 139.483,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-08-12T23:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-13T01:55:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-13T01:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-13T03:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       }
@@ -1273,7 +1301,7 @@
   "status": "lines_but_no_raw_candidates",
   "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 3389,
+  "text_length": 3213,
   "top_reason": "line_movement_guard_dropped",
   "version": "harizon-telegram-report-v6-standalone-single-source"
 }

@@ -3,13 +3,13 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 8 | day inventory: 300
-• С линиями: 4 | с контекстом: 8 | ready model: 81
-• odds-api.io offers: 106 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 0 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 5 | day inventory: 300
+• С линиями: 5 | с контекстом: 2 | ready model: 103
+• odds-api.io offers: 3870 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 32 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: bzzoiro: 13, odds_api_io: 2
 
-• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 2.
+• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 3.
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0 / 24
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
@@ -18,38 +18,39 @@
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 27 | no next regular run: 27
-• Line guard: seen 26 | kept 0 | dropped 10
+• Final pre-kickoff checks: 13 | no next regular run: 13
+• Line guard: seen 40 | kept 1 | dropped 23
 
-• Bzzoiro targeted odds: targets 80; events 1318; matched 24; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro targeted odds: targets 80; events 1318; matched 43; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
 • Bzzoiro odds detail: targets 0; requests 0; events_with_offers 0; offers 0; diag no_matched_event_ids.
 • Bzzoiro source trace: aggregate events 0; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 21; floor 2; hard 2; relieved 0.
+• Last-chance line relief: seen 21; floor 3; hard 5; relieved 0.
 📡 Core API
-• odds_api_io: events req 1, odds req 0, matched 0, offers 106, 2+ books 0, err 1, auth_failed False
-• sstats: req 3, ctx 8, rows 13234, err 0, deep enriched 0
+• odds_api_io: events req 0, odds req 10, matched 87, offers 3870, 2+ books 32, err 1, auth_failed False
+• sstats: req 11, ctx 2, rows 4225, err 0, deep enriched 0
 • bzzoiro: req 3, ctx 0, events 0 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: реально плохое движение 12; движение не подтверждено 8; финальная проверка не подтвердила 1; коэффициент ниже минимума 9; конфликт направления с xG 2.
+• Line movement breakdown: реально плохое движение 9; движение не подтверждено 11; коэффициент ниже минимума 7.
 🚫 Почему не опубликовано
-• semantic line movement failed: 12 (27%)
-• line movement guard снял кандидата: 10 (23%)
-• odds below global min: 9 (20%)
-• semantic line movement not confirmed: 8 (18%)
-• направление ставки конфликтует с xG: 2 (5%)
-• модель слишком оптимистична относительно xG-ориентира: 2 (5%)
-• semantic line movement unconfirmed final: 1 (2%)
+• кандидат ждёт следующий cron для второго снимка линии: 13 (22%)
+• semantic line movement not confirmed: 11 (19%)
+• line movement guard снял кандидата: 10 (17%)
+• semantic line movement failed: 9 (16%)
+• odds below global min: 7 (12%)
+• price integrity:external snapshot bookmaker median outlier: 2 (3%)
+• current price recheck value lost:-4.0/-1.5: 1 (2%)
+• current price recheck value lost:-15.2/-8.0: 1 (2%)
 
 🔎 Проверенные reserve-кандидаты
-1. Deportes Antofagasta — Santiago Wanderers | Больше @2.90 | EV +2.1% | edge +0.7 п.п. | q 52.1 reserve
-   • reject: semantic line movement not confirmed
-2. Deportes Antofagasta — Santiago Wanderers | Больше @1.80 | EV +2.3% | edge +1.3 п.п. | q 61.2 reserve
+1. Al Diriyah — Al-Ahli | Меньше @1.73 | EV +2.0% | edge +1.2 п.п. | q 56.4 reserve
+   • reject: odds below global min
+2. FC Tobol — FK Partizan | Больше @2.90 | EV +1.2% | edge +0.4 п.п. | q 58.5 reserve
+   • reject: current price recheck value lost:-4.0/-1.5, semantic line movement not confirmed
+3. Ilves — HNK Rijeka | Меньше @1.77 | EV +1.6% | edge +0.9 п.п. | q 62.6 reserve
    • reject: semantic line movement failed
-3. Deportes Antofagasta — Santiago Wanderers | Меньше @1.60 | EV +0.8% | edge +0.5 п.п. | q 44.2 reserve
-   • reject: odds below global min, направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-4. Cruzeiro EC — CR Flamengo | Меньше @1.64 | EV +0.8% | edge +0.5 п.п. | q 44.2 reserve
-   • reject: odds below global min, направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+4. Abha — Al-Hazem | Меньше @1.85 | EV +5.1% | edge +2.7 п.п. | q 68.1 reserve
+   • reject: semantic line movement not confirmed
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail и last-chance relief теперь диагностируются отдельно.
