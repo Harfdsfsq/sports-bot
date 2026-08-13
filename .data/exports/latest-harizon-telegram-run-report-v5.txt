@@ -4,53 +4,53 @@
 
 📦 Покрытие
 • Матчи в run: 0 | day inventory: 300
-• С линиями: 0 | с контекстом: 0 | ready model: 103
-• odds-api.io offers: 2944 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 25 | 2-source overlap Bzzoiro+odds-api.io: 0
+• С линиями: 0 | с контекстом: 59 | ready model: 120
+• odds-api.io offers: 2966 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 23 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: bzzoiro: 13, odds_api_io: 2
 
-• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 3.
+• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 2.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 24
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 2 / 24
+• Passed quality: 2 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 21 | evaluated 21 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 31 | evaluated 31 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
 • Final pre-kickoff checks: 0 | no next regular run: 0
-• Line guard: seen 40 | kept 9 | dropped 15
+• Line guard: seen 41 | kept 1 | dropped 24
 
-• Bzzoiro targeted odds: targets 80; events 1318; matched 36; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro targeted odds: targets 80; events 1318; matched 31; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
 • Bzzoiro odds detail: targets 0; requests 0; events_with_offers 0; offers 0; diag no_matched_event_ids.
 • Bzzoiro source trace: aggregate events 0; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 8; floor 3; hard 0; relieved 0.
+• Last-chance line relief: seen 31; floor 5; hard 5; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 8, matched 65, offers 2944, 2+ books 25, err 1, auth_failed False
-• sstats: req 11, ctx 0, rows 4225, err 0, deep enriched 0
+• odds_api_io: events req 0, odds req 9, matched 73, offers 2966, 2+ books 23, err 1, auth_failed False
+• sstats: req 11, ctx 57, rows 12025, err 0, deep enriched 0
 • bzzoiro: req 3, ctx 0, events 0 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: реально плохое движение 9; движение не подтверждено 11; коэффициент ниже минимума 7.
+• Line movement breakdown: реально плохое движение 13; движение не подтверждено 11; коэффициент ниже минимума 9.
 🚫 Почему не опубликовано
-• semantic line movement not confirmed: 11 (22%)
-• semantic line movement failed: 9 (18%)
-• line movement guard снял кандидата: 9 (18%)
-• odds below global min: 7 (14%)
-• кандидат ждёт следующий cron для второго снимка линии: 6 (12%)
-• price integrity:external snapshot bookmaker median outlier: 2 (4%)
-• current price recheck value lost:-4.0/-1.5: 1 (2%)
-• current price recheck value lost:-15.2/-8.0: 1 (2%)
+• semantic line movement failed: 13 (15%)
+• line movement guard снял кандидата: 13 (15%)
+• semantic line movement not confirmed: 11 (13%)
+• кандидат ждёт следующий cron для второго снимка линии: 11 (13%)
+• odds below global min: 9 (10%)
+• tier a quality below min: 5 (6%)
+• tier b quality below min: 5 (6%)
+• tier c quality below min: 5 (6%)
 
 🔎 Проверенные reserve-кандидаты
-1. Al Diriyah — Al-Ahli | Меньше @1.73 | EV +2.0% | edge +1.2 п.п. | q 56.4 reserve
-   • reject: odds below global min
+1. Shkendija Tetovo — Hibernian FC | Больше @2.75 | EV +8.2% | edge +3.0 п.п. | q 75.0 reserve
+   • reject: tier a quality below min, tier a odds sources below min:1/2, tier b quality below min
 2. FC Tobol — FK Partizan | Больше @2.90 | EV +1.2% | edge +0.4 п.п. | q 58.5 reserve
    • reject: current price recheck value lost:-4.0/-1.5, semantic line movement not confirmed
-3. Ilves — HNK Rijeka | Меньше @1.77 | EV +1.6% | edge +0.9 п.п. | q 62.6 reserve
+3. Tobol Kostanay — FK Partizan Belgrade | Меньше @2.05 | EV +3.5% | edge +1.7 п.п. | q 71.6 reserve
    • reject: semantic line movement failed
-4. Abha — Al-Hazem | Меньше @1.85 | EV +5.1% | edge +2.7 п.п. | q 68.1 reserve
-   • reject: semantic line movement not confirmed
+4. Reggina 1914 — SSD Sanremese Calcio | Больше @1.90 | EV +0.8% | edge +0.4 п.п. | q 51.2 reserve
+   • reject: current price recheck value lost:3.4/1.7, semantic line movement not confirmed
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail и last-chance relief теперь диагностируются отдельно.
