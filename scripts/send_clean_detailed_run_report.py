@@ -413,7 +413,7 @@ def split_messages(text: str, limit: int = 3600) -> list[str]:
 
 
 def telegram_send(token: str, chat_id: str, text: str) -> tuple[bool, str]:
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    url = f"{{https://api.telegram.org/bot{token}}}/sendMessage"
     data = parse.urlencode({"chat_id": chat_id, "text": text, "disable_web_page_preview": "true"}).encode("utf-8")
     try:
         with request.urlopen(url, data=data, timeout=20) as response:  # noqa: S310
@@ -437,6 +437,15 @@ def main() -> int:
         return 0
     cleaned = clean_report(raw)
     write_text(OUT_PATH, cleaned)
+    scorecard_patch: dict[str, Any] = {"status": "not_run"}
+    try:
+        from scripts.patch_ideal_audit_scorecard import main as patch_scorecard_main
+        patch_scorecard_main()
+        scorecard_patch = load_json(Path(".data/exports/latest-ideal-audit-scorecard-patch.json"), {"status": "unknown"})
+        cleaned = read_text(OUT_PATH) or cleaned
+    except Exception as exc:
+        scorecard_patch = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+        write_json(Path(".data/exports/latest-ideal-audit-scorecard-patch.json"), scorecard_patch)
     token = str(os.getenv("TELEGRAM_TOKEN") or "").strip()
     chat_id = str(os.getenv("TELEGRAM_CHAT_ID") or "").strip()
     chunks = split_messages(cleaned, env_int("TELEGRAM_MESSAGE_SOFT_LIMIT", 3600))
@@ -455,6 +464,8 @@ def main() -> int:
         "chunks": len(chunks),
         "removed_providers": sorted(REMOVED_PROVIDERS),
         "api_work_block_added": "🧩 Работа API" in cleaned,
+        "ideal_audit_scorecard_added": "🧭 Ideal runtime audit" in cleaned,
+        "scorecard_patch": scorecard_patch,
         "api_health_present": HEALTH_PATH.exists(),
         "health_probe": health_probe,
         "sent": sent,
