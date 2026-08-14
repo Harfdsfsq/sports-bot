@@ -189,6 +189,8 @@
     }
   ],
   "blockers": [
+    "line_coverage_below_80pct",
+    "context_coverage_below_85pct",
     "odds_api_io_account2_zero_offers",
     "line_movement_top_blocker",
     "final_edge_explainability_gap",
@@ -200,22 +202,22 @@
     "overlap_bridge_offers": 78,
     "overlap_matches": 9
   },
-  "created_at_utc": "2026-08-14T13:45:11.241079+00:00",
-  "ideal_score": 77.0,
+  "created_at_utc": "2026-08-14T13:48:24.448322+00:00",
+  "ideal_score": 58.0,
   "inventory": {
-    "next_12h_ready": 117,
-    "next_12h_ready_pct": 84.8,
-    "next_12h_total": 138,
-    "next_6h_ready": 117,
-    "next_6h_ready_pct": 84.8,
-    "next_6h_total": 138,
-    "ready": 241,
-    "ready_pct": 80.3,
+    "next_12h_ready": 96,
+    "next_12h_ready_pct": 79.3,
+    "next_12h_total": 121,
+    "next_6h_ready": 96,
+    "next_6h_ready_pct": 80.7,
+    "next_6h_total": 119,
+    "ready": 166,
+    "ready_pct": 55.3,
     "total": 300,
-    "with_context": 265,
-    "with_context_pct": 88.3,
-    "with_lines": 250,
-    "with_lines_pct": 83.3
+    "with_context": 191,
+    "with_context_pct": 63.7,
+    "with_lines": 176,
+    "with_lines_pct": 58.7
   },
   "line_movement": {
     "class_counts": {
@@ -226,7 +228,7 @@
       "unconfirmed_final": 2,
       "xg_direction_conflict": 2
     },
-    "created_at_utc": "2026-08-14T13:23:10.523933+00:00",
+    "created_at_utc": "2026-08-14T13:45:33.665059+00:00",
     "evaluated": 29,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
@@ -611,13 +613,11 @@
     "watchlist_count": 0
   },
   "odds_api_io_account2": {
-    "http_statuses": [
-      403
-    ],
+    "http_statuses": [],
     "offers": 0,
-    "plan_restriction": true,
+    "plan_restriction": false,
     "rate_limited": false,
-    "requests": 1
+    "requests": 0
   },
   "proxy_xg_replacement": {
     "checked": 26,
@@ -727,6 +727,8 @@
     ]
   },
   "recommended_actions": [
+    "raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill",
+    "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set",
     "classify movement failures and store awaiting-movement candidates for next cron instead of losing them",
     "expose displayed vs canonical vs post-recheck EV/edge in near-miss report",
