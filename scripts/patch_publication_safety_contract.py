@@ -76,6 +76,16 @@ def _is_proxy_default_xg(metrics: dict[str, Any]) -> bool:
     return bool(xg.get('proxy_default_xg_guard')) or 'proxy_default_1_1_xg_placeholder' in reason
 
 
+def _proxy_default_xg_was_replaced(candidate: dict[str, Any], metrics: dict[str, Any]) -> bool:
+    if bool(candidate.get('proxy_default_xg_replaced')):
+        return True
+    xg = _xg_payload(metrics)
+    if bool(xg.get('proxy_default_xg_replaced_guard_respected')):
+        return True
+    text = _payload_text(candidate, metrics)
+    return any(token in text for token in MARKET_IMPLIED_XG_TOKENS)
+
+
 def _has_hard_xg(candidate: dict[str, Any], metrics: dict[str, Any]) -> bool:
     text = _payload_text(candidate, metrics)
     return any(token in text for token in HARD_XG_TOKENS)
@@ -143,6 +153,9 @@ def install(base: Any) -> None:
     def wrapped(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
         reasons = list(old(tier, candidate, metrics) or [])
         t = str(tier or '').strip().upper()
+        proxy_replaced = _proxy_default_xg_was_replaced(candidate, metrics)
+        if proxy_replaced:
+            reasons = [r for r in reasons if 'proxy_default_xg_placeholder' not in str(r)]
         if t == 'A' and (_truthy('HARIZON_REQUIRE_2PLUS_LINES_CONTEXTS_FOR_TELEGRAM', True) or _truthy('CONTROLLED_FALLBACK_REQUIRE_2PLUS_LINES_CONTEXTS', True)):
             odds = _odds_sources(metrics)
             ctx = _context_sources(metrics)
@@ -150,7 +163,7 @@ def install(base: Any) -> None:
                 add(f'tier_{t.lower()}_two_plus_odds_sources_required:{odds}/2', reasons)
             if ctx < 2:
                 add(f'tier_{t.lower()}_two_plus_context_sources_required:{ctx}/2', reasons)
-        if _truthy('CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS', True) and _is_proxy_default_xg(metrics):
+        if _truthy('CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS', True) and _is_proxy_default_xg(metrics) and not proxy_replaced:
             add(f'tier_{t.lower()}_proxy_default_xg_placeholder', reasons)
         xg = _xg_payload(metrics)
         hard_xg_flag = xg.get('xg_hard_confirmation')
