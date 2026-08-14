@@ -3,10 +3,10 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 15 | day inventory: 300
-• С линиями: 10 | с контекстом: 29 | ready model: 150
-• odds-api.io offers: 2940 | Bzzoiro secondary offers: 132
-• 2+ букмекера odds-api.io: 26 | 2-source overlap Bzzoiro+odds-api.io: 18
+• Матчи в run: 12 | day inventory: 300
+• С линиями: 10 | с контекстом: 40 | ready model: 167
+• odds-api.io offers: 2742 | Bzzoiro secondary offers: 66
+• 2+ букмекера odds-api.io: 22 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: bzzoiro: 13, odds_api_io: 2
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
@@ -18,40 +18,40 @@
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 24 | no next regular run: 10
-• Line guard: seen 33 | kept 4 | dropped 21
+• Final pre-kickoff checks: 21 | no next regular run: 7
+• Line guard: seen 31 | kept 6 | dropped 17
 
-• Bzzoiro targeted odds: targets 80; events 1318; matched 6; ids 6; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 24; requests 48; events_with_offers 22; offers 198; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 132; overlap matches 18; same-bucket matches 18.
-• Bzzoiro odds merge: 2-source matches 12; 2+ books 27; inventory updated 58; inventory 2-source 12.
+• Bzzoiro targeted odds: targets 80; events 1318; matched 10; ids 10; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 12; requests 24; events_with_offers 11; offers 99; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 66; overlap matches 0; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 5; 2+ books 24; inventory updated 55; inventory 2-source 5.
 • Bzzoiro source trace: aggregate events 0; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 28; floor 1; hard 21; relieved 1.
+• Last-chance line relief: seen 28; floor 1; hard 23; relieved 1.
 📡 Core API
-• odds_api_io: events req 0, odds req 11, matched 93, offers 2940, 2+ books 26, err 1, auth_failed False
-• sstats: req 2, ctx 27, rows 11841, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 0 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 132, overlap odds-api.io 18, err 0
+• odds_api_io: events req 0, odds req 11, matched 96, offers 2742, 2+ books 22, err 1, auth_failed False
+• sstats: req 2, ctx 40, rows 11841, err 0, deep enriched 0
+• bzzoiro: req 4, ctx 0, events 0 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 66, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: реально плохое движение 15; движение не подтверждено 6; финальная проверка не подтвердила 1; коэффициент ниже минимума 12.
+• Line movement breakdown: реально плохое движение 11; движение не подтверждено 7; финальная проверка не подтвердила 1; коэффициент ниже минимума 14; конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• line movement guard снял кандидата: 16 (24%)
-• semantic line movement failed: 15 (22%)
-• odds below global min: 12 (18%)
-• semantic line movement not confirmed: 6 (9%)
-• кандидат ждёт следующий cron для второго снимка линии: 5 (7%)
+• odds below global min: 14 (22%)
+• semantic line movement failed: 11 (17%)
+• line movement guard снял кандидата: 11 (17%)
+• semantic line movement not confirmed: 7 (11%)
+• кандидат ждёт следующий cron для второго снимка линии: 6 (10%)
+• направление ставки конфликтует с xG: 2 (3%)
 • tier a quality below min: 2 (3%)
 • tier a odds sources below min:1/2: 2 (3%)
-• tier c quality below min: 2 (3%)
 
 🔎 Проверенные reserve-кандидаты
-1. Al-Nasr Dubai CSC — Ittihad Kalba FC | Больше @1.64 | EV +2.9% | edge +1.8 п.п. | q 55.2 reserve
+1. Navbahor — FC Bunyodkor | Больше @1.67 | EV +1.0% | edge +0.6 п.п. | q 47.1 reserve
    • reject: odds below global min
-2. Olympique Marseille — Atletico Madrid | Меньше @1.58 | EV +3.6% | edge +2.3 п.п. | q 56.5 reserve
+2. Al-Nasr Dubai CSC — Ittihad Kalba FC | Больше @1.64 | EV +2.9% | edge +1.8 п.п. | q 55.2 reserve
    • reject: odds below global min
-3. AZ Picerno — Barletta Calcio | Больше @2.38 | EV +4.4% | edge +1.9 п.п. | q 73.4 reserve
-   • reject: tier a quality below min, tier a canonical edge below min, tier a publication score below min
-4. Viborg FF — AGF | Меньше @1.57 | EV +0.9% | edge +0.6 п.п. | q 48.6 reserve
+3. FC Epitsentr Kamianets-Podilskyi — Veres Rivne | Меньше @1.68 | EV +4.3% | edge +2.6 п.п. | q 57.8 reserve
+   • reject: odds below global min
+4. AZ Picerno — Barletta Calcio | Меньше @1.55 | EV +3.8% | edge +2.4 п.п. | q 62.1 reserve
    • reject: odds below global min
 
 📌 Вывод
