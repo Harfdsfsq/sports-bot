@@ -48,6 +48,10 @@ jobs:
       SEEN_CANDIDATE_LOOKBACK_HOURS: "96"
       RUN_REPORT_ENABLED: "false"
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
+      DETAILED_RUN_REPORT_SEND_TELEGRAM: "true"
+      DETAILED_RUN_REPORT_FORCE_SEND: "true"
+      DETAILED_RUN_REPORT_MIN_INTERVAL_MINUTES: "0"
+      DETAILED_RUN_REPORT_TOP_NEAR_MISSES: "8"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
       PUBLISH_WINDOW_HOURS: "2"
       CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS: "2"
@@ -499,6 +503,19 @@ jobs:
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
 
+      - name: Send detailed Telegram run report
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports artifacts/run-bot
+          python -u scripts/build_detailed_run_report.py || true
+          python -u scripts/send_clean_detailed_run_report.py || true
+          cp .data/exports/latest-detailed-run-report.json artifacts/run-bot/latest-detailed-run-report.json 2>/dev/null || true
+          cp .data/exports/latest-detailed-run-report.txt artifacts/run-bot/latest-detailed-run-report.txt 2>/dev/null || true
+          cp .data/exports/latest-detailed-run-report-cleaned.txt artifacts/run-bot/latest-detailed-run-report-cleaned.txt 2>/dev/null || true
+          cp .data/exports/latest-detailed-run-report-send-clean.json artifacts/run-bot/latest-detailed-run-report-send-clean.json 2>/dev/null || true
+
       - name: Commit runtime artifacts
         if: always()
         shell: bash
@@ -510,7 +527,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json \
+          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/detailed-run-report-sent.json \
             .data/exports/latest-*.json .data/exports/latest-*.txt .data/exports/latest-*.csv \
             .data/day_inventory/current.json .data/day_inventory/latest.json .data/day_inventory/today.json .data/day_inventory/${DAY_INVENTORY_CACHE_DATE}.json \
             .data/day_inventory/*highwater*.json .data/day_inventory/highwater.json .data/day_inventory/largest.json \
@@ -570,6 +587,7 @@ jobs:
             .data/published-candidate-index.json
             .data/fallback-sent-index.json
             .data/candidate-lifecycle-state.json
+            .data/detailed-run-report-sent.json
           if-no-files-found: ignore
           include-hidden-files: true
           retention-days: 7
