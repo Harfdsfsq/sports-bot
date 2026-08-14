@@ -1,11 +1,11 @@
 🧭 HARIZON ideal runtime audit
-• Ideal score: 73.4/100
-• Inventory: 300; lines 177/300 (59.0%); context 193/300 (64.3%); ready 167/300 (55.7%)
-• Near 6h ready: 23/28 (82.1%); near 12h ready: 23/28 (82.1%)
-• odds-api.io account2: offers 0; req 0; http []
-• Bzzoiro bridge: offers 18; overlap 0; 2-source 19
-• Top blockers: line_coverage_below_80pct, context_coverage_below_85pct, odds_api_io_account2_zero_offers
+• Ideal score: 84.2/100
+• Inventory: 300; lines 235/300 (78.3%); context 264/300 (88.0%); ready 226/300 (75.3%)
+• Near 6h ready: 39/47 (83.0%); near 12h ready: 43/51 (84.3%)
+• odds-api.io account2: offers 0; req 3; http [403, 403, 403]
+• Bzzoiro bridge: offers 6; overlap 0; 2-source 16
+• Top blockers: line_coverage_below_80pct, odds_api_io_account2_zero_offers, line_movement_top_blocker
 • Next actions:
   - raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill
-  - raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates
   - enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set
+  - classify movement failures and store awaiting-movement candidates for next cron instead of losing them
