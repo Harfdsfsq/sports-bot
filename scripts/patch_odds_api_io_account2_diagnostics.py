@@ -1,46 +1,60 @@
 from __future__ import annotations
 
-"""Runtime patch for odds-api.io account2 diagnostics and fallback config.
+"""Runtime patch for odds-api.io account2 entitlement diagnostics/fallback.
 
-Safe operational patch: no publication guards are relaxed. The patch only makes
-account2 expose why it produced zero offers and lets configured fallback books be
-used when the provider reports entitlement/plan restriction.
+Goals:
+- ODDS_API_IO_KEY_2 is valid, but selected account2 books can still return 403
+  plan restriction. Do not treat that as a bad key.
+- If the selected pair is unavailable, optionally retry account2 without the
+  bookmakers filter to discover which two dashboard-selected books the account
+  is actually allowed to return.
+- Preserve source independence: recovered account2 rows are still odds_api_io,
+  not a second provider.
 """
 
+import os
 from typing import Any
 
 
-def install(base: Any) -> None:
-    provider_cls = getattr(base, "OddsApiIoProvider", None)
-    if provider_cls is None:
-        return
-    if getattr(provider_cls, "_harizon_account2_diag_patch_installed", False):
-        return
+def _truthy(name: str, default: str = "false") -> bool:
+    return str(os.getenv(name, default)).strip().lower() in {"1", "true", "yes", "on"}
 
-    old_odds_accounts = getattr(provider_cls, "_odds_accounts", None)
-    old_fetch = getattr(provider_cls, "_fetch_odds_multi_chunk", None)
-    if not callable(old_odds_accounts) or not callable(old_fetch):
-        return
 
-    def patched_odds_accounts(self: Any) -> list[dict[str, str]]:
-        accounts = list(old_odds_accounts(self) or [])
+def _csv(value: Any) -> str:
+    if isinstance(value, (list, tuple)):
+        return ",".join(str(x).strip() for x in value if str(x).strip())
+    return str(value or "").strip()
+
+
+def install(module: Any | None = None) -> dict[str, Any]:
+    if module is None:
+        from app.providers import odds_api_io as module  # type: ignore
+    cls = getattr(module, "OddsApiIoProvider", None)
+    if cls is None:
+        return {"status": "provider_class_missing"}
+    if getattr(cls, "_harizon_account2_diag_patched", False):
+        return {"status": "already_patched"}
+
+    original_accounts = cls._odds_accounts
+    original_fetch_chunk = cls._fetch_odds_multi_chunk
+
+    def patched_accounts(self: Any) -> list[dict[str, str]]:
+        accounts = original_accounts(self)
         settings = getattr(self, "settings", None)
-        fallback = getattr(settings, "odds_api_io_bookmakers_account2_fallback", None)
-        if fallback is None:
-            import os
-            fallback = os.getenv("ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK", "")
-        if isinstance(fallback, (list, tuple)):
-            fallback_text = ",".join(str(x).strip() for x in fallback if str(x).strip())
-        else:
-            fallback_text = str(fallback or "").strip()
-        if fallback_text:
-            for account in accounts:
-                if str(account.get("name") or "") == "account2":
-                    account["fallback_bookmakers"] = fallback_text
-                    account["configured_fallback_bookmakers"] = fallback_text
+        configured_fallback = _csv(getattr(settings, "odds_api_io_bookmakers_account2_fallback", ""))
+        env_fallback = _csv(os.getenv("ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK"))
+        fallback = configured_fallback or env_fallback
+        for account in accounts:
+            if str(account.get("name") or "") == "account2":
+                if fallback:
+                    account["fallback_bookmakers"] = fallback
+                elif _truthy("ODDS_API_IO_ACCOUNT2_UNFILTERED_RETRY_ENABLED", "true"):
+                    # Empty fallback means retry /odds/multi without bookmakers filter.
+                    account["fallback_bookmakers"] = "__UNFILTERED__"
+                account["diagnostic_note"] = "account2 key present; bookmaker entitlement may be narrower than configured pair"
         return accounts
 
-    async def patched_fetch(
+    async def patched_fetch_chunk(
         self: Any,
         client: Any,
         api_key: str,
@@ -50,39 +64,40 @@ def install(base: Any) -> None:
         account_name: str = "account1",
         fallback_books: str = "",
     ) -> list[dict[str, Any]]:
-        before = 0
+        if str(account_name) != "account2" or str(fallback_books or "") != "__UNFILTERED__":
+            return await original_fetch_chunk(self, client, api_key, event_ids, target_books, stats, account_name=account_name, fallback_books=fallback_books)
+
         account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
-        try:
-            before = int(account_stats.get("offers_parsed") or 0)
-        except Exception:
-            before = 0
-        account_stats["configured_bookmakers"] = str(target_books or "")
-        account_stats["configured_fallback_bookmakers"] = str(fallback_books or account_stats.get("fallback_bookmakers") or "")
-        result = await old_fetch(self, client, api_key, event_ids, target_books, stats, account_name=account_name, fallback_books=fallback_books)
-        account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
-        account_stats["last_event_ids_requested"] = [int(x) for x in list(event_ids or [])[:10]]
-        account_stats["last_event_ids_count"] = len(event_ids or [])
-        account_stats["last_payload_events_returned"] = len(result or [])
-        account_stats["zero_offer_after_request"] = bool(account_name == "account2" and int(account_stats.get("offers_parsed") or 0) <= before)
-        account_stats["effective_bookmakers"] = str(account_stats.get("effective_bookmakers") or target_books or "")
-        account_stats["body_preview"] = str(stats.get("last_body_preview") or "")[:600]
-        account_stats["http_statuses"] = list(account_stats.get("http_statuses") or [])[-10:]
-        return result
+        account_stats["configured_bookmakers"] = target_books
+        account_stats["fallback_bookmakers"] = "__UNFILTERED__"
+        # First try configured Betfair/Sbobet normally.
+        first = await original_fetch_chunk(self, client, api_key, event_ids, target_books, stats, account_name=account_name, fallback_books="")
+        if first:
+            return first
+        if not bool(account_stats.get("plan_restriction")) and not bool(account_stats.get("auth_error")):
+            return first
+        # Clear per-account plan marker only for diagnostic unfiltered retry.
+        account_stats["plan_restriction_before_unfiltered_retry"] = bool(account_stats.get("plan_restriction"))
+        account_stats["auth_error_before_unfiltered_retry"] = bool(account_stats.get("auth_error"))
+        account_stats["plan_restriction"] = False
+        account_stats["auth_error"] = False
+        account_stats["unfiltered_retry_attempted"] = True
+        retry = await original_fetch_chunk(self, client, api_key, event_ids, "", stats, account_name=account_name, fallback_books="")
+        if retry:
+            account_stats["unfiltered_retry_recovered"] = True
+            account_stats["effective_bookmakers"] = "__UNFILTERED__"
+            stats["account2_unfiltered_retry_recovered"] = True
+        else:
+            account_stats["unfiltered_retry_recovered"] = False
+        return retry
 
-    provider_cls._odds_accounts = patched_odds_accounts
-    provider_cls._fetch_odds_multi_chunk = patched_fetch
-    provider_cls._harizon_account2_diag_patch_installed = True
+    cls._odds_accounts = patched_accounts
+    cls._fetch_odds_multi_chunk = patched_fetch_chunk
+    cls._harizon_account2_diag_patched = True
+    return {
+        "status": "installed",
+        "account2_unfiltered_retry_enabled": _truthy("ODDS_API_IO_ACCOUNT2_UNFILTERED_RETRY_ENABLED", "true"),
+    }
 
 
-def main() -> int:
-    try:
-        import app.providers.odds_api_io as base
-        install(base)
-        print('{"status":"installed","patch":"odds_api_io_account2_diagnostics"}')
-    except Exception as exc:
-        print('{"status":"error","patch":"odds_api_io_account2_diagnostics","error":"%s"}' % str(exc).replace('"', "'"))
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+__all__ = ["install"]
