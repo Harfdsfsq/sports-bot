@@ -1,48 +1,48 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: line movement guard снял кандидата
+• Итог: 🔴 нет свежих линий
+• Главная причина: счётчик публикации противоречит fresh-воронке
 
 📦 Покрытие
-• Матчи в run: 3 | day inventory: 300
-• С линиями: 3 | с контекстом: 23 | ready model: 167
-• odds-api.io offers: 3446 | Bzzoiro secondary offers: 42
-• 2+ букмекера odds-api.io: 28 | 2-source overlap Bzzoiro+odds-api.io: 2
+• Матчи в run: 0 | day inventory: 300
+• С линиями: 0 | с контекстом: 0 | ready model: 170
+• odds-api.io offers: 0 | Bzzoiro secondary offers: 30
+• 2+ букмекера odds-api.io: 0 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: bzzoiro: 13, odds_api_io: 2
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 1.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 24
+• Raw/candidates before quality: 0 / 0
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
 • Controlled fallback: status no_viable_controlled_fallback | seen 29 | evaluated 29 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 17 | no next regular run: 1
-• Line guard: seen 34 | kept 7 | dropped 19
+• Final pre-kickoff checks: 20 | no next regular run: 20
+• Line guard: seen 21 | kept 6 | dropped 7
 
-• Bzzoiro targeted odds: targets 80; events 1318; matched 3; ids 3; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 8; requests 16; events_with_offers 7; offers 63; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 42; overlap matches 2; same-bucket matches 2.
-• Bzzoiro odds merge: 2-source matches 9; 2+ books 30; inventory updated 60; inventory 2-source 8.
-• Bzzoiro source trace: aggregate events 416; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 29; floor 1; hard 23; relieved 1.
+• Bzzoiro targeted odds: targets 80; events 1318; matched 6; ids 6; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 6; requests 12; events_with_offers 5; offers 45; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 30; overlap matches 0; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 4; 2+ books 22; inventory updated 47; inventory 2-source 4.
+• Bzzoiro source trace: aggregate events 0; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 2; floor 1; hard 0; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 12, matched 101, offers 3446, 2+ books 28, err 1, auth_failed False
-• sstats: req 2, ctx 22, rows 11841, err 0, deep enriched 0
-• bzzoiro: req 4, ctx 0, events 416 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 42, overlap odds-api.io 2, err 0
+• odds_api_io: events req 0, odds req 0, matched 0, offers 0, 2+ books 0, err 0, auth_failed False
+• sstats: req 0, ctx 0, rows 0, err 0, deep enriched 0
+• bzzoiro: req 0, ctx 0, events 0 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 30, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
 • Line movement breakdown: реально плохое движение 15; движение не подтверждено 4; финальная проверка не подтвердила 2; коэффициент ниже минимума 13; конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• semantic line movement failed: 15 (23%)
-• line movement guard снял кандидата: 14 (22%)
-• odds below global min: 13 (20%)
-• кандидат ждёт следующий cron для второго снимка линии: 5 (8%)
-• semantic line movement not confirmed: 4 (6%)
-• tier a quality below min: 2 (3%)
-• tier a odds sources below min:1/2: 2 (3%)
-• tier c quality below min: 2 (3%)
+• semantic line movement failed: 15 (28%)
+• odds below global min: 13 (25%)
+• line movement guard снял кандидата: 5 (9%)
+• semantic line movement not confirmed: 4 (8%)
+• tier a quality below min: 2 (4%)
+• tier a odds sources below min:1/2: 2 (4%)
+• tier c quality below min: 2 (4%)
+• направление ставки конфликтует с xG: 2 (4%)
 
 🔎 Проверенные reserve-кандидаты
 1. Navbahor — FC Bunyodkor | Больше @1.67 | EV +1.0% | edge +0.6 п.п. | q 47.1 reserve

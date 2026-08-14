@@ -1,9 +1,9 @@
 🧾 Подробный отчёт run — прогнозов нет
 
 🧭 Состояние артефактов
-• debug: свежий | 2026-08-14T12:48:26.254332+00:00, Δ +2.4 мин
-• run_summary: свежий | 2026-08-14T12:48:26.254332+00:00, Δ +2.4 мин
-• fallback: свежий | 2026-08-14T12:50:47.625482+00:00, Δ +0.0 мин
+• debug: нет | н/д
+• run_summary: свежий | 2026-08-14T12:48:26.254332+00:00, Δ +0.0 мин
+• fallback: устарел | 2026-04-26T22:32:02.281275+00:00, Δ +157816.4 мин
 
 🧭 Runtime policy
 • Версия: harizon-runtime-policy-v6-strict-full-inventory
@@ -11,158 +11,48 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 178/300
-• С контекстом: 213/300
-• Готово к модели: 167/300
-• Ближайшие 6 часов: 97/144 готово
-• Следующие 12 часов: 102/151 готово
+• С линиями: 180/300
+• С контекстом: 260/300
+• Готово к модели: 170/300
+• Ближайшие 6 часов: 92/170 готово
+• Следующие 12 часов: 95/180 готово
 
 ⚙️ Что сделал скрипт
 • Матчи: 3 | с линиями: 3 | контекстов: 23
 • Кандидаты: raw 0 | до качества 24 | publishable 0
-• Резерв проверил: 29 | оценено в отчёте: 29 | выбрано: 0
-• матчей с линиями из любого источника: 3
-• матчей с любым контекстом: 0
-• матчей с объединенным контекстом: 0
-• raw с market-derived сигналом: 0
-
-📡 Источники / фактическая работа
-• odds_api_io: data 69/3659, max 200, err 1
-• bzzoiro: data 0/0, req 4
-• sstats: data 23/23, req 2, max 150
-• football_data: data 0/0, budget_exhausted
-• thesportsdb: data 0/0, req 2, max 12
-• sportlogic: data 0/0
-• openfootball: data 0/0, req 0
-
-📈 odds-api.io routing
-• account1: Bet365,Unibet | req 11 | offers 3357
-• account2: Betfair Exchange,Sbobet | req 1 | offers 0
-• Букмекеры в ответах: Bet365, Unibet
-• Матчи с 2+ букмекерами: 28; с 1 букмекером: 39
+• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
 
 🚫 Почему не прошли
-• semantic line movement failed — 15 (26%)
-• коэффициент ниже общего минимума — 13 (23%)
-• semantic line movement not confirmed — 4 (7%)
-• качество ниже минимума уровня A — 2 (4%)
-• уровень A: odds sources below min:1/2 — 2 (4%)
-• качество ниже минимума уровня C — 2 (4%)
-• направление ставки конфликтует с xG — 2 (4%)
-• semantic line movement unconfirmed final — 2 (4%)
-• уровень A: proxy default xg placeholder — 2 (4%)
-• уровень B: proxy default xg placeholder — 2 (4%)
+• Воронка видит кандидатов, но свежий fallback/detailed слой не выгрузил причины отказа.
 
-⚠️ Пограничные кандидаты
-1. Ал-Наср Дубай CSC — Иттихад Калба
- 🏆 ОАЭ - Про-лига
- 🎯 Меньше @2.30 | 🕒 14.08.2026 17:10 MSK
- • odds sources 1, confirmation sources 2
- • EV +10.6%
- • запас +4.6 п.п.
- • уверенность 72.4%
- • линии 2, источники 2
- • не прошло: качество ниже минимума уровня A; уровень A: odds sources below min:1/2; уровень A: proxy default xg placeholder; уровень A: proxy default xg placeholder
-2. Фратриа Варна — PFK Берое Стара Загора
- 🏆 Булгариа - Втора Лига
- 🎯 Больше @2.25 | 🕒 14.08.2026 18:45 MSK
- • odds sources 1, confirmation sources 3
- • confirmation sources: sstats
- • EV +8.1%
- • запас +3.6 п.п.
- • уверенность 71.0%
- • линии 1, источники 3
- • не прошло: current price recheck value lost:-4.9/-2.5
-3. Ейнтрачт Брауншуейг — Вфл Бочум
- 🏆 Германия - Вторая Бундеслига
- 🎯 Больше @2.88 | 🕒 14.08.2026 19:30 MSK
- • odds sources 1, confirmation sources 2
- • confirmation sources: sstats
- • EV +8.0%
- • запас +2.8 п.п.
- • уверенность 71.2%
- • линии 2, источники 2
- • не прошло: качество ниже минимума уровня A; уровень A: publication score below min; уровень A: odds sources below min:1/2; уровень A: market implied xg not hard confirmation
-4. AZ Пикерно — Барлетта Калкио
- 🏆 Италия - Коппа Италиа Серие C, Кнокут стаге
- 🎯 Больше @2.42 | 🕒 14.08.2026 19:00 MSK
- • odds sources 1, confirmation sources 6
- • confirmation sources: sstats
- • EV +6.1%
- • запас +2.5 п.п.
- • уверенность 73.3%
- • линии 2, источники 6
- • не прошло: final edge below min
-5. Навбахор — Буниодкор
- 🏆 Узбекистан - Суперлига
- 🎯 Меньше @2.15 | 🕒 14.08.2026 17:00 MSK
- • odds sources 1, confirmation sources 5
- • confirmation sources: sstats
- • EV +4.7%
- • запас +2.2 п.п.
- • уверенность 70.9%
- • линии 1, источники 5
- • не прошло: semantic line movement unconfirmed final
-6. Епицентр Камианец-Подилскии — Верес Ривне
- 🏆 Украина - Премьер-лига
- 🎯 Меньше @1.68 | 🕒 14.08.2026 18:00 MSK
- • odds sources 1, confirmation sources 2
- • EV +4.3%
- • запас +2.6 п.п.
- • уверенность 69.5%
- • линии 2, источники 2
- • не прошло: коэффициент ниже общего минимума
-7. Епицентр Камианец-Подилскии — Верес Ривне
- 🏆 Украина - Премьер-лига
- 🎯 Больше @2.10 | 🕒 14.08.2026 18:00 MSK
- • odds sources 1, confirmation sources 3
- • confirmation sources: sstats
- • EV +3.8%
- • запас +1.8 п.п.
- • уверенность 70.8%
- • линии 2, источники 3
- • не прошло: semantic line movement unconfirmed final
-8. AZ Пикерно — Барлетта Калкио
- 🏆 Италия - Коппа Италиа Серие C, Кнокут стаге
- 🎯 Меньше @2.62 | 🕒 14.08.2026 19:00 MSK
- • odds sources 1, confirmation sources 6
- • confirmation sources: sstats
- • EV +3.5%
- • запас +1.3 п.п.
- • уверенность 72.2%
- • линии 2, источники 6
- • не прошло: current price recheck value lost:-1.5/-0.6; semantic line movement failed
+⚠️ Пограничные кандидаты: нет свежего fallback-отчёта, поэтому старый watchlist скрыт.
 
 🧩 Работа API — разбор
 
 • odds_api_io: главный источник линий и списка матчей по целевым букмекерам
-  - runtime: data 69/3659, err 1, budget_exhausted False, events_matched 101, offers_parsed 3446
+  - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 10, http 200
   - квота: grant 120, reason granted, status critical_inventory_and_primary_live_odds
 • allsportsapi: fixture/secondary odds probe; помогает расширять inventory и проверять доп. линии
-  - runtime: data 0/0, req 1, err 0, budget_exhausted False, events_matched 0, offers_parsed 0, fixtures_fetched 0
+  - runtime: не участвовал в прогнозном runtime
   - health: server_error, configured true, req 1, rows 0, http 502, html_error_page
   - квота: grant 24, reason granted, status secondary_fixture_and_odds_rescue
 • bzzoiro: контекст/прогнозы; независимое подтверждение, но матчинг пока даёт мало совпадений
-  - runtime: data 0/0, req 4, err 0, contexts_built 0
+  - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 26, http 200
   - квота: grant 24, reason granted, status high_quality_context_near_window_first
 • sstats: форма/статистика команд; основной near-window context provider
-  - runtime: data 23/23, req 2, err 0, contexts_built 22, budget_exhausted False
+  - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 5, http 200
   - квота: grant 36, reason granted, status critical_team_form_context_near_window_first
 • football_data: fixture/league calendar; добор матчей и алиасы
-  - runtime: data 0/0, budget_exhausted True
+  - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 13, http 200
   - квота: grant 6, reason granted, status context_only_cached_league_calendar
 • thesportsdb: fixture/алиасы команд и лиг
-  - runtime: data 0/0, req 2, err 0, contexts_built 0, budget_exhausted False
+  - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 5, http 200
   - квота: grant 10, reason granted, status alias_and_fixture_context_cached
-• weather: агрегированный погодный overlay: WeatherAPI первым, OpenWeatherMap fallback
-  - runtime: data 0/0, req 0, err 0, contexts_built 0, matches_considered 0, weatherapi_requests 0, openweathermap_requests 0, weatherapi_enriched 0, openweathermap_enriched 0, cache_hits 0, no_weather_payload 0, budget_exhausted False
-  - health: нет health-probe
-  - квота: нет quota-строки
 • weatherapi: основной погодный API
   - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 1, http 200
@@ -176,15 +66,11 @@
   - health: ok, configured true, req 1, rows 1, http 200
   - квота: grant 0, reason weatherapi_and_openmeteo_first, status weather_rotation_disabled_weatherapi_first
 • sportlogic: probe/context; games получает, но odds/parser ещё не подтверждён
-  - runtime: data 0/0
+  - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 50, http 200
   - квота: grant 30, reason free_limit_500_day_10_min_use_only_near_window_or_primary_odds_empty, status secondary_odds_rescue_and_context_probe
-• openfootball: публичный календарь/алиасы
-  - runtime: data 0/0, req 0, err 0, contexts_built 0
-  - health: нет health-probe
-  - квота: нет quota-строки
 • futrixmetrics: доп. context provider; сейчас low_recent_yield
-  - runtime: data 0/0, req 0, err 0, contexts_built 0, budget_exhausted True
+  - runtime: не участвовал в прогнозном runtime
   - health: config_only, configured true, req 0, rows 0, key present; live probe skipped because FUTRIXMETRICS_BASE_URL/FUTRIXMETRICS_HEALTH_ENDPOI
   - квота: grant 0, reason low_recent_yield_do_not_spend_until_mapping_fixed, status disabled_by_low_recent_yield
 • highlightly: health-probe only: endpoint/key проверяется, в прогнозирование ещё не интегрирован
@@ -192,7 +78,7 @@
   - health: ok, configured true, req 1, rows 5, http 200
   - квота: grant 2, reason 100_day_free_use_probe_only_until_parser_verified, status health_probe_then_fixture_rescue
 • newsapi: news context rotation; не нужен каждый run
-  - runtime: data 0/0
+  - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 1, http 200
   - квота: нет quota-строки
 • currents: news context rotation
@@ -200,7 +86,7 @@
   - health: ok, configured true, req 1, rows 30, http 200
   - квота: нет quota-строки
 • gnews: news context rotation; не нужен каждый run
-  - runtime: data 0/0, budget_exhausted True
+  - runtime: не участвовал в прогнозном runtime
   - health: ok, configured true, req 1, rows 1, http 200
   - квота: grant 0, reason news_context_not_every_run, status news_context_rotation_only
 • newsdata: news context health-probe/rotation
@@ -231,14 +117,6 @@
   - runtime: не участвовал в прогнозном runtime
   - health: нет health-probe
   - квота: grant 0, reason 100_month_too_small_for_every_run, status monthly_limited_discovery_only
-• bookies_bootstrap: вспомогательный источник/health probe
-  - runtime: data 0/0, req 0, err 0, matches_built 0
-  - health: нет health-probe
-  - квота: нет quota-строки
-• espn: вспомогательный источник/health probe
-  - runtime: data 0/0, err 0, contexts_built 0, events_matched 0
-  - health: нет health-probe
-  - квота: нет quota-строки
 • newsapi_currents: вспомогательный источник/health probe
   - runtime: не участвовал в прогнозном runtime
   - health: нет health-probe
@@ -247,14 +125,6 @@
   - runtime: не участвовал в прогнозном runtime
   - health: нет health-probe
   - квота: grant 2, reason granted, status public_context_known_dataset_only
-• openligadb: вспомогательный источник/health probe
-  - runtime: data 0/0, budget_exhausted True
-  - health: нет health-probe
-  - квота: нет quota-строки
-• self_history: вспомогательный источник/health probe
-  - runtime: data 0/0, contexts_built 0
-  - health: нет health-probe
-  - квота: нет quota-строки
 • sharpapi: вспомогательный источник/health probe
   - runtime: не участвовал в прогнозном runtime
   - health: нет health-probe
