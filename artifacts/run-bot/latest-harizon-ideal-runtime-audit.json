@@ -3,34 +3,35 @@
   "blockers": [
     "line_coverage_below_80pct",
     "context_coverage_below_85pct",
+    "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers"
   ],
   "bzzoiro_chain": {
     "merge_after_2plus_books": 21,
     "merge_after_2plus_sources": 21,
-    "overlap_bridge_offers": 12,
+    "overlap_bridge_offers": 18,
     "overlap_matches": 0
   },
-  "created_at_utc": "2026-08-14T17:13:43.325721+00:00",
-  "ideal_score": 73.7,
+  "created_at_utc": "2026-08-14T17:21:03.789264+00:00",
+  "ideal_score": 76.3,
   "inventory": {
-    "next_12h_ready": 23,
-    "next_12h_ready_pct": 85.2,
-    "next_12h_total": 27,
-    "next_6h_ready": 23,
-    "next_6h_ready_pct": 85.2,
-    "next_6h_total": 27,
-    "ready": 168,
-    "ready_pct": 56.0,
+    "next_12h_ready": 22,
+    "next_12h_ready_pct": 55.0,
+    "next_12h_total": 40,
+    "next_6h_ready": 22,
+    "next_6h_ready_pct": 66.7,
+    "next_6h_total": 33,
+    "ready": 166,
+    "ready_pct": 55.3,
     "total": 300,
-    "with_context": 196,
-    "with_context_pct": 65.3,
-    "with_lines": 177,
-    "with_lines_pct": 59.0
+    "with_context": 230,
+    "with_context_pct": 76.7,
+    "with_lines": 176,
+    "with_lines_pct": 58.7
   },
   "line_movement": {
     "class_counts": {},
-    "created_at_utc": "2026-08-14T17:10:48.473437+00:00",
+    "created_at_utc": "2026-08-14T17:18:10.237032+00:00",
     "evaluated": 0,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
@@ -46,34 +47,23 @@
     "requests": 0
   },
   "proxy_xg_replacement": {
-    "checked": 13,
-    "created_at_utc": "2026-08-14T17:09:16.431124+00:00",
-    "examples": [
-      {
-        "away_team": "CD Extremadura",
-        "expected_away": 1.4059,
-        "expected_home": 1.4059,
-        "home_team": "CD Coria",
-        "point": 2.5,
-        "selection": "Больше",
-        "total_xg": 2.8117
-      }
-    ],
+    "checked": 0,
+    "created_at_utc": "2026-08-14T17:16:16.691298+00:00",
+    "examples": [],
     "note": "Market-implied xG replaces only proxy 1:1 placeholders; it is not hard provider xG and does not bypass line/value/source guards.",
-    "replaced": 1,
+    "replaced": 0,
     "skipped": {
       "hard_xg": 0,
       "no_market_implied": 0,
-      "not_placeholder": 12
+      "not_placeholder": 0
     },
     "status": "ok",
-    "touched_files": [
-      "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json"
-    ]
+    "touched_files": []
   },
   "recommended_actions": [
     "raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill",
     "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
+    "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set"
   ],
   "status": "ok",
