@@ -339,60 +339,6 @@ jobs:
           fi
           python -u scripts/expand_day_inventory_to_target.py || true
           python -u scripts/guard_day_inventory_no_shrink.py snapshot || true
-          cp .data/exports/latest-day-inventory-target-expand.json artifacts/run-bot/latest-day-inventory-target-expand.json 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-core-build-report.json artifacts/run-bot/latest-day-inventory-core-build-report.json 2>/dev/null || true
-
-      - name: Apply publication family policy
-        shell: bash
-        run: |
-          set -uo pipefail
-          python -u scripts/apply_publication_family_policy.py || true
-
-      - name: Apply A/B tier bookmaker contract
-        shell: bash
-        run: |
-          set -uo pipefail
-          python -u scripts/apply_ab_tier_bookmaker_contract.py || true
-
-      - name: Apply provider quota governor
-        shell: bash
-        run: |
-          set -uo pipefail
-          timeout 45s python -u scripts/apply_provider_quota_governor.py || true
-
-      - name: Apply provider request budget
-        shell: bash
-        run: |
-          set -uo pipefail
-          timeout 45s python -u scripts/apply_provider_request_budget.py || true
-
-      - name: Apply per-run API quota contract
-        shell: bash
-        run: |
-          set -uo pipefail
-          timeout 45s python -u scripts/apply_per_run_api_quota_contract.py || true
-
-      - name: Apply coverage uplift runtime policy
-        shell: bash
-        run: |
-          set -uo pipefail
-          python -u scripts/apply_coverage_uplift_runtime_policy.py || true
-
-      - name: Provider smoke
-        if: ${{ github.event.inputs.provider_smoke == 'true' || github.event.inputs.mode == 'smoke' }}
-        shell: bash
-        run: |
-          set -uo pipefail
-          timeout 90s python -u scripts/provider_smoke.py || true
-          cp .data/exports/latest-provider-smoke.json artifacts/run-bot/latest-provider-smoke.json 2>/dev/null || true
-          cp .data/exports/latest-provider-smoke.md artifacts/run-bot/latest-provider-smoke.md 2>/dev/null || true
-
-      - name: Run tests
-        if: ${{ github.event.inputs.run_tests == 'true' || github.event.inputs.mode == 'smoke' }}
-        shell: bash
-        run: |
-          set -uo pipefail
-          timeout 90s pytest -q || true
 
       - name: Run bot
         shell: bash
@@ -400,55 +346,15 @@ jobs:
           set -o pipefail
           mkdir -p .data/exports artifacts/run-bot
           run_status=0
-          echo "run-bot dispatch mode=${CRONJOB_RUN_MODE} effective RUN_MODE=${RUN_MODE} start $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee .data/exports/latest-run-bot-step-status.json
           if timeout 600s python -u -m app.cli run-once 2>&1 | tee .data/exports/latest-run-bot.log; then
             echo "run bot ok" | tee .data/exports/latest-run-bot-step-status.json
           else
-            status=$?
-            run_status=${status}
-            if [[ "${status}" -eq 124 ]]; then
-              echo "run bot timed out with status ${status}" | tee .data/exports/latest-run-bot-step-status.json
-            else
-              echo "run bot failed with status ${status}" | tee .data/exports/latest-run-bot-step-status.json
-            fi
+            run_status=$?
+            echo "run bot failed with status ${run_status}" | tee .data/exports/latest-run-bot-step-status.json
           fi
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
-          cp .data/exports/latest-run-bot-step-status.json artifacts/run-bot/latest-run-bot-step-status.json 2>/dev/null || true
-          cp .data/exports/latest-run-summary.json artifacts/run-bot/latest-run-summary.json 2>/dev/null || true
-          cp .data/exports/latest-picks.json artifacts/run-bot/latest-picks.json 2>/dev/null || true
-          cp .data/exports/latest-picks.csv artifacts/run-bot/latest-picks.csv 2>/dev/null || true
-          cp .data/exports/latest-bets.json artifacts/run-bot/latest-bets.json 2>/dev/null || true
-          cp .data/exports/latest-matches.json artifacts/run-bot/latest-matches.json 2>/dev/null || true
           cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
-          cp .data/state.json artifacts/run-bot/state.json 2>/dev/null || true
-          mkdir -p artifacts/run-bot/line_history artifacts/run-bot/day_inventory
-          cp .data/line_history/latest.json artifacts/run-bot/line_history/latest.json 2>/dev/null || true
-          cp .data/line_history/${DAY_INVENTORY_CACHE_DATE}.json artifacts/run-bot/line_history/${DAY_INVENTORY_CACHE_DATE}.json 2>/dev/null || true
-          cp .data/day_inventory/latest.json artifacts/run-bot/day_inventory/latest.json 2>/dev/null || true
-          cp .data/day_inventory/current.json artifacts/run-bot/day_inventory/current.json 2>/dev/null || true
-          cp .data/day_inventory/today.json artifacts/run-bot/day_inventory/today.json 2>/dev/null || true
           exit "${run_status}"
-
-      - name: Persist movement watchlist and diagnostics
-        if: always()
-        shell: bash
-        run: |
-          set -uo pipefail
-          mkdir -p .data/exports artifacts/run-bot
-          python -u scripts/update_day_inventory_priority_and_line_state.py || true
-          python -u scripts/restore_awaiting_movement_candidates.py || true
-          python -u scripts/repair_inventory_refresh_plan_counts.py || true
-          python -u scripts/day_inventory_cumulative_coverage.py || true
-          python -u scripts/build_day_inventory_coverage_truth.py || true
-          python -u scripts/build_a_cover_candidate_gap_report.py || true
-          python -u scripts/build_b_cover_candidate_gap_report.py || true
-          python -u scripts/build_fresh_b_cover_diagnostics.py || true
-          cp .data/exports/latest-day-inventory-priority-and-line-state.json artifacts/run-bot/latest-day-inventory-priority-and-line-state.json 2>/dev/null || true
-          cp .data/exports/latest-line-movement-guard-report.json artifacts/run-bot/latest-line-movement-guard-report.json 2>/dev/null || true
-          cp .data/exports/latest-awaiting-movement-restore.json artifacts/run-bot/latest-awaiting-movement-restore.json 2>/dev/null || true
-          cp .data/exports/latest-a-cover-candidate-gap-report.json artifacts/run-bot/latest-a-cover-candidate-gap-report.json 2>/dev/null || true
-          cp .data/exports/latest-b-cover-candidate-gap-report.json artifacts/run-bot/latest-b-cover-candidate-gap-report.json 2>/dev/null || true
-          cp .data/exports/latest-fresh-b-cover-diagnostics.json artifacts/run-bot/latest-fresh-b-cover-diagnostics.json 2>/dev/null || true
 
       - name: Evaluate controlled fallback publication
         if: always()
@@ -462,11 +368,6 @@ jobs:
           python -u scripts/persist_awaiting_movement_candidates.py || true
           python -u scripts/build_fresh_b_cover_diagnostics.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
-          cp .data/exports/latest-controlled-fallback-pick.json artifacts/run-bot/latest-controlled-fallback-pick.json 2>/dev/null || true
-          cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
-          cp .data/exports/latest-awaiting-movement-candidates.json artifacts/run-bot/latest-awaiting-movement-candidates.json 2>/dev/null || true
-          cp .data/exports/latest-fresh-b-cover-diagnostics.json artifacts/run-bot/latest-fresh-b-cover-diagnostics.json 2>/dev/null || true
-          cp .data/fallback-sent-index.json artifacts/run-bot/fallback-sent-index.json 2>/dev/null || true
 
       - name: Update cumulative day inventory coverage
         if: always()
@@ -479,12 +380,6 @@ jobs:
           python -u scripts/backfill_inventory_bookmaker_coverage.py || true
           python -u scripts/day_inventory_cumulative_coverage.py || true
           python -u scripts/guard_day_inventory_no_shrink.py repair || true
-          cp .data/exports/latest-day-inventory-accumulation.json artifacts/run-bot/latest-day-inventory-accumulation.json 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-coverage-merge.json artifacts/run-bot/latest-day-inventory-coverage-merge.json 2>/dev/null || true
-          cp .data/exports/latest-inventory-bookmaker-backfill.json artifacts/run-bot/latest-inventory-bookmaker-backfill.json 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-no-shrink-guard.json artifacts/run-bot/latest-day-inventory-no-shrink-guard.json 2>/dev/null || true
-          cp .data/day_inventory/*.json artifacts/run-bot/day_inventory/ 2>/dev/null || true
 
       - name: Build ideal runtime audit
         if: always()
@@ -493,16 +388,6 @@ jobs:
           set -uo pipefail
           mkdir -p .data/exports artifacts/run-bot
           python -u scripts/build_harizon_ideal_runtime_audit.py || true
-          cp .data/exports/latest-harizon-ideal-runtime-audit.json artifacts/run-bot/latest-harizon-ideal-runtime-audit.json 2>/dev/null || true
-          cp .data/exports/latest-harizon-ideal-runtime-audit.txt artifacts/run-bot/latest-harizon-ideal-runtime-audit.txt 2>/dev/null || true
-
-      - name: Normalize published pick payloads
-        if: always()
-        shell: bash
-        run: |
-          set -uo pipefail
-          python -u scripts/normalize_published_pick_payloads.py || true
-          cp .data/exports/latest-normalized-publication-payloads.json artifacts/run-bot/latest-normalized-publication-payloads.json 2>/dev/null || true
 
       - name: Send HARIZON Telegram run report
         if: always()
@@ -511,8 +396,6 @@ jobs:
           set -uo pipefail
           mkdir -p .data/exports artifacts/run-bot
           python -u scripts/send_harizon_telegram_run_report_v13.py || python -u scripts/send_harizon_telegram_run_report_v10.py || true
-          cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
-          cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
 
       - name: Send detailed Telegram run report
         if: always()
@@ -521,7 +404,7 @@ jobs:
           set -uo pipefail
           mkdir -p .data/exports artifacts/run-bot
           DETAILED_RUN_REPORT_SEND_TELEGRAM=false DETAILED_RUN_REPORT_FORCE_SEND=false python -u scripts/build_detailed_run_report.py || true
-          DETAILED_RUN_REPORT_SEND_TELEGRAM=true DETAILED_RUN_REPORT_FORCE_SEND=true python -u scripts/send_clean_detailed_run_report.py || true
+          DETAILED_RUN_REPORT_SEND_TELEGRAM=true DETAILED_RUN_REPORT_FORCE_SEND=true python -u scripts/send_clean_detailed_run_report_fixed.py || true
           cp .data/exports/latest-detailed-run-report.json artifacts/run-bot/latest-detailed-run-report.json 2>/dev/null || true
           cp .data/exports/latest-detailed-run-report.txt artifacts/run-bot/latest-detailed-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-detailed-run-report-cleaned.txt artifacts/run-bot/latest-detailed-run-report-cleaned.txt 2>/dev/null || true
@@ -533,45 +416,20 @@ jobs:
         run: |
           set -uo pipefail
           if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip runtime artifact commit: fresh run-bot log was not created"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/detailed-run-report-sent.json \
             .data/exports/latest-*.json .data/exports/latest-*.txt .data/exports/latest-*.csv \
-            .data/day_inventory/current.json .data/day_inventory/latest.json .data/day_inventory/today.json .data/day_inventory/${DAY_INVENTORY_CACHE_DATE}.json \
-            .data/day_inventory/*highwater*.json .data/day_inventory/highwater.json .data/day_inventory/largest.json \
-            .data/cache/day_inventory/*highwater*.json .data/cache/day_inventory/highwater.json .data/cache/day_inventory/largest.json \
-            .data/line_history/latest.json .data/line_history/${DAY_INVENTORY_CACHE_DATE}.json \
-            .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
-          git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
-          git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
-          git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
+            .data/day_inventory/current.json .data/day_inventory/latest.json .data/day_inventory/today.json \
+            .data/line_history/latest.json .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           if git diff --cached --quiet; then
-            echo "no runtime artifact changes to commit"
             exit 0
           fi
           git commit -m "Update runtime artifacts [skip ci]" || true
           git pull --rebase --autostash origin main || true
           git push || true
-
-      - name: Save persisted day inventory
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            .data/day_inventory
-            .data/cache/day_inventory
-            .data/line_history
-          key: run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
-
-      - name: Prune artifact payload
-        if: always()
-        shell: bash
-        run: |
-          set -uo pipefail
-          python -u scripts/prune_run_artifacts.py || true
 
       - name: Upload run artifact
         if: always()
@@ -586,12 +444,6 @@ jobs:
             .data/day_inventory/current.json
             .data/day_inventory/latest.json
             .data/day_inventory/today.json
-            .data/day_inventory/*highwater*.json
-            .data/day_inventory/highwater.json
-            .data/day_inventory/largest.json
-            .data/cache/day_inventory/*highwater*.json
-            .data/cache/day_inventory/highwater.json
-            .data/cache/day_inventory/largest.json
             .data/line_history/latest.json
             .data/provider_quota_governor_state.json
             .data/provider_request_budget_state.json
