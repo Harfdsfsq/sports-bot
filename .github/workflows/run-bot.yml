@@ -458,6 +458,7 @@ jobs:
           mkdir -p .data/exports artifacts/run-bot
           python -u scripts/apply_publication_family_policy.py || true
           python -u scripts/publish_controlled_fallback_guarded.py || true
+          python -u scripts/ensure_controlled_fallback_report.py || true
           python -u scripts/persist_awaiting_movement_candidates.py || true
           python -u scripts/build_fresh_b_cover_diagnostics.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
@@ -484,6 +485,16 @@ jobs:
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-no-shrink-guard.json artifacts/run-bot/latest-day-inventory-no-shrink-guard.json 2>/dev/null || true
           cp .data/day_inventory/*.json artifacts/run-bot/day_inventory/ 2>/dev/null || true
+
+      - name: Build ideal runtime audit
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports artifacts/run-bot
+          python -u scripts/build_harizon_ideal_runtime_audit.py || true
+          cp .data/exports/latest-harizon-ideal-runtime-audit.json artifacts/run-bot/latest-harizon-ideal-runtime-audit.json 2>/dev/null || true
+          cp .data/exports/latest-harizon-ideal-runtime-audit.txt artifacts/run-bot/latest-harizon-ideal-runtime-audit.txt 2>/dev/null || true
 
       - name: Normalize published pick payloads
         if: always()
