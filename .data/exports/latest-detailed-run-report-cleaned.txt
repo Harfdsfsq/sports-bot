@@ -1,9 +1,9 @@
 🧾 Подробный отчёт run — прогнозов нет
 
 🧭 Состояние артефактов
-• debug: свежий | 2026-08-14T13:18:07.687348+00:00, Δ +0.0 мин
-• run_summary: свежий | 2026-08-14T13:18:07.687348+00:00, Δ +0.0 мин
-• fallback: устарел | 2026-04-26T22:32:02.281275+00:00, Δ +157846.1 мин
+• debug: свежий | 2026-08-14T13:42:14.070695+00:00, Δ +0.0 мин
+• run_summary: свежий | 2026-08-14T13:42:14.070695+00:00, Δ +0.0 мин
+• fallback: устарел | 2026-08-14T12:50:47.625482+00:00, Δ +51.4 мин
 
 🧭 Runtime policy
 • Версия: harizon-runtime-policy-v6-strict-full-inventory
@@ -11,35 +11,44 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 179/300
-• С контекстом: 234/300
-• Готово к модели: 170/300
-• Ближайшие 6 часов: 95/143 готово
-• Следующие 12 часов: 95/145 готово
+• С линиями: 176/300
+• С контекстом: 191/300
+• Готово к модели: 166/300
+• Ближайшие 6 часов: 96/119 готово
+• Следующие 12 часов: 96/121 готово
+
+🧭 Ideal runtime audit
+• Score: 77/100
+• Lines: 250/300 (83%) | Context: 265/300 (88%)
+• Ready: 241/300 (80%) | Near 6h: 117/138 (85%)
+• account2: offers 0, req 1, plan_restriction True
+• Bzzoiro bridge: offers 78, overlap 9, 2-source 11
+• Main blockers: odds_api_io_account2_zero_offers, line_movement_top_blocker, final_edge_explainability_gap, proxy_xg_placeholder_still_present
+• Next action: enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set
 
 ⚙️ Что сделал скрипт
-• Матчи: 8 | с линиями: 7 | контекстов: 35
-• Кандидаты: raw 0 | до качества 24 | publishable 0
+• Матчи: 19 | с линиями: 16 | контекстов: 32
+• Кандидаты: raw 0 | до качества 25 | publishable 0
 • Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
-• матчей с линиями из любого источника: 7
-• матчей с любым контекстом: 2
-• матчей с объединенным контекстом: 2
+• матчей с линиями из любого источника: 16
+• матчей с любым контекстом: 6
+• матчей с объединенным контекстом: 6
 • raw с market-derived сигналом: 0
 
 📡 Источники / фактическая работа
-• odds_api_io: data 68/3933, max 200, err 1
-• bzzoiro: data 0/0, req 2, stop_reason runner_provider_deadline_exhausted, budget_exhausted, degraded
-• sstats: data 34/34, req 2, max 150
-• football_data: data 0/0
-• thesportsdb: data 1/1, req 2, max 12
+• odds_api_io: data 71/4181, max 200, err 1
+• bzzoiro: data 0/0, req 4, stop_reason runner_provider_deadline_exhausted, budget_exhausted, degraded
+• sstats: data 32/32, req 2, max 150
+• football_data: data 0/0, req 1, max 12
+• thesportsdb: data 0/0, req 1, max 12
 • sportlogic: data 0/0
 • openfootball: data 0/0, req 0
 
 📈 odds-api.io routing
-• account1: Bet365,Unibet | req 11 | offers 3540
+• account1: Bet365,Unibet | req 9 | offers 3776
 • account2: Betfair Exchange,Sbobet | req 1 | offers 0
 • Букмекеры в ответах: Bet365, Unibet
-• Матчи с 2+ букмекерами: 28; с 1 букмекером: 38
+• Матчи с 2+ букмекерами: 31; с 1 букмекером: 38
 
 🚫 Почему не прошли
 • Воронка видит кандидатов, но свежий fallback/detailed слой не выгрузил причины отказа.
@@ -49,7 +58,7 @@
 🧩 Работа API — разбор
 
 • odds_api_io: главный источник линий и списка матчей по целевым букмекерам
-  - runtime: data 68/3933, err 1, budget_exhausted False, events_matched 103, offers_parsed 3638
+  - runtime: data 71/4181, err 1, budget_exhausted False, events_matched 85, offers_parsed 3883
   - health: ok, configured true, req 1, rows 10, http 200
   - квота: grant 120, reason granted, status critical_inventory_and_primary_live_odds
 • allsportsapi: fixture/secondary odds probe; помогает расширять inventory и проверять доп. линии
@@ -57,23 +66,23 @@
   - health: server_error, configured true, req 1, rows 0, http 502, html_error_page
   - квота: grant 24, reason granted, status secondary_fixture_and_odds_rescue
 • bzzoiro: контекст/прогнозы; независимое подтверждение, но матчинг пока даёт мало совпадений
-  - runtime: data 0/0, req 2, err 0, contexts_built 0, budget_exhausted True
+  - runtime: data 0/0, req 4, err 0, contexts_built 0, budget_exhausted True
   - health: ok, configured true, req 1, rows 26, http 200
   - квота: grant 24, reason granted, status high_quality_context_near_window_first
 • sstats: форма/статистика команд; основной near-window context provider
-  - runtime: data 34/34, req 2, err 0, contexts_built 33, budget_exhausted False
+  - runtime: data 32/32, req 2, err 0, contexts_built 30, budget_exhausted False
   - health: ok, configured true, req 1, rows 5, http 200
   - квота: grant 36, reason granted, status critical_team_form_context_near_window_first
 • football_data: fixture/league calendar; добор матчей и алиасы
-  - runtime: data 0/0
+  - runtime: data 0/0, req 1, err 0, contexts_built 0, budget_exhausted False, events_matched 0
   - health: ok, configured true, req 1, rows 13, http 200
   - квота: grant 6, reason granted, status context_only_cached_league_calendar
 • thesportsdb: fixture/алиасы команд и лиг
-  - runtime: data 1/1, req 2, err 0, contexts_built 1, budget_exhausted False
+  - runtime: data 0/0, req 1, err 0, contexts_built 0, budget_exhausted False
   - health: ok, configured true, req 1, rows 5, http 200
   - квота: grant 10, reason granted, status alias_and_fixture_context_cached
 • weather: агрегированный погодный overlay: WeatherAPI первым, OpenWeatherMap fallback
-  - runtime: data 2/2, req 2, err 0, contexts_built 2, matches_considered 2, weatherapi_requests 2, openweathermap_requests 0, weatherapi_enriched 2, openweathermap_enriched 0, cache_hits 0, no_weather_payload 0, budget_exhausted False
+  - runtime: data 5/5, req 6, err 1, contexts_built 5, matches_considered 6, weatherapi_requests 6, openweathermap_requests 0, weatherapi_enriched 5, openweathermap_enriched 0, cache_hits 0, no_weather_payload 1, budget_exhausted False
   - health: нет health-probe
   - квота: нет quota-строки
 • weatherapi: основной погодный API
