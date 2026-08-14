@@ -15,14 +15,14 @@ def _f(value: Any) -> float | None:
 
 def _source_text(candidate: dict[str, Any]) -> str:
     parts: list[str] = []
-    for key in ('_candidate_source', 'candidate_source', 'quality_score_source'):
+    for key in ('_candidate_source', 'candidate_source', 'quality_score_source', 'proxy_default_xg_replacement_source'):
         value = candidate.get(key)
         if value not in (None, ''):
             parts.append(str(value))
     summary = candidate.get('source_summary') if isinstance(candidate.get('source_summary'), dict) else {}
     diagnostics = candidate.get('diagnostics') if isinstance(candidate.get('diagnostics'), dict) else {}
     for box in (summary, diagnostics):
-        for key in ('selected_source', 'quality_score_source', 'created_by'):
+        for key in ('selected_source', 'quality_score_source', 'created_by', 'proxy_default_xg_replacement_source'):
             value = box.get(key) if isinstance(box, dict) else None
             if value not in (None, ''):
                 parts.append(str(value))
@@ -40,6 +40,15 @@ def _looks_like_proxy_promotion(candidate: dict[str, Any]) -> bool:
 def _hard_xg_marker(candidate: dict[str, Any]) -> bool:
     text = str(candidate).lower()
     return any(token in text for token in ('bzzoiro_stats', 'sstats_xg', 'xg_live', 'actual_home_xg', 'actual_away_xg', 'pre_match_home_xg', 'pre_match_away_xg'))
+
+
+def _proxy_replaced(candidate: dict[str, Any]) -> bool:
+    if bool(candidate.get('proxy_default_xg_replaced')):
+        return True
+    summary = candidate.get('source_summary') if isinstance(candidate.get('source_summary'), dict) else {}
+    diagnostics = candidate.get('diagnostics') if isinstance(candidate.get('diagnostics'), dict) else {}
+    text = str({'candidate': candidate, 'source_summary': summary, 'diagnostics': diagnostics}).lower()
+    return any(token in text for token in ('proxy_default_xg_replaced', 'market_implied_replaces_proxy_placeholder', 'market_implied_total_xg'))
 
 
 def _is_default_1_1(metrics: dict[str, Any], candidate: dict[str, Any]) -> bool:
@@ -73,6 +82,9 @@ def install(base: Any) -> None:
         fam = str(candidate.get('family') or candidate.get('market_family') or '').strip().lower()
         if fam not in {'totals', 'teamtotals'}:
             return metrics
+        if _proxy_replaced(candidate):
+            metrics['proxy_default_xg_replaced_guard_respected'] = True
+            return metrics
         if _is_default_1_1(metrics, candidate) and _looks_like_proxy_promotion(candidate) and not _hard_xg_marker(candidate):
             metrics.update({
                 'enabled': False,
@@ -92,6 +104,8 @@ def install(base: Any) -> None:
     if callable(original_tier_reasons):
         def wrapped_tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
             reasons = list(original_tier_reasons(tier, candidate, metrics) or [])
+            if _proxy_replaced(candidate):
+                return [r for r in reasons if 'proxy_default_xg_placeholder' not in str(r)]
             xg = metrics.get('xg_sanity') if isinstance(metrics.get('xg_sanity'), dict) else {}
             if _is_placeholder(xg):
                 reasons.append(f"tier_{str(tier or '').lower()}_proxy_default_xg_placeholder")
