@@ -1,13 +1,13 @@
 🧭 HARIZON ideal runtime audit
-• Ideal score: 58.0/100
-• Inventory: 300; lines 176/300 (58.7%); context 191/300 (63.7%); ready 166/300 (55.3%)
-• Near 6h ready: 96/119 (80.7%); near 12h ready: 96/121 (79.3%)
-• odds-api.io account2: offers 0; req 0; http []
-• Bzzoiro bridge: offers 78; overlap 9; 2-source 11
-• Top blockers: line_coverage_below_80pct, context_coverage_below_85pct, odds_api_io_account2_zero_offers, line_movement_top_blocker, final_edge_explainability_gap, proxy_xg_placeholder_still_present
+• Ideal score: 75.2/100
+• Inventory: 300; lines 238/300 (79.3%); context 277/300 (92.3%); ready 221/300 (73.7%)
+• Near 6h ready: 125/180 (69.4%); near 12h ready: 126/181 (69.6%)
+• odds-api.io account2: offers 0; req 1; http [403]
+• Bzzoiro bridge: offers 24; overlap 0; 2-source 6
+• Top blockers: line_coverage_below_80pct, near_6h_model_ready_below_80pct, odds_api_io_account2_zero_offers, line_movement_top_blocker, final_edge_explainability_gap, proxy_xg_placeholder_still_present
 • Next actions:
   - raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill
-  - raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates
+  - prioritize next-6h inventory for odds/context before wider inventory
   - enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set
   - classify movement failures and store awaiting-movement candidates for next cron instead of losing them
   - expose displayed vs canonical vs post-recheck EV/edge in near-miss report
