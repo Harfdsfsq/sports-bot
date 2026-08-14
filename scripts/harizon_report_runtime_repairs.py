@@ -38,12 +38,36 @@ def patch_payload_quality(payload:dict[str,Any])->dict[str,Any]:
 
 def patch_payload(payload:dict[str,Any])->dict[str,Any]:
     if _disabled_sportlogic_env(): payload.setdefault('api',{})['sportlogic']={'enabled':False,'requests':0,'fixtures':0,'odds_requests':0,'matched':0,'offers':0,'errors':0,'diagnosis':'disabled_by_env'}
-    q=_load(EXPORT/'latest-a-tier-targeted-enrichment-queue.json',{}); b=_load(EXPORT/'latest-bzzoiro-targeted-odds-confirmation.json',{}); trace=_load(EXPORT/'latest-bzzoiro-report-source-trace.json',{}); detail=_load(EXPORT/'latest-bzzoiro-targeted-odds-detail.json',{}); relief=_load(EXPORT/'latest-last-chance-line-recheck-relief.json',{})
+    q=_load(EXPORT/'latest-a-tier-targeted-enrichment-queue.json',{}); b=_load(EXPORT/'latest-bzzoiro-targeted-odds-confirmation.json',{}); trace=_load(EXPORT/'latest-bzzoiro-report-source-trace.json',{}); detail=_load(EXPORT/'latest-bzzoiro-targeted-odds-detail.json',{}); relief=_load(EXPORT/'latest-last-chance-line-recheck-relief.json',{}); overlap=_load(EXPORT/'latest-bzzoiro-overlap-bridge.json',{}); merge=_load(EXPORT/'latest-sstats-bzzoiro-odds-merge.json',{})
     if isinstance(q,dict): payload.setdefault('a_tier_enrichment',{}).update(q.get('summary') or {})
-    if isinstance(b,dict): payload.setdefault('a_tier_enrichment',{})['bzzoiro_targeted']={k:b.get(k) for k in ('targets','bzzoiro_events_seen','matched_events','offers','two_source_promoted','diagnosis','odds_detail')}
+    if isinstance(b,dict): payload.setdefault('a_tier_enrichment',{})['bzzoiro_targeted']={k:b.get(k) for k in ('targets','bzzoiro_events_seen','matched_events','matched_events_with_event_id','offers','two_source_promoted','diagnosis','odds_detail')}
     if isinstance(trace,dict): payload.setdefault('a_tier_enrichment',{})['bzzoiro_trace']=trace
     if isinstance(detail,dict): payload.setdefault('a_tier_enrichment',{})['bzzoiro_detail']=detail
+    if isinstance(overlap,dict): payload.setdefault('a_tier_enrichment',{})['bzzoiro_overlap_bridge']=overlap
+    if isinstance(merge,dict): payload.setdefault('a_tier_enrichment',{})['bzzoiro_odds_merge']=merge
     if isinstance(relief,dict): payload.setdefault('line_guard',{})['last_chance_relief']=relief
+    # The base report reads only original source_stats, which can stay zero even
+    # after late overlap/merge repairs. Surface the repaired truth so Telegram no
+    # longer says Bzzoiro overlap 0 when artifacts prove otherwise.
+    cov=payload.setdefault('coverage',{})
+    api=payload.setdefault('api',{}).setdefault('bzzoiro',{})
+    if isinstance(overlap,dict):
+        bridge_offers=_int(overlap.get('bzzoiro_offer_rows'))
+        bridge_matches=_int(overlap.get('unique_overlap_match_count'))
+        bridge_bucket_matches=_int(overlap.get('unique_overlap_same_bucket_match_count'))
+        if bridge_offers>0: cov['bzzoiro_secondary_offers_added']=max(_int(cov.get('bzzoiro_secondary_offers_added')),bridge_offers); api['secondary_offers_added']=max(_int(api.get('secondary_offers_added')),bridge_offers)
+        if bridge_matches>0: cov['bzzoiro_odds_overlap_with_odds_api_io']=max(_int(cov.get('bzzoiro_odds_overlap_with_odds_api_io')),bridge_matches); api['overlap']=max(_int(api.get('overlap')),bridge_matches)
+        cov['bzzoiro_same_bucket_overlap_matches']=bridge_bucket_matches
+    if isinstance(merge,dict):
+        after2=_int(merge.get('after_2plus_sources'))
+        ann=merge.get('day_inventory_annotation') if isinstance(merge.get('day_inventory_annotation'),dict) else {}
+        inv2=_int(ann.get('matches_with_2plus_runtime_odds_sources'))
+        bsrc=_int(ann.get('matches_with_bzzoiro_source'))
+        if max(after2,inv2)>0:
+            cov['bzzoiro_runtime_2source_matches']=max(after2,inv2)
+            cov['bzzoiro_odds_overlap_with_odds_api_io']=max(_int(cov.get('bzzoiro_odds_overlap_with_odds_api_io')),max(after2,inv2))
+            api['overlap']=max(_int(api.get('overlap')),max(after2,inv2))
+        if bsrc>0: cov['bzzoiro_inventory_matches_with_source']=bsrc
     return payload
 
 def patch_text_quality(text:str,payload:dict[str,Any])->str:
@@ -59,16 +83,28 @@ def patch_runtime_lines(text:str)->str:
     if isinstance(trace,dict):
         persisted=_int(trace.get('persisted_event_rows')); diag=trace.get('diagnosis') or 'n/a'
         text=re.sub(r'^(• bzzoiro: req \d+, ctx \d+, events )(\d+)(?: \([^)]*\))?(, secondary offers .*)$',rf'\g<1>\2 (aggregate; persisted rows {persisted}; trace {diag})\3',text,count=1,flags=re.MULTILINE)
+    overlap=_load(EXPORT/'latest-bzzoiro-overlap-bridge.json',{}); merge=_load(EXPORT/'latest-sstats-bzzoiro-odds-merge.json',{})
+    if isinstance(overlap,dict):
+        offers=_int(overlap.get('bzzoiro_offer_rows')); match=_int(overlap.get('unique_overlap_match_count'))
+        if offers>0:
+            text=re.sub(r'Bzzoiro secondary offers: \d+',f'Bzzoiro secondary offers: {offers}',text,count=1)
+            text=re.sub(r'2-source overlap Bzzoiro\+odds-api\.io: \d+',f'2-source overlap Bzzoiro+odds-api.io: {match}',text,count=1)
+            text=re.sub(r'(• bzzoiro: req \d+, ctx \d+, events .*?, secondary offers )\d+(, overlap odds-api.io )\d+',rf'\g<1>{offers}\g<2>{match}',text,count=1)
     return text
 
 def patch_a_tier_summary(text:str)->str:
-    q=_load(EXPORT/'latest-a-tier-targeted-enrichment-queue.json',{}); s=q.get('summary') if isinstance(q,dict) and isinstance(q.get('summary'),dict) else {}; b=_load(EXPORT/'latest-bzzoiro-targeted-odds-confirmation.json',{}); trace=_load(EXPORT/'latest-bzzoiro-report-source-trace.json',{}); detail=_load(EXPORT/'latest-bzzoiro-targeted-odds-detail.json',{}); relief=_load(EXPORT/'latest-last-chance-line-recheck-relief.json',{})
+    q=_load(EXPORT/'latest-a-tier-targeted-enrichment-queue.json',{}); s=q.get('summary') if isinstance(q,dict) and isinstance(q.get('summary'),dict) else {}; b=_load(EXPORT/'latest-bzzoiro-targeted-odds-confirmation.json',{}); trace=_load(EXPORT/'latest-bzzoiro-report-source-trace.json',{}); detail=_load(EXPORT/'latest-bzzoiro-targeted-odds-detail.json',{}); relief=_load(EXPORT/'latest-last-chance-line-recheck-relief.json',{}); overlap=_load(EXPORT/'latest-bzzoiro-overlap-bridge.json',{}); merge=_load(EXPORT/'latest-sstats-bzzoiro-odds-merge.json',{})
     if s and 'A-tier enrichment queue' not in text:
         text=text.replace('🧪 Воронка кандидатов',f"• A-tier enrichment queue: Bzzoiro odds targets {_int(s.get('bzzoiro_odds_target_count'))}; context projection targets {_int(s.get('context_projection_target_count'))}; high-value recheck {_int(s.get('high_value_recheck_target_count'))}.\n🧪 Воронка кандидатов",1)
     if isinstance(b,dict) and 'Bzzoiro targeted odds' not in text:
-        text=text.replace('📡 Core API',f"• Bzzoiro targeted odds: targets {_int(b.get('targets'))}; events {_int(b.get('bzzoiro_events_seen'))}; matched {_int(b.get('matched_events'))}; offers {_int(b.get('offers'))}; 2-source promoted {_int(b.get('two_source_promoted'))}; diag {b.get('diagnosis') or 'n/a'}.\n📡 Core API",1)
+        text=text.replace('📡 Core API',f"• Bzzoiro targeted odds: targets {_int(b.get('targets'))}; events {_int(b.get('bzzoiro_events_seen'))}; matched {_int(b.get('matched_events'))}; ids {_int(b.get('matched_events_with_event_id'))}; offers {_int(b.get('offers'))}; 2-source promoted {_int(b.get('two_source_promoted'))}; diag {b.get('diagnosis') or 'n/a'}.\n📡 Core API",1)
     if isinstance(detail,dict) and 'Bzzoiro odds detail' not in text:
         text=text.replace('📡 Core API',f"• Bzzoiro odds detail: targets {_int(detail.get('targets'))}; requests {_int(detail.get('requests'))}; events_with_offers {_int(detail.get('events_with_offers'))}; offers {_int(detail.get('offers'))}; diag {detail.get('diagnosis') or 'n/a'}.\n📡 Core API",1)
+    if isinstance(overlap,dict) and 'Bzzoiro overlap bridge' not in text:
+        text=text.replace('📡 Core API',f"• Bzzoiro overlap bridge: offers {_int(overlap.get('bzzoiro_offer_rows'))}; overlap matches {_int(overlap.get('unique_overlap_match_count'))}; same-bucket matches {_int(overlap.get('unique_overlap_same_bucket_match_count'))}.\n📡 Core API",1)
+    if isinstance(merge,dict) and 'Bzzoiro odds merge' not in text:
+        ann=merge.get('day_inventory_annotation') if isinstance(merge.get('day_inventory_annotation'),dict) else {}
+        text=text.replace('📡 Core API',f"• Bzzoiro odds merge: 2-source matches {_int(merge.get('after_2plus_sources'))}; 2+ books {_int(merge.get('after_2plus_books'))}; inventory updated {_int(ann.get('updated_matches'))}; inventory 2-source {_int(ann.get('matches_with_2plus_runtime_odds_sources'))}.\n📡 Core API",1)
     if isinstance(trace,dict) and 'Bzzoiro source trace' not in text:
         text=text.replace('📡 Core API',f"• Bzzoiro source trace: aggregate events {_int(trace.get('source_stats_events_fetched'))}; persisted rows {_int(trace.get('persisted_event_rows'))}; targeted events {_int(trace.get('targeted_events_seen'))}; diag {trace.get('diagnosis') or 'n/a'}.\n📡 Core API",1)
     if isinstance(relief,dict) and 'Last-chance line relief' not in text:
@@ -83,7 +119,7 @@ def patch_line_diagnostics(text:str)->str:
     return text
 
 def patch_conclusion(text:str)->str:
-    repl='• Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail и last-chance relief теперь диагностируются отдельно.'
+    repl='• Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.'
     text=re.sub(r'^• Главный технический bottleneck:.*$',repl,text,count=1,flags=re.MULTILINE); text=re.sub(r'^• Главный текущий стопор:.*$',repl,text,count=1,flags=re.MULTILINE); return text
 
 def patch(payload:dict[str,Any],text:str)->tuple[dict[str,Any],str]:
