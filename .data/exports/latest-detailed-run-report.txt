@@ -1,9 +1,9 @@
 🧾 Подробный отчёт run — прогнозов нет
 
 🧭 Состояние артефактов
-• debug: свежий | 2026-08-14T17:48:55.442795+00:00, Δ +2.0 мин
-• run_summary: свежий | 2026-08-14T17:48:55.442795+00:00, Δ +2.0 мин
-• fallback: свежий | 2026-08-14T17:50:53.735699+00:00, Δ +0.0 мин
+• debug: свежий | 2026-08-14T19:08:11.867335+00:00, Δ +2.0 мин
+• run_summary: свежий | 2026-08-14T19:08:11.867335+00:00, Δ +2.0 мин
+• fallback: свежий | 2026-08-14T19:10:09.433863+00:00, Δ +0.0 мин
 
 🧭 Runtime policy
 • Версия: harizon-runtime-policy-v6-strict-full-inventory
@@ -11,127 +11,35 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 185/300
-• С контекстом: 205/300
-• Готово к модели: 170/300
-• Ближайшие 6 часов: 21/31 готово
-• Следующие 12 часов: 21/31 готово
+• С линиями: 176/300
+• С контекстом: 191/300
+• Готово к модели: 166/300
+• Ближайшие 6 часов: 3/3 готово
+• Следующие 12 часов: 3/3 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 17 | с линиями: 15 | контекстов: 8
-• Кандидаты: raw 0 | до качества 30 | publishable 0
-• Резерв проверил: 8 | оценено в отчёте: 8 | выбрано: 0
-• матчей с линиями из любого источника: 15
-• матчей с любым контекстом: 8
-• матчей с объединенным контекстом: 8
+• Матчи: 0 | с линиями: 0 | контекстов: 0
+• Кандидаты: raw 0 | до качества 24 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
+• матчей с линиями из любого источника: 0
+• матчей с любым контекстом: 0
+• матчей с объединенным контекстом: 0
 • raw с market-derived сигналом: 0
 
 📡 Источники / фактическая работа
-• odds_api_io: data 21/1766, max 200, err 3
-• bzzoiro: data 0/0, req 3
-• sstats: data 8/8, req 2, max 150
+• odds_api_io: data 0/0, max 200
+• bzzoiro: data 0/0
+• sstats: data 0/0
 • api_football: data 0/0, off:disabled_by_config
 • football_data: data 0/0
 • thesportsdb: data 0/0
 • sportlogic: data 0/0
-• openfootball: data 0/0, req 8
-
-📈 odds-api.io routing
-• account1: Bet365,Unibet | req 2 | offers 1588
-• account2: Betfair Exchange,Sbobet | req 3 | offers 0
-• Букмекеры в ответах: Bet365, Unibet
-• Матчи с 2+ букмекерами: 16; с 1 букмекером: 0
+• openfootball: data 0/0, req 48
 
 🚫 Почему не прошли
-• направление ставки конфликтует с xG — 2 (12%)
-• semantic line movement missing — 2 (12%)
-• current price recheck value lost:-1.9/-0.9 — 1 (6%)
-• current price recheck value lost:-2.0/-1.0 — 1 (6%)
-• semantic line movement not publishable:current edge below floor:0.1<1.5 — 1 (6%)
-• current price recheck value lost:-1.4/-0.6 — 1 (6%)
-• semantic line movement not publishable:current edge below floor:0.4<1.5 — 1 (6%)
-• current price recheck value lost:-1.1/-0.5 — 1 (6%)
-• semantic line movement not publishable:current edge below floor:0.9<1.5 — 1 (6%)
-• отрицательная контрольная ценность после пересчёта по выбранному коэффициенту — 1 (6%)
+• Воронка видит кандидатов, но свежий fallback/detailed слой не выгрузил причины отказа.
 
-⚠️ Пограничные кандидаты
-1. Аталанта — Атлетик Бильбао
- 🏆 Клуб Фриендлиес
- 🎯 Меньше 2.5 @2.36 | 🕒 14.08.2026 21:45 MSK
- • odds sources 2, confirmation sources 2
- • confirmation sources: clubelo, sstats
- • EV +10.3%
- • запас +4.4 п.п.
- • уверенность 74.3%
- • качество 75.7
- • линии 3, источники 2
- • не прошло: current price recheck value lost:-1.9/-0.9
-2. Гренобле Фут 38 — Мец
- 🏆 Лига 2
- 🎯 Больше 2.5 @2.28 | 🕒 14.08.2026 21:45 MSK
- • odds sources 2, confirmation sources 3
- • confirmation sources: clubelo, espn, sstats
- • EV +4.9%
- • запас +2.1 п.п.
- • уверенность 71.8%
- • качество 58.3
- • линии 3, источники 3
- • не прошло: current price recheck value lost:-1.1/-0.5; semantic line movement not publishable:current edge below floor:0.9<1.5
-3. Нанки — Монтпеллиер
- 🏆 Лига 2
- 🎯 Больше 2.5 @2.16 | 🕒 14.08.2026 21:45 MSK
- • odds sources 2, confirmation sources 1
- • confirmation sources: sstats
- • EV +4.5%
- • запас +2.1 п.п.
- • уверенность 72.5%
- • качество 50.1
- • линии 3, источники 1
- • не прошло: current price recheck value lost:-2.0/-1.0; semantic line movement not publishable:current edge below floor:0.1<1.5
-4. Ред Стар — Сочаукс
- 🏆 Лига 2
- 🎯 Меньше @1.80 | 🕒 14.08.2026 21:45 MSK
- • odds sources 1, confirmation sources 4
- • confirmation sources: bzzoiro, clubelo, espn, sstats
- • EV +4.4%
- • запас +2.5 п.п.
- • уверенность 65.8%
- • качество 61.8
- • линии 2, источники 4
- • не прошло: semantic line movement missing
-5. Монза — US Авеллино 1912
- 🏆 Коппа Италиа
- 🎯 Меньше 2.5 @1.93 | 🕒 14.08.2026 21:45 MSK
- • odds sources 2, confirmation sources 1
- • confirmation sources: sstats
- • EV +2.0%
- • запас +1.1 п.п.
- • уверенность 70.9%
- • качество 64.6
- • линии 3, источники 1
- • не прошло: current price recheck value lost:-3.5/-1.9; semantic line movement not publishable:current ev below floor:2.0<3.0
-6. Стаде Лаваллоис — Нантес
- 🏆 Лига 2
- 🎯 Меньше @1.86 | 🕒 14.08.2026 21:45 MSK
- • odds sources 2, confirmation sources 2
- • confirmation sources: bzzoiro, sstats
- • EV +12.1%
- • запас +6.5 п.п.
- • уверенность 71.8%
- • качество 76.0
- • линии 3, источники 2
- • не прошло: направление ставки конфликтует с xG; модель слишком оптимистична относительно xG-ориентира
-7. Фиорентина — Беневенто
- 🏆 Коппа Италиа
- 🎯 Меньше 2.5 @2.48 | 🕒 14.08.2026 22:15 MSK
- • odds sources 2, confirmation sources 1
- • confirmation sources: sstats
- • EV +4.1%
- • запас +1.6 п.п.
- • уверенность 71.5%
- • качество 48.0
- • линии 3, источники 1
- • не прошло: направление ставки конфликтует с xG; current price recheck value lost:-1.4/-0.6; semantic line movement not publishable:current edge below floor:0.4<1.5
+⚠️ Пограничные кандидаты: не найдено ставок с положительным EV/edge после жёстких guard’ов.
 
 🔌 API / квоты последнего run
 • odds_api_io: grant 160, reason granted
@@ -146,7 +54,8 @@
 • futrixmetrics: grant 0, reason base_url_or_mapping_not_verified
 
 📌 Вывод
-• Главный фильтр — оптимизм модели против xG. Value есть, но xG-ориентир не подтверждает такой запас.
+• Главная проблема текущего состояния — не качество отчёта Telegram, а диагностический разрыв: candidates есть, publishable нет, но причины отказа не попали в свежие артефакты.
+• Исправлено: отчёт больше не смешивает старый fallback/watchlist с новым run-summary.
 
 🛠 Исправления по аудиту
 • Нужны unit-тесты daily top-5/fallback и общий модуль подсчёта дневной квоты.

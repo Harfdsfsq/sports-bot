@@ -1,58 +1,40 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: quality: вероятность после калибровки ниже порога
+• Итог: 🔴 нет свежих линий
+• Главная причина: no viable controlled fallback
 
 📦 Покрытие
-• Матчи в run: 17 | day inventory: 300
-• С линиями: 15 | с контекстом: 8 | ready model: 170
-• odds-api.io offers: 1750 | Bzzoiro secondary offers: 6
-• 2+ букмекера odds-api.io: 16 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 0 | day inventory: 300
+• С линиями: 0 | с контекстом: 0 | ready model: 166
+• odds-api.io offers: 0 | Bzzoiro secondary offers: 6
+• 2+ букмекера odds-api.io: 0 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: bzzoiro: 13, odds_api_io: 2
 
-• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 1.
+• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8 / 30
-• Passed quality: 8 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 0 / 24
+• Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 8 | evaluated 8 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 37 | no next regular run: 36
+• Final pre-kickoff checks: 0 | no next regular run: 0
 • Line guard: seen 8 | kept 0 | dropped 0
 
-• Bzzoiro targeted odds: targets 80; events 1318; matched 3; ids 3; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro targeted odds: targets 80; events 1318; matched 6; ids 6; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
 • Bzzoiro odds detail: targets 2; requests 4; events_with_offers 1; offers 9; diag offers_parsed.
 • Bzzoiro overlap bridge: offers 6; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 16; 2+ books 17; inventory updated 12; inventory 2-source 12.
-• Bzzoiro source trace: aggregate events 269; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 8; floor 2; hard 7; relieved 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 0; inventory updated 0; inventory 2-source 0.
+• Bzzoiro source trace: aggregate events 0; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 0; floor 0; hard 0; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 5, matched 16, offers 1750, 2+ books 16, err 3, auth_failed False
-• sstats: req 2, ctx 2, rows 11841, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 269 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 6, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 0, matched 0, offers 0, 2+ books 0, err 0, auth_failed False
+• sstats: req 0, ctx 0, rows 0, err 0, deep enriched 0
+• bzzoiro: req 0, ctx 0, events 0 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 6, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
-• Line movement breakdown: конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• quality: вероятность после калибровки ниже порога: 2 (12%)
-• направление ставки конфликтует с xG: 2 (12%)
-• quality: market sanity totals/xG contradiction: 2 (12%)
-• semantic line movement missing: 2 (12%)
-• quality bad historical segment guard: 2 (12%)
-• current price recheck value lost:-1.9/-0.9: 1 (6%)
-• current price recheck value lost:-2.0/-1.0: 1 (6%)
-• semantic line movement not publishable:current edge below floor:0.1<1.5: 1 (6%)
-
-🔎 Проверенные reserve-кандидаты
-1. Atalanta — Athletic Club | Меньше 2.5 @2.36 | EV +10.3% | edge +4.4 п.п. | q 75.7
-   • reject: current price recheck value lost:-1.9/-0.9
-2. Nancy — Montpellier | Больше 2.5 @2.16 | EV +4.5% | edge +2.1 п.п. | q 50.1
-   • reject: current price recheck value lost:-2.0/-1.0, semantic line movement not publishable:current edge below floor:0.1<1.5
-3. Fiorentina — Benevento | Меньше 2.5 @2.48 | EV +4.1% | edge +1.6 п.п. | q 48.0
-   • reject: направление ставки конфликтует с xG, current price recheck value lost:-1.4/-0.6, semantic line movement not publishable:current edge below floor:0.4<1.5
-4. Grenoble Foot 38 — Metz | Больше 2.5 @2.28 | EV +4.9% | edge +2.1 п.п. | q 58.3
-   • reject: current price recheck value lost:-1.1/-0.5, semantic line movement not publishable:current edge below floor:0.9<1.5
+• Нет reject reasons в свежих артефактах.
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
