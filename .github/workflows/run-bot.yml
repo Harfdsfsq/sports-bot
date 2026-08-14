@@ -509,8 +509,8 @@ jobs:
         run: |
           set -uo pipefail
           mkdir -p .data/exports artifacts/run-bot
-          python -u scripts/build_detailed_run_report.py || true
-          python -u scripts/send_clean_detailed_run_report.py || true
+          DETAILED_RUN_REPORT_SEND_TELEGRAM=false DETAILED_RUN_REPORT_FORCE_SEND=false python -u scripts/build_detailed_run_report.py || true
+          DETAILED_RUN_REPORT_SEND_TELEGRAM=true DETAILED_RUN_REPORT_FORCE_SEND=true python -u scripts/send_clean_detailed_run_report.py || true
           cp .data/exports/latest-detailed-run-report.json artifacts/run-bot/latest-detailed-run-report.json 2>/dev/null || true
           cp .data/exports/latest-detailed-run-report.txt artifacts/run-bot/latest-detailed-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-detailed-run-report-cleaned.txt artifacts/run-bot/latest-detailed-run-report-cleaned.txt 2>/dev/null || true
