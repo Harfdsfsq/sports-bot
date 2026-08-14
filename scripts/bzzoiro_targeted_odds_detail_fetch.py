@@ -25,11 +25,29 @@ def _eid_from_raw(raw:dict[str,Any])->str:
     for k in ('id','api_id','event_id','source_event_id','bzzoiro_event_id'):
         v=raw.get(k)
         if v not in (None,''): return str(v)
+    for k in ('event','fixture','match'):
+        nested=raw.get(k)
+        if isinstance(nested,dict):
+            v=_eid_from_raw(nested)
+            if v: return v
     return ''
 
 def _event_id(row:dict[str,Any])->str:
     raw=row.get('raw') if isinstance(row.get('raw'),dict) else {}
     return _eid_from_raw(raw) or _eid_from_raw(row)
+
+def _shape(value:Any)->Any:
+    if isinstance(value,dict):
+        return {str(k): _shape(v) for k,v in list(value.items())[:12]}
+    if isinstance(value,list):
+        return {'type':'list','len':len(value),'first':_shape(value[0]) if value else None}
+    return type(value).__name__
+
+def _preview(value:Any,limit:int=1200)->str:
+    try:
+        return json.dumps(value,ensure_ascii=False,default=str)[:limit]
+    except Exception:
+        return str(value)[:limit]
 
 def _offers_from_payload(payload:Any,*,event_id:str,match_key:str='')->list[dict[str,Any]]:
     offers=[]
@@ -83,7 +101,7 @@ async def _main()->int:
         eid=_event_id(row)
         if eid and eid not in seen: seen.add(eid); targets.append({'event_id':eid,'match_key':row.get('match_key'),'home_team':row.get('home_team'),'away_team':row.get('away_team')})
     targets=targets[:max(0,int(float(os.getenv('BZZOIRO_TARGETED_ODDS_DETAIL_LIMIT','60') or 60)))]
-    key=os.getenv('BZZOIRO_API_KEY'); base=(os.getenv('BZZOIRO_BASE_URL') or 'https://sports.bzzoiro.com/api/v2').rstrip('/'); details=[]; all_offers=[]; requests=0
+    key=os.getenv('BZZOIRO_API_KEY'); base=(os.getenv('BZZOIRO_BASE_URL') or 'https://sports.bzzoiro.com/api/v2').rstrip('/'); details=[]; all_offers=[]; requests=0; payload_samples=[]
     if key and targets:
         headers={'Authorization':f'Token {key}'}
         async with httpx.AsyncClient(timeout=float(os.getenv('BZZOIRO_TIMEOUT_SECONDS','20') or 20),follow_redirects=True) as client:
@@ -93,13 +111,17 @@ async def _main()->int:
                     payloads[endpoint]=await _fetch(client,base,eid,headers,endpoint); requests+=1
                 offers=[]
                 for p in payloads.values(): offers.extend(_offers_from_payload(p,event_id=eid,match_key=str(t.get('match_key') or '')))
-                all_offers.extend(offers); details.append({**t,'offers':len(offers),'sample_offers':offers[:8],'payload_shapes':{k:type(v).__name__ for k,v in payloads.items()},'endpoint_statuses':{k:(v.get('http_status') if isinstance(v,dict) else 200) for k,v in payloads.items()}})
+                if len(payload_samples) < 6:
+                    payload_samples.append({'event_id':eid,'match_key':t.get('match_key'),'endpoint_statuses':{k:(v.get('http_status') if isinstance(v,dict) and 'http_status' in v else (None if isinstance(v,dict) and v.get('error') else 200)) for k,v in payloads.items()},'payload_shapes':{k:_shape(v) for k,v in payloads.items()},'body_preview':{k:_preview(v) for k,v in payloads.items()}})
+                all_offers.extend(offers); details.append({**t,'offers':len(offers),'sample_offers':offers[:8],'payload_shapes':{k:type(v).__name__ for k,v in payloads.items()},'endpoint_statuses':{k:(v.get('http_status') if isinstance(v,dict) and 'http_status' in v else (None if isinstance(v,dict) and v.get('error') else 200)) for k,v in payloads.items()}})
     diagnosis='missing_bzzoiro_api_key' if not key else ('no_matched_event_ids' if not targets else ('offers_parsed' if all_offers else 'detail_endpoints_returned_no_parseable_offers'))
-    payload={'status':'ok','created_at_utc':datetime.now(UTC).isoformat(),'targets':len(targets),'requests':requests,'events_with_offers':sum(1 for d in details if d.get('offers')),'offers':len(all_offers),'details':details,'publication_contract_relaxed':False,'diagnosis':diagnosis}
-    _write(OUT,payload); _write(RAW,{'created_at_utc':payload['created_at_utc'],'source':'bzzoiro','rows':all_offers,'offer_count':len(all_offers),'diagnosis':diagnosis}); _write(ODDS,{'created_at_utc':payload['created_at_utc'],'source':'bzzoiro','rows':all_offers,'offer_count':len(all_offers),'diagnosis':diagnosis})
+    payload={'status':'ok','created_at_utc':datetime.now(UTC).isoformat(),'targets':len(targets),'requests':requests,'events_with_offers':sum(1 for d in details if d.get('offers')),'offers':len(all_offers),'details':details,'payload_samples':payload_samples,'publication_contract_relaxed':False,'diagnosis':diagnosis}
+    _write(OUT,payload); _write(RAW,{'created_at_utc':payload['created_at_utc'],'source':'bzzoiro','rows':all_offers,'offer_count':len(all_offers),'payload_samples':payload_samples,'diagnosis':diagnosis}); _write(ODDS,{'created_at_utc':payload['created_at_utc'],'source':'bzzoiro','rows':all_offers,'offer_count':len(all_offers),'diagnosis':diagnosis})
     # Merge diagnostics back into targeted confirmation so Telegram report sees post-detail truth.
     if isinstance(conf,dict):
         conf['odds_detail']={k:payload[k] for k in ('targets','requests','events_with_offers','offers','diagnosis')}
+        if payload_samples:
+            conf['odds_detail']['payload_samples']=payload_samples[:3]
         if all_offers:
             conf['offers']=max(int(conf.get('offers') or 0),len(all_offers)); conf['diagnosis']='detail_offers_parsed';
             conf['two_source_promoted']=max(int(conf.get('two_source_promoted') or 0), sum(1 for c in confirmations if isinstance(c,dict) and int(c.get('target_odds_sources') or 0)<2))

@@ -154,26 +154,40 @@ def main_pipeline_sent_count(
     """Return fresh main-pipeline Telegram sends for this run only."""
     summary_has_publication_counters = any(
         key in summary
-        for key in ("published_to_telegram", "telegram_picks_sent", "published")
+        for key in ("published_to_telegram", "telegram_picks_sent", "telegram_messages_sent", "published")
     )
     diagnostics = {
         "summary_has_publication_counters": summary_has_publication_counters,
         "sent_picks_count": int(sent_picks_count or 0),
         "sent_pending_count": int(sent_pending_count or 0),
+        "matches_seen": as_int(summary.get("matches_seen"), 0),
+        "ignored_ledger_sent_picks_count": 0,
         "ignored_ledger_sent_pending_count": 0,
         "counter_inconsistent": False,
     }
+    matches_seen = as_int(summary.get("matches_seen"), 0)
+    no_fresh_run_publication_possible = matches_seen <= 0 and publishable <= 0
     if summary_has_publication_counters:
         count = max(
             as_int(summary.get("published_to_telegram"), 0),
             as_int(summary.get("telegram_picks_sent"), 0),
+            as_int(summary.get("telegram_messages_sent"), 0),
             as_int(summary.get("published"), 0),
         )
-        if count > 0 and publishable <= 0 and sent_picks_count <= 0:
+        if count > 0 and (no_fresh_run_publication_possible or (publishable <= 0 and sent_picks_count <= 0)):
             diagnostics["counter_inconsistent"] = True
             diagnostics["ignored_summary_published_count"] = count
+            diagnostics["reason"] = "publication_counter_inconsistent"
             return 0, diagnostics
         return count, diagnostics
+
+    if no_fresh_run_publication_possible:
+        diagnostics["counter_inconsistent"] = bool(sent_picks_count or sent_pending_count)
+        diagnostics["ignored_ledger_sent_picks_count"] = int(sent_picks_count or 0)
+        diagnostics["ignored_ledger_sent_pending_count"] = int(sent_pending_count or 0)
+        if diagnostics["counter_inconsistent"]:
+            diagnostics["reason"] = "publication_counter_inconsistent"
+        return 0, diagnostics
 
     if sent_picks_count > 0:
         return int(sent_picks_count), diagnostics
@@ -576,6 +590,8 @@ def build_payload() -> dict[str, Any]:
 
     if published_count > 0:
         top_reason = str(publish_status.get("top_reason_when_published") or "telegram_sent")
+    elif bool(publication_counter_diagnostics.get("counter_inconsistent")):
+        top_reason = "publication_counter_inconsistent"
     elif odds_auth_failed and raw_candidates <= 0:
         top_reason = "odds_api_io_auth_failed"
     elif line_dropped > 0:
@@ -698,7 +714,7 @@ def send_telegram(text: str) -> bool:
             part = f"🧾 Подробный отчёт run — часть {idx}/{len(chunks)}\n\n" + part
         data = parse.urlencode({"chat_id": chat_id, "text": part, "disable_web_page_preview": "true"}).encode("utf-8")
         try:
-            req = request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=data, method="POST")
+            req = request.Request(f"{{https://api.telegram.org/bot{token}}}/sendMessage", data=data, method="POST")
             with request.urlopen(req, timeout=20) as resp:
                 body = resp.read().decode("utf-8", errors="replace")
             try:

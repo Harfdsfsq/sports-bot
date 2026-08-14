@@ -65,6 +65,22 @@ def _away(row: dict[str, Any]) -> Any:
     return row.get('away_team') or row.get('away') or row.get('awayName') or row.get('team_away') or row.get('awayTeam') or row.get('event_away')
 
 
+def _event_id_from_raw(raw: Any) -> str:
+    if not isinstance(raw, dict):
+        return ''
+    for key in ('id', 'api_id', 'event_id', 'source_event_id', 'bzzoiro_event_id'):
+        value = raw.get(key)
+        if value not in (None, ''):
+            return str(value)
+    for key in ('event', 'fixture', 'match'):
+        nested = raw.get(key)
+        if isinstance(nested, dict):
+            value = _event_id_from_raw(nested)
+            if value:
+                return value
+    return ''
+
+
 def _event_offers(row: dict[str, Any]) -> list[dict[str, Any]]:
     raw = row.get('raw') if isinstance(row.get('raw'), dict) else row
     offers: list[dict[str, Any]] = []
@@ -111,7 +127,8 @@ def _extract_events() -> tuple[list[dict[str, Any]], list[str], bool, bool]:
             for row in _rows(root):
                 home, away = _home(row), _away(row)
                 if not (home and away): continue
-                out.append({'artifact': path.name, 'home_team': home, 'away_team': away, 'kickoff': row.get('kickoff') or row.get('commence_time') or row.get('start_time') or row.get('event_date'), 'offers': _event_offers(row), 'raw': row})
+                raw = row.get('raw') if isinstance(row.get('raw'), dict) else row
+                out.append({'artifact': path.name, 'home_team': home, 'away_team': away, 'kickoff': row.get('kickoff') or row.get('commence_time') or row.get('start_time') or row.get('event_date'), 'offers': _event_offers(row), 'bzzoiro_event_id': _event_id_from_raw(raw), 'raw': raw})
     return out, scanned, any_preview, any_full
 
 
@@ -133,12 +150,15 @@ def main() -> int:
         from scripts.trace_bzzoiro_report_source import main as trace; trace()
     except Exception: pass
     targets = _targets(); events, scanned, any_preview, any_full = _extract_events(); confirmations: list[dict[str, Any]] = []
-    matched = offers = 0
+    matched = offers = matched_with_event_id = 0
     for target in targets:
         ev, score = _best_event(target, events)
         if not ev or score < 0.58: continue
         matched += 1; ev_offers = ev.get('offers') if isinstance(ev.get('offers'), list) else [] ; cnt = len(ev_offers); offers += cnt
-        confirmations.append({'match_key': target.get('match_key'), 'home_team': target.get('home_team'), 'away_team': target.get('away_team'), 'target_odds_sources': target.get('odds_sources'), 'matched_bzzoiro_home': ev.get('home_team'), 'matched_bzzoiro_away': ev.get('away_team'), 'match_score': round(score,3), 'offers': cnt, 'sample_offers': ev_offers[:6], 'artifact': ev.get('artifact'), 'source': 'bzzoiro', 'promotes_to_2source': bool(cnt > 0 and int(target.get('odds_sources') or 0) < 2)})
+        event_id = str(ev.get('bzzoiro_event_id') or _event_id_from_raw(ev.get('raw')) or '')
+        if event_id:
+            matched_with_event_id += 1
+        confirmations.append({'match_key': target.get('match_key'), 'home_team': target.get('home_team'), 'away_team': target.get('away_team'), 'target_odds_sources': target.get('odds_sources'), 'matched_bzzoiro_home': ev.get('home_team'), 'matched_bzzoiro_away': ev.get('away_team'), 'match_score': round(score,3), 'bzzoiro_event_id': event_id, 'event_id': event_id, 'raw': ev.get('raw'), 'offers': cnt, 'sample_offers': ev_offers[:6], 'artifact': ev.get('artifact'), 'source': 'bzzoiro', 'promotes_to_2source': bool(cnt > 0 and int(target.get('odds_sources') or 0) < 2)})
     promoted = sum(1 for c in confirmations if c.get('promotes_to_2source'))
     if targets and not events: diagnosis = 'no_bzzoiro_events_or_odds_artifact'
     elif any_full and matched and not offers: diagnosis = 'matched_full_events_without_parseable_offers'
@@ -146,7 +166,7 @@ def main() -> int:
     elif any_preview: diagnosis = 'preview_events_only_no_full_rows'
     elif matched and not offers: diagnosis = 'matched_without_offers'
     else: diagnosis = 'ok'
-    payload = {'status':'ok','created_at_utc':datetime.now(UTC).isoformat(),'targets':len(targets),'bzzoiro_events_seen':len(events),'events_preview_only': bool(any_preview and not any_full),'events_full_available': any_full,'matched_events':matched,'offers':offers,'two_source_promoted':promoted,'confirmations':confirmations[:80],'scanned_artifacts':scanned,'publication_contract_relaxed':False,'diagnosis':diagnosis}
-    _write(OUT, payload); print(json.dumps({k:payload[k] for k in ('targets','bzzoiro_events_seen','events_full_available','matched_events','offers','two_source_promoted','diagnosis')}, ensure_ascii=False)); return 0
+    payload = {'status':'ok','created_at_utc':datetime.now(UTC).isoformat(),'targets':len(targets),'bzzoiro_events_seen':len(events),'events_preview_only': bool(any_preview and not any_full),'events_full_available': any_full,'matched_events':matched,'matched_events_with_event_id':matched_with_event_id,'offers':offers,'two_source_promoted':promoted,'confirmations':confirmations[:80],'scanned_artifacts':scanned,'publication_contract_relaxed':False,'diagnosis':diagnosis}
+    _write(OUT, payload); print(json.dumps({k:payload[k] for k in ('targets','bzzoiro_events_seen','events_full_available','matched_events','matched_events_with_event_id','offers','two_source_promoted','diagnosis')}, ensure_ascii=False)); return 0
 
 if __name__ == '__main__': raise SystemExit(main())
