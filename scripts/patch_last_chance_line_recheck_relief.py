@@ -34,8 +34,36 @@ def _floor(metrics: dict[str, Any]) -> bool:
 
 
 def _blocked_by_hard_guard(reason: str) -> bool:
-    r=reason.lower(); hard=('semantic line movement failed','bad_movement','xg','duplicate','odds below','price integrity','daily limit','drift_too_high','value_lost','family not allowed')
+    # Normalize separators because report/reject reasons mix spaces and underscores.
+    r=str(reason or '').lower().replace('_',' ').replace('-',' ')
+    hard=(
+        'semantic line movement failed',
+        'bad movement',
+        'xg',
+        'duplicate',
+        'odds below',
+        'odds above',
+        'price integrity',
+        'daily limit',
+        'daily cap',
+        'drift too high',
+        'value lost',
+        'family not allowed',
+        'final ev below min',
+    )
     return any(t in r for t in hard)
+
+
+def _is_relievable_line_reason(reason: str) -> bool:
+    r=str(reason or '').lower().replace('_',' ').replace('-',' ')
+    return any(t in r for t in (
+        'next regular run before kickoff',
+        'no next regular run',
+        'missing line recheck',
+        'semantic line movement not confirmed',
+        'unconfirmed final',
+        'needs next cron line movement recheck',
+    ))
 
 
 def install(base: Any) -> dict[str, Any]:
@@ -44,16 +72,22 @@ def install(base: Any) -> dict[str, Any]:
     def wrapped(candidate:dict[str,Any], metrics:dict[str,Any], sent_index:dict[str,Any])->list[str]:
         reasons=list(old(candidate,metrics,sent_index) or []); _STATE['seen']+=1
         lower=[str(r).lower() for r in reasons]
-        no_next=any('next regular run before kickoff' in r or 'no next regular run' in r for r in lower)
-        missing=any('missing line recheck' in r or 'semantic line movement not confirmed' in r or 'unconfirmed final' in r for r in lower)
+        no_next=any('next regular run before kickoff' in r or 'no next regular run' in r or 'needs_next_cron_line_movement_recheck' in r for r in lower)
+        missing=any(_is_relievable_line_reason(r) for r in reasons)
         floor=_floor(metrics)
         if floor: _STATE['floor_passed']+=1
-        hard=any(_blocked_by_hard_guard(r) for r in lower)
+        hard=any(_blocked_by_hard_guard(r) for r in reasons)
         if hard: _STATE['blocked_by_hard_guard']+=1
-        if len(_STATE['samples'])<20: _STATE['samples'].append({'home':candidate.get('home_team'),'away':candidate.get('away_team'),'floor':floor,'no_next':no_next,'missing':missing,'hard':hard,'reasons':reasons[:5]})
-        if no_next and missing and floor and not hard:
+        # Keep richer diagnostics so the next artifact explains why relief did or did not apply.
+        relief_eligible = bool(missing and floor and not hard)
+        if len(_STATE['samples'])<30: _STATE['samples'].append({'home':candidate.get('home_team'),'away':candidate.get('away_team'),'floor':floor,'no_next':no_next,'missing':missing,'hard':hard,'relief_eligible':relief_eligible,'metrics':{'ev':max(_num(metrics.get('canonical_ev_pct')),_num(metrics.get('ev_pct'))),'edge':max(_num(metrics.get('canonical_edge_pp')),_num(metrics.get('edge_pp'))),'q':max(_num(metrics.get('reserve_quality_score')),_num(metrics.get('quality_score'))),'odds':_num(metrics.get('odds')),'books':max(_int(metrics.get('books_count')),_int(metrics.get('bookmaker_count')),2 if _int(metrics.get('price_confirmation_count'))>=2 else 0)},'reasons':reasons[:8]})
+        # Last-chance relief should remove only soft lifecycle confirmation reasons.
+        # Do NOT require no_next: artifacts showed floor=True/hard=False/missing=True
+        # with semantic_line_movement_not_confirmed only, but no no_next flag, so the
+        # previous condition never relieved safe last-chance candidates.
+        if relief_eligible:
             _STATE['relieved']+=1; metrics.setdefault('repaired_reasons',[]).append('last_chance_line_recheck_relief_value_floor_passed')
-            reasons=[r for r in reasons if not any(t in str(r).lower() for t in ('next regular run before kickoff','missing line recheck','semantic line movement not confirmed','unconfirmed final'))]
+            reasons=[r for r in reasons if not _is_relievable_line_reason(r)]
         _write(); return reasons
     base.hard_reject_reasons=wrapped; base._harizon_last_chance_line_recheck_relief=True; _write()
     return {'status':'installed','publication_contract_relaxed':False}
