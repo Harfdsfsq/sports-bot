@@ -49,7 +49,7 @@ def target_date() -> str:
 
 
 def date_of(key: str, row: dict[str, Any]) -> str:
-    for v in (row.get('date'), row.get('kickoff_utc'), row.get('commence_time'), row.get('start_time'), key):
+    for v in (row.get('date'), row.get('kickoff_utc'), row.get('commence_time'), row.get('start_time'), row.get('kickoff'), key):
         m = re.search(r'20\d{2}-\d{2}-\d{2}', str(v or ''))
         if m:
             return m.group(0)
@@ -58,15 +58,16 @@ def date_of(key: str, row: dict[str, Any]) -> str:
 
 def teams_from_key(key: str) -> tuple[str, str]:
     parts = [p for p in str(key or '').split('|') if p and not re.search(r'20\d{2}-\d{2}-\d{2}', p)]
-    parts = [p for p in parts if norm(p) not in {'soccer', 'football'}]
+    parts = [p for p in parts if norm(p) not in {'soccer', 'football', 'teams'}]
     return (parts[0], parts[1]) if len(parts) >= 2 else ('', '')
 
 
 def aliases(date: str, home: Any, away: Any, raw: Any = '') -> set[str]:
     h, a = norm(home), norm(away)
-    out = {norm(raw), str(raw or '').strip()}
+    out = {norm(raw), str(raw or '').strip().lower()}
     if date and h and a:
-        out.update({f'{date}|{h}|{a}', f'teams:{date}|{h}|{a}', f'soccer|{h}|{a}|{date}'})
+        out.update({f'{date}|{h}|{a}', f'{date}|{a}|{h}', f'teams:{date}|{h}|{a}', f'teams:{date}|{a}|{h}', f'soccer|{h}|{a}|{date}', f'soccer|{a}|{h}|{date}'})
+        out.add(f"pair|{'|'.join(sorted([re.sub(r'[^a-z0-9а-я]+', '', h), re.sub(r'[^a-z0-9а-я]+', '', a)]))}|{date}")
     return {x for x in out if x and x.strip('|')}
 
 
@@ -82,7 +83,7 @@ def point(h: dict[str, Any]) -> float | None:
 
 
 def side(h: dict[str, Any]) -> str:
-    text = str(h.get('market_name') or '').lower()
+    text = str(h.get('market_name') or h.get('family') or h.get('market') or '').lower()
     raw = norm(h.get('selection') or h.get('outcome') or h.get('name'))
     if '.over@' in text or ' over@' in text or 'over' in raw or 'больше' in raw or 'тб' in raw:
         return 'over'
@@ -97,9 +98,56 @@ def bucket(row: dict[str, Any]) -> str:
     return '|'.join(['totals', side(row), ps])
 
 
+def _detail_offer_rows() -> tuple[list[dict[str, Any]], Counter]:
+    """Materialize rows from targeted detail fetch into bridge-compatible offers.
+
+    The previous bridge only read provider_odds_hints sidecars. After the event-id
+    fix, Bzzoiro detail writes real Offer-like rows to latest-bzzoiro-odds.json;
+    without reading that file the run can show detail offers > 0 while overlap and
+    secondary promotion stay at zero.
+    """
+    out: list[dict[str, Any]] = []
+    counts: Counter = Counter()
+    for path in (EXPORT / 'latest-bzzoiro-odds.json', EXPORT / 'latest-bzzoiro-odds-raw.json'):
+        payload = load(path, {})
+        source_rows = rows(payload)
+        for r in source_rows:
+            if not isinstance(r, dict):
+                continue
+            fam = str(r.get('family') or r.get('market_family') or r.get('market') or '').lower()
+            if fam not in {'totals', 'total', 'over_under'}:
+                continue
+            price = fnum(r.get('price') or r.get('odds') or r.get('decimal_odds'))
+            p = point(r)
+            sel = side(r)
+            if price is None or price <= 1.01 or price > 50 or p is None or sel not in {'over', 'under'}:
+                continue
+            raw_key = str(r.get('match_key') or r.get('canonical_match_id') or r.get('source_match_key') or r.get('source_event_id') or '').strip()
+            kh, ka = teams_from_key(raw_key)
+            row = {
+                'source': 'bzzoiro', 'provider': 'bzzoiro', 'bookmaker': r.get('bookmaker') or 'BzzoiroDetail', 'book': r.get('bookmaker') or 'BzzoiroDetail',
+                'family': 'totals', 'market_family': 'totals', 'market': 'totals', 'market_key': 'totals',
+                'selection': sel, 'selection_key': sel, 'outcome': sel,
+                'point': p, 'line': p, 'price': price, 'odds': price, 'decimal_odds': price,
+                'match_key': raw_key, 'canonical_match_id': raw_key,
+                'home_team': r.get('home_team') or r.get('home') or kh,
+                'away_team': r.get('away_team') or r.get('away') or ka,
+                'date': date_of(raw_key, r),
+                'commence_time': r.get('commence_time') or r.get('kickoff_utc') or r.get('date') or date_of(raw_key, r),
+                'source_event_id': r.get('source_event_id') or r.get('event_id') or r.get('bzzoiro_event_id'),
+                'bzzoiro_detail_offer_bridge': True,
+            }
+            out.append(row)
+            counts[path.name] += 1
+    return out, counts
+
+
 def bzz_rows() -> tuple[list[dict[str, Any]], Counter]:
     out: list[dict[str, Any]] = []
     src_counts: Counter = Counter()
+    detail_rows, detail_counts = _detail_offer_rows()
+    out.extend(detail_rows)
+    src_counts.update(detail_counts)
     for path in (EXPORT / 'latest-bzzoiro-v2-odds-hints-by-match.json', EXPORT / 'latest-bzzoiro-odds-hints-by-match.json'):
         payload = load(path, {})
         matches = payload.get('matches') if isinstance(payload, dict) else None
@@ -138,10 +186,10 @@ def bzz_rows() -> tuple[list[dict[str, Any]], Counter]:
                     'bzzoiro_offer_bridge': True,
                 }
                 out.append(row)
-                src_counts[str(path)] += 1
+                src_counts[path.name] += 1
     seen, deduped = set(), []
     for r in out:
-        sig = json.dumps([r.get('match_key'), r.get('selection'), r.get('point'), r.get('price')], sort_keys=True)
+        sig = json.dumps([r.get('match_key'), r.get('source_event_id'), r.get('selection'), r.get('point'), r.get('price'), r.get('bookmaker')], sort_keys=True)
         if sig not in seen:
             seen.add(sig)
             deduped.append(r)
@@ -160,7 +208,7 @@ def rows(payload: Any) -> list[dict[str, Any]]:
 
 def ref_index() -> dict[str, set[str]]:
     idx: dict[str, set[str]] = defaultdict(set)
-    for path in (EXPORT / 'latest-odds-api-io-offer-snapshot.json', EXPORT / 'latest-line-snapshots.json', EXPORT / 'latest-consensus-lines.json'):
+    for path in (EXPORT / 'latest-odds-api-io-offer-snapshot.json', EXPORT / 'latest-line-snapshots.json', EXPORT / 'latest-consensus-lines.json', EXPORT / 'latest-matches.json'):
         for r in rows(load(path, [])):
             home = r.get('home_team') or r.get('home') or r.get('home_name')
             away = r.get('away_team') or r.get('away') or r.get('away_name')
@@ -169,6 +217,11 @@ def ref_index() -> dict[str, set[str]]:
             for a in aliases(d, home, away, raw):
                 idx[a].add(bucket(r))
     return idx
+
+
+def _row_aliases(r: dict[str, Any]) -> set[str]:
+    key = str(r.get('match_key') or r.get('canonical_match_id') or '').strip()
+    return aliases(r.get('date'), r.get('home_team'), r.get('away_team'), key)
 
 
 def main() -> int:
@@ -182,6 +235,7 @@ def main() -> int:
     unique_bucket_overlap: set[str] = set()
     target_date_rows = 0
     target_date_matches: set[str] = set()
+    no_alias_rows = 0
     for r in out:
         key = str(r.get('match_key') or '').strip()
         if key:
@@ -190,7 +244,9 @@ def main() -> int:
             target_date_rows += 1
             if key:
                 target_date_matches.add(key)
-        als = aliases(r.get('date'), r.get('home_team'), r.get('away_team'), key)
+        als = _row_aliases(r)
+        if not als:
+            no_alias_rows += 1
         b = bucket(r)
         has_match = any(a in idx for a in als)
         has_bucket = any(b in idx.get(a, set()) for a in als)
@@ -215,7 +271,9 @@ def main() -> int:
         'unique_overlap_same_bucket_match_count': len(unique_bucket_overlap),
         'source_counts': dict(source_counts),
         'odds_reference_aliases': len(idx),
+        'no_alias_rows': no_alias_rows,
         'sample_unique_matches': sorted(unique_offer_matches)[:20],
+        'sample_overlap_matches': sorted(unique_match_overlap)[:20],
     }
     dump(OUT_OFFERS, {'status': 'ok', 'created_at_utc': now, 'rows': out, 'meta': report})
     dump(OUT_REPORT, report)
