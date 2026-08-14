@@ -1,0 +1,72 @@
+name: ideal-runtime-audit
+
+on:
+  workflow_run:
+    workflows: ["run-bot"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: ideal-runtime-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ideal-runtime-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}
+      TZ: Europe/Moscow
+      APP_TIMEZONE: Europe/Moscow
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build ideal runtime audit
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports artifacts/run-bot
+          python -u scripts/build_harizon_ideal_runtime_audit.py || true
+          cp .data/exports/latest-harizon-ideal-runtime-audit.json artifacts/run-bot/latest-harizon-ideal-runtime-audit.json 2>/dev/null || true
+          cp .data/exports/latest-harizon-ideal-runtime-audit.txt artifacts/run-bot/latest-harizon-ideal-runtime-audit.txt 2>/dev/null || true
+
+      - name: Commit audit artifacts
+        shell: bash
+        run: |
+          set -uo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .data/exports/latest-harizon-ideal-runtime-audit.json .data/exports/latest-harizon-ideal-runtime-audit.txt artifacts/run-bot/latest-harizon-ideal-runtime-audit.json artifacts/run-bot/latest-harizon-ideal-runtime-audit.txt || true
+          if git diff --cached --quiet; then
+            echo "no ideal audit artifact changes to commit"
+            exit 0
+          fi
+          git commit -m "Update ideal runtime audit [skip ci]" || true
+          git pull --rebase --autostash origin main || true
+          git push || true
+
+      - name: Upload ideal audit artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ideal-runtime-audit-${{ github.run_id }}
+          path: |
+            .data/exports/latest-harizon-ideal-runtime-audit.json
+            .data/exports/latest-harizon-ideal-runtime-audit.txt
+            artifacts/run-bot/latest-harizon-ideal-runtime-audit.json
+            artifacts/run-bot/latest-harizon-ideal-runtime-audit.txt
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 7
