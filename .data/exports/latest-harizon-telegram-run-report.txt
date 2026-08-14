@@ -3,54 +3,54 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 22 | day inventory: 300
-• С линиями: 22 | с контекстом: 29 | ready model: 123
-• odds-api.io offers: 2474 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 29 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 7 | day inventory: 300
+• С линиями: 6 | с контекстом: 38 | ready model: 126
+• odds-api.io offers: 3103 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 35 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: bzzoiro: 13, odds_api_io: 2
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 2.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1 / 28
+• Raw/candidates before quality: 1 / 26
 • Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 9 | evaluated 9 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 18 | evaluated 18 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 17 | no next regular run: 16
-• Line guard: seen 17 | kept 4 | dropped 5
+• Final pre-kickoff checks: 17 | no next regular run: 14
+• Line guard: seen 35 | kept 6 | dropped 21
 
-• Bzzoiro targeted odds: targets 80; events 1318; matched 14; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 0; requests 0; events_with_offers 0; offers 0; diag no_matched_event_ids.
+• Bzzoiro targeted odds: targets 80; events 1318; matched 23; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 24; requests 48; events_with_offers 21; offers 189; diag offers_parsed.
 • Bzzoiro source trace: aggregate events 416; persisted rows 328; targeted events 1318; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 9; floor 3; hard 4; relieved 0.
+• Last-chance line relief: seen 18; floor 2; hard 6; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 11, matched 99, offers 2474, 2+ books 29, err 1, auth_failed False
-• sstats: req 2, ctx 26, rows 11841, err 0, deep enriched 0
+• odds_api_io: events req 0, odds req 12, matched 109, offers 3103, 2+ books 35, err 1, auth_failed False
+• sstats: req 2, ctx 34, rows 11841, err 0, deep enriched 0
 • bzzoiro: req 4, ctx 0, events 416 (aggregate; persisted rows 328; trace full_or_provider_rows_available), secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 0, odds req 0, matched 0, offers 0, err 0
 
-• Line movement breakdown: движение не подтверждено 3; коэффициент ниже минимума 4; конфликт направления с xG 1.
+• Line movement breakdown: реально плохое движение 3; движение не подтверждено 8; коэффициент ниже минимума 7; конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• odds below global min: 4 (20%)
-• semantic line movement not confirmed: 3 (15%)
-• line movement guard снял кандидата: 3 (15%)
-• кандидат ждёт следующий cron для второго снимка линии: 2 (10%)
-• направление ставки конфликтует с xG: 1 (5%)
-• current price recheck value lost:4.1/1.8: 1 (5%)
-• final ev below min: 1 (5%)
-• current price recheck value alive but drift too high:12.6/6.8: 1 (5%)
+• кандидат ждёт следующий cron для второго снимка линии: 16 (33%)
+• semantic line movement not confirmed: 8 (17%)
+• odds below global min: 7 (15%)
+• line movement guard снял кандидата: 5 (10%)
+• semantic line movement failed: 3 (6%)
+• направление ставки конфликтует с xG: 2 (4%)
+• final edge below min: 2 (4%)
+• current price recheck value lost:4.3/1.9: 1 (2%)
 
 🔎 Проверенные reserve-кандидаты
-1. Dandenong City SC — Altona Magic SC | Больше @2.75 | EV +7.2% | edge +2.6 п.п. | q 77.6 reserve
+1. Tokyo Verdy — Kashiwa Reysol | Больше @2.42 | EV +12.2% | edge +5.0 п.п. | q 94.1 reserve
+   • reject: current price recheck value lost:4.3/1.9, semantic line movement not publishable:current edge below floor:0.8<1.4
+2. Shandong Taishan FC — Qingdao Hainiu FC | Больше @3.00 | EV +5.2% | edge +1.7 п.п. | q 61.0 reserve
    • reject: направление ставки конфликтует с xG
-2. Tokyo Verdy — Kashiwa Reysol | Больше @2.42 | EV +11.9% | edge +4.9 п.п. | q 91.3 reserve
-   • reject: current price recheck value lost:4.1/1.8
-3. Shandong Taishan FC — Qingdao Hainiu FC | Меньше @1.90 | EV +5.8% | edge +3.1 п.п. | q 73.8 reserve
-   • reject: final ev below min
-4. Wuhan Three Towns — Shanghai Port | Меньше @1.57 | EV +5.4% | edge +3.4 п.п. | q 62.2 reserve
-   • reject: odds below global min
+3. Wuhan Three Towns — Shanghai Port | Больше @2.35 | EV +4.6% | edge +2.0 п.п. | q 74.1 reserve
+   • reject: направление ставки конфликтует с xG
+4. Shandong Taishan FC — Qingdao Hainiu FC | Меньше @1.95 | EV +4.8% | edge +2.5 п.п. | q 70.5 reserve
+   • reject: final edge below min, final ev below min
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail и last-chance relief теперь диагностируются отдельно.
