@@ -2,13 +2,16 @@ from __future__ import annotations
 
 """Direct detailed-report Telegram sender with stale-artifact protection.
 
-This script is intentionally independent from the historical clean sender. It
-reads the already rendered cleaned detailed report, sends it to Telegram with a
-plain concatenated HTTPS URL, and always writes a fresh send status artifact.
+Independent Telegram sender for the detailed HARIZON report. Before sending it
+rebuilds the source detailed report, rebuilds the clean/API/audit enriched text
+without Telegram side effects, then sends the freshly rendered cleaned text with
+a plain concatenated HTTPS URL. It always overwrites the send-status artifact.
 """
 
 import json
 import os
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -16,7 +19,7 @@ from urllib import parse, request
 
 UTC = timezone.utc
 CLEANED = Path(".data/exports/latest-detailed-run-report-cleaned.txt")
-FALLBACK = Path(".data/exports/latest-detailed-run-report.txt")
+RAW = Path(".data/exports/latest-detailed-run-report.txt")
 STATUS = Path(".data/exports/latest-detailed-run-report-send-clean.json")
 STATE = Path(".data/detailed-run-report-sent.json")
 
@@ -39,6 +42,63 @@ def read_text(path: Path) -> str:
         return path.read_text(encoding="utf-8")
     except Exception:
         return ""
+
+
+def run_step(args: list[str], env_updates: dict[str, str] | None = None, timeout: int = 90) -> dict[str, Any]:
+    env = os.environ.copy()
+    if env_updates:
+        env.update(env_updates)
+    try:
+        completed = subprocess.run(
+            [sys.executable, *args],
+            check=False,
+            timeout=timeout,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        return {
+            "args": args,
+            "returncode": completed.returncode,
+            "stdout_preview": (completed.stdout or "")[:1000],
+            "stderr_preview": (completed.stderr or "")[:1000],
+        }
+    except Exception as exc:
+        return {"args": args, "returncode": -1, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def rebuild_report_text() -> list[dict[str, Any]]:
+    steps: list[dict[str, Any]] = []
+    # Builder must not send. It should only refresh latest-detailed-run-report.*
+    steps.append(run_step(["scripts/build_detailed_run_report.py"], {
+        "DETAILED_RUN_REPORT_SEND_TELEGRAM": "false",
+        "DETAILED_RUN_REPORT_FORCE_SEND": "false",
+    }))
+    # Clean/enrich in-process, without sending, so we do not use the historical
+    # broken Telegram URL path and still get API work + ideal scorecard blocks.
+    try:
+        import scripts.send_clean_detailed_run_report as clean_base
+        raw = read_text(RAW)
+        if raw:
+            cleaned = clean_base.clean_report(raw)
+            CLEANED.parent.mkdir(parents=True, exist_ok=True)
+            CLEANED.write_text(cleaned, encoding="utf-8")
+            scorecard_status: dict[str, Any] = {"status": "not_run"}
+            try:
+                from scripts.patch_ideal_audit_scorecard import main as scorecard_main
+                scorecard_main()
+                try:
+                    scorecard_status = json.loads(Path(".data/exports/latest-ideal-audit-scorecard-patch.json").read_text(encoding="utf-8"))
+                except Exception:
+                    scorecard_status = {"status": "unknown"}
+            except Exception as exc:
+                scorecard_status = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+            steps.append({"args": ["clean_report_in_process"], "returncode": 0, "scorecard": scorecard_status})
+        else:
+            steps.append({"args": ["clean_report_in_process"], "returncode": 1, "error": "raw_report_missing"})
+    except Exception as exc:
+        steps.append({"args": ["clean_report_in_process"], "returncode": -1, "error": f"{type(exc).__name__}: {exc}"})
+    return steps
 
 
 def split_messages(text: str, limit: int) -> list[str]:
@@ -80,7 +140,8 @@ def send_one(token: str, chat_id: str, text: str) -> tuple[bool, str]:
 
 def main() -> int:
     created = datetime.now(UTC).isoformat()
-    text = read_text(CLEANED) or read_text(FALLBACK)
+    rebuild_steps = rebuild_report_text()
+    text = read_text(CLEANED) or read_text(RAW)
     token = str(os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
     chat_id = str(os.getenv("TELEGRAM_CHAT_ID") or "").strip()
     chunks = split_messages(text, env_int("TELEGRAM_MESSAGE_SOFT_LIMIT", 3600))
@@ -97,10 +158,11 @@ def main() -> int:
         "status": "sent" if sent and all(x.get("ok") for x in sent) else "not_sent_or_partial",
         "created_at_utc": created,
         "sender": "send_detailed_report_direct",
-        "source_path": str(CLEANED if CLEANED.exists() else FALLBACK),
+        "source_path": str(CLEANED if CLEANED.exists() else RAW),
         "cleaned_path": str(CLEANED),
         "chunks": len(chunks),
         "ideal_audit_scorecard_added": "🧭 Ideal runtime audit" in text,
+        "rebuild_steps": rebuild_steps,
         "sent": sent,
     }
     write_json(STATUS, payload)
