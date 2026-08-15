@@ -1,9 +1,9 @@
 🧾 Подробный отчёт run — прогнозов нет
 
 🧭 Состояние артефактов
-• debug: свежий | 2026-08-15T14:11:26.928432+00:00, Δ +2.4 мин
-• run_summary: свежий | 2026-08-15T14:11:26.928432+00:00, Δ +2.4 мин
-• fallback: свежий | 2026-08-15T14:13:48.500029+00:00, Δ +0.0 мин
+• debug: свежий | 2026-08-15T14:29:05.816727+00:00, Δ +2.3 мин
+• run_summary: свежий | 2026-08-15T14:29:05.816727+00:00, Δ +2.3 мин
+• fallback: свежий | 2026-08-15T14:31:21.977903+00:00, Δ +0.0 мин
 
 🧭 Runtime policy
 • Версия: harizon-runtime-policy-v6-strict-full-inventory
@@ -11,42 +11,119 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 253/300
-• С контекстом: 196/300
-• Готово к модели: 182/300
-• Ближайшие 6 часов: 7/10 готово
-• Следующие 12 часов: 7/10 готово
+• С линиями: 277/300
+• С контекстом: 198/300
+• Готово к модели: 195/300
+• Ближайшие 6 часов: 9/11 готово
+• Следующие 12 часов: 9/11 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 0 | с линиями: 0 | контекстов: 0
-• Кандидаты: raw 0 | до качества 24 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
-• матчей с линиями из любого источника: 0
+• Матчи: 9 | с линиями: 8 | контекстов: 0
+• Кандидаты: raw 0 | до качества 30 | publishable 0
+• Резерв проверил: 6 | оценено в отчёте: 6 | выбрано: 0
+• матчей с линиями из любого источника: 8
 • матчей с любым контекстом: 0
 • матчей с объединенным контекстом: 0
 • raw с market-derived сигналом: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched inputs 0 | removed нет подтверждения источниками 0
-• quality shadow: input 24 | passed 15 | rejected 9
+• quality shadow: input 30 | passed 20 | rejected 10
 • current price patch: v3-positive-reason-normalizer-after-semantic | hard_after 4
-• zero-raw recovery: not_recovered | recovered 0
+• zero-raw recovery: not_needed | recovered 0
 
 📡 Источники / фактическая работа
-• odds_api_io: data 8/1040, max 200, err 2, stop_reason plan_restriction
+• odds_api_io: data 8/1044, max 200, err 2, stop_reason plan_restriction
 • bzzoiro: data 0/0, req 3, err 0
 • sstats: data 0/0, req 14, max 150, err 0
 • api_football: data 0/0, off:disabled_by_config
 • football_data: data 0/0, req 1, max 12, err 0
 • thesportsdb: data 0/0
 • sportlogic: data 0/0
-• openfootball: data 0/0, req 48, err 0
+• openfootball: data 0/0, req 6, err 0
 
 📈 odds-api.io routing
-• account1: Bet365,Unibet | req 1 | offers 937
+• account1: Bet365,Unibet | req 1 | offers 936
 • account2: Betfair Exchange,Sbobet | req 2 | offers 0
 • Букмекеры в ответах: Bet365, Unibet
 • Матчи с 2+ букмекерами: 8; с 1 букмекером: 0
+
+🚫 Почему не прошли
+• controlled fallback next regular run before kickoff — 6 (21%)
+• controlled fallback missing line recheck — 6 (21%)
+• price integrity:selected price vs bookmaker median outlier — 5 (18%)
+• price integrity:external snapshot bookmaker median outlier — 4 (14%)
+• price integrity:selected price vs market probability outlier — 4 (14%)
+• коэффициент ниже общего минимума — 2 (7%)
+• коэффициент выше общего максимума — 1 (4%)
+
+⚠️ Пограничные кандидаты
+1. Екскелсиор — PSV Ейндховен
+ 🏆 Эредивизи
+ 🎯 Больше 2.5 @2.45 | 🕒 15.08.2026 21:00 MSK
+ • odds sources 1, confirmation sources 3
+ • confirmation sources: football_data, sstats, weather
+ • EV +38.2%
+ • запас +15.6 п.п.
+ • уверенность 75.7%
+ • качество 100.0
+ • линии 3, источники 3
+ • не прошло: price integrity:selected price vs bookmaker median outlier; price integrity:external snapshot bookmaker median outlier; price integrity:selected price vs market probability outlier; controlled fallback next regular run before kickoff; controlled fallback missing line recheck
+2. Акадéмико Висеу — Санта Клара
+ 🏆 Лига Португал Бетклик
+ 🎯 Больше 1.5 @2.38 | 🕒 15.08.2026 20:00 MSK
+ • odds sources 2, confirmation sources 2
+ • confirmation sources: sstats, weather
+ • EV +33.6%
+ • запас +14.1 п.п.
+ • уверенность 75.8%
+ • качество 98.0
+ • линии 3, источники 2
+ • не прошло: price integrity:selected price vs bookmaker median outlier; price integrity:external snapshot bookmaker median outlier; price integrity:selected price vs market probability outlier; controlled fallback next regular run before kickoff; controlled fallback missing line recheck
+3. Утречт — AZ Алкмаар
+ 🏆 Эредивизи
+ 🎯 Больше 1.5 @1.73 | 🕒 15.08.2026 19:45 MSK
+ • odds sources 2, confirmation sources 3
+ • confirmation sources: football_data, sstats, weather
+ • EV +28.7%
+ • запас +16.6 п.п.
+ • уверенность 78.2%
+ • качество 100.0
+ • линии 3, источники 3
+ • не прошло: коэффициент ниже общего минимума; price integrity:selected price vs bookmaker median outlier; price integrity:external snapshot bookmaker median outlier; price integrity:selected price vs market probability outlier; controlled fallback next regular run before kickoff
+4. Рио Аве — Порто
+ 🏆 Лига Португал Бетклик
+ 🎯 Больше 1.5 @1.98 | 🕒 15.08.2026 22:30 MSK
+ • odds sources 1, confirmation sources 2
+ • confirmation sources: sstats, weather
+ • EV +28.0%
+ • запас +14.1 п.п.
+ • уверенность 76.0%
+ • качество 91.1
+ • линии 2, источники 2
+ • не прошло: price integrity:selected price vs bookmaker median outlier; price integrity:external snapshot bookmaker median outlier; price integrity:selected price vs market probability outlier; controlled fallback next regular run before kickoff; controlled fallback missing line recheck
+5. Фортуна Ситтард — Камбуур
+ 🏆 Эредивизи
+ 🎯 Больше 1.5 @1.64 | 🕒 15.08.2026 22:00 MSK
+ • odds sources 2, confirmation sources 3
+ • confirmation sources: football_data, sstats, weather
+ • EV +19.2%
+ • запас +11.7 п.п.
+ • уверенность 75.9%
+ • качество 90.5
+ • линии 3, источники 3
+ • не прошло: коэффициент ниже общего минимума; price integrity:selected price vs bookmaker median outlier; controlled fallback next regular run before kickoff; controlled fallback missing line recheck
+6. Рио Аве — Порто
+ 🏆 Лига Португал Бетклик
+ 🎯 Больше @3.25 | 🕒 15.08.2026 22:30 MSK
+ • odds sources 2, confirmation sources 2
+ • confirmation sources: sstats, weather
+ • EV +5.3%
+ • запас +1.6 п.п.
+ • уверенность 75.0%
+ • качество 63.6
+ • линии 3, источники 2
+ • не прошло: коэффициент выше общего максимума; controlled fallback next regular run before kickoff; controlled fallback missing line recheck
 
 🔌 API / квоты последнего run
 • odds_api_io: grant 160, reason granted

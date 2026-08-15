@@ -1,40 +1,58 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🔴 нет свежих линий
-• Главная причина: odds-api.io: выбранные букмекеры недоступны на текущем тарифе
+• Итог: 🟡 кандидаты есть, quality/value не пропустили
+• Главная причина: controlled fallback next regular run before kickoff
 
 📦 Покрытие
-• Матчи в run: 0 | day inventory: 300
-• С линиями: 0 | с контекстом: 0 | ready model: 182
-• odds-api.io offers: 937 | Bzzoiro secondary offers: 36
+• Матчи в run: 9 | day inventory: 300
+• С линиями: 8 | с контекстом: 0 | ready model: 195
+• odds-api.io offers: 936 | Bzzoiro secondary offers: 36
 • 2+ букмекера odds-api.io: 8 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 40, bzzoiro: 37, bzzoiro+odds_api_io: 12
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 24
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 6 / 30
+• Passed quality: 6 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 6 | evaluated 6 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 1 | no next regular run: 0
+• Final pre-kickoff checks: 2 | no next regular run: 0
 • Line guard: seen 16 | kept 0 | dropped 0
 
-• Bzzoiro targeted odds: targets 80; events 1386; matched 4; ids 4; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 7; requests 14; events_with_offers 6; offers 54; diag offers_parsed.
+• Bzzoiro targeted odds: targets 80; events 1386; matched 3; ids 3; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 6; requests 12; events_with_offers 6; offers 54; diag offers_parsed.
 • Bzzoiro overlap bridge: offers 36; overlap matches 0; same-bucket matches 0.
 • Bzzoiro odds merge: 2-source matches 0; 2+ books 8; inventory updated 6; inventory 2-source 6.
 • Bzzoiro source trace: aggregate events 345; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 0; floor 0; hard 0; relieved 0.
+• Last-chance line relief: seen 6; floor 4; hard 6; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 3, matched 8, offers 937, 2+ books 8, err 2, auth_failed False
+• odds_api_io: events req 0, odds req 3, matched 8, offers 936, 2+ books 8, err 2, auth_failed False
 • sstats: req 14, ctx 0, rows 12854, err 0, deep enriched 0
 • bzzoiro: req 3, ctx 0, events 345 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 36, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
+• Line movement breakdown: коэффициент ниже минимума 2.
 🚫 Почему не опубликовано
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (100%)
+• controlled fallback next regular run before kickoff: 6 (20%)
+• controlled fallback missing line recheck: 6 (20%)
+• price integrity:selected price vs bookmaker median outlier: 5 (17%)
+• price integrity:external snapshot bookmaker median outlier: 4 (13%)
+• price integrity:selected price vs market probability outlier: 4 (13%)
+• odds below global min: 2 (7%)
+• odds above global max: 1 (3%)
+• quality: вероятность после калибровки ниже порога: 1 (3%)
+
+🔎 Проверенные reserve-кандидаты
+1. Rio Ave — FC Porto | Больше @3.25 | EV +5.3% | edge +1.6 п.п. | q 63.6
+   • reject: odds above global max, controlled fallback next regular run before kickoff, controlled fallback missing line recheck
+2. Excelsior — PSV Eindhoven | Больше 2.5 @2.45 | EV +38.2% | edge +15.6 п.п. | q 100.0
+   • reject: price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier, price integrity:selected price vs market probability outlier
+3. Académico Viseu FC — Santa Clara | Больше 1.5 @2.38 | EV +33.6% | edge +14.1 п.п. | q 98.0
+   • reject: price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier, price integrity:selected price vs market probability outlier
+4. FC Utrecht — AZ Alkmaar | Больше 1.5 @1.73 | EV +28.7% | edge +16.6 п.п. | q 100.0
+   • reject: odds below global min, price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
