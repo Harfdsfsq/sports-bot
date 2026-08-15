@@ -1,9 +1,9 @@
 🧾 Подробный отчёт run — прогнозов нет
 
 🧭 Состояние артефактов
-• debug: свежий | 2026-08-15T13:08:24.563286+00:00, Δ +3.2 мин
-• run_summary: свежий | 2026-08-15T13:08:24.563286+00:00, Δ +3.2 мин
-• fallback: свежий | 2026-08-15T13:11:36.467331+00:00, Δ +0.0 мин
+• debug: свежий | 2026-08-15T14:11:26.928432+00:00, Δ +2.4 мин
+• run_summary: свежий | 2026-08-15T14:11:26.928432+00:00, Δ +2.4 мин
+• fallback: свежий | 2026-08-15T14:13:48.500029+00:00, Δ +0.0 мин
 
 🧭 Runtime policy
 • Версия: harizon-runtime-policy-v6-strict-full-inventory
@@ -11,128 +11,42 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 232/300
-• С контекстом: 163/300
-• Готово к модели: 157/300
-• Ближайшие 6 часов: 13/28 готово
-• Следующие 12 часов: 15/31 готово
+• С линиями: 253/300
+• С контекстом: 196/300
+• Готово к модели: 182/300
+• Ближайшие 6 часов: 7/10 готово
+• Следующие 12 часов: 7/10 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 18 | с линиями: 15 | контекстов: 1
-• Кандидаты: raw 0 | до качества 35 | publishable 0
-• Резерв проверил: 12 | оценено в отчёте: 12 | выбрано: 0
-• матчей с линиями из любого источника: 15
-• матчей с любым контекстом: 1
-• матчей с объединенным контекстом: 1
+• Матчи: 0 | с линиями: 0 | контекстов: 0
+• Кандидаты: raw 0 | до качества 24 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
+• матчей с линиями из любого источника: 0
+• матчей с любым контекстом: 0
+• матчей с объединенным контекстом: 0
 • raw с market-derived сигналом: 0
 
+🧩 Диагностика патчей
+• confirmation bridge: installed | patched inputs 0 | removed нет подтверждения источниками 0
+• quality shadow: input 24 | passed 15 | rejected 9
+• current price patch: v3-positive-reason-normalizer-after-semantic | hard_after 4
+• zero-raw recovery: not_recovered | recovered 0
+
 📡 Источники / фактическая работа
-• odds_api_io: data 23/2706, max 200, err 4
-• bzzoiro: data 0/0, req 3
-• sstats: data 1/1, req 14, max 150
+• odds_api_io: data 8/1040, max 200, err 2, stop_reason plan_restriction
+• bzzoiro: data 0/0, req 3, err 0
+• sstats: data 0/0, req 14, max 150, err 0
 • api_football: data 0/0, off:disabled_by_config
-• football_data: data 0/0, req 1, max 12
+• football_data: data 0/0, req 1, max 12, err 0
 • thesportsdb: data 0/0
 • sportlogic: data 0/0
-• openfootball: data 0/0, req 6
+• openfootball: data 0/0, req 48, err 0
 
 📈 odds-api.io routing
-• account1: Bet365,Unibet | req 3 | offers 2316
-• account2: Betfair Exchange,Sbobet | req 4 | offers 0
+• account1: Bet365,Unibet | req 1 | offers 937
+• account2: Betfair Exchange,Sbobet | req 2 | offers 0
 • Букмекеры в ответах: Bet365, Unibet
-• Матчи с 2+ букмекерами: 23; с 1 букмекером: 0
-
-🚫 Почему не прошли
-• нет подтверждения источниками — 8 (16%)
-• уровень A: odds sources below min:0/2 — 4 (8%)
-• уровень A: confirmation sources below min:1/2 — 4 (8%)
-• price integrity:selected price vs bookmaker median outlier — 2 (4%)
-• price integrity:external snapshot bookmaker median outlier — 2 (4%)
-• price integrity:selected price vs market probability outlier — 2 (4%)
-• запас value ниже минимума уровня A — 2 (4%)
-• EV ниже минимума уровня A — 2 (4%)
-• уровень A: publication score below min — 2 (4%)
-• уровень A: two plus odds sources required:1/2 — 2 (4%)
-
-⚠️ Пограничные кандидаты
-1. Алверка — Естрела Амадора
- 🏆 Лига Португал Бетклик
- 🎯 Больше 1.5 @2.28 | 🕒 15.08.2026 17:30 MSK
- • odds sources 2, confirmation sources 0
- • EV +43.7%
- • запас +19.2 п.п.
- • уверенность 78.1%
- • качество 74.9
- • линии 3, источники 0
- • не прошло: нет подтверждения источниками; price integrity:selected price vs bookmaker median outlier; price integrity:external snapshot bookmaker median outlier; price integrity:selected price vs market probability outlier
-2. Миддлесбругх — Линколн Кити
- 🏆 Чемпионшип
- 🎯 Больше @3.05 | 🕒 15.08.2026 17:00 MSK
- • odds sources 2, confirmation sources 0
- • EV +4.4%
- • запас +1.4 п.п.
- • уверенность 74.9%
- • качество 60.7
- • линии 3, источники 0
- • не прошло: нет подтверждения источниками
-3. Роиале Унион Сайнт-Гиллоисе — SV Зулте Уарегем
- 🏆 Про-лига
- 🎯 Меньше 2.5 @2.40 | 🕒 15.08.2026 17:00 MSK
- • EV +2.8%
- • запас +1.2 п.п.
- • уверенность 73.2%
- • качество 56.5
- • линии 3, источники 0
- • не прошло: нет подтверждения источниками; current price recheck value lost:-5.7/-2.6
-4. Фулхам — Штутгарт
- 🏆 Клуб Фриендлиес
- 🎯 Больше 3.5 @2.36 | 🕒 15.08.2026 17:00 MSK
- • odds sources 0, confirmation sources 1
- • confirmation sources: sstats
- • EV +2.5%
- • запас +1.1 п.п.
- • уверенность 70.7%
- • качество 54.0
- • линии 3, источники 1
- • не прошло: current price recheck value lost:-4.4/-2.0
-5. Порцмут — Квинс Парк Рангерс
- 🏆 Чемпионшип
- 🎯 Больше 2.5 @2.26 | 🕒 15.08.2026 17:00 MSK
- • odds sources 0, confirmation sources 1
- • confirmation sources: sstats
- • EV +2.3%
- • запас +1.0 п.п.
- • уверенность 72.9%
- • качество 60.5
- • линии 3, источники 1
- • не прошло: запас value ниже минимума уровня A; EV ниже минимума уровня A; уровень A: publication score below min; уровень A: odds sources below min:0/2
-6. Миддлесбругх — Линколн Кити
- 🏆 Чемпионшип
- 🎯 Больше 2.5 @1.82 | 🕒 15.08.2026 17:00 MSK
- • EV +2.2%
- • запас +1.2 п.п.
- • уверенность 72.7%
- • качество 58.0
- • линии 3, источники 0
- • не прошло: нет подтверждения источниками
-7. Норуич Кити — Уест Бромуич Албион
- 🏆 Чемпионшип
- 🎯 Больше 2.5 @2.10 | 🕒 15.08.2026 17:00 MSK
- • EV +2.2%
- • запас +1.0 п.п.
- • уверенность 73.5%
- • качество 51.9
- • линии 3, источники 0
- • не прошло: нет подтверждения источниками
-8. Миддлесбругх — Линколн Кити
- 🏆 Чемпионшип
- 🎯 Меньше @2.24 | 🕒 15.08.2026 17:00 MSK
- • EV +1.8%
- • запас +0.8 п.п.
- • уверенность 74.7%
- • качество 62.1
- • линии 3, источники 0
- • не прошло: нет подтверждения источниками; current price recheck value lost:-3.6/-1.7
+• Матчи с 2+ букмекерами: 8; с 1 букмекером: 0
 
 🔌 API / квоты последнего run
 • odds_api_io: grant 160, reason granted
@@ -147,11 +61,10 @@
 • futrixmetrics: grant 0, reason base_url_or_mapping_not_verified
 
 📌 Вывод
-• Прогнозов нет из-за комбинации value, xG, качества и ограничений семейств рынков.
+• Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
 
 🛠 Исправления по аудиту
-• Нужны unit-тесты daily top-5/fallback и общий модуль подсчёта дневной квоты.
-• Историю run лучше перенести из JSON в SQLite, чтобы отчётность и backtest не зависели от одиночных stale-файлов.
+• В отчёт добавлены patch diagnostics: confirmation bridge, quality shadow, zero-raw recovery и current price patch.
 • API/матчинг надо оценивать по свежести, покрытию контекста и причинам отказа, а не только по числу запросов.
 
 ⚖️ Дисклеймер: аналитика бота не гарантирует результат и не является финансовой рекомендацией.
