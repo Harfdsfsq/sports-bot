@@ -65,7 +65,8 @@ def main()->int:
         from scripts.patch_semantic_movement_current_price_guard import install as sm
         from scripts.patch_tier_a_strict_policy import install as ta
         from scripts.patch_controlled_fallback_confirmation_bridge import install as cb
-        ta(v18.base); ps(v18.base); cb(v18.base); lc(v18.base); ar(v18.base); q(v18.base); sm(v18.base); cp(v18.base); _install_b_tier_testing_relief(v18.base)
+        from scripts.patch_fallback_evidence_and_integrity_runtime import install as ei
+        ta(v18.base); ps(v18.base); cb(v18.base); ei(v18.base); lc(v18.base); ar(v18.base); q(v18.base); sm(v18.base); cp(v18.base); _install_b_tier_testing_relief(v18.base)
     except Exception: pass
     _apply_focused_alpha_policy(); _repair_runtime_artifacts_before_fallback(); _build_focused_alpha_decisions(); _force_runtime_publication_contract()
     from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
