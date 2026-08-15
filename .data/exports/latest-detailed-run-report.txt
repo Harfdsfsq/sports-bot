@@ -1,124 +1,58 @@
 🧾 Подробный отчёт run — прогнозов нет
 
-🧭 Состояние артефактов
-• debug: свежий | 2026-08-15T17:08:57.602147+00:00, Δ +2.2 мин
-• run_summary: свежий | 2026-08-15T17:08:57.602147+00:00, Δ +2.2 мин
-• fallback: свежий | 2026-08-15T17:11:07.888552+00:00, Δ +0.0 мин
-
-🧭 Runtime policy
-• Версия: harizon-runtime-policy-v6-strict-full-inventory
-• Inventory bootstrap: odds_api_io | provider merge: true
-
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 275/300
-• С контекстом: 186/300
-• Готово к модели: 184/300
-• Ближайшие 6 часов: 6/7 готово
-• Следующие 12 часов: 6/7 готово
+• С линиями: 243/300
+• С контекстом: 182/300
+• Готово к модели: 180/300
+• Ближайшие 6 часов: 5/6 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 3 | с линиями: 1 | контекстов: 1
+• Матчи: 4 | с линиями: 0 | контекстов: 0
 • Кандидаты: raw 0 | до качества 24 | publishable 0
-• Резерв проверил: 4 | оценено в отчёте: 4 | выбрано: 0
-• матчей с линиями из любого источника: 1
-• матчей с любым контекстом: 0
-• матчей с объединенным контекстом: 0
-• raw с market-derived сигналом: 0
+• Резерв проверил: 0 | оценено в отчёте: 3 | выбрано: 0
 
 🧩 Диагностика патчей
-• confirmation bridge: installed | patched inputs 0 | removed нет подтверждения источниками 0
-• quality shadow: input 24 | passed 15 | rejected 9
-• current price patch: v3-positive-reason-normalizer-after-semantic | hard_after 3
-• zero-raw recovery: not_needed | recovered 0
+• confirmation bridge: installed | patched_hard_reject_inputs 0
+• quality shadow: ok
+• current price patch: ok
+• zero-raw recovery: not_recovered | recovered_candidates 0
+• match-window recovery: not_needed | recovered_matches 0
+• evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
+• provider targeting: ok | fallback_evaluated 3
 
 📡 Источники / фактическая работа
-• odds_api_io: data 2/238, max 200, err 2, stop_reason plan_restriction
+• odds_api_io: data 2/245, req 0, err 2
 • bzzoiro: data 0/0, req 3, err 0
-• sstats: data 0/0
-• api_football: data 0/0, off:disabled_by_config
-• football_data: data 1/1, req 3, max 12, err 0
-• thesportsdb: data 0/0
-• sportlogic: data 0/0
-• openfootball: data 0/0, req 2, err 0
-
-📈 odds-api.io routing
-• account1: Bet365,Unibet | req 1 | offers 155
-• account2: Betfair Exchange,Sbobet | req 2 | offers 0
-• Букмекеры в ответах: Bet365, Unibet
-• Матчи с 2+ букмекерами: 1; с 1 букмекером: 0
+• sstats: data 0/0, req 14, err 0
+• football_data: data 0/0, req 1, err 0
+• thesportsdb: data 0/0, req 0, err 0
+• sportlogic: data 0/0, req 0, err 0
+• openfootball: data 0/0, req 4, err 0
 
 🚫 Почему не прошли
-• price integrity:selected price vs market probability outlier — 2 (22%)
-• controlled fallback next regular run before kickoff — 2 (22%)
-• controlled fallback missing line recheck — 2 (22%)
-• price integrity:external snapshot bookmaker median outlier — 1 (11%)
-• коэффициент ниже общего минимума — 1 (11%)
-• коэффициент выше общего максимума — 1 (11%)
+• tier_a_odds_sources_below_min:1/2 — 2 (20%)
+• odds_below_global_min — 1 (10%)
+• odds_above_global_max — 1 (10%)
+• controlled_fallback_next_regular_run_before_kickoff — 1 (10%)
+• controlled_fallback_missing_line_recheck — 1 (10%)
+• tier_a_publication_score_below_min — 1 (10%)
+• tier_b_bookmaker_quorum_prices_missing:1/2 — 1 (10%)
+• tier_b_watchlist_only_no_publication — 1 (10%)
+• tier_c_publication_score_below_min — 1 (10%)
 
 ⚠️ Пограничные кандидаты
-1. Екскелсиор — PSV Ейндховен
- 🏆 Эредивизи
- 🎯 Больше 2.5 @2.45 | 🕒 15.08.2026 21:00 MSK
- • odds sources 0, confirmation sources 3
- • confirmation sources: football_data, sstats, weather
- • EV +38.2%
- • запас +15.6 п.п.
- • уверенность 75.7%
- • качество 100.0
- • линии 3, источники 3
- • не прошло: price integrity:external snapshot bookmaker median outlier; price integrity:selected price vs market probability outlier
-2. Рио Аве — Порто
- 🏆 Лига Португал Бетклик
- 🎯 Больше 1.5 @1.98 | 🕒 15.08.2026 22:30 MSK
- • odds sources 0, confirmation sources 4
- • confirmation sources: bzzoiro, football_data, sstats, weather
- • EV +28.0%
- • запас +14.1 п.п.
- • уверенность 76.0%
- • качество 91.1
- • линии 2, источники 4
- • не прошло: price integrity:selected price vs market probability outlier; controlled fallback next regular run before kickoff; controlled fallback missing line recheck
-3. Фортуна Ситтард — Камбуур
- 🏆 Эредивизи
- 🎯 Больше 1.5 @1.64 | 🕒 15.08.2026 22:00 MSK
- • odds sources 0, confirmation sources 4
- • confirmation sources: bzzoiro, football_data, sstats, weather
- • EV +19.2%
- • запас +11.7 п.п.
- • уверенность 75.9%
- • качество 90.5
- • линии 3, источники 4
- • не прошло: коэффициент ниже общего минимума
-4. Рио Аве — Порто
- 🏆 Лига Португал Бетклик
- 🎯 Больше @3.25 | 🕒 15.08.2026 22:30 MSK
- • odds sources 0, confirmation sources 4
- • confirmation sources: bzzoiro, football_data, sstats, weather
- • EV +5.3%
- • запас +1.6 п.п.
- • уверенность 75.0%
- • качество 63.6
- • линии 3, источники 4
- • не прошло: коэффициент выше общего максимума; controlled fallback next regular run before kickoff; controlled fallback missing line recheck
-
-🔌 API / квоты последнего run
-• odds_api_io: grant 160, reason granted
-• bzzoiro: grant 96, reason granted
-• sstats: grant 60, reason granted
-• sportlogic: grant 40, reason free_limit_500_day_10_min_near_window_secondary_rescue
-• football_data: grant 8, reason granted
-• thesportsdb: grant 12, reason granted
-• weatherapi: grant 16, reason granted
-• openweathermap: grant 6, reason granted
-• oddspapi: grant 0, reason missing_key
-• futrixmetrics: grant 0, reason base_url_or_mapping_not_verified
+1. Рио Аве — Порто | Больше 1.5 @1.98
+   • EV +28.0% | edge +14.1 п.п. | q 91.1
+   • не прошло: tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_odds_sources_below_min:1/2; tier_b_bookmaker_quorum_prices_missing:1/2; tier_b_watchlist_only_no_publication
+2. Фортуна Ситтард — Камбуур | Больше 1.5 @1.64
+   • EV +19.2% | edge +11.7 п.п. | q 90.5
+   • не прошло: odds_below_global_min
+3. Рио Аве — Порто | Больше @3.25
+   • EV +5.3% | edge +1.6 п.п. | q 63.6
+   • не прошло: odds_above_global_max; controlled_fallback_next_regular_run_before_kickoff; controlled_fallback_missing_line_recheck
 
 📌 Вывод
-• Главный блокер — прике интегрити: выбранная цена выглядит выбросом относительно рынка.
-
-🛠 Исправления по аудиту
-• В отчёт добавлены patch diagnostics: confirmation bridge, quality shadow, zero-raw recovery и current price patch.
-• API/матчинг надо оценивать по свежести, покрытию контекста и причинам отказа, а не только по числу запросов.
+• Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
 
 ⚖️ Дисклеймер: аналитика бота не гарантирует результат и не является финансовой рекомендацией.
