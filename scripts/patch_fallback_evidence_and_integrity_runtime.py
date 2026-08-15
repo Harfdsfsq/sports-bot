@@ -4,12 +4,12 @@ from __future__ import annotations
 
 Keeps publication strict, but fixes bad diagnostics/evaluation paths from recent
 runs:
-1) ``evaluate_candidate`` returns a tuple, so earlier metric repairs did not see
-   the real metrics dict;
+1) ``evaluate_candidate`` returns a tuple, so metric repairs must patch tuple[2];
 2) B-tier bookmaker quorum can be verified from the fresh odds-api same-side
-   snapshot even when the candidate row itself does not carry raw_bucket_offers;
+   snapshot when available;
 3) selected-vs-market-probability is only a warning if there are no real
-   same-side bookmaker prices. Median/external snapshot outliers remain hard.
+   same-side bookmaker prices. Median/external snapshot outliers remain hard;
+4) runtime counters are persisted after evaluation, not only at install time.
 """
 
 import json
@@ -48,6 +48,7 @@ def _split(v: Any) -> list[str]:
 
 def _write(report: dict[str, Any]) -> None:
     try:
+        report['updated_at_utc'] = datetime.now(timezone.utc).isoformat()
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     except Exception:
@@ -94,6 +95,7 @@ def _external_prices(candidate: dict[str, Any], metrics: dict[str, Any]) -> list
 
 
 def _repair_metrics(candidate: dict[str, Any], metrics: dict[str, Any], report: dict[str, Any]) -> None:
+    report['evaluations_seen'] += 1
     count, names, books = _line_evidence(candidate, metrics)
     before = _int(metrics.get('odds_sources_count'))
     if count > before:
@@ -130,7 +132,6 @@ def _soften_reasons(candidate: dict[str, Any], metrics: dict[str, Any], reasons:
         if len(reasons) != before:
             report['market_probability_guard_softened_without_real_prices'] += 1
             metrics['market_probability_integrity_warning'] = True
-    # Deduplicate noisy repeated tier reasons.
     deduped: list[str] = []
     seen: set[str] = set()
     for reason in reasons:
@@ -148,6 +149,7 @@ def install(base: Any) -> dict[str, Any]:
         'status': 'installed',
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
         'patched_functions': [],
+        'evaluations_seen': 0,
         'patched_odds_source_metrics': 0,
         'patched_books_metrics': 0,
         'patched_external_snapshot_books': 0,
@@ -165,6 +167,7 @@ def install(base: Any) -> dict[str, Any]:
             result = __fn(candidate, *args, **kwargs)
             if isinstance(result, dict):
                 _repair_metrics(candidate, result, report)
+                _write(report)
             return result
         wrapped._harizon_evidence_integrity_patch = True  # type: ignore[attr-defined]
         setattr(base, name, wrapped)
@@ -179,7 +182,9 @@ def install(base: Any) -> dict[str, Any]:
                 _repair_metrics(candidate, metrics, report)
                 new_reasons = _soften_reasons(candidate, metrics, list(reasons or []), report)
                 new_ok = bool(ok) and not new_reasons
+                _write(report)
                 return (new_ok, new_reasons, metrics, tier) + tuple(result[4:])
+            _write(report)
             return result
         eval_wrapped._harizon_evidence_integrity_patch = True  # type: ignore[attr-defined]
         base.evaluate_candidate = eval_wrapped
@@ -190,7 +195,9 @@ def install(base: Any) -> dict[str, Any]:
         def hard_reject_wrapped(candidate: dict[str, Any], metrics: dict[str, Any], sent_index: dict[str, Any]) -> list[str]:
             _repair_metrics(candidate, metrics, report)
             reasons = list(old_hr(candidate, metrics, sent_index) or [])
-            return _soften_reasons(candidate, metrics, reasons, report)
+            out = _soften_reasons(candidate, metrics, reasons, report)
+            _write(report)
+            return out
         hard_reject_wrapped._harizon_evidence_integrity_patch = True  # type: ignore[attr-defined]
         base.hard_reject_reasons = hard_reject_wrapped
         report['patched_functions'].append('hard_reject_reasons')
