@@ -1,33 +1,51 @@
 {
-  "best_near_misses": [],
+  "best_near_misses": [
+    {
+      "away_team": "Rochdale",
+      "books": 3,
+      "context_sources": 2,
+      "edge_pp": 0.377,
+      "ev_pct": 0.727,
+      "home_team": "Newport County",
+      "league_name": "League Two",
+      "odds": 1.93,
+      "odds_sources": 2,
+      "point": 2.5,
+      "quality": 65.7,
+      "reasons": [
+        "controlled_fallback_next_regular_run_before_kickoff",
+        "controlled_fallback_missing_line_recheck",
+        "current_price_recheck_value_lost:-6.1/-3.4"
+      ],
+      "selection": "Меньше 2.5"
+    }
+  ],
   "blockers": [
-    "line_coverage_below_80pct",
-    "context_coverage_below_85pct",
     "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers"
   ],
   "bzzoiro_chain": {
-    "merge_after_2plus_books": 0,
-    "merge_after_2plus_sources": 0,
-    "overlap_bridge_offers": 48,
-    "overlap_matches": 0
+    "merge_after_2plus_books": 28,
+    "merge_after_2plus_sources": 22,
+    "overlap_bridge_offers": 72,
+    "overlap_matches": 3
   },
-  "created_at_utc": "2026-08-15T09:16:03.701336+00:00",
-  "ideal_score": 75.2,
+  "created_at_utc": "2026-08-15T10:46:15.701634+00:00",
+  "ideal_score": 88.9,
   "inventory": {
-    "next_12h_ready": 48,
-    "next_12h_ready_pct": 39.0,
-    "next_12h_total": 123,
-    "next_6h_ready": 48,
-    "next_6h_ready_pct": 42.1,
-    "next_6h_total": 114,
-    "ready": 153,
-    "ready_pct": 51.0,
-    "total": 300,
-    "with_context": 175,
-    "with_context_pct": 58.3,
-    "with_lines": 215,
-    "with_lines_pct": 71.7
+    "next_12h_ready": 28,
+    "next_12h_ready_pct": 36.4,
+    "next_12h_total": 77,
+    "next_6h_ready": 28,
+    "next_6h_ready_pct": 40.0,
+    "next_6h_total": 70,
+    "ready": 202,
+    "ready_pct": 67.6,
+    "total": 299,
+    "with_context": 254,
+    "with_context_pct": 84.9,
+    "with_lines": 243,
+    "with_lines_pct": 81.3
   },
   "line_movement": {
     "class_counts": {},
@@ -40,15 +58,22 @@
     "watchlist_count": 0
   },
   "odds_api_io_account2": {
-    "http_statuses": [],
+    "http_statuses": [
+      403,
+      403,
+      403,
+      403,
+      403,
+      403
+    ],
     "offers": 0,
-    "plan_restriction": false,
+    "plan_restriction": true,
     "rate_limited": false,
-    "requests": 0
+    "requests": 6
   },
   "proxy_xg_replacement": {
     "checked": 0,
-    "created_at_utc": "2026-08-15T09:12:42.975409+00:00",
+    "created_at_utc": "2026-08-15T10:45:03.649607+00:00",
     "examples": [],
     "note": "Market-implied xG replaces only proxy 1:1 placeholders; it is not hard provider xG and does not bypass line/value/source guards.",
     "replaced": 0,
@@ -61,11 +86,13 @@
     "touched_files": []
   },
   "recommended_actions": [
-    "raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill",
-    "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
     "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set"
   ],
   "status": "ok",
-  "top_reason_counts": {}
+  "top_reason_counts": {
+    "controlled_fallback_missing_line_recheck": 1,
+    "controlled_fallback_next_regular_run_before_kickoff": 1,
+    "current_price_recheck_value_lost:-6.1/-3.4": 1
+  }
 }
