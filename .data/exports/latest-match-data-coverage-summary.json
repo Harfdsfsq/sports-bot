@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 6,
+      "rows_seen": 6,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 55,
-      "rows_stale": 55
+      "rows_kept": 3,
+      "rows_seen": 192,
+      "rows_stale": 189
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,32 +26,33 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 2,
-      "rows_seen": 2,
+      "rows_kept": 1,
+      "rows_seen": 1,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 24,
+    "candidates_before_quality": 26,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 0,
-    "controlled_candidates_seen": null,
+    "contexts_built": 56,
+    "controlled_candidates_seen": 3,
     "controlled_published": false,
-    "controlled_status": "fallback_artifact_stale_or_missing_after_step",
-    "coverage_candidates_current_date": 2,
-    "matches_seen": 3,
-    "matches_with_offers": 0
+    "controlled_status": "no_viable_controlled_fallback",
+    "coverage_candidates_current_date": 3,
+    "matches_seen": 24,
+    "matches_with_offers": 22
   },
-  "created_at": "2026-08-15T19:11:06.677604+00:00",
+  "created_at": "2026-08-15T22:13:45.990744+00:00",
   "family_counts": {
-    "totals": 2
+    "dnb": 2,
+    "totals": 1
   },
-  "matches_with_candidates": 1,
+  "matches_with_candidates": 3,
   "missing_data_flags": {
-    "edge_below_micro_c": 1,
-    "ev_below_micro_c": 1,
-    "single_odds_source": 2
+    "confidence_below_micro_c": 2,
+    "edge_below_micro_c": 3,
+    "single_odds_source": 3
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -65,22 +66,41 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 1,
+  "positive_near_miss_count": 3,
   "provider_gap_summary": [
     {
       "api_key_present": true,
-      "budget_exhausted": false,
+      "budget_exhausted": null,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 72,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 4309,
+      "provider": "account1",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 704,
+      "matches_built": null,
       "offers_parsed": null,
-      "provider": "odds_api_io",
-      "rate_limited": false,
+      "provider": "espn",
+      "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
@@ -92,11 +112,32 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 999,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors"
+      ],
+      "matches_built": 703,
+      "offers_parsed": null,
+      "provider": "odds_api_io",
+      "rate_limited": false,
+      "response_errors": 12,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 1000,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 704,
+      "matches_built": 703,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -122,6 +163,109 @@
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 56,
+      "direct_event_contexts_built": 56,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 15,
+      "direct_event_contexts_built": 15,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 15,
+      "direct_event_contexts_built": 15,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "account2",
+      "rate_limited": false,
+      "response_errors": 12,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "v2_primary",
+      "rate_limited": null,
+      "response_errors": 4,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
     },
     {
@@ -188,9 +332,9 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
@@ -200,10 +344,10 @@
         "no_useful_rows"
       ],
       "matches_built": null,
-      "offers_parsed": null,
-      "provider": "football_data",
-      "rate_limited": false,
-      "response_errors": 0,
+      "offers_parsed": 0,
+      "provider": "bzzoiro_odds",
+      "rate_limited": null,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -306,141 +450,166 @@
       ],
       "matches_built": 0,
       "offers_parsed": null,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": 0,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": 0,
-      "offers_parsed": null,
       "provider": "sstats_fixture_source",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": 0,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
-    "no_data": 12,
-    "working": 3
+    "broken_or_unavailable": 2,
+    "no_data": 9,
+    "working": 8
   },
   "reject_reason_counts_from_rows": {
-    "controlled_fallback_missing_line_recheck": 2,
-    "controlled_fallback_next_regular_run_before_kickoff": 2,
-    "odds_above_global_max": 1,
-    "price_integrity:selected_price_vs_market_probability_outlier": 1
+    "bad_historical_segment_guard": 2
   },
-  "target_date": "2026-08-15",
+  "target_date": "2026-08-16",
   "top_near_miss": [
     {
-      "away_team": "FC Porto",
+      "away_team": "New York Red Bulls",
       "best_candidate": {
-        "adjusted_probability": 0.646273,
+        "adjusted_probability": 0.757135,
         "books_count": 2,
-        "canonical_edge_pp": 14.122,
-        "canonical_ev_pct": 27.962,
-        "confidence": 75.978,
+        "canonical_edge_pp": 3.142,
+        "canonical_ev_pct": 17.356,
+        "confidence": 75.939,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.55,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше 1.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.939,
+      "best_edge_pp": 3.142,
+      "best_ev_pct": 17.356,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-15T23:30:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Atlanta United FC",
+      "league_name": "USA - MLS",
+      "match_key": "soccer|atlanta united|new york red bulls|2026-08-15",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Deportivo Toluca FC",
+      "best_candidate": {
+        "adjusted_probability": 0.240008,
+        "books_count": 2,
+        "canonical_edge_pp": 2.217,
+        "canonical_ev_pct": 8.004,
+        "confidence": 66.394,
         "confirmation_sources_count": 4,
         "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.98,
-        "odds_sources_count": 0,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 1.5,
+        "family": "dnb",
+        "odds": 4.5,
+        "odds_sources_count": 1,
+        "origin": "latest_rescue_candidates",
+        "point": null,
         "reject_reasons": [
-          "price_integrity:selected_price_vs_market_probability_outlier",
-          "controlled_fallback_next_regular_run_before_kickoff",
-          "controlled_fallback_missing_line_recheck"
+          "bad_historical_segment_guard"
         ],
-        "selection": "Больше 1.5",
-        "sources_count": 0
+        "selection": "Atlante FC (0)",
+        "sources_count": 1
       },
-      "best_confidence": 75.978,
-      "best_edge_pp": 14.122,
-      "best_ev_pct": 27.962,
-      "books_max": 3,
-      "candidate_count": 2,
-      "commence_time": "2026-08-15T19:30:00+00:00",
+      "best_confidence": 66.394,
+      "best_edge_pp": 2.217,
+      "best_ev_pct": 8.004,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-15T23:00:00+00:00",
       "confirmation_sources_max": 4,
       "context_sources_max": 4,
       "controlled_count": 0,
       "families": {
-        "totals": 2
+        "dnb": 1
       },
-      "home_team": "Rio Ave",
-      "league_name": "Liga Portugal Betclic",
-      "match_key": "soccer|porto|rio ave|2026-08-15",
+      "home_team": "Atlante FC",
+      "league_name": "Mexico - Liga MX, Apertura",
+      "match_key": "soccer|atlante_fc|deportivo_toluca_fc|2026-08-15",
       "missing_flags": {
+        "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 2
+        "single_odds_source": 1
       },
       "odds_sources_max": 1,
       "origins": {
-        "awaiting_movement_lifecycle": 2
+        "latest_rescue_candidates": 1
       },
       "reject_reasons": {
-        "controlled_fallback_missing_line_recheck": 2,
-        "controlled_fallback_next_regular_run_before_kickoff": 2,
-        "odds_above_global_max": 1,
-        "price_integrity:selected_price_vs_market_probability_outlier": 1
+        "bad_historical_segment_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Deportivo Toluca FC",
+      "best_candidate": {
+        "adjusted_probability": 0.240008,
+        "books_count": 2,
+        "canonical_edge_pp": 2.217,
+        "canonical_ev_pct": 8.004,
+        "confidence": 66.394,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "dnb",
+        "odds": 4.5,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": null,
+        "reject_reasons": [
+          "bad_historical_segment_guard"
+        ],
+        "selection": "Atlante FC (0)",
+        "sources_count": 1
+      },
+      "best_confidence": 66.394,
+      "best_edge_pp": 2.217,
+      "best_ev_pct": 8.004,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-15T23:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "dnb": 1
+      },
+      "home_team": "Atlante FC",
+      "league_name": "Mexico - Liga MX, Apertura",
+      "match_key": "soccer|atlante|toluca|2026-08-15",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
       },
       "sources_max": 1
     }

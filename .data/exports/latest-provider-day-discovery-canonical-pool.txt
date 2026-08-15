@@ -1,23 +1,23 @@
 # Provider day discovery canonical pool
-UTC: 2026-08-15T17:06:28.647329+00:00
-target_date: 2026-08-15
-canonical_matches: 693
-2+ provider sources: 89
-2+ primary sources: 67
+UTC: 2026-08-15T22:06:13.192518+00:00
+target_date: 2026-08-16
+canonical_matches: 548
+2+ provider sources: 47
+2+ primary sources: 26
 all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=20 ok=4 rows=724 event_like=709 unique=309 statuses={"OK": 4, "EMPTY": 1, "AUTH": 15}
-- football_data: commands=1 ok=1 rows=26 event_like=26 unique=26 statuses={"OK": 1}
+- bzzoiro: commands=20 ok=3 rows=462 event_like=447 unique=154 statuses={"OK": 3, "EMPTY": 2, "AUTH": 15}
+- football_data: commands=1 ok=1 rows=23 event_like=23 unique=23 statuses={"OK": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=2 ok=0 rows=2 event_like=0 unique=0 statuses={"HTTP_ERROR": 2}
 - sstats: commands=1 ok=1 rows=218 event_like=152 unique=152 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 604, "2": 82, "3": 7}
-- primary providers: {"1": 626, "2": 67}
+- all providers: {"1": 501, "3": 5, "2": 42}
+- primary providers: {"1": 522, "2": 26}
 
 ## Top canonical matches
 - 2026-08-14T21:00:00+00:00 | AD Carmelita — Futbol Consultants Moravia | providers=sstats ids={"sstats": "1601402"}
@@ -36,7 +36,7 @@ all 3 primary sources: 0
 - 2026-08-14T23:30:00+00:00 | Racing Club — Banfield | providers=sstats ids={"sstats": "1493072"}
 - 2026-08-14T23:30:00+00:00 | Atletico DE Rafaela — Defensores De Belgrano | providers=sstats ids={"sstats": "1498724"}
 - 2026-08-14T23:30:00+00:00 | Sport Recife — Londrina | providers=sstats ids={"sstats": "1520819"}
-- 2026-08-15T00:00:00+00:00 | NJ/NY Gotham FC — Kansas City Current | providers=bzzoiro,sstats ids={"bzzoiro": "216406", "sstats": "1508503"}
+- 2026-08-15T00:00:00+00:00 | NJ/NY Gotham FC W — Kansas City W | providers=sstats ids={"sstats": "1508503"}
 - 2026-08-15T00:00:00+00:00 | Bolívar — San Antonio Bulo Bulo | providers=sstats ids={"sstats": "1618973"}
 - 2026-08-15T00:00:00+00:00 | Tupapa Maraerenga — ABM Galaxy | providers=sstats ids={"sstats": "1526953"}
 - 2026-08-15T00:00:00+00:00 | Independiente del Valle — Delfin SC | providers=sstats ids={"sstats": "1519451"}
@@ -46,10 +46,10 @@ all 3 primary sources: 0
 - 2026-08-15T01:00:00+00:00 | Mineros de Zacatecas — Venados FC | providers=sstats ids={"sstats": "1581391"}
 - 2026-08-15T01:00:00+00:00 | Municipal Limeño — Inter | providers=sstats ids={"sstats": "1600564"}
 - 2026-08-15T01:00:00+00:00 | Cruz Azul W — Atlante W | providers=sstats ids={"sstats": "1603318"}
-- 2026-08-15T01:10:00+00:00 | Millonarios — Barranquilla FC | providers=bzzoiro,sstats ids={"bzzoiro": "223986", "sstats": "1607639"}
+- 2026-08-15T01:10:00+00:00 | Millonarios — Barranquilla | providers=sstats ids={"sstats": "1607639"}
 - 2026-08-15T01:30:00+00:00 | San Francisco FC — Independiente de La Chorrera | providers=sstats ids={"sstats": "1583735"}
-- 2026-08-15T02:00:00+00:00 | San Diego Wave FC — Denver Summit FC | providers=bzzoiro,sstats ids={"bzzoiro": "216407", "sstats": "1508504"}
-- 2026-08-15T02:00:00+00:00 | Utah Royals FC — Bay FC | providers=bzzoiro,sstats ids={"bzzoiro": "216409", "sstats": "1508506"}
+- 2026-08-15T02:00:00+00:00 | Seattle Reign FC W — Chicago Red Stars W | providers=sstats ids={"sstats": "1508505"}
+- 2026-08-15T02:00:00+00:00 | Utah Royals W — Bay FC W | providers=sstats ids={"sstats": "1508506"}
 
 ## Targeted enrichment plan sample
 - AD Carmelita — Futbol Consultants Moravia | primary=1 providers=sstats
@@ -116,9 +116,9 @@ all 3 primary sources: 0
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- NJ/NY Gotham FC — Kansas City Current | primary=2 providers=bzzoiro,sstats
-  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+- NJ/NY Gotham FC W — Kansas City W | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Bolívar — San Antonio Bulo Bulo | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
