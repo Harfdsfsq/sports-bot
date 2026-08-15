@@ -9,12 +9,10 @@ def _apply_rules_runtime_env() -> None:
     """Keep fallback aligned with RULES.txt without disabling price/movement guards.
 
     The fallback process is a separate Python entrypoint, so it does not always
-    inherit the main runner's runtime_startup_chain overrides.  The 13:32 run
-    showed candidates blocked by `semantic_current_exact_market_price_missing`
-    even when no exact current offer existed in the odds-api snapshot.  For B-tier
-    this should be a watch/recheck condition, not a hard terminal blocker: price
-    integrity is still checked when a current comparable quote exists, and line
-    movement/value guards still reject weak or stale prices.
+    inherit the main runner's runtime_startup_chain overrides.  For B-tier, a
+    missing exact selected quote should not be a hard terminal blocker when a
+    comparable current quote exists; however current-price EV/edge, line
+    movement, source confirmation and xG guards still remain active.
     """
     defaults = {
         "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
@@ -29,10 +27,10 @@ def _apply_rules_runtime_env() -> None:
         "CONTROLLED_FALLBACK_ALLOW_CURRENT_BOOK_SUBSTITUTION": "true",
         "CONTROLLED_FALLBACK_CURRENT_PRICE_ABS_TOLERANCE": "0.05",
         "CONTROLLED_FALLBACK_CURRENT_PRICE_PCT_TOLERANCE": "2.5",
-        # Do not hard-reject only because the exact selected book/market is absent
-        # from the small current odds-api snapshot. Comparable current quotes and
-        # line movement still decide whether the candidate is publishable.
         "CONTROLLED_FALLBACK_REQUIRE_FRESH_SELECTED_PRICE": "false",
+        "CONTROLLED_FALLBACK_ALLOW_VALUE_ALIVE_HIGH_DRIFT": "true",
+        "CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT": "3.0",
+        "CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP": "1.5",
     }
     for key, value in defaults.items():
         os.environ[key] = value
@@ -61,6 +59,7 @@ def main() -> int:
     from scripts.patch_current_bankroll_source import install as install_current_bankroll_source
     from scripts.patch_proxy_default_xg_guard import install as install_proxy_default_xg_guard
     from scripts.patch_publication_safety_contract import install as install_publication_safety_contract
+    from scripts.patch_current_price_recheck_value import install as install_current_price_recheck_value
     from scripts.patch_semantic_movement_current_price_guard import (
         install as install_semantic_movement_current_price_guard,
     )
@@ -74,7 +73,11 @@ def main() -> int:
     install_display_line_count_safe(v18.base)
     install_same_match_total_conflict_guard(v18.base)
     install_current_bankroll_source(v18.base)
+    # Order matters: semantic guard can emit selected/current price reasons;
+    # current-price patch must run after it to normalize positive EV/edge and
+    # avoid false `value lost:+EV/+edge` blockers in the v20 path.
     install_semantic_movement_current_price_guard(v18.base)
+    install_current_price_recheck_value(v18.base)
     code = int(v18.main() or 0)
     try:
         from scripts.sync_run_report_ledger_export import main as sync_run_ledger
