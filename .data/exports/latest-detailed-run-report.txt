@@ -2,15 +2,15 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 78/300
-• С контекстом: 59/300
-• Готово к модели: 47/300
-• Ближайшие 6 часов: 47/114 готово
+• С линиями: 178/300
+• С контекстом: 99/300
+• Готово к модели: 92/300
+• Ближайшие 6 часов: 50/119 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 24 | с линиями: 22 | контекстов: 56
-• Кандидаты: raw 0 | до качества 26 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 3 | выбрано: 0
+• Матчи: 18 | с линиями: 18 | контекстов: 11
+• Кандидаты: raw 0 | до качества 33 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 4 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -18,39 +18,40 @@
 • current price patch: ok
 • zero-raw recovery: not_needed | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
-• evidence/integrity patch: installed | patched_odds_source_metrics 3 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 3
+• evidence/integrity patch: installed | patched_odds_source_metrics 4 | market_probability_guard_softened_without_real_prices 0
+• provider targeting: ok | fallback_evaluated 4
 
 📡 Источники / фактическая работа
-• odds_api_io: data 72/4308, req 0, err 12
+• odds_api_io: data 65/3927, req 0, err 12
 • bzzoiro: data 0/0, req 3, err 0
-• sstats: data 56/56, req 15, err 0
+• sstats: data 7/7, req 15, err 0
 • football_data: data 0/0, req 0, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
 • openfootball: data 0/0, req 0, err 0
 
 🚫 Почему не прошли
-• family_not_allowed:dnb — 2 (22%)
-• odds_above_global_max — 2 (22%)
-• odds_below_global_min — 1 (11%)
-• price_integrity:selected_price_vs_bookmaker_median_outlier — 1 (11%)
-• xg_probability_gap_hard_reject — 1 (11%)
-• controlled_fallback_next_regular_run_before_kickoff — 1 (11%)
-• controlled_fallback_missing_line_recheck — 1 (11%)
+• price_integrity:selected_price_vs_bookmaker_median_outlier — 3 (33%)
+• price_integrity:external_snapshot_bookmaker_median_outlier — 3 (33%)
+• price_integrity:selected_price_vs_market_probability_outlier — 1 (11%)
+• canonical_negative_value — 1 (11%)
+• current_price_recheck_value_lost:-16.2/-9.2 — 1 (11%)
 
 ⚠️ Пограничные кандидаты
-1. Атланта Юнайтед — Неу Иорк Ред Буллс | Больше 1.5 @1.55
-   • EV +17.4% | edge +11.2 п.п. | q 81.6
-   • не прошло: odds_below_global_min; price_integrity:selected_price_vs_bookmaker_median_outlier; xg_probability_gap_hard_reject; controlled_fallback_next_regular_run_before_kickoff; controlled_fallback_missing_line_recheck
-2. Атланте — Депортиво Толука | Atlante FC (0) @4.50
-   • EV +8.0% | edge +1.8 п.п. | q 64.8
-   • не прошло: family_not_allowed:dnb; odds_above_global_max
-3. Атланте — Депортиво Толука | Atlante FC (0) @4.50
-   • EV +8.0% | edge +1.8 п.п. | q 64.8
-   • не прошло: family_not_allowed:dnb; odds_above_global_max
+1. Нашвилле — Интер Майами | Меньше 2.5 @2.67
+   • EV +39.9% | edge +14.9 п.п. | q 100.0
+   • не прошло: price_integrity:selected_price_vs_bookmaker_median_outlier; price_integrity:external_snapshot_bookmaker_median_outlier; price_integrity:selected_price_vs_market_probability_outlier
+2. Хустон Динамо — Лос-Анджелес Гэлакси | Больше 1.5 @1.75
+   • EV +21.1% | edge +12.1 п.п. | q 86.3
+   • не прошло: price_integrity:selected_price_vs_bookmaker_median_outlier; price_integrity:external_snapshot_bookmaker_median_outlier
+3. Хустон Динамо — Лос-Анджелес Гэлакси | Больше 1.5 @1.75
+   • EV +21.1% | edge +12.1 п.п. | q 86.3
+   • не прошло: price_integrity:selected_price_vs_bookmaker_median_outlier; price_integrity:external_snapshot_bookmaker_median_outlier
+4. Унион Эспаньола — Сан Маркос де Арика | Больше 2.5 @2.10
+   • EV -0.8% | edge -0.4 п.п. | q 44.6
+   • не прошло: canonical_negative_value; current_price_recheck_value_lost:-16.2/-9.2
 
 📌 Вывод
-• Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
+• Главный блокер — price integrity: выбранная цена выглядит выбросом относительно рынка; новый патч не снимает реальные median/outlier блоки, а только убирает ложный market_probability hard-block без реальных same-side цен.
 
 ⚖️ Дисклеймер: аналитика бота не гарантирует результат и не является финансовой рекомендацией.
