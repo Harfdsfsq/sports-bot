@@ -53,15 +53,7 @@ def _items(value: Any) -> list[str]:
 
 def _norm_source(value: Any) -> str:
     text = re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower()).strip("_")
-    return {
-        "oddsapiio": "odds_api_io",
-        "odds_api": "odds_api_io",
-        "odds_api_io_account1": "odds_api_io",
-        "odds_api_io_account2": "odds_api_io",
-        "bzzoiro_v2": "bzzoiro",
-        "bzzoiro_current_odds": "bzzoiro",
-        "sport_logic": "sportlogic",
-    }.get(text, text)
+    return {"oddsapiio": "odds_api_io", "odds_api": "odds_api_io", "odds_api_io_account1": "odds_api_io", "odds_api_io_account2": "odds_api_io", "bzzoiro_v2": "bzzoiro", "bzzoiro_current_odds": "bzzoiro", "sport_logic": "sportlogic"}.get(text, text)
 
 
 def _as_int(value: Any, default: int = 0) -> int:
@@ -125,23 +117,12 @@ def _identity_from_key(match_key: str) -> dict[str, str]:
             date = part
         elif part.lower() not in {"soccer", "football", "teams"}:
             teams.append(part)
-    return {
-        "home_team": _title_part(teams[0]) if len(teams) > 0 else "",
-        "away_team": _title_part(teams[1]) if len(teams) > 1 else "",
-        "date_local": date,
-        "kickoff_utc": f"{date}T12:00:00+00:00" if date else "",
-        "sport_key": "soccer",
-    }
+    return {"home_team": _title_part(teams[0]) if len(teams) > 0 else "", "away_team": _title_part(teams[1]) if len(teams) > 1 else "", "date_local": date, "kickoff_utc": f"{date}T12:00:00+00:00" if date else "", "sport_key": "soccer"}
 
 
 def _source_values(row: dict[str, Any], *keys: str) -> list[str]:
     out: list[str] = []
-    for container in (
-        row,
-        row.get("coverage") if isinstance(row.get("coverage"), dict) else {},
-        row.get("metadata") if isinstance(row.get("metadata"), dict) else {},
-        row.get("source_summary") if isinstance(row.get("source_summary"), dict) else {},
-    ):
+    for container in (row, row.get("coverage") if isinstance(row.get("coverage"), dict) else {}, row.get("metadata") if isinstance(row.get("metadata"), dict) else {}, row.get("source_summary") if isinstance(row.get("source_summary"), dict) else {}):
         if not isinstance(container, dict):
             continue
         for key in keys:
@@ -182,14 +163,7 @@ def _needs_bzzoiro(row: dict[str, Any]) -> bool:
     if not isinstance(row, dict) or not _future(row):
         return False
     missing = {str(x).lower() for x in _items(row.get("missing")) + _items(row.get("tier_a_missing"))}
-    return (
-        _as_int(row.get("core_odds_needed") or row.get("odds_needed")) > 0
-        or _as_int(row.get("core_context_needed") or row.get("context_needed")) > 0
-        or _odds_count(row) < 2
-        or _context_count(row) < 2
-        or "independent_odds_sources" in missing
-        or "context_sources" in missing
-    )
+    return (_as_int(row.get("core_odds_needed") or row.get("odds_needed")) > 0 or _as_int(row.get("core_context_needed") or row.get("context_needed")) > 0 or _odds_count(row) < 2 or _context_count(row) < 2 or "independent_odds_sources" in missing or "context_sources" in missing)
 
 
 def _identity_index() -> dict[str, dict[str, Any]]:
@@ -250,14 +224,7 @@ def _prime_bzzoiro_source_matrix_plan() -> None:
     if not _enabled("HARIZON_BZZOIRO_V2_SOURCE_MATRIX_BOOTSTRAP_ENABLED"):
         return
     limit = max(1, _as_int(os.getenv("BZZOIRO_SCOPE_TARGET_LIMIT") or os.getenv("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT") or 300, 300))
-    sources = [
-        ("progressive_existing", _rows(_load_json(EXPORT_DIR / "latest-progressive-coverage-plan.json", {}))),
-        ("coverage_planner", _rows(_load_json(EXPORT_DIR / "latest-coverage-planner.json", {}))),
-        ("coverage_truth", _rows(_load_json(EXPORT_DIR / "latest-day-inventory-coverage-truth.json", {}))),
-        ("today", _rows(_load_json(DAY_DIR / "today.json", {}))),
-        ("current", _rows(_load_json(DAY_DIR / "current.json", {}))),
-        ("latest", _rows(_load_json(DAY_DIR / "latest.json", {}))),
-    ]
+    sources = [("progressive_existing", _rows(_load_json(EXPORT_DIR / "latest-progressive-coverage-plan.json", {}))), ("coverage_planner", _rows(_load_json(EXPORT_DIR / "latest-coverage-planner.json", {}))), ("coverage_truth", _rows(_load_json(EXPORT_DIR / "latest-day-inventory-coverage-truth.json", {}))), ("today", _rows(_load_json(DAY_DIR / "today.json", {}))), ("current", _rows(_load_json(DAY_DIR / "current.json", {}))), ("latest", _rows(_load_json(DAY_DIR / "latest.json", {})))]
     selected: dict[str, dict[str, Any]] = {}
     counts: dict[str, int] = {}
     for name, rows in sources:
@@ -331,6 +298,17 @@ def _send_past_predictions_report_after_cli() -> None:
         pass
 
 
+def _install_runtime_match_window_recovery() -> None:
+    if not _enabled("HARIZON_RUNTIME_MATCH_WINDOW_RECOVERY_ENABLED"):
+        return
+    try:
+        from scripts.patch_runtime_match_window_recovery import install
+        import app.services.runner as runner_module
+        install(runner_module)
+    except Exception:
+        pass
+
+
 def _install_bzzoiro_v2_source_matrix() -> None:
     if not _enabled("HARIZON_BZZOIRO_V2_SOURCE_MATRIX_BOOTSTRAP_ENABLED"):
         return
@@ -384,20 +362,19 @@ def _install_quality_shadow_diagnostics() -> None:
 def _run_bzzoiro_offer_bridge_after_cli() -> None:
     if not _enabled("HARIZON_BZZOIRO_OFFER_OVERLAP_BRIDGE_ENABLED"):
         return
-    try:
-        from scripts.bridge_bzzoiro_offer_overlap import main as bridge_main
-        bridge_main()
-    except Exception:
-        pass
-    try:
-        from scripts.repair_bzzoiro_overlap_inventory_sources import main as repair_main
-        repair_main()
-    except Exception:
-        pass
+    for module_name in ("scripts.bridge_bzzoiro_offer_overlap", "scripts.repair_bzzoiro_overlap_inventory_sources", "scripts.target_fallback_provider_enrichment"):
+        try:
+            module = __import__(module_name, fromlist=["main"])
+            fn = getattr(module, "main", None)
+            if callable(fn):
+                fn()
+        except Exception:
+            pass
 
 
 if _is_run_once():
     _sync_publication_ledger_before_cli()
+    _install_runtime_match_window_recovery()
     _install_odds_api_io_account2_diagnostics()
     _install_zero_raw_candidate_recovery()
     _install_quality_shadow_diagnostics()

@@ -16,7 +16,7 @@ def _run_step(module_name:str)->None:
     except Exception: pass
 
 def _repair_runtime_artifacts_before_fallback()->None:
-    for m in ('scripts.bridge_runtime_context_coverage','scripts.build_context_source_index','scripts.build_day_inventory_coverage_truth','scripts.harizon_a_tier_coverage_plan','scripts.harizon_a_tier_targeted_enrichment_queue','scripts.apply_a_tier_targeted_provider_env','scripts.persist_bzzoiro_runtime_artifacts','scripts.bzzoiro_targeted_odds_confirmation','scripts.bzzoiro_targeted_odds_detail_fetch','scripts.trace_bzzoiro_report_source','scripts.project_sstats_context_into_candidates','scripts.replace_rescue_proxy_placeholder_xg','scripts.day_inventory_cumulative_coverage'):
+    for m in ('scripts.bridge_runtime_context_coverage','scripts.build_context_source_index','scripts.build_day_inventory_coverage_truth','scripts.harizon_a_tier_coverage_plan','scripts.harizon_a_tier_targeted_enrichment_queue','scripts.target_fallback_provider_enrichment','scripts.apply_a_tier_targeted_provider_env','scripts.persist_bzzoiro_runtime_artifacts','scripts.bzzoiro_targeted_odds_confirmation','scripts.bzzoiro_targeted_odds_detail_fetch','scripts.trace_bzzoiro_report_source','scripts.project_sstats_context_into_candidates','scripts.replace_rescue_proxy_placeholder_xg','scripts.day_inventory_cumulative_coverage'):
         _run_step(m)
 
 def _apply_focused_alpha_policy()->None:
@@ -69,6 +69,6 @@ def main()->int:
     except Exception: pass
     _apply_focused_alpha_policy(); _repair_runtime_artifacts_before_fallback(); _build_focused_alpha_decisions(); _force_runtime_publication_contract()
     from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
-    code=int(v20_main() or 0); _build_focused_alpha_decisions(); return code
+    code=int(v20_main() or 0); _build_focused_alpha_decisions(); _run_step('scripts.target_fallback_provider_enrichment'); return code
 
 if __name__=='__main__': raise SystemExit(main())
