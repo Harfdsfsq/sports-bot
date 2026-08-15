@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-"""Recover the runtime funnel when lines/context exist but CandidateFactory returns raw=0.
+"""Recover the runtime funnel when live lines exist but CandidateFactory returns 0.
 
-The patch does not publish anything by itself. It only creates a conservative
-pre-quality diagnostic candidate pool from already-fetched offers by allowing the
-existing simple/market-derived builders to run with first-snapshot consensus
-relief. Normal quality, publication, current-price, line-movement, xG and
-Telegram guards still run afterwards.
+This patch is intentionally conservative: it only creates a pre-quality pool from
+already fetched offers. It does not publish by itself; quality, stake, current
+price, line movement, duplicate and controlled-fallback guards still run later.
+
+The 2026-08-16 00:09 run had matches_with_offers=7 but candidates_before_quality=0.
+The previous recovery only relaxed model thresholds, but still kept target
+bookmaker/source gates. If odds-api returns useful prices from non-target books,
+the factory can silently end at 0. In recovery mode we temporarily allow all
+fetched bookmakers and lower source/book minimums to 1 so later safety layers can
+see/evaluate the best available setups instead of having no pool at all.
 """
 
 import json
@@ -53,11 +58,12 @@ def _restore(obj: Any, old: dict[str, Any]) -> None:
             pass
 
 
-def _offer_count(offers_by_match: Any) -> tuple[int, int]:
+def _offer_count(offers_by_match: Any) -> tuple[int, int, int]:
     if not isinstance(offers_by_match, dict):
-        return 0, 0
+        return 0, 0, 0
     matches = 0
     offers = 0
+    books: set[str] = set()
     for rows in offers_by_match.values():
         if rows:
             matches += 1
@@ -65,7 +71,22 @@ def _offer_count(offers_by_match: Any) -> tuple[int, int]:
                 offers += len(rows)
             except Exception:
                 offers += 1
-    return matches, offers
+            for row in rows or []:
+                book = str(getattr(row, 'bookmaker', '') or '').strip()
+                if book:
+                    books.add(book.lower())
+    return matches, offers, len(books)
+
+
+def _mark_recovered(items: list[Any], mode: str) -> None:
+    for item in items or []:
+        try:
+            item.reasons.append(f"zero_raw_candidate_recovery={mode}")
+            item.source_summary["zero_raw_candidate_recovery"] = True
+            item.source_summary["zero_raw_recovery_mode"] = mode
+            item.source_summary["publication_contract_relaxed"] = False
+        except Exception:
+            pass
 
 
 def install(model_module: Any | None = None) -> dict[str, Any]:
@@ -85,7 +106,7 @@ def install(model_module: Any | None = None) -> dict[str, Any]:
 
     def build_candidates(self: Any, matches: list[Any], offers_by_match: dict[str, list[Any]], contexts_by_match: dict[str, Any], market_signals_by_match: dict[str, dict[str, Any]] | None = None):
         candidates, rejections, debug = original(self, matches, offers_by_match, contexts_by_match, market_signals_by_match)
-        matches_with_offers, total_offers = _offer_count(offers_by_match)
+        matches_with_offers, total_offers, unique_books = _offer_count(offers_by_match)
         payload: dict[str, Any] = {
             "created_at_utc": datetime.now(timezone.utc).isoformat(),
             "status": "not_needed" if candidates else "zero_raw_seen",
@@ -93,18 +114,21 @@ def install(model_module: Any | None = None) -> dict[str, Any]:
             "matches": len(matches or []),
             "matches_with_offers": matches_with_offers,
             "offers": total_offers,
+            "unique_books": unique_books,
             "rejections": dict(rejections or {}),
             "recovered_candidates": 0,
             "normal_publication_guards_preserved": True,
         }
-        if candidates or matches_with_offers <= 0:
+        if candidates:
+            _write(payload)
+            return candidates, rejections, debug
+        if matches_with_offers <= 0:
+            payload["status"] = "zero_raw_no_offer_input"
             _write(payload)
             return candidates, rejections, debug
 
-        # Existing builders were too dependent on line-history/market-signal state.
-        # On a fresh run, a first snapshot can be a legitimate item for the later
-        # lifecycle guard to carry over, so temporarily allow first-snapshot simple
-        # candidates. Quality and publication layers still decide safety.
+        # Recovery pass 1: first-snapshot/market-derived relief, but keep the
+        # existing target-bookmaker set. This handles missing market history.
         temp = {
             "simple_market_fallback_enabled": True,
             "partial_context_market_fallback_enabled": True,
@@ -119,6 +143,8 @@ def install(model_module: Any | None = None) -> dict[str, Any]:
             "market_derived_min_sources": 1,
             "fallback_publish_mode_enabled": True,
             "model_relaxed_fallback_enabled": True,
+            "force_publish_when_empty_enabled": False,
+            "min_sources_publish": 1,
         }
         old = _set_temp(self.settings, temp)
         try:
@@ -126,21 +152,41 @@ def install(model_module: Any | None = None) -> dict[str, Any]:
         finally:
             _restore(self.settings, old)
 
+        # Recovery pass 2: if target/consensus bookmaker filters caused the zero
+        # pool, temporarily allow every fetched book. Publication still later
+        # requires current price/integrity/quorum checks, so this only exposes
+        # candidates for diagnostics and controlled fallback evaluation.
+        if not recovered:
+            old_settings = _set_temp(self.settings, temp)
+            old_factory = {
+                "target_books": getattr(self, "target_books", set()),
+                "consensus_books": getattr(self, "consensus_books", set()),
+            }
+            try:
+                self.target_books = set()
+                self.consensus_books = set()
+                recovered, rec2_rejections, rec_debug = original(self, matches, offers_by_match, contexts_by_match, market_signals_by_match)
+                for key, value in (rec2_rejections or {}).items():
+                    rec_rejections[f"all_books_{key}"] = rec_rejections.get(f"all_books_{key}", 0) + int(value or 0)
+            finally:
+                self.target_books = old_factory["target_books"]
+                self.consensus_books = old_factory["consensus_books"]
+                _restore(self.settings, old_settings)
+
         for key, value in (rec_rejections or {}).items():
-            rejections[f"zero_raw_recovery_{key}"] = rejections.get(f"zero_raw_recovery_{key}", 0) + int(value or 0)
+            try:
+                rejections[f"zero_raw_recovery_{key}"] = rejections.get(f"zero_raw_recovery_{key}", 0) + int(value or 0)
+            except Exception:
+                pass
         if recovered:
-            for item in recovered:
-                try:
-                    item.reasons.append("zero_raw_candidate_recovery=first_snapshot_consensus")
-                    item.source_summary["zero_raw_candidate_recovery"] = True
-                    item.source_summary["zero_raw_recovery_mode"] = "first_snapshot_consensus"
-                except Exception:
-                    pass
+            mode = "first_snapshot_all_books" if any(str(k).startswith("all_books_") for k in (rec_rejections or {}).keys()) else "first_snapshot_consensus"
+            _mark_recovered(recovered, mode)
             payload.update({
                 "status": "recovered",
                 "recovered_candidates": len(recovered),
+                "recovery_mode": mode,
                 "recovery_rejections": dict(rec_rejections or {}),
-                "note": "Recovered candidates are still passed through quality/publication guards.",
+                "note": "Recovered candidates are still passed through quality/publication/current-price guards.",
             })
             _write(payload)
             return recovered, rejections, rec_debug
