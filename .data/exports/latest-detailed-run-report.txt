@@ -1,9 +1,9 @@
 🧾 Подробный отчёт run — прогнозов нет
 
 🧭 Состояние артефактов
-• debug: свежий | 2026-08-15T11:00:26.930888+00:00, Δ +2.5 мин
-• run_summary: свежий | 2026-08-15T11:00:26.930888+00:00, Δ +2.5 мин
-• fallback: свежий | 2026-08-15T11:02:55.873791+00:00, Δ +0.0 мин
+• debug: свежий | 2026-08-15T11:45:07.949750+00:00, Δ +1.9 мин
+• run_summary: свежий | 2026-08-15T11:45:07.949750+00:00, Δ +1.9 мин
+• fallback: свежий | 2026-08-15T11:47:03.923636+00:00, Δ +0.0 мин
 
 🧭 Runtime policy
 • Версия: harizon-runtime-policy-v6-strict-full-inventory
@@ -11,64 +11,80 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 203/300
-• С контекстом: 146/300
-• Готово к модели: 143/300
-• Ближайшие 6 часов: 15/44 готово
-• Следующие 12 часов: 20/53 готово
+• С линиями: 232/300
+• С контекстом: 189/300
+• Готово к модели: 170/300
+• Ближайшие 6 часов: 14/32 готово
+• Следующие 12 часов: 18/37 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 7 | с линиями: 3 | контекстов: 7
-• Кандидаты: raw 0 | до качества 26 | publishable 0
-• Резерв проверил: 2 | оценено в отчёте: 2 | выбрано: 0
-• матчей с линиями из любого источника: 3
-• матчей с любым контекстом: 0
-• матчей с объединенным контекстом: 0
+• Матчи: 5 | с линиями: 5 | контекстов: 6
+• Кандидаты: raw 0 | до качества 29 | publishable 0
+• Резерв проверил: 4 | оценено в отчёте: 4 | выбрано: 0
+• матчей с линиями из любого источника: 5
+• матчей с любым контекстом: 1
+• матчей с объединенным контекстом: 1
 • raw с market-derived сигналом: 0
 
 📡 Источники / фактическая работа
-• odds_api_io: data 32/3134, max 200, err 4
+• odds_api_io: data 27/3347, max 200, err 4
 • bzzoiro: data 0/0, req 3
-• sstats: data 2/2, req 14, max 150
+• sstats: data 6/6, req 14, max 150
 • api_football: data 0/0, off:disabled_by_config
-• football_data: data 5/5, req 5, max 12
+• football_data: data 0/0, req 1, max 12
 • thesportsdb: data 0/0
 • sportlogic: data 0/0
-• openfootball: data 0/0, req 6
+• openfootball: data 0/0, req 0
 
 📈 odds-api.io routing
-• account1: Bet365,Unibet | req 3 | offers 2759
+• account1: Bet365,Unibet | req 3 | offers 2704
 • account2: Betfair Exchange,Sbobet | req 4 | offers 0
 • Букмекеры в ответах: Bet365, Unibet
-• Матчи с 2+ букмекерами: 28; с 1 букмекером: 1
+• Матчи с 2+ букмекерами: 27; с 1 букмекером: 0
 
 🚫 Почему не прошли
-• current price recheck value lost:-6.1/-3.4 — 1 (33%)
-• нет подтверждения источниками — 1 (33%)
-• current price recheck value alive but drift too high:125.3/26.1 — 1 (33%)
+• нет подтверждения источниками — 2 (22%)
+• current price recheck value lost:91.5/21.5 — 1 (11%)
+• controlled fallback next regular run before kickoff — 1 (11%)
+• controlled fallback missing line recheck — 1 (11%)
+• current price recheck value lost:-5.2/-2.4 — 1 (11%)
+• current price recheck value lost:-2.0/-0.8 — 1 (11%)
+• отрицательная контрольная ценность после пересчёта по выбранному коэффициенту — 1 (11%)
+• current price recheck value lost:-5.3/-2.3 — 1 (11%)
 
 ⚠️ Пограничные кандидаты
-1. Шангхай Шенхуа — Хенан
- 🏆 Чинесе Супер Лигуе
- 🎯 Больше 3.5 @2.18 | 🕒 15.08.2026 15:00 MSK
+1. Челси — Реал Сосьедад
+ 🏆 Клуб Фриендлиес
+ 🎯 Меньше @2.88 | 🕒 15.08.2026 16:00 MSK
+ • odds sources 2, confirmation sources 1
+ • confirmation sources: sstats
+ • EV +5.5%
+ • запас +1.9 п.п.
+ • уверенность 75.1%
+ • качество 72.0
+ • линии 3, источники 1
+ • не прошло: current price recheck value lost:-2.0/-0.8
+2. 1. FSV Майнз 05 — Бурнемут
+ 🏆 Клуб Фриендлиес
+ 🎯 Больше 3.5 @2.36 | 🕒 15.08.2026 16:30 MSK
  • odds sources 2, confirmation sources 0
- • EV +2.3%
- • запас +1.1 п.п.
- • уверенность 72.9%
- • качество 47.3
+ • EV +1.6%
+ • запас +0.7 п.п.
+ • уверенность 70.3%
+ • качество 45.1
  • линии 3, источники 0
- • не прошло: нет подтверждения источниками; current price recheck value alive but drift too high:125.3/26.1
-2. Неупорт Кунти — Рочдале
- 🏆 Лига 2
- 🎯 Меньше 2.5 @1.93 | 🕒 15.08.2026 14:30 MSK
- • odds sources 0, confirmation sources 2
- • confirmation sources: espn, sstats
- • EV +0.7%
+ • не прошло: нет подтверждения источниками; controlled fallback next regular run before kickoff; controlled fallback missing line recheck; current price recheck value lost:-5.2/-2.4
+3. Челси — Реал Сосьедад
+ 🏆 Клуб Фриендлиес
+ 🎯 Больше 3.5 @2.24 | 🕒 15.08.2026 16:00 MSK
+ • odds sources 2, confirmation sources 1
+ • confirmation sources: sstats
+ • EV +0.9%
  • запас +0.4 п.п.
- • уверенность 72.7%
- • качество 62.8
- • линии 3, источники 2
- • не прошло: current price recheck value lost:-6.1/-3.4
+ • уверенность 72.2%
+ • качество 52.5
+ • линии 3, источники 1
+ • не прошло: current price recheck value lost:91.5/21.5
 
 🔌 API / квоты последнего run
 • odds_api_io: grant 160, reason granted
