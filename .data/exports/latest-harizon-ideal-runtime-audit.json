@@ -1,6 +1,7 @@
 {
   "best_near_misses": [],
   "blockers": [
+    "line_coverage_below_80pct",
     "context_coverage_below_85pct",
     "odds_api_io_account2_zero_offers"
   ],
@@ -10,8 +11,8 @@
     "overlap_bridge_offers": 48,
     "overlap_matches": 0
   },
-  "created_at_utc": "2026-08-15T18:34:28.322358+00:00",
-  "ideal_score": 84.2,
+  "created_at_utc": "2026-08-15T18:37:04.217349+00:00",
+  "ideal_score": 76.1,
   "inventory": {
     "next_12h_ready": 3,
     "next_12h_ready_pct": 75.0,
@@ -19,82 +20,21 @@
     "next_6h_ready": 3,
     "next_6h_ready_pct": 75.0,
     "next_6h_total": 4,
-    "ready": 196,
-    "ready_pct": 65.6,
-    "total": 299,
-    "with_context": 204,
-    "with_context_pct": 68.2,
-    "with_lines": 286,
-    "with_lines_pct": 95.7
+    "ready": 162,
+    "ready_pct": 54.0,
+    "total": 300,
+    "with_context": 164,
+    "with_context_pct": 54.7,
+    "with_lines": 224,
+    "with_lines_pct": 74.7
   },
   "line_movement": {
-    "class_counts": {
-      "odds_below_min": 1,
-      "other": 2
-    },
-    "created_at_utc": "2026-08-15T18:16:40.842760+00:00",
-    "evaluated": 3,
+    "class_counts": {},
+    "created_at_utc": "2026-08-15T18:34:44.024170+00:00",
+    "evaluated": 0,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
-    "samples": [
-      {
-        "away_team": "SC Cambuur",
-        "classes": [
-          "odds_below_min"
-        ],
-        "edge_pp": 11.679,
-        "ev_pct": 19.154,
-        "home_team": "Fortuna Sittard",
-        "key": "soccer|cambuur|fortuna sittard|2026-08-15|Fortuna Sittard|SC Cambuur|Больше 1.5|1.5",
-        "odds": 1.64,
-        "point": 1.5,
-        "reject_reasons": [
-          "odds_below_global_min"
-        ],
-        "reserve_quality_score": 86.1,
-        "selection": "Больше 1.5"
-      },
-      {
-        "away_team": "FC Porto",
-        "classes": [
-          "other"
-        ],
-        "edge_pp": 1.631,
-        "ev_pct": 5.3,
-        "home_team": "Rio Ave",
-        "key": "soccer|porto|rio ave|2026-08-15|Rio Ave|FC Porto|Больше|3.5",
-        "odds": 3.25,
-        "point": 3.5,
-        "reject_reasons": [
-          "odds_above_global_max",
-          "controlled_fallback_next_regular_run_before_kickoff",
-          "controlled_fallback_missing_line_recheck"
-        ],
-        "reserve_quality_score": 64.4,
-        "selection": "Больше"
-      },
-      {
-        "away_team": "FC Porto",
-        "classes": [
-          "other"
-        ],
-        "edge_pp": 14.122,
-        "ev_pct": 27.962,
-        "home_team": "Rio Ave",
-        "key": "soccer|porto|rio ave|2026-08-15|Rio Ave|FC Porto|Больше 1.5|1.5",
-        "odds": 1.98,
-        "point": 1.5,
-        "reject_reasons": [
-          "tier_a_publication_score_below_min",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_b_bookmaker_quorum_prices_missing:1/2",
-          "tier_b_watchlist_only_no_publication",
-          "tier_c_publication_score_below_min"
-        ],
-        "reserve_quality_score": 95.2,
-        "selection": "Больше 1.5"
-      }
-    ],
+    "samples": [],
     "status": "ok",
     "watchlist_count": 0
   },
@@ -120,6 +60,7 @@
     "touched_files": []
   },
   "recommended_actions": [
+    "raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill",
     "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set"
   ],
