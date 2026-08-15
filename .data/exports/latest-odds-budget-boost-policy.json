@@ -1,0 +1,88 @@
+{
+  "patched": {
+    "football_data": {
+      "env": {
+        "ENABLE_FOOTBALL_DATA": "true",
+        "ENABLE_FOOTBALL_DATA_CONTEXT": "true",
+        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "180",
+        "FOOTBALL_DATA_ENABLED": "true",
+        "FOOTBALL_DATA_PER_RUN_MAX": "16",
+        "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "16"
+      },
+      "per_run_max": 16
+    },
+    "odds_api_io": {
+      "env": {
+        "ENABLE_ODDS_API_IO": "true",
+        "MAX_MATCHES_FOR_ODDS_FETCH": "520",
+        "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
+        "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "100",
+        "ODDS_API_IO_BOOKMAKERS": "Bet365,Unibet",
+        "ODDS_API_IO_BOOKMAKERS_ACCOUNT1": "Bet365,Unibet",
+        "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
+        "ODDS_API_IO_ENABLED": "true",
+        "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36",
+        "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "200",
+        "ODDS_API_IO_PAGE_LIMIT": "100",
+        "ODDS_API_IO_PER_RUN_MAX": "200"
+      },
+      "limit": {
+        "account1_bookmakers": [
+          "Bet365",
+          "Unibet"
+        ],
+        "account2_bookmakers": [
+          "Betfair Exchange",
+          "Sbobet"
+        ],
+        "bookmakers": 2,
+        "bookmakers_per_account": 2,
+        "budget_scope": "per_run_dual_account",
+        "requests_per_hour": 100,
+        "requests_per_hour_per_account": 100,
+        "rules_source": "RULES.txt + dual-account user configuration"
+      },
+      "per_run_max": 200
+    },
+    "openfootball_public": {
+      "env": {
+        "ENABLE_OPENFOOTBALL_CONTEXT": "true",
+        "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "220",
+        "OPENFOOTBALL_ENABLED": "true",
+        "OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "18",
+        "OPENFOOTBALL_SKIP_404_CACHE_TTL_HOURS": "24"
+      },
+      "per_run_max": 18
+    },
+    "sstats": {
+      "env": {
+        "ENABLE_SSTATS": "true",
+        "ENABLE_SSTATS_CONTEXT": "true",
+        "SSTATS_CONTEXT_MATCH_LIMIT": "320",
+        "SSTATS_ENABLED": "true",
+        "SSTATS_LOOKBACK_DAYS": "35",
+        "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150",
+        "SSTATS_PER_RUN_MAX": "150",
+        "SSTATS_RECENT_MATCHES": "10",
+        "SSTATS_REQUESTS_MAX_PER_RUN": "150"
+      },
+      "per_run_max": 150
+    },
+    "thesportsdb": {
+      "env": {
+        "ENABLE_THESPORTSDB": "true",
+        "ENABLE_THESPORTSDB_CONTEXT": "true",
+        "THESPORTSDB_CONTEXT_MATCH_LIMIT": "180",
+        "THESPORTSDB_ENABLED": "true",
+        "THESPORTSDB_PER_RUN_MAX": "30",
+        "THESPORTSDB_REQUESTS_MAX_PER_RUN": "30"
+      },
+      "per_run_max": 30
+    }
+  },
+  "policy_path": "/home/runner/work/sports-bot/sports-bot/config/provider_request_budget.json",
+  "reason": "Align legacy odds budget boost with dual-account odds-api.io mode so it no longer downgrades provider max to 80.",
+  "status": "ok",
+  "updated_at_utc": "2026-08-15T18:13:38.767270+00:00",
+  "version": "v20-dual-account-odds-api-io-budget"
+}
