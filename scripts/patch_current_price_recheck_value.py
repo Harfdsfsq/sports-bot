@@ -45,8 +45,15 @@ def _prob_from_ev(price: float, ev_pct: float) -> float:
 
 
 def _selected_current(reason: str) -> tuple[float, float] | None:
-    # Produced by semantic_current_price_guard as selected/current decimal odds.
     m = re.search(r'semantic_selected_price_not_current:([0-9.]+)/([0-9.]+)', str(reason))
+    return (_num(m.group(1)), _num(m.group(2))) if m else None
+
+
+def _existing_recheck_result(reason: str) -> tuple[float, float] | None:
+    # Normalize reasons emitted by earlier wrappers.  A text named "value_lost"
+    # can contain a positive current EV/edge when the previous drift guard was the
+    # real blocker.  Treat the numeric EV/edge as source of truth.
+    m = re.search(r'current[_ ]price[_ ]recheck[_ ]value[_ ](?:lost|alive[^:]*):([+-]?[0-9.]+)/([+-]?[0-9.]+)', str(reason), flags=re.I)
     return (_num(m.group(1)), _num(m.group(2))) if m else None
 
 
@@ -72,6 +79,27 @@ def install(base: Any) -> dict[str, Any]:
         rechecked = False
         samples: list[dict[str, Any]] = []
         for reason in reasons:
+            existing = _existing_recheck_result(str(reason))
+            if existing is not None:
+                current_ev, current_edge = existing
+                alive = current_ev >= min_ev and current_edge >= min_edge
+                sample = {
+                    'source_reason': str(reason),
+                    'recalculated_ev_pct': round(current_ev, 2),
+                    'recalculated_edge_pp': round(current_edge, 2),
+                    'min_ev_pct': min_ev,
+                    'min_edge_pp': min_edge,
+                    'status': 'existing_recheck_value_alive' if alive else 'existing_recheck_value_lost',
+                }
+                samples.append(sample)
+                if alive:
+                    metrics['current_price_recheck'] = sample
+                    metrics.setdefault('repaired_reasons', []).append('positive_current_price_recheck_reason_normalized')
+                    rechecked = True
+                    continue
+                new_reasons.append(f'current_price_recheck_value_lost:{current_ev:.1f}/{current_edge:.1f}')
+                continue
+
             pair = _selected_current(str(reason))
             if not pair:
                 new_reasons.append(reason)
@@ -95,9 +123,6 @@ def install(base: Any) -> dict[str, Any]:
                 'current_price_bounds_ok': _current_price_bounds_ok(current),
             }
             if alive and (drift_pct <= hard_drift or allow_alive_high_drift):
-                # Value survived at the current quote. A large drift is diagnostic only:
-                # other guards (sources, quality, line movement, xG) still decide whether
-                # this can be published. Do not convert a live value into a hard reject.
                 sample['status'] = 'value_alive_at_current_price_high_drift_warning' if drift_pct > hard_drift else 'value_alive_at_current_price'
                 metrics['current_price_recheck'] = sample
                 metrics.setdefault('current_price_recheck_warnings', [])
@@ -127,7 +152,7 @@ def install(base: Any) -> dict[str, Any]:
             'samples': samples,
             'hard_reasons_after': [str(x) for x in new_reasons],
             'publication_contract_relaxed': False,
-            'note': 'High drift is no longer a hard reject when current-price EV/edge remain above floors; all other guards remain active.',
+            'note': 'Positive current-price EV/edge is normalized as alive even if an earlier wrapper named the reason value_lost; all other guards remain active.',
         })
         return list(dict.fromkeys(new_reasons))
 
