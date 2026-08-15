@@ -370,6 +370,17 @@ def _install_zero_raw_candidate_recovery() -> None:
         pass
 
 
+def _install_quality_shadow_diagnostics() -> None:
+    if not _enabled("HARIZON_QUALITY_SHADOW_DIAGNOSTICS_ENABLED"):
+        return
+    try:
+        from scripts.patch_quality_shadow_diagnostics import install
+        import app.services.quality as quality_module
+        install(quality_module)
+    except Exception:
+        pass
+
+
 def _run_bzzoiro_offer_bridge_after_cli() -> None:
     if not _enabled("HARIZON_BZZOIRO_OFFER_OVERLAP_BRIDGE_ENABLED"):
         return
@@ -389,6 +400,7 @@ if _is_run_once():
     _sync_publication_ledger_before_cli()
     _install_odds_api_io_account2_diagnostics()
     _install_zero_raw_candidate_recovery()
+    _install_quality_shadow_diagnostics()
     _install_bzzoiro_v2_source_matrix()
     atexit.register(_run_bzzoiro_offer_bridge_after_cli)
     atexit.register(_sync_publication_ledger_after_cli)
