@@ -6,14 +6,6 @@ import scripts.publish_controlled_fallback_guarded_v19 as v19
 
 
 def _apply_rules_runtime_env() -> None:
-    """Keep fallback aligned with RULES.txt without disabling price/movement guards.
-
-    The fallback process is a separate Python entrypoint, so it does not always
-    inherit the main runner's runtime_startup_chain overrides.  For B-tier, a
-    missing exact selected quote should not be a hard terminal blocker when a
-    comparable current quote exists; however current-price EV/edge, line
-    movement, source confirmation and xG guards still remain active.
-    """
     defaults = {
         "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
         "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1",
@@ -39,16 +31,12 @@ def _apply_rules_runtime_env() -> None:
 def main() -> int:
     _apply_rules_runtime_env()
     v19.run_preflight()
-    try:
-        from scripts.restore_awaiting_movement_candidates import main as restore_awaiting
-        restore_awaiting()
-    except Exception:
-        pass
-    try:
-        from scripts.apply_fallback_price_floor import main as apply_price_floor
-        apply_price_floor()
-    except Exception:
-        pass
+    for step in ('scripts.build_context_source_index','scripts.restore_awaiting_movement_candidates','scripts.apply_fallback_price_floor'):
+        try:
+            module = __import__(step, fromlist=['main']); fn = getattr(module, 'main', None)
+            if callable(fn): fn()
+        except Exception:
+            pass
     import scripts.publish_controlled_fallback_guarded_v18 as v18
     from scripts.patch_controlled_fallback_duplicate_matching import install as install_duplicate_matcher
     from scripts.patch_a_cover_evidence_quality import install as install_a_cover_evidence_quality
@@ -59,51 +47,29 @@ def main() -> int:
     from scripts.patch_current_bankroll_source import install as install_current_bankroll_source
     from scripts.patch_proxy_default_xg_guard import install as install_proxy_default_xg_guard
     from scripts.patch_publication_safety_contract import install as install_publication_safety_contract
+    from scripts.patch_controlled_fallback_confirmation_bridge import install as install_confirmation_bridge
     from scripts.patch_current_price_recheck_value import install as install_current_price_recheck_value
-    from scripts.patch_semantic_movement_current_price_guard import (
-        install as install_semantic_movement_current_price_guard,
-    )
+    from scripts.patch_semantic_movement_current_price_guard import install as install_semantic_movement_current_price_guard
 
     install_duplicate_matcher(v18)
     install_a_cover_evidence_quality(v18.base)
     install_xg_probability_support(v18.base)
+    install_confirmation_bridge(v18.base)
     install_proxy_default_xg_guard(v18.base)
     install_publication_safety_contract(v18.base)
     install_reference_price_guard(v18.base)
     install_display_line_count_safe(v18.base)
     install_same_match_total_conflict_guard(v18.base)
     install_current_bankroll_source(v18.base)
-    # Order matters: semantic guard can emit selected/current price reasons;
-    # current-price patch must run after it to normalize positive EV/edge and
-    # avoid false `value lost:+EV/+edge` blockers in the v20 path.
     install_semantic_movement_current_price_guard(v18.base)
     install_current_price_recheck_value(v18.base)
     code = int(v18.main() or 0)
-    try:
-        from scripts.sync_run_report_ledger_export import main as sync_run_ledger
-        sync_run_ledger()
-    except Exception:
-        pass
-    try:
-        from scripts.sync_publication_ledger import main as sync_publication_ledger
-        sync_publication_ledger()
-    except Exception:
-        pass
-    try:
-        from scripts.sync_controlled_fallback_selected_to_ledger import main as sync_selected_fallback
-        sync_selected_fallback()
-    except Exception:
-        pass
-    try:
-        from scripts.sync_run_report_ledger_export import main as sync_run_ledger
-        sync_run_ledger()
-    except Exception:
-        pass
-    try:
-        from scripts.build_two_plus_coverage_report import main as two_plus_report
-        two_plus_report()
-    except Exception:
-        pass
+    for step in ('scripts.sync_run_report_ledger_export','scripts.sync_publication_ledger','scripts.sync_controlled_fallback_selected_to_ledger','scripts.sync_run_report_ledger_export','scripts.build_two_plus_coverage_report'):
+        try:
+            module = __import__(step, fromlist=['main']); fn = getattr(module, 'main', None)
+            if callable(fn): fn()
+        except Exception:
+            pass
     return code
 
 

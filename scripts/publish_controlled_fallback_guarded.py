@@ -16,7 +16,7 @@ def _run_step(module_name:str)->None:
     except Exception: pass
 
 def _repair_runtime_artifacts_before_fallback()->None:
-    for m in ('scripts.bridge_runtime_context_coverage','scripts.build_day_inventory_coverage_truth','scripts.harizon_a_tier_coverage_plan','scripts.harizon_a_tier_targeted_enrichment_queue','scripts.apply_a_tier_targeted_provider_env','scripts.persist_bzzoiro_runtime_artifacts','scripts.bzzoiro_targeted_odds_confirmation','scripts.bzzoiro_targeted_odds_detail_fetch','scripts.trace_bzzoiro_report_source','scripts.project_sstats_context_into_candidates','scripts.replace_rescue_proxy_placeholder_xg','scripts.day_inventory_cumulative_coverage'):
+    for m in ('scripts.bridge_runtime_context_coverage','scripts.build_context_source_index','scripts.build_day_inventory_coverage_truth','scripts.harizon_a_tier_coverage_plan','scripts.harizon_a_tier_targeted_enrichment_queue','scripts.apply_a_tier_targeted_provider_env','scripts.persist_bzzoiro_runtime_artifacts','scripts.bzzoiro_targeted_odds_confirmation','scripts.bzzoiro_targeted_odds_detail_fetch','scripts.trace_bzzoiro_report_source','scripts.project_sstats_context_into_candidates','scripts.replace_rescue_proxy_placeholder_xg','scripts.day_inventory_cumulative_coverage'):
         _run_step(m)
 
 def _apply_focused_alpha_policy()->None:
@@ -64,8 +64,8 @@ def main()->int:
         from scripts.patch_semantic_line_movement_alias_relief import install as ar
         from scripts.patch_semantic_movement_current_price_guard import install as sm
         from scripts.patch_tier_a_strict_policy import install as ta
-        # Order matters: semantic guard emits current selected/current reasons; cp must be the final wrapper.
-        ta(v18.base); ps(v18.base); lc(v18.base); ar(v18.base); q(v18.base); sm(v18.base); cp(v18.base); _install_b_tier_testing_relief(v18.base)
+        from scripts.patch_controlled_fallback_confirmation_bridge import install as cb
+        ta(v18.base); ps(v18.base); cb(v18.base); lc(v18.base); ar(v18.base); q(v18.base); sm(v18.base); cp(v18.base); _install_b_tier_testing_relief(v18.base)
     except Exception: pass
     _apply_focused_alpha_policy(); _repair_runtime_artifacts_before_fallback(); _build_focused_alpha_decisions(); _force_runtime_publication_contract()
     from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
