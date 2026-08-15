@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 8,
+      "rows_seen": 8,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 55,
-      "rows_stale": 55
+      "rows_kept": 78,
+      "rows_seen": 132,
+      "rows_stale": 54
     },
     "lifecycle": {
       "files_present": 0,
@@ -25,28 +25,41 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 1,
+      "rows_seen": 1,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 24,
+    "candidates_before_quality": 25,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 6,
-    "controlled_candidates_seen": null,
+    "contexts_built": 19,
+    "controlled_candidates_seen": 2,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 0,
-    "matches_seen": 17,
-    "matches_with_offers": 9
+    "coverage_candidates_current_date": 38,
+    "matches_seen": 13,
+    "matches_with_offers": 29
   },
-  "created_at": "2026-08-15T05:11:39.093203+00:00",
-  "family_counts": {},
-  "matches_with_candidates": 0,
-  "missing_data_flags": {},
+  "created_at": "2026-08-15T07:12:45.567556+00:00",
+  "family_counts": {
+    "dnb": 3,
+    "h2h": 7,
+    "spreads": 9,
+    "teamtotals": 1,
+    "totals": 18
+  },
+  "matches_with_candidates": 13,
+  "missing_data_flags": {
+    "confidence_below_micro_c": 36,
+    "edge_below_micro_c": 38,
+    "ev_below_micro_c": 36,
+    "single_book": 36,
+    "single_context_source": 36,
+    "single_odds_source": 36
+  },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -59,23 +72,23 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 0,
+  "positive_near_miss_count": 2,
   "provider_gap_summary": [
     {
-      "api_key_present": null,
+      "api_key_present": true,
       "budget_exhausted": null,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": true,
+      "enabled": null,
       "events_fetched": null,
-      "events_matched": null,
+      "events_matched": 103,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 89,
-      "provider": "bzzoiro_odds",
-      "rate_limited": null,
-      "response_errors": null,
+      "offers_parsed": 4478,
+      "provider": "account1",
+      "rate_limited": false,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -89,12 +102,14 @@
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
-      "matches_built": 783,
+      "gap_flags": [
+        "response_errors"
+      ],
+      "matches_built": 802,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 0,
+      "response_errors": 13,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -109,7 +124,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 783,
+      "matches_built": 802,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -140,8 +155,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 6,
-      "direct_event_contexts_built": 6,
+      "contexts_built": 18,
+      "direct_event_contexts_built": 18,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -159,6 +174,25 @@
       "team_form_contexts_built": null
     },
     {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 13,
+      "direct_event_contexts_built": 13,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
       "api_key_present": null,
       "budget_exhausted": null,
       "contexts_built": null,
@@ -169,12 +203,53 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 89,
+      "offers_parsed": 275,
       "provider": "v2_primary",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 13,
+      "direct_event_contexts_built": 13,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "account2",
+      "rate_limited": false,
+      "response_errors": 13,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
     },
     {
@@ -365,55 +440,109 @@
       "rows_fetched": 0,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
-    "no_data": 11,
-    "working": 6
+    "broken_or_unavailable": 1,
+    "no_data": 9,
+    "working": 8
   },
   "reject_reason_counts_from_rows": {},
   "target_date": "2026-08-15",
-  "top_near_miss": []
+  "top_near_miss": [
+    {
+      "away_team": "Kingston City FC",
+      "best_candidate": {
+        "adjusted_probability": 0.547252,
+        "books_count": 2,
+        "canonical_edge_pp": 2.57,
+        "canonical_ev_pct": 17.112,
+        "confidence": 75.681,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 2.14,
+        "odds_sources_count": 2,
+        "origin": "latest_rescue_candidates",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 2
+      },
+      "best_confidence": 75.681,
+      "best_edge_pp": 2.57,
+      "best_ev_pct": 17.112,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-15T08:15:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Altona City SC",
+      "league_name": "Australia - Victoria Premier League 2",
+      "match_key": "soccer|altona_city_sc|kingston_city_fc|2026-08-15",
+      "missing_flags": {
+        "edge_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "latest_rescue_candidates": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Kingston City FC",
+      "best_candidate": {
+        "adjusted_probability": 0.547252,
+        "books_count": 2,
+        "canonical_edge_pp": 2.57,
+        "canonical_ev_pct": 17.112,
+        "confidence": 75.681,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 2.14,
+        "odds_sources_count": 2,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 2
+      },
+      "best_confidence": 75.681,
+      "best_edge_pp": 2.57,
+      "best_ev_pct": 17.112,
+      "books_max": 2,
+      "candidate_count": 4,
+      "commence_time": "2026-08-15T08:15:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "h2h": 1,
+        "totals": 3
+      },
+      "home_team": "Altona City SC",
+      "league_name": "Australia - Victoria Premier League 2",
+      "match_key": "soccer|altona city|kingston city|2026-08-15",
+      "missing_flags": {
+        "confidence_below_micro_c": 3,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 4
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    }
+  ]
 }
