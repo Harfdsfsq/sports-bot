@@ -2,10 +2,14 @@ from __future__ import annotations
 
 """Runtime repairs for controlled fallback evidence and integrity checks.
 
-Keeps publication strict, but fixes two bad diagnostics from recent runs:
-1) candidates can display lines/books while metrics still say odds_sources=0;
-2) selected-vs-market-probability can hard-block when there are no real same-side
-   bookmaker prices to validate that the selected price is actually current.
+Keeps publication strict, but fixes bad diagnostics/evaluation paths from recent
+runs:
+1) ``evaluate_candidate`` returns a tuple, so earlier metric repairs did not see
+   the real metrics dict;
+2) B-tier bookmaker quorum can be verified from the fresh odds-api same-side
+   snapshot even when the candidate row itself does not carry raw_bucket_offers;
+3) selected-vs-market-probability is only a warning if there are no real
+   same-side bookmaker prices. Median/external snapshot outliers remain hard.
 """
 
 import json
@@ -61,6 +65,8 @@ def _line_evidence(candidate: dict[str, Any], metrics: dict[str, Any]) -> tuple[
     books = 0
     line_count = 0
     for box in containers:
+        if not isinstance(box, dict):
+            continue
         for key in ('odds_sources', 'line_sources', 'price_sources', 'verified_odds_sources', 'exact_odds_sources'):
             names.update(_split(box.get(key)))
         for key in ('odds_sources_count', 'line_sources_count', 'independent_odds_sources_count', 'price_sources_count'):
@@ -69,11 +75,22 @@ def _line_evidence(candidate: dict[str, Any], metrics: dict[str, Any]) -> tuple[
             books = max(books, _int(box.get(key)))
         for key in ('books', 'bookmakers', 'bookmaker_names', 'raw_bucket_offers'):
             books = max(books, _int(box.get(key)))
-    # If report has visible bookmaker/line evidence but no provider name, mark it
-    # as bookmaker_quorum evidence for diagnostics. This is not A-tier proof.
     if not names and (books >= 2 or line_count >= 2):
         names.add('bookmaker_quorum')
     return max(line_count, len(names)), sorted(names), books
+
+
+def _external_prices(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[float]:
+    try:
+        from scripts.filter_controlled_fallback_price_integrity import external_snapshot_same_side_prices
+        row = {**candidate, **{k: v for k, v in metrics.items() if k not in candidate}, 'metrics': metrics}
+        prices, _offers, debug = external_snapshot_same_side_prices(row)
+        if isinstance(debug, dict):
+            metrics['external_same_side_snapshot_debug'] = debug
+        return [float(x) for x in prices if _num(x) > 1.0]
+    except Exception as exc:
+        metrics['external_same_side_snapshot_error'] = f'{type(exc).__name__}: {exc}'[:240]
+        return []
 
 
 def _repair_metrics(candidate: dict[str, Any], metrics: dict[str, Any], report: dict[str, Any]) -> None:
@@ -90,6 +107,40 @@ def _repair_metrics(candidate: dict[str, Any], metrics: dict[str, Any], report: 
     if books > _int(metrics.get('books_count')):
         metrics['books_count'] = books
         report['patched_books_metrics'] += 1
+    prices = _external_prices(candidate, metrics)
+    if len(prices) >= 2:
+        metrics['books_count'] = max(_int(metrics.get('books_count')), len(prices))
+        metrics['price_confirmation_sources_count'] = max(_int(metrics.get('price_confirmation_sources_count')), len(prices))
+        metrics['external_same_side_real_book_prices'] = [round(x, 4) for x in prices[:12]]
+        report['patched_external_snapshot_books'] += 1
+
+
+def _soften_reasons(candidate: dict[str, Any], metrics: dict[str, Any], reasons: list[str], report: dict[str, Any]) -> list[str]:
+    prices = metrics.get('external_same_side_real_book_prices')
+    price_count = _int(prices)
+    if price_count >= 2:
+        before = len(reasons)
+        reasons = [r for r in reasons if not str(r).startswith('tier_b_bookmaker_quorum_prices_missing')]
+        if len(reasons) != before:
+            report['removed_false_bookmaker_quorum_missing'] += 1
+    same_side = max(_int(metrics.get('same_side_identified_offers_count')), _int(metrics.get('external_snapshot_side_rows')), price_count)
+    if same_side <= 0:
+        before = len(reasons)
+        reasons = [r for r in reasons if str(r) != 'price_integrity:selected_price_vs_market_probability_outlier']
+        if len(reasons) != before:
+            report['market_probability_guard_softened_without_real_prices'] += 1
+            metrics['market_probability_integrity_warning'] = True
+    # Deduplicate noisy repeated tier reasons.
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for reason in reasons:
+        key = str(reason)
+        if key in seen:
+            report['duplicate_reasons_removed'] += 1
+            continue
+        seen.add(key)
+        deduped.append(reason)
+    return deduped
 
 
 def install(base: Any) -> dict[str, Any]:
@@ -99,11 +150,14 @@ def install(base: Any) -> dict[str, Any]:
         'patched_functions': [],
         'patched_odds_source_metrics': 0,
         'patched_books_metrics': 0,
+        'patched_external_snapshot_books': 0,
+        'removed_false_bookmaker_quorum_missing': 0,
         'market_probability_guard_softened_without_real_prices': 0,
+        'duplicate_reasons_removed': 0,
         'publication_contract_relaxed': False,
     }
 
-    for name in ('candidate_metrics', 'metrics_for_candidate', 'build_metrics', 'evaluate_candidate'):
+    for name in ('candidate_metrics', 'metrics_for_candidate', 'build_metrics'):
         fn = getattr(base, name, None)
         if not callable(fn) or getattr(fn, '_harizon_evidence_integrity_patch', False):
             continue
@@ -116,27 +170,27 @@ def install(base: Any) -> dict[str, Any]:
         setattr(base, name, wrapped)
         report['patched_functions'].append(name)
 
+    old_eval = getattr(base, 'evaluate_candidate', None)
+    if callable(old_eval) and not getattr(old_eval, '_harizon_evidence_integrity_patch', False):
+        def eval_wrapped(candidate: dict[str, Any], *args: Any, **kwargs: Any):
+            result = old_eval(candidate, *args, **kwargs)
+            if isinstance(result, tuple) and len(result) >= 4 and isinstance(result[2], dict):
+                ok, reasons, metrics, tier = result[:4]
+                _repair_metrics(candidate, metrics, report)
+                new_reasons = _soften_reasons(candidate, metrics, list(reasons or []), report)
+                new_ok = bool(ok) and not new_reasons
+                return (new_ok, new_reasons, metrics, tier) + tuple(result[4:])
+            return result
+        eval_wrapped._harizon_evidence_integrity_patch = True  # type: ignore[attr-defined]
+        base.evaluate_candidate = eval_wrapped
+        report['patched_functions'].append('evaluate_candidate')
+
     old_hr = getattr(base, 'hard_reject_reasons', None)
     if callable(old_hr) and not getattr(old_hr, '_harizon_evidence_integrity_patch', False):
         def hard_reject_wrapped(candidate: dict[str, Any], metrics: dict[str, Any], sent_index: dict[str, Any]) -> list[str]:
             _repair_metrics(candidate, metrics, report)
             reasons = list(old_hr(candidate, metrics, sent_index) or [])
-            # If the only price-integrity proof is model market_probability and
-            # the guard itself says there were no real same-side offers/books, do
-            # not call it a hard integrity failure. Keep external/bookmaker median
-            # failures hard. This prevents false blocks like high EV + conf 4 but
-            # odds_sources displayed as 0.
-            details = candidate.get('price_integrity_details') if isinstance(candidate.get('price_integrity_details'), dict) else {}
-            ss = candidate.get('source_summary') if isinstance(candidate.get('source_summary'), dict) else {}
-            same_side = max(_int(details.get('same_side_identified_offers_count')), _int(ss.get('same_side_identified_offers_count')))
-            real_prices = max(_int(details.get('same_side_real_book_prices')), _int(ss.get('same_side_real_book_prices')))
-            if same_side <= 0 and real_prices <= 0:
-                filtered = [r for r in reasons if str(r) != 'price_integrity:selected_price_vs_market_probability_outlier']
-                if len(filtered) != len(reasons):
-                    report['market_probability_guard_softened_without_real_prices'] += 1
-                    metrics['market_probability_integrity_warning'] = True
-                    reasons = filtered
-            return reasons
+            return _soften_reasons(candidate, metrics, reasons, report)
         hard_reject_wrapped._harizon_evidence_integrity_patch = True  # type: ignore[attr-defined]
         base.hard_reject_reasons = hard_reject_wrapped
         report['patched_functions'].append('hard_reject_reasons')
