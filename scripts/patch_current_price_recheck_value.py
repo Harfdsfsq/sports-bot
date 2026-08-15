@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 OUT = Path('.data/exports/latest-current-price-recheck-value.json')
+PATCH_VERSION = 'v3-positive-reason-normalizer-after-semantic'
 
 
 def _num(v: Any, default: float = 0.0) -> float:
@@ -50,9 +51,6 @@ def _selected_current(reason: str) -> tuple[float, float] | None:
 
 
 def _existing_recheck_result(reason: str) -> tuple[float, float] | None:
-    # Normalize reasons emitted by earlier wrappers.  A text named "value_lost"
-    # can contain a positive current EV/edge when the previous drift guard was the
-    # real blocker.  Treat the numeric EV/edge as source of truth.
     m = re.search(r'current[_ ]price[_ ]recheck[_ ]value[_ ](?:lost|alive[^:]*):([+-]?[0-9.]+)/([+-]?[0-9.]+)', str(reason), flags=re.I)
     return (_num(m.group(1)), _num(m.group(2))) if m else None
 
@@ -63,13 +61,33 @@ def _current_price_bounds_ok(current: float) -> bool:
     return min_odds <= current <= max_odds
 
 
+def _is_our_wrapper(fn: Any) -> bool:
+    return bool(getattr(fn, '_harizon_current_price_recheck_wrapper', False))
+
+
+def _base_for_reinstall(base: Any, old: Any) -> Any:
+    # Earlier runs installed this patch before semantic current-price guard, which
+    # means it never saw semantic_selected_price_not_current reasons.  Allow a
+    # reinstall when semantic guard is now the active wrapper; otherwise keep the
+    # existing wrapper to avoid recursive double wrapping.
+    previous = getattr(base, '_harizon_current_price_recheck_wrapped_fn', None)
+    if _is_our_wrapper(old) and callable(previous):
+        return previous
+    return old
+
+
 def install(base: Any) -> dict[str, Any]:
     old = getattr(base, 'hard_reject_reasons', None)
-    if not callable(old) or getattr(base, '_harizon_current_price_recheck', False):
-        return {'status': 'already_installed' if getattr(base, '_harizon_current_price_recheck', False) else 'missing_hard_reject'}
+    if not callable(old):
+        return {'status': 'missing_hard_reject'}
+    if getattr(base, '_harizon_current_price_recheck_version', '') == PATCH_VERSION and _is_our_wrapper(old):
+        return {'status': 'already_installed', 'version': PATCH_VERSION}
+    wrapped_target = _base_for_reinstall(base, old)
+    if not callable(wrapped_target):
+        return {'status': 'missing_wrapped_target'}
 
     def hard_reject(candidate: dict[str, Any], metrics: dict[str, Any], sent_index: dict[str, Any]) -> list[str]:
-        reasons = list(old(candidate, metrics, sent_index) or [])
+        reasons = list(wrapped_target(candidate, metrics, sent_index) or [])
         ev = max(_num(metrics.get('canonical_ev_pct')), _num(metrics.get('ev_pct')), _num(candidate.get('ev_pct')))
         min_ev = _env_float('CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT', 3.0)
         min_edge = _env_float('CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP', 1.5)
@@ -143,6 +161,7 @@ def install(base: Any) -> dict[str, Any]:
         _write({
             'created_at_utc': datetime.now(timezone.utc).isoformat(),
             'status': 'ok',
+            'version': PATCH_VERSION,
             'match_key': candidate.get('match_key'),
             'home_team': candidate.get('home_team'),
             'away_team': candidate.get('away_team'),
@@ -152,13 +171,16 @@ def install(base: Any) -> dict[str, Any]:
             'samples': samples,
             'hard_reasons_after': [str(x) for x in new_reasons],
             'publication_contract_relaxed': False,
-            'note': 'Positive current-price EV/edge is normalized as alive even if an earlier wrapper named the reason value_lost; all other guards remain active.',
+            'note': 'Installed after semantic guard; positive current-price EV/edge is never emitted as value_lost.',
         })
         return list(dict.fromkeys(new_reasons))
 
+    hard_reject._harizon_current_price_recheck_wrapper = True  # type: ignore[attr-defined]
     base.hard_reject_reasons = hard_reject
     base._harizon_current_price_recheck = True
-    return {'status': 'installed', 'publication_contract_relaxed': False}
+    base._harizon_current_price_recheck_version = PATCH_VERSION
+    base._harizon_current_price_recheck_wrapped_fn = wrapped_target
+    return {'status': 'installed', 'version': PATCH_VERSION, 'publication_contract_relaxed': False}
 
 
 __all__ = ['install']
