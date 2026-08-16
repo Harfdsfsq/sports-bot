@@ -1,12 +1,12 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: line movement guard снял кандидата
+• Главная причина: odds-api.io: выбранные букмекеры недоступны на текущем тарифе
 
 📦 Покрытие
-• Матчи в run: 2 | day inventory: 300
-• С линиями: 2 | с контекстом: 0 | ready model: 238
-• odds-api.io offers: 453 | Bzzoiro secondary offers: 120
-• 2+ букмекера odds-api.io: 3 | 2-source overlap Bzzoiro+odds-api.io: 2
+• Матчи в run: 1 | day inventory: 300
+• С линиями: 1 | с контекстом: 0 | ready model: 234
+• odds-api.io offers: 120 | Bzzoiro secondary offers: 120
+• 2+ букмекера odds-api.io: 1 | 2-source overlap Bzzoiro+odds-api.io: 1
 • Source combinations: odds_api_io: 40, bzzoiro: 37, bzzoiro+odds_api_io: 12
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
@@ -14,45 +14,27 @@
 • Raw/candidates before quality: 0 / 24
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 8 | evaluated 8 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 7 | no next regular run: 5
-• Line guard: seen 19 | kept 0 | dropped 3
+• Final pre-kickoff checks: 2 | no next regular run: 0
+• Line guard: seen 16 | kept 0 | dropped 0
 
 • Bzzoiro targeted odds: targets 80; events 1386; matched 28; ids 28; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 21; requests 42; events_with_offers 20; offers 180; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 120; overlap matches 2; same-bucket matches 2.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 3; inventory updated 6; inventory 2-source 0.
+• Bzzoiro odds detail: targets 20; requests 40; events_with_offers 20; offers 180; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 120; overlap matches 1; same-bucket matches 1.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 1; inventory updated 2; inventory 2-source 0.
 • Bzzoiro source trace: aggregate events 313; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 8; floor 1; hard 3; relieved 0.
+• Last-chance line relief: seen 0; floor 0; hard 0; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 3, matched 6, offers 453, 2+ books 3, err 2, auth_failed False
+• odds_api_io: events req 0, odds req 3, matched 2, offers 120, 2+ books 1, err 2, auth_failed False
 • sstats: req 3, ctx 0, rows 13537, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 313 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 120, overlap odds-api.io 2, err 0
+• bzzoiro: req 3, ctx 0, events 313 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 120, overlap odds-api.io 1, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
-• Line movement breakdown: коэффициент ниже минимума 3.
 🚫 Почему не опубликовано
-• tier b quality below min: 5 (10%)
-• tier b publication score below min: 5 (10%)
-• tier b proxy default xg placeholder: 5 (10%)
-• tier c quality below min: 5 (10%)
-• tier c proxy default xg placeholder: 5 (10%)
-• tier a quality below min: 4 (8%)
-• tier a publication score below min: 4 (8%)
-• tier a odds sources below min:1/2: 4 (8%)
-
-🔎 Проверенные reserve-кандидаты
-1. Varzim SC — AD Marco 09 | Меньше @1.60 | EV +0.8% | edge +0.5 п.п. | q 47.2 reserve
-   • reject: odds below global min
-2. Famalicão — CS Marítimo | Больше @1.60 | EV +7.1% | edge +4.5 п.п. | q 66.0 reserve
-   • reject: odds below global min
-3. Sporting Braga — Gil Vicente | Больше @2.67 | EV +6.4% | edge +2.4 п.п. | q 68.2 reserve
-   • reject: tier b quality below min, tier b publication score below min, tier b proxy default xg placeholder
-4. Famalicão — CS Marítimo | Меньше @1.74 | EV +6.8% | edge +3.9 п.п. | q 77.0 reserve
-   • reject: odds below global min
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (100%)
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
