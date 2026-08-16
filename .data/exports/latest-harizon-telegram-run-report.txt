@@ -3,54 +3,52 @@
 • Главная причина: price integrity:selected price vs bookmaker median outlier
 
 📦 Покрытие
-• Матчи в run: 18 | day inventory: 300
-• С линиями: 18 | с контекстом: 11 | ready model: 92
-• odds-api.io offers: 3628 | Bzzoiro secondary offers: 42
-• 2+ букмекера odds-api.io: 41 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 10 | day inventory: 300
+• С линиями: 10 | с контекстом: 8 | ready model: 113
+• odds-api.io offers: 2467 | Bzzoiro secondary offers: 48
+• 2+ букмекера odds-api.io: 29 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 40, bzzoiro: 37, bzzoiro+odds_api_io: 12
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 3 / 33
-• Passed quality: 3 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 2 / 32
+• Passed quality: 2 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 4 | evaluated 4 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 3 | evaluated 3 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 42 | no next regular run: 37
+• Final pre-kickoff checks: 9 | no next regular run: 9
 • Line guard: seen 17 | kept 1 | dropped 0
 
-• Bzzoiro targeted odds: targets 80; events 1386; matched 22; ids 22; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 12; requests 24; events_with_offers 7; offers 63; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 42; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 41; inventory updated 59; inventory 2-source 0.
-• Bzzoiro source trace: aggregate events 377; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 4; floor 3; hard 3; relieved 0.
+• Bzzoiro targeted odds: targets 80; events 1386; matched 23; ids 23; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 17; requests 34; events_with_offers 8; offers 72; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 48; overlap matches 0; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 29; inventory updated 59; inventory 2-source 0.
+• Bzzoiro source trace: aggregate events 309; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 3; floor 1; hard 3; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 23, matched 109, offers 3628, 2+ books 41, err 12, auth_failed False
-• sstats: req 15, ctx 7, rows 14023, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 377 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 42, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 25, matched 113, offers 2467, 2+ books 29, err 13, auth_failed False
+• sstats: req 17, ctx 8, rows 13537, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 309 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 48, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
+• Line movement breakdown: коэффициент ниже минимума 2.
 🚫 Почему не опубликовано
-• price integrity:selected price vs bookmaker median outlier: 3 (25%)
-• price integrity:external snapshot bookmaker median outlier: 3 (25%)
-• quality bad historical segment guard: 2 (17%)
-• price integrity:selected price vs market probability outlier: 1 (8%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (8%)
-• current price recheck value lost:-16.2/-9.2: 1 (8%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (8%)
+• price integrity:selected price vs bookmaker median outlier: 3 (27%)
+• price integrity:external snapshot bookmaker median outlier: 3 (27%)
+• odds below global min: 2 (18%)
+• price integrity:selected price vs market probability outlier: 1 (9%)
+• quality bad historical segment guard: 1 (9%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (9%)
 
 🔎 Проверенные reserve-кандидаты
-1. Houston Dynamo — Los Angeles Galaxy | Больше 1.5 @1.75 | EV +21.1% | edge +12.1 п.п. | q 86.3
-   • reject: price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier
-2. Nashville SC — Inter Miami CF | Меньше 2.5 @2.67 | EV +39.9% | edge +14.9 п.п. | q 100.0
+1. San Jose Earthquakes — Saint Louis City SC | Больше 1.5 @1.66 | EV +22.1% | edge +13.3 п.п. | q 100.0
+   • reject: odds below global min, price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier
+2. Los Angeles FC — San Diego FC | Меньше 2.5 @2.67 | EV +40.3% | edge +15.1 п.п. | q 100.0
    • reject: price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier, price integrity:selected price vs market probability outlier
-3. Houston Dynamo — Los Angeles Galaxy | Больше 1.5 @1.75 | EV +21.1% | edge +12.1 п.п. | q 86.3
-   • reject: price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier
-4. Union Espanola — San Marcos de Arica | Больше 2.5 @2.10 | EV -0.8% | edge -0.4 п.п. | q 44.6
-   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, current price recheck value lost:-16.2/-9.2
+3. San Jose Earthquakes — Saint Louis City SC | Больше 1.5 @1.66 | EV +22.1% | edge +13.3 п.п. | q 100.0
+   • reject: odds below global min, price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
