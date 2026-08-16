@@ -2,15 +2,15 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 189/300
-• С контекстом: 119/300
-• Готово к модели: 113/300
-• Ближайшие 6 часов: 25/62 готово
+• С линиями: 195/300
+• С контекстом: 120/300
+• Готово к модели: 116/300
+• Ближайшие 6 часов: 20/87 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 10 | с линиями: 10 | контекстов: 8
-• Кандидаты: raw 0 | до качества 32 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 3 | выбрано: 0
+• Матчи: 8 | с линиями: 8 | контекстов: 1
+• Кандидаты: raw 0 | до качества 26 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 1 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -18,36 +18,29 @@
 • current price patch: ok
 • zero-raw recovery: not_needed | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
-• evidence/integrity patch: installed | patched_odds_source_metrics 3 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 3
+• evidence/integrity patch: installed | patched_odds_source_metrics 1 | market_probability_guard_softened_without_real_prices 0
+• provider targeting: ok | fallback_evaluated 1
 
 📡 Источники / фактическая работа
-• odds_api_io: data 65/2762, req 0, err 13
+• odds_api_io: data 62/2347, req 0, err 13
 • bzzoiro: data 0/0, req 3, err 0
-• sstats: data 8/8, req 17, err 0
-• football_data: data 0/0, req 0, err 0
-• thesportsdb: data 0/0, req 2, err 1
+• sstats: data 1/1, req 17, err 0
+• football_data: data 0/0, req 1, err 0
+• thesportsdb: data 0/0, req 1, err 0
 • sportlogic: data 0/0, req 0, err 0
 • openfootball: data 0/0, req 0, err 0
 
 🚫 Почему не прошли
-• price_integrity:selected_price_vs_bookmaker_median_outlier — 3 (33%)
-• price_integrity:external_snapshot_bookmaker_median_outlier — 3 (33%)
-• odds_below_global_min — 2 (22%)
-• price_integrity:selected_price_vs_market_probability_outlier — 1 (11%)
+• odds_below_global_min — 1 (33%)
+• canonical_negative_value — 1 (33%)
+• current_price_recheck_value_lost:-17.8/-14.1 — 1 (33%)
 
 ⚠️ Пограничные кандидаты
-1. Лос-Анджелес — Сан Диего | Меньше 2.5 @2.67
-   • EV +40.3% | edge +15.1 п.п. | q 100.0
-   • не прошло: price_integrity:selected_price_vs_bookmaker_median_outlier; price_integrity:external_snapshot_bookmaker_median_outlier; price_integrity:selected_price_vs_market_probability_outlier
-2. Сан-Хосе Эртквейкс — Сайнт Луис Кити | Больше 1.5 @1.66
-   • EV +22.1% | edge +13.3 п.п. | q 100.0
-   • не прошло: odds_below_global_min; price_integrity:selected_price_vs_bookmaker_median_outlier; price_integrity:external_snapshot_bookmaker_median_outlier
-3. Сан-Хосе Эртквейкс — Сайнт Луис Кити | Больше 1.5 @1.66
-   • EV +22.1% | edge +13.3 п.п. | q 100.0
-   • не прошло: odds_below_global_min; price_integrity:selected_price_vs_bookmaker_median_outlier; price_integrity:external_snapshot_bookmaker_median_outlier
+1. Голд Коаст Книгхц — Истерн Субурбс | Больше 2.5 @1.53
+   • EV -1.6% | edge -1.0 п.п. | q 45.2
+   • не прошло: odds_below_global_min; canonical_negative_value; current_price_recheck_value_lost:-17.8/-14.1
 
 📌 Вывод
-• Главный блокер — price integrity: выбранная цена выглядит выбросом относительно рынка; новый патч не снимает реальные median/outlier блоки, а только убирает ложный market_probability hard-block без реальных same-side цен.
+• Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
 
 ⚖️ Дисклеймер: аналитика бота не гарантирует результат и не является финансовой рекомендацией.

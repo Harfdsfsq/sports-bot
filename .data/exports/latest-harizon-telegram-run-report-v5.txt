@@ -1,54 +1,49 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: price integrity:selected price vs bookmaker median outlier
+• Главная причина: odds below global min
 
 📦 Покрытие
-• Матчи в run: 10 | day inventory: 300
-• С линиями: 10 | с контекстом: 8 | ready model: 113
-• odds-api.io offers: 2467 | Bzzoiro secondary offers: 48
-• 2+ букмекера odds-api.io: 29 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 8 | day inventory: 300
+• С линиями: 8 | с контекстом: 1 | ready model: 116
+• odds-api.io offers: 2211 | Bzzoiro secondary offers: 96
+• 2+ букмекера odds-api.io: 33 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 40, bzzoiro: 37, bzzoiro+odds_api_io: 12
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2 / 32
-• Passed quality: 2 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 1 / 26
+• Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 3 | evaluated 3 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 1 | evaluated 1 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 9 | no next regular run: 9
-• Line guard: seen 17 | kept 1 | dropped 0
+• Final pre-kickoff checks: 11 | no next regular run: 11
+• Line guard: seen 16 | kept 0 | dropped 0
 
-• Bzzoiro targeted odds: targets 80; events 1386; matched 23; ids 23; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 17; requests 34; events_with_offers 8; offers 72; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 48; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 29; inventory updated 59; inventory 2-source 0.
-• Bzzoiro source trace: aggregate events 309; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 3; floor 1; hard 3; relieved 0.
+• Bzzoiro targeted odds: targets 80; events 1386; matched 22; ids 22; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 23; requests 46; events_with_offers 16; offers 144; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 96; overlap matches 0; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 33; inventory updated 62; inventory 2-source 0.
+• Bzzoiro source trace: aggregate events 313; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 1; floor 0; hard 1; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 25, matched 113, offers 2467, 2+ books 29, err 13, auth_failed False
-• sstats: req 17, ctx 8, rows 13537, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 309 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 48, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 25, matched 112, offers 2211, 2+ books 33, err 13, auth_failed False
+• sstats: req 17, ctx 1, rows 13537, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 313 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 96, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
-• Line movement breakdown: коэффициент ниже минимума 2.
+• Line movement breakdown: коэффициент ниже минимума 1.
 🚫 Почему не опубликовано
-• price integrity:selected price vs bookmaker median outlier: 3 (27%)
-• price integrity:external snapshot bookmaker median outlier: 3 (27%)
-• odds below global min: 2 (18%)
-• price integrity:selected price vs market probability outlier: 1 (9%)
-• quality bad historical segment guard: 1 (9%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (9%)
+• odds below global min: 1 (20%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (20%)
+• current price recheck value lost:-17.8/-14.1: 1 (20%)
+• quality bad historical segment guard: 1 (20%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (20%)
 
 🔎 Проверенные reserve-кандидаты
-1. San Jose Earthquakes — Saint Louis City SC | Больше 1.5 @1.66 | EV +22.1% | edge +13.3 п.п. | q 100.0
-   • reject: odds below global min, price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier
-2. Los Angeles FC — San Diego FC | Меньше 2.5 @2.67 | EV +40.3% | edge +15.1 п.п. | q 100.0
-   • reject: price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier, price integrity:selected price vs market probability outlier
-3. San Jose Earthquakes — Saint Louis City SC | Больше 1.5 @1.66 | EV +22.1% | edge +13.3 п.п. | q 100.0
-   • reject: odds below global min, price integrity:selected price vs bookmaker median outlier, price integrity:external snapshot bookmaker median outlier
+1. Gold Coast Knights FC — Eastern Suburbs | Больше 2.5 @1.53 | EV -1.6% | edge -1.0 п.п. | q 45.2
+   • reject: odds below global min, отрицательная canonical value после пересчёта по выбранному коэффициенту, current price recheck value lost:-17.8/-14.1
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
