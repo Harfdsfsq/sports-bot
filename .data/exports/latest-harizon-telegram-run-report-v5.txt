@@ -1,40 +1,58 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🔴 нет свежих линий
-• Главная причина: счётчик публикации противоречит fresh-воронке
+• Итог: 🟠 линии есть, raw-кандидатов нет
+• Главная причина: кандидат ждёт следующий cron для второго снимка линии
 
 📦 Покрытие
-• Матчи в run: 0 | day inventory: 300
-• С линиями: 0 | с контекстом: 0 | ready model: 244
-• odds-api.io offers: 0 | Bzzoiro secondary offers: 102
-• 2+ букмекера odds-api.io: 0 | 2-source overlap Bzzoiro+odds-api.io: 1
+• Матчи в run: 1 | day inventory: 300
+• С линиями: 1 | с контекстом: 4 | ready model: 239
+• odds-api.io offers: 651 | Bzzoiro secondary offers: 120
+• 2+ букмекера odds-api.io: 6 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 40, bzzoiro: 37, bzzoiro+odds_api_io: 12
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 0
+• Raw/candidates before quality: 0 / 24
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status fallback_artifact_stale_or_missing_after_step | seen 0 | evaluated 0 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 6 | evaluated 6 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 20 | no next regular run: 20
-• Line guard: seen 16 | kept 0 | dropped 0
+• Final pre-kickoff checks: 2 | no next regular run: 2
+• Line guard: seen 21 | kept 1 | dropped 4
 
-• Bzzoiro targeted odds: targets 80; events 1386; matched 29; ids 29; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 17; requests 34; events_with_offers 17; offers 153; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 102; overlap matches 1; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 0; inventory updated 0; inventory 2-source 0.
-• Bzzoiro source trace: aggregate events 0; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 0; floor 0; hard 0; relieved 0.
+• Bzzoiro targeted odds: targets 80; events 1386; matched 23; ids 23; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 20; requests 40; events_with_offers 20; offers 180; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 120; overlap matches 0; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 6; inventory updated 5; inventory 2-source 0.
+• Bzzoiro source trace: aggregate events 313; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 6; floor 0; hard 3; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 0, matched 0, offers 0, 2+ books 0, err 0, auth_failed False
-• sstats: req 0, ctx 0, rows 0, err 0, deep enriched 0
-• bzzoiro: req 0, ctx 0, events 0 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 102, overlap odds-api.io 1, err 0
+• odds_api_io: events req 0, odds req 3, matched 6, offers 651, 2+ books 6, err 2, auth_failed False
+• sstats: req 17, ctx 3, rows 13537, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 313 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 120, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
+• Line movement breakdown: коэффициент ниже минимума 2; конфликт направления с xG 1.
 🚫 Почему не опубликовано
-• счётчик публикации противоречит fresh-воронке: 1 (100%)
+• кандидат ждёт следующий cron для второго снимка линии: 4 (14%)
+• tier b quality below min: 3 (10%)
+• tier b publication score below min: 3 (10%)
+• tier c quality below min: 3 (10%)
+• tier a quality below min: 2 (7%)
+• tier a publication score below min: 2 (7%)
+• tier a odds sources below min:1/2: 2 (7%)
+• tier b canonical edge below min: 2 (7%)
+
+🔎 Проверенные reserve-кандидаты
+1. Burnley — West Ham United | Меньше @2.06 | EV +4.6% | edge +2.2 п.п. | q 70.8 reserve
+   • reject: направление ставки конфликтует с xG
+2. Burnley — West Ham United | Меньше @2.06 | EV +4.6% | edge +2.2 п.п. | q 72.3 reserve
+   • reject: tier a quality below min, tier a publication score below min, tier a odds sources below min:1/2
+3. Espanyol — Levante UD | Меньше @2.25 | EV +3.6% | edge +1.6 п.п. | q 63.9 reserve
+   • reject: tier a quality below min, tier a canonical edge below min, tier a publication score below min
+4. FC Arouca — Moreirense | Больше @1.60 | EV +6.8% | edge +4.3 п.п. | q 67.1 reserve
+   • reject: odds below global min
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
