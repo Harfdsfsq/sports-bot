@@ -48,7 +48,7 @@
     {
       "away_team": "Levante UD",
       "books": 2,
-      "context_sources": 2,
+      "context_sources": 3,
       "edge_pp": 1.62,
       "ev_pct": 3.645,
       "home_team": "Espanyol",
@@ -127,32 +127,33 @@
   ],
   "blockers": [
     "context_coverage_below_85pct",
+    "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers",
     "final_edge_explainability_gap",
     "proxy_xg_placeholder_still_present"
   ],
   "bzzoiro_chain": {
-    "merge_after_2plus_books": 6,
+    "merge_after_2plus_books": 9,
     "merge_after_2plus_sources": 0,
-    "overlap_bridge_offers": 120,
-    "overlap_matches": 0
+    "overlap_bridge_offers": 132,
+    "overlap_matches": 4
   },
-  "created_at_utc": "2026-08-16T14:09:27.529515+00:00",
-  "ideal_score": 91.4,
+  "created_at_utc": "2026-08-16T15:20:15.383386+00:00",
+  "ideal_score": 91.8,
   "inventory": {
-    "next_12h_ready": 5,
-    "next_12h_ready_pct": 50.0,
-    "next_12h_total": 10,
-    "next_6h_ready": 5,
-    "next_6h_ready_pct": 71.4,
-    "next_6h_total": 7,
-    "ready": 239,
-    "ready_pct": 79.7,
+    "next_12h_ready": 7,
+    "next_12h_ready_pct": 63.6,
+    "next_12h_total": 11,
+    "next_6h_ready": 7,
+    "next_6h_ready_pct": 63.6,
+    "next_6h_total": 11,
+    "ready": 244,
+    "ready_pct": 81.3,
     "total": 300,
-    "with_context": 249,
-    "with_context_pct": 83.0,
-    "with_lines": 247,
-    "with_lines_pct": 82.3
+    "with_context": 253,
+    "with_context_pct": 84.3,
+    "with_lines": 255,
+    "with_lines_pct": 85.0
   },
   "line_movement": {
     "class_counts": {
@@ -160,7 +161,7 @@
       "other": 3,
       "xg_direction_conflict": 1
     },
-    "created_at_utc": "2026-08-16T14:07:03.557120+00:00",
+    "created_at_utc": "2026-08-16T15:17:43.822793+00:00",
     "evaluated": 6,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
@@ -306,52 +307,70 @@
     "requests": 0
   },
   "proxy_xg_replacement": {
-    "checked": 5,
-    "created_at_utc": "2026-08-16T14:05:28.940078+00:00",
+    "checked": 9,
+    "created_at_utc": "2026-08-16T15:15:44.958394+00:00",
     "examples": [
       {
         "away_team": "Levante UD",
-        "expected_away": 0.9158,
-        "expected_home": 0.9158,
+        "expected_away": 1.5562,
+        "expected_home": 1.5562,
         "home_team": "Espanyol",
         "point": 2.0,
-        "selection": "Меньше",
-        "total_xg": 1.8316
+        "selection": "Больше",
+        "total_xg": 3.1123
       },
       {
         "away_team": "Moreirense",
-        "expected_away": 1.672,
-        "expected_home": 1.672,
+        "expected_away": 1.1482,
+        "expected_home": 1.1482,
         "home_team": "FC Arouca",
-        "point": 2.0,
-        "selection": "Больше",
-        "total_xg": 3.3441
+        "point": 2.5,
+        "selection": "Меньше",
+        "total_xg": 2.2963
+      },
+      {
+        "away_team": "SC Farense",
+        "expected_away": 1.0884,
+        "expected_home": 1.0884,
+        "home_team": "FC Porto B",
+        "point": 2.5,
+        "selection": "Меньше",
+        "total_xg": 2.1768
+      },
+      {
+        "away_team": "Kristiansund BK",
+        "expected_away": 1.3471,
+        "expected_home": 1.3471,
+        "home_team": "Fredrikstad FK",
+        "point": 2.5,
+        "selection": "Меньше",
+        "total_xg": 2.6942
       },
       {
         "away_team": "CS Marítimo",
-        "expected_away": 1.6774,
-        "expected_home": 1.6774,
+        "expected_away": 1.1482,
+        "expected_home": 1.1482,
         "home_team": "Famalicão",
-        "point": 2.0,
-        "selection": "Больше",
-        "total_xg": 3.3548
+        "point": 2.5,
+        "selection": "Меньше",
+        "total_xg": 2.2963
       },
       {
         "away_team": "Gil Vicente",
-        "expected_away": 1.5787,
-        "expected_home": 1.5787,
+        "expected_away": 1.0446,
+        "expected_home": 1.0446,
         "home_team": "Sporting Braga",
-        "point": 3.0,
-        "selection": "Больше",
-        "total_xg": 3.1573
+        "point": 2.0,
+        "selection": "Меньше",
+        "total_xg": 2.0892
       }
     ],
     "note": "Market-implied xG replaces only proxy 1:1 placeholders; it is not hard provider xG and does not bypass line/value/source guards.",
-    "replaced": 4,
+    "replaced": 6,
     "skipped": {
       "hard_xg": 0,
-      "no_market_implied": 0,
-      "not_placeholder": 1
+      "no_market_implied": 1,
+      "not_placeholder": 2
     },
     "status": "ok",
     "touched_files": [
@@ -360,6 +379,7 @@
   },
   "recommended_actions": [
     "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
+    "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set",
     "expose displayed vs canonical vs post-recheck EV/edge in near-miss report",
     "verify proxy xG replacement order and safety-contract reason cleanup"

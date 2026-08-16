@@ -126,6 +126,8 @@
     }
   ],
   "blockers": [
+    "context_coverage_below_85pct",
+    "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers",
     "final_edge_explainability_gap",
     "proxy_xg_placeholder_still_present"
@@ -136,22 +138,22 @@
     "overlap_bridge_offers": 132,
     "overlap_matches": 4
   },
-  "created_at_utc": "2026-08-16T15:17:22.446963+00:00",
-  "ideal_score": 92.0,
+  "created_at_utc": "2026-08-16T15:20:15.383386+00:00",
+  "ideal_score": 91.8,
   "inventory": {
-    "next_12h_ready": 12,
-    "next_12h_ready_pct": 100.0,
-    "next_12h_total": 12,
-    "next_6h_ready": 12,
-    "next_6h_ready_pct": 100.0,
-    "next_6h_total": 12,
-    "ready": 259,
-    "ready_pct": 86.3,
+    "next_12h_ready": 7,
+    "next_12h_ready_pct": 63.6,
+    "next_12h_total": 11,
+    "next_6h_ready": 7,
+    "next_6h_ready_pct": 63.6,
+    "next_6h_total": 11,
+    "ready": 244,
+    "ready_pct": 81.3,
     "total": 300,
-    "with_context": 260,
-    "with_context_pct": 86.7,
-    "with_lines": 294,
-    "with_lines_pct": 98.0
+    "with_context": 253,
+    "with_context_pct": 84.3,
+    "with_lines": 255,
+    "with_lines_pct": 85.0
   },
   "line_movement": {
     "class_counts": {
@@ -159,7 +161,7 @@
       "other": 3,
       "xg_direction_conflict": 1
     },
-    "created_at_utc": "2026-08-16T14:07:03.557120+00:00",
+    "created_at_utc": "2026-08-16T15:17:43.822793+00:00",
     "evaluated": 6,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
@@ -298,15 +300,11 @@
     "watchlist_count": 0
   },
   "odds_api_io_account2": {
-    "http_statuses": [
-      403,
-      403,
-      403
-    ],
+    "http_statuses": [],
     "offers": 0,
-    "plan_restriction": true,
+    "plan_restriction": false,
     "rate_limited": false,
-    "requests": 3
+    "requests": 0
   },
   "proxy_xg_replacement": {
     "checked": 9,
@@ -380,6 +378,8 @@
     ]
   },
   "recommended_actions": [
+    "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
+    "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set",
     "expose displayed vs canonical vs post-recheck EV/edge in near-miss report",
     "verify proxy xG replacement order and safety-contract reason cleanup"
