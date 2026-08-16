@@ -76,6 +76,14 @@ jobs:
       DAY_INVENTORY_ENABLE_BZZOIRO: "true"
       DAY_INVENTORY_ENABLE_SSTATS: "true"
       DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"
+      # The Actions cache restores the inventory on every run, so a snapshot
+      # built at 00:00 MSK stayed in place all day and the runner kept looking
+      # at matches that had already kicked off. Rebuild the inventory whenever
+      # fewer than this many matches are still upcoming.
+      DAY_INVENTORY_MIN_UPCOMING_MATCHES: "40"
+      # Matches that kicked off less than this many minutes ago are still kept
+      # as filler at the tail of the top-300 ranking.
+      DAY_INVENTORY_STARTED_GRACE_MINUTES: "15"
       HARIZON_FULL_INVENTORY_COVERAGE_ROUTING_ENABLED: "true"
       HARIZON_FULL_INVENTORY_PROVIDER_TARGETS: "300"
       HARIZON_DATA_COLLECTION_WINDOW_HOURS: "36"
@@ -109,6 +117,7 @@ jobs:
       PUBLISH_TIER_B_MIN_ODDS_SOURCES: "1"
       PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "1"
       MIN_SOURCES_PUBLISH: "1"
+      MIN_BOOKS_PUBLISH: "2"
       PUBLISH_MIN_ODDS_SOURCES: "1"
       PUBLISH_MIN_CONTEXT_SOURCES: "1"
       MIN_CONTEXT_SOURCES_PUBLISH: "1"
@@ -120,6 +129,20 @@ jobs:
       CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_EV_PCT: "7.0"
       ODDS_SOURCE_INDEPENDENCE_ENABLED: "true"
       BOOKMAKER_QUORUM_ENABLED: "true"
+
+      # windowed_core_coverage_runtime_patch hard-codes 2 odds sources,
+      # 2 context sources and 2 of 3 core providers for every candidate and
+      # overwrites these keys on import, which blocked B-tier entirely. The tier
+      # contract above is the source of truth; runtime_startup_chain restores
+      # these values after all runtime patches have been installed.
+      CORE_COVERAGE_WINDOW_HOURS: "24"
+      CORE_COVERAGE_CRON_INTERVAL_HOURS: "2"
+      CORE_COVERAGE_MIN_ODDS_SOURCES: "1"
+      CORE_COVERAGE_MIN_CONTEXT_SOURCES: "1"
+      CORE_COVERAGE_MIN_CORE_PROVIDERS: "1"
+      CORE_COVERAGE_MIN_MOVEMENT_SNAPSHOTS: "2"
+      CORE_COVERAGE_RECHECK_LEAD_MINUTES: "20"
+      CORE_COVERAGE_CONTEXT_TARGET_LIMIT: "300"
 
       PUBLISH_REQUIRE_LINE_MOVEMENT: "true"
       LINE_MOVEMENT_GUARD_ENABLED: "true"
@@ -151,9 +174,13 @@ jobs:
       ODDS_API_IO_ACCOUNT_HOURLY_LIMIT: "100"
       ODDS_API_IO_ACCOUNT_DAILY_LIMIT: "500"
       ODDS_API_IO_ACCOUNT_SOURCE_SPLIT_ENABLED: "true"
-      ODDS_API_IO_BOOKMAKERS: Bet365,Unibet,Betfair Exchange,Sbobet
-      ODDS_API_IO_BOOKMAKERS_ACCOUNT1: Bet365,Unibet
-      ODDS_API_IO_BOOKMAKERS_ACCOUNT2: Betfair Exchange,Sbobet
+      # account2 reported plan_restriction on Betfair Exchange / Sbobet, which
+      # left 286 of 300 matches with a single odds source. Both accounts now ask
+      # for books the plan actually serves, and account2 keeps an unfiltered
+      # retry as a fallback.
+      ODDS_API_IO_BOOKMAKERS: Bet365,Unibet,William Hill,Pinnacle,1xBet,Betway
+      ODDS_API_IO_BOOKMAKERS_ACCOUNT1: Bet365,Unibet,Betway
+      ODDS_API_IO_BOOKMAKERS_ACCOUNT2: William Hill,Pinnacle,1xBet
       ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK: ""
       ODDS_API_IO_ACCOUNT2_UNFILTERED_RETRY_ENABLED: "true"
       ODDS_API_IO_RELAXED_INVENTORY_MATCHING_ENABLED: "true"
@@ -184,7 +211,10 @@ jobs:
       BZZOIRO_TARGETED_ODDS_DETAIL_LIMIT: "160"
       BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT: "160"
       BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS: "160"
-      BZZOIRO_RUNTIME_PROVIDER_DEADLINE_SECONDS: "220"
+      # 220s was not enough to finish a single context pass, so the provider
+      # ended every run with runner_provider_deadline_exhausted and
+      # contexts_built: 0. The whole run has a 900s budget.
+      BZZOIRO_RUNTIME_PROVIDER_DEADLINE_SECONDS: "420"
 
       SSTATS_ENABLED: "true"
       ENABLE_SSTATS: "true"
@@ -329,7 +359,33 @@ jobs:
         run: |
           set -uo pipefail
           mkdir -p .data/exports .data/cache/day_inventory .data/day_inventory artifacts/run-bot
+          # The cache restore step above always brings the inventory files back,
+          # so the previous "rebuild only when the files are missing" condition
+          # never fired. Every run re-analysed the snapshot built at 00:00 MSK,
+          # whose matches had already kicked off by midday - that is why the
+          # coverage planner reported eligible_matches: 1 and the runner
+          # matches_seen: 1. Rebuild whenever the cached snapshot no longer has
+          # a useful number of upcoming matches.
+          rebuild_inventory=0
+          upcoming=0
+          min_upcoming="${DAY_INVENTORY_MIN_UPCOMING_MATCHES:-40}"
+          min_upcoming="${min_upcoming//[^0-9]/}"
+          min_upcoming="${min_upcoming:-40}"
           if [[ ! -s .data/day_inventory/today.json && ! -s .data/day_inventory/current.json && ! -s .data/day_inventory/latest.json ]]; then
+            rebuild_inventory=1
+            echo "day inventory: no cached snapshot found, rebuilding from scratch"
+          else
+            upcoming="$(python -u scripts/count_upcoming_inventory_matches.py 2> .data/exports/latest-upcoming-inventory-count.log | tail -n 1 || true)"
+            upcoming="${upcoming//[^0-9]/}"
+            upcoming="${upcoming:-0}"
+            echo "day inventory: ${upcoming} upcoming matches in cache (minimum ${min_upcoming})"
+            if [[ "${upcoming}" -lt "${min_upcoming}" ]]; then
+              rebuild_inventory=1
+              echo "day inventory: cached snapshot is exhausted, rebuilding from scratch"
+            fi
+          fi
+          printf '{"rebuild_inventory": %s, "upcoming_in_cache": %s, "min_upcoming": %s}\n' "${rebuild_inventory}" "${upcoming}" "${min_upcoming}" > .data/exports/latest-day-inventory-rebuild-decision.json
+          if [[ "${rebuild_inventory}" == "1" ]]; then
             python -u scripts/build_day_inventory_core_v3.py || true
           fi
           python -u scripts/expand_day_inventory_to_target.py || true
@@ -337,6 +393,7 @@ jobs:
           python -u scripts/maximize_inventory_coverage_runtime.py || true
           python -u scripts/build_day_inventory_coverage_truth.py || true
           python -u scripts/guard_day_inventory_no_shrink.py snapshot || true
+          python -u scripts/count_upcoming_inventory_matches.py > /dev/null 2> .data/exports/latest-upcoming-inventory-count.log || true
 
       - name: Run bot
         shell: bash
