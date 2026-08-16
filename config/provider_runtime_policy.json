@@ -1,234 +1,45 @@
 {
-  "version": "v25-max-coverage-near-window",
-  "description": "Maximize safe free-tier coverage: odds-api.io remains primary, account2 gets entitlement/unfiltered diagnostics, Bzzoiro/SStats receive enough near-window budget, and secondary APIs run as controlled coverage rescue instead of waiting for total primary failure.",
-  "mode": "per_run_with_daily_guards",
+  "version": "v26-full-300-two-plus-coverage",
+  "description": "Route all available free-tier provider budget toward the full top-300 day inventory. Target: 300 matches with 2+ context sources, 2+ independent live line sources where provider quotas/entitlements allow, and auditable gap targets when they do not.",
+  "mode": "per_run_with_daily_guards_full_inventory",
   "deleted_providers": ["bookies_api"],
   "base_env": {
-    "PROVIDER_REQUEST_BUDGET_MODE": "per_run_with_daily_guards",
+    "PROVIDER_REQUEST_BUDGET_MODE": "per_run_with_daily_guards_full_inventory",
     "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "false",
     "PROVIDER_QUOTA_RUNS_PER_DAY": "12",
-    "PROVIDER_QUOTA_SAFETY_FACTOR": "0.78",
+    "PROVIDER_QUOTA_SAFETY_FACTOR": "0.92",
     "ALL_SOURCES_FREE_MAXIMIZE": "true",
     "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
     "CONTEXT_ENRICHMENT_MATCH_LIMIT": "300",
-    "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "120",
-    "DAY_INVENTORY_NEAR_WINDOW_HOURS": "12",
+    "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "300",
+    "DAY_INVENTORY_NEAR_WINDOW_HOURS": "36",
     "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
     "NEAR_WINDOW_CONTEXT_PRIORITY_ENABLED": "true",
-    "NEAR_WINDOW_CONTEXT_HOURS": "12",
-    "NEAR_WINDOW_CONTEXT_MIN_MATCHES": "72",
-    "NEAR_WINDOW_PROVIDER_CONTEXT_MIN_MATCHES": "60",
-    "NEAR_WINDOW_PRIORITY_MIN_LEAD_MINUTES": "20",
+    "NEAR_WINDOW_CONTEXT_HOURS": "36",
+    "NEAR_WINDOW_CONTEXT_MIN_MATCHES": "300",
+    "NEAR_WINDOW_PROVIDER_CONTEXT_MIN_MATCHES": "300",
+    "NEAR_WINDOW_PRIORITY_MIN_LEAD_MINUTES": "0",
+    "HARIZON_FULL_INVENTORY_COVERAGE_ROUTING_ENABLED": "true",
+    "HARIZON_FULL_INVENTORY_PROVIDER_TARGETS": "300",
+    "HARIZON_RUNTIME_MATCH_RECOVERY_MIN_FILTERED_MATCHES": "300",
+    "HARIZON_RUNTIME_MATCH_RECOVERY_MAX_MATCHES": "300",
+    "HARIZON_RUNTIME_MATCH_RECOVERY_WINDOW_HOURS": "36",
     "API_HEALTH_DURING_RUN_ENABLED": "true",
     "API_HEALTH_MODE": "quick",
-    "API_HEALTH_GUARD_TIMEOUT_SECONDS": "60",
     "FIXTURE_EXPANSION_ENABLED": "true",
     "SECONDARY_ODDS_RESCUE_ENABLED": "true",
-    "SECONDARY_ODDS_RESCUE_TRIGGER": "primary_thin_or_account2_zero",
-    "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "120",
-    "SECONDARY_ODDS_RESCUE_NEAR_WINDOW_HOURS": "12"
-  },
-  "deleted_provider_env": {
-    "ENABLE_BOOKIES_API": "false",
-    "BOOKIES_API_ENABLED": "false",
-    "BOOKIES_API_ODDS_FETCH_LIMIT": "0",
-    "BOOKIES_API_REQUEST_BUDGET_GRANTED": "0",
-    "BOOKIES_API_REQUEST_BUDGET_REASON": "removed_from_project"
+    "SECONDARY_ODDS_RESCUE_TRIGGER": "full_inventory_gap_or_primary_thin",
+    "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "900",
+    "SECONDARY_ODDS_RESCUE_NEAR_WINDOW_HOURS": "36"
   },
   "providers": {
-    "odds_api_io": {
-      "status": "critical_inventory_and_primary_live_odds",
-      "grant": 160,
-      "secret_env_keys": ["ODDS_API_IO_KEY", "ODDS_API_IO_KEY_2"],
-      "free_limit_note": "100 requests/hour per account. Account2 dashboard has two slots; if Betfair/Sbobet 403, retry unfiltered to use whichever selected books are entitled.",
-      "env": {
-        "ENABLE_ODDS_API_IO": "true",
-        "ODDS_API_IO_ENABLED": "true",
-        "ODDS_API_IO_PER_RUN_MAX": "160",
-        "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "160",
-        "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "80",
-        "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "80",
-        "ODDS_API_IO_BOOKMAKERS_ACCOUNT1": "Bet365,Unibet",
-        "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
-        "ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK": "",
-        "ODDS_API_IO_ACCOUNT2_UNFILTERED_RETRY_ENABLED": "true",
-        "ODDS_API_IO_PAGE_LIMIT": "100",
-        "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "18",
-        "ODDS_API_IO_ACCOUNT_QUOTA_ENABLED": "true",
-        "ODDS_API_IO_ACCOUNT_HOURLY_LIMIT": "100",
-        "ODDS_API_IO_ACCOUNT_DAILY_LIMIT": "500",
-        "MAX_MATCHES_FOR_ODDS_FETCH": "420"
-      }
-    },
-    "bzzoiro": {
-      "status": "high_quality_context_and_secondary_odds_near_window",
-      "grant": 96,
-      "secret_env_keys": ["BZZOIRO_API_KEY"],
-      "env": {
-        "ENABLE_BZZOIRO": "true",
-        "ENABLE_BZZOIRO_CONTEXT": "true",
-        "BZZOIRO_ENABLED": "true",
-        "BZZOIRO_PER_RUN_MAX": "96",
-        "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "96",
-        "BZZOIRO_CONTEXT_MATCH_LIMIT": "160",
-        "BZZOIRO_MAX_PAGES": "12",
-        "BZZOIRO_PAGE_SIZE": "25",
-        "BZZOIRO_TARGET_NEAR_WINDOW_FIRST": "true",
-        "BZZOIRO_RUNTIME_PROVIDER_DEADLINE_SECONDS": "145",
-        "BZZOIRO_TARGETED_ODDS_DETAIL_LIMIT": "80",
-        "BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT": "32",
-        "BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS": "48"
-      }
-    },
-    "sstats": {
-      "status": "critical_team_form_context_near_window_first",
-      "grant": 60,
-      "secret_env_keys": ["SSTATS_API_KEY"],
-      "env": {
-        "ENABLE_SSTATS": "true",
-        "ENABLE_SSTATS_CONTEXT": "true",
-        "SSTATS_ENABLED": "true",
-        "SSTATS_TARGET_NEAR_MISS_FIRST": "true",
-        "SSTATS_PER_RUN_MAX": "60",
-        "SSTATS_REQUESTS_MAX_PER_RUN": "60",
-        "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "60",
-        "SSTATS_CONTEXT_MATCH_LIMIT": "120",
-        "SSTATS_LOOKBACK_DAYS": "45",
-        "SSTATS_RECENT_MATCHES": "10"
-      }
-    },
-    "sportlogic": {
-      "status": "secondary_odds_rescue_and_context_probe",
-      "grant": 40,
-      "reason": "free_limit_500_day_10_min_near_window_secondary_rescue",
-      "secret_env_keys": ["SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN"],
-      "env": {
-        "ENABLE_SPORTLOGIC": "true",
-        "SPORTLOGIC_ENABLED": "true",
-        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
-        "SPORTLOGIC_PER_RUN_MAX": "40",
-        "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "40",
-        "SPORTLOGIC_MATCH_LIMIT": "80",
-        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "80",
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": "32",
-        "SPORTLOGIC_PER_PAGE": "50",
-        "SPORTLOGIC_MIN_SECONDS_BETWEEN_REQUESTS": "7",
-        "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "false"
-      }
-    },
-    "allsportsapi": {
-      "status": "secondary_fixture_context_and_odds_rescue",
-      "grant": 36,
-      "secret_env_keys": ["ALLSPORTSAPI_API_KEY"],
-      "env": {
-        "ENABLE_ALLSPORTSAPI": "true",
-        "ALLSPORTSAPI_ENABLED": "true",
-        "ALLSPORTSAPI_PER_RUN_MAX": "36",
-        "ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN": "36",
-        "ALLSPORTSAPI_MATCH_LIMIT": "72",
-        "ALLSPORTSAPI_REQUESTS_MAX_PER_RUN": "36",
-        "ALLSPORTSAPI_ONLY_IF_PRIMARY_ODDS_EMPTY": "false"
-      }
-    },
-    "football_data": {
-      "status": "context_only_cached_league_calendar",
-      "grant": 8,
-      "secret_env_keys": ["FOOTBALL_DATA_API_KEY"],
-      "env": {
-        "ENABLE_FOOTBALL_DATA_CONTEXT": "true",
-        "FOOTBALL_DATA_ENABLED": "true",
-        "FOOTBALL_DATA_PER_RUN_MAX": "8",
-        "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "8",
-        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "96",
-        "FOOTBALL_DATA_CACHE_TTL_MINUTES": "720"
-      }
-    },
-    "thesportsdb": {
-      "status": "alias_and_fixture_context_cached",
-      "grant": 12,
-      "secret_env_keys": ["THESPORTSDB_API_KEY"],
-      "env": {
-        "ENABLE_THESPORTSDB_CONTEXT": "true",
-        "THESPORTSDB_CONTEXT_ENABLED": "true",
-        "THESPORTSDB_PER_RUN_MAX": "12",
-        "THESPORTSDB_REQUESTS_MAX_PER_RUN": "12",
-        "THESPORTSDB_MAX_HTTP_REQUESTS_PER_RUN": "12",
-        "THESPORTSDB_CONTEXT_MATCH_LIMIT": "120",
-        "THESPORTSDB_CACHE_TTL_MINUTES": "1440"
-      }
-    },
-    "highlightly": {
-      "status": "fixture_odds_lineup_stats_probe",
-      "grant": 8,
-      "secret_env_keys": ["HIGHLIGHTLY_API_KEY"],
-      "reason": "100_day_free_use_near_window_probe_until_parser_verified",
-      "env": {
-        "HIGHLIGHTLY_PER_RUN_MAX": "8",
-        "HIGHLIGHTLY_CONTEXT_MATCH_LIMIT": "24",
-        "HIGHLIGHTLY_ODDS_MATCH_LIMIT": "12"
-      }
-    },
-    "weatherapi": {
-      "status": "weather_overlay_top_candidates_only",
-      "grant": 16,
-      "secret_env_keys": ["WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY"],
-      "env": {
-        "ENABLE_WEATHERAPI": "true",
-        "WEATHERAPI_ENABLED": "true",
-        "WEATHERAPI_PER_RUN_MAX": "16",
-        "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": "16",
-        "WEATHER_CONTEXT_ENABLED": "true",
-        "WEATHER_CONTEXT_MATCH_LIMIT": "32",
-        "WEATHER_CACHE_TTL_MINUTES": "360"
-      }
-    },
-    "openweathermap": {
-      "status": "weather_fallback_only",
-      "grant": 6,
-      "secret_env_keys": ["OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY"],
-      "env": {
-        "ENABLE_OPENWEATHERMAP": "true",
-        "OPENWEATHERMAP_ENABLED": "true",
-        "OPENWEATHERMAP_PER_RUN_MAX": "6",
-        "OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN": "6",
-        "WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED": "true"
-      }
-    },
-    "openfootball_public": {
-      "status": "public_context_known_dataset_only",
-      "grant": 2,
-      "env": {
-        "ENABLE_OPENFOOTBALL_CONTEXT": "true",
-        "OPENFOOTBALL_ENABLED": "true",
-        "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "120",
-        "OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "2",
-        "OPENFOOTBALL_SKIP_404_CACHE_TTL_HOURS": "24"
-      }
-    },
-    "oddspapi": {
-      "status": "last_resort_odds_rescue_monthly_limited",
-      "grant": 2,
-      "secret_env_keys": ["ODDSPAPI_API_KEY", "ODDSPAPI_KEY", "ODDS_PAPI_API_KEY"],
-      "env": {
-        "ENABLE_ODDSPAPI": "true",
-        "ODDSPAPI_ENABLED": "true",
-        "ODDSPAPI_PER_RUN_MAX": "2",
-        "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "2",
-        "ODDSPAPI_MATCH_LIMIT": "16",
-        "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0",
-        "ODDSPAPI_ONLY_IF_PRIMARY_ODDS_EMPTY": "false"
-      }
-    },
-    "futrixmetrics": {"status": "disabled_until_endpoint_mapping_fixed", "grant": 0, "reason": "base_url_or_mapping_not_verified", "env": {"FUTRIXMETRICS_PER_RUN_MAX": "0", "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "0"}},
-    "newsapi_currents": {"status": "news_context_rotation_only", "grant": 0, "reason": "news_context_not_every_run", "env": {"NEWSAPI_PER_RUN_MAX": "0", "CURRENTS_NEWS_PER_RUN_MAX": "0"}},
-    "gnews": {"status": "news_context_rotation_only", "grant": 0, "reason": "news_context_not_every_run", "env": {"GNEWS_PER_RUN_MAX": "0", "GNEWS_MATCH_LIMIT": "0"}},
-    "newsdata": {"status": "health_probe_news_rotation", "grant": 0, "secret_env_keys": ["NEWSDATA_API_KEY"], "reason": "news_context_not_every_run", "env": {"NEWSDATA_PER_RUN_MAX": "0"}},
-    "guardian": {"status": "health_probe_news_rotation", "grant": 0, "secret_env_keys": ["GUARDIAN_API_KEY"], "reason": "news_context_not_every_run", "env": {"GUARDIAN_PER_RUN_MAX": "0"}},
-    "meteostat": {"status": "weather_rotation_disabled_weatherapi_first", "grant": 0, "reason": "weatherapi_and_openmeteo_first", "env": {"RAPIDAPI_METEOSTAT_PER_RUN_MAX": "0"}},
-    "oddsfeed": {"status": "monthly_limited_discovery_only", "grant": 1, "reason": "500_month_rapidapi_probe_only_until_endpoint_schema_verified", "env": {"RAPIDAPI_ODDS_FEED_PER_RUN_MAX": "1"}},
-    "sportsbook_api": {"status": "daily_limited_discovery_only", "grant": 0, "reason": "50_day_too_small_for_every_run", "env": {"RAPIDAPI_SPORTSBOOK_PER_RUN_MAX": "0"}},
-    "sportapi": {"status": "api_sports_overlap_disabled", "grant": 0, "reason": "overlaps_with_api_football_backend", "env": {"RAPIDAPI_SPORTAPI7_PER_RUN_MAX": "0"}},
-    "freeapilivefootball": {"status": "monthly_limited_discovery_only", "grant": 0, "reason": "100_month_too_small_for_every_run", "env": {"RAPIDAPI_FREE_FOOTBALL_PER_RUN_MAX": "0"}},
-    "sharpapi": {"status": "text_enrichment_probe_only", "grant": 0, "secret_env_keys": ["SHARPAPI_API_KEY"], "reason": "text_enrichment_not_core_prediction", "env": {"ENABLE_SHARPAPI": "false", "SHARPAPI_PER_RUN_MAX": "0"}}
+    "odds_api_io": {"status": "primary_live_odds_full_inventory", "grant": 200, "secret_env_keys": ["ODDS_API_IO_KEY", "ODDS_API_IO_KEY_2"], "env": {"ENABLE_ODDS_API_IO": "true", "ODDS_API_IO_ENABLED": "true", "ODDS_API_IO_PER_RUN_MAX": "200", "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "200", "ODDS_API_IO_REQUESTS_MAX_PER_RUN": "200", "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100", "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "100", "ODDS_API_IO_BOOKMAKERS_ACCOUNT1": "Bet365,Unibet", "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet", "ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK": "", "ODDS_API_IO_ACCOUNT2_UNFILTERED_RETRY_ENABLED": "true", "ODDS_API_IO_PAGE_LIMIT": "100", "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36", "ODDS_API_IO_ACCOUNT_QUOTA_ENABLED": "true", "ODDS_API_IO_ACCOUNT_HOURLY_LIMIT": "100", "ODDS_API_IO_ACCOUNT_DAILY_LIMIT": "500", "ODDS_API_IO_MATCH_LIMIT": "300", "ODDS_API_IO_ODDS_MATCH_LIMIT": "300", "ODDS_API_IO_MAX_ODDS_EVENTS_PER_RUN": "300", "MAX_MATCHES_FOR_ODDS_FETCH": "520"}},
+    "bzzoiro": {"status": "secondary_live_odds_and_context_full_inventory", "grant": 180, "secret_env_keys": ["BZZOIRO_API_KEY"], "env": {"ENABLE_BZZOIRO": "true", "ENABLE_BZZOIRO_CONTEXT": "true", "BZZOIRO_ENABLED": "true", "BZZOIRO_PER_RUN_MAX": "180", "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "180", "BZZOIRO_CONTEXT_MATCH_LIMIT": "300", "BZZOIRO_ODDS_MATCH_LIMIT": "300", "BZZOIRO_MAX_PAGES": "24", "BZZOIRO_PAGE_SIZE": "30", "BZZOIRO_TARGET_NEAR_WINDOW_FIRST": "true", "BZZOIRO_RUNTIME_PROVIDER_DEADLINE_SECONDS": "220", "BZZOIRO_TARGETED_ODDS_DETAIL_LIMIT": "160", "BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT": "160", "BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS": "160"}},
+    "sstats": {"status": "primary_context_full_inventory", "grant": 150, "secret_env_keys": ["SSTATS_API_KEY"], "env": {"ENABLE_SSTATS": "true", "ENABLE_SSTATS_CONTEXT": "true", "SSTATS_ENABLED": "true", "SSTATS_TARGET_NEAR_MISS_FIRST": "true", "SSTATS_PER_RUN_MAX": "150", "SSTATS_REQUESTS_MAX_PER_RUN": "150", "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150", "SSTATS_CONTEXT_MATCH_LIMIT": "300", "SSTATS_LOOKBACK_DAYS": "45", "SSTATS_RECENT_MATCHES": "10"}},
+    "sportlogic": {"status": "secondary_odds_context_full_inventory", "grant": 120, "secret_env_keys": ["SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN"], "env": {"ENABLE_SPORTLOGIC": "true", "SPORTLOGIC_ENABLED": "true", "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true", "SPORTLOGIC_PER_RUN_MAX": "120", "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "120", "SPORTLOGIC_MATCH_LIMIT": "300", "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "300", "SPORTLOGIC_ODDS_MATCH_LIMIT": "160", "SPORTLOGIC_PER_PAGE": "50", "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "false"}},
+    "football_data": {"status": "fixture_context_full_inventory", "grant": 24, "secret_env_keys": ["FOOTBALL_DATA_API_KEY"], "env": {"ENABLE_FOOTBALL_DATA_CONTEXT": "true", "FOOTBALL_DATA_ENABLED": "true", "FOOTBALL_DATA_PER_RUN_MAX": "24", "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "24", "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "300", "FOOTBALL_DATA_CACHE_TTL_MINUTES": "720"}},
+    "thesportsdb": {"status": "fixture_context_full_inventory", "grant": 30, "secret_env_keys": ["THESPORTSDB_API_KEY"], "env": {"ENABLE_THESPORTSDB_CONTEXT": "true", "THESPORTSDB_CONTEXT_ENABLED": "true", "THESPORTSDB_PER_RUN_MAX": "30", "THESPORTSDB_REQUESTS_MAX_PER_RUN": "30", "THESPORTSDB_MAX_HTTP_REQUESTS_PER_RUN": "30", "THESPORTSDB_CONTEXT_MATCH_LIMIT": "300", "THESPORTSDB_CACHE_TTL_MINUTES": "1440"}},
+    "openfootball_public": {"status": "public_fixture_context_full_inventory", "grant": 18, "env": {"ENABLE_OPENFOOTBALL_CONTEXT": "true", "OPENFOOTBALL_ENABLED": "true", "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "300", "OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "18", "OPENFOOTBALL_SKIP_404_CACHE_TTL_HOURS": "24"}},
+    "weatherapi": {"status": "weather_overlay_full_top_candidates", "grant": 32, "secret_env_keys": ["WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY"], "env": {"ENABLE_WEATHERAPI": "true", "WEATHERAPI_ENABLED": "true", "WEATHERAPI_PER_RUN_MAX": "32", "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": "32", "WEATHER_CONTEXT_ENABLED": "true", "WEATHER_CONTEXT_MATCH_LIMIT": "300", "WEATHER_CACHE_TTL_MINUTES": "360"}}
   }
 }

@@ -1,204 +1,51 @@
 from __future__ import annotations
 
-import json
-import os
+import json, os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-ROOT = Path('.').resolve()
-POLICY_PATH = ROOT / 'config' / 'provider_request_budget.json'
-OUT = ROOT / '.data' / 'exports' / 'latest-odds-budget-boost-policy.json'
-GITHUB_ENV = os.getenv('GITHUB_ENV')
-UTC = timezone.utc
+ROOT=Path('.').resolve(); POLICY_PATH=ROOT/'config/provider_request_budget.json'; OUT=ROOT/'.data/exports/latest-odds-budget-boost-policy.json'; GITHUB_ENV=os.getenv('GITHUB_ENV'); UTC=timezone.utc
 
+def load_json(path:Path,default:Any)->Any:
+    try: return json.loads(path.read_text(encoding='utf-8'))
+    except Exception: return default
 
-def load_json(path: Path, default: Any) -> Any:
-    try:
-        return json.loads(path.read_text(encoding='utf-8'))
-    except Exception:
-        return default
+def write_json(path:Path,payload:Any)->None:
+    path.parent.mkdir(parents=True,exist_ok=True); path.write_text(json.dumps(payload,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
 
-
-def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-
-
-def append_env(env: dict[str, str]) -> None:
+def append_env(env:dict[str,str])->None:
     if not GITHUB_ENV:
-        for key in sorted(env):
-            print(f'{key}={env[key]}')
+        for k in sorted(env): print(f'{k}={env[k]}')
         return
-    with open(GITHUB_ENV, 'a', encoding='utf-8') as fh:
-        for key in sorted(env):
-            fh.write(f'{key}={env[key]}\n')
+    with open(GITHUB_ENV,'a',encoding='utf-8') as fh:
+        for k in sorted(env): fh.write(f'{k}={env[k]}\n')
 
+def patch(providers:dict[str,Any],name:str,env:dict[str,str],grant:int)->None:
+    row=providers.setdefault(name,{})
+    if not isinstance(row,dict): row={}; providers[name]=row
+    row['per_run_max']=grant; row['min_spacing_minutes']=0
+    old=dict(row.get('env') or {}); old.update(env); row['env']=old
 
-def patch_provider(providers: dict[str, Any], name: str, patch: dict[str, Any]) -> dict[str, Any]:
-    row = providers.get(name)
-    if not isinstance(row, dict):
-        row = {}
-        providers[name] = row
-    for key, value in patch.items():
-        if key == 'env':
-            env = dict(row.get('env') or {})
-            env.update({str(k): str(v) for k, v in dict(value).items()})
-            row['env'] = env
-        elif isinstance(value, dict) and isinstance(row.get(key), dict):
-            nested = dict(row.get(key) or {})
-            nested.update(value)
-            row[key] = nested
-        else:
-            row[key] = value
-    return row
-
-
-def main() -> int:
-    policy = load_json(POLICY_PATH, {})
-    if not isinstance(policy, dict):
-        policy = {}
-    providers = policy.setdefault('providers', {})
-    if not isinstance(providers, dict):
-        providers = {}
-        policy['providers'] = providers
-
-    odds_global = os.getenv('ODDS_API_IO_PER_RUN_MAX', '200')
-    odds_account1 = os.getenv('ODDS_API_IO_ACCOUNT1_PER_RUN_MAX', '100')
-    odds_account2 = os.getenv('ODDS_API_IO_ACCOUNT2_PER_RUN_MAX', '100')
-
-    # RULES.txt: each odds-api.io free account allows 100 requests/hour and 2 selected bookmakers.
-    # Dual-account mode keeps 2 books per account, not 4 books on one key.
-    odds = patch_provider(providers, 'odds_api_io', {
-        'per_run_max': int(float(odds_global or 140)),
-        'min_spacing_minutes': 0,
-        'limit': {
-            'requests_per_hour_per_account': 100,
-            'bookmakers_per_account': 2,
-            'budget_scope': 'per_run_dual_account',
-            'account1_bookmakers': ['Bet365', 'Unibet'],
-            'account2_bookmakers': ['Betfair Exchange', 'Sbobet'],
-            'rules_source': 'RULES.txt + dual-account user configuration',
-        },
-        'env': {
-            'ENABLE_ODDS_API_IO': 'true',
-            'ODDS_API_IO_ENABLED': 'true',
-            'ODDS_API_IO_PER_RUN_MAX': odds_global,
-            'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': odds_global,
-            'ODDS_API_IO_ACCOUNT1_PER_RUN_MAX': odds_account1,
-            'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': odds_account2,
-            'ODDS_API_IO_BOOKMAKERS': 'Bet365,Unibet',
-            'ODDS_API_IO_BOOKMAKERS_ACCOUNT1': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1', 'Bet365,Unibet'),
-            'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2', 'Betfair Exchange,Sbobet'),
-            'ODDS_API_IO_PAGE_LIMIT': '100',
-            'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
-            'MAX_MATCHES_FOR_ODDS_FETCH': '520',
-        },
-    })
-
-    sstats = patch_provider(providers, 'sstats', {
-        'per_run_max': 150,
-        'min_spacing_minutes': 0,
-        'limit': {'requests_per_minute': 150, 'rules_source': 'RULES.txt'},
-        'env': {
-            'ENABLE_SSTATS': 'true',
-            'ENABLE_SSTATS_CONTEXT': 'true',
-            'SSTATS_ENABLED': 'true',
-            'SSTATS_PER_RUN_MAX': '150',
-            'SSTATS_REQUESTS_MAX_PER_RUN': '150',
-            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
-            'SSTATS_CONTEXT_MATCH_LIMIT': '320',
-            'SSTATS_LOOKBACK_DAYS': '35',
-            'SSTATS_RECENT_MATCHES': '10',
-        },
-    })
-
-    thesportsdb = patch_provider(providers, 'thesportsdb', {
-        'per_run_max': 30,
-        'min_spacing_minutes': 0,
-        'limit': {'requests_per_minute': 30, 'rules_source': 'RULES.txt'},
-        'env': {
-            'ENABLE_THESPORTSDB': 'true',
-            'ENABLE_THESPORTSDB_CONTEXT': 'true',
-            'THESPORTSDB_ENABLED': 'true',
-            'THESPORTSDB_PER_RUN_MAX': '30',
-            'THESPORTSDB_REQUESTS_MAX_PER_RUN': '30',
-            'THESPORTSDB_CONTEXT_MATCH_LIMIT': '180',
-        },
-    })
-
-    football = patch_provider(providers, 'football_data', {
-        'per_run_max': 16,
-        'min_spacing_minutes': 2,
-        'limit': {'requests_per_minute_registered': 10, 'rules_source': 'RULES.txt'},
-        'env': {
-            'ENABLE_FOOTBALL_DATA': 'true',
-            'ENABLE_FOOTBALL_DATA_CONTEXT': 'true',
-            'FOOTBALL_DATA_ENABLED': 'true',
-            'FOOTBALL_DATA_PER_RUN_MAX': '16',
-            'FOOTBALL_DATA_REQUESTS_MAX_PER_RUN': '16',
-            'FOOTBALL_DATA_CONTEXT_MATCH_LIMIT': '180',
-        },
-    })
-
-    openfootball = patch_provider(providers, 'openfootball_public', {
-        'per_run_max': 18,
-        'min_spacing_minutes': 0,
-        'env': {
-            'ENABLE_OPENFOOTBALL_CONTEXT': 'true',
-            'OPENFOOTBALL_ENABLED': 'true',
-            'OPENFOOTBALL_CONTEXT_MATCH_LIMIT': '220',
-            'OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '18',
-            'OPENFOOTBALL_SKIP_404_CACHE_TTL_HOURS': '24',
-        },
-    })
-
-    policy['version'] = 'v20-dual-account-odds-api-io-budget'
-    write_json(POLICY_PATH, policy)
-
-    env = {
-        'RULES_API_BUDGET_POLICY_VERSION': policy['version'],
-        'ALL_SOURCES_FREE_MAXIMIZE': 'false',
-        'ODDS_API_IO_PER_RUN_MAX': odds_global,
-        'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': odds_global,
-        'ODDS_API_IO_ACCOUNT1_PER_RUN_MAX': odds_account1,
-        'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': odds_account2,
-        'ODDS_API_IO_BOOKMAKERS_ACCOUNT1': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1', 'Bet365,Unibet'),
-        'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2', 'Betfair Exchange,Sbobet'),
-        'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
-        'MAX_MATCHES_FOR_ODDS_FETCH': '520',
-        'SSTATS_PER_RUN_MAX': '150',
-        'SSTATS_REQUESTS_MAX_PER_RUN': '150',
-        'SSTATS_CONTEXT_MATCH_LIMIT': '320',
-        'THESPORTSDB_PER_RUN_MAX': '30',
-        'THESPORTSDB_REQUESTS_MAX_PER_RUN': '30',
-        'THESPORTSDB_CONTEXT_MATCH_LIMIT': '180',
-        'FOOTBALL_DATA_PER_RUN_MAX': '16',
-        'FOOTBALL_DATA_REQUESTS_MAX_PER_RUN': '16',
-        'FOOTBALL_DATA_CONTEXT_MATCH_LIMIT': '180',
-        'OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '18',
-        'OPENFOOTBALL_CONTEXT_MATCH_LIMIT': '220',
+def main()->int:
+    policy=load_json(POLICY_PATH,{}) if isinstance(load_json(POLICY_PATH,{}),dict) else {}
+    providers=policy.setdefault('providers',{})
+    env={
+      'RULES_API_BUDGET_POLICY_VERSION':'v26-full-300-two-plus-coverage',
+      'ALL_SOURCES_FREE_MAXIMIZE':'true','CONTEXT_ENRICHMENT_REQUIRES_OFFERS':'false','CONTEXT_ENRICHMENT_MATCH_LIMIT':'300','PREMIUM_CONTEXT_SHORTLIST_LIMIT':'300',
+      'DAY_INVENTORY_TARGET_SIZE':'300','DAY_INVENTORY_MAX_MATCHES':'300','DAY_INVENTORY_FORCE_FULL_300':'true','DAY_INVENTORY_FORCE_TOP_300':'true','DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES':'300',
+      'HARIZON_FULL_INVENTORY_PROVIDER_TARGETS':'300','HARIZON_RUNTIME_MATCH_RECOVERY_MIN_FILTERED_MATCHES':'300','HARIZON_RUNTIME_MATCH_RECOVERY_MAX_MATCHES':'300','HARIZON_RUNTIME_MATCH_RECOVERY_WINDOW_HOURS':'36',
+      'ODDS_API_IO_PER_RUN_MAX':'200','ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN':'200','ODDS_API_IO_REQUESTS_MAX_PER_RUN':'200','ODDS_API_IO_ACCOUNT1_PER_RUN_MAX':'100','ODDS_API_IO_ACCOUNT2_PER_RUN_MAX':'100','ODDS_API_IO_MATCH_LIMIT':'300','ODDS_API_IO_ODDS_MATCH_LIMIT':'300','ODDS_API_IO_MAX_ODDS_EVENTS_PER_RUN':'300','MAX_MATCHES_FOR_ODDS_FETCH':'520','ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT':'36',
+      'BZZOIRO_PER_RUN_MAX':'180','BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN':'180','BZZOIRO_CONTEXT_MATCH_LIMIT':'300','BZZOIRO_ODDS_MATCH_LIMIT':'300','BZZOIRO_TARGETED_ODDS_DETAIL_LIMIT':'160','BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT':'160','BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS':'160','BZZOIRO_RUNTIME_PROVIDER_DEADLINE_SECONDS':'220',
+      'SSTATS_PER_RUN_MAX':'150','SSTATS_REQUESTS_MAX_PER_RUN':'150','SSTATS_MAX_HTTP_REQUESTS_PER_RUN':'150','SSTATS_CONTEXT_MATCH_LIMIT':'300',
+      'SPORTLOGIC_ENABLED':'true','ENABLE_SPORTLOGIC':'true','SPORTLOGIC_CONTROLLED_ODDS_ENABLED':'true','SPORTLOGIC_PER_RUN_MAX':'120','SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN':'120','SPORTLOGIC_MATCH_LIMIT':'300','SPORTLOGIC_CONTEXT_MATCH_LIMIT':'300','SPORTLOGIC_ODDS_MATCH_LIMIT':'160','SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY':'false',
+      'FOOTBALL_DATA_PER_RUN_MAX':'24','FOOTBALL_DATA_REQUESTS_MAX_PER_RUN':'24','FOOTBALL_DATA_CONTEXT_MATCH_LIMIT':'300','THESPORTSDB_PER_RUN_MAX':'30','THESPORTSDB_REQUESTS_MAX_PER_RUN':'30','THESPORTSDB_CONTEXT_MATCH_LIMIT':'300','OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN':'18','OPENFOOTBALL_CONTEXT_MATCH_LIMIT':'300','WEATHERAPI_PER_RUN_MAX':'32','WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN':'32','WEATHER_CONTEXT_MATCH_LIMIT':'300'
     }
-    append_env(env)
-
-    report = {
-        'status': 'ok',
-        'updated_at_utc': datetime.now(UTC).isoformat(),
-        'policy_path': str(POLICY_PATH),
-        'version': policy['version'],
-        'patched': {
-            'odds_api_io': {'per_run_max': odds.get('per_run_max'), 'limit': odds.get('limit'), 'env': odds.get('env')},
-            'sstats': {'per_run_max': sstats.get('per_run_max'), 'env': sstats.get('env')},
-            'thesportsdb': {'per_run_max': thesportsdb.get('per_run_max'), 'env': thesportsdb.get('env')},
-            'football_data': {'per_run_max': football.get('per_run_max'), 'env': football.get('env')},
-            'openfootball_public': {'per_run_max': openfootball.get('per_run_max'), 'env': openfootball.get('env')},
-        },
-        'reason': 'Align legacy odds budget boost with dual-account odds-api.io mode so it no longer downgrades provider max to 80.',
-    }
-    write_json(OUT, report)
-    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0
-
-
-if __name__ == '__main__':
-    raise SystemExit(main())
+    patch(providers,'odds_api_io',{k:v for k,v in env.items() if k.startswith('ODDS_API_IO') or k=='MAX_MATCHES_FOR_ODDS_FETCH'},200)
+    patch(providers,'bzzoiro',{k:v for k,v in env.items() if k.startswith('BZZOIRO')},180)
+    patch(providers,'sstats',{k:v for k,v in env.items() if k.startswith('SSTATS')},150)
+    patch(providers,'sportlogic',{k:v for k,v in env.items() if k.startswith('SPORTLOGIC') or k=='ENABLE_SPORTLOGIC'},120)
+    policy['version']='v26-full-300-two-plus-coverage'; write_json(POLICY_PATH,policy); append_env(env)
+    report={'status':'ok','updated_at_utc':datetime.now(UTC).isoformat(),'version':policy['version'],'env':env,'reason':'Full top-300 coverage routing; no legacy downgrade to 80 requests.'}
+    write_json(OUT,report); print(json.dumps(report,ensure_ascii=False,indent=2,sort_keys=True)); return 0
+if __name__=='__main__': raise SystemExit(main())
