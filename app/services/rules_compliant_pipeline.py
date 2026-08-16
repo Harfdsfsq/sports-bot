@@ -1,6 +1,20 @@
 from __future__ import annotations
 
-"""Rules-compliant runtime policy for the prediction pipeline."""
+"""Rules-compliant runtime policy for the prediction pipeline.
+
+Configuration contract:
+
+- ``RULES_ENV_DEFAULTS`` is applied with ``setdefault`` semantics: it fills in
+  variables that are unset, but never overwrites what the workflow (or the
+  operator) already configured. This module used to overwrite the whole block
+  unconditionally, which made ``.github/workflows/run-bot.yml`` inert.
+- ``RULES_ENV_MIN_NUMERIC`` holds floors that must hold regardless of the
+  environment. A publish window shorter than the cron interval makes the
+  line-movement recheck impossible to satisfy, so it is raised back up.
+- The resulting configuration is written to
+  ``.data/exports/latest-effective-policy.json`` so a run can be debugged
+  without guessing which configuration layer won.
+"""
 
 import json
 import os
@@ -20,8 +34,6 @@ RULES_ENV_DEFAULTS = {
     "DAY_INVENTORY_RUN_MATCH_LIMIT": "300",
     "ANALYSIS_MATCH_CAP_PER_RUN": "300",
     "MAX_MATCHES_FOR_ODDS_FETCH": "300",
-    "PUBLISH_WINDOW_HOURS": "24",
-    "CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS": "24",
     "PUBLISH_MIN_BOOKS": "2",
     "MIN_BOOKS_PUBLISH": "2",
     "PUBLISH_MIN_ODDS_SOURCES": "1",
@@ -50,7 +62,7 @@ RULES_ENV_DEFAULTS = {
     "LINE_MOVEMENT_CRON_TIMEZONE": "Europe/Moscow",
     "LINE_MOVEMENT_USE_SCHEDULED_CRON": "true",
     "FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES": "true",
-    "FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT": "0",
+    "FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT": "40",
     "RULES_MAX_PROVIDER_DISPERSION_PCT": "8.5",
     "FORCE_PUBLISH_WHEN_EMPTY_ENABLED": "false",
     "QUALITY_EMERGENCY_PUBLISH_ENABLED": "false",
@@ -58,13 +70,91 @@ RULES_ENV_DEFAULTS = {
     "REPUBLISH_SEEN_CANDIDATES_WHEN_EMPTY": "false",
 }
 
+# Floors that hold regardless of the environment. The publish window must stay
+# wider than one cron interval, otherwise a candidate can never survive long
+# enough to get its second line snapshot and is rejected forever with
+# ``awaiting_next_run``.
+RULES_ENV_MIN_NUMERIC = {
+    "PUBLISH_WINDOW_HOURS": 24.0,
+    "CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS": 24.0,
+}
+
+# Keys dumped to the effective-policy audit so it is always obvious which
+# thresholds a run actually used.
+EFFECTIVE_POLICY_KEYS = (
+    "PUBLISH_WINDOW_HOURS",
+    "CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS",
+    "MIN_KICKOFF_LEAD_MINUTES",
+    "PUBLISH_ALLOW_B_TIER",
+    "PREDICTION_PUBLICATION_ENABLED",
+    "PUBLISH_MIN_BOOKS",
+    "MIN_BOOKS_PUBLISH",
+    "PUBLISH_MIN_ODDS_SOURCES",
+    "MIN_SOURCES_PUBLISH",
+    "PUBLISH_MIN_CONTEXT_SOURCES",
+    "MIN_CONTEXT_SOURCES_PUBLISH",
+    "PUBLISH_TIER_A_MIN_BOOKS",
+    "PUBLISH_TIER_A_MIN_ODDS_SOURCES",
+    "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES",
+    "PUBLISH_TIER_B_MIN_BOOKS",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES",
+    "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_CONTEXT_SOURCES",
+    "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN",
+    "MAX_PICKS_PER_RUN",
+    "PUBLISH_REQUIRE_LINE_MOVEMENT",
+    "LINE_MOVEMENT_GUARD_ENABLED",
+    "LINE_MOVEMENT_CRON_INTERVAL_MINUTES",
+    "LINE_MOVEMENT_MIN_RECHECK_MINUTES",
+    "LINE_MOVEMENT_MAX_ADVERSE_DRIFT_PCT",
+    "DAILY_INVENTORY_MAX_MATCHES",
+    "DAY_INVENTORY_MAX_MATCHES",
+    "MAX_MATCHES_FOR_ODDS_FETCH",
+    "FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES",
+    "FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT",
+    "RULES_MAX_PROVIDER_DISPERSION_PCT",
+    "LEGACY_RUNTIME_EXTENSIONS_ENABLED",
+)
+
+# Populated by _apply_rules_env_defaults so the audit can show which layer won.
+_LAST_ENV_DECISIONS: dict[str, Any] = {}
+
+# Runner attributes that may hold the current value candidates. Used to target
+# final enrichment (weather and other minor providers) at candidates only.
+CANDIDATE_LIST_ATTRS = (
+    "_rules_value_candidates",
+    "_value_candidates",
+    "_publishable_candidates",
+    "_selected_candidates",
+    "_current_candidates",
+    "_candidates",
+)
+
 
 def _apply_rules_env_defaults() -> dict[str, str]:
+    """Fill in unset policy variables without clobbering the environment."""
     applied: dict[str, str] = {}
+    kept: dict[str, str] = {}
+    raised: dict[str, str] = {}
     for key, value in RULES_ENV_DEFAULTS.items():
-        if os.getenv(key) != value:
+        current = os.getenv(key)
+        if current is None or str(current).strip() == "":
             os.environ[key] = value
             applied[key] = value
+        elif str(current).strip() != value:
+            kept[key] = str(current).strip()
+    for key, minimum in RULES_ENV_MIN_NUMERIC.items():
+        current = os.getenv(key)
+        if current is None or str(current).strip() == "" or _float(current, -1.0) < minimum:
+            text = str(int(minimum)) if float(minimum).is_integer() else str(minimum)
+            os.environ[key] = text
+            raised[key] = text
+    _LAST_ENV_DECISIONS.clear()
+    _LAST_ENV_DECISIONS.update({
+        "applied_defaults": applied,
+        "kept_from_environment": kept,
+        "raised_to_minimum": raised,
+    })
     return applied
 
 
@@ -229,6 +319,55 @@ def _candidate_value_score(candidate: Any) -> float:
     return _float(_candidate_get(candidate, "publication_score"), 0.0) * 2.0 + _float(_candidate_get(candidate, "ev_pct"), 0.0) * 3.0 + _float(_candidate_get(candidate, "edge_pct"), 0.0) * 2.0 + _float(_candidate_get(candidate, "confidence"), 0.0) * 0.1
 
 
+def _norm_identity(value: Any) -> str:
+    return "".join(ch for ch in str(value or "").strip().lower() if ch.isalnum())
+
+
+def _identity_keys(item: Any) -> set[str]:
+    keys: set[str] = set()
+    for field in ("canonical_match_id", "match_key", "match_id", "event_id"):
+        value = _norm_identity(_candidate_get(item, field))
+        if value:
+            keys.add(value)
+    home = _norm_identity(_candidate_get(item, "home_team"))
+    away = _norm_identity(_candidate_get(item, "away_team"))
+    if home and away:
+        keys.add(f"{home}|{away}")
+    return keys
+
+
+def _value_candidate_keys(runner: Any) -> set[str]:
+    keys: set[str] = set()
+    for attr in CANDIDATE_LIST_ATTRS:
+        items = getattr(runner, attr, None)
+        if not isinstance(items, (list, tuple, set)):
+            continue
+        for item in items:
+            keys |= _identity_keys(item)
+    return keys
+
+
+def _select_final_enrichment_matches(runner: Any, matches: list[Any], now_utc: datetime) -> list[Any]:
+    """Pick the matches worth spending scarce minor-provider quota on.
+
+    The rules ask for final enrichment on value candidates only. The previous
+    implementation passed an empty list, which disabled enrichment entirely and
+    starved every candidate of one context source.
+    """
+    if not matches:
+        return []
+    wanted = _value_candidate_keys(runner)
+    if wanted:
+        selected = [match for match in matches if _identity_keys(match) & wanted]
+        if selected:
+            return selected
+    limit = _int(os.getenv("FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT"), 40)
+    if limit <= 0:
+        return []
+    upcoming = [match for match in matches if _match_hours(match, now_utc) >= 0]
+    return sorted(upcoming, key=lambda match: _match_hours(match, now_utc))[:limit]
+
+
 def _provider_conflict(candidate: Any) -> tuple[bool, list[str]]:
     reasons: list[str] = []
     summary = _candidate_get(candidate, "source_summary", {}) or {}
@@ -277,6 +416,25 @@ def _write_audit(summary: dict[str, Any]) -> None:
         out.write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
     except Exception:
         return
+
+
+def _write_effective_policy(extra: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Dump the configuration a run actually used."""
+    payload: dict[str, Any] = {
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "env_decisions": dict(_LAST_ENV_DECISIONS),
+        "effective_env": {key: os.getenv(key) for key in EFFECTIVE_POLICY_KEYS},
+        "note": "RULES_ENV_DEFAULTS never overwrite an already configured variable; RULES_ENV_MIN_NUMERIC are hard floors.",
+    }
+    if extra:
+        payload.update(extra)
+    try:
+        out = Path(os.getenv("EFFECTIVE_POLICY_AUDIT_PATH", ".data/exports/latest-effective-policy.json"))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+    except Exception:
+        pass
+    return payload
 
 
 def _patch_day_inventory() -> dict[str, Any]:
@@ -390,27 +548,50 @@ def _patch_runner() -> dict[str, Any]:
                     pass
                 continue
             out.append(candidate)
+        # Remember the surviving candidates so final enrichment can target them.
+        try:
+            self._rules_value_candidates = list(out)
+        except Exception:
+            pass
         return out
     def select_publishable_rules(self: Any, candidates: list[Any]) -> list[Any]:
         now = datetime.now(UTC)
         for candidate in candidates:
             _annotate_candidate_bucket(candidate, now)
         ranked = sorted(candidates, key=lambda c: (_bucket_rank(str((_candidate_get(c, "source_summary", {}) or {}).get("time_bucket") or "24h+")), -_candidate_value_score(c)))
+        try:
+            self._rules_value_candidates = list(ranked)
+        except Exception:
+            pass
         return original_select(self, ranked)
     async def fetch_weather_contexts_rules(self: Any, matches: list[Any], base_contexts: dict[str, Any]):
         if not _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True):
             return await original_fetch_weather(self, matches, base_contexts)
-        return await original_fetch_weather(self, [], base_contexts)
+        now = datetime.now(UTC)
+        requested = list(matches or [])
+        targets = _select_final_enrichment_matches(self, requested, now)
+        try:
+            self._rules_final_enrichment = {
+                "requested_matches": len(requested),
+                "selected_matches": len(targets),
+                "mode": "value_candidates" if _value_candidate_keys(self) else "nearest_window_fallback",
+                "fallback_limit": _int(os.getenv("FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT"), 40),
+            }
+        except Exception:
+            pass
+        return await original_fetch_weather(self, targets, base_contexts)
     async def run_once_rules(self: Any):
         summary = await original_run_once(self)
         audit = getattr(self, "_rules_compliance_runtime", {}) if isinstance(getattr(self, "_rules_compliance_runtime", {}), dict) else {}
         line_counter = audit.get("line_movement")
         if isinstance(line_counter, Counter):
             line_counter = dict(line_counter)
-        rules_summary = {"enabled": True, "created_at_utc": datetime.now(UTC).isoformat(), "inventory_top_300": True, "time_buckets": BUCKET_ORDER, "nearest_bucket_first": True, "line_context_minimum_checked": True, "new_candidates_saved_before_publish": True, "line_movement_rechecked": True, "final_enrichment_only_for_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True), "published_only_after_final_check": True, "runtime": {**audit, "line_movement": line_counter or {}}, "published": int((summary or {}).get("published_to_telegram") or (summary or {}).get("published") or 0) if isinstance(summary, dict) else 0}
+        final_enrichment = getattr(self, "_rules_final_enrichment", {})
+        rules_summary = {"enabled": True, "created_at_utc": datetime.now(UTC).isoformat(), "inventory_top_300": True, "time_buckets": BUCKET_ORDER, "nearest_bucket_first": True, "line_context_minimum_checked": True, "new_candidates_saved_before_publish": True, "line_movement_rechecked": True, "final_enrichment_only_for_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True), "final_enrichment": final_enrichment if isinstance(final_enrichment, dict) else {}, "published_only_after_final_check": True, "runtime": {**audit, "line_movement": line_counter or {}}, "published": int((summary or {}).get("published_to_telegram") or (summary or {}).get("published") or 0) if isinstance(summary, dict) else 0}
         if isinstance(summary, dict):
             summary["rules_compliance"] = rules_summary
         _write_audit(rules_summary)
+        _write_effective_policy({"stage": "run_once_end", "final_enrichment": rules_summary["final_enrichment"], "published": rules_summary["published"]})
         return summary
     PredictionRunner._filter_publishable_candidates = filter_publishable_rules
     PredictionRunner._select_publishable_candidates = select_publishable_rules
@@ -424,5 +605,6 @@ def install() -> dict[str, Any]:
     if not _truthy(os.getenv("RULES_COMPLIANT_PIPELINE_ENABLED"), True):
         return {"installed": False, "reason": "disabled_by_env"}
     applied_env = _apply_rules_env_defaults()
-    results = {"env_overrides": applied_env, "day_inventory": _patch_day_inventory(), "coverage_planner": _patch_coverage_planner(), "runner": _patch_runner(), "policy": {"top_inventory_limit": _int(os.getenv("DAILY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES"), 300), "time_buckets": BUCKET_ORDER, "final_enrichment_only_for_value_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True), "b_tier_context_sources": _int(os.getenv("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES"), 1), "publish_window_hours": _int(os.getenv("PUBLISH_WINDOW_HOURS"), 24)}}
+    results = {"env_overrides": applied_env, "env_decisions": dict(_LAST_ENV_DECISIONS), "day_inventory": _patch_day_inventory(), "coverage_planner": _patch_coverage_planner(), "runner": _patch_runner(), "policy": {"top_inventory_limit": _int(os.getenv("DAILY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES"), 300), "time_buckets": BUCKET_ORDER, "final_enrichment_only_for_value_candidates": _truthy(os.getenv("FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES"), True), "b_tier_context_sources": _int(os.getenv("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES"), 1), "publish_window_hours": _int(os.getenv("PUBLISH_WINDOW_HOURS"), 24)}}
+    _write_effective_policy({"stage": "install"})
     return {"installed": True, "results": results}
