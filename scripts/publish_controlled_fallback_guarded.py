@@ -5,7 +5,23 @@ from typing import Any
 
 
 def _force_runtime_publication_contract() -> None:
-    overrides={'PUBLISH_TIER_A_MIN_ODDS_SOURCES':'2','PUBLISH_TIER_A_MIN_BOOKS':'2','PUBLISH_TIER_A_MIN_CONTEXT_SOURCES':'2','PUBLISH_TIER_B_MIN_ODDS_SOURCES':'1','PUBLISH_TIER_B_MIN_BOOKS':'2','PUBLISH_TIER_B_MIN_CONTEXT_SOURCES':'1','CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS':'2','CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES':'1','CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES':'1','CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM':'false','CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM':'false','CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER':'true','CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS':'true','CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS':'true','CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP':'2.3','CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT':'4.0','CONTROLLED_FALLBACK_ALLOW_VALUE_ALIVE_HIGH_DRIFT':'true','CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT':'3.0','CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP':'1.5','CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED':'3','CONTROLLED_FALLBACK_DAILY_MAX_B_TIER':'3','A_TIER_TARGETED_ENRICHMENT_ENABLED':'true','BZZOIRO_TARGETED_ODDS_CONFIRMATION_ENABLED':'true','SSTATS_TARGETED_CONTEXT_PROJECTION_ENABLED':'true','HIGH_VALUE_FAST_RECHECK_ENABLED':'true','BZZOIRO_TARGETED_ODDS_DETAIL_LIMIT':'60','BZZOIRO_CONTEXT_MATCH_LIMIT':'300','BZZOIRO_ODDS_MATCH_LIMIT':'300','BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT':'220','SSTATS_CONTEXT_MATCH_LIMIT':'320','SSTATS_DEEP_CONTEXT_MATCH_LIMIT':'80','ODDS_API_IO_PER_RUN_MAX':'200','ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN':'200','ODDS_API_IO_MATCH_LIMIT':'80','ODDS_API_IO_ODDS_MATCH_LIMIT':'80','MAX_MATCHES_FOR_ODDS_FETCH':'300','ODDS_API_IO_FORCE_CURRENT_RECHECK_FOR_FALLBACK':'true','DAY_INVENTORY_ENABLE_SPORTLOGIC':'false','ENABLE_SPORTLOGIC':'false','SPORTLOGIC_ENABLED':'false','SPORTLOGIC_CONTROLLED_ODDS_ENABLED':'false','SPORTLOGIC_PER_RUN_MAX':'0','SPORTLOGIC_REQUEST_BUDGET_GRANTED':'0','SPORTLOGIC_MATCH_LIMIT':'0','SPORTLOGIC_CONTEXT_MATCH_LIMIT':'0','SPORTLOGIC_ODDS_MATCH_LIMIT':'0','SPORTLOGIC_DISABLED_ZERO_ROWS_GUARD':'true'}
+    overrides={
+        'PUBLISH_TIER_A_MIN_ODDS_SOURCES':'2','PUBLISH_TIER_A_MIN_BOOKS':'2','PUBLISH_TIER_A_MIN_CONTEXT_SOURCES':'2',
+        'PUBLISH_TIER_B_MIN_ODDS_SOURCES':'1','PUBLISH_TIER_B_MIN_BOOKS':'2','PUBLISH_TIER_B_MIN_CONTEXT_SOURCES':'2',
+        'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS':'2','CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES':'2','CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES':'2',
+        'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM':'false','CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM':'false',
+        'CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER':'true','CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS':'true','CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS':'true',
+        'CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP':'2.3','CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT':'4.0','CONTROLLED_FALLBACK_ALLOW_VALUE_ALIVE_HIGH_DRIFT':'true',
+        'CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT':'3.0','CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP':'1.5','CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED':'3','CONTROLLED_FALLBACK_DAILY_MAX_B_TIER':'3',
+        'A_TIER_TARGETED_ENRICHMENT_ENABLED':'true','BZZOIRO_TARGETED_ODDS_CONFIRMATION_ENABLED':'true','SSTATS_TARGETED_CONTEXT_PROJECTION_ENABLED':'true','HIGH_VALUE_FAST_RECHECK_ENABLED':'true',
+        'DAY_INVENTORY_TARGET_SIZE':'300','DAY_INVENTORY_MAX_MATCHES':'300','DAY_INVENTORY_FORCE_FULL_300':'true','DAY_INVENTORY_FORCE_TOP_300':'true','DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES':'300',
+        'HARIZON_FULL_INVENTORY_PROVIDER_TARGETS':'300','HARIZON_RUNTIME_MATCH_RECOVERY_MIN_FILTERED_MATCHES':'300','HARIZON_RUNTIME_MATCH_RECOVERY_MAX_MATCHES':'300','HARIZON_RUNTIME_MATCH_RECOVERY_WINDOW_HOURS':'36',
+        'CONTEXT_ENRICHMENT_MATCH_LIMIT':'300','PREMIUM_CONTEXT_SHORTLIST_LIMIT':'300','CONTEXT_ENRICHMENT_REQUIRES_OFFERS':'false',
+        'ODDS_API_IO_PER_RUN_MAX':'200','ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN':'200','ODDS_API_IO_REQUESTS_MAX_PER_RUN':'200','ODDS_API_IO_ACCOUNT1_PER_RUN_MAX':'100','ODDS_API_IO_ACCOUNT2_PER_RUN_MAX':'100','ODDS_API_IO_MATCH_LIMIT':'300','ODDS_API_IO_ODDS_MATCH_LIMIT':'300','ODDS_API_IO_MAX_ODDS_EVENTS_PER_RUN':'300','MAX_MATCHES_FOR_ODDS_FETCH':'520','ODDS_API_IO_FORCE_CURRENT_RECHECK_FOR_FALLBACK':'true',
+        'BZZOIRO_PER_RUN_MAX':'180','BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN':'180','BZZOIRO_CONTEXT_MATCH_LIMIT':'300','BZZOIRO_ODDS_MATCH_LIMIT':'300','BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT':'300','BZZOIRO_TARGETED_ODDS_DETAIL_LIMIT':'160','BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT':'160','BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS':'160','BZZOIRO_RUNTIME_PROVIDER_DEADLINE_SECONDS':'220',
+        'SSTATS_PER_RUN_MAX':'150','SSTATS_REQUESTS_MAX_PER_RUN':'150','SSTATS_MAX_HTTP_REQUESTS_PER_RUN':'150','SSTATS_CONTEXT_MATCH_LIMIT':'300','SSTATS_DEEP_CONTEXT_MATCH_LIMIT':'150',
+        'DAY_INVENTORY_ENABLE_SPORTLOGIC':'true','ENABLE_SPORTLOGIC':'true','SPORTLOGIC_ENABLED':'true','SPORTLOGIC_CONTROLLED_ODDS_ENABLED':'true','SPORTLOGIC_PER_RUN_MAX':'120','SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN':'120','SPORTLOGIC_REQUEST_BUDGET_GRANTED':'120','SPORTLOGIC_MATCH_LIMIT':'300','SPORTLOGIC_CONTEXT_MATCH_LIMIT':'300','SPORTLOGIC_ODDS_MATCH_LIMIT':'160','SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY':'false','SPORTLOGIC_DISABLED_ZERO_ROWS_GUARD':'false'
+    }
     for k,v in overrides.items(): os.environ[k]=v
 
 def _run_step(module_name:str)->None:
@@ -16,7 +32,7 @@ def _run_step(module_name:str)->None:
     except Exception: pass
 
 def _repair_runtime_artifacts_before_fallback()->None:
-    for m in ('scripts.bridge_runtime_context_coverage','scripts.build_context_source_index','scripts.build_day_inventory_coverage_truth','scripts.harizon_a_tier_coverage_plan','scripts.harizon_a_tier_targeted_enrichment_queue','scripts.target_fallback_provider_enrichment','scripts.apply_a_tier_targeted_provider_env','scripts.apply_odds_budget_boost_policy','scripts.persist_bzzoiro_runtime_artifacts','scripts.bzzoiro_targeted_odds_confirmation','scripts.bzzoiro_targeted_odds_detail_fetch','scripts.trace_bzzoiro_report_source','scripts.project_sstats_context_into_candidates','scripts.replace_rescue_proxy_placeholder_xg','scripts.day_inventory_cumulative_coverage'):
+    for m in ('scripts.apply_odds_budget_boost_policy','scripts.maximize_inventory_coverage_runtime','scripts.bridge_runtime_context_coverage','scripts.build_context_source_index','scripts.build_day_inventory_coverage_truth','scripts.harizon_a_tier_coverage_plan','scripts.harizon_a_tier_targeted_enrichment_queue','scripts.target_fallback_provider_enrichment','scripts.apply_a_tier_targeted_provider_env','scripts.persist_bzzoiro_runtime_artifacts','scripts.bzzoiro_targeted_odds_confirmation','scripts.bzzoiro_targeted_odds_detail_fetch','scripts.trace_bzzoiro_report_source','scripts.project_sstats_context_into_candidates','scripts.replace_rescue_proxy_placeholder_xg','scripts.day_inventory_cumulative_coverage'):
         _run_step(m)
 
 def _apply_focused_alpha_policy()->None:
@@ -42,7 +58,7 @@ def _int(v:Any,d:int=0)->int:
     except Exception: return d
 
 def _b_tier_testing_floor(metrics:dict[str,Any])->bool:
-    return max(_int(metrics.get('books_count')),_int(metrics.get('bookmaker_count')))>=2 and max(_int(metrics.get('odds_sources_count')),_int(metrics.get('line_sources_count')),_int(metrics.get('sources_count')))>=1 and max(_int(metrics.get('context_sources_count')),_int(metrics.get('confirmation_sources_count')))>=1 and max(_num(metrics.get('canonical_ev_pct')),_num(metrics.get('ev_pct')))>=4.0 and max(_num(metrics.get('canonical_edge_pp')),_num(metrics.get('edge_pp')))>=2.3 and 1.70<=_num(metrics.get('odds'))<=2.70
+    return max(_int(metrics.get('books_count')),_int(metrics.get('bookmaker_count')))>=2 and max(_int(metrics.get('odds_sources_count')),_int(metrics.get('line_sources_count')),_int(metrics.get('sources_count')))>=1 and max(_int(metrics.get('context_sources_count')),_int(metrics.get('confirmation_sources_count')))>=2 and max(_num(metrics.get('canonical_ev_pct')),_num(metrics.get('ev_pct')))>=4.0 and max(_num(metrics.get('canonical_edge_pp')),_num(metrics.get('edge_pp')))>=2.3 and 1.70<=_num(metrics.get('odds'))<=2.70
 
 def _install_b_tier_testing_relief(base:Any)->None:
     old=getattr(base,'tier_reasons',None)
@@ -50,7 +66,7 @@ def _install_b_tier_testing_relief(base:Any)->None:
     def wrapped(tier:str,candidate:dict[str,Any],metrics:dict[str,Any])->list[str]:
         reasons=list(old(tier,candidate,metrics) or [])
         if str(tier or '').upper()!='B' or not _b_tier_testing_floor(metrics): return reasons
-        return [r for r in reasons if str(r) not in {'tier_b_quality_below_min','tier_b_publication_score_below_min','tier_b_market_implied_xg_not_hard_confirmation'} and not str(r).startswith('tier_b_context_sources_below_min') and not str(r).startswith('tier_b_confirmation_sources_below_min')]
+        return [r for r in reasons if str(r) not in {'tier_b_quality_below_min','tier_b_publication_score_below_min','tier_b_market_implied_xg_not_hard_confirmation'}]
     base.tier_reasons=wrapped; base._b_tier_testing_relief_installed=True
 
 def main()->int:
