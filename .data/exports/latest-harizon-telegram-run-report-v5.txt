@@ -1,49 +1,46 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: odds below global min
+• Главная причина: odds above global max
 
 📦 Покрытие
-• Матчи в run: 4 | day inventory: 300
-• С линиями: 4 | с контекстом: 11 | ready model: 160
-• odds-api.io offers: 4199 | Bzzoiro secondary offers: 144
-• 2+ букмекера odds-api.io: 47 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 8 | day inventory: 300
+• С линиями: 5 | с контекстом: 3 | ready model: 144
+• odds-api.io offers: 4065 | Bzzoiro secondary offers: 138
+• 2+ букмекера odds-api.io: 40 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 40, bzzoiro: 37, bzzoiro+odds_api_io: 12
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1 / 26
+• Raw/candidates before quality: 1 / 25
 • Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
 • Controlled fallback: status no_viable_controlled_fallback | seen 1 | evaluated 1 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 6 | no next regular run: 6
+• Final pre-kickoff checks: 24 | no next regular run: 24
 • Line guard: seen 16 | kept 0 | dropped 0
 
 • Bzzoiro targeted odds: targets 80; events 1386; matched 24; ids 24; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 24; requests 48; events_with_offers 24; offers 216; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 144; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 47; inventory updated 86; inventory 2-source 0.
+• Bzzoiro odds detail: targets 23; requests 46; events_with_offers 23; offers 207; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 138; overlap matches 0; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 40; inventory updated 77; inventory 2-source 0.
 • Bzzoiro source trace: aggregate events 313; persisted rows 345; targeted events 1386; diag full_or_provider_rows_available.
 • Last-chance line relief: seen 1; floor 0; hard 1; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 23, matched 110, offers 4199, 2+ books 47, err 12, auth_failed False
-• sstats: req 17, ctx 11, rows 13538, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 313 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 144, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 21, matched 99, offers 4065, 2+ books 40, err 11, auth_failed False
+• sstats: req 17, ctx 3, rows 13538, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 313 (aggregate; persisted rows 345; trace full_or_provider_rows_available), secondary offers 138, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
-• Line movement breakdown: коэффициент ниже минимума 1.
 🚫 Почему не опубликовано
-• odds below global min: 1 (20%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (20%)
-• current price recheck value lost:-18.8/-14.4: 1 (20%)
-• quality bad historical segment guard: 1 (20%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (20%)
+• odds above global max: 1 (33%)
+• quality: вероятность после калибровки ниже порога: 1 (33%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (33%)
 
 🔎 Проверенные reserve-кандидаты
-1. Sorrento FC — Uwa Nedlands FC | Больше 2.5 @1.60 | EV -0.4% | edge -0.2 п.п. | q 45.4
-   • reject: odds below global min, отрицательная canonical value после пересчёта по выбранному коэффициенту, current price recheck value lost:-18.8/-14.4
+1. Subiaco AFC — Perth Redstar FC | Меньше @3.25 | EV +7.6% | edge +2.3 п.п. | q 58.3
+   • reject: odds above global max
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.

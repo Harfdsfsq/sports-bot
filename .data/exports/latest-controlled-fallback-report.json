@@ -1,50 +1,46 @@
 {
-  "created_at": "2026-08-16T05:12:12.911230+00:00",
+  "created_at": "2026-08-16T07:10:30.606566+00:00",
   "enabled": true,
   "published": false,
   "status": "no_viable_controlled_fallback",
   "candidates_seen": 1,
   "evaluated": [
     {
-      "match_key": "soccer|sorrento|uwa nedlands|2026-08-16",
-      "home_team": "Sorrento FC",
-      "away_team": "Uwa Nedlands FC",
-      "home_team_ru": "Сорренто",
-      "away_team_ru": "Ууа Недландс",
+      "match_key": "soccer|perth redstar|subiaco|2026-08-16",
+      "home_team": "Subiaco AFC",
+      "away_team": "Perth Redstar FC",
+      "home_team_ru": "Субиако",
+      "away_team_ru": "Перт Редстар",
       "league_name": "Australia - Western Australia NPL, Women",
       "league_name_ru": "Австралия - Уестерн Аустралиа NPL, Уомен",
-      "commence_time": "2026-08-16T07:00:00+00:00",
-      "commence_time_display": "16.08.2026 10:00 MSK",
+      "commence_time": "2026-08-16T07:45:00+00:00",
+      "commence_time_display": "16.08.2026 10:45 MSK",
       "candidate_source": "debug_candidates_before_quality",
       "family": "totals",
-      "selection": "Больше 2.5",
+      "selection": "Меньше",
       "point": 2.5,
       "ok": false,
       "tier": null,
       "reject_reasons": [
-        "odds_below_global_min",
-        "canonical_negative_value",
-        "current_price_recheck_value_lost:-18.8/-14.4"
+        "odds_above_global_max"
       ],
       "reject_reasons_ru": [
-        "коэффициент ниже общего минимума",
-        "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
-        "current price recheck value lost:-18.8/-14.4"
+        "коэффициент выше общего максимума"
       ],
       "metrics": {
-        "odds": 1.6,
-        "selected_implied_probability": 0.625,
-        "adjusted_probability": 0.622752,
-        "model_probability": 0.663242,
-        "market_probability": 0.641931,
-        "canonical_edge_pp": -0.225,
-        "market_edge_pp": -1.918,
-        "canonical_ev_pct": -0.36,
-        "confidence": 71.176,
-        "quality_score": 45.395,
-        "quality_score_raw": 45.395,
+        "odds": 3.25,
+        "selected_implied_probability": 0.307692,
+        "adjusted_probability": 0.330978,
+        "model_probability": 0.435625,
+        "market_probability": 0.317129,
+        "canonical_edge_pp": 2.329,
+        "market_edge_pp": 1.385,
+        "canonical_ev_pct": 7.568,
+        "confidence": 63.656,
+        "quality_score": 58.336,
+        "quality_score_raw": 58.336,
         "quality_score_source": "raw",
-        "publication_score": 74.916,
+        "publication_score": 35.227,
         "books_count": 2,
         "odds_sources_count": 3,
         "line_sources": [
@@ -75,14 +71,30 @@
           "min_confidence": 78.0
         },
         "quality_reasons": [
-          "bad_historical_segment_guard"
+          "post_calibration_probability_guard"
         ],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.435625,
+          "xg_probability_pct": 43.562,
+          "xg_model_gap_pp": -10.465,
+          "xg_abs_gap_pp": 10.465,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_model_conservative_gap_pp": 10.465,
+          "xg_total": 2.945,
+          "xg_direction_ok": true,
+          "xg_direction_evaluated": true,
+          "xg_hard_confirmation": true,
+          "xg_direction_probability_support_override": {
+            "used": true,
+            "xg_probability_pct": 43.562,
+            "implied_probability_pct": 30.769,
+            "adjusted_probability_pct": 33.098,
+            "min_support_edge_pp": 1.0,
+            "max_model_over_xg_pp": 0.75,
+            "reason": "xg_probability_supports_selected_price_and_model_not_over_xg"
+          }
         },
         "btts_sanity": {
           "enabled": false,
@@ -106,8 +118,8 @@
           "odds_api_io"
         ],
         "external_same_side_snapshot_debug": {
-          "external_snapshot_rows_total": 4199,
-          "external_snapshot_match_rows": 20,
+          "external_snapshot_rows_total": 4065,
+          "external_snapshot_match_rows": 21,
           "external_snapshot_side_rows": 2,
           "external_snapshot_skipped_unknown_side": 0,
           "external_snapshot_skipped_opposite_side": 5,
@@ -115,18 +127,18 @@
         },
         "price_confirmation_sources_count": 2,
         "external_same_side_real_book_prices": [
-          1.6,
-          1.3
+          2.625,
+          3.25
         ],
-        "reserve_quality_score": 49.5,
+        "reserve_quality_score": 64.8,
         "reserve_quality_components": {
-          "ev_pct": 0.0,
-          "edge_pp": 0.0,
-          "odds": 1.6,
+          "ev_pct": 7.568,
+          "edge_pp": 2.329,
+          "odds": 3.25,
           "books": 2,
           "odds_sources": 3,
           "confirmations": 3,
-          "confidence": 71.176,
+          "confidence": 63.656,
           "league_reliability": {
             "score": 64.0,
             "reasons": [],
@@ -140,26 +152,13 @@
         },
         "semantic_current_price_guard": {
           "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-odds-api-io-offer-snapshot.json",
-          "created_at_utc": "2026-08-16T05:08:37.980055+00:00",
+          "created_at_utc": "2026-08-16T07:07:04.591967+00:00",
           "stale": false,
-          "matching_offers": 1,
-          "selected_price": 1.6,
-          "current_price": 1.3,
+          "matching_offers": 3,
+          "selected_price": 3.25,
+          "current_price": 3.25,
           "current_bookmaker": "Unibet",
-          "price_diff_pct": 23.077
-        },
-        "current_price_recheck": {
-          "selected_price": 1.6,
-          "current_price": 1.3,
-          "model_probability_from_selected_ev": 0.625,
-          "recalculated_ev_pct": -18.75,
-          "recalculated_edge_pp": -14.42,
-          "drift_pct": 23.08,
-          "min_ev_pct": 3.0,
-          "min_edge_pp": 1.5,
-          "hard_drift_pct": 35.0,
-          "current_price_bounds_ok": false,
-          "status": "value_lost_after_current_price_recheck"
+          "price_diff_pct": 0.0
         }
       }
     }
@@ -183,11 +182,10 @@
   "pool_counts": {
     "b_cover_value_promotion_stale_payload": 1,
     "debug_candidates_before_quality": 1,
-    "debug_candidates_before_quality_duplicate_in_pool": 1,
-    "debug_candidates_before_quality_stale_or_outside_window": 23,
+    "debug_candidates_before_quality_stale_or_outside_window": 24,
     "latest_picks_stale_or_outside_window": 99
   },
   "watchlist": [],
   "no_pick_report_sent": true,
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":5233,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1786857135,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440"
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":5235,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1786864232,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440"
 }
