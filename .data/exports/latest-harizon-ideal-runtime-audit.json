@@ -1,7 +1,9 @@
 {
   "best_near_misses": [],
   "blockers": [
+    "line_coverage_below_80pct",
     "context_coverage_below_85pct",
+    "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers"
   ],
   "bzzoiro_chain": {
@@ -10,49 +12,49 @@
     "overlap_bridge_offers": 144,
     "overlap_matches": 0
   },
-  "created_at_utc": "2026-08-16T05:13:23.716903+00:00",
-  "ideal_score": 91.3,
+  "created_at_utc": "2026-08-16T05:16:16.198248+00:00",
+  "ideal_score": 76.6,
   "inventory": {
-    "next_12h_ready": 88,
-    "next_12h_ready_pct": 71.0,
+    "next_12h_ready": 43,
+    "next_12h_ready_pct": 34.7,
     "next_12h_total": 124,
-    "next_6h_ready": 85,
-    "next_6h_ready_pct": 81.7,
+    "next_6h_ready": 42,
+    "next_6h_ready_pct": 40.4,
     "next_6h_total": 104,
-    "ready": 244,
-    "ready_pct": 81.3,
+    "ready": 160,
+    "ready_pct": 53.3,
     "total": 300,
-    "with_context": 247,
-    "with_context_pct": 82.3,
-    "with_lines": 294,
-    "with_lines_pct": 98.0
+    "with_context": 177,
+    "with_context_pct": 59.0,
+    "with_lines": 221,
+    "with_lines_pct": 73.7
   },
   "line_movement": {
     "class_counts": {
       "odds_below_min": 1
     },
-    "created_at_utc": "2026-08-16T03:17:10.326417+00:00",
+    "created_at_utc": "2026-08-16T05:13:43.910485+00:00",
     "evaluated": 1,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
     "samples": [
       {
-        "away_team": "Eastern Suburbs",
+        "away_team": "Uwa Nedlands FC",
         "classes": [
           "odds_below_min"
         ],
-        "edge_pp": -1.011,
-        "ev_pct": -1.55,
-        "home_team": "Gold Coast Knights FC",
-        "key": "soccer|eastern suburbs|gold coast knights|2026-08-16|Gold Coast Knights FC|Eastern Suburbs|Больше 2.5|2.5",
-        "odds": 1.533,
+        "edge_pp": -0.225,
+        "ev_pct": -0.36,
+        "home_team": "Sorrento FC",
+        "key": "soccer|sorrento|uwa nedlands|2026-08-16|Sorrento FC|Uwa Nedlands FC|Больше 2.5|2.5",
+        "odds": 1.6,
         "point": 2.5,
         "reject_reasons": [
           "odds_below_global_min",
           "canonical_negative_value",
-          "current_price_recheck_value_lost:-17.8/-14.1"
+          "current_price_recheck_value_lost:-18.8/-14.4"
         ],
-        "reserve_quality_score": 49.2,
+        "reserve_quality_score": 49.5,
         "selection": "Больше 2.5"
       }
     ],
@@ -60,24 +62,11 @@
     "watchlist_count": 0
   },
   "odds_api_io_account2": {
-    "http_statuses": [
-      403,
-      403,
-      403,
-      403,
-      403,
-      403,
-      403,
-      403,
-      403,
-      403,
-      403,
-      403
-    ],
+    "http_statuses": [],
     "offers": 0,
-    "plan_restriction": true,
+    "plan_restriction": false,
     "rate_limited": false,
-    "requests": 12
+    "requests": 0
   },
   "proxy_xg_replacement": {
     "checked": 0,
@@ -94,7 +83,9 @@
     "touched_files": []
   },
   "recommended_actions": [
+    "raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill",
     "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
+    "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set"
   ],
   "status": "ok",
