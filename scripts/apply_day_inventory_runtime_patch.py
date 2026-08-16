@@ -161,6 +161,16 @@ RUNNER_METHODS = r'''
 
 '''
 
+MERGE_CALL = '            deduped_matches = self._merge_day_inventory_matches(deduped_matches, now_utc)\n'
+
+CONTEXT_REPLACEMENTS = {
+    "'sstats': self._select_provider_context_matches(context_target_matches, 'sstats', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'sstats': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'sstats', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'sstats'),",
+    "'bzzoiro': self._select_provider_context_matches(context_target_matches, 'bzzoiro', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'bzzoiro': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'bzzoiro', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'bzzoiro'),",
+    "'futrixmetrics': self._select_provider_context_matches(context_target_matches, 'futrixmetrics', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'futrixmetrics': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'futrixmetrics', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'futrixmetrics'),",
+    "'football_data': self._select_provider_context_matches(context_target_matches, 'football_data', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'football_data': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'football_data', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'football_data'),",
+    "'thesportsdb': self._select_provider_context_matches(context_target_matches, 'thesportsdb', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'thesportsdb': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'thesportsdb', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'thesportsdb'),",
+}
+
 
 def replace_once(src: str, old: str, new: str, label: str) -> str:
     if old not in src:
@@ -176,27 +186,51 @@ def main() -> int:
     src = RUNNER_PATH.read_text(encoding='utf-8')
     original = src
 
-    if 'def _merge_day_inventory_matches' not in src:
-        src = replace_once(src, '    async def run_once(self) -> dict[str, Any]:\n', RUNNER_METHODS + '\n    async def run_once(self) -> dict[str, Any]:\n', 'insert day inventory runtime methods')
+    # app/services/runner.py can already ship its own, richer implementation:
+    #     def _merge_day_inventory_matches(self, bootstrap_matches, bootstrap_meta, now_utc, ...)
+    # In that case this script must not inject its own two-argument call site, otherwise
+    # run-once dies immediately with:
+    #     TypeError: PredictionRunner._merge_day_inventory_matches() missing 1 required
+    #                positional argument: 'now_utc'
+    # The helper methods and the call sites that use them are therefore always applied
+    # together, never separately.
+    owns_runtime_methods = 'def _merge_day_inventory_matches' not in src
 
-    src = replace_once(
-        src,
-        '            deduped_matches = self._dedupe_matches(bootstrap_matches)\n',
-        '            deduped_matches = self._dedupe_matches(bootstrap_matches)\n            deduped_matches = self._merge_day_inventory_matches(deduped_matches, now_utc)\n',
-        'merge inventory after bootstrap dedupe',
-    ) if 'deduped_matches = self._merge_day_inventory_matches(deduped_matches, now_utc)' not in src else src
+    if owns_runtime_methods:
+        src = replace_once(
+            src,
+            '    async def run_once(self) -> dict[str, Any]:\n',
+            RUNNER_METHODS + '\n    async def run_once(self) -> dict[str, Any]:\n',
+            'insert day inventory runtime methods',
+        )
 
-    replacements = {
-        "'sstats': self._select_provider_context_matches(context_target_matches, 'sstats', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'sstats': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'sstats', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'sstats'),",
-        "'bzzoiro': self._select_provider_context_matches(context_target_matches, 'bzzoiro', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'bzzoiro': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'bzzoiro', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'bzzoiro'),",
-        "'futrixmetrics': self._select_provider_context_matches(context_target_matches, 'futrixmetrics', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'futrixmetrics': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'futrixmetrics', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'futrixmetrics'),",
-        "'football_data': self._select_provider_context_matches(context_target_matches, 'football_data', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'football_data': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'football_data', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'football_data'),",
-        "'thesportsdb': self._select_provider_context_matches(context_target_matches, 'thesportsdb', fallback_matches=filtered_matches, offers_by_match=merged_offers),": "'thesportsdb': self._expand_context_targets_from_inventory(self._select_provider_context_matches(context_target_matches, 'thesportsdb', fallback_matches=filtered_matches, offers_by_match=merged_offers), filtered_matches, merged_offers, 'thesportsdb'),",
-    }
-    for old, new in replacements.items():
-        if new in src:
-            continue
-        src = replace_once(src, old, new, f'expand {old.split(":", 1)[0]} targets')
+    helpers_available = 'def _expand_context_targets_from_inventory' in src
+    merge_available = 'def _merge_day_inventory_matches(self, matches: list[Match], now_utc: datetime)' in src
+
+    if merge_available:
+        if MERGE_CALL not in src:
+            src = replace_once(
+                src,
+                '            deduped_matches = self._dedupe_matches(bootstrap_matches)\n',
+                '            deduped_matches = self._dedupe_matches(bootstrap_matches)\n' + MERGE_CALL,
+                'merge inventory after bootstrap dedupe',
+            )
+    elif MERGE_CALL in src:
+        # Repair a checkout patched by an older version of this script against a runner
+        # that provides its own incompatible merge signature.
+        src = src.replace(MERGE_CALL, '', 1)
+        print('repaired: removed incompatible day inventory merge call')
+    else:
+        print('skip: runner provides its own day inventory merge, call site left untouched')
+
+    for old, new in CONTEXT_REPLACEMENTS.items():
+        if helpers_available:
+            if new in src:
+                continue
+            src = replace_once(src, old, new, f'expand {old.split(":", 1)[0]} targets')
+        elif new in src:
+            src = src.replace(new, old)
+            print(f'repaired: reverted context expansion for {old.split(":", 1)[0]}')
 
     if src != original:
         RUNNER_PATH.write_text(src, encoding='utf-8')
