@@ -239,6 +239,47 @@ def _candidate_passes_unified_contract(candidate: Any, now_utc: datetime | None 
     return not reasons, report
 
 
+def _kickoff_utc(row: Any) -> datetime | None:
+    """Parse an inventory row kickoff into an aware UTC datetime."""
+    if not isinstance(row, dict):
+        return None
+    raw = row.get('kickoff_utc') or row.get('kickoff_local')
+    if raw in (None, ''):
+        return None
+    text = str(raw).strip()
+    if text.endswith('Z'):
+        text = text[:-1] + '+00:00'
+    try:
+        parsed = datetime.fromisoformat(text)
+    except Exception:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+
+def _is_upcoming(row: Any, started_cutoff: datetime) -> bool:
+    kickoff = _kickoff_utc(row)
+    return kickoff is not None and kickoff >= started_cutoff
+
+
+def _inventory_rank(row: Any, started_cutoff: datetime) -> tuple[int, float, float]:
+    """Rank inventory rows so the top-N cut keeps matches that can still be bet.
+
+    Group 0: upcoming fixtures, soonest kickoff first, higher priority first.
+    Group 1: already started/finished fixtures, most recent first (history filler).
+    Group 2: rows without a usable kickoff.
+    """
+    kickoff = _kickoff_utc(row)
+    if kickoff is None:
+        return (2, 0.0, 0.0)
+    stamp = kickoff.timestamp()
+    priority = _float(row.get('priority'), 0.0) if isinstance(row, dict) else 0.0
+    if kickoff >= started_cutoff:
+        return (0, stamp, -priority)
+    return (1, -stamp, -priority)
+
+
 def _finalize_inventory_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(payload, dict):
         return payload
@@ -267,14 +308,21 @@ def _finalize_inventory_payload(payload: dict[str, Any]) -> dict[str, Any]:
             'primary_providers': list(PRIMARY_PROVIDERS),
             'updated_at_utc': now,
         }
-    rows.sort(key=lambda row: (str(row.get('kickoff_utc') or ''), -_float(row.get('priority'), 0.0)))
+    now_dt = datetime.now(UTC)
+    grace_minutes = max(0, _int(os.getenv('DAY_INVENTORY_STARTED_GRACE_MINUTES'), 15))
+    started_cutoff = now_dt - timedelta(minutes=grace_minutes)
+    rows.sort(key=lambda row: _inventory_rank(row, started_cutoff))
     target = max(1, _int(os.getenv('DAY_INVENTORY_TARGET_SIZE'), 300))
+    upcoming_available = sum(1 for row in rows if _is_upcoming(row, started_cutoff))
     if len(rows) > target:
         del rows[target:]
     counts = payload.setdefault('counts', {})
     if isinstance(counts, dict):
         counts['harizon_inventory_target'] = target
         counts['harizon_inventory_kept'] = len(rows)
+        counts['harizon_inventory_upcoming_available'] = upcoming_available
+        counts['harizon_inventory_upcoming_kept'] = sum(1 for row in rows if _is_upcoming(row, started_cutoff))
+        counts['harizon_inventory_started_kept'] = sum(1 for row in rows if not _is_upcoming(row, started_cutoff))
         counts['harizon_needs_odds_backfill'] = sum(1 for row in rows if isinstance(row, dict) and (row.get('harizon_contract') or {}).get('needs_odds_backfill'))
         counts['harizon_needs_context_backfill'] = sum(1 for row in rows if isinstance(row, dict) and (row.get('harizon_contract') or {}).get('needs_context_backfill'))
         counts['harizon_movement_refresh_targets'] = sum(1 for row in rows if isinstance(row, dict) and (row.get('harizon_contract') or {}).get('needs_movement_refresh'))
@@ -287,6 +335,9 @@ def _finalize_inventory_payload(payload: dict[str, Any]) -> dict[str, Any]:
         'min_odds_sources': 2,
         'min_context_sources': 2,
         'run_interval_hours': _int(os.getenv('HARIZON_RUN_INTERVAL_HOURS'), 2),
+        'ranking_policy': 'upcoming_first_then_started_filler',
+        'started_grace_minutes': grace_minutes,
+        'upcoming_available': upcoming_available,
         'updated_at_utc': now,
     }
     return payload
