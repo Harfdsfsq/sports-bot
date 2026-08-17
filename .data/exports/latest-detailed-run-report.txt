@@ -1,36 +1,44 @@
 🧾 Подробный отчёт run — прогнозов нет
 
-🕒 Источник цифр: debug-last-run (6 мин назад) — свежий
+🕒 Источник цифр: debug-last-run (3 мин назад) — свежий
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 296/300
-• С контекстом: 283/300
-• Готово к модели: 283/300
-• Ближайшие 6 часов: 45/82 готово
+• С линиями: 290/300
+• С контекстом: 277/300
+• Готово к модели: 277/300
+• Ближайшие 6 часов: 6/43 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 0 | с линиями: 0 | контекстов: 7
+• Матчи: 1 | с линиями: 1 | контекстов: 2
 • Кандидаты: raw 0 | до качества 24 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
+• Резерв проверил: 0 | оценено в отчёте: 1 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
 • quality shadow: ok
 • current price patch: ok
-• zero-raw recovery: not_recovered | recovered_candidates 0
+• zero-raw recovery: not_needed | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
 • evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 0
+• provider targeting: ok | fallback_evaluated 1
 
 📡 Источники / фактическая работа
-• odds_api_io: data 31/2191, req 0, err 5
+• odds_api_io: data 4/249, req 0, err 2
 • bzzoiro: data 0/0, req 2, err 0
-• sstats: data 7/7, req 3, err 0
+• sstats: data 2/2, req 3, err 0
 • football_data: data 0/0, req 0, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
 • openfootball: data 0/0, req 0, err 0
+
+🚫 Почему не прошли
+• odds_below_global_min — 1 (100%)
+
+⚠️ Пограничные кандидаты
+1. Ланус — Индепендиенте Авелланеда | Меньше @1.73
+   • EV +0.8% | edge +0.4 п.п. | q 0.0
+   • не прошло: odds_below_global_min
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
