@@ -1,11 +1,14 @@
 🧭 HARIZON ideal runtime audit
-• Ideal score: 53.3/100
-• Inventory: 177; lines 175/177 (98.9%); context 10/177 (5.6%); ready 8/177 (4.5%)
-• Near 6h ready: 6/21 (28.6%); near 12h ready: 6/23 (26.1%)
+• Ideal score: 39.6/100
+• Inventory: 300; lines 40/300 (13.3%); context 109/300 (36.3%); ready 37/300 (12.3%)
+• Near 6h ready: 13/18 (72.2%); near 12h ready: 16/29 (55.2%)
 • odds-api.io account2: offers 0; req 0; http []
-• Bzzoiro bridge: offers 84; overlap 0; 2-source 0
-• Top blockers: context_coverage_below_85pct, near_6h_model_ready_below_80pct, odds_api_io_account2_zero_offers
+• Bzzoiro bridge: offers 0; overlap 0; 2-source 0
+• Top blockers: line_coverage_below_80pct, context_coverage_below_85pct, near_6h_model_ready_below_80pct, odds_api_io_account2_zero_offers, final_edge_explainability_gap, proxy_xg_placeholder_still_present
 • Next actions:
+  - raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill
   - raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates
   - prioritize next-6h inventory for odds/context before wider inventory
   - enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set
+  - expose displayed vs canonical vs post-recheck EV/edge in near-miss report
+  - verify proxy xG replacement order and safety-contract reason cleanup
