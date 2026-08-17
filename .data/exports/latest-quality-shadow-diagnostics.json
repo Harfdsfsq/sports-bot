@@ -1,15 +1,16 @@
 {
-  "created_at_utc": "2026-08-17T13:08:34.614215+00:00",
+  "created_at_utc": "2026-08-17T17:08:36.597567+00:00",
   "input_candidates": 24,
-  "passed_quality": 15,
+  "passed_quality": 14,
   "reason_counts": {
     "bad_historical_segment_guard": 3,
     "market_sanity_totals_xg_contradiction": 1,
     "no_bet_quality_score_guard": 4,
-    "passed_quality": 15,
+    "passed_quality": 14,
+    "post_calibration_edge_guard": 1,
     "post_calibration_probability_guard": 1
   },
-  "rejected_quality": 9,
+  "rejected_quality": 10,
   "status": "ok",
   "top_all": [
     {
@@ -1149,66 +1150,6 @@
       "sources_count": 1
     },
     {
-      "away_team": "Varnamo",
-      "best_vs_consensus_edge_pct": null,
-      "books_count": 1,
-      "calibration": {
-        "applied": true,
-        "delta_probability": 0.015,
-        "raw_delta_probability": 0.13025,
-        "segments_used": [
-          "family:totals",
-          "league:other",
-          "context:unknown",
-          "bookmaker:unknown"
-        ]
-      },
-      "commence_time": "2026-06-16T17:00:00+00:00",
-      "confidence": 67.509,
-      "context_source": null,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "edge_pct": 4.143,
-      "ev_pct": 6.463,
-      "family": "totals",
-      "home_team": "Helsingborgs",
-      "league_name": "line_history",
-      "learning_adjustment": {
-        "applied": true,
-        "raw_score_delta": 1.081,
-        "score_delta": 0.757,
-        "segments_used": [
-          "family:totals",
-          "league:other",
-          "context:unknown",
-          "bookmaker:unknown"
-        ]
-      },
-      "line_move_pp": null,
-      "market_movement": null,
-      "market_signal_derived": null,
-      "market_signal_history_ready": null,
-      "match_key": "soccer|helsingborgs|varnamo|2026-06-16",
-      "odds": 1.56,
-      "point": 3.5,
-      "publication_score": 73.972,
-      "quality_reasons": [],
-      "quality_score": 58.326,
-      "quality_status": "passed_quality",
-      "segments": [
-        "family:totals",
-        "market:totals:totals|under|3.5|",
-        "league:other",
-        "context:unknown",
-        "bookmaker:unknown",
-        "odds:1.00-1.69",
-        "prob:65-70"
-      ],
-      "selection": "Меньше",
-      "selection_key": "totals|under|3.5|",
-      "sources_count": 1
-    },
-    {
       "away_team": "Penarol Montevideo",
       "best_vs_consensus_edge_pct": null,
       "books_count": 1,
@@ -1271,6 +1212,74 @@
       "selection": "Больше",
       "selection_key": "totals|over|2.5|",
       "sources_count": 1
+    },
+    {
+      "away_team": "Goztepe U19",
+      "best_vs_consensus_edge_pct": null,
+      "books_count": 2,
+      "calibration": {
+        "applied": true,
+        "delta_probability": -0.03351,
+        "raw_delta_probability": -0.06093,
+        "segments_used": [
+          "family:totals",
+          "league:low",
+          "context:unknown",
+          "bookmaker:bet365",
+          "odds:1.70-2.04"
+        ]
+      },
+      "commence_time": "2026-08-17T14:00:00+00:00",
+      "confidence": 72.889,
+      "context_source": null,
+      "context_sources": [
+        "bzzoiro",
+        "inventory_context",
+        "model_xg",
+        "sstats"
+      ],
+      "context_sources_count": 4,
+      "edge_pct": 6.353,
+      "ev_pct": 11.753,
+      "family": "totals",
+      "home_team": "Samsunspor U19",
+      "league_name": "Turkiye Amateur - U19 PAF Ligi",
+      "learning_adjustment": {
+        "applied": true,
+        "raw_score_delta": -0.74,
+        "score_delta": -0.518,
+        "segments_used": [
+          "family:totals",
+          "context:unknown",
+          "bookmaker:bet365",
+          "odds:1.70-2.04"
+        ]
+      },
+      "line_move_pp": null,
+      "market_movement": "awaiting_next_run",
+      "market_signal_derived": null,
+      "market_signal_history_ready": null,
+      "match_key": "2026-08-17|samsunspor|goztepe",
+      "odds": 1.85,
+      "point": 2.5,
+      "publication_score": 30.822,
+      "quality_reasons": [
+        "bad_historical_segment_guard"
+      ],
+      "quality_score": 65.624,
+      "quality_status": "rejected_by_quality_filters",
+      "segments": [
+        "family:totals",
+        "market:totals:totals|under|2.5|",
+        "league:low",
+        "context:unknown",
+        "bookmaker:bet365",
+        "odds:1.70-2.04",
+        "prob:60-65"
+      ],
+      "selection": "Меньше",
+      "selection_key": "totals|under|2.5|",
+      "sources_count": 2
     },
     {
       "away_team": "FK Humenne",
@@ -1372,9 +1381,10 @@
         "model_xg",
         "odds_api_io",
         "sstats",
-        "sstatsform"
+        "sstatsform",
+        "weather"
       ],
-      "context_sources_count": 7,
+      "context_sources_count": 8,
       "edge_pct": 4.305,
       "ev_pct": 9.256,
       "family": "totals",
@@ -1445,9 +1455,11 @@
         "inventory_context",
         "model_xg",
         "odds_api_io",
-        "sstatsform"
+        "sstats",
+        "sstatsform",
+        "weather"
       ],
-      "context_sources_count": 6,
+      "context_sources_count": 8,
       "edge_pct": 4.182,
       "ev_pct": 8.992,
       "family": "totals",
@@ -1493,73 +1505,67 @@
       "sources_count": 1
     },
     {
-      "away_team": "Puebla U21",
+      "away_team": "CA San Lorenzo de Almagro",
       "best_vs_consensus_edge_pct": null,
       "books_count": 2,
       "calibration": {
         "applied": true,
-        "delta_probability": -0.03513,
-        "raw_delta_probability": -0.06388,
+        "delta_probability": -0.01897,
+        "raw_delta_probability": -0.03449,
         "segments_used": [
           "family:totals",
-          "context:unknown",
-          "bookmaker:bet365",
-          "odds:2.05-2.74",
-          "prob:50-55"
+          "league:low",
+          "context:unknown"
         ]
       },
-      "commence_time": "2026-08-17T15:15:00+00:00",
-      "confidence": 70.423,
+      "commence_time": "2026-08-17T14:00:00+00:00",
+      "confidence": 69.251,
       "context_source": null,
       "context_sources": [
         "bzzoiro",
         "inventory_context",
-        "model_xg",
-        "sstats"
+        "model_xg"
       ],
-      "context_sources_count": 4,
-      "edge_pct": 3.06,
-      "ev_pct": 6.273,
+      "context_sources_count": 3,
+      "edge_pct": 4.295,
+      "ev_pct": 7.001,
       "family": "totals",
-      "home_team": "Pachuca U21",
-      "league_name": "Mexico - U21 Liga MX, Apertura",
+      "home_team": "Social Atletico Television",
+      "league_name": "Argentina - Primera Division A, Women, Clausura",
       "learning_adjustment": {
-        "applied": true,
-        "raw_score_delta": -1.473,
-        "score_delta": -1.031,
+        "applied": false,
+        "raw_score_delta": 0.466,
+        "score_delta": 0.326,
         "segments_used": [
           "family:totals",
-          "context:unknown",
-          "bookmaker:bet365",
-          "odds:2.05-2.74",
-          "prob:50-55"
+          "context:unknown"
         ]
       },
       "line_move_pp": null,
       "market_movement": "awaiting_next_run",
       "market_signal_derived": null,
       "market_signal_history_ready": null,
-      "match_key": "2026-08-17|pachuca|puebla",
-      "odds": 2.05,
+      "match_key": "2026-08-17|social atletico television|ca san lorenzo almagro",
+      "odds": 1.63,
       "point": 2.5,
-      "publication_score": 17.935,
+      "publication_score": 20.142,
       "quality_reasons": [
-        "bad_historical_segment_guard"
+        "post_calibration_edge_guard"
       ],
-      "quality_score": 62.165,
+      "quality_score": 62.55,
       "quality_status": "rejected_by_quality_filters",
       "segments": [
         "family:totals",
         "market:totals:totals|under|2.5|",
-        "league:secondary",
+        "league:low",
         "context:unknown",
-        "bookmaker:bet365",
-        "odds:2.05-2.74",
-        "prob:50-55"
+        "bookmaker:unibet",
+        "odds:1.00-1.69",
+        "prob:65-70"
       ],
       "selection": "Меньше",
       "selection_key": "totals|under|2.5|",
-      "sources_count": 2
+      "sources_count": 1
     }
   ],
   "top_rejected": [
@@ -1888,6 +1894,74 @@
       "sources_count": 1
     },
     {
+      "away_team": "Goztepe U19",
+      "best_vs_consensus_edge_pct": null,
+      "books_count": 2,
+      "calibration": {
+        "applied": true,
+        "delta_probability": -0.03351,
+        "raw_delta_probability": -0.06093,
+        "segments_used": [
+          "family:totals",
+          "league:low",
+          "context:unknown",
+          "bookmaker:bet365",
+          "odds:1.70-2.04"
+        ]
+      },
+      "commence_time": "2026-08-17T14:00:00+00:00",
+      "confidence": 72.889,
+      "context_source": null,
+      "context_sources": [
+        "bzzoiro",
+        "inventory_context",
+        "model_xg",
+        "sstats"
+      ],
+      "context_sources_count": 4,
+      "edge_pct": 6.353,
+      "ev_pct": 11.753,
+      "family": "totals",
+      "home_team": "Samsunspor U19",
+      "league_name": "Turkiye Amateur - U19 PAF Ligi",
+      "learning_adjustment": {
+        "applied": true,
+        "raw_score_delta": -0.74,
+        "score_delta": -0.518,
+        "segments_used": [
+          "family:totals",
+          "context:unknown",
+          "bookmaker:bet365",
+          "odds:1.70-2.04"
+        ]
+      },
+      "line_move_pp": null,
+      "market_movement": "awaiting_next_run",
+      "market_signal_derived": null,
+      "market_signal_history_ready": null,
+      "match_key": "2026-08-17|samsunspor|goztepe",
+      "odds": 1.85,
+      "point": 2.5,
+      "publication_score": 30.822,
+      "quality_reasons": [
+        "bad_historical_segment_guard"
+      ],
+      "quality_score": 65.624,
+      "quality_status": "rejected_by_quality_filters",
+      "segments": [
+        "family:totals",
+        "market:totals:totals|under|2.5|",
+        "league:low",
+        "context:unknown",
+        "bookmaker:bet365",
+        "odds:1.70-2.04",
+        "prob:60-65"
+      ],
+      "selection": "Меньше",
+      "selection_key": "totals|under|2.5|",
+      "sources_count": 2
+    },
+    {
       "away_team": "FK Humenne",
       "best_vs_consensus_edge_pct": null,
       "books_count": 2,
@@ -1987,9 +2061,10 @@
         "model_xg",
         "odds_api_io",
         "sstats",
-        "sstatsform"
+        "sstatsform",
+        "weather"
       ],
-      "context_sources_count": 7,
+      "context_sources_count": 8,
       "edge_pct": 4.305,
       "ev_pct": 9.256,
       "family": "totals",
@@ -2060,9 +2135,11 @@
         "inventory_context",
         "model_xg",
         "odds_api_io",
-        "sstatsform"
+        "sstats",
+        "sstatsform",
+        "weather"
       ],
-      "context_sources_count": 6,
+      "context_sources_count": 8,
       "edge_pct": 4.182,
       "ev_pct": 8.992,
       "family": "totals",
@@ -2108,73 +2185,67 @@
       "sources_count": 1
     },
     {
-      "away_team": "Puebla U21",
+      "away_team": "CA San Lorenzo de Almagro",
       "best_vs_consensus_edge_pct": null,
       "books_count": 2,
       "calibration": {
         "applied": true,
-        "delta_probability": -0.03513,
-        "raw_delta_probability": -0.06388,
+        "delta_probability": -0.01897,
+        "raw_delta_probability": -0.03449,
         "segments_used": [
           "family:totals",
-          "context:unknown",
-          "bookmaker:bet365",
-          "odds:2.05-2.74",
-          "prob:50-55"
+          "league:low",
+          "context:unknown"
         ]
       },
-      "commence_time": "2026-08-17T15:15:00+00:00",
-      "confidence": 70.423,
+      "commence_time": "2026-08-17T14:00:00+00:00",
+      "confidence": 69.251,
       "context_source": null,
       "context_sources": [
         "bzzoiro",
         "inventory_context",
-        "model_xg",
-        "sstats"
+        "model_xg"
       ],
-      "context_sources_count": 4,
-      "edge_pct": 3.06,
-      "ev_pct": 6.273,
+      "context_sources_count": 3,
+      "edge_pct": 4.295,
+      "ev_pct": 7.001,
       "family": "totals",
-      "home_team": "Pachuca U21",
-      "league_name": "Mexico - U21 Liga MX, Apertura",
+      "home_team": "Social Atletico Television",
+      "league_name": "Argentina - Primera Division A, Women, Clausura",
       "learning_adjustment": {
-        "applied": true,
-        "raw_score_delta": -1.473,
-        "score_delta": -1.031,
+        "applied": false,
+        "raw_score_delta": 0.466,
+        "score_delta": 0.326,
         "segments_used": [
           "family:totals",
-          "context:unknown",
-          "bookmaker:bet365",
-          "odds:2.05-2.74",
-          "prob:50-55"
+          "context:unknown"
         ]
       },
       "line_move_pp": null,
       "market_movement": "awaiting_next_run",
       "market_signal_derived": null,
       "market_signal_history_ready": null,
-      "match_key": "2026-08-17|pachuca|puebla",
-      "odds": 2.05,
+      "match_key": "2026-08-17|social atletico television|ca san lorenzo almagro",
+      "odds": 1.63,
       "point": 2.5,
-      "publication_score": 17.935,
+      "publication_score": 20.142,
       "quality_reasons": [
-        "bad_historical_segment_guard"
+        "post_calibration_edge_guard"
       ],
-      "quality_score": 62.165,
+      "quality_score": 62.55,
       "quality_status": "rejected_by_quality_filters",
       "segments": [
         "family:totals",
         "market:totals:totals|under|2.5|",
-        "league:secondary",
+        "league:low",
         "context:unknown",
-        "bookmaker:bet365",
-        "odds:2.05-2.74",
-        "prob:50-55"
+        "bookmaker:unibet",
+        "odds:1.00-1.69",
+        "prob:65-70"
       ],
       "selection": "Меньше",
       "selection_key": "totals|under|2.5|",
-      "sources_count": 2
+      "sources_count": 1
     }
   ]
 }
