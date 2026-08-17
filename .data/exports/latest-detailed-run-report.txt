@@ -1,18 +1,18 @@
 🧾 Подробный отчёт run — прогнозов нет
 
-🕒 Источник цифр: debug-last-run (3 мин назад) — свежий
+🕒 Источник цифр: debug-last-run (2 мин назад) — свежий
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 290/300
-• С контекстом: 277/300
-• Готово к модели: 277/300
-• Ближайшие 6 часов: 6/43 готово
+• С линиями: 40/300
+• С контекстом: 109/300
+• Готово к модели: 37/300
+• Ближайшие 6 часов: 13/18 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 1 | с линиями: 1 | контекстов: 2
-• Кандидаты: raw 0 | до качества 24 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 1 | выбрано: 0
+• Матчи: 4 | с линиями: 4 | контекстов: 9
+• Кандидаты: raw 0 | до качества 26 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 19 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -21,24 +21,54 @@
 • zero-raw recovery: not_needed | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
 • evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 1
+• provider targeting: ok | fallback_evaluated 19
 
 📡 Источники / фактическая работа
-• odds_api_io: data 4/249, req 0, err 2
-• bzzoiro: data 0/0, req 2, err 0
-• sstats: data 2/2, req 3, err 0
+• odds_api_io: data 25/1433, req 0, err 5
+• bzzoiro: data 3/3, req 3, err 0
+• sstats: data 7/7, req 3, err 0
 • football_data: data 0/0, req 0, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
 • openfootball: data 0/0, req 0, err 0
 
 🚫 Почему не прошли
-• odds_below_global_min — 1 (100%)
+• tier_b_quality_below_min — 11 (16%)
+• tier_c_quality_below_min — 11 (16%)
+• tier_b_publication_score_below_min — 9 (13%)
+• tier_b_proxy_default_xg_placeholder — 7 (10%)
+• tier_c_proxy_default_xg_placeholder — 7 (10%)
+• tier_c_market_implied_xg_not_hard_confirmation — 4 (6%)
+• odds_below_global_min — 3 (4%)
+• tier_a_quality_below_min — 3 (4%)
+• tier_a_canonical_edge_below_min — 3 (4%)
+• tier_a_publication_score_below_min — 3 (4%)
 
 ⚠️ Пограничные кандидаты
-1. Ланус — Индепендиенте Авелланеда | Меньше @1.73
-   • EV +0.8% | edge +0.4 п.п. | q 0.0
+1. Питбуллс Санта Барбара — CS Уругуей де Коронадо | Меньше @2.05
+   • EV +11.2% | edge +5.5 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
+2. Питбуллс Санта Барбара — CS Уругуей де Коронадо | Меньше @2.05
+   • EV +11.2% | edge +5.5 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_b_proxy_default_xg_placeholder; tier_c_quality_below_min; tier_c_proxy_default_xg_placeholder
+3. Депортиво Толука — Атлас | Больше @2.00
+   • EV +11.2% | edge +5.6 п.п. | q 0.0
+   • не прошло: current_price_recheck_value_lost:-3.9/-2.2
+4. Сантос Лагуна — Монтеррей | Меньше @2.50
+   • EV +8.4% | edge +3.4 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
+5. CSD Макара — Универсидад Католика дел Екуадор | Меньше @1.73
+   • EV +5.9% | edge +3.4 п.п. | q 0.0
    • не прошло: odds_below_global_min
+6. CSD Макара — Универсидад Католика дел Екуадор | Меньше @1.73
+   • EV +5.9% | edge +3.4 п.п. | q 0.0
+   • не прошло: odds_below_global_min
+7. Палестино — Хуачипато | Больше @2.65
+   • EV +5.0% | edge +1.9 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_canonical_edge_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2
+8. Палестино — Хуачипато | Больше @2.65
+   • EV +5.0% | edge +1.9 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_canonical_edge_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
