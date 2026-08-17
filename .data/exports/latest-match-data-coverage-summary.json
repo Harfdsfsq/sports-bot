@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 32,
-      "rows_seen": 32,
+      "rows_kept": 0,
+      "rows_seen": 0,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 14,
-      "rows_seen": 67,
-      "rows_stale": 53
+      "rows_kept": 3,
+      "rows_seen": 55,
+      "rows_stale": 52
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 13,
-      "rows_seen": 13,
+      "rows_kept": 11,
+      "rows_seen": 11,
       "rows_stale": 0
     }
   },
@@ -35,27 +35,26 @@
     "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 0,
-    "controlled_candidates_seen": 16,
+    "contexts_built": 2,
+    "controlled_candidates_seen": null,
     "controlled_published": false,
-    "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 19,
+    "controlled_status": "fallback_artifact_stale_or_missing_after_step",
+    "coverage_candidates_current_date": 11,
     "matches_seen": 2,
     "matches_with_offers": 2
   },
-  "created_at": "2026-08-17T09:11:11.653424+00:00",
+  "created_at": "2026-08-17T11:12:19.518424+00:00",
   "family_counts": {
-    "h2h": 1,
-    "totals": 18
+    "totals": 11
   },
-  "matches_with_candidates": 14,
+  "matches_with_candidates": 10,
   "missing_data_flags": {
-    "confidence_below_micro_c": 19,
-    "edge_below_micro_c": 16,
-    "ev_below_micro_c": 16,
-    "single_book": 12,
-    "single_context_source": 5,
-    "single_odds_source": 7
+    "confidence_below_micro_c": 11,
+    "edge_below_micro_c": 8,
+    "ev_below_micro_c": 8,
+    "single_book": 6,
+    "single_context_source": 1,
+    "single_odds_source": 1
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +68,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 14,
+  "positive_near_miss_count": 10,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +77,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 13,
+      "events_matched": 19,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 201,
+      "offers_parsed": 863,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +101,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 314,
+      "matches_built": 347,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -117,14 +116,35 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 415,
+      "events_fetched": 455,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 314,
+      "matches_built": 347,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
@@ -408,27 +428,6 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -444,6 +443,27 @@
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": 0,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats_pari_odds",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
     },
@@ -515,27 +535,9 @@
     "broken_or_unavailable": 2,
     "low_overlap_or_matching_issue": 1,
     "no_data": 15,
-    "working": 3
+    "working": 4
   },
-  "reject_reason_counts_from_rows": {
-    "odds_below_global_min": 1,
-    "tier_a_books_below_min": 1,
-    "tier_a_canonical_edge_below_min": 1,
-    "tier_a_canonical_ev_below_min": 1,
-    "tier_a_odds_sources_below_min:1/2": 1,
-    "tier_a_proxy_default_xg_placeholder": 1,
-    "tier_a_publication_score_below_min": 1,
-    "tier_a_quality_below_min": 1,
-    "tier_b_books_below_min": 1,
-    "tier_b_canonical_edge_below_min": 1,
-    "tier_b_canonical_ev_below_min": 1,
-    "tier_b_low_quality_competition_requires_a_tier": 1,
-    "tier_b_proxy_default_xg_placeholder": 1,
-    "tier_b_publication_score_below_min": 1,
-    "tier_b_quality_below_min": 1,
-    "tier_c_proxy_default_xg_placeholder": 1,
-    "tier_c_quality_below_min": 1
-  },
+  "reject_reason_counts_from_rows": {},
   "target_date": "2026-08-17",
   "top_near_miss": [
     {
@@ -684,17 +686,12 @@
         "context_sources_count": 2,
         "family": "totals",
         "odds": 2.05,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 2,
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
-        "reject_reasons": [
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 2
       },
       "best_confidence": 70.423,
       "best_edge_pp": 3.06,
@@ -704,7 +701,7 @@
       "commence_time": "2026-08-17T15:15:00+00:00",
       "confirmation_sources_max": 2,
       "context_sources_max": 2,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
@@ -714,71 +711,14 @@
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
+        "ev_below_micro_c": 1
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 2,
       "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_b_proxy_default_xg_placeholder": 1,
-        "tier_c_proxy_default_xg_placeholder": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "North Sunshine Eagles FC",
-      "best_candidate": {
-        "adjusted_probability": 0.376863,
-        "books_count": 2,
-        "canonical_edge_pp": 1.972,
-        "canonical_ev_pct": 5.522,
-        "confidence": 65.585,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 2.8,
-        "odds_sources_count": 1,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 65.585,
-      "best_edge_pp": 1.972,
-      "best_ev_pct": 5.522,
-      "books_max": 2,
-      "candidate_count": 3,
-      "commence_time": "2026-08-17T10:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "h2h": 1,
-        "totals": 2
-      },
-      "home_team": "FC Bulleen Lions",
-      "league_name": "Australia - Victoria Premier League 1",
-      "match_key": "soccer|bulleen lions|north sunshine eagles|2026-08-17",
-      "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 3,
-        "ev_below_micro_c": 3,
-        "single_book": 2,
-        "single_context_source": 2,
-        "single_odds_source": 2
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        ".logs/debug-last-run.json": 1,
-        "awaiting_movement_lifecycle": 2
+        "awaiting_movement_lifecycle": 1
       },
       "reject_reasons": {},
-      "sources_max": 3
+      "sources_max": 2
     },
     {
       "away_team": "FK Septemvri Sofia",
@@ -802,12 +742,12 @@
       "best_confidence": 67.638,
       "best_edge_pp": 1.038,
       "best_ev_pct": 3.133,
-      "books_max": 4,
+      "books_max": 1,
       "candidate_count": 2,
       "commence_time": "2026-08-17T16:00:00+00:00",
       "confirmation_sources_max": 3,
       "context_sources_max": 3,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 2
       },
@@ -818,17 +758,14 @@
         "confidence_below_micro_c": 2,
         "edge_below_micro_c": 2,
         "ev_below_micro_c": 2,
-        "single_book": 1
+        "single_book": 2
       },
-      "odds_sources_max": 2,
+      "odds_sources_max": 3,
       "origins": {
-        "awaiting_movement_lifecycle": 1,
-        "controlled": 1
+        "awaiting_movement_lifecycle": 2
       },
-      "reject_reasons": {
-        "odds_below_global_min": 1
-      },
-      "sources_max": 2
+      "reject_reasons": {},
+      "sources_max": 3
     },
     {
       "away_team": "Ilves",
@@ -877,136 +814,6 @@
       "sources_max": 2
     },
     {
-      "away_team": "Phnom Penh Crown",
-      "best_candidate": {
-        "adjusted_probability": 0.577143,
-        "books_count": 1,
-        "canonical_edge_pp": 0.571,
-        "canonical_ev_pct": 1.0,
-        "confidence": 69.25,
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
-        "family": "totals",
-        "odds": 1.75,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_a_books_below_min",
-          "tier_a_quality_below_min",
-          "tier_a_canonical_edge_below_min",
-          "tier_a_canonical_ev_below_min",
-          "tier_a_publication_score_below_min",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_a_proxy_default_xg_placeholder",
-          "tier_b_books_below_min",
-          "tier_b_quality_below_min",
-          "tier_b_canonical_edge_below_min",
-          "tier_b_canonical_ev_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_b_bookmaker_quorum_books_below_min:1/2",
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_books_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_canonical_edge_below_min",
-          "tier_c_canonical_ev_below_min",
-          "tier_c_publication_score_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
-        "selection": "Больше",
-        "sources_count": 1
-      },
-      "best_confidence": 69.25,
-      "best_edge_pp": 0.571,
-      "best_ev_pct": 1.0,
-      "books_max": 1,
-      "candidate_count": 1,
-      "commence_time": "2026-08-17T10:00:00+00:00",
-      "confirmation_sources_max": 6,
-      "context_sources_max": 6,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Tsl FC",
-      "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group B",
-      "match_key": "2026-08-17|tsl|phnom penh crown",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_book": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "tier_a_books_below_min": 1,
-        "tier_a_canonical_edge_below_min": 1,
-        "tier_a_canonical_ev_below_min": 1,
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_default_xg_placeholder": 1,
-        "tier_a_publication_score_below_min": 1,
-        "tier_a_quality_below_min": 1,
-        "tier_b_books_below_min": 1,
-        "tier_b_canonical_edge_below_min": 1,
-        "tier_b_canonical_ev_below_min": 1,
-        "tier_b_publication_score_below_min": 1,
-        "tier_b_quality_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "Jamshedpur FC",
-      "best_candidate": {
-        "adjusted_probability": 0.642903,
-        "books_count": 1,
-        "canonical_edge_pp": 0.637,
-        "canonical_ev_pct": 1.0,
-        "confidence": 69.25,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 1.571,
-        "odds_sources_count": 5,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 5
-      },
-      "best_confidence": 69.25,
-      "best_edge_pp": 0.637,
-      "best_ev_pct": 1.0,
-      "books_max": 1,
-      "candidate_count": 1,
-      "commence_time": "2026-08-17T10:30:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Mohun Bagan Super Giant",
-      "league_name": "India - Durand Cup, Knockout Stage",
-      "match_key": "soccer|jamshedpur|mohun bagan super giant|2026-08-17",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_book": 1
-      },
-      "odds_sources_max": 5,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 5
-    },
-    {
       "away_team": "CE Sabadell FC",
       "best_candidate": {
         "adjusted_probability": 0.619632,
@@ -1052,6 +859,147 @@
       },
       "reject_reasons": {},
       "sources_max": 6
+    },
+    {
+      "away_team": "Elche CF",
+      "best_candidate": {
+        "adjusted_probability": 0.627329,
+        "books_count": 1,
+        "canonical_edge_pp": 0.621,
+        "canonical_ev_pct": 1.0,
+        "confidence": 69.25,
+        "confirmation_sources_count": 7,
+        "context_sources_count": 7,
+        "family": "totals",
+        "odds": 1.61,
+        "odds_sources_count": 7,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 7
+      },
+      "best_confidence": 69.25,
+      "best_edge_pp": 0.621,
+      "best_ev_pct": 1.0,
+      "books_max": 1,
+      "candidate_count": 1,
+      "commence_time": "2026-08-17T19:00:00+00:00",
+      "confirmation_sources_max": 7,
+      "context_sources_max": 7,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "RC Deportivo De A Coruna",
+      "league_name": "Spain - LaLiga",
+      "match_key": "soccer|elche|rc a coruna|2026-08-17",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 1
+      },
+      "odds_sources_max": 7,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 7
+    },
+    {
+      "away_team": "FK Septemvri Sofia",
+      "best_candidate": {
+        "adjusted_probability": 0.596154,
+        "books_count": 1,
+        "canonical_edge_pp": 0.444,
+        "canonical_ev_pct": 0.75,
+        "confidence": 67.638,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.69,
+        "odds_sources_count": 3,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 3
+      },
+      "best_confidence": 67.638,
+      "best_edge_pp": 0.444,
+      "best_ev_pct": 0.75,
+      "books_max": 1,
+      "candidate_count": 1,
+      "commence_time": "2026-08-17T16:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "FK Spartak Varna",
+      "league_name": "Parva Liga",
+      "match_key": "2026-08-17|spartak varna|septemvri sofia",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
+      "away_team": "Aris Thessaloniki",
+      "best_candidate": {
+        "adjusted_probability": 0.623839,
+        "books_count": 1,
+        "canonical_edge_pp": 0.464,
+        "canonical_ev_pct": 0.75,
+        "confidence": 64.638,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.615,
+        "odds_sources_count": 3,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 3
+      },
+      "best_confidence": 64.638,
+      "best_edge_pp": 0.464,
+      "best_ev_pct": 0.75,
+      "books_max": 1,
+      "candidate_count": 1,
+      "commence_time": "2026-08-17T15:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Anagennisi Karditsas 1904",
+      "league_name": "Greece - Greece Cup, Qualification",
+      "match_key": "soccer|anagennisi karditsas 1904|aris thessaloniki|2026-08-17",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
     }
   ]
 }
