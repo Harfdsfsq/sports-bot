@@ -2,14 +2,14 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 40,
-      "rows_seen": 40,
+      "rows_kept": 42,
+      "rows_seen": 42,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 27,
-      "rows_seen": 78,
+      "rows_kept": 28,
+      "rows_seen": 79,
       "rows_stale": 51
     },
     "lifecycle": {
@@ -26,36 +26,37 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 18,
-      "rows_seen": 18,
+      "rows_kept": 14,
+      "rows_seen": 14,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 26,
+    "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 1,
-    "controlled_candidates_seen": 20,
+    "contexts_built": 2,
+    "controlled_candidates_seen": 21,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 26,
-    "matches_seen": 2,
-    "matches_with_offers": 2
+    "coverage_candidates_current_date": 33,
+    "matches_seen": 5,
+    "matches_with_offers": 4
   },
-  "created_at": "2026-08-18T09:11:16.513932+00:00",
+  "created_at": "2026-08-18T11:11:09.684481+00:00",
   "family_counts": {
-    "h2h": 2,
-    "totals": 24
+    "h2h": 1,
+    "spreads": 7,
+    "totals": 25
   },
-  "matches_with_candidates": 11,
+  "matches_with_candidates": 17,
   "missing_data_flags": {
-    "confidence_below_micro_c": 24,
-    "edge_below_micro_c": 22,
-    "ev_below_micro_c": 21,
-    "single_book": 12,
-    "single_context_source": 12,
-    "single_odds_source": 13
+    "confidence_below_micro_c": 33,
+    "edge_below_micro_c": 31,
+    "ev_below_micro_c": 30,
+    "single_book": 19,
+    "single_context_source": 15,
+    "single_odds_source": 21
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +70,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 11,
+  "positive_near_miss_count": 16,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +79,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 17,
+      "events_matched": 20,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 509,
+      "offers_parsed": 422,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +103,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 515,
+      "matches_built": 514,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -121,7 +122,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 515,
+      "matches_built": 514,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -133,27 +134,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 1,
-      "direct_event_contexts_built": 1,
-      "enabled": true,
-      "events_fetched": 15,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "raw_stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "working",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 1,
-      "direct_event_contexts_built": 1,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -171,22 +153,24 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": 1,
-      "direct_event_contexts_built": 1,
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": null,
+      "events_fetched": 15,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "low_overlap_or_matching_failed"
+      ],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "v1_empty_prediction_fallback",
+      "provider": "raw_stats",
       "rate_limited": null,
-      "response_errors": null,
+      "response_errors": 0,
       "rows_fetched": null,
-      "status_category": "working",
+      "status_category": "low_overlap_or_matching_issue",
       "team_form_contexts_built": null
     },
     {
@@ -465,6 +449,27 @@
       "team_form_contexts_built": null
     },
     {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "v1_empty_prediction_fallback",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
       "api_key_present": true,
       "budget_exhausted": false,
       "contexts_built": 0,
@@ -488,125 +493,35 @@
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "no_data": 12,
-    "working": 6
+    "low_overlap_or_matching_issue": 1,
+    "no_data": 13,
+    "working": 4
   },
   "reject_reason_counts_from_rows": {
+    "bad_historical_segment_guard": 1,
+    "market_sanity_totals_xg_contradiction": 1,
     "odds_below_global_min": 1,
-    "tier_a_canonical_edge_below_min": 2,
-    "tier_a_canonical_ev_below_min": 2,
-    "tier_a_odds_sources_below_min:1/2": 2,
-    "tier_a_proxy_default_xg_placeholder": 2,
-    "tier_a_publication_score_below_min": 2,
-    "tier_a_quality_below_min": 2,
-    "tier_b_bookmaker_quorum_prices_missing:1/2": 2,
-    "tier_b_canonical_edge_below_min": 2,
-    "tier_b_canonical_ev_below_min": 2,
-    "tier_b_proxy_default_xg_placeholder": 2,
-    "tier_b_publication_score_below_min": 2,
-    "tier_b_quality_below_min": 2
+    "tier_a_books_below_min": 1,
+    "tier_a_canonical_edge_below_min": 4,
+    "tier_a_canonical_ev_below_min": 3,
+    "tier_a_odds_sources_below_min:1/2": 6,
+    "tier_a_proxy_default_xg_placeholder": 6,
+    "tier_a_publication_score_below_min": 6,
+    "tier_a_quality_below_min": 6,
+    "tier_b_bookmaker_quorum_prices_missing:1/2": 3,
+    "tier_b_books_below_min": 1,
+    "tier_b_canonical_edge_below_min": 6,
+    "tier_b_canonical_ev_below_min": 4,
+    "tier_b_proxy_default_xg_placeholder": 6,
+    "tier_b_publication_score_below_min": 7,
+    "tier_b_quality_below_min": 7,
+    "tier_c_canonical_edge_below_min": 1,
+    "tier_c_proxy_default_xg_placeholder": 3,
+    "tier_c_publication_score_below_min": 2,
+    "tier_c_quality_below_min": 4
   },
   "target_date": "2026-08-18",
   "top_near_miss": [
-    {
-      "away_team": "Sydney FC",
-      "best_candidate": {
-        "adjusted_probability": 0.65125,
-        "books_count": 1,
-        "canonical_edge_pp": 7.154,
-        "canonical_ev_pct": 12.341,
-        "confidence": 74.353,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 1.725,
-        "odds_sources_count": 4,
-        "origin": "rescue",
-        "point": 3.0,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 4
-      },
-      "best_confidence": 74.353,
-      "best_edge_pp": 7.154,
-      "best_ev_pct": 12.341,
-      "books_max": 1,
-      "candidate_count": 1,
-      "commence_time": "2026-08-18T09:30:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "SD Raiders FC",
-      "league_name": "Australia - Australia Cup, Knockout Stage",
-      "match_key": "soccer|sd_raiders_fc|sydney_fc|2026-08-18",
-      "missing_flags": {
-        "single_book": 1
-      },
-      "odds_sources_max": 4,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 4
-    },
-    {
-      "away_team": "Sydney FC",
-      "best_candidate": {
-        "adjusted_probability": 0.65125,
-        "books_count": 3,
-        "canonical_edge_pp": 7.154,
-        "canonical_ev_pct": 12.341,
-        "confidence": 74.353,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.725,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 3.0,
-        "reject_reasons": [
-          "odds_below_global_min"
-        ],
-        "selection": "Больше",
-        "sources_count": 1
-      },
-      "best_confidence": 74.353,
-      "best_edge_pp": 7.154,
-      "best_ev_pct": 12.341,
-      "books_max": 3,
-      "candidate_count": 7,
-      "commence_time": "2026-08-18T09:30:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 1,
-      "families": {
-        "totals": 7
-      },
-      "home_team": "SD Raiders FC",
-      "league_name": "Australia - Australia Cup, Knockout Stage",
-      "match_key": "soccer|raiders|sydney|2026-08-18",
-      "missing_flags": {
-        "confidence_below_micro_c": 6,
-        "edge_below_micro_c": 6,
-        "ev_below_micro_c": 5,
-        "single_book": 2,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 4,
-      "origins": {
-        ".logs/debug-last-run.json": 3,
-        "awaiting_movement_lifecycle": 3,
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "odds_below_global_min": 1
-      },
-      "sources_max": 4
-    },
     {
       "away_team": "FK Hebar Pazardzhik",
       "best_candidate": {
@@ -702,6 +617,127 @@
       "sources_max": 4
     },
     {
+      "away_team": "Sydney FC",
+      "best_candidate": {
+        "adjusted_probability": 0.62984,
+        "books_count": 1,
+        "canonical_edge_pp": 0.484,
+        "canonical_ev_pct": 8.647,
+        "confidence": 73.39,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 1.725,
+        "odds_sources_count": 4,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.0,
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
+        "selection": "Больше",
+        "sources_count": 4
+      },
+      "best_confidence": 73.39,
+      "best_edge_pp": 0.484,
+      "best_ev_pct": 8.647,
+      "books_max": 1,
+      "candidate_count": 1,
+      "commence_time": "2026-08-18T09:30:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "SD Raiders FC",
+      "league_name": "Australia - Australia Cup, Knockout Stage",
+      "match_key": "soccer|sd_raiders_fc|sydney_fc|2026-08-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_book": 1
+      },
+      "odds_sources_max": 4,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
+      "sources_max": 4
+    },
+    {
+      "away_team": "Tatran Oravske Vesele",
+      "best_candidate": {
+        "adjusted_probability": 0.402226,
+        "books_count": 3,
+        "canonical_edge_pp": 2.127,
+        "canonical_ev_pct": 5.584,
+        "confidence": 71.613,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.625,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_proxy_default_xg_placeholder",
+          "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_proxy_default_xg_placeholder",
+          "tier_c_quality_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_proxy_default_xg_placeholder"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 71.613,
+      "best_edge_pp": 2.127,
+      "best_ev_pct": 5.584,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-08-18T15:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Tj Partizan Osrblie",
+      "league_name": "Slovakia - Slovensky Pohar",
+      "match_key": "soccer|tatran oravske vesele|tj partizan osrblie|2026-08-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_proxy_default_xg_placeholder": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_proxy_default_xg_placeholder": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_proxy_default_xg_placeholder": 1,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
       "away_team": "Beijing Guoan",
       "best_candidate": {
         "adjusted_probability": 0.421448,
@@ -720,70 +756,92 @@
         "selection": "Больше",
         "sources_count": 2
       },
-      "best_confidence": 71.716,
+      "best_confidence": 72.338,
       "best_edge_pp": 2.145,
       "best_ev_pct": 5.362,
       "books_max": 2,
-      "candidate_count": 3,
+      "candidate_count": 7,
       "commence_time": "2026-08-18T11:35:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 1,
       "families": {
-        "totals": 3
+        "spreads": 3,
+        "totals": 4
       },
       "home_team": "Shanghai Shenhua FC",
       "league_name": "China - Chinese Super League",
       "match_key": "soccer|beijing guoan|shanghai shenhua|2026-08-18",
       "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 3,
-        "ev_below_micro_c": 3,
-        "single_book": 1,
-        "single_context_source": 1,
-        "single_odds_source": 1
+        "confidence_below_micro_c": 7,
+        "edge_below_micro_c": 7,
+        "ev_below_micro_c": 7,
+        "single_book": 4,
+        "single_context_source": 4,
+        "single_odds_source": 4
       },
       "odds_sources_max": 4,
       "origins": {
-        "awaiting_movement_lifecycle": 3
+        ".logs/debug-last-run.json": 3,
+        "awaiting_movement_lifecycle": 3,
+        "controlled": 1
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_proxy_default_xg_placeholder": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_canonical_ev_below_min": 1,
+        "tier_b_proxy_default_xg_placeholder": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_canonical_edge_below_min": 1,
+        "tier_c_quality_below_min": 1
+      },
       "sources_max": 4
     },
     {
-      "away_team": "Gwelup Croatia SC",
+      "away_team": "AFC Chindia Targoviste",
       "best_candidate": {
-        "adjusted_probability": 0.4187,
+        "adjusted_probability": 0.568999,
         "books_count": 2,
-        "canonical_edge_pp": 1.547,
-        "canonical_ev_pct": 3.838,
-        "confidence": 67.827,
+        "canonical_edge_pp": 2.846,
+        "canonical_ev_pct": 5.265,
+        "confidence": 68.469,
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.48,
+        "odds": 1.85,
         "odds_sources_count": 1,
-        "origin": "awaiting_movement_lifecycle",
+        "origin": "controlled",
         "point": 2.5,
-        "reject_reasons": [],
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_proxy_default_xg_placeholder",
+          "tier_c_quality_below_min",
+          "tier_c_proxy_default_xg_placeholder"
+        ],
         "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 67.827,
-      "best_edge_pp": 1.547,
-      "best_ev_pct": 3.838,
+      "best_confidence": 68.469,
+      "best_edge_pp": 2.846,
+      "best_ev_pct": 5.265,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-18T11:30:00+00:00",
+      "commence_time": "2026-08-18T14:30:00+00:00",
       "confirmation_sources_max": 1,
       "context_sources_max": 1,
-      "controlled_count": 0,
+      "controlled_count": 1,
       "families": {
         "totals": 1
       },
-      "home_team": "Kingsley Westside FC",
-      "league_name": "Australia - Western Australia State League 1",
-      "match_key": "soccer|gwelup croatia|kingsley westside|2026-08-18",
+      "home_team": "Scm Ramnicu Valcea",
+      "league_name": "Romania - Cupa Romaniei, Knockout Stage",
+      "match_key": "soccer|chindia targoviste|scm ramnicu valcea|2026-08-18",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
@@ -793,9 +851,88 @@
       },
       "odds_sources_max": 1,
       "origins": {
-        "awaiting_movement_lifecycle": 1
+        "controlled": 1
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "tier_b_proxy_default_xg_placeholder": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_proxy_default_xg_placeholder": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Qizilqum Zarafshon",
+      "best_candidate": {
+        "adjusted_probability": 0.498007,
+        "books_count": 3,
+        "canonical_edge_pp": 2.182,
+        "canonical_ev_pct": 4.581,
+        "confidence": 69.362,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.1,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_proxy_default_xg_placeholder",
+          "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_bookmaker_quorum_prices_missing:1/2",
+          "tier_b_proxy_default_xg_placeholder",
+          "tier_c_quality_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_proxy_default_xg_placeholder"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.362,
+      "best_edge_pp": 2.182,
+      "best_ev_pct": 4.581,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-08-18T14:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "PFC Sogdiana",
+      "league_name": "Uzbekistan - Superliga",
+      "match_key": "soccer|pfc sogdiana|qizilqum zarafshon|2026-08-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_proxy_default_xg_placeholder": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_bookmaker_quorum_prices_missing:1/2": 1,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_proxy_default_xg_placeholder": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_proxy_default_xg_placeholder": 1,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 1
+      },
       "sources_max": 1
     },
     {
@@ -821,30 +958,85 @@
       "best_edge_pp": 2.054,
       "best_ev_pct": 3.547,
       "books_max": 2,
-      "candidate_count": 1,
+      "candidate_count": 2,
       "commence_time": "2026-08-18T13:00:00+00:00",
       "confirmation_sources_max": 1,
       "context_sources_max": 1,
       "controlled_count": 0,
       "families": {
+        "spreads": 1,
         "totals": 1
       },
       "home_team": "Thailand",
       "league_name": "International - ASEAN Championship, Playoffs",
       "match_key": "soccer|singapore|thailand|2026-08-18",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_context_source": 1,
-        "single_odds_source": 1
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 2,
+        "single_book": 1,
+        "single_context_source": 2,
+        "single_odds_source": 2
       },
       "odds_sources_max": 1,
       "origins": {
+        ".logs/debug-last-run.json": 1,
         "awaiting_movement_lifecycle": 1
       },
       "reject_reasons": {},
       "sources_max": 1
+    },
+    {
+      "away_team": "Gwelup Croatia SC",
+      "best_candidate": {
+        "adjusted_probability": 0.408845,
+        "books_count": 2,
+        "canonical_edge_pp": 0.884,
+        "canonical_ev_pct": 2.211,
+        "confidence": 70.095,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.5,
+        "odds_sources_count": 3,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 3
+      },
+      "best_confidence": 70.095,
+      "best_edge_pp": 0.884,
+      "best_ev_pct": 2.211,
+      "books_max": 2,
+      "candidate_count": 4,
+      "commence_time": "2026-08-18T11:30:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "h2h": 1,
+        "spreads": 1,
+        "totals": 2
+      },
+      "home_team": "Kingsley Westside FC",
+      "league_name": "Australia - Western Australia State League 1",
+      "match_key": "soccer|gwelup croatia|kingsley westside|2026-08-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
     },
     {
       "away_team": "AEK Athens",
@@ -892,136 +1084,6 @@
       },
       "reject_reasons": {},
       "sources_max": 5
-    },
-    {
-      "away_team": "Viking FK",
-      "best_candidate": {
-        "adjusted_probability": 0.449975,
-        "books_count": 4,
-        "canonical_edge_pp": 0.75,
-        "canonical_ev_pct": 1.694,
-        "confidence": 69.562,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
-        "family": "totals",
-        "odds": 2.26,
-        "odds_sources_count": 2,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_canonical_edge_below_min",
-          "tier_a_canonical_ev_below_min",
-          "tier_a_publication_score_below_min",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_a_proxy_default_xg_placeholder",
-          "tier_b_quality_below_min",
-          "tier_b_canonical_edge_below_min",
-          "tier_b_canonical_ev_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_b_bookmaker_quorum_prices_missing:1/2",
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_c_quality_below_min",
-          "tier_c_canonical_edge_below_min",
-          "tier_c_canonical_ev_below_min",
-          "tier_c_publication_score_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 69.562,
-      "best_edge_pp": 0.75,
-      "best_ev_pct": 1.694,
-      "books_max": 4,
-      "candidate_count": 3,
-      "commence_time": "2026-08-18T19:00:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
-      "controlled_count": 2,
-      "families": {
-        "totals": 3
-      },
-      "home_team": "GNK Dinamo Zagreb",
-      "league_name": "International Clubs - UEFA Champions League, Playoff Round",
-      "match_key": "soccer|gnk dinamo zagreb|viking|2026-08-18",
-      "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 3,
-        "ev_below_micro_c": 3,
-        "single_book": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        "awaiting_movement_lifecycle": 1,
-        "controlled": 2
-      },
-      "reject_reasons": {
-        "tier_a_canonical_edge_below_min": 2,
-        "tier_a_canonical_ev_below_min": 2,
-        "tier_a_odds_sources_below_min:1/2": 2,
-        "tier_a_proxy_default_xg_placeholder": 2,
-        "tier_a_publication_score_below_min": 2,
-        "tier_a_quality_below_min": 2,
-        "tier_b_bookmaker_quorum_prices_missing:1/2": 2,
-        "tier_b_canonical_edge_below_min": 2,
-        "tier_b_canonical_ev_below_min": 2,
-        "tier_b_proxy_default_xg_placeholder": 2,
-        "tier_b_publication_score_below_min": 2,
-        "tier_b_quality_below_min": 2
-      },
-      "sources_max": 3
-    },
-    {
-      "away_team": "Railway FC",
-      "best_candidate": {
-        "adjusted_probability": 0.610606,
-        "books_count": 1,
-        "canonical_edge_pp": 0.455,
-        "canonical_ev_pct": 0.75,
-        "confidence": 67.638,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 1.65,
-        "odds_sources_count": 3,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 3
-      },
-      "best_confidence": 67.638,
-      "best_edge_pp": 0.455,
-      "best_ev_pct": 0.75,
-      "books_max": 1,
-      "candidate_count": 4,
-      "commence_time": "2026-08-18T09:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "h2h": 2,
-        "totals": 2
-      },
-      "home_team": "Patha Chakra",
-      "league_name": "India - Calcutta Premier Division, Group A",
-      "match_key": "soccer|patha chakra|railway|2026-08-18",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 4,
-        "single_book": 4,
-        "single_context_source": 3,
-        "single_odds_source": 3
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        ".logs/debug-last-run.json": 3,
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
     }
   ]
 }
