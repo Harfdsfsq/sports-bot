@@ -3,13 +3,13 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 5 | day inventory: 300
-• С линиями: 0 | с контекстом: 5 | ready model: 82
-• odds-api.io offers: 940 | Bzzoiro secondary offers: 12
-• 2+ букмекера odds-api.io: 7 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 6 | day inventory: 300
+• С линиями: 0 | с контекстом: 4 | ready model: 121
+• odds-api.io offers: 236 | Bzzoiro secondary offers: 12
+• 2+ букмекера odds-api.io: 6 | 2-source overlap Bzzoiro+odds-api.io: 0
 • Source combinations: odds_api_io: 16
 
-• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 2.
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0 / 24
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
@@ -18,41 +18,41 @@
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 13 | no next regular run: 13
-• Line guard: seen 28 | kept 1 | dropped 17
+• Final pre-kickoff checks: 34 | no next regular run: 34
+• Line guard: seen 18 | kept 4 | dropped 4
 
-• Bzzoiro targeted odds: targets 80; events 618; matched 5; ids 5; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro targeted odds: targets 80; events 618; matched 4; ids 4; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
 • Bzzoiro odds detail: targets 2; requests 4; events_with_offers 2; offers 18; diag offers_parsed.
 • Bzzoiro overlap bridge: offers 12; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 7; inventory updated 15; inventory 2-source 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 6; inventory updated 5; inventory 2-source 0.
 • Bzzoiro source trace: aggregate events 117; persisted rows 153; targeted events 618; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 20; floor 4; hard 7; relieved 0.
+• Last-chance line relief: seen 20; floor 4; hard 10; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 9, matched 37, offers 940, 2+ books 7, err 5, auth_failed False
-• sstats: req 3, ctx 5, rows 14450, err 0, deep enriched 0
+• odds_api_io: events req 0, odds req 9, matched 38, offers 236, 2+ books 6, err 5, auth_failed False
+• sstats: req 3, ctx 4, rows 14450, err 0, deep enriched 0
 • bzzoiro: req 2, ctx 0, events 117 (aggregate; persisted rows 153; trace full_or_provider_rows_available), secondary offers 12, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
-• Line movement breakdown: коэффициент ниже минимума 6.
+• Line movement breakdown: коэффициент ниже минимума 10.
 🚫 Почему не опубликовано
-• tier b proxy default xg placeholder: 13 (11%)
-• tier c quality below min: 13 (11%)
-• tier c proxy default xg placeholder: 13 (11%)
-• кандидат ждёт следующий cron для второго снимка линии: 10 (9%)
-• tier b quality below min: 9 (8%)
-• tier a quality below min: 8 (7%)
-• tier a publication score below min: 8 (7%)
-• tier a odds sources below min:1/2: 8 (7%)
+• odds below global min: 10 (15%)
+• tier c quality below min: 8 (12%)
+• tier b proxy default xg placeholder: 7 (10%)
+• tier c proxy default xg placeholder: 7 (10%)
+• tier b quality below min: 6 (9%)
+• tier b publication score below min: 6 (9%)
+• tier a quality below min: 4 (6%)
+• tier a canonical edge below min: 4 (6%)
 
 🔎 Проверенные reserve-кандидаты
-1. ACSM Resita — FC Petrolul Ploiesti | Меньше @1.80 | EV +9.3% | edge +5.2 п.п. | q 87.1 reserve
-   • reject: tier b proxy default xg placeholder, tier c quality below min, tier c proxy default xg placeholder
-2. PFC Sogdiana — Qizilqum Zarafshon | Больше @2.10 | EV +4.6% | edge +2.2 п.п. | q 73.5 reserve
-   • reject: tier a quality below min, tier a publication score below min, tier a odds sources below min:1/2
-3. ACSM Resita — FC Petrolul Ploiesti | Больше @2.08 | EV +4.3% | edge +2.1 п.п. | q 70.4 reserve
-   • reject: tier a quality below min, tier a publication score below min, tier a odds sources below min:1/2
-4. Scm Ramnicu Valcea — AFC Chindia Targoviste | Меньше @1.85 | EV +5.3% | edge +2.8 п.п. | q 69.7 reserve
-   • reject: tier b proxy default xg placeholder, tier c quality below min, tier c proxy default xg placeholder
+1. UD Mutilvera — Pena Sport FC | Больше @1.61 | EV +4.7% | edge +2.9 п.п. | q 52.6 reserve
+   • reject: odds below global min, current price recheck value lost:-0.8/-0.5
+2. Nykoebing FC — Naestved BK | Меньше @1.57 | EV +11.1% | edge +7.1 п.п. | q 75.1 reserve
+   • reject: odds below global min
+3. Valencia CF — Paris Saint-Germain | Меньше @2.15 | EV +5.3% | edge +2.5 п.п. | q 64.4 reserve
+   • reject: tier b quality below min, tier b publication score below min, tier b low quality competition requires a tier
+4. PFC Ludogorets Razgrad II — PFC Vihren Sandanski | Больше @2.00 | EV +8.3% | edge +4.2 п.п. | q 79.1 reserve
+   • reject: current price recheck value lost:-2.0/-1.1
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
