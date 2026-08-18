@@ -13,6 +13,33 @@
       "books_count": 1,
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books_count": 1,
+        "context": true,
+        "context_2plus_sources": false,
+        "context_sources": [
+          "sstats"
+        ],
+        "daily_coverage_evidence_synced": true,
+        "line_sources_count": 1,
+        "odds": true,
+        "odds_2plus_sources": false,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 1,
+        "ready_for_model": true,
+        "strict_coverage_ready": false
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-17T23:11:42.839580+00:00",
+        "last_odds_refresh_utc": "2026-08-17T21:08:22.014268+00:00"
+      },
+      "day_inventory_source_ids": {
+        "odds_api_io": "73576534"
+      },
       "fixture_sources_count": 1,
       "independent_odds_sources_count": 1,
       "latest_books_max": 1,
@@ -36,34 +63,7 @@
       ],
       "verified_odds_sources": [
         "odds_api_io"
-      ],
-      "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
-      "day_inventory_coverage": {
-        "books_count": 1,
-        "context": true,
-        "context_2plus_sources": false,
-        "context_sources": [
-          "sstats"
-        ],
-        "daily_coverage_evidence_synced": true,
-        "line_sources_count": 1,
-        "odds": true,
-        "odds_2plus_sources": false,
-        "odds_sources": [
-          "odds_api_io"
-        ],
-        "odds_sources_count": 1,
-        "ready_for_model": true,
-        "strict_coverage_ready": false
-      },
-      "day_inventory_refresh": {
-        "last_context_refresh_utc": "2026-08-17T23:11:42.839580+00:00",
-        "last_odds_refresh_utc": "2026-08-17T21:08:22.014268+00:00"
-      },
-      "day_inventory_source_ids": {
-        "odds_api_io": "73576534"
-      }
+      ]
     },
     "forecast_status": "",
     "forecast_family": "spreads",
@@ -108,6 +108,7 @@
     "commence_time": "2026-08-18T09:30:00+00:00",
     "tier": "mid",
     "metadata": {
+      "accumulated_from_latest_matches": true,
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.182859+00:00",
       "books_count": 1,
@@ -116,8 +117,61 @@
       "context_sources_count": 1,
       "core_inventory": true,
       "coverage_repair_sources": [
+        "day_inventory",
         "latest-controlled-fallback-report.json"
       ],
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books": [
+          "bookmakers",
+          "over15",
+          "over25",
+          "over35",
+          "under15",
+          "under25",
+          "under35"
+        ],
+        "books_count": 1,
+        "context": true,
+        "context_2plus_sources": true,
+        "context_source_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 1,
+        "daily_coverage_evidence_synced": true,
+        "fixture_core": true,
+        "fixture_source_2plus": true,
+        "form": true,
+        "form_sources_count": 1,
+        "line_sources_count": 1,
+        "news": false,
+        "odds": true,
+        "odds_2plus_sources": false,
+        "odds_source_count": 1,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 2,
+        "price_confirmations": 7,
+        "price_sources_count": 7,
+        "ready_for_model": true,
+        "strict_coverage_ready": false,
+        "weather": false,
+        "xg": true
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-18T03:07:56.473546+00:00",
+        "last_fixture_refresh_utc": "2026-08-17T21:02:52.989230+00:00",
+        "last_odds_refresh_utc": "2026-08-18T03:07:56.473546+00:00",
+        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
+      },
+      "day_inventory_source_ids": {
+        "day_inventory": "73807900",
+        "odds_api_io": "73807900",
+        "sstats": "1627681"
+      },
       "fixture_sources_count": 2,
       "has_current_odds_provider": true,
       "independent_odds_sources_count": 1,
@@ -130,6 +184,8 @@
       "latest_context_sources_max": 3,
       "latest_controlled_count": 0,
       "latest_odds_sources_max": 3,
+      "latest_run_source": "day_inventory",
+      "latest_run_source_event_id": "73807900",
       "latest_sources_max": 3,
       "line_sources": [
         "odds_api_io"
@@ -167,9 +223,9 @@
         "status": "pending"
       },
       "runtime_context_bridge_matched_aliases": [
-        "soccer|patha chakra|railway|2026-08-18",
+        "soccer_patha_chakra_railway_2026_08_18",
         "2026-08-18|patha chakra|railway",
-        "soccer_patha_chakra_railway_2026_08_18"
+        "soccer|patha chakra|railway|2026-08-18"
       ],
       "runtime_context_bridge_samples": [
         {
@@ -188,8 +244,8 @@
           "source": "context_observations"
         }
       ],
-      "runtime_context_bridge_updated_utc": "2026-08-18T01:10:55.413081+00:00",
-      "runtime_offer_sources_annotated_at_utc": "2026-08-18T01:07:36.601459+00:00",
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-08-18T03:07:14.240130+00:00",
       "source_evidence_samples": [
         {
           "books": 1,
@@ -260,58 +316,7 @@
       ],
       "verified_odds_sources": [
         "odds_api_io"
-      ],
-      "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
-      "day_inventory_coverage": {
-        "books": [
-          "bookmakers",
-          "over15",
-          "over25",
-          "over35",
-          "under15",
-          "under25",
-          "under35"
-        ],
-        "books_count": 1,
-        "context": true,
-        "context_2plus_sources": true,
-        "context_source_count": 0,
-        "context_sources": [
-          "sstats"
-        ],
-        "context_sources_count": 1,
-        "daily_coverage_evidence_synced": true,
-        "fixture_core": true,
-        "fixture_source_2plus": true,
-        "form": true,
-        "form_sources_count": 1,
-        "line_sources_count": 1,
-        "news": false,
-        "odds": true,
-        "odds_2plus_sources": false,
-        "odds_source_count": 1,
-        "odds_sources": [
-          "odds_api_io"
-        ],
-        "odds_sources_count": 2,
-        "price_confirmations": 7,
-        "price_sources_count": 7,
-        "ready_for_model": true,
-        "strict_coverage_ready": false,
-        "weather": false,
-        "xg": true
-      },
-      "day_inventory_refresh": {
-        "last_context_refresh_utc": "2026-08-18T01:10:57.377081+00:00",
-        "last_fixture_refresh_utc": "2026-08-17T21:02:52.989230+00:00",
-        "last_odds_refresh_utc": "2026-08-18T01:10:57.373053+00:00",
-        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
-      },
-      "day_inventory_source_ids": {
-        "odds_api_io": "73807900",
-        "sstats": "1627681"
-      }
+      ]
     },
     "forecast_status": "",
     "forecast_family": "spreads",
@@ -322,16 +327,16 @@
     "forecast_odds": "",
     "forecast_bookmaker": "Bet365",
     "forecast_odds_source": "odds_api_io",
-    "forecast_model_probability_pct": 50.9,
-    "forecast_adjusted_probability_pct": 50.16,
-    "forecast_market_probability_pct": 50.0,
+    "forecast_model_probability_pct": 51.12,
+    "forecast_adjusted_probability_pct": 49.94,
+    "forecast_market_probability_pct": 49.69,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 53.09,
+    "forecast_confidence": 53.19,
     "forecast_books_count": "",
     "forecast_sources_count": "",
     "forecast_model_mode": "market_simple_spreads",
-    "forecast_publication_score": 14.63,
+    "forecast_publication_score": 15.986,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -356,6 +361,7 @@
     "commence_time": "2026-08-18T09:30:00+00:00",
     "tier": "mid",
     "metadata": {
+      "accumulated_from_latest_matches": true,
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.182538+00:00",
       "books_count": 2,
@@ -364,8 +370,84 @@
       "context_sources_count": 1,
       "core_inventory": true,
       "coverage_repair_sources": [
+        "day_inventory",
         "latest-controlled-fallback-report.json"
       ],
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books": [
+          "bookmakers",
+          "over15",
+          "over25",
+          "over35",
+          "under15",
+          "under25",
+          "under35"
+        ],
+        "books_count": 2,
+        "context": true,
+        "context_2plus_sources": true,
+        "context_source_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_basis": [
+          "context_sources_count"
+        ],
+        "context_sources_count": 1,
+        "core_context_sources": [
+          "inventory_context",
+          "model_xg",
+          "sstats"
+        ],
+        "core_context_sources_count": 3,
+        "daily_coverage_evidence_synced": true,
+        "declared_context_sources_count": 3,
+        "declared_odds_sources_count": 2,
+        "fixture_core": true,
+        "fixture_source_2plus": true,
+        "form": true,
+        "form_sources_count": 1,
+        "line_sources": [
+          "book:bet365",
+          "book:unibet"
+        ],
+        "line_sources_count": 1,
+        "min_books": 2,
+        "min_context_sources": 2,
+        "min_odds_sources": 1,
+        "named_odds_sources_count": 1,
+        "news": false,
+        "odds": true,
+        "odds_2plus_sources": false,
+        "odds_source_count": 1,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_basis": [
+          "normalized_odds_source_lists",
+          "raw_bucket_offers.sources"
+        ],
+        "odds_sources_count": 2,
+        "price_confirmations": 7,
+        "price_sources_count": 7,
+        "ready_for_model": true,
+        "strict_coverage_ready": false,
+        "weather": false,
+        "xg": true
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-18T03:07:56.473546+00:00",
+        "last_fixture_refresh_utc": "2026-08-17T21:02:52.990328+00:00",
+        "last_odds_refresh_utc": "2026-08-18T03:07:56.473546+00:00",
+        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
+      },
+      "day_inventory_source_ids": {
+        "day_inventory": "73705882",
+        "odds_api_io": "73705882",
+        "sstats": "1623383"
+      },
       "fixture_sources_count": 2,
       "has_current_odds_provider": true,
       "independent_odds_sources_count": 1,
@@ -378,6 +460,8 @@
       "latest_context_sources_max": 1,
       "latest_controlled_count": 0,
       "latest_odds_sources_max": 1,
+      "latest_run_source": "day_inventory",
+      "latest_run_source_event_id": "73705882",
       "latest_sources_max": 1,
       "line_sources": [
         "odds_api_io"
@@ -415,9 +499,9 @@
         "status": "pending"
       },
       "runtime_context_bridge_matched_aliases": [
-        "soccer|raiders|sydney|2026-08-18",
         "soccer_raiders_sydney_2026_08_18",
-        "2026-08-18|raiders|sydney"
+        "2026-08-18|raiders|sydney",
+        "soccer|raiders|sydney|2026-08-18"
       ],
       "runtime_context_bridge_samples": [
         {
@@ -436,8 +520,8 @@
           "source": "context_observations"
         }
       ],
-      "runtime_context_bridge_updated_utc": "2026-08-18T01:10:55.413081+00:00",
-      "runtime_offer_sources_annotated_at_utc": "2026-08-18T01:07:36.601416+00:00",
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-08-18T03:07:14.240026+00:00",
       "source_evidence_samples": [
         {
           "books": 2,
@@ -509,78 +593,27 @@
       ],
       "verified_odds_sources": [
         "odds_api_io"
-      ],
-      "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
-      "day_inventory_coverage": {
-        "books": [
-          "bookmakers",
-          "over15",
-          "over25",
-          "over35",
-          "under15",
-          "under25",
-          "under35"
-        ],
-        "books_count": 2,
-        "context": true,
-        "context_2plus_sources": true,
-        "context_source_count": 0,
-        "context_sources": [
-          "sstats"
-        ],
-        "context_sources_count": 1,
-        "daily_coverage_evidence_synced": true,
-        "fixture_core": true,
-        "fixture_source_2plus": true,
-        "form": true,
-        "form_sources_count": 1,
-        "line_sources_count": 1,
-        "news": false,
-        "odds": true,
-        "odds_2plus_sources": false,
-        "odds_source_count": 1,
-        "odds_sources": [
-          "odds_api_io"
-        ],
-        "odds_sources_count": 2,
-        "price_confirmations": 7,
-        "price_sources_count": 7,
-        "ready_for_model": true,
-        "strict_coverage_ready": false,
-        "weather": false,
-        "xg": true
-      },
-      "day_inventory_refresh": {
-        "last_context_refresh_utc": "2026-08-18T01:10:57.377081+00:00",
-        "last_fixture_refresh_utc": "2026-08-17T21:02:52.990328+00:00",
-        "last_odds_refresh_utc": "2026-08-18T01:10:57.372870+00:00",
-        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
-      },
-      "day_inventory_source_ids": {
-        "odds_api_io": "73705882",
-        "sstats": "1623383"
-      }
+      ]
     },
     "forecast_status": "",
-    "forecast_family": "totals",
-    "forecast_selection": "Больше",
-    "forecast_selection_key": "over",
-    "forecast_team_side": "",
-    "forecast_line": 4.5,
+    "forecast_family": "spreads",
+    "forecast_selection": "SD Raiders FC",
+    "forecast_selection_key": "home",
+    "forecast_team_side": "home",
+    "forecast_line": 0.25,
     "forecast_odds": "",
     "forecast_bookmaker": "Bet365",
     "forecast_odds_source": "odds_api_io",
-    "forecast_model_probability_pct": 31.96,
-    "forecast_adjusted_probability_pct": 29.17,
-    "forecast_market_probability_pct": 27.16,
+    "forecast_model_probability_pct": 32.07,
+    "forecast_adjusted_probability_pct": 29.26,
+    "forecast_market_probability_pct": 28.67,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": 64.38,
+    "forecast_confidence": 53.82,
     "forecast_books_count": "",
     "forecast_sources_count": "",
-    "forecast_model_mode": "market_derived_totals",
-    "forecast_publication_score": 23.264,
+    "forecast_model_mode": "market_simple_spreads",
+    "forecast_publication_score": 26.577,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
@@ -605,17 +638,71 @@
     "commence_time": "2026-08-18T11:30:00+00:00",
     "tier": "mid",
     "metadata": {
+      "accumulated_from_latest_matches": true,
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
-      "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.355862+00:00",
+      "bookmaker_backfill_updated_at_utc": "2026-08-18T03:08:46.770613+00:00",
       "books_count": 1,
       "competition": "Australia - Western Australia State League 1",
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
       "core_inventory": true,
+      "coverage_repair_sources": [
+        "day_inventory"
+      ],
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books": [
+          "bookmakers",
+          "over15",
+          "over25",
+          "over35",
+          "under15",
+          "under25",
+          "under35"
+        ],
+        "books_count": 1,
+        "context": true,
+        "context_2plus_sources": false,
+        "context_source_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 2,
+        "daily_coverage_evidence_synced": true,
+        "fixture_core": true,
+        "form": false,
+        "line_sources_count": 1,
+        "news": false,
+        "odds": true,
+        "odds_2plus_sources": true,
+        "odds_source_count": 1,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 1,
+        "price_confirmations": 7,
+        "price_sources_count": 7,
+        "ready_for_model": true,
+        "strict_coverage_ready": false,
+        "weather": false,
+        "xg": false
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-18T01:09:03.374173+00:00",
+        "last_fixture_refresh_utc": "2026-08-17T21:02:52.990531+00:00",
+        "last_odds_refresh_utc": "2026-08-18T01:09:03.374173+00:00"
+      },
+      "day_inventory_source_ids": {
+        "day_inventory": "73706204",
+        "odds_api_io": "73706204"
+      },
       "fixture_sources_count": 1,
       "has_current_odds_provider": true,
       "independent_odds_sources_count": 1,
       "latest_books_max": 7,
+      "latest_run_source": "day_inventory",
+      "latest_run_source_event_id": "73706204",
       "line_sources": [
         "odds_api_io"
       ],
@@ -653,8 +740,8 @@
       },
       "runtime_context_bridge_matched_aliases": [
         "soccer|gwelup croatia|kingsley westside|2026-08-18",
-        "soccer_gwelup_croatia_kingsley_westside_2026_08_18",
-        "2026-08-18|gwelup croatia|kingsley westside"
+        "2026-08-18|gwelup croatia|kingsley westside",
+        "soccer_gwelup_croatia_kingsley_westside_2026_08_18"
       ],
       "runtime_context_bridge_samples": [
         {
@@ -673,7 +760,7 @@
           "source": "context_observations"
         }
       ],
-      "runtime_context_bridge_updated_utc": "2026-08-18T01:09:04.552491+00:00",
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
       "runtime_offer_sources_annotated_at_utc": "2026-08-18T01:07:36.601811+00:00",
       "source_evidence_updated_utc": "2026-08-18T01:09:07.089720+00:00",
       "sources_seen": "odds_api_io",
@@ -685,79 +772,33 @@
       ],
       "verified_odds_sources": [
         "odds_api_io"
-      ],
-      "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
-      "day_inventory_coverage": {
-        "books": [
-          "bookmakers",
-          "over15",
-          "over25",
-          "over35",
-          "under15",
-          "under25",
-          "under35"
-        ],
-        "books_count": 1,
-        "context": true,
-        "context_2plus_sources": false,
-        "context_source_count": 0,
-        "context_sources": [
-          "sstats"
-        ],
-        "daily_coverage_evidence_synced": true,
-        "fixture_core": true,
-        "form": false,
-        "line_sources_count": 1,
-        "news": false,
-        "odds": true,
-        "odds_2plus_sources": true,
-        "odds_source_count": 1,
-        "odds_sources": [
-          "odds_api_io"
-        ],
-        "odds_sources_count": 1,
-        "price_confirmations": 7,
-        "price_sources_count": 7,
-        "ready_for_model": true,
-        "strict_coverage_ready": false,
-        "weather": false,
-        "xg": false
-      },
-      "day_inventory_refresh": {
-        "last_context_refresh_utc": "2026-08-18T01:09:03.374173+00:00",
-        "last_fixture_refresh_utc": "2026-08-17T21:02:52.990531+00:00",
-        "last_odds_refresh_utc": "2026-08-18T01:09:03.374173+00:00"
-      },
-      "day_inventory_source_ids": {
-        "odds_api_io": "73706204"
-      }
+      ]
     },
     "forecast_status": "",
-    "forecast_family": "",
-    "forecast_selection": "",
-    "forecast_selection_key": "",
+    "forecast_family": "totals",
+    "forecast_selection": "Больше",
+    "forecast_selection_key": "over",
     "forecast_team_side": "",
-    "forecast_line": "",
+    "forecast_line": 2.5,
     "forecast_odds": "",
-    "forecast_bookmaker": "",
-    "forecast_odds_source": "",
-    "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": "",
-    "forecast_market_probability_pct": "",
+    "forecast_bookmaker": "Bet365",
+    "forecast_odds_source": "odds_api_io",
+    "forecast_model_probability_pct": 66.0,
+    "forecast_adjusted_probability_pct": 63.68,
+    "forecast_market_probability_pct": 62.02,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": "",
+    "forecast_confidence": 64.3,
     "forecast_books_count": "",
     "forecast_sources_count": "",
-    "forecast_model_mode": "",
-    "forecast_publication_score": "",
+    "forecast_model_mode": "market_simple_totals",
+    "forecast_publication_score": 17.149,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
-    "forecast_context_source": "",
+    "forecast_context_source": "market_signal",
     "forecast_context_confidence": "",
-    "forecast_market_movement": "",
+    "forecast_market_movement": "insufficient_history",
     "forecast_quality_status": "",
     "forecast_quality_score": "",
     "forecast_quality_reasons": "",
@@ -776,6 +817,7 @@
     "commence_time": "2026-08-18T11:35:00+00:00",
     "tier": "mid",
     "metadata": {
+      "accumulated_from_latest_matches": true,
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.356031+00:00",
       "books_count": 2,
@@ -786,6 +828,60 @@
       "coverage_repair_sources": [
         "latest-controlled-fallback-report.json"
       ],
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books": [
+          "bookmakers",
+          "over15",
+          "over25",
+          "over35",
+          "under15",
+          "under25",
+          "under35"
+        ],
+        "books_count": 2,
+        "context": true,
+        "context_2plus_sources": true,
+        "context_source_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 1,
+        "daily_coverage_evidence_synced": true,
+        "fixture_core": true,
+        "fixture_source_2plus": true,
+        "form": true,
+        "form_sources_count": 1,
+        "line_sources_count": 1,
+        "lineups": true,
+        "news": false,
+        "odds": true,
+        "odds_2plus_sources": false,
+        "odds_source_count": 1,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 1,
+        "price_confirmations": 7,
+        "price_sources_count": 7,
+        "ready_for_model": true,
+        "strict_coverage_ready": false,
+        "venue_referee": true,
+        "weather": false,
+        "xg": true
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-18T01:10:57.377081+00:00",
+        "last_fixture_refresh_utc": "2026-08-17T21:02:52.990734+00:00",
+        "last_odds_refresh_utc": "2026-08-18T01:10:57.373169+00:00",
+        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
+      },
+      "day_inventory_source_ids": {
+        "day_inventory": "73790810",
+        "odds_api_io": "73790810",
+        "sstats": "1523198"
+      },
       "fixture_sources_count": 2,
       "has_current_odds_provider": true,
       "independent_odds_sources_count": 1,
@@ -798,6 +894,8 @@
       "latest_context_sources_max": 2,
       "latest_controlled_count": 1,
       "latest_odds_sources_max": 1,
+      "latest_run_source": "day_inventory",
+      "latest_run_source_event_id": "73790810",
       "latest_sources_max": 2,
       "line_sources": [
         "odds_api_io"
@@ -959,86 +1057,33 @@
       ],
       "verified_odds_sources": [
         "odds_api_io"
-      ],
-      "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
-      "day_inventory_coverage": {
-        "books": [
-          "bookmakers",
-          "over15",
-          "over25",
-          "over35",
-          "under15",
-          "under25",
-          "under35"
-        ],
-        "books_count": 2,
-        "context": true,
-        "context_2plus_sources": true,
-        "context_source_count": 0,
-        "context_sources": [
-          "sstats"
-        ],
-        "context_sources_count": 1,
-        "daily_coverage_evidence_synced": true,
-        "fixture_core": true,
-        "fixture_source_2plus": true,
-        "form": true,
-        "form_sources_count": 1,
-        "line_sources_count": 1,
-        "lineups": true,
-        "news": false,
-        "odds": true,
-        "odds_2plus_sources": false,
-        "odds_source_count": 1,
-        "odds_sources": [
-          "odds_api_io"
-        ],
-        "odds_sources_count": 1,
-        "price_confirmations": 7,
-        "price_sources_count": 7,
-        "ready_for_model": true,
-        "strict_coverage_ready": false,
-        "venue_referee": true,
-        "weather": false,
-        "xg": true
-      },
-      "day_inventory_refresh": {
-        "last_context_refresh_utc": "2026-08-18T01:10:57.377081+00:00",
-        "last_fixture_refresh_utc": "2026-08-17T21:02:52.990734+00:00",
-        "last_odds_refresh_utc": "2026-08-18T01:10:57.373169+00:00",
-        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
-      },
-      "day_inventory_source_ids": {
-        "odds_api_io": "73790810",
-        "sstats": "1523198"
-      }
+      ]
     },
     "forecast_status": "",
-    "forecast_family": "",
-    "forecast_selection": "",
-    "forecast_selection_key": "",
-    "forecast_team_side": "",
-    "forecast_line": "",
+    "forecast_family": "spreads",
+    "forecast_selection": "Beijing Guoan",
+    "forecast_selection_key": "away",
+    "forecast_team_side": "away",
+    "forecast_line": -0.5,
     "forecast_odds": "",
-    "forecast_bookmaker": "",
-    "forecast_odds_source": "",
-    "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": "",
-    "forecast_market_probability_pct": "",
+    "forecast_bookmaker": "Unibet",
+    "forecast_odds_source": "odds_api_io",
+    "forecast_model_probability_pct": 43.52,
+    "forecast_adjusted_probability_pct": 41.5,
+    "forecast_market_probability_pct": 40.12,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": "",
+    "forecast_confidence": 60.98,
     "forecast_books_count": "",
     "forecast_sources_count": "",
-    "forecast_model_mode": "",
-    "forecast_publication_score": "",
+    "forecast_model_mode": "market_simple_spreads",
+    "forecast_publication_score": 43.276,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
-    "forecast_context_source": "",
+    "forecast_context_source": "market_signal",
     "forecast_context_confidence": "",
-    "forecast_market_movement": "",
+    "forecast_market_movement": "insufficient_history",
     "forecast_quality_status": "",
     "forecast_quality_score": "",
     "forecast_quality_reasons": "",
@@ -1057,17 +1102,71 @@
     "commence_time": "2026-08-18T12:30:00+00:00",
     "tier": "mid",
     "metadata": {
+      "accumulated_from_latest_matches": true,
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
-      "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.595306+00:00",
+      "bookmaker_backfill_updated_at_utc": "2026-08-18T03:08:46.768464+00:00",
       "books_count": 0,
       "competition": "Armenia - First League",
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
       "core_inventory": true,
+      "coverage_repair_sources": [
+        "day_inventory"
+      ],
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books": [
+          "bookmakers",
+          "over15",
+          "over25",
+          "over35",
+          "under15",
+          "under25",
+          "under35"
+        ],
+        "books_count": 7,
+        "context": true,
+        "context_2plus_sources": false,
+        "context_source_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 2,
+        "daily_coverage_evidence_synced": true,
+        "fixture_core": true,
+        "fixture_source_2plus": true,
+        "form": true,
+        "form_sources_count": 1,
+        "news": false,
+        "odds": false,
+        "odds_2plus_sources": false,
+        "odds_source_count": 1,
+        "odds_sources": [],
+        "odds_sources_count": 1,
+        "price_confirmations": 7,
+        "price_sources_count": 7,
+        "ready_for_model": false,
+        "strict_coverage_ready": false,
+        "weather": false,
+        "xg": false
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": null,
+        "last_fixture_refresh_utc": "2026-08-17T21:02:52.991120+00:00",
+        "last_odds_refresh_utc": null
+      },
+      "day_inventory_source_ids": {
+        "day_inventory": "73409082",
+        "odds_api_io": "73409082",
+        "sstats": "1605051"
+      },
       "fixture_sources_count": 2,
       "has_current_odds_provider": true,
       "independent_odds_sources_count": 0,
       "latest_books_max": 7,
+      "latest_run_source": "day_inventory",
+      "latest_run_source_event_id": "73409082",
       "odds_api_io_id": 73409082,
       "odds_sources_count": 0,
       "price_confirmation_sources_count": 0,
@@ -1097,9 +1196,9 @@
         "status": "pending"
       },
       "runtime_context_bridge_matched_aliases": [
-        "soccer|andranik|olympia yerevan|2026-08-18",
+        "2026-08-18|andranik|olympia yerevan",
         "soccer_andranik_olympia_yerevan_2026_08_18",
-        "2026-08-18|andranik|olympia yerevan"
+        "soccer|andranik|olympia yerevan|2026-08-18"
       ],
       "runtime_context_bridge_samples": [
         {
@@ -1118,7 +1217,7 @@
           "source": "context_observations"
         }
       ],
-      "runtime_context_bridge_updated_utc": "2026-08-18T01:09:04.552491+00:00",
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
       "source_evidence_samples": [
         {
           "deep_ok": true,
@@ -1133,54 +1232,7 @@
       "verified_context_sources": [
         "sstats"
       ],
-      "verified_odds_sources": [],
-      "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
-      "day_inventory_coverage": {
-        "books": [
-          "bookmakers",
-          "over15",
-          "over25",
-          "over35",
-          "under15",
-          "under25",
-          "under35"
-        ],
-        "books_count": 7,
-        "context": true,
-        "context_2plus_sources": false,
-        "context_source_count": 0,
-        "context_sources": [
-          "sstats"
-        ],
-        "context_sources_count": 1,
-        "daily_coverage_evidence_synced": true,
-        "fixture_core": true,
-        "fixture_source_2plus": true,
-        "form": true,
-        "form_sources_count": 1,
-        "news": false,
-        "odds": false,
-        "odds_2plus_sources": false,
-        "odds_source_count": 1,
-        "odds_sources": [],
-        "odds_sources_count": 1,
-        "price_confirmations": 7,
-        "price_sources_count": 7,
-        "ready_for_model": false,
-        "strict_coverage_ready": false,
-        "weather": false,
-        "xg": false
-      },
-      "day_inventory_refresh": {
-        "last_context_refresh_utc": null,
-        "last_fixture_refresh_utc": "2026-08-17T21:02:52.991120+00:00",
-        "last_odds_refresh_utc": null
-      },
-      "day_inventory_source_ids": {
-        "odds_api_io": "73409082",
-        "sstats": "1605051"
-      }
+      "verified_odds_sources": []
     },
     "forecast_status": "",
     "forecast_family": "",
@@ -1225,12 +1277,60 @@
     "commence_time": "2026-08-18T13:00:00+00:00",
     "tier": "mid",
     "metadata": {
+      "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
+      "bookmaker_backfill_updated_at_utc": "2026-08-18T03:08:46.788402+00:00",
       "books_count": 1,
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books": [
+          "bet365",
+          "bookmakers",
+          "over15",
+          "over25",
+          "over35",
+          "under15",
+          "under25",
+          "under35",
+          "unibet"
+        ],
+        "books_count": 9,
+        "context": true,
+        "context_2plus_sources": false,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 2,
+        "daily_coverage_evidence_synced": true,
+        "fixture_source_2plus": true,
+        "form": true,
+        "form_sources_count": 1,
+        "line_sources_count": 1,
+        "odds": true,
+        "odds_2plus_sources": true,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 3,
+        "price_confirmations": 9,
+        "price_sources_count": 9,
+        "ready_for_model": true,
+        "strict_coverage_ready": false,
+        "xg": false
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-18T01:09:07.131877+00:00",
+        "last_odds_refresh_utc": "2026-08-17T21:08:22.014268+00:00"
+      },
+      "day_inventory_source_ids": {
+        "odds_api_io": "73601682",
+        "sstats": "1619115"
+      },
       "fixture_sources_count": 2,
       "independent_odds_sources_count": 1,
-      "latest_books_max": 1,
+      "latest_books_max": 9,
       "line_sources": [
         "odds_api_io"
       ],
@@ -1259,66 +1359,33 @@
       ],
       "verified_odds_sources": [
         "odds_api_io"
-      ],
-      "day_inventory": true,
-      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
-      "day_inventory_coverage": {
-        "books_count": 1,
-        "context": true,
-        "context_2plus_sources": false,
-        "context_sources": [
-          "sstats"
-        ],
-        "context_sources_count": 1,
-        "daily_coverage_evidence_synced": true,
-        "fixture_source_2plus": true,
-        "form": true,
-        "form_sources_count": 1,
-        "line_sources_count": 1,
-        "odds": true,
-        "odds_2plus_sources": true,
-        "odds_sources": [
-          "odds_api_io"
-        ],
-        "odds_sources_count": 1,
-        "ready_for_model": true,
-        "strict_coverage_ready": false,
-        "xg": false
-      },
-      "day_inventory_refresh": {
-        "last_context_refresh_utc": "2026-08-18T01:09:07.131877+00:00",
-        "last_odds_refresh_utc": "2026-08-17T21:08:22.014268+00:00"
-      },
-      "day_inventory_source_ids": {
-        "odds_api_io": "73601682",
-        "sstats": "1619115"
-      }
+      ]
     },
     "forecast_status": "",
-    "forecast_family": "",
-    "forecast_selection": "",
-    "forecast_selection_key": "",
-    "forecast_team_side": "",
-    "forecast_line": "",
+    "forecast_family": "spreads",
+    "forecast_selection": "Cardiff City U21",
+    "forecast_selection_key": "home",
+    "forecast_team_side": "home",
+    "forecast_line": -0.75,
     "forecast_odds": "",
-    "forecast_bookmaker": "",
-    "forecast_odds_source": "",
-    "forecast_model_probability_pct": "",
-    "forecast_adjusted_probability_pct": "",
-    "forecast_market_probability_pct": "",
+    "forecast_bookmaker": "Bet365",
+    "forecast_odds_source": "odds_api_io",
+    "forecast_model_probability_pct": 49.58,
+    "forecast_adjusted_probability_pct": 48.84,
+    "forecast_market_probability_pct": 48.68,
     "forecast_edge_pct": "",
     "forecast_ev_pct": "",
-    "forecast_confidence": "",
+    "forecast_confidence": 53.09,
     "forecast_books_count": "",
     "forecast_sources_count": "",
-    "forecast_model_mode": "",
-    "forecast_publication_score": "",
+    "forecast_model_mode": "market_simple_spreads",
+    "forecast_publication_score": 8.068,
     "forecast_expected_home": "",
     "forecast_expected_away": "",
     "forecast_total_xg": "",
-    "forecast_context_source": "",
+    "forecast_context_source": "market_signal",
     "forecast_context_confidence": "",
-    "forecast_market_movement": "",
+    "forecast_market_movement": "insufficient_history",
     "forecast_quality_status": "",
     "forecast_quality_score": "",
     "forecast_quality_reasons": "",
@@ -1337,6 +1404,7 @@
     "commence_time": "2026-08-18T13:00:00+00:00",
     "tier": "mid",
     "metadata": {
+      "accumulated_from_latest_matches": true,
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.595892+00:00",
       "books_count": 2,
@@ -1344,6 +1412,62 @@
       "confirmation_sources_count": 1,
       "context_sources_count": 1,
       "core_inventory": true,
+      "coverage_repair_sources": [
+        "day_inventory",
+        "latest-controlled-fallback-report.json"
+      ],
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books": [
+          "bookmakers",
+          "over15",
+          "over25",
+          "over35",
+          "under15",
+          "under25",
+          "under35"
+        ],
+        "books_count": 2,
+        "context": true,
+        "context_2plus_sources": true,
+        "context_source_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 1,
+        "daily_coverage_evidence_synced": true,
+        "fixture_core": true,
+        "fixture_source_2plus": true,
+        "form": true,
+        "form_sources_count": 1,
+        "line_sources_count": 1,
+        "news": false,
+        "odds": true,
+        "odds_2plus_sources": false,
+        "odds_source_count": 1,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 1,
+        "price_confirmations": 7,
+        "price_sources_count": 7,
+        "ready_for_model": true,
+        "strict_coverage_ready": false,
+        "weather": false,
+        "xg": true
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-18T03:07:56.473546+00:00",
+        "last_fixture_refresh_utc": "2026-08-17T21:02:52.989786+00:00",
+        "last_odds_refresh_utc": "2026-08-18T03:07:56.473546+00:00",
+        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
+      },
+      "day_inventory_source_ids": {
+        "day_inventory": "73550270",
+        "odds_api_io": "73550270",
+        "sstats": "1619318"
+      },
       "fixture_sources_count": 2,
       "has_current_odds_provider": true,
       "independent_odds_sources_count": 1,
@@ -1356,6 +1480,8 @@
       "latest_context_sources_max": 1,
       "latest_controlled_count": 1,
       "latest_odds_sources_max": 1,
+      "latest_run_source": "day_inventory",
+      "latest_run_source_event_id": "73550270",
       "latest_sources_max": 1,
       "line_sources": [
         "odds_api_io"
@@ -1393,9 +1519,9 @@
         "status": "pending"
       },
       "runtime_context_bridge_matched_aliases": [
-        "2026-08-18|singapore|thailand",
         "soccer|singapore|thailand|2026-08-18",
-        "soccer_singapore_thailand_2026_08_18"
+        "soccer_singapore_thailand_2026_08_18",
+        "2026-08-18|singapore|thailand"
       ],
       "runtime_context_bridge_samples": [
         {
@@ -1414,7 +1540,7 @@
           "source": "context_observations"
         }
       ],
-      "runtime_context_bridge_updated_utc": "2026-08-18T01:10:55.413081+00:00",
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
       "runtime_offer_sources_annotated_at_utc": "2026-08-18T01:07:36.601963+00:00",
       "source_evidence_samples": [
         {
@@ -1472,7 +1598,128 @@
       ],
       "verified_odds_sources": [
         "odds_api_io"
+      ]
+    },
+    "forecast_status": "",
+    "forecast_family": "totals",
+    "forecast_selection": "Больше",
+    "forecast_selection_key": "over",
+    "forecast_team_side": "",
+    "forecast_line": 2.5,
+    "forecast_odds": "",
+    "forecast_bookmaker": "Bet365",
+    "forecast_odds_source": "odds_api_io",
+    "forecast_model_probability_pct": 57.96,
+    "forecast_adjusted_probability_pct": 55.51,
+    "forecast_market_probability_pct": 53.76,
+    "forecast_edge_pct": "",
+    "forecast_ev_pct": "",
+    "forecast_confidence": 64.32,
+    "forecast_books_count": "",
+    "forecast_sources_count": "",
+    "forecast_model_mode": "market_simple_totals",
+    "forecast_publication_score": 26.679,
+    "forecast_expected_home": "",
+    "forecast_expected_away": "",
+    "forecast_total_xg": "",
+    "forecast_context_source": "market_signal",
+    "forecast_context_confidence": "",
+    "forecast_market_movement": "insufficient_history",
+    "forecast_quality_status": "",
+    "forecast_quality_score": "",
+    "forecast_quality_reasons": "",
+    "forecast_quality_calibration": "",
+    "forecast_reasons": "",
+    "forecast_analysis_points": ""
+  },
+  {
+    "match_key": "soccer|saint gallen|taverne|2026-08-18",
+    "source": "day_inventory",
+    "source_event_id": "72526276",
+    "sport_key": "soccer",
+    "league_name": "Switzerland - 1. Liga, Group C",
+    "home_team": "FC St. Gallen",
+    "away_team": "AC Taverne",
+    "commence_time": "2026-08-18T14:00:00+00:00",
+    "tier": "mid",
+    "metadata": {
+      "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
+      "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.819622+00:00",
+      "books_count": 0,
+      "competition": "Switzerland - 1. Liga, Group C",
+      "confirmation_sources_count": 1,
+      "context_sources_count": 1,
+      "core_inventory": true,
+      "fixture_sources_count": 2,
+      "has_current_odds_provider": true,
+      "independent_odds_sources_count": 0,
+      "latest_books_max": 7,
+      "odds_api_io_id": 72526276,
+      "odds_sources_count": 0,
+      "price_confirmation_sources_count": 0,
+      "price_sources_count": 0,
+      "provider_source_ids": {
+        "odds_api_io": "72526276"
+      },
+      "raw_event": {
+        "away": "AC Taverne",
+        "awayId": 34776,
+        "date": "2026-08-18T14:00:00Z",
+        "home": "FC St. Gallen",
+        "homeId": 2496,
+        "id": 72526276,
+        "league": {
+          "name": "Switzerland - 1. Liga, Group C",
+          "slug": "switzerland-1-liga-group-c"
+        },
+        "scores": {
+          "away": 0,
+          "home": 0
+        },
+        "sport": {
+          "name": "Football",
+          "slug": "football"
+        },
+        "status": "pending"
+      },
+      "runtime_context_bridge_matched_aliases": [
+        "soccer_saint_gallen_taverne_2026_08_18",
+        "soccer|saint gallen|taverne|2026-08-18",
+        "2026-08-18|saint gallen|taverne"
       ],
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
+      "source_evidence_samples": [
+        {
+          "deep_ok": true,
+          "detail_ok": false,
+          "game_id": "1609630",
+          "source": "latest-sstats-deep-inventory-enrichment.json"
+        }
+      ],
+      "source_evidence_updated_utc": "2026-08-17T21:08:26.025827+00:00",
+      "sources_seen": "odds_api_io",
+      "verified_bookmakers": [],
+      "verified_context_sources": [
+        "sstats"
+      ],
+      "verified_odds_sources": [],
       "day_inventory": true,
       "day_inventory_path": ".data/day_inventory/2026-08-18.json",
       "day_inventory_coverage": {
@@ -1485,9 +1732,9 @@
           "under25",
           "under35"
         ],
-        "books_count": 2,
+        "books_count": 7,
         "context": true,
-        "context_2plus_sources": true,
+        "context_2plus_sources": false,
         "context_source_count": 0,
         "context_sources": [
           "sstats"
@@ -1498,31 +1745,27 @@
         "fixture_source_2plus": true,
         "form": true,
         "form_sources_count": 1,
-        "line_sources_count": 1,
         "news": false,
-        "odds": true,
+        "odds": false,
         "odds_2plus_sources": false,
         "odds_source_count": 1,
-        "odds_sources": [
-          "odds_api_io"
-        ],
+        "odds_sources": [],
         "odds_sources_count": 1,
         "price_confirmations": 7,
         "price_sources_count": 7,
-        "ready_for_model": true,
+        "ready_for_model": false,
         "strict_coverage_ready": false,
         "weather": false,
         "xg": false
       },
       "day_inventory_refresh": {
-        "last_context_refresh_utc": "2026-08-18T01:10:57.377081+00:00",
-        "last_fixture_refresh_utc": "2026-08-17T21:02:52.989786+00:00",
-        "last_odds_refresh_utc": "2026-08-18T01:10:57.370895+00:00",
-        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
+        "last_context_refresh_utc": null,
+        "last_fixture_refresh_utc": "2026-08-17T21:02:52.992642+00:00",
+        "last_odds_refresh_utc": null
       },
       "day_inventory_source_ids": {
-        "odds_api_io": "73550270",
-        "sstats": "1619318"
+        "odds_api_io": "72526276",
+        "sstats": "1609630"
       }
     },
     "forecast_status": "",
@@ -1568,6 +1811,7 @@
     "commence_time": "2026-08-18T14:30:00+00:00",
     "tier": "mid",
     "metadata": {
+      "accumulated_from_latest_matches": true,
       "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
       "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.977343+00:00",
       "books_count": 2,
@@ -1575,6 +1819,60 @@
       "confirmation_sources_count": 0,
       "context_sources_count": 0,
       "core_inventory": true,
+      "coverage_repair_sources": [
+        "day_inventory",
+        "latest-controlled-fallback-report.json"
+      ],
+      "day_inventory": true,
+      "day_inventory_coverage": {
+        "books": [
+          "bookmakers",
+          "over15",
+          "over25",
+          "over35",
+          "under15",
+          "under25",
+          "under35"
+        ],
+        "books_count": 7,
+        "context": false,
+        "context_2plus_sources": true,
+        "context_source_count": 0,
+        "context_sources": [],
+        "context_sources_count": 1,
+        "daily_coverage_evidence_synced": true,
+        "fixture_core": true,
+        "fixture_source_2plus": true,
+        "form": true,
+        "form_sources_count": 1,
+        "line_sources_count": 1,
+        "news": false,
+        "odds": true,
+        "odds_2plus_sources": false,
+        "odds_source_count": 1,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 1,
+        "price_confirmations": 7,
+        "price_sources_count": 7,
+        "ready_for_model": false,
+        "strict_coverage_ready": false,
+        "weather": false,
+        "xg": true
+      },
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-18T03:07:56.473546+00:00",
+        "last_fixture_refresh_utc": "2026-08-17T21:02:52.993028+00:00",
+        "last_odds_refresh_utc": "2026-08-18T03:07:56.473546+00:00",
+        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
+      },
+      "day_inventory_source_ids": {
+        "day_inventory": "73716168",
+        "odds_api_io": "73716168",
+        "sstats": "1627507"
+      },
       "fixture_sources_count": 2,
       "has_current_odds_provider": true,
       "independent_odds_sources_count": 1,
@@ -1587,6 +1885,8 @@
       "latest_context_sources_max": 1,
       "latest_controlled_count": 1,
       "latest_odds_sources_max": 1,
+      "latest_run_source": "day_inventory",
+      "latest_run_source_event_id": "73716168",
       "latest_sources_max": 1,
       "line_sources": [
         "odds_api_io"
@@ -1624,11 +1924,11 @@
         "status": "pending"
       },
       "runtime_context_bridge_matched_aliases": [
-        "soccer|acsm resita|petrolul ploiesti|2026-08-18",
         "soccer_acsm_resita_petrolul_ploiesti_2026_08_18",
-        "2026-08-18|acsm resita|petrolul ploiesti"
+        "2026-08-18|acsm resita|petrolul ploiesti",
+        "soccer|acsm resita|petrolul ploiesti|2026-08-18"
       ],
-      "runtime_context_bridge_updated_utc": "2026-08-18T01:09:04.552491+00:00",
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
       "runtime_offer_sources_annotated_at_utc": "2026-08-18T01:07:36.602222+00:00",
       "source_evidence_samples": [
         {
@@ -1648,6 +1948,140 @@
       "verified_context_sources": [],
       "verified_odds_sources": [
         "odds_api_io"
+      ]
+    },
+    "forecast_status": "",
+    "forecast_family": "",
+    "forecast_selection": "",
+    "forecast_selection_key": "",
+    "forecast_team_side": "",
+    "forecast_line": "",
+    "forecast_odds": "",
+    "forecast_bookmaker": "",
+    "forecast_odds_source": "",
+    "forecast_model_probability_pct": "",
+    "forecast_adjusted_probability_pct": "",
+    "forecast_market_probability_pct": "",
+    "forecast_edge_pct": "",
+    "forecast_ev_pct": "",
+    "forecast_confidence": "",
+    "forecast_books_count": "",
+    "forecast_sources_count": "",
+    "forecast_model_mode": "",
+    "forecast_publication_score": "",
+    "forecast_expected_home": "",
+    "forecast_expected_away": "",
+    "forecast_total_xg": "",
+    "forecast_context_source": "",
+    "forecast_context_confidence": "",
+    "forecast_market_movement": "",
+    "forecast_quality_status": "",
+    "forecast_quality_score": "",
+    "forecast_quality_reasons": "",
+    "forecast_quality_calibration": "",
+    "forecast_reasons": "",
+    "forecast_analysis_points": ""
+  },
+  {
+    "match_key": "soccer|atlanta united 2|chicago fire 2|2026-08-18",
+    "source": "day_inventory",
+    "source_event_id": "68157010",
+    "sport_key": "soccer",
+    "league_name": "USA - MLS Next Pro",
+    "home_team": "Atlanta United 2",
+    "away_team": "Chicago Fire FC II",
+    "commence_time": "2026-08-18T15:00:00+00:00",
+    "tier": "mid",
+    "metadata": {
+      "bookmaker_backfill_source": "runtime_offer_context_artifacts_v2",
+      "bookmaker_backfill_updated_at_utc": "2026-08-17T21:08:43.978678+00:00",
+      "books_count": 2,
+      "competition": "USA - MLS Next Pro",
+      "confirmation_sources_count": 1,
+      "context_sources_count": 1,
+      "core_inventory": true,
+      "fixture_sources_count": 2,
+      "has_current_odds_provider": true,
+      "independent_odds_sources_count": 1,
+      "latest_books_max": 7,
+      "line_sources": [
+        "odds_api_io"
+      ],
+      "line_sources_count": 1,
+      "odds_api_io_id": 68157010,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
+      "price_confirmation_sources_count": 2,
+      "price_sources_count": 2,
+      "provider_source_ids": {
+        "odds_api_io": "68157010"
+      },
+      "raw_event": {
+        "away": "Chicago Fire FC II",
+        "awayId": 885977,
+        "date": "2026-08-18T15:00:00Z",
+        "home": "Atlanta United 2",
+        "homeId": 414325,
+        "id": 68157010,
+        "league": {
+          "name": "USA - MLS Next Pro",
+          "slug": "usa-mls-next-pro"
+        },
+        "scores": {
+          "away": 0,
+          "home": 0
+        },
+        "sport": {
+          "name": "Football",
+          "slug": "football"
+        },
+        "status": "pending"
+      },
+      "runtime_context_bridge_matched_aliases": [
+        "soccer_atlanta_united_2_chicago_fire_2_2026_08_18",
+        "soccer|atlanta united 2|chicago fire 2|2026-08-18",
+        "2026-08-18|atlanta united 2|chicago fire 2"
+      ],
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        },
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-08-18T03:07:14.240547+00:00",
+      "source_evidence_samples": [
+        {
+          "deep_ok": true,
+          "detail_ok": false,
+          "game_id": "1513294",
+          "source": "latest-sstats-deep-inventory-enrichment.json"
+        }
+      ],
+      "source_evidence_updated_utc": "2026-08-17T21:08:26.025827+00:00",
+      "sources_seen": "odds_api_io",
+      "verified_bookmakers": [
+        "bet365",
+        "unibet"
+      ],
+      "verified_context_sources": [
+        "sstats"
+      ],
+      "verified_odds_sources": [
+        "odds_api_io"
       ],
       "day_inventory": true,
       "day_inventory_path": ".data/day_inventory/2026-08-18.json",
@@ -1661,11 +2095,13 @@
           "under25",
           "under35"
         ],
-        "books_count": 7,
-        "context": false,
+        "books_count": 2,
+        "context": true,
         "context_2plus_sources": false,
         "context_source_count": 0,
-        "context_sources": [],
+        "context_sources": [
+          "sstats"
+        ],
         "context_sources_count": 1,
         "daily_coverage_evidence_synced": true,
         "fixture_core": true,
@@ -1683,20 +2119,128 @@
         "odds_sources_count": 1,
         "price_confirmations": 7,
         "price_sources_count": 7,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "strict_coverage_ready": false,
         "weather": false,
         "xg": false
       },
       "day_inventory_refresh": {
         "last_context_refresh_utc": null,
-        "last_fixture_refresh_utc": "2026-08-17T21:02:52.993028+00:00",
-        "last_odds_refresh_utc": null,
-        "last_run_coverage_merge_utc": "2026-08-18T01:10:57.059486+00:00"
+        "last_fixture_refresh_utc": "2026-08-17T21:02:53.008536+00:00",
+        "last_odds_refresh_utc": null
       },
       "day_inventory_source_ids": {
-        "odds_api_io": "73716168",
-        "sstats": "1627507"
+        "odds_api_io": "68157010",
+        "sstats": "1513294"
+      }
+    },
+    "forecast_status": "",
+    "forecast_family": "",
+    "forecast_selection": "",
+    "forecast_selection_key": "",
+    "forecast_team_side": "",
+    "forecast_line": "",
+    "forecast_odds": "",
+    "forecast_bookmaker": "",
+    "forecast_odds_source": "",
+    "forecast_model_probability_pct": "",
+    "forecast_adjusted_probability_pct": "",
+    "forecast_market_probability_pct": "",
+    "forecast_edge_pct": "",
+    "forecast_ev_pct": "",
+    "forecast_confidence": "",
+    "forecast_books_count": "",
+    "forecast_sources_count": "",
+    "forecast_model_mode": "",
+    "forecast_publication_score": "",
+    "forecast_expected_home": "",
+    "forecast_expected_away": "",
+    "forecast_total_xg": "",
+    "forecast_context_source": "",
+    "forecast_context_confidence": "",
+    "forecast_market_movement": "",
+    "forecast_quality_status": "",
+    "forecast_quality_score": "",
+    "forecast_quality_reasons": "",
+    "forecast_quality_calibration": "",
+    "forecast_reasons": "",
+    "forecast_analysis_points": ""
+  },
+  {
+    "match_key": "soccer|coquimbo unido|huachipato|2026-08-18",
+    "source": "day_inventory",
+    "source_event_id": "73026712",
+    "sport_key": "soccer",
+    "league_name": "Chile - Primera Division, Women",
+    "home_team": "Coquimbo Unido",
+    "away_team": "Huachipato",
+    "commence_time": "2026-08-18T15:00:00+00:00",
+    "tier": "mid",
+    "metadata": {
+      "books_count": 1,
+      "confirmation_sources_count": 1,
+      "context_sources_count": 1,
+      "fixture_sources_count": 1,
+      "independent_odds_sources_count": 1,
+      "latest_books_max": 1,
+      "line_sources": [
+        "odds_api_io"
+      ],
+      "line_sources_count": 1,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
+      "price_confirmation_sources_count": 1,
+      "price_sources_count": 1,
+      "runtime_context_bridge_matched_aliases": [
+        "2026-08-18|coquimbo unido|huachipato"
+      ],
+      "runtime_context_bridge_samples": [
+        {
+          "kind": "context",
+          "provider": "sstats",
+          "source": "context_observations"
+        }
+      ],
+      "runtime_context_bridge_updated_utc": "2026-08-18T03:07:55.580916+00:00",
+      "runtime_offer_sources_annotated_at_utc": "2026-08-18T03:07:14.240442+00:00",
+      "source_evidence_updated_utc": "2026-08-17T21:08:26.025827+00:00",
+      "verified_bookmakers": [
+        "bet365"
+      ],
+      "verified_context_sources": [
+        "sstats"
+      ],
+      "verified_odds_sources": [
+        "odds_api_io"
+      ],
+      "day_inventory": true,
+      "day_inventory_path": ".data/day_inventory/2026-08-18.json",
+      "day_inventory_coverage": {
+        "books_count": 1,
+        "context": true,
+        "context_2plus_sources": false,
+        "context_sources": [
+          "sstats"
+        ],
+        "daily_coverage_evidence_synced": true,
+        "line_sources_count": 1,
+        "odds": true,
+        "odds_2plus_sources": false,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 1,
+        "ready_for_model": true,
+        "strict_coverage_ready": false
+      },
+      "day_inventory_refresh": {
+        "last_context_refresh_utc": "2026-08-18T03:09:47.098320+00:00",
+        "last_odds_refresh_utc": "2026-08-17T21:08:22.014268+00:00"
+      },
+      "day_inventory_source_ids": {
+        "odds_api_io": "73026712"
       }
     },
     "forecast_status": "",
