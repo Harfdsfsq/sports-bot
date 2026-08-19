@@ -3,16 +3,16 @@
 🕒 Источник цифр: debug-last-run (3 мин назад) — свежий
 
 📦 Дневной inventory
-• Матчей всего: 248
-• С линиями: 240/248
-• С контекстом: 212/248
-• Готово к модели: 212/248
-• Ближайшие 6 часов: 8/19 готово
+• Матчей всего: 246
+• С линиями: 238/246
+• С контекстом: 212/246
+• Готово к модели: 212/246
+• Ближайшие 6 часов: 3/5 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 4 | с линиями: 4 | контекстов: 5
+• Матчи: 2 | с линиями: 1 | контекстов: 2
 • Кандидаты: raw 0 | до качества 0 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
+• Резерв проверил: 0 | оценено в отчёте: 6 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -21,16 +21,48 @@
 • zero-raw recovery: not_needed | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
 • evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 0
+• provider targeting: ok | fallback_evaluated 6
 
 📡 Источники / фактическая работа
-• odds_api_io: data 12/695, req 0, err 4
+• odds_api_io: data 14/658, req 0, err 5
 • bzzoiro: data 0/0, req 2, err 0
-• sstats: data 4/4, req 3, err 0
-• football_data: data 1/1, req 3, err 0
+• sstats: data 2/2, req 17, err 0
+• football_data: data 0/0, req 0, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
 • openfootball: data 0/0, req 0, err 0
+
+🚫 Почему не прошли
+• tier_c_quality_below_min — 4 (19%)
+• tier_b_proxy_default_xg_placeholder — 3 (14%)
+• tier_c_proxy_default_xg_placeholder — 3 (14%)
+• tier_b_quality_below_min — 2 (10%)
+• tier_b_low_quality_competition_requires_a_tier — 2 (10%)
+• xg_direction_conflict — 1 (5%)
+• odds_below_global_min — 1 (5%)
+• tier_a_quality_below_min — 1 (5%)
+• tier_a_canonical_edge_below_min — 1 (5%)
+• tier_a_canonical_ev_below_min — 1 (5%)
+
+⚠️ Пограничные кандидаты
+1. Елче Иликитано — Картагена | Больше @1.90
+   • EV +10.9% | edge +5.7 п.п. | q 0.0
+   • не прошло: tier_b_proxy_default_xg_placeholder; tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min; tier_c_proxy_default_xg_placeholder
+2. CSD Кселаджу MC — Дирианген Дириамба | Меньше @2.35
+   • EV +10.5% | edge +4.5 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_b_proxy_default_xg_placeholder; tier_c_quality_below_min; tier_c_proxy_default_xg_placeholder
+3. Артериво Уакейама — Азул Кларо Нумазу | Меньше @1.80
+   • EV +4.8% | edge +2.7 п.п. | q 0.0
+   • не прошло: tier_b_proxy_default_xg_placeholder; tier_c_quality_below_min; tier_c_proxy_default_xg_placeholder
+4. CSD Кселаджу MC — Дирианген Дириамба | Больше @1.62
+   • EV +2.7% | edge +1.6 п.п. | q 0.0
+   • не прошло: odds_below_global_min
+5. Рил Естели — CS Хередиано | Меньше @1.80
+   • EV +1.6% | edge +0.9 п.п. | q 0.0
+   • не прошло: xg_direction_conflict
+6. RSD Алкалá — Гимнáстика Сеговиана | Меньше @1.82
+   • EV +0.8% | edge +0.4 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_canonical_edge_below_min; tier_a_canonical_ev_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
