@@ -1,18 +1,18 @@
 🧾 Подробный отчёт run — прогнозов нет
 
-🕒 Источник цифр: debug-last-run (3 мин назад) — свежий
+🕒 Источник цифр: debug-last-run (4 мин назад) — свежий
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 292/300
-• С контекстом: 193/300
-• Готово к модели: 193/300
-• Ближайшие 6 часов: 14/132 готово
+• С линиями: 286/300
+• С контекстом: 195/300
+• Готово к модели: 195/300
+• Ближайшие 6 часов: 16/111 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 0 | с линиями: 0 | контекстов: 3
+• Матчи: 24 | с линиями: 0 | контекстов: 0
 • Кандидаты: raw 0 | до качества 24 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 5 | выбрано: 0
+• Резерв проверил: 0 | оценено в отчёте: 9 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -21,43 +21,54 @@
 • zero-raw recovery: not_recovered | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
 • evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 5
+• provider targeting: ok | fallback_evaluated 9
 
 📡 Источники / фактическая работа
-• odds_api_io: data 18/484, req 0, err 5
+• odds_api_io: data 10/146, req 0, err 4
 • bzzoiro: data 0/0, req 2, err 0
-• sstats: data 3/3, req 3, err 0
+• sstats: data 0/0, req 3, err 0
 • football_data: data 0/0, req 0, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
 • openfootball: data 0/0, req 0, err 0
 
 🚫 Почему не прошли
-• tier_b_quality_below_min — 1 (12%)
-• tier_b_proxy_default_xg_placeholder — 1 (12%)
-• tier_c_quality_below_min — 1 (12%)
-• tier_c_proxy_default_xg_placeholder — 1 (12%)
-• current_price_recheck_value_lost:-2.1/-1.1 — 1 (12%)
-• current_price_recheck_value_lost:-1.3/-0.6 — 1 (12%)
-• current_price_recheck_value_lost:-0.5/-0.2 — 1 (12%)
-• odds_below_global_min — 1 (12%)
+• tier_b_quality_below_min — 7 (20%)
+• tier_c_quality_below_min — 7 (20%)
+• tier_b_proxy_default_xg_placeholder — 5 (14%)
+• tier_c_proxy_default_xg_placeholder — 5 (14%)
+• tier_c_market_implied_xg_not_hard_confirmation — 2 (6%)
+• tier_b_publication_score_below_min — 2 (6%)
+• odds_below_global_min — 2 (6%)
+• tier_a_quality_below_min — 1 (3%)
+• tier_a_canonical_edge_below_min — 1 (3%)
+• tier_a_publication_score_below_min — 1 (3%)
 
 ⚠️ Пограничные кандидаты
-1. Женис — Кайсар Кизилорда | Больше @2.08
-   • EV +8.7% | edge +4.2 п.п. | q 0.0
-   • не прошло: current_price_recheck_value_lost:-2.1/-1.1
-2. Виетнам — Малейсиа | Меньше @1.93
-   • EV +8.4% | edge +4.4 п.п. | q 0.0
+1. Офк-Сим Раславике — Косике | Больше @2.16
+   • EV +11.0% | edge +5.1 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
+2. Офк-Сим Раславике — Косике | Больше @2.16
+   • EV +11.0% | edge +5.1 п.п. | q 0.0
    • не прошло: tier_b_quality_below_min; tier_b_proxy_default_xg_placeholder; tier_c_quality_below_min; tier_c_proxy_default_xg_placeholder
-3. CSM Слатина — ACS Сепси OSK Сфанту Гхеоргхе | Меньше @1.70
+3. Татран Красно Над Кисуку — Подконике | Меньше @2.62
+   • EV +10.9% | edge +4.2 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
+4. Татран Красно Над Кисуку — Подконике | Меньше @2.62
+   • EV +10.9% | edge +4.2 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_b_proxy_default_xg_placeholder; tier_c_quality_below_min; tier_c_proxy_default_xg_placeholder
+5. Женис — Кайсар Кизилорда | Больше @2.08
+   • EV +8.7% | edge +4.2 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_b_proxy_default_xg_placeholder; tier_c_quality_below_min; tier_c_proxy_default_xg_placeholder
+6. CSM Слатина — ACS Сепси OSK Сфанту Гхеоргхе | Меньше @1.70
    • EV +6.2% | edge +3.7 п.п. | q 0.0
    • не прошло: odds_below_global_min
-4. Ники Волу 1924 PAE — Паниониос Атенс | Больше @2.30
+7. Ники Волу 1924 PAE — Паниониос Атенс | Больше @2.30
    • EV +6.1% | edge +2.7 п.п. | q 0.0
-   • не прошло: current_price_recheck_value_lost:-1.3/-0.6
-5. PAE PS Каламата — Панайтоликос Агринио | Больше @2.25
+   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_b_proxy_default_xg_placeholder; tier_c_quality_below_min; tier_c_proxy_default_xg_placeholder
+8. PAE PS Каламата — Панайтоликос Агринио | Больше @2.25
    • EV +3.6% | edge +1.6 п.п. | q 0.0
-   • не прошло: current_price_recheck_value_lost:-0.5/-0.2
+   • не прошло: tier_a_quality_below_min; tier_a_canonical_edge_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
