@@ -1,12 +1,12 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🔴 нет свежих линий
-• Главная причина: line movement guard снял кандидата
+• Итог: 🟠 линии есть, raw-кандидатов нет
+• Главная причина: tier c quality below min
 
 📦 Покрытие
-• Матчи в run: 24 | day inventory: 300
-• С линиями: 0 | с контекстом: 0 | ready model: 195
-• odds-api.io offers: 146 | Bzzoiro secondary offers: 24
-• 2+ букмекера odds-api.io: 3 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 3 | day inventory: 300
+• С линиями: 2 | с контекстом: 1 | ready model: 222
+• odds-api.io offers: 840 | Bzzoiro secondary offers: 30
+• 2+ букмекера odds-api.io: 8 | 2-source overlap Bzzoiro+odds-api.io: 1
 • Source combinations: odds_api_io: 21
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
@@ -18,41 +18,41 @@
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 74 | no next regular run: 74
-• Line guard: seen 13 | kept 2 | dropped 3
+• Final pre-kickoff checks: 1 | no next regular run: 1
+• Line guard: seen 16 | kept 1 | dropped 7
 
-• Bzzoiro targeted odds: targets 80; events 606; matched 18; ids 18; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 6; requests 12; events_with_offers 4; offers 36; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 24; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 3; inventory updated 10; inventory 2-source 0.
+• Bzzoiro targeted odds: targets 80; events 606; matched 15; ids 15; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 6; requests 12; events_with_offers 5; offers 45; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 30; overlap matches 1; same-bucket matches 1.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 8; inventory updated 8; inventory 2-source 7.
 • Bzzoiro source trace: aggregate events 154; persisted rows 150; targeted events 606; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 9; floor 6; hard 2; relieved 0.
+• Last-chance line relief: seen 9; floor 6; hard 1; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 7, matched 30, offers 146, 2+ books 3, err 4, auth_failed False
-• sstats: req 3, ctx 0, rows 14292, err 0, deep enriched 0
-• bzzoiro: req 2, ctx 0, events 154 (aggregate; persisted rows 150; trace full_or_provider_rows_available), secondary offers 24, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 3, matched 9, offers 840, 2+ books 8, err 2, auth_failed False
+• sstats: req 3, ctx 1, rows 14292, err 0, deep enriched 0
+• bzzoiro: req 2, ctx 0, events 154 (aggregate; persisted rows 150; trace full_or_provider_rows_available), secondary offers 30, overlap odds-api.io 1, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
-• Line movement breakdown: коэффициент ниже минимума 2.
+• Line movement breakdown: коэффициент ниже минимума 1.
 🚫 Почему не опубликовано
-• tier b quality below min: 7 (19%)
-• tier c quality below min: 7 (19%)
-• tier b proxy default xg placeholder: 5 (14%)
-• tier c proxy default xg placeholder: 5 (14%)
-• line movement guard снял кандидата: 3 (8%)
-• tier c market implied xg not hard confirmation: 2 (5%)
-• tier b publication score below min: 2 (5%)
-• odds below global min: 2 (5%)
+• tier c quality below min: 8 (18%)
+• tier b proxy default xg placeholder: 7 (16%)
+• tier c proxy default xg placeholder: 7 (16%)
+• кандидат ждёт следующий cron для второго снимка линии: 7 (16%)
+• tier b low quality competition requires a tier: 4 (9%)
+• tier a quality below min: 2 (5%)
+• tier a odds sources below min:1/2: 2 (5%)
+• tier a proxy default xg placeholder: 2 (5%)
 
 🔎 Проверенные reserve-кандидаты
-1. Ofk-Sim Raslavice — FK Kosice | Больше @2.16 | EV +11.0% | edge +5.1 п.п. | q 86.1 reserve
-   • reject: tier b quality below min, tier c quality below min, tier c market implied xg not hard confirmation
-2. Tatran Krasno Nad Kysucou — FK Podkonice | Меньше @2.62 | EV +10.9% | edge +4.2 п.п. | q 80.8 reserve
-   • reject: tier b quality below min, tier c quality below min, tier c market implied xg not hard confirmation
-3. FC Zhenis — Kaisar Kyzylorda | Больше @2.08 | EV +8.7% | edge +4.2 п.п. | q 78.2 reserve
-   • reject: tier b quality below min, tier b proxy default xg placeholder, tier c quality below min
-4. Niki Volou 1924 PAE — Panionios Athens | Больше @2.30 | EV +6.1% | edge +2.7 п.п. | q 69.5 reserve
-   • reject: tier b quality below min, tier b publication score below min, tier b proxy default xg placeholder
+1. Coruxo FC — Pontevedra CF | Меньше @2.00 | EV +9.3% | edge +4.7 п.п. | q 86.2 reserve
+   • reject: tier b low quality competition requires a tier, tier c quality below min, tier c market implied xg not hard confirmation
+2. Coruxo FC — Pontevedra CF | Меньше @2.00 | EV +9.3% | edge +4.7 п.п. | q 86.2 reserve
+   • reject: tier b proxy default xg placeholder, tier b low quality competition requires a tier, tier c quality below min
+3. FC Barcelona — Al Ahly FC | Меньше @2.50 | EV +12.2% | edge +4.9 п.п. | q 94.6 reserve
+   • reject: tier b proxy default xg placeholder, tier b low quality competition requires a tier, tier c quality below min
+4. SD Ponferradina — Real Madrid Castilla U21 | Меньше @1.77 | EV +5.3% | edge +3.0 п.п. | q 74.7 reserve
+   • reject: tier b proxy default xg placeholder, tier b low quality competition requires a tier, tier c quality below min
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
