@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 12,
-      "rows_seen": 12,
+      "rows_kept": 14,
+      "rows_seen": 14,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 10,
-      "rows_seen": 47,
-      "rows_stale": 37
+      "rows_kept": 94,
+      "rows_seen": 119,
+      "rows_stale": 25
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 1,
-      "rows_seen": 1,
+      "rows_kept": 3,
+      "rows_seen": 3,
       "rows_stale": 0
     }
   },
@@ -35,27 +35,27 @@
     "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 2,
-    "controlled_candidates_seen": 6,
+    "contexts_built": 4,
+    "controlled_candidates_seen": 7,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 13,
-    "matches_seen": 14,
-    "matches_with_offers": 14
+    "coverage_candidates_current_date": 34,
+    "matches_seen": 21,
+    "matches_with_offers": 21
   },
-  "created_at": "2026-08-19T01:13:25.464948+00:00",
+  "created_at": "2026-08-19T03:13:32.609218+00:00",
   "family_counts": {
-    "spreads": 2,
-    "totals": 11
+    "h2h": 2,
+    "totals": 32
   },
-  "matches_with_candidates": 8,
+  "matches_with_candidates": 14,
   "missing_data_flags": {
-    "confidence_below_micro_c": 13,
-    "edge_below_micro_c": 9,
-    "ev_below_micro_c": 7,
-    "single_book": 7,
-    "single_context_source": 8,
-    "single_odds_source": 13
+    "confidence_below_micro_c": 34,
+    "edge_below_micro_c": 29,
+    "ev_below_micro_c": 25,
+    "single_book": 29,
+    "single_context_source": 30,
+    "single_odds_source": 31
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 7,
+  "positive_near_miss_count": 11,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +78,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 14,
+      "events_matched": 12,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 653,
+      "offers_parsed": 766,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +102,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 594,
+      "matches_built": 601,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -117,11 +117,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 856,
+      "events_fetched": 874,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 594,
+      "matches_built": 601,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -133,8 +133,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 2,
-      "direct_event_contexts_built": 2,
+      "contexts_built": 4,
+      "direct_event_contexts_built": 4,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -275,27 +275,6 @@
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": null,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "espn",
-      "rate_limited": null,
-      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -471,73 +450,222 @@
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "no_data": 13,
+    "no_data": 12,
     "working": 4
   },
   "reject_reason_counts_from_rows": {
     "odds_below_global_min": 1,
-    "tier_a_canonical_edge_below_min": 1,
+    "tier_a_canonical_edge_below_min": 2,
     "tier_a_canonical_ev_below_min": 1,
-    "tier_a_odds_sources_below_min:1/2": 1,
-    "tier_a_publication_score_below_min": 1,
-    "tier_a_quality_below_min": 1,
-    "tier_b_bookmaker_quorum_prices_missing:1/2": 1,
-    "tier_b_canonical_edge_below_min": 1,
-    "tier_b_canonical_ev_below_min": 1,
-    "tier_b_low_quality_competition_requires_a_tier": 2,
-    "tier_b_proxy_default_xg_placeholder": 2,
-    "tier_b_publication_score_below_min": 1,
-    "tier_b_quality_below_min": 1,
-    "tier_c_proxy_default_xg_placeholder": 2,
-    "tier_c_quality_below_min": 3,
-    "xg_direction_conflict": 1
+    "tier_a_confirmation_sources_below_min:1/2": 2,
+    "tier_a_odds_sources_below_min:1/2": 2,
+    "tier_a_proxy_default_xg_placeholder": 2,
+    "tier_a_publication_score_below_min": 2,
+    "tier_a_quality_below_min": 2,
+    "tier_a_two_plus_context_sources_required:1/2": 2,
+    "tier_a_two_plus_odds_sources_required:1/2": 2,
+    "tier_b_canonical_edge_below_min": 2,
+    "tier_b_canonical_ev_below_min": 2,
+    "tier_b_proxy_default_xg_placeholder": 1,
+    "tier_b_publication_score_below_min": 2,
+    "tier_b_quality_below_min": 3,
+    "tier_c_proxy_default_xg_placeholder": 1,
+    "tier_c_quality_below_min": 1
   },
   "target_date": "2026-08-19",
   "top_near_miss": [
     {
-      "away_team": "Oriente Petrolero",
+      "away_team": "",
       "best_candidate": {
         "adjusted_probability": 0.0,
         "books_count": 0,
-        "canonical_edge_pp": 6.26,
-        "canonical_ev_pct": 11.895,
+        "canonical_edge_pp": 0.0,
+        "canonical_ev_pct": 36.523,
         "confidence": 0.0,
         "confirmation_sources_count": 0,
         "context_sources_count": 0,
         "family": "totals",
-        "odds": 1.9,
+        "odds": 1.79,
         "odds_sources_count": 0,
         "origin": ".logs/debug-last-run.json",
-        "point": null,
+        "point": 0.5,
         "reject_reasons": [],
-        "selection": "Меньше",
+        "selection": "Больше 0.5",
         "sources_count": 0
       },
-      "best_confidence": 0.0,
-      "best_edge_pp": 6.26,
-      "best_ev_pct": 11.895,
+      "best_confidence": 63.95,
+      "best_edge_pp": 0.0,
+      "best_ev_pct": 36.523,
       "books_max": 0,
-      "candidate_count": 2,
+      "candidate_count": 5,
       "commence_time": "",
-      "confirmation_sources_max": 0,
-      "context_sources_max": 0,
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
       "controlled_count": 0,
       "families": {
-        "totals": 2
+        "totals": 5
       },
-      "home_team": "The Strongest",
+      "home_team": "",
       "league_name": "",
-      "match_key": "soccer|the_strongest|oriente_petrolero|2026-08-19",
+      "match_key": "soccer|dangjin citizen|jeonbuk|2026-08-19",
       "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "edge_below_micro_c": 1,
-        "single_book": 2,
-        "single_context_source": 2,
-        "single_odds_source": 2
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 5,
+        "single_context_source": 5,
+        "single_odds_source": 5
       },
       "odds_sources_max": 0,
       "origins": {
-        ".logs/debug-last-run.json": 2
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 0
+    },
+    {
+      "away_team": "",
+      "best_candidate": {
+        "adjusted_probability": 0.0,
+        "books_count": 0,
+        "canonical_edge_pp": 0.0,
+        "canonical_ev_pct": 29.839,
+        "confidence": 0.0,
+        "confirmation_sources_count": 0,
+        "context_sources_count": 0,
+        "family": "totals",
+        "odds": 2.25,
+        "odds_sources_count": 0,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 0
+      },
+      "best_confidence": 63.71,
+      "best_edge_pp": 0.0,
+      "best_ev_pct": 29.839,
+      "books_max": 0,
+      "candidate_count": 4,
+      "commence_time": "",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 4
+      },
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|fukui united|nagano parceiro|2026-08-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 2,
+        "single_book": 4,
+        "single_context_source": 4,
+        "single_odds_source": 4
+      },
+      "odds_sources_max": 0,
+      "origins": {
+        ".logs/debug-last-run.json": 4
+      },
+      "reject_reasons": {},
+      "sources_max": 0
+    },
+    {
+      "away_team": "",
+      "best_candidate": {
+        "adjusted_probability": 0.0,
+        "books_count": 0,
+        "canonical_edge_pp": 0.0,
+        "canonical_ev_pct": 18.225,
+        "confidence": 0.0,
+        "confirmation_sources_count": 0,
+        "context_sources_count": 0,
+        "family": "totals",
+        "odds": 1.825,
+        "odds_sources_count": 0,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше 2.5",
+        "sources_count": 0
+      },
+      "best_confidence": 63.95,
+      "best_edge_pp": 0.0,
+      "best_ev_pct": 18.225,
+      "books_max": 0,
+      "candidate_count": 5,
+      "commence_time": "",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 5
+      },
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|gimcheon sangmu|gimpo|2026-08-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 5,
+        "single_context_source": 5,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 0,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 0
+    },
+    {
+      "away_team": "",
+      "best_candidate": {
+        "adjusted_probability": 0.0,
+        "books_count": 0,
+        "canonical_edge_pp": 0.0,
+        "canonical_ev_pct": 14.587,
+        "confidence": 0.0,
+        "confirmation_sources_count": 0,
+        "context_sources_count": 0,
+        "family": "totals",
+        "odds": 1.72,
+        "odds_sources_count": 0,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 0
+      },
+      "best_confidence": 62.64,
+      "best_edge_pp": 0.0,
+      "best_ev_pct": 14.587,
+      "books_max": 0,
+      "candidate_count": 4,
+      "commence_time": "",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 4
+      },
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|kawasoe|tokushima|2026-08-19",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 2,
+        "single_book": 4,
+        "single_context_source": 4,
+        "single_odds_source": 4
+      },
+      "odds_sources_max": 0,
+      "origins": {
+        ".logs/debug-last-run.json": 4
       },
       "reject_reasons": {},
       "sources_max": 0
@@ -554,17 +682,12 @@
         "context_sources_count": 3,
         "family": "totals",
         "odds": 1.9,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 3,
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
-        "reject_reasons": [
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
+        "reject_reasons": [],
         "selection": "Больше",
-        "sources_count": 1
+        "sources_count": 3
       },
       "best_confidence": 73.987,
       "best_edge_pp": 5.716,
@@ -574,7 +697,7 @@
       "commence_time": "2026-08-19T08:00:00+00:00",
       "confirmation_sources_max": 3,
       "context_sources_max": 3,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
@@ -582,7 +705,60 @@
       "league_name": "International Clubs - Club Friendly Games",
       "match_key": "2026-08-19|elche ilicitano|cartagena",
       "missing_flags": {
+        "confidence_below_micro_c": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
+      "away_team": "Jinju Citizen FC",
+      "best_candidate": {
+        "adjusted_probability": 0.45819,
+        "books_count": 3,
+        "canonical_edge_pp": 2.341,
+        "canonical_ev_pct": 5.384,
+        "confidence": 68.523,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.3,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_proxy_default_xg_placeholder",
+          "tier_c_quality_below_min",
+          "tier_c_proxy_default_xg_placeholder"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 68.523,
+      "best_edge_pp": 2.341,
+      "best_ev_pct": 5.384,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-08-19T10:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "FC Pohang Steelers",
+      "league_name": "Republic of Korea - Korea Cup",
+      "match_key": "2026-08-19|pohang steelers|jinju citizen",
+      "missing_flags": {
         "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 1,
@@ -590,111 +766,13 @@
         "controlled": 1
       },
       "reject_reasons": {
-        "tier_b_low_quality_competition_requires_a_tier": 1,
         "tier_b_proxy_default_xg_placeholder": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
         "tier_c_proxy_default_xg_placeholder": 1,
         "tier_c_quality_below_min": 1
       },
       "sources_max": 1
-    },
-    {
-      "away_team": "Diriangen FC Diriamba",
-      "best_candidate": {
-        "adjusted_probability": 0.470068,
-        "books_count": 2,
-        "canonical_edge_pp": 4.454,
-        "canonical_ev_pct": 10.466,
-        "confidence": 70.81,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 2.35,
-        "odds_sources_count": 1,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 70.81,
-      "best_edge_pp": 4.454,
-      "best_ev_pct": 10.466,
-      "books_max": 6,
-      "candidate_count": 2,
-      "commence_time": "2026-08-19T03:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 1,
-      "families": {
-        "totals": 2
-      },
-      "home_team": "CSD Xelaju MC",
-      "league_name": "International Clubs - CONCACAF Central American Cup, Group A",
-      "match_key": "2026-08-19|csd xelaju mc|diriangen diriamba",
-      "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_context_source": 1,
-        "single_odds_source": 2
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "awaiting_movement_lifecycle": 1,
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "odds_below_global_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "FC Maruyasu Okazaki",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 5.67,
-        "canonical_ev_pct": 10.348,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 1.825,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": null,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 0
-      },
-      "best_confidence": 0.0,
-      "best_edge_pp": 5.67,
-      "best_ev_pct": 10.348,
-      "books_max": 0,
-      "candidate_count": 2,
-      "commence_time": "",
-      "confirmation_sources_max": 0,
-      "context_sources_max": 0,
-      "controlled_count": 0,
-      "families": {
-        "totals": 2
-      },
-      "home_team": "SRC Hiroshima",
-      "league_name": "",
-      "match_key": "soccer|src_hiroshima|fc_maruyasu_okazaki|2026-08-19",
-      "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "edge_below_micro_c": 1,
-        "single_book": 2,
-        "single_context_source": 2,
-        "single_odds_source": 2
-      },
-      "odds_sources_max": 0,
-      "origins": {
-        ".logs/debug-last-run.json": 2
-      },
-      "reject_reasons": {},
-      "sources_max": 0
     },
     {
       "away_team": "Azul Claro Numazu",
@@ -708,16 +786,12 @@
         "context_sources_count": 4,
         "family": "totals",
         "odds": 1.8,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 4,
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
-        "reject_reasons": [
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_c_quality_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 4
       },
       "best_confidence": 72.75,
       "best_edge_pp": 2.655,
@@ -727,7 +801,7 @@
       "commence_time": "2026-08-19T08:00:00+00:00",
       "confirmation_sources_max": 4,
       "context_sources_max": 4,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
@@ -737,60 +811,72 @@
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
+        "ev_below_micro_c": 1
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 4,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_b_proxy_default_xg_placeholder": 1,
-        "tier_c_proxy_default_xg_placeholder": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "reject_reasons": {},
+      "sources_max": 4
     },
     {
-      "away_team": "CS Herediano",
+      "away_team": "Bucheon FC 1995",
       "best_candidate": {
-        "adjusted_probability": 0.564286,
+        "adjusted_probability": 0.481008,
         "books_count": 2,
-        "canonical_edge_pp": 0.873,
-        "canonical_ev_pct": 1.571,
-        "confidence": 68.307,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
+        "canonical_edge_pp": 1.589,
+        "canonical_ev_pct": 3.417,
+        "confidence": 67.638,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "family": "totals",
-        "odds": 1.8,
+        "odds": 2.15,
         "odds_sources_count": 1,
         "origin": "controlled",
         "point": 2.5,
         "reject_reasons": [
-          "xg_direction_conflict"
+          "tier_a_quality_below_min",
+          "tier_a_canonical_edge_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_a_two_plus_odds_sources_required:1/2",
+          "tier_a_two_plus_context_sources_required:1/2",
+          "tier_a_proxy_default_xg_placeholder",
+          "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_canonical_ev_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_proxy_default_xg_placeholder",
+          "tier_c_quality_below_min",
+          "tier_c_canonical_edge_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_proxy_default_xg_placeholder"
         ],
-        "selection": "Меньше",
+        "selection": "Больше",
         "sources_count": 1
       },
-      "best_confidence": 68.307,
-      "best_edge_pp": 0.873,
-      "best_ev_pct": 1.571,
+      "best_confidence": 67.638,
+      "best_edge_pp": 1.589,
+      "best_ev_pct": 3.417,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-19T03:00:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
+      "commence_time": "2026-08-19T10:30:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
       "controlled_count": 1,
       "families": {
         "totals": 1
       },
-      "home_team": "Real Esteli FC",
-      "league_name": "International Clubs - CONCACAF Central American Cup, Group B",
-      "match_key": "2026-08-19|real esteli|cs herediano",
+      "home_team": "Busan IPark",
+      "league_name": "Republic of Korea - Korea Cup",
+      "match_key": "2026-08-19|busan ipark|bucheon 1995",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1,
+        "single_context_source": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 1,
@@ -798,22 +884,33 @@
         "controlled": 1
       },
       "reject_reasons": {
-        "xg_direction_conflict": 1
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_proxy_default_xg_placeholder": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_a_two_plus_context_sources_required:1/2": 1,
+        "tier_a_two_plus_odds_sources_required:1/2": 1,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_canonical_ev_below_min": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1
       },
       "sources_max": 1
     },
     {
-      "away_team": "Gimnástica Segoviana",
+      "away_team": "Gwangju FC",
       "best_candidate": {
-        "adjusted_probability": 0.552055,
-        "books_count": 2,
-        "canonical_edge_pp": 0.411,
-        "canonical_ev_pct": 0.75,
-        "confidence": 64.638,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "adjusted_probability": 0.57849,
+        "books_count": 3,
+        "canonical_edge_pp": 1.511,
+        "canonical_ev_pct": 2.682,
+        "confidence": 67.307,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "family": "totals",
-        "odds": 1.825,
+        "odds": 1.775,
         "odds_sources_count": 1,
         "origin": "controlled",
         "point": 2.5,
@@ -823,39 +920,44 @@
           "tier_a_canonical_ev_below_min",
           "tier_a_publication_score_below_min",
           "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_a_two_plus_odds_sources_required:1/2",
+          "tier_a_two_plus_context_sources_required:1/2",
+          "tier_a_proxy_default_xg_placeholder",
           "tier_b_quality_below_min",
           "tier_b_canonical_edge_below_min",
           "tier_b_canonical_ev_below_min",
           "tier_b_publication_score_below_min",
-          "tier_b_bookmaker_quorum_prices_missing:1/2",
-          "tier_b_low_quality_competition_requires_a_tier",
+          "tier_b_proxy_default_xg_placeholder",
           "tier_c_quality_below_min",
           "tier_c_canonical_edge_below_min",
           "tier_c_canonical_ev_below_min",
-          "tier_c_publication_score_below_min"
+          "tier_c_publication_score_below_min",
+          "tier_c_proxy_default_xg_placeholder"
         ],
         "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 64.638,
-      "best_edge_pp": 0.411,
-      "best_ev_pct": 0.75,
-      "books_max": 2,
+      "best_confidence": 67.307,
+      "best_edge_pp": 1.511,
+      "best_ev_pct": 2.682,
+      "books_max": 3,
       "candidate_count": 1,
-      "commence_time": "2026-08-19T09:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "commence_time": "2026-08-19T10:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
       "controlled_count": 1,
       "families": {
         "totals": 1
       },
-      "home_team": "RSD Alcalá",
-      "league_name": "Club Friendlies",
-      "match_key": "soccer|gimnastica segoviana|rsd alcala|2026-08-19",
+      "home_team": "Ulsan Citizen FC",
+      "league_name": "Republic of Korea - Korea Cup",
+      "match_key": "2026-08-19|ulsan citizen|gwangju",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1,
+        "single_context_source": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 1,
@@ -865,16 +967,68 @@
       "reject_reasons": {
         "tier_a_canonical_edge_below_min": 1,
         "tier_a_canonical_ev_below_min": 1,
+        "tier_a_confirmation_sources_below_min:1/2": 1,
         "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_proxy_default_xg_placeholder": 1,
         "tier_a_publication_score_below_min": 1,
         "tier_a_quality_below_min": 1,
-        "tier_b_bookmaker_quorum_prices_missing:1/2": 1,
+        "tier_a_two_plus_context_sources_required:1/2": 1,
+        "tier_a_two_plus_odds_sources_required:1/2": 1,
         "tier_b_canonical_edge_below_min": 1,
         "tier_b_canonical_ev_below_min": 1,
-        "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_b_publication_score_below_min": 1,
-        "tier_b_quality_below_min": 1,
-        "tier_c_quality_below_min": 1
+        "tier_b_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Japan Soccer College",
+      "best_candidate": {
+        "adjusted_probability": 0.625387,
+        "books_count": 1,
+        "canonical_edge_pp": 0.619,
+        "canonical_ev_pct": 1.0,
+        "confidence": 69.25,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 1.615,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "odds_below_global_min"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.25,
+      "best_edge_pp": 0.619,
+      "best_ev_pct": 1.0,
+      "books_max": 1,
+      "candidate_count": 1,
+      "commence_time": "2026-08-19T10:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Reilac Shiga FC",
+      "league_name": "Emperor Cup",
+      "match_key": "2026-08-19|reilac shiga|japan college",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "odds_below_global_min": 1
       },
       "sources_max": 1
     }
