@@ -49,6 +49,7 @@ def main() -> int:
     from scripts.patch_display_line_count_safe import install as install_display_line_count_safe
     from scripts.patch_same_match_total_conflict_guard import install as install_same_match_total_conflict_guard
     from scripts.patch_current_bankroll_source import install as install_current_bankroll_source
+    from scripts.patch_market_implied_xg_backfill import install as install_market_implied_xg_backfill
     from scripts.patch_proxy_default_xg_guard import install as install_proxy_default_xg_guard
     from scripts.patch_publication_safety_contract import install as install_publication_safety_contract
     from scripts.patch_controlled_fallback_confirmation_bridge import install as install_confirmation_bridge
@@ -59,6 +60,8 @@ def main() -> int:
     install_a_cover_evidence_quality(v18.base)
     install_xg_probability_support(v18.base)
     install_confirmation_bridge(v18.base)
+    # Must stay immediately before the proxy xG guard.
+    install_market_implied_xg_backfill(v18.base)
     install_proxy_default_xg_guard(v18.base)
     install_publication_safety_contract(v18.base)
     install_reference_price_guard(v18.base)
