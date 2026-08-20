@@ -1,18 +1,29 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import Any
+
+# Provider evidence that counts as a real (hard) context. Kept in sync with
+# scripts/patch_publication_safety_contract.py.
+HARD_CONTEXT_TOKENS = (
+    'bzzoiro_stats', 'bzzoiro_prediction', 'bzzoiro_odds_comparison', 'odds_comparison',
+    'event_stats', 'event_prediction', 'sstats_xg', 'sstats_form', 'sstats_team_form',
+    'team_form_index', 'pre_match_home_xg', 'pre_match_away_xg', 'actual_home_xg',
+    'actual_away_xg', 'home_xg', 'away_xg', 'xg_live',
+)
 
 
 def _force_runtime_publication_contract() -> None:
     overrides={
         'PUBLISH_TIER_A_MIN_ODDS_SOURCES':'2','PUBLISH_TIER_A_MIN_BOOKS':'2','PUBLISH_TIER_A_MIN_CONTEXT_SOURCES':'2',
-        'PUBLISH_TIER_B_MIN_ODDS_SOURCES':'1','PUBLISH_TIER_B_MIN_BOOKS':'2','PUBLISH_TIER_B_MIN_CONTEXT_SOURCES':'2',
-        'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS':'2','CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES':'2','CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES':'2',
+        'PUBLISH_TIER_B_MIN_ODDS_SOURCES':'1','PUBLISH_TIER_B_MIN_BOOKS':'2','PUBLISH_TIER_B_MIN_CONTEXT_SOURCES':'1',
+        'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS':'2','CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES':'1','CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES':'1',
         'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM':'false','CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM':'false',
         'CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER':'true','CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS':'true','CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS':'true',
+        'CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT':'true',
         'CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP':'2.3','CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT':'4.0','CONTROLLED_FALLBACK_ALLOW_VALUE_ALIVE_HIGH_DRIFT':'true',
-        'CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT':'3.0','CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP':'1.5','CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED':'3','CONTROLLED_FALLBACK_DAILY_MAX_B_TIER':'3',
+        'CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT':'3.0','CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP':'1.5','CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED':'5','CONTROLLED_FALLBACK_DAILY_MAX_B_TIER':'5',
         'A_TIER_TARGETED_ENRICHMENT_ENABLED':'true','BZZOIRO_TARGETED_ODDS_CONFIRMATION_ENABLED':'true','SSTATS_TARGETED_CONTEXT_PROJECTION_ENABLED':'true','HIGH_VALUE_FAST_RECHECK_ENABLED':'true',
         'DAY_INVENTORY_TARGET_SIZE':'300','DAY_INVENTORY_MAX_MATCHES':'300','DAY_INVENTORY_FORCE_FULL_300':'true','DAY_INVENTORY_FORCE_TOP_300':'true','DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES':'300',
         'HARIZON_FULL_INVENTORY_PROVIDER_TARGETS':'300','HARIZON_RUNTIME_MATCH_RECOVERY_MIN_FILTERED_MATCHES':'300','HARIZON_RUNTIME_MATCH_RECOVERY_MAX_MATCHES':'300','HARIZON_RUNTIME_MATCH_RECOVERY_WINDOW_HOURS':'36',
@@ -57,15 +68,52 @@ def _int(v:Any,d:int=0)->int:
         return int(float(str(v).replace(',','.'))) if v not in (None,'') else d
     except Exception: return d
 
-def _b_tier_testing_floor(metrics:dict[str,Any])->bool:
-    return max(_int(metrics.get('books_count')),_int(metrics.get('bookmaker_count')))>=2 and max(_int(metrics.get('odds_sources_count')),_int(metrics.get('line_sources_count')),_int(metrics.get('sources_count')))>=1 and max(_int(metrics.get('context_sources_count')),_int(metrics.get('confirmation_sources_count')))>=2 and max(_num(metrics.get('canonical_ev_pct')),_num(metrics.get('ev_pct')))>=4.0 and max(_num(metrics.get('canonical_edge_pp')),_num(metrics.get('edge_pp')))>=2.3 and 1.70<=_num(metrics.get('odds'))<=2.70
+def _env_num(name:str,default:float)->float:
+    return _num(os.getenv(name),default)
+
+def _has_hard_context(candidate:dict[str,Any],metrics:dict[str,Any])->bool:
+    try:
+        text=json.dumps({'candidate':candidate,'metrics':metrics},ensure_ascii=False,sort_keys=True,default=str).lower()
+    except Exception:
+        text=f'{candidate}{metrics}'.lower()
+    return any(token in text for token in HARD_CONTEXT_TOKENS)
+
+def _b_tier_testing_floor(candidate:dict[str,Any],metrics:dict[str,Any])->bool:
+    """RULES.txt B-cover: 1 line source, 2 bookmakers, 1 *real* context.
+
+    The old version demanded 2 context sources, which no match in the day
+    inventory ever has (see .data/exports/latest-two-plus-coverage-report.json:
+    context_2plus_sources = 0/300), so the relief never fired and nothing was
+    published. Volume is bought back with a stricter definition of a context:
+    a hard provider context is now mandatory, because market_signal-only picks
+    run at -11.6% ROI while sstats_form runs at +54.8%.
+    """
+    books=max(_int(metrics.get('books_count')),_int(metrics.get('bookmaker_count')))
+    odds_sources=max(_int(metrics.get('odds_sources_count')),_int(metrics.get('line_sources_count')),_int(metrics.get('sources_count')))
+    contexts=max(_int(metrics.get('context_sources_count')),_int(metrics.get('confirmation_sources_count')))
+    ev=max(_num(metrics.get('canonical_ev_pct')),_num(metrics.get('ev_pct')))
+    edge=max(_num(metrics.get('canonical_edge_pp')),_num(metrics.get('edge_pp')))
+    price=_num(metrics.get('odds'))
+    min_price=_env_num('HARIZON_B_RELIEF_MIN_ODDS',1.70)
+    max_price=_env_num('HARIZON_B_RELIEF_MAX_ODDS',3.20)
+    min_ev=_env_num('HARIZON_B_RELIEF_MIN_EV_PCT',4.0)
+    min_edge=_env_num('HARIZON_B_RELIEF_MIN_EDGE_PP',2.3)
+    return (
+        books>=2
+        and odds_sources>=1
+        and contexts>=1
+        and _has_hard_context(candidate,metrics)
+        and ev>=min_ev
+        and edge>=min_edge
+        and min_price<=price<=max_price
+    )
 
 def _install_b_tier_testing_relief(base:Any)->None:
     old=getattr(base,'tier_reasons',None)
     if not callable(old) or getattr(base,'_b_tier_testing_relief_installed',False): return
     def wrapped(tier:str,candidate:dict[str,Any],metrics:dict[str,Any])->list[str]:
         reasons=list(old(tier,candidate,metrics) or [])
-        if str(tier or '').upper()!='B' or not _b_tier_testing_floor(metrics): return reasons
+        if str(tier or '').upper()!='B' or not _b_tier_testing_floor(candidate,metrics): return reasons
         return [r for r in reasons if str(r) not in {'tier_b_quality_below_min','tier_b_publication_score_below_min','tier_b_market_implied_xg_not_hard_confirmation'}]
     base.tier_reasons=wrapped; base._b_tier_testing_relief_installed=True
 
