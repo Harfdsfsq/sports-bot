@@ -15,28 +15,54 @@ HARD_CONTEXT_TOKENS = (
 )
 
 _RELIEF_DIAGNOSTICS: list[dict[str, Any]] = []
+_RELIEF_INSTALL_EVENTS: list[dict[str, Any]] = []
+_RELIEF_INSTALL_COUNT = [0]
 _RELIEF_DIAGNOSTICS_PATH = os.path.join('.data', 'exports', 'latest-b-relief-diagnostics.json')
 
 
-def _write_relief_diagnostics() -> None:
-    """Persist why the B-tier relief fired or not.
+def _record_install_event(stage: str, status: str, detail: str = '') -> None:
+    _RELIEF_INSTALL_EVENTS.append({'stage': stage, 'status': status, 'detail': str(detail)[:400]})
 
-    Without this the floor is a bare bool: a relief that evaluated 24 candidates
-    and rejected all of them looks exactly like a relief that never ran.
-    """
+
+def _relief_status() -> str:
+    if not any(event.get('status') == 'installed' for event in _RELIEF_INSTALL_EVENTS):
+        return 'relief_never_installed'
     if not _RELIEF_DIAGNOSTICS:
-        return
+        return 'installed_but_never_evaluated'
+    if any(entry.get('passed') for entry in _RELIEF_DIAGNOSTICS):
+        return 'evaluated_with_passes'
+    return 'evaluated_all_rejected'
+
+
+def _write_relief_diagnostics() -> None:
+    """Persist whether the B-tier relief was installed, ran and fired.
+
+    This must be written unconditionally. The previous version returned early on
+    an empty list, so "the relief rejected every candidate", "the relief never
+    got called" and "the relief was never installed because an unrelated import
+    failed" all produced the same missing file.
+    """
     try:
         from collections import Counter
         from datetime import datetime, timezone
-        failed: Counter[str] = Counter()
+        deduped: dict[str, dict[str, Any]] = {}
         for entry in _RELIEF_DIAGNOSTICS:
+            key = '|'.join(str(entry.get(name)) for name in ('match', 'selection', 'point'))
+            if key not in deduped:
+                deduped[key] = entry
+        rows = list(deduped.values())
+        failed: Counter[str] = Counter()
+        for entry in rows:
             for name in entry.get('failed_conditions') or []:
                 failed[str(name)] += 1
         payload = {
             'created_at_utc': datetime.now(timezone.utc).isoformat(),
-            'evaluated_candidates': len(_RELIEF_DIAGNOSTICS),
-            'passed_count': sum(1 for entry in _RELIEF_DIAGNOSTICS if entry.get('passed')),
+            'status': _relief_status(),
+            'install_events': _RELIEF_INSTALL_EVENTS,
+            'install_count': _RELIEF_INSTALL_COUNT[0],
+            'evaluated_candidates': len(rows),
+            'evaluation_calls': len(_RELIEF_DIAGNOSTICS),
+            'passed_count': sum(1 for entry in rows if entry.get('passed')),
             'failed_condition_counts': dict(failed.most_common()),
             'thresholds': {
                 'min_books': 2,
@@ -48,7 +74,7 @@ def _write_relief_diagnostics() -> None:
                 'min_odds': _env_num('HARIZON_B_RELIEF_MIN_ODDS', 1.70),
                 'max_odds': _env_num('HARIZON_B_RELIEF_MAX_ODDS', 3.20),
             },
-            'rows': _RELIEF_DIAGNOSTICS[:200],
+            'rows': rows[:200],
         }
         os.makedirs(os.path.dirname(_RELIEF_DIAGNOSTICS_PATH), exist_ok=True)
         with open(_RELIEF_DIAGNOSTICS_PATH, 'w', encoding='utf-8') as handle:
@@ -189,19 +215,49 @@ def _b_tier_testing_floor(candidate:dict[str,Any],metrics:dict[str,Any])->bool:
         })
     return not failed
 
-def _install_b_tier_testing_relief(base:Any)->None:
+def _install_b_tier_testing_relief(base:Any,stage:str='early')->None:
     old=getattr(base,'tier_reasons',None)
-    if not callable(old) or getattr(base,'_b_tier_testing_relief_installed',False): return
+    if not callable(old):
+        _record_install_event(stage,'skipped_no_tier_reasons',type(base).__name__); return
+    if getattr(old,'_is_b_tier_relief',False):
+        _record_install_event(stage,'skipped_already_outermost'); return
+    # Allow exactly one re-install: the v20 chain may wrap or rebind
+    # tier_reasons after the early install, and the relief has to stay the
+    # outermost wrapper to have the last word on the reason list.
+    if _RELIEF_INSTALL_COUNT[0]>=2:
+        _record_install_event(stage,'skipped_install_limit'); return
     def wrapped(tier:str,candidate:dict[str,Any],metrics:dict[str,Any])->list[str]:
         reasons=list(old(tier,candidate,metrics) or [])
         if str(tier or '').upper()!='B' or not _b_tier_testing_floor(candidate,metrics): return reasons
         return [r for r in reasons if str(r) not in {'tier_b_quality_below_min','tier_b_publication_score_below_min','tier_b_market_implied_xg_not_hard_confirmation'}]
+    wrapped._is_b_tier_relief=True
     base.tier_reasons=wrapped; base._b_tier_testing_relief_installed=True
+    _RELIEF_INSTALL_COUNT[0]+=1
+    _record_install_event(stage,'installed')
+
+def _install_relief_before_publish(v18:Any)->None:
+    """Re-install the relief immediately before the publisher actually runs.
+
+    v20 installs a dozen patches on v18.base and only then calls v18.main, so an
+    early install is at the mercy of every one of them.
+    """
+    old_main=getattr(v18,'main',None)
+    if not callable(old_main) or getattr(old_main,'_relief_late_hook',False):
+        _record_install_event('late_hook','skipped_already_wrapped'); return
+    def wrapped_main(*args:Any,**kwargs:Any)->Any:
+        try: _install_b_tier_testing_relief(getattr(v18,'base',None),'late_before_v18_main')
+        except Exception as exc: _record_install_event('late_before_v18_main','failed',repr(exc))
+        return old_main(*args,**kwargs)
+    wrapped_main._relief_late_hook=True
+    v18.main=wrapped_main
+    _record_install_event('late_hook','wrapped_v18_main')
 
 def main()->int:
     _force_runtime_publication_contract(); _repair_runtime_artifacts_before_fallback(); _apply_focused_alpha_policy()
+    v18=None
     try:
-        import scripts.publish_controlled_fallback_guarded_v18 as v18
+        import scripts.publish_controlled_fallback_guarded_v18 as v18_module
+        v18=v18_module
         from scripts.harizon_production_quality_layer import install as q
         from scripts.patch_current_price_recheck_value import install as cp
         from scripts.patch_last_chance_line_recheck_relief import install as lc
@@ -211,10 +267,25 @@ def main()->int:
         from scripts.patch_tier_a_strict_policy import install as ta
         from scripts.patch_controlled_fallback_confirmation_bridge import install as cb
         from scripts.patch_fallback_evidence_and_integrity_runtime import install as ei
-        ta(v18.base); ps(v18.base); cb(v18.base); ei(v18.base); lc(v18.base); ar(v18.base); q(v18.base); sm(v18.base); cp(v18.base); _install_b_tier_testing_relief(v18.base)
+        ta(v18.base); ps(v18.base); cb(v18.base); ei(v18.base); lc(v18.base); ar(v18.base); q(v18.base); sm(v18.base); cp(v18.base)
     except Exception: pass
+    # The relief gets its own block on purpose: while it shared the block above,
+    # any failing import in it skipped the relief for the entire run silently.
+    try:
+        if v18 is None:
+            _record_install_event('early','failed','v18 module unavailable')
+        else:
+            _install_b_tier_testing_relief(v18.base,'early')
+            _install_relief_before_publish(v18)
+    except Exception as exc:
+        _record_install_event('early','failed',repr(exc))
     _apply_focused_alpha_policy(); _repair_runtime_artifacts_before_fallback(); _build_focused_alpha_decisions(); _force_runtime_publication_contract()
-    from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
-    code=int(v20_main() or 0); _build_focused_alpha_decisions(); _run_step('scripts.target_fallback_provider_enrichment'); _write_relief_diagnostics(); return code
+    code=1
+    try:
+        from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
+        code=int(v20_main() or 0); _build_focused_alpha_decisions(); _run_step('scripts.target_fallback_provider_enrichment')
+    finally:
+        _write_relief_diagnostics()
+    return code
 
 if __name__=='__main__': raise SystemExit(main())
