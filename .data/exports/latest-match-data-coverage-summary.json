@@ -2,14 +2,14 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 32,
-      "rows_seen": 32,
+      "rows_kept": 0,
+      "rows_seen": 0,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 96,
-      "rows_seen": 121,
+      "rows_kept": 232,
+      "rows_seen": 257,
       "rows_stale": 25
     },
     "lifecycle": {
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 8,
-      "rows_seen": 8,
+      "rows_kept": 10,
+      "rows_seen": 10,
       "rows_stale": 0
     }
   },
@@ -36,26 +36,26 @@
     "candidates_publishable": 0,
     "candidates_raw": 0,
     "contexts_built": 3,
-    "controlled_candidates_seen": 16,
+    "controlled_candidates_seen": null,
     "controlled_published": false,
-    "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 41,
-    "matches_seen": 27,
-    "matches_with_offers": 27
+    "controlled_status": "fallback_artifact_stale_or_missing_after_step",
+    "coverage_candidates_current_date": 74,
+    "matches_seen": 28,
+    "matches_with_offers": 28
   },
-  "created_at": "2026-08-20T01:12:48.261668+00:00",
+  "created_at": "2026-08-20T03:12:51.287154+00:00",
   "family_counts": {
-    "spreads": 7,
-    "totals": 34
+    "spreads": 16,
+    "totals": 58
   },
-  "matches_with_candidates": 22,
+  "matches_with_candidates": 24,
   "missing_data_flags": {
-    "confidence_below_micro_c": 40,
-    "edge_below_micro_c": 35,
-    "ev_below_micro_c": 31,
-    "single_book": 23,
-    "single_context_source": 22,
-    "single_odds_source": 29
+    "confidence_below_micro_c": 63,
+    "edge_below_micro_c": 68,
+    "ev_below_micro_c": 64,
+    "single_book": 60,
+    "single_context_source": 64,
+    "single_odds_source": 66
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 21,
+  "positive_near_miss_count": 14,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -82,7 +82,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2890,
+      "offers_parsed": 2822,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +102,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 677,
+      "matches_built": 676,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -117,11 +117,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 951,
+      "events_fetched": 970,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 677,
+      "matches_built": 676,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -164,6 +164,44 @@
       "matches_built": null,
       "offers_parsed": null,
       "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -402,76 +440,14 @@
       "rows_fetched": 0,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "no_data": 11,
-    "working": 5
+    "no_data": 9,
+    "working": 7
   },
-  "reject_reason_counts_from_rows": {
-    "odds_below_global_min": 3,
-    "price_integrity:external_snapshot_bookmaker_median_outlier": 1,
-    "tier_a_books_below_min": 1,
-    "tier_a_canonical_edge_below_min": 2,
-    "tier_a_canonical_ev_below_min": 1,
-    "tier_a_odds_sources_below_min:1/2": 5,
-    "tier_a_proxy_default_xg_placeholder": 5,
-    "tier_a_publication_score_below_min": 5,
-    "tier_a_quality_below_min": 5,
-    "tier_b_books_below_min": 1,
-    "tier_b_canonical_edge_below_min": 3,
-    "tier_b_canonical_ev_below_min": 2,
-    "tier_b_proxy_default_xg_placeholder": 6,
-    "tier_b_publication_score_below_min": 5,
-    "tier_b_quality_below_min": 5,
-    "tier_c_canonical_edge_below_min": 1,
-    "tier_c_proxy_default_xg_placeholder": 5,
-    "tier_c_publication_score_below_min": 3,
-    "tier_c_quality_below_min": 6
-  },
+  "reject_reason_counts_from_rows": {},
   "target_date": "2026-08-20",
   "top_near_miss": [
     {
@@ -480,12 +456,12 @@
         "adjusted_probability": 0.0,
         "books_count": 0,
         "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 58.361,
+        "canonical_ev_pct": 105.574,
         "confidence": 0.0,
         "confirmation_sources_count": 0,
         "context_sources_count": 0,
         "family": "totals",
-        "odds": 2.28,
+        "odds": 2.75,
         "odds_sources_count": 0,
         "origin": ".logs/debug-last-run.json",
         "point": 1.5,
@@ -493,111 +469,9 @@
         "selection": "Больше 1.5",
         "sources_count": 0
       },
-      "best_confidence": 66.28,
+      "best_confidence": 68.64,
       "best_edge_pp": 0.0,
-      "best_ev_pct": 58.361,
-      "books_max": 0,
-      "candidate_count": 4,
-      "commence_time": "",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 2,
-        "totals": 2
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|dallas|real salt lake|2026-08-20",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 3,
-        "ev_below_micro_c": 2,
-        "single_book": 4,
-        "single_context_source": 4,
-        "single_odds_source": 4
-      },
-      "odds_sources_max": 0,
-      "origins": {
-        ".logs/debug-last-run.json": 4
-      },
-      "reject_reasons": {},
-      "sources_max": 0
-    },
-    {
-      "away_team": "Houston Dynamo",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 49.693,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.2,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше 2.5",
-        "sources_count": 0
-      },
-      "best_confidence": 69.394,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 49.693,
-      "books_max": 9,
-      "candidate_count": 5,
-      "commence_time": "2026-08-20T02:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 1,
-      "families": {
-        "totals": 5
-      },
-      "home_team": "Vancouver Whitecaps",
-      "league_name": "MLS",
-      "match_key": "soccer|houston dynamo|vancouver whitecaps|2026-08-20",
-      "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 3,
-        "single_book": 4,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 4,
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "price_integrity:external_snapshot_bookmaker_median_outlier": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 43.031,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.23,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 0
-      },
-      "best_confidence": 66.03,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 43.031,
+      "best_ev_pct": 105.574,
       "books_max": 0,
       "candidate_count": 5,
       "commence_time": "",
@@ -610,7 +484,7 @@
       },
       "home_team": "",
       "league_name": "",
-      "match_key": "soccer|colorado rapids|los angeles|2026-08-20",
+      "match_key": "soccer|ajax|sion|2026-08-20",
       "missing_flags": {
         "confidence_below_micro_c": 5,
         "edge_below_micro_c": 4,
@@ -627,17 +501,17 @@
       "sources_max": 0
     },
     {
-      "away_team": "San Diego FC",
+      "away_team": "",
       "best_candidate": {
         "adjusted_probability": 0.0,
         "books_count": 0,
         "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 42.507,
+        "canonical_ev_pct": 84.567,
         "confidence": 0.0,
         "confirmation_sources_count": 0,
         "context_sources_count": 0,
         "family": "totals",
-        "odds": 1.93,
+        "odds": 2.7,
         "odds_sources_count": 0,
         "origin": ".logs/debug-last-run.json",
         "point": 1.5,
@@ -645,45 +519,142 @@
         "selection": "Больше 1.5",
         "sources_count": 0
       },
-      "best_confidence": 66.24,
+      "best_confidence": 66.33,
       "best_edge_pp": 0.0,
-      "best_ev_pct": 42.507,
-      "books_max": 2,
+      "best_ev_pct": 84.567,
+      "books_max": 0,
       "candidate_count": 5,
-      "commence_time": "2026-08-20T02:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 1,
+      "commence_time": "",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
       "families": {
         "spreads": 2,
         "totals": 3
       },
-      "home_team": "Portland Timbers",
-      "league_name": "MLS",
-      "match_key": "soccer|portland timbers|san diego|2026-08-20",
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-20",
       "missing_flags": {
         "confidence_below_micro_c": 5,
         "edge_below_micro_c": 4,
         "ev_below_micro_c": 3,
-        "single_book": 4,
-        "single_context_source": 4,
+        "single_book": 5,
+        "single_context_source": 5,
         "single_odds_source": 5
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 0,
       "origins": {
-        ".logs/debug-last-run.json": 4,
-        "controlled": 1
+        ".logs/debug-last-run.json": 5
       },
-      "reject_reasons": {
-        "odds_below_global_min": 1
+      "reject_reasons": {},
+      "sources_max": 0
+    },
+    {
+      "away_team": "",
+      "best_candidate": {
+        "adjusted_probability": 0.0,
+        "books_count": 0,
+        "canonical_edge_pp": 0.0,
+        "canonical_ev_pct": 84.406,
+        "confidence": 0.0,
+        "confirmation_sources_count": 0,
+        "context_sources_count": 0,
+        "family": "totals",
+        "odds": 2.7,
+        "odds_sources_count": 0,
+        "origin": ".logs/debug-last-run.json",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше 1.5",
+        "sources_count": 0
       },
-      "sources_max": 1
+      "best_confidence": 66.18,
+      "best_edge_pp": 0.0,
+      "best_ev_pct": 84.406,
+      "books_max": 0,
+      "candidate_count": 5,
+      "commence_time": "",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 2,
+        "totals": 3
+      },
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|lugano|maccabi tel aviv|2026-08-20",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 5,
+        "single_context_source": 5,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 0,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 0
+    },
+    {
+      "away_team": "",
+      "best_candidate": {
+        "adjusted_probability": 0.0,
+        "books_count": 0,
+        "canonical_edge_pp": 0.0,
+        "canonical_ev_pct": 66.198,
+        "confidence": 0.0,
+        "confirmation_sources_count": 0,
+        "context_sources_count": 0,
+        "family": "totals",
+        "odds": 2.28,
+        "odds_sources_count": 0,
+        "origin": ".logs/debug-last-run.json",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше 1.5",
+        "sources_count": 0
+      },
+      "best_confidence": 66.08,
+      "best_edge_pp": 0.0,
+      "best_ev_pct": 66.198,
+      "books_max": 0,
+      "candidate_count": 5,
+      "commence_time": "",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 2
+      },
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|heart of midlothian|sk rapid wien|2026-08-20",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 5,
+        "single_context_source": 5,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 0,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 0
     },
     {
       "away_team": "Omonia Nicosia",
       "best_candidate": {
         "adjusted_probability": 0.561746,
-        "books_count": 3,
+        "books_count": 2,
         "canonical_edge_pp": 4.893,
         "canonical_ev_pct": 9.54,
         "confidence": 73.393,
@@ -691,26 +662,22 @@
         "context_sources_count": 3,
         "family": "totals",
         "odds": 1.95,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 3,
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
-        "reject_reasons": [
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_c_quality_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 3
       },
       "best_confidence": 73.393,
       "best_edge_pp": 4.893,
       "best_ev_pct": 9.54,
-      "books_max": 3,
+      "books_max": 2,
       "candidate_count": 1,
       "commence_time": "2026-08-20T18:00:00+00:00",
       "confirmation_sources_max": 3,
       "context_sources_max": 3,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
@@ -718,19 +685,14 @@
       "league_name": "Europa League",
       "match_key": "2026-08-20|sint truidense vv|omonia nicosia",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "single_odds_source": 1
+        "confidence_below_micro_c": 1
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 3,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_b_proxy_default_xg_placeholder": 1,
-        "tier_c_proxy_default_xg_placeholder": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "reject_reasons": {},
+      "sources_max": 3
     },
     {
       "away_team": "CSKA Sofia",
@@ -744,16 +706,12 @@
         "context_sources_count": 3,
         "family": "totals",
         "odds": 2.075,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 3,
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
-        "reject_reasons": [
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_c_quality_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
+        "reject_reasons": [],
         "selection": "Больше",
-        "sources_count": 1
+        "sources_count": 3
       },
       "best_confidence": 73.241,
       "best_edge_pp": 4.435,
@@ -763,7 +721,7 @@
       "commence_time": "2026-08-20T18:00:00+00:00",
       "confirmation_sources_max": 3,
       "context_sources_max": 3,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
@@ -771,93 +729,87 @@
       "league_name": "Europa League",
       "match_key": "2026-08-20|ofi crete|cska sofia",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "single_odds_source": 1
+        "confidence_below_micro_c": 1
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 3,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_b_proxy_default_xg_placeholder": 1,
-        "tier_c_proxy_default_xg_placeholder": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "reject_reasons": {},
+      "sources_max": 3
     },
     {
-      "away_team": "Brighton & Hove Albion",
+      "away_team": "FC København",
       "best_candidate": {
-        "adjusted_probability": 0.389719,
+        "adjusted_probability": 0.431215,
         "books_count": 2,
-        "canonical_edge_pp": 2.608,
-        "canonical_ev_pct": 7.173,
-        "confidence": 73.828,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
+        "canonical_edge_pp": 3.122,
+        "canonical_ev_pct": 7.804,
+        "confidence": 74.112,
+        "confirmation_sources_count": 8,
+        "context_sources_count": 8,
         "family": "totals",
-        "odds": 2.75,
-        "odds_sources_count": 4,
+        "odds": 2.5,
+        "odds_sources_count": 8,
         "origin": "rescue",
         "point": 3.5,
         "reject_reasons": [],
         "selection": "Больше",
-        "sources_count": 4
+        "sources_count": 8
       },
-      "best_confidence": 73.828,
-      "best_edge_pp": 2.608,
-      "best_ev_pct": 7.173,
+      "best_confidence": 74.112,
+      "best_edge_pp": 3.122,
+      "best_ev_pct": 7.804,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-20T17:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
+      "commence_time": "2026-08-20T16:00:00+00:00",
+      "confirmation_sources_max": 8,
+      "context_sources_max": 8,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Tromsø IL",
+      "home_team": "Inter Turku",
       "league_name": "Conference League",
-      "match_key": "soccer|troms_il|brighton_hove_albion|2026-08-20",
+      "match_key": "soccer|inter_turku|fc_k_benhavn|2026-08-20",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1
       },
-      "odds_sources_max": 4,
+      "odds_sources_max": 8,
       "origins": {
         "rescue": 1
       },
       "reject_reasons": {},
-      "sources_max": 4
+      "sources_max": 8
     },
     {
       "away_team": "FC Ararat-Armenia",
       "best_candidate": {
-        "adjusted_probability": 0.389719,
+        "adjusted_probability": 0.387832,
         "books_count": 2,
-        "canonical_edge_pp": 2.608,
-        "canonical_ev_pct": 7.173,
-        "confidence": 73.828,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
+        "canonical_edge_pp": 2.42,
+        "canonical_ev_pct": 6.654,
+        "confidence": 67.594,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
         "family": "totals",
         "odds": 2.75,
-        "odds_sources_count": 4,
+        "odds_sources_count": 2,
         "origin": "rescue",
         "point": 3.5,
         "reject_reasons": [],
         "selection": "Больше",
-        "sources_count": 4
+        "sources_count": 2
       },
-      "best_confidence": 73.828,
-      "best_edge_pp": 2.608,
-      "best_ev_pct": 7.173,
+      "best_confidence": 67.594,
+      "best_edge_pp": 2.42,
+      "best_ev_pct": 6.654,
       "books_max": 2,
       "candidate_count": 1,
       "commence_time": "2026-08-20T17:00:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
       "controlled_count": 0,
       "families": {
         "totals": 1
@@ -870,148 +822,104 @@
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1
       },
-      "odds_sources_max": 4,
+      "odds_sources_max": 2,
       "origins": {
         "rescue": 1
       },
       "reject_reasons": {},
-      "sources_max": 4
+      "sources_max": 2
     },
     {
-      "away_team": "Brighton & Hove Albion",
+      "away_team": "SK Brann",
       "best_candidate": {
-        "adjusted_probability": 0.389719,
+        "adjusted_probability": 0.541773,
         "books_count": 2,
-        "canonical_edge_pp": 2.608,
-        "canonical_ev_pct": 7.173,
-        "confidence": 73.828,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
+        "canonical_edge_pp": 3.157,
+        "canonical_ev_pct": 6.187,
+        "confidence": 73.384,
+        "confirmation_sources_count": 8,
+        "context_sources_count": 8,
         "family": "totals",
-        "odds": 2.75,
-        "odds_sources_count": 2,
-        "origin": "controlled",
-        "point": 3.5,
-        "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_publication_score_below_min",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_a_proxy_default_xg_placeholder",
-          "tier_b_quality_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_c_quality_below_min",
-          "tier_c_publication_score_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
-        "selection": "Больше",
-        "sources_count": 2
+        "odds": 1.96,
+        "odds_sources_count": 8,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 8
       },
-      "best_confidence": 73.828,
-      "best_edge_pp": 2.608,
-      "best_ev_pct": 7.173,
+      "best_confidence": 73.384,
+      "best_edge_pp": 3.157,
+      "best_ev_pct": 6.187,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-20T17:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 1,
+      "commence_time": "2026-08-20T17:45:00+00:00",
+      "confirmation_sources_max": 8,
+      "context_sources_max": 8,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Tromsø IL",
+      "home_team": "PAOK",
       "league_name": "Conference League",
-      "match_key": "2026-08-20|troms il|brighton hove albion",
+      "match_key": "soccer|paok|sk_brann|2026-08-20",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1
       },
-      "odds_sources_max": 2,
+      "odds_sources_max": 8,
       "origins": {
-        "controlled": 1
+        "rescue": 1
       },
-      "reject_reasons": {
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_default_xg_placeholder": 1,
-        "tier_a_publication_score_below_min": 1,
-        "tier_a_quality_below_min": 1,
-        "tier_b_proxy_default_xg_placeholder": 1,
-        "tier_b_publication_score_below_min": 1,
-        "tier_b_quality_below_min": 1,
-        "tier_c_proxy_default_xg_placeholder": 1,
-        "tier_c_publication_score_below_min": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 2
+      "reject_reasons": {},
+      "sources_max": 8
     },
     {
-      "away_team": "FC Ararat-Armenia",
+      "away_team": "Hibernian",
       "best_candidate": {
-        "adjusted_probability": 0.389719,
+        "adjusted_probability": 0.569012,
         "books_count": 2,
-        "canonical_edge_pp": 2.608,
-        "canonical_ev_pct": 7.173,
-        "confidence": 73.828,
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
+        "canonical_edge_pp": 2.553,
+        "canonical_ev_pct": 4.698,
+        "confidence": 72.714,
+        "confirmation_sources_count": 9,
+        "context_sources_count": 9,
         "family": "totals",
-        "odds": 2.75,
-        "odds_sources_count": 2,
-        "origin": "controlled",
-        "point": 3.5,
-        "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_publication_score_below_min",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_a_proxy_default_xg_placeholder",
-          "tier_b_quality_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_c_quality_below_min",
-          "tier_c_publication_score_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
-        "selection": "Больше",
-        "sources_count": 2
+        "odds": 1.84,
+        "odds_sources_count": 8,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 8
       },
-      "best_confidence": 73.828,
-      "best_edge_pp": 2.608,
-      "best_ev_pct": 7.173,
+      "best_confidence": 72.714,
+      "best_edge_pp": 2.553,
+      "best_ev_pct": 4.698,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-20T17:00:00+00:00",
-      "confirmation_sources_max": 6,
-      "context_sources_max": 6,
-      "controlled_count": 1,
+      "commence_time": "2026-08-20T18:30:00+00:00",
+      "confirmation_sources_max": 9,
+      "context_sources_max": 9,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Universitatea Craiova",
-      "league_name": "Europa League",
-      "match_key": "2026-08-20|universitatea craiova|ararat armenia",
+      "home_team": "KAA Gent",
+      "league_name": "Conference League",
+      "match_key": "soccer|kaa_gent|hibernian|2026-08-20",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1
       },
-      "odds_sources_max": 2,
+      "odds_sources_max": 8,
       "origins": {
-        "controlled": 1
+        "rescue": 1
       },
-      "reject_reasons": {
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_default_xg_placeholder": 1,
-        "tier_a_publication_score_below_min": 1,
-        "tier_a_quality_below_min": 1,
-        "tier_b_proxy_default_xg_placeholder": 1,
-        "tier_b_publication_score_below_min": 1,
-        "tier_b_quality_below_min": 1,
-        "tier_c_proxy_default_xg_placeholder": 1,
-        "tier_c_publication_score_below_min": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 2
+      "reject_reasons": {},
+      "sources_max": 8
     }
   ]
 }
