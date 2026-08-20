@@ -37,6 +37,10 @@ def _apply_rules_runtime_env() -> None:
         "HARIZON_B_RELIEF_MAX_ODDS": "3.20",
         "HARIZON_B_RELIEF_MIN_EV_PCT": "2.0",
         "HARIZON_B_RELIEF_MIN_EDGE_PP": "1.0",
+        # The tier-B contract and the relief floor both demand two bookmakers, so
+        # a single-book promotion can never be published; it only consumes a
+        # promotion slot. Keep the promotion bar equal to the publication bar.
+        "PROMOTE_B_COVER_MIN_BOOKS": "2",
         # A-cover promotion runs in-process below; give it the same window as the
         # publisher instead of its own 2h fallback default.
         "PROMOTE_A_COVER_WINDOW_HOURS": "24",
