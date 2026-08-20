@@ -5,9 +5,14 @@ from __future__ import annotations
 The rules define a strict A-tier and a lighter B-tier:
 
 * A-tier: 2 odds/line sources, 2 bookmaker/price confirmations, 2 contexts;
-* B-tier: 1 odds/line source, 2 bookmaker/price confirmations, 2 contexts.
+* B-tier: 1 odds/line source, 2 bookmaker/price confirmations, 1 context.
 
 Value, quality, price-integrity and line-movement guards still apply to both.
+
+Important: these helpers must never raise a configured value above what the
+workflow env asked for. The A-tier quorum (2 odds / 2 context sources) is
+enforced by ``scripts/patch_publication_safety_contract.py`` and by the
+``PUBLISH_TIER_A_*`` variables, not by silently clamping the shared floor.
 """
 
 import os
@@ -63,11 +68,30 @@ def publish_min_odds_sources(settings: Any | None = None, default: int | None = 
 
 
 def publish_min_context_sources(settings: Any | None = None, default: int | None = None) -> int:
-    fallback = 2 if default is None else int(default)
+    """Minimum independent context sources required for publication.
+
+    B-tier (RULES.txt 8.1) needs one real context, so a configured value of 1
+    must be honoured. Only strict A-only mode keeps the hard floor of 2.
+    """
+    strict_a_only = not b_tier_enabled(settings)
+    floor = 2 if strict_a_only else publish_floor(settings)
+    fallback = (2 if strict_a_only else 1) if default is None else int(default)
     setting_value = getattr(settings, "min_context_sources_publish", None) if settings is not None else None
     raw = os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH")
     value = as_int(raw if raw not in (None, "") else setting_value, fallback)
-    return max(2, value)
+    return max(floor, value)
+
+
+def publish_tier_a_min_context_sources(settings: Any | None = None) -> int:
+    """A-tier context quorum. Always at least 2, per RULES.txt 8.2."""
+    raw = os.getenv("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES")
+    return max(2, as_int(raw, 2))
+
+
+def publish_tier_a_min_odds_sources(settings: Any | None = None) -> int:
+    """A-tier line quorum. Always at least 2, per RULES.txt 8.2."""
+    raw = os.getenv("PUBLISH_TIER_A_MIN_ODDS_SOURCES")
+    return max(2, as_int(raw, 2))
 
 
 def publish_min_books(settings: Any | None = None, default: int | None = None) -> int:
