@@ -1,14 +1,14 @@
 {
   "blocker_counts": {
-    "bookmaker_2plus": 11,
-    "context_source_2plus": 265,
-    "odds_source_2plus": 282
+    "bookmaker_2plus": 10,
+    "context_source_2plus": 262,
+    "odds_source_2plus": 296
   },
-  "created_at_utc": "2026-08-20T15:07:11.864791+00:00",
+  "created_at_utc": "2026-08-20T16:29:35.941694+00:00",
   "inventory_rows": 302,
   "provider_hit_counts": {},
   "providers_indexed": {
-    "bzzoiro_v2": 1
+    "bzzoiro_v2": 6
   },
   "rows": [
     {
@@ -1422,11 +1422,15 @@
       "kickoff": "2026-08-20T09:30:00+00:00",
       "league_name": "Estonia - Esiliiga",
       "match_key": "2026-08-20|elva|maardu linnameeskond",
-      "missing": [],
-      "next_actions": [],
+      "missing": [
+        "odds_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_odds_api_price_backfill"
+      ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|elva|maardu linnameeskond"
@@ -1434,23 +1438,22 @@
     {
       "away_team": "Measurers Club",
       "books_count": 28,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Aryans Sports",
       "kickoff": "2026-08-20T09:30:00+00:00",
       "league_name": "India - Calcutta Premier Division, Group A",
       "match_key": "2026-08-20|aryans sports|measurers",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|aryans sports|measurers"
@@ -1458,9 +1461,7 @@
     {
       "away_team": "Kalighat Sports Lovers",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Nbp Rainbow AC",
       "kickoff": "2026-08-20T09:30:00+00:00",
       "league_name": "India - Calcutta Premier Division, Group A",
@@ -1474,18 +1475,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|nbp rainbow|kalighat sports lovers"
     },
     {
       "away_team": "Ayeyawady FC",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "No Limits",
       "kickoff": "2026-08-20T09:30:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group F",
@@ -1499,32 +1496,29 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|no limits|ayeyawady"
     },
     {
       "away_team": "Kaya FC",
       "books_count": 2,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Phnom Penh Crown",
       "kickoff": "2026-08-20T10:00:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group B",
       "match_key": "2026-08-20|phnom penh crown|kaya",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|phnom penh crown|kaya"
@@ -1597,9 +1591,7 @@
     {
       "away_team": "Lillestrom SK U19",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Tromsoe IL U19",
       "kickoff": "2026-08-20T11:00:00+00:00",
       "league_name": "Norway - U19 Nasjonal, Playoffs",
@@ -1613,9 +1605,7 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|tromsoe il|lillestrom sk"
     },
@@ -1623,18 +1613,23 @@
       "away_team": "FC Syunik",
       "books_count": 11,
       "context_sources": [
-        "inventory_context",
-        "sstats"
+        "inventory_context"
       ],
       "home_team": "FC Van Charentsavan",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "Armenia - Premier League",
       "match_key": "2026-08-20|van charentsavan|syunik",
-      "missing": [],
-      "next_actions": [],
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|van charentsavan|syunik"
@@ -1690,15 +1685,15 @@
       "semantic_key": "2026-08-20|tartu jk welco|levadia tallinn"
     },
     {
-      "away_team": "JK Tallinna Kalev",
-      "books_count": 10,
+      "away_team": "FC Phoenix Johvi",
+      "books_count": 11,
       "context_sources": [
         "sstats"
       ],
-      "home_team": "Nomme Kalju FC",
+      "home_team": "JK Tabasalu",
       "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "Estonia - Esiliiga",
-      "match_key": "2026-08-20|nomme kalju|jk tallinna kalev",
+      "league_name": "Estonia - Esiliiga B",
+      "match_key": "2026-08-20|jk tabasalu|phoenix johvi",
       "missing": [
         "context_source_2plus"
       ],
@@ -1708,7 +1703,30 @@
       ],
       "odds_sources": [
         "odds_api_io",
-        "sstats"
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|jk tabasalu|phoenix johvi"
+    },
+    {
+      "away_team": "JK Tallinna Kalev",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Nomme Kalju FC",
+      "kickoff": "2026-08-20T12:00:00+00:00",
+      "league_name": "Estonia - Esiliiga",
+      "match_key": "2026-08-20|nomme kalju|jk tallinna kalev",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|nomme kalju|jk tallinna kalev"
@@ -1807,35 +1825,55 @@
       "semantic_key": "2026-08-20|tallinn|nomme united"
     },
     {
-      "away_team": "FC Phoenix Johvi",
-      "books_count": 6,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "JK Tabasalu",
+      "away_team": "Saku Sporting",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Tallinna FC Flora",
       "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "Estonia - Esiliiga B",
-      "match_key": "2026-08-20|jk tabasalu|phoenix johvi",
+      "league_name": "Estonia - Meistriliiga Women",
+      "match_key": "2026-08-20|tallinna flora|saku sporting",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats_pari"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|jk tabasalu|phoenix johvi"
+      "semantic_key": "2026-08-20|tallinna flora|saku sporting"
+    },
+    {
+      "away_team": "Tartu JK Tammeka U21",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "FA Tartu Kalev",
+      "kickoff": "2026-08-20T12:00:00+00:00",
+      "league_name": "Estonia - Esiliiga B",
+      "match_key": "2026-08-20|fa tartu kalev|tartu jk tammeka",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|fa tartu kalev|tartu jk tammeka"
     },
     {
       "away_team": "Viljandi JK Tulevik",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Parnu JK Vaprus II",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "Estonia - Esiliiga B",
@@ -1849,18 +1887,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|parnu jk vaprus|viljandi jk tulevik"
     },
     {
       "away_team": "Sabah FA",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Rajshahi Stars FC",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group A",
@@ -1874,18 +1908,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|rajshahi stars|sabah fa"
     },
     {
       "away_team": "Banaat FC",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Master FC",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group C",
@@ -1899,18 +1929,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|master|banaat"
     },
     {
       "away_team": "College of Asian Scholars",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Kharaatsai",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group D",
@@ -1924,18 +1950,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|kharaatsai|college of asian scholars"
     },
     {
       "away_team": "Bam Khatoon FC",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Al Nassr FC",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group E",
@@ -1949,18 +1971,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|al nassr|bam khatoon"
     },
     {
       "away_team": "Botyr Ekibastuz",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Akademia Ontustyk",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "Kazakhstan - Pervaya Liga",
@@ -1974,9 +1992,7 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|akademia ontustyk|botyr ekibastuz"
     },
@@ -2004,9 +2020,7 @@
     {
       "away_team": "FK Aral Samali",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Olimpik Mobiuz",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "Uzbekistan - Pro Liga",
@@ -2020,79 +2034,29 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|olimpik mobiuz|aral samali"
     },
     {
-      "away_team": "Saku Sporting",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "Tallinna FC Flora",
-      "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "Estonia - Meistriliiga Women",
-      "match_key": "2026-08-20|tallinna flora|saku sporting",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|tallinna flora|saku sporting"
-    },
-    {
-      "away_team": "Tartu JK Tammeka U21",
-      "books_count": 1,
-      "context_sources": [],
-      "home_team": "FA Tartu Kalev",
-      "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "Estonia - Esiliiga B",
-      "match_key": "2026-08-20|fa tartu kalev|tartu jk tammeka",
-      "missing": [
-        "odds_source_2plus",
-        "bookmaker_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|fa tartu kalev|tartu jk tammeka"
-    },
-    {
       "away_team": "New Taipei Hang Yuen",
       "books_count": 10,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "FC Jurong",
       "kickoff": "2026-08-20T12:30:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group F",
       "match_key": "2026-08-20|jurong|new taipei hang yuen",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|jurong|new taipei hang yuen"
@@ -2142,23 +2106,22 @@
     {
       "away_team": "Jkt Tanzania",
       "books_count": 10,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Polisi Tanzania FC",
       "kickoff": "2026-08-20T13:00:00+00:00",
       "league_name": "Tanzania - Premier League",
       "match_key": "2026-08-20|polisi tanzania|jkt tanzania",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|polisi tanzania|jkt tanzania"
@@ -2187,23 +2150,22 @@
     {
       "away_team": "Mega Sport Belqas",
       "books_count": 11,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "El Dakhleya Sc",
       "kickoff": "2026-08-20T13:30:00+00:00",
       "league_name": "Egypt - 2. Division A",
       "match_key": "2026-08-20|el dakhleya|mega sport belqas",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|el dakhleya|mega sport belqas"
@@ -2234,30 +2196,29 @@
     {
       "away_team": "Al Nasr Cairo",
       "books_count": 10,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "El Entag El Harby",
       "kickoff": "2026-08-20T13:30:00+00:00",
       "league_name": "Egypt - 2. Division A",
       "match_key": "2026-08-20|el entag el harby|al nasr cairo",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|el entag el harby|al nasr cairo"
     },
     {
       "away_team": "Northeast United FC",
-      "books_count": 4,
+      "books_count": 10,
       "context_sources": [],
       "home_team": "Mohun Bagan Super Giant",
       "kickoff": "2026-08-20T13:30:00+00:00",
@@ -2281,9 +2242,7 @@
     {
       "away_team": "Baladiyyat AL Mehalla",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "El Mansurah",
       "kickoff": "2026-08-20T13:30:00+00:00",
       "league_name": "Egypt - 2. Division A",
@@ -2298,7 +2257,7 @@
         "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|el mansurah|baladiyyat al mehalla"
@@ -2306,9 +2265,7 @@
     {
       "away_team": "Kahrabaa Ismailia",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "La Viena FC",
       "kickoff": "2026-08-20T13:30:00+00:00",
       "league_name": "Egypt - 2. Division A",
@@ -2322,15 +2279,13 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|viena|kahrabaa ismailia"
     },
     {
       "away_team": "AFK Csikszereda Miercurea Ciuc",
-      "books_count": 7,
+      "books_count": 8,
       "context_sources": [
         "bzzoiro",
         "sstats"
@@ -2343,64 +2298,14 @@
       "next_actions": [],
       "odds_sources": [
         "odds_api_io",
-        "sstats",
         "sstats_pari"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|csa steaua bucuresti|afk csikszereda miercurea ciuc"
     },
     {
-      "away_team": "FK Kokand 1912",
-      "books_count": 5,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "FC Bunyodkor",
-      "kickoff": "2026-08-20T14:00:00+00:00",
-      "league_name": "Uzbekistan - Superliga",
-      "match_key": "2026-08-20|bunyodkor|kokand 1912",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
-      ],
-      "odds_sources": [
-        "odds_api_io",
-        "sstats",
-        "sstats_pari"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|bunyodkor|kokand 1912"
-    },
-    {
-      "away_team": "Tsl FC",
-      "books_count": 4,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Ilbirs Bishkek FC",
-      "kickoff": "2026-08-20T14:00:00+00:00",
-      "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group B",
-      "match_key": "2026-08-20|ilbirs bishkek|tsl",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
-      ],
-      "odds_sources": [
-        "odds_api_io",
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|ilbirs bishkek|tsl"
-    },
-    {
       "away_team": "Harju JK Laagri",
-      "books_count": 3,
+      "books_count": 10,
       "context_sources": [],
       "home_team": "Viimsi JK",
       "kickoff": "2026-08-20T14:00:00+00:00",
@@ -2420,6 +2325,51 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|viimsi jk|harju jk laagri"
+    },
+    {
+      "away_team": "FK Kokand 1912",
+      "books_count": 5,
+      "context_sources": [],
+      "home_team": "FC Bunyodkor",
+      "kickoff": "2026-08-20T14:00:00+00:00",
+      "league_name": "Uzbekistan - Superliga",
+      "match_key": "2026-08-20|bunyodkor|kokand 1912",
+      "missing": [
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context"
+      ],
+      "odds_sources": [
+        "odds_api_io",
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|bunyodkor|kokand 1912"
+    },
+    {
+      "away_team": "Tsl FC",
+      "books_count": 4,
+      "context_sources": [],
+      "home_team": "Ilbirs Bishkek FC",
+      "kickoff": "2026-08-20T14:00:00+00:00",
+      "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group B",
+      "match_key": "2026-08-20|ilbirs bishkek|tsl",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|ilbirs bishkek|tsl"
     },
     {
       "away_team": "PFK Metallurg Bekabad",
@@ -2445,9 +2395,7 @@
     {
       "away_team": "FC Pakhtakor Tashkent II",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "FC Yaypan Fergana",
       "kickoff": "2026-08-20T14:00:00+00:00",
       "league_name": "Uzbekistan - Pro Liga",
@@ -2461,51 +2409,57 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|yaypan fergana|pakhtakor tashkent"
     },
     {
       "away_team": "Qatar SC",
-      "books_count": 7,
+      "books_count": 8,
       "context_sources": [
-        "sstats"
+        "bzzoiro",
+        "dayinventory",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstats",
+        "unknown"
       ],
       "home_team": "AL Wakrah SC",
       "kickoff": "2026-08-20T14:15:00+00:00",
       "league_name": "Qatar - Stars League",
       "match_key": "2026-08-20|al wakrah|qatar",
       "missing": [
-        "context_source_2plus"
+        "odds_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|al wakrah|qatar"
     },
     {
       "away_team": "FC Botosani",
-      "books_count": 6,
-      "context_sources": [],
+      "books_count": 7,
+      "context_sources": [
+        "bzzoiro",
+        "dayinventory",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "unknown"
+      ],
       "home_team": "CSC 1599 Selimbar",
       "kickoff": "2026-08-20T14:30:00+00:00",
       "league_name": "Romania - Cupa Romaniei, Knockout Stage",
       "match_key": "2026-08-20|csc 1599 selimbar|botosani",
       "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
+        "odds_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
       "odds_sources": [
@@ -2538,56 +2492,8 @@
       "semantic_key": "2026-08-20|kairat almaty|rsc anderlecht"
     },
     {
-      "away_team": "JIPPO",
-      "books_count": 4,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "KaPa Kapylan Pallo",
-      "kickoff": "2026-08-20T15:00:00+00:00",
-      "league_name": "Finland - Ykkosliiga",
-      "match_key": "2026-08-20|kapa kapylan pallo|jippo",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
-      ],
-      "odds_sources": [
-        "odds_api_io",
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|kapa kapylan pallo|jippo"
-    },
-    {
-      "away_team": "Lokomotiv Tashkent",
-      "books_count": 4,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Xorazm Fk Urganch",
-      "kickoff": "2026-08-20T15:00:00+00:00",
-      "league_name": "Uzbekistan - Superliga",
-      "match_key": "2026-08-20|xorazm urganch|lokomotiv tashkent",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
-      ],
-      "odds_sources": [
-        "odds_api_io",
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|xorazm urganch|lokomotiv tashkent"
-    },
-    {
       "away_team": "Ppj/Lauttasaari",
-      "books_count": 3,
+      "books_count": 10,
       "context_sources": [],
       "home_team": "Toolon Taisto",
       "kickoff": "2026-08-20T15:00:00+00:00",
@@ -2610,7 +2516,7 @@
     },
     {
       "away_team": "Hamkam U19",
-      "books_count": 3,
+      "books_count": 10,
       "context_sources": [
         "sstats"
       ],
@@ -2635,7 +2541,7 @@
     },
     {
       "away_team": "Universidad de Chile",
-      "books_count": 3,
+      "books_count": 10,
       "context_sources": [
         "sstats"
       ],
@@ -2655,6 +2561,62 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|deportes iquique|universidad chile"
+    },
+    {
+      "away_team": "JIPPO",
+      "books_count": 6,
+      "context_sources": [
+        "bzzoiro",
+        "dayinventory",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstats",
+        "unknown"
+      ],
+      "home_team": "KaPa Kapylan Pallo",
+      "kickoff": "2026-08-20T15:00:00+00:00",
+      "league_name": "Finland - Ykkosliiga",
+      "match_key": "2026-08-20|kapa kapylan pallo|jippo",
+      "missing": [
+        "odds_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|kapa kapylan pallo|jippo"
+    },
+    {
+      "away_team": "Lokomotiv Tashkent",
+      "books_count": 6,
+      "context_sources": [
+        "bzzoiro",
+        "dayinventory",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstats",
+        "unknown"
+      ],
+      "home_team": "Xorazm Fk Urganch",
+      "kickoff": "2026-08-20T15:00:00+00:00",
+      "league_name": "Uzbekistan - Superliga",
+      "match_key": "2026-08-20|xorazm urganch|lokomotiv tashkent",
+      "missing": [
+        "odds_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|xorazm urganch|lokomotiv tashkent"
     },
     {
       "away_team": "Mikkelin Palloilijat 2",
@@ -2680,9 +2642,7 @@
     {
       "away_team": "PFC Nasaf",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Rtc FC",
       "kickoff": "2026-08-20T15:00:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group C",
@@ -2696,18 +2656,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|rtc|pfc nasaf"
     },
     {
       "away_team": "Etihad Club",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "FC CSKA Dushanbe",
       "kickoff": "2026-08-20T15:00:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group E",
@@ -2721,18 +2677,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|cska dushanbe|etihad"
     },
     {
       "away_team": "FK Sochi",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "FC Neftekhimik Nizhnekamsk",
       "kickoff": "2026-08-20T15:00:00+00:00",
       "league_name": "Russia - 1. Liga",
@@ -2746,11 +2698,78 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|neftekhimik nizhnekamsk|sochi"
+    },
+    {
+      "away_team": "AL Naft",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "AL Naft Maysan",
+      "kickoff": "2026-08-20T15:30:00+00:00",
+      "league_name": "Iraq - Stars League",
+      "match_key": "2026-08-20|al naft maysan|al naft",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|al naft maysan|al naft"
+    },
+    {
+      "away_team": "Al Kahrabaa SC",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "Ghaz Al-Shamal SC",
+      "kickoff": "2026-08-20T15:30:00+00:00",
+      "league_name": "Iraq - Stars League",
+      "match_key": "2026-08-20|ghaz al shamal|al kahrabaa",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|ghaz al shamal|al kahrabaa"
+    },
+    {
+      "away_team": "Coastal Union FC",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "Young Africans SC",
+      "kickoff": "2026-08-20T15:30:00+00:00",
+      "league_name": "Tanzania - Premier League",
+      "match_key": "2026-08-20|young africans|coastal union",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|young africans|coastal union"
     },
     {
       "away_team": "Toip-49",
@@ -2772,56 +2791,6 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|leki|toip 49"
-    },
-    {
-      "away_team": "AL Naft",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "AL Naft Maysan",
-      "kickoff": "2026-08-20T15:30:00+00:00",
-      "league_name": "Iraq - Stars League",
-      "match_key": "2026-08-20|al naft maysan|al naft",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|al naft maysan|al naft"
-    },
-    {
-      "away_team": "Al Kahrabaa SC",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Ghaz Al-Shamal SC",
-      "kickoff": "2026-08-20T15:30:00+00:00",
-      "league_name": "Iraq - Stars League",
-      "match_key": "2026-08-20|ghaz al shamal|al kahrabaa",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|ghaz al shamal|al kahrabaa"
     },
     {
       "away_team": "MS Ashdod U19",
@@ -2847,9 +2816,7 @@
     {
       "away_team": "SK Rotor Volgograd",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "PFK Arsenal Tula",
       "kickoff": "2026-08-20T15:30:00+00:00",
       "league_name": "Russia - 1. Liga",
@@ -2863,43 +2830,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|pfk arsenal tula|sk rotor volgograd"
     },
     {
-      "away_team": "Coastal Union FC",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Young Africans SC",
-      "kickoff": "2026-08-20T15:30:00+00:00",
-      "league_name": "Tanzania - Premier League",
-      "match_key": "2026-08-20|young africans|coastal union",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|young africans|coastal union"
-    },
-    {
       "away_team": "FC Torpedo Belaz Zhodino",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "FC Dinamo Minsk",
       "kickoff": "2026-08-20T15:45:00+00:00",
       "league_name": "Belarus - Vysshaya League",
@@ -2913,9 +2851,7 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|dinamo minsk|torpedo belaz zhodino"
     },
@@ -3023,6 +2959,215 @@
       "semantic_key": "2026-08-20|jagiellonia bia ystok|iberia 1999"
     },
     {
+      "away_team": "FC Copenhagen",
+      "books_count": 10,
+      "context_sources": [
+        "sstats"
+      ],
+      "home_team": "FC Inter Turku",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "International Clubs - UEFA Conference League, Playoff Round",
+      "match_key": "2026-08-20|inter turku|copenhagen",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|inter turku|copenhagen"
+    },
+    {
+      "away_team": "FC Salzburg",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Mjallby AIF",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
+      "match_key": "2026-08-20|mjallby aif|salzburg",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|mjallby aif|salzburg"
+    },
+    {
+      "away_team": "Toukolan Teras",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Atlantis FC/2",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "Finland - Kolmonen, Southern, Group 2",
+      "match_key": "2026-08-20|atlantis 2|toukolan teras",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|atlantis|toukolan teras"
+    },
+    {
+      "away_team": "Hellas Kagran",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "SV Post Vienna",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "Austria Amateur - Wiener Stadtliga",
+      "match_key": "2026-08-20|sv post vienna|hellas kagran",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|sv post vienna|hellas kagran"
+    },
+    {
+      "away_team": "Fish United",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "NOPS",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "Finland - Kolmonen, Western, Group 2",
+      "match_key": "2026-08-20|nops|fish united",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|nops|fish united"
+    },
+    {
+      "away_team": "AC Estudiantes",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Tampere United 2",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "Finland - Kolmonen, Western, Group 2",
+      "match_key": "2026-08-20|tampere united 2|estudiantes",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|tampere united|estudiantes"
+    },
+    {
+      "away_team": "FC Iberia 1999",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Jagiellonia Bialystok",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
+      "match_key": "2026-08-20|jagiellonia bialystok|iberia 1999",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|jagiellonia bialystok|iberia 1999"
+    },
+    {
+      "away_team": "Rio Ave U23",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "SL Benfica U23",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "Portugal - U23 Liga Next Gen",
+      "match_key": "2026-08-20|sl benfica|rio ave",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|sl benfica u23|rio ave u23"
+    },
+    {
+      "away_team": "Lyn",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "Rosenborg BK Kvinner",
+      "kickoff": "2026-08-20T16:00:00+00:00",
+      "league_name": "Norway - Toppserien, Women",
+      "match_key": "2026-08-20|rosenborg bk kvinner|lyn",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|rosenborg bk kvinner|lyn"
+    },
+    {
       "away_team": "Red Bull Salzburg",
       "books_count": 5,
       "context_sources": [],
@@ -3044,48 +3189,6 @@
       "semantic_key": "2026-08-20|mj llby aif|red bull salzburg"
     },
     {
-      "away_team": "Hellas Kagran",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "SV Post Vienna",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "Austria Amateur - Wiener Stadtliga",
-      "match_key": "2026-08-20|sv post vienna|hellas kagran",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|sv post vienna|hellas kagran"
-    },
-    {
-      "away_team": "Toukolan Teras",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Atlantis FC/2",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "Finland - Kolmonen, Southern, Group 2",
-      "match_key": "2026-08-20|atlantis 2|toukolan teras",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|atlantis|toukolan teras"
-    },
-    {
       "away_team": "Lohjan Pallo",
       "books_count": 3,
       "context_sources": [],
@@ -3105,161 +3208,6 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|eif akademi|lohjan pallo"
-    },
-    {
-      "away_team": "Fish United",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "NOPS",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "Finland - Kolmonen, Western, Group 2",
-      "match_key": "2026-08-20|nops|fish united",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|nops|fish united"
-    },
-    {
-      "away_team": "AC Estudiantes",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Tampere United 2",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "Finland - Kolmonen, Western, Group 2",
-      "match_key": "2026-08-20|tampere united 2|estudiantes",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|tampere united|estudiantes"
-    },
-    {
-      "away_team": "FC Copenhagen",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "FC Inter Turku",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "International Clubs - UEFA Conference League, Playoff Round",
-      "match_key": "2026-08-20|inter turku|copenhagen",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|inter turku|copenhagen"
-    },
-    {
-      "away_team": "FC Iberia 1999",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Jagiellonia Bialystok",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
-      "match_key": "2026-08-20|jagiellonia bialystok|iberia 1999",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|jagiellonia bialystok|iberia 1999"
-    },
-    {
-      "away_team": "FC Salzburg",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Mjallby AIF",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
-      "match_key": "2026-08-20|mjallby aif|salzburg",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|mjallby aif|salzburg"
-    },
-    {
-      "away_team": "Lyn",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Rosenborg BK Kvinner",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "Norway - Toppserien, Women",
-      "match_key": "2026-08-20|rosenborg bk kvinner|lyn",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|rosenborg bk kvinner|lyn"
-    },
-    {
-      "away_team": "Rio Ave U23",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "SL Benfica U23",
-      "kickoff": "2026-08-20T16:00:00+00:00",
-      "league_name": "Portugal - U23 Liga Next Gen",
-      "match_key": "2026-08-20|sl benfica|rio ave",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|sl benfica u23|rio ave u23"
     },
     {
       "away_team": "VCU Rams",
@@ -3325,6 +3273,98 @@
       "semantic_key": "2026-08-20|villanova wildcats|temple owls"
     },
     {
+      "away_team": "Ostersunds FK",
+      "books_count": 5,
+      "context_sources": [],
+      "home_team": "FC Arlanda",
+      "kickoff": "2026-08-20T16:30:00+00:00",
+      "league_name": "Sweden - Svenska Cup, Preliminary Round",
+      "match_key": "2026-08-20|arlanda|ostersunds",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|arlanda|ostersunds"
+    },
+    {
+      "away_team": "Lusail SC",
+      "books_count": 5,
+      "context_sources": [],
+      "home_team": "Al Rayyan SC",
+      "kickoff": "2026-08-20T16:30:00+00:00",
+      "league_name": "Qatar - Stars League",
+      "match_key": "2026-08-20|al rayyan|lusail",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|al rayyan|lusail"
+    },
+    {
+      "away_team": "AIK",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "Piteaa IF",
+      "kickoff": "2026-08-20T16:30:00+00:00",
+      "league_name": "Sweden - Svenska Cup, Preliminary Round",
+      "match_key": "2026-08-20|piteaa if|aik",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|piteaa if|aik"
+    },
+    {
+      "away_team": "IFK Norrkoping FK",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "Vasalunds IF",
+      "kickoff": "2026-08-20T16:30:00+00:00",
+      "league_name": "Sweden - Svenska Cup, Preliminary Round",
+      "match_key": "2026-08-20|vasalunds if|ifk norrkoping",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|vasalunds if|ifk norrkoping"
+    },
+    {
       "away_team": "Salon Palloilijat 2",
       "books_count": 3,
       "context_sources": [],
@@ -3344,106 +3384,6 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|piikkion palloseura|salon palloilijat"
-    },
-    {
-      "away_team": "Lusail SC",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Al Rayyan SC",
-      "kickoff": "2026-08-20T16:30:00+00:00",
-      "league_name": "Qatar - Stars League",
-      "match_key": "2026-08-20|al rayyan|lusail",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|al rayyan|lusail"
-    },
-    {
-      "away_team": "Ostersunds FK",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "FC Arlanda",
-      "kickoff": "2026-08-20T16:30:00+00:00",
-      "league_name": "Sweden - Svenska Cup, Preliminary Round",
-      "match_key": "2026-08-20|arlanda|ostersunds",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|arlanda|ostersunds"
-    },
-    {
-      "away_team": "AIK",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Piteaa IF",
-      "kickoff": "2026-08-20T16:30:00+00:00",
-      "league_name": "Sweden - Svenska Cup, Preliminary Round",
-      "match_key": "2026-08-20|piteaa if|aik",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|piteaa if|aik"
-    },
-    {
-      "away_team": "IFK Norrkoping FK",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Vasalunds IF",
-      "kickoff": "2026-08-20T16:30:00+00:00",
-      "league_name": "Sweden - Svenska Cup, Preliminary Round",
-      "match_key": "2026-08-20|vasalunds if|ifk norrkoping",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|vasalunds if|ifk norrkoping"
     },
     {
       "away_team": "FC Ararat-Armenia",
@@ -3539,11 +3479,15 @@
       "kickoff": "2026-08-20T17:00:00+00:00",
       "league_name": "Conference League",
       "match_key": "2026-08-20|nordsj lland|st gallen 1879",
-      "missing": [],
-      "next_actions": [],
+      "missing": [
+        "odds_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_odds_api_price_backfill"
+      ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|nordsj lland|st gallen 1879"
@@ -3572,11 +3516,262 @@
       "semantic_key": "2026-08-20|kf egnatia|lillestr m sk"
     },
     {
+      "away_team": "Saaksjaerven Loiske",
+      "books_count": 11,
+      "context_sources": [],
+      "home_team": "FC Lasten",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "Finland - Kolmonen, Western, Group 2",
+      "match_key": "2026-08-20|lasten|saaksjaerven loiske",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|lasten|saaksjaerven loiske"
+    },
+    {
+      "away_team": "Lillestroem SK",
+      "books_count": 11,
+      "context_sources": [],
+      "home_team": "KF Egnatia Rrogozhine",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
+      "match_key": "2026-08-20|kf egnatia rrogozhine|lillestroem sk",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|kf egnatia rrogozhine|lillestroem sk"
+    },
+    {
+      "away_team": "FC Thun",
+      "books_count": 11,
+      "context_sources": [],
+      "home_team": "KKS Lech Poznan",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
+      "match_key": "2026-08-20|kks lech poznan|thun",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|kks lech poznan|thun"
+    },
+    {
+      "away_team": "Gilla FC",
+      "books_count": 11,
+      "context_sources": [],
+      "home_team": "PPJ/Ruoholahti",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "Finland - Kolmonen, Southern, Group 1",
+      "match_key": "2026-08-20|ppj ruoholahti|gilla",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|ppj ruoholahti|gilla"
+    },
+    {
+      "away_team": "Japs 47",
+      "books_count": 11,
+      "context_sources": [],
+      "home_team": "Tups",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "Finland - Kolmonen, Southern, Group 3",
+      "match_key": "2026-08-20|tups|japs 47",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|tups|japs 47"
+    },
+    {
+      "away_team": "Brighton & Hove Albion",
+      "books_count": 11,
+      "context_sources": [],
+      "home_team": "Tromsoe IL",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "International Clubs - UEFA Conference League, Playoff Round",
+      "match_key": "2026-08-20|tromsoe il|brighton hove albion",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|tromsoe il|brighton hove albion"
+    },
+    {
+      "away_team": "FC Ararat-Armenia",
+      "books_count": 11,
+      "context_sources": [],
+      "home_team": "CS Universitatea Craiova",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
+      "match_key": "2026-08-20|cs universitatea craiova|ararat armenia",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|cs universitatea craiova|ararat armenia"
+    },
+    {
+      "away_team": "Ferencvarosi Budapest",
+      "books_count": 11,
+      "context_sources": [],
+      "home_team": "Trabzonspor",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
+      "match_key": "2026-08-20|trabzonspor|ferencvarosi budapest",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|trabzonspor|ferencvarosi budapest"
+    },
+    {
+      "away_team": "FK Kauno Zalgiris",
+      "books_count": 5,
+      "context_sources": [],
+      "home_team": "Besiktas Istanbul",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
+      "match_key": "2026-08-20|besiktas istanbul|kauno zalgiris",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|besiktas istanbul|kauno zalgiris"
+    },
+    {
+      "away_team": "FC St. Gallen 1879",
+      "books_count": 4,
+      "context_sources": [],
+      "home_team": "FC Nordsjaelland",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "International Clubs - UEFA Conference League, Playoff Round",
+      "match_key": "2026-08-20|nordsjaelland|st gallen 1879",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|nordsjaelland|st gallen 1879"
+    },
+    {
+      "away_team": "CS 2 de Mayo",
+      "books_count": 4,
+      "context_sources": [],
+      "home_team": "Deportivo Humaita FC",
+      "kickoff": "2026-08-20T17:00:00+00:00",
+      "league_name": "Paraguay - Copa Paraguay",
+      "match_key": "2026-08-20|deportivo humaita|cs 2 mayo",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|deportivo humaita|cs mayo"
+    },
+    {
       "away_team": "FK Kauno Žalgiris",
       "books_count": 5,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Beşiktaş JK",
       "kickoff": "2026-08-20T17:00:00+00:00",
       "league_name": "Europa League",
@@ -3590,18 +3785,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|be ikta jk|kauno algiris"
     },
     {
       "away_team": "FC Thun",
       "books_count": 5,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Lech Poznań",
       "kickoff": "2026-08-20T17:00:00+00:00",
       "league_name": "Europa League",
@@ -3615,18 +3806,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|lech pozna|thun"
     },
     {
       "away_team": "Ferencváros TC",
       "books_count": 5,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Trabzonspor",
       "kickoff": "2026-08-20T17:00:00+00:00",
       "league_name": "Europa League",
@@ -3640,9 +3827,7 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|trabzonspor|ferencv ros tc"
     },
@@ -3750,241 +3935,6 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|nordsjaelland|copenhagen"
-    },
-    {
-      "away_team": "Gilla FC",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "PPJ/Ruoholahti",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "Finland - Kolmonen, Southern, Group 1",
-      "match_key": "2026-08-20|ppj ruoholahti|gilla",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|ppj ruoholahti|gilla"
-    },
-    {
-      "away_team": "Japs 47",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Tups",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "Finland - Kolmonen, Southern, Group 3",
-      "match_key": "2026-08-20|tups|japs 47",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|tups|japs 47"
-    },
-    {
-      "away_team": "Saaksjaerven Loiske",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "FC Lasten",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "Finland - Kolmonen, Western, Group 2",
-      "match_key": "2026-08-20|lasten|saaksjaerven loiske",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|lasten|saaksjaerven loiske"
-    },
-    {
-      "away_team": "FC St. Gallen 1879",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "FC Nordsjaelland",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "International Clubs - UEFA Conference League, Playoff Round",
-      "match_key": "2026-08-20|nordsjaelland|st gallen 1879",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|nordsjaelland|st gallen 1879"
-    },
-    {
-      "away_team": "Brighton & Hove Albion",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Tromsoe IL",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "International Clubs - UEFA Conference League, Playoff Round",
-      "match_key": "2026-08-20|tromsoe il|brighton hove albion",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|tromsoe il|brighton hove albion"
-    },
-    {
-      "away_team": "FK Kauno Zalgiris",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Besiktas Istanbul",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
-      "match_key": "2026-08-20|besiktas istanbul|kauno zalgiris",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|besiktas istanbul|kauno zalgiris"
-    },
-    {
-      "away_team": "FC Ararat-Armenia",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "CS Universitatea Craiova",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
-      "match_key": "2026-08-20|cs universitatea craiova|ararat armenia",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|cs universitatea craiova|ararat armenia"
-    },
-    {
-      "away_team": "Lillestroem SK",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "KF Egnatia Rrogozhine",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
-      "match_key": "2026-08-20|kf egnatia rrogozhine|lillestroem sk",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|kf egnatia rrogozhine|lillestroem sk"
-    },
-    {
-      "away_team": "FC Thun",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "KKS Lech Poznan",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
-      "match_key": "2026-08-20|kks lech poznan|thun",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|kks lech poznan|thun"
-    },
-    {
-      "away_team": "Ferencvarosi Budapest",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Trabzonspor",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "International Clubs - UEFA Europa League, Playoff Round",
-      "match_key": "2026-08-20|trabzonspor|ferencvarosi budapest",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|trabzonspor|ferencvarosi budapest"
-    },
-    {
-      "away_team": "CS 2 de Mayo",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Deportivo Humaita FC",
-      "kickoff": "2026-08-20T17:00:00+00:00",
-      "league_name": "Paraguay - Copa Paraguay",
-      "match_key": "2026-08-20|deportivo humaita|cs 2 mayo",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|deportivo humaita|cs mayo"
     },
     {
       "away_team": "Rutgers Scarlet Knights",
@@ -5339,6 +5289,29 @@
       "semantic_key": "2026-08-20|getafe|partizan"
     },
     {
+      "away_team": "Pafos FC",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Dinamo City",
+      "kickoff": "2026-08-20T19:00:00+00:00",
+      "league_name": "Conference League",
+      "match_key": "2026-08-20|dinamo city|pafos",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|dinamo city|pafos"
+    },
+    {
       "away_team": "Deportivo Alaves",
       "books_count": 10,
       "context_sources": [],
@@ -5413,29 +5386,6 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|benfica|agf"
-    },
-    {
-      "away_team": "Pafos FC",
-      "books_count": 5,
-      "context_sources": [],
-      "home_team": "Dinamo City",
-      "kickoff": "2026-08-20T19:00:00+00:00",
-      "league_name": "Conference League",
-      "match_key": "2026-08-20|dinamo city|pafos",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|dinamo city|pafos"
     },
     {
       "away_team": "Deportivo Alavés",
@@ -5776,27 +5726,6 @@
       "semantic_key": "2026-08-20|cde juventud italiana|delfin"
     },
     {
-      "away_team": "Vasco da Gama",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "Olimpia",
-      "kickoff": "2026-08-20T22:00:00+00:00",
-      "league_name": "Copa Sudamericana",
-      "match_key": "2026-08-20|olimpia|vasco da gama",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|olimpia|vasco da gama"
-    },
-    {
       "away_team": "Mirassol FC SP",
       "books_count": 3,
       "context_sources": [],
@@ -5839,6 +5768,48 @@
       "semantic_key": "2026-08-20|csd macara|santos sp"
     },
     {
+      "away_team": "CR Vasco da Gama RJ",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "Club Olimpia",
+      "kickoff": "2026-08-20T22:00:00+00:00",
+      "league_name": "International Clubs - CONMEBOL Sudamericana, Knockout stage",
+      "match_key": "2026-08-20|olimpia|cr vasco da gama rj",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|olimpia|cr vasco da gama rj"
+    },
+    {
+      "away_team": "Vasco da Gama",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "Olimpia",
+      "kickoff": "2026-08-20T22:00:00+00:00",
+      "league_name": "Copa Sudamericana",
+      "match_key": "2026-08-20|olimpia|vasco da gama",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|olimpia|vasco da gama"
+    },
+    {
       "away_team": "Mirassol",
       "books_count": 5,
       "context_sources": [],
@@ -5879,27 +5850,6 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|macar|santos"
-    },
-    {
-      "away_team": "CR Vasco da Gama RJ",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Club Olimpia",
-      "kickoff": "2026-08-20T22:00:00+00:00",
-      "league_name": "International Clubs - CONMEBOL Sudamericana, Knockout stage",
-      "match_key": "2026-08-20|olimpia|cr vasco da gama rj",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|olimpia|cr vasco da gama rj"
     },
     {
       "away_team": "Clube De Regatas Brasil",
@@ -6429,6 +6379,27 @@
       "semantic_key": "2026-08-21|ad torrej n|real vila"
     },
     {
+      "away_team": "Neom SC",
+      "books_count": 3,
+      "context_sources": [],
+      "home_team": "Al Faisaly",
+      "kickoff": "2026-08-21T18:00:00+00:00",
+      "league_name": "Saudi Pro League",
+      "match_key": "2026-08-21|al faisaly|neom",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-21|al faisaly|neom"
+    },
+    {
       "away_team": "dijon",
       "books_count": 2,
       "context_sources": [],
@@ -6532,27 +6503,6 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-21|usl dunkerque|montpellier"
-    },
-    {
-      "away_team": "Neom SC",
-      "books_count": 3,
-      "context_sources": [],
-      "home_team": "Al Faisaly",
-      "kickoff": "2026-08-21T18:00:00+00:00",
-      "league_name": "Saudi Pro League",
-      "match_key": "2026-08-21|al faisaly|neom",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-21|al faisaly|neom"
     },
     {
       "away_team": "al ittihad",
@@ -6661,27 +6611,6 @@
       "semantic_key": "2026-08-21|erzurumspor|galatasaray"
     },
     {
-      "away_team": "vfb stuttgart",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "hansa rostock",
-      "kickoff": "2026-08-21T18:45:00+00:00",
-      "league_name": "DFB Pokal",
-      "match_key": "2026-08-21|hansa rostock|vfb stuttgart",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-21|hansa rostock|vfb stuttgart"
-    },
-    {
       "away_team": "raal louvi re",
       "books_count": 2,
       "context_sources": [],
@@ -6703,6 +6632,27 @@
       "semantic_key": "2026-08-21|standard li ge|raal louvi re"
     },
     {
+      "away_team": "vfb stuttgart",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "hansa rostock",
+      "kickoff": "2026-08-21T18:45:00+00:00",
+      "league_name": "DFB Pokal",
+      "match_key": "2026-08-21|hansa rostock|vfb stuttgart",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-21|hansa rostock|vfb stuttgart"
+    },
+    {
       "away_team": "rc strasbourg",
       "books_count": 2,
       "context_sources": [],
@@ -6722,27 +6672,6 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-21|olympique marseille|rc strasbourg"
-    },
-    {
-      "away_team": "girona",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "c rdoba",
-      "kickoff": "2026-08-21T19:00:00+00:00",
-      "league_name": "Segunda División",
-      "match_key": "2026-08-21|c rdoba|girona",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-21|c rdoba|girona"
     },
     {
       "away_team": "real sociedad",
@@ -6785,6 +6714,27 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-21|arsenal|coventry city"
+    },
+    {
+      "away_team": "girona",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "c rdoba",
+      "kickoff": "2026-08-21T19:00:00+00:00",
+      "league_name": "Segunda División",
+      "match_key": "2026-08-21|c rdoba|girona",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-21|c rdoba|girona"
     },
     {
       "away_team": "acad mica coimbra",
@@ -8210,25 +8160,52 @@
       "semantic_key": "2026-08-20|dinaz vyshhorod|yarud mariupol"
     },
     {
-      "away_team": "Measurers Club",
-      "books_count": 28,
+      "away_team": "Maardu Linnameeskond",
+      "books_count": 65,
       "context_sources": [
+        "bzzoiro",
+        "dayinventory",
+        "inventory_context",
+        "model_xg",
+        "odds_api_io",
         "sstats"
       ],
+      "home_team": "FC Elva",
+      "kickoff": "2026-08-20T09:30:00+00:00",
+      "league_name": "Estonia - Esiliiga",
+      "match_key": "2026-08-20|elva|maardu linnameeskond",
+      "missing": [
+        "odds_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|elva|maardu linnameeskond"
+    },
+    {
+      "away_team": "Measurers Club",
+      "books_count": 28,
+      "context_sources": [],
       "home_team": "Aryans Sports",
       "kickoff": "2026-08-20T09:30:00+00:00",
       "league_name": "India - Calcutta Premier Division, Group A",
       "match_key": "2026-08-20|aryans sports|measurers",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|aryans sports|measurers"
@@ -8236,9 +8213,7 @@
     {
       "away_team": "Kalighat Sports Lovers",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Nbp Rainbow AC",
       "kickoff": "2026-08-20T09:30:00+00:00",
       "league_name": "India - Calcutta Premier Division, Group A",
@@ -8252,18 +8227,14 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|nbp rainbow|kalighat sports lovers"
     },
     {
       "away_team": "Ayeyawady FC",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "No Limits",
       "kickoff": "2026-08-20T09:30:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group F",
@@ -8277,32 +8248,29 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|no limits|ayeyawady"
     },
     {
       "away_team": "Kaya FC",
       "books_count": 2,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Phnom Penh Crown",
       "kickoff": "2026-08-20T10:00:00+00:00",
       "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group B",
       "match_key": "2026-08-20|phnom penh crown|kaya",
       "missing": [
+        "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|phnom penh crown|kaya"
@@ -8375,9 +8343,7 @@
     {
       "away_team": "Lillestrom SK U19",
       "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
+      "context_sources": [],
       "home_team": "Tromsoe IL U19",
       "kickoff": "2026-08-20T11:00:00+00:00",
       "league_name": "Norway - U19 Nasjonal, Playoffs",
@@ -8391,11 +8357,34 @@
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "sstats"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|tromsoe il|lillestrom sk"
+    },
+    {
+      "away_team": "FC Syunik",
+      "books_count": 11,
+      "context_sources": [
+        "inventory_context"
+      ],
+      "home_team": "FC Van Charentsavan",
+      "kickoff": "2026-08-20T12:00:00+00:00",
+      "league_name": "Armenia - Premier League",
+      "match_key": "2026-08-20|van charentsavan|syunik",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|van charentsavan|syunik"
     },
     {
       "away_team": "Thimphu City",
@@ -8448,15 +8437,15 @@
       "semantic_key": "2026-08-20|tartu jk welco|levadia tallinn"
     },
     {
-      "away_team": "JK Tallinna Kalev",
-      "books_count": 10,
+      "away_team": "FC Phoenix Johvi",
+      "books_count": 11,
       "context_sources": [
         "sstats"
       ],
-      "home_team": "Nomme Kalju FC",
+      "home_team": "JK Tabasalu",
       "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "Estonia - Esiliiga",
-      "match_key": "2026-08-20|nomme kalju|jk tallinna kalev",
+      "league_name": "Estonia - Esiliiga B",
+      "match_key": "2026-08-20|jk tabasalu|phoenix johvi",
       "missing": [
         "context_source_2plus"
       ],
@@ -8466,7 +8455,30 @@
       ],
       "odds_sources": [
         "odds_api_io",
-        "sstats"
+        "sstats_pari"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|jk tabasalu|phoenix johvi"
+    },
+    {
+      "away_team": "JK Tallinna Kalev",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Nomme Kalju FC",
+      "kickoff": "2026-08-20T12:00:00+00:00",
+      "league_name": "Estonia - Esiliiga",
+      "match_key": "2026-08-20|nomme kalju|jk tallinna kalev",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-20|nomme kalju|jk tallinna kalev"
@@ -8565,39 +8577,36 @@
       "semantic_key": "2026-08-20|tallinn|nomme united"
     },
     {
-      "away_team": "FC Phoenix Johvi",
-      "books_count": 6,
-      "context_sources": [
-        "sstats"
+      "away_team": "Saku Sporting",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "Tallinna FC Flora",
+      "kickoff": "2026-08-20T12:00:00+00:00",
+      "league_name": "Estonia - Meistriliiga Women",
+      "match_key": "2026-08-20|tallinna flora|saku sporting",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
       ],
-      "home_team": "JK Tabasalu",
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-20|tallinna flora|saku sporting"
+    },
+    {
+      "away_team": "Tartu JK Tammeka U21",
+      "books_count": 10,
+      "context_sources": [],
+      "home_team": "FA Tartu Kalev",
       "kickoff": "2026-08-20T12:00:00+00:00",
       "league_name": "Estonia - Esiliiga B",
-      "match_key": "2026-08-20|jk tabasalu|phoenix johvi",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
-      ],
-      "odds_sources": [
-        "odds_api_io",
-        "sstats_pari"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|jk tabasalu|phoenix johvi"
-    },
-    {
-      "away_team": "Viljandi JK Tulevik",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Parnu JK Vaprus II",
-      "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "Estonia - Esiliiga B",
-      "match_key": "2026-08-20|parnu jk vaprus|viljandi jk tulevik",
+      "match_key": "2026-08-20|fa tartu kalev|tartu jk tammeka",
       "missing": [
         "odds_source_2plus",
         "context_source_2plus"
@@ -8608,85 +8617,10 @@
         "target_odds_api_price_backfill"
       ],
       "odds_sources": [
-        "sstats"
+        "odds_api_io"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|parnu jk vaprus|viljandi jk tulevik"
-    },
-    {
-      "away_team": "Sabah FA",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Rajshahi Stars FC",
-      "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group A",
-      "match_key": "2026-08-20|rajshahi stars|sabah fa",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|rajshahi stars|sabah fa"
-    },
-    {
-      "away_team": "Banaat FC",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Master FC",
-      "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group C",
-      "match_key": "2026-08-20|master|banaat",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|master|banaat"
-    },
-    {
-      "away_team": "College of Asian Scholars",
-      "books_count": 3,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Kharaatsai",
-      "kickoff": "2026-08-20T12:00:00+00:00",
-      "league_name": "International Clubs - AFC Champions League, Women, Prelim., Group D",
-      "match_key": "2026-08-20|kharaatsai|college of asian scholars",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-20|kharaatsai|college of asian scholars"
+      "semantic_key": "2026-08-20|fa tartu kalev|tartu jk tammeka"
     }
   ]
 }
