@@ -27,10 +27,12 @@ def _apply_rules_runtime_env() -> None:
         "CONTROLLED_FALLBACK_ALLOW_VALUE_ALIVE_HIGH_DRIFT": "true",
         "CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT": "3.0",
         "CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP": "1.5",
-        # B-tier relief must stay inside the value range the promotion model can
-        # actually produce (median-anchored probability + capped boost), otherwise
-        # the floor is unreachable and every promoted candidate dies on
-        # quality/publication-score minimums.
+        # B-tier value bar. Must equal _b_tier_testing_floor in
+        # scripts/publish_controlled_fallback_guarded.py: the relief cannot strip
+        # tier_b_canonical_edge_below_min / _ev_below_min, so a higher bar here
+        # would silently veto every candidate the relief accepted.
+        "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "1.0",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "2.0",
         "HARIZON_B_RELIEF_MIN_ODDS": "1.70",
         "HARIZON_B_RELIEF_MAX_ODDS": "3.20",
         "HARIZON_B_RELIEF_MIN_EV_PCT": "2.0",
