@@ -2,14 +2,14 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 54,
-      "rows_seen": 54,
+      "rows_kept": 58,
+      "rows_seen": 58,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 41,
-      "rows_seen": 90,
+      "rows_kept": 12,
+      "rows_seen": 61,
       "rows_stale": 49
     },
     "lifecycle": {
@@ -26,36 +26,36 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 18,
-      "rows_seen": 18,
+      "rows_kept": 20,
+      "rows_seen": 20,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 26,
+    "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 0,
-    "controlled_candidates_seen": 27,
+    "contexts_built": 2,
+    "controlled_candidates_seen": 29,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 41,
-    "matches_seen": 9,
-    "matches_with_offers": 4
+    "coverage_candidates_current_date": 32,
+    "matches_seen": 7,
+    "matches_with_offers": 3
   },
-  "created_at": "2026-08-20T09:14:50.482589+00:00",
+  "created_at": "2026-08-20T11:11:46.146530+00:00",
   "family_counts": {
-    "spreads": 10,
-    "totals": 31
+    "spreads": 3,
+    "totals": 29
   },
-  "matches_with_candidates": 29,
+  "matches_with_candidates": 27,
   "missing_data_flags": {
-    "confidence_below_micro_c": 41,
-    "edge_below_micro_c": 38,
-    "ev_below_micro_c": 38,
-    "single_book": 20,
-    "single_context_source": 15,
-    "single_odds_source": 20
+    "confidence_below_micro_c": 31,
+    "edge_below_micro_c": 28,
+    "ev_below_micro_c": 29,
+    "single_book": 15,
+    "single_context_source": 6,
+    "single_odds_source": 13
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 26,
+  "positive_near_miss_count": 27,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +78,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 18,
+      "events_matched": 17,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 353,
+      "offers_parsed": 490,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +102,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 690,
+      "matches_built": 689,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -121,7 +121,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 690,
+      "matches_built": 689,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -140,9 +140,30 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 4,
+      "matches_built": 6,
       "offers_parsed": null,
       "provider": "openligadb",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -385,27 +406,6 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -421,6 +421,27 @@
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": 0,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats_pari_odds",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
     },
@@ -470,30 +491,30 @@
   "provider_status_counts": {
     "broken_or_unavailable": 2,
     "no_data": 13,
-    "working": 4
+    "working": 5
   },
   "reject_reason_counts_from_rows": {
-    "bad_historical_segment_guard": 1,
-    "odds_below_global_min": 1,
-    "tier_a_books_below_min": 1,
+    "odds_below_global_min": 3,
+    "tier_a_books_below_min": 3,
     "tier_a_canonical_edge_below_min": 3,
-    "tier_a_canonical_ev_below_min": 1,
-    "tier_a_odds_sources_below_min:1/2": 3,
-    "tier_a_proxy_default_xg_placeholder": 1,
-    "tier_a_publication_score_below_min": 3,
-    "tier_a_quality_below_min": 3,
+    "tier_a_canonical_ev_below_min": 3,
+    "tier_a_confirmation_sources_below_min:1/2": 1,
+    "tier_a_odds_sources_below_min:1/2": 5,
+    "tier_a_proxy_default_xg_placeholder": 3,
+    "tier_a_publication_score_below_min": 5,
+    "tier_a_quality_below_min": 5,
+    "tier_a_two_plus_context_sources_required:1/2": 1,
+    "tier_a_two_plus_odds_sources_required:1/2": 1,
     "tier_b_bookmaker_quorum_books_below_min:1/2": 1,
-    "tier_b_books_below_min": 1,
-    "tier_b_canonical_edge_below_min": 3,
+    "tier_b_books_below_min": 3,
+    "tier_b_canonical_edge_below_min": 5,
     "tier_b_canonical_ev_below_min": 3,
-    "tier_b_proxy_default_xg_placeholder": 3,
-    "tier_b_publication_score_below_min": 3,
-    "tier_b_quality_below_min": 3,
-    "tier_c_canonical_edge_below_min": 2,
+    "tier_b_proxy_default_xg_placeholder": 2,
+    "tier_b_publication_score_below_min": 5,
+    "tier_b_quality_below_min": 5,
     "tier_c_proxy_default_xg_placeholder": 2,
-    "tier_c_publication_score_below_min": 1,
-    "tier_c_quality_below_min": 4,
-    "xg_direction_conflict": 3
+    "tier_c_publication_score_below_min": 2,
+    "tier_c_quality_below_min": 3
   },
   "target_date": "2026-08-20",
   "top_near_miss": [
@@ -501,7 +522,7 @@
       "away_team": "AFK Csikszereda Miercurea Ciuc",
       "best_candidate": {
         "adjusted_probability": 0.558602,
-        "books_count": 3,
+        "books_count": 2,
         "canonical_edge_pp": 5.227,
         "canonical_ev_pct": 10.324,
         "confidence": 72.246,
@@ -509,26 +530,22 @@
         "context_sources_count": 2,
         "family": "totals",
         "odds": 1.975,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 2,
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
-        "reject_reasons": [
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_c_quality_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 2
       },
       "best_confidence": 72.246,
       "best_edge_pp": 5.227,
       "best_ev_pct": 10.324,
-      "books_max": 3,
+      "books_max": 2,
       "candidate_count": 1,
       "commence_time": "2026-08-20T14:00:00+00:00",
       "confirmation_sources_max": 2,
       "context_sources_max": 2,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
@@ -536,19 +553,14 @@
       "league_name": "Romania - Cupa Romaniei, Knockout Stage",
       "match_key": "2026-08-20|csa steaua bucuresti|afk csikszereda miercurea ciuc",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "single_odds_source": 1
+        "confidence_below_micro_c": 1
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 2,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_b_proxy_default_xg_placeholder": 1,
-        "tier_c_proxy_default_xg_placeholder": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "reject_reasons": {},
+      "sources_max": 2
     },
     {
       "away_team": "Omonia Nicosia",
@@ -642,7 +654,7 @@
       "away_team": "FC Nomme United",
       "best_candidate": {
         "adjusted_probability": 0.517525,
-        "books_count": 2,
+        "books_count": 1,
         "canonical_edge_pp": 3.676,
         "canonical_ev_pct": 7.645,
         "confidence": 69.24,
@@ -650,16 +662,12 @@
         "context_sources_count": 2,
         "family": "totals",
         "odds": 2.08,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 2,
+        "origin": "awaiting_movement_lifecycle",
         "point": 1.5,
-        "reject_reasons": [
-          "tier_b_proxy_default_xg_placeholder",
-          "tier_c_quality_below_min",
-          "tier_c_proxy_default_xg_placeholder"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 2
       },
       "best_confidence": 69.484,
       "best_edge_pp": 3.676,
@@ -669,7 +677,7 @@
       "commence_time": "2026-08-20T12:00:00+00:00",
       "confirmation_sources_max": 2,
       "context_sources_max": 2,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 2
       },
@@ -680,12 +688,112 @@
         "confidence_below_micro_c": 2,
         "edge_below_micro_c": 2,
         "ev_below_micro_c": 2,
+        "single_book": 1,
         "single_context_source": 1,
-        "single_odds_source": 2
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "awaiting_movement_lifecycle": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Al Nasr Cairo",
+      "best_candidate": {
+        "adjusted_probability": 0.666114,
+        "books_count": 2,
+        "canonical_edge_pp": 4.692,
+        "canonical_ev_pct": 7.577,
+        "confidence": 74.01,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
+        "family": "totals",
+        "odds": 1.615,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "odds_below_global_min"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 74.01,
+      "best_edge_pp": 4.692,
+      "best_ev_pct": 7.577,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-20T13:30:00+00:00",
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "El Entag El Harby",
+      "league_name": "Egypt - 2. Division A",
+      "match_key": "2026-08-20|el entag el harby|al nasr cairo",
+      "missing_flags": {
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
       },
       "odds_sources_max": 1,
       "origins": {
-        "awaiting_movement_lifecycle": 1,
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "odds_below_global_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Qatar SC",
+      "best_candidate": {
+        "adjusted_probability": 0.40879,
+        "books_count": 2,
+        "canonical_edge_pp": 2.784,
+        "canonical_ev_pct": 7.307,
+        "confidence": 73.888,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
+        "family": "totals",
+        "odds": 2.625,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_b_proxy_default_xg_placeholder",
+          "tier_c_quality_below_min",
+          "tier_c_proxy_default_xg_placeholder"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 73.888,
+      "best_edge_pp": 2.784,
+      "best_ev_pct": 7.307,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-20T14:15:00+00:00",
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "AL Wakrah SC",
+      "league_name": "Qatar - Stars League",
+      "match_key": "2026-08-20|al wakrah|qatar",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
         "controlled": 1
       },
       "reject_reasons": {
@@ -860,7 +968,7 @@
       "commence_time": "2026-08-20T12:00:00+00:00",
       "confirmation_sources_max": 4,
       "context_sources_max": 4,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 2
       },
@@ -872,121 +980,14 @@
         "edge_below_micro_c": 2,
         "ev_below_micro_c": 2,
         "single_context_source": 1,
-        "single_odds_source": 2
+        "single_odds_source": 1
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 4,
       "origins": {
-        "awaiting_movement_lifecycle": 1,
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "tier_a_canonical_edge_below_min": 1,
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_proxy_default_xg_placeholder": 1,
-        "tier_a_publication_score_below_min": 1,
-        "tier_a_quality_below_min": 1,
-        "tier_b_canonical_edge_below_min": 1,
-        "tier_b_canonical_ev_below_min": 1,
-        "tier_b_proxy_default_xg_placeholder": 1,
-        "tier_b_publication_score_below_min": 1,
-        "tier_b_quality_below_min": 1,
-        "tier_c_canonical_edge_below_min": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "Kuopion Palloseura",
-      "best_candidate": {
-        "adjusted_probability": 0.57071,
-        "books_count": 2,
-        "canonical_edge_pp": 3.017,
-        "canonical_ev_pct": 5.581,
-        "confidence": 73.112,
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
-        "family": "totals",
-        "odds": 1.85,
-        "odds_sources_count": 6,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 6
-      },
-      "best_confidence": 73.112,
-      "best_edge_pp": 3.017,
-      "best_ev_pct": 5.581,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-20T19:00:00+00:00",
-      "confirmation_sources_max": 6,
-      "context_sources_max": 6,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Shamrock Rovers",
-      "league_name": "Conference League",
-      "match_key": "2026-08-20|shamrock rovers|kuopion palloseura",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 6,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
+        "awaiting_movement_lifecycle": 2
       },
       "reject_reasons": {},
-      "sources_max": 6
-    },
-    {
-      "away_team": "Larne FC",
-      "best_candidate": {
-        "adjusted_probability": 0.421448,
-        "books_count": 1,
-        "canonical_edge_pp": 2.145,
-        "canonical_ev_pct": 5.362,
-        "confidence": 65.213,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 2.5,
-        "odds_sources_count": 2,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.0,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 65.213,
-      "best_edge_pp": 2.145,
-      "best_ev_pct": 5.362,
-      "books_max": 1,
-      "candidate_count": 1,
-      "commence_time": "2026-08-20T16:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Lincoln Red Imps",
-      "league_name": "Conference League",
-      "match_key": "soccer|larne|lincoln red imps|2026-08-20",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_book": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
+      "sources_max": 4
     }
   ]
 }
