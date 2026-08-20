@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 60,
-      "rows_seen": 60,
+      "rows_kept": 46,
+      "rows_seen": 46,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 244,
-      "rows_seen": 269,
-      "rows_stale": 25
+      "rows_kept": 8,
+      "rows_seen": 47,
+      "rows_stale": 39
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 19,
-      "rows_seen": 19,
+      "rows_kept": 13,
+      "rows_seen": 13,
       "rows_stale": 0
     }
   },
@@ -35,27 +35,27 @@
     "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 4,
-    "controlled_candidates_seen": 30,
+    "contexts_built": 7,
+    "controlled_candidates_seen": 23,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 96,
-    "matches_seen": 28,
-    "matches_with_offers": 28
+    "coverage_candidates_current_date": 27,
+    "matches_seen": 18,
+    "matches_with_offers": 18
   },
-  "created_at": "2026-08-20T05:13:31.047845+00:00",
+  "created_at": "2026-08-20T07:13:57.011793+00:00",
   "family_counts": {
-    "spreads": 16,
-    "totals": 80
+    "spreads": 2,
+    "totals": 25
   },
-  "matches_with_candidates": 40,
+  "matches_with_candidates": 23,
   "missing_data_flags": {
-    "confidence_below_micro_c": 67,
-    "edge_below_micro_c": 89,
-    "ev_below_micro_c": 85,
-    "single_book": 63,
-    "single_context_source": 66,
-    "single_odds_source": 72
+    "confidence_below_micro_c": 27,
+    "edge_below_micro_c": 25,
+    "ev_below_micro_c": 24,
+    "single_book": 13,
+    "single_context_source": 8,
+    "single_odds_source": 9
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 30,
+  "positive_near_miss_count": 22,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +78,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 27,
+      "events_matched": 18,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2774,
+      "offers_parsed": 364,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,11 +102,11 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 690,
+      "matches_built": 691,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 4,
+      "response_errors": 5,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -121,7 +121,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 690,
+      "matches_built": 691,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -152,8 +152,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 4,
-      "direct_event_contexts_built": 4,
+      "contexts_built": 7,
+      "direct_event_contexts_built": 7,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -187,7 +187,7 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
-      "response_errors": 4,
+      "response_errors": 5,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -294,6 +294,27 @@
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "espn",
+      "rate_limited": null,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -448,324 +469,79 @@
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "no_data": 11,
+    "no_data": 12,
     "working": 5
   },
   "reject_reason_counts_from_rows": {
-    "current_price_recheck_value_lost:2.2/0.9": 1,
-    "missing_total_xg_sanity": 2,
-    "odds_below_global_min": 1,
-    "tier_a_canonical_edge_below_min": 3,
-    "tier_a_canonical_ev_below_min": 1,
-    "tier_a_odds_sources_below_min:1/2": 3,
-    "tier_a_publication_score_below_min": 3,
-    "tier_a_quality_below_min": 3,
-    "tier_b_canonical_edge_below_min": 3,
-    "tier_b_canonical_ev_below_min": 3,
-    "tier_b_proxy_default_xg_placeholder": 1,
-    "tier_b_publication_score_below_min": 3,
-    "tier_b_quality_below_min": 3,
-    "tier_c_canonical_edge_below_min": 3,
+    "tier_a_books_below_min": 3,
+    "tier_a_canonical_edge_below_min": 4,
+    "tier_a_canonical_ev_below_min": 4,
+    "tier_a_odds_sources_below_min:1/2": 4,
+    "tier_a_publication_score_below_min": 4,
+    "tier_a_quality_below_min": 4,
+    "tier_a_xg_confirmation_missing": 1,
+    "tier_b_bookmaker_quorum_books_below_min:1/2": 2,
+    "tier_b_books_below_min": 3,
+    "tier_b_canonical_edge_below_min": 4,
+    "tier_b_canonical_ev_below_min": 4,
+    "tier_b_proxy_default_xg_placeholder": 2,
+    "tier_b_publication_score_below_min": 7,
+    "tier_b_quality_below_min": 7,
+    "tier_c_canonical_edge_below_min": 1,
     "tier_c_canonical_ev_below_min": 1,
-    "tier_c_proxy_default_xg_placeholder": 1,
-    "tier_c_publication_score_below_min": 2,
+    "tier_c_proxy_default_xg_placeholder": 2,
     "tier_c_quality_below_min": 4,
     "xg_direction_conflict": 3
   },
   "target_date": "2026-08-20",
   "top_near_miss": [
     {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 41.106,
-        "canonical_ev_pct": 113.042,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.75,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": null,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 0
-      },
-      "best_confidence": 78.4,
-      "best_edge_pp": 41.106,
-      "best_ev_pct": 113.042,
-      "books_max": 0,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 1,
-        "totals": 4
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|ajax|sion|2026-08-20",
-      "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 4,
-        "single_book": 5,
-        "single_context_source": 5,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 0,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 0
-    },
-    {
-      "away_team": "RSC Anderlecht",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 90.655,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.7,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 0
-      },
-      "best_confidence": 77.36,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 90.655,
-      "books_max": 4,
-      "candidate_count": 6,
-      "commence_time": "2026-08-20T15:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 1,
-      "families": {
-        "spreads": 2,
-        "totals": 4
-      },
-      "home_team": "Kairat Almaty",
-      "league_name": "Europa League",
-      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-20",
-      "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 4,
-        "single_book": 5,
-        "single_context_source": 5,
-        "single_odds_source": 6
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5,
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "missing_total_xg_sanity": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 89.938,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.38,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 0
-      },
-      "best_confidence": 66.31,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 89.938,
-      "books_max": 0,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 1,
-        "totals": 4
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-20",
-      "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 3,
-        "single_book": 5,
-        "single_context_source": 5,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 0,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 0
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 66.372,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.43,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 0
-      },
-      "best_confidence": 66.13,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 66.372,
-      "books_max": 0,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 2,
-        "totals": 3
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|bradford city|sheffield wednesday|2026-08-20",
-      "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 3,
-        "single_book": 5,
-        "single_context_source": 5,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 0,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 0
-    },
-    {
-      "away_team": "FC København",
-      "best_candidate": {
-        "adjusted_probability": 0.473636,
-        "books_count": 3,
-        "canonical_edge_pp": 4.26,
-        "canonical_ev_pct": 9.884,
-        "confidence": 75.048,
-        "confirmation_sources_count": 10,
-        "context_sources_count": 10,
-        "family": "totals",
-        "odds": 2.32,
-        "odds_sources_count": 2,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "xg_direction_conflict"
-        ],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 75.048,
-      "best_edge_pp": 4.26,
-      "best_ev_pct": 9.884,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-08-20T16:00:00+00:00",
-      "confirmation_sources_max": 10,
-      "context_sources_max": 10,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Inter Turku",
-      "league_name": "Conference League",
-      "match_key": "2026-08-20|inter turku|k benhavn",
-      "missing_flags": {},
-      "odds_sources_max": 2,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "xg_direction_conflict": 1
-      },
-      "sources_max": 2
-    },
-    {
       "away_team": "Omonia Nicosia",
       "best_candidate": {
-        "adjusted_probability": 0.561746,
-        "books_count": 2,
-        "canonical_edge_pp": 4.893,
+        "adjusted_probability": 0.0,
+        "books_count": 0,
+        "canonical_edge_pp": 0.0,
         "canonical_ev_pct": 9.54,
-        "confidence": 73.393,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "confidence": 0.0,
+        "confirmation_sources_count": 0,
+        "context_sources_count": 0,
         "family": "totals",
         "odds": 1.95,
-        "odds_sources_count": 3,
-        "origin": "awaiting_movement_lifecycle",
+        "odds_sources_count": 0,
+        "origin": ".logs/debug-last-run.json",
         "point": 2.5,
         "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 3
+        "sources_count": 0
       },
-      "best_confidence": 73.393,
-      "best_edge_pp": 4.893,
+      "best_confidence": 0.0,
+      "best_edge_pp": 0.0,
       "best_ev_pct": 9.54,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-20T18:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "books_max": 0,
+      "candidate_count": 2,
+      "commence_time": "",
+      "confirmation_sources_max": 0,
+      "context_sources_max": 0,
       "controlled_count": 0,
       "families": {
-        "totals": 1
+        "totals": 2
       },
       "home_team": "Sint-Truidense VV",
-      "league_name": "Europa League",
+      "league_name": "",
       "match_key": "2026-08-20|sint truidense vv|omonia nicosia",
       "missing_flags": {
-        "confidence_below_micro_c": 1
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "single_book": 2,
+        "single_context_source": 2,
+        "single_odds_source": 2
       },
-      "odds_sources_max": 3,
+      "odds_sources_max": 0,
       "origins": {
-        "awaiting_movement_lifecycle": 1
+        ".logs/debug-last-run.json": 2
       },
       "reject_reasons": {},
-      "sources_max": 3
+      "sources_max": 0
     },
     {
       "away_team": "CSKA Sofia",
@@ -790,74 +566,159 @@
       "best_edge_pp": 4.435,
       "best_ev_pct": 9.202,
       "books_max": 2,
-      "candidate_count": 1,
+      "candidate_count": 2,
       "commence_time": "2026-08-20T18:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 1,
       "families": {
-        "totals": 1
+        "totals": 2
       },
       "home_team": "OFI Crete",
       "league_name": "Europa League",
       "match_key": "2026-08-20|ofi crete|cska sofia",
       "missing_flags": {
-        "confidence_below_micro_c": 1
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 1
       },
       "odds_sources_max": 3,
       "origins": {
-        "awaiting_movement_lifecycle": 1
+        "awaiting_movement_lifecycle": 1,
+        "controlled": 1
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "tier_a_books_below_min": 1,
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_canonical_ev_below_min": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_bookmaker_quorum_books_below_min:1/2": 1,
+        "tier_b_books_below_min": 1,
+        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_canonical_ev_below_min": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1
+      },
       "sources_max": 3
     },
     {
-      "away_team": "HNK Rijeka",
+      "away_team": "FC Nomme United",
       "best_candidate": {
-        "adjusted_probability": 0.520017,
-        "books_count": 4,
-        "canonical_edge_pp": 3.925,
-        "canonical_ev_pct": 8.164,
-        "confidence": 76.074,
-        "confirmation_sources_count": 9,
-        "context_sources_count": 9,
+        "adjusted_probability": 0.558549,
+        "books_count": 2,
+        "canonical_edge_pp": 3.907,
+        "canonical_ev_pct": 7.521,
+        "confidence": 69.484,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.08,
-        "odds_sources_count": 2,
+        "odds": 1.925,
+        "odds_sources_count": 1,
         "origin": "controlled",
-        "point": 2.5,
+        "point": 3.5,
         "reject_reasons": [
-          "xg_direction_conflict"
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_proxy_default_xg_placeholder",
+          "tier_c_quality_below_min",
+          "tier_c_proxy_default_xg_placeholder"
         ],
         "selection": "Меньше",
-        "sources_count": 2
+        "sources_count": 1
       },
-      "best_confidence": 76.074,
-      "best_edge_pp": 3.925,
-      "best_ev_pct": 8.164,
-      "books_max": 4,
+      "best_confidence": 69.484,
+      "best_edge_pp": 3.907,
+      "best_ev_pct": 7.521,
+      "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-20T17:00:00+00:00",
-      "confirmation_sources_max": 9,
-      "context_sources_max": 9,
+      "commence_time": "2026-08-20T12:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
       "controlled_count": 1,
       "families": {
         "totals": 1
       },
-      "home_team": "FC Midtjylland",
-      "league_name": "Conference League",
-      "match_key": "2026-08-20|midtjylland|hnk rijeka",
+      "home_team": "FC Tallinn",
+      "league_name": "Estonia - Esiliiga",
+      "match_key": "2026-08-20|tallinn|nomme united",
       "missing_flags": {
-        "edge_below_micro_c": 1
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
       },
-      "odds_sources_max": 2,
+      "odds_sources_max": 1,
       "origins": {
         "controlled": 1
       },
       "reject_reasons": {
-        "xg_direction_conflict": 1
+        "tier_b_proxy_default_xg_placeholder": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_proxy_default_xg_placeholder": 1,
+        "tier_c_quality_below_min": 1
       },
-      "sources_max": 2
+      "sources_max": 1
+    },
+    {
+      "away_team": "Maardu Linnameeskond",
+      "best_candidate": {
+        "adjusted_probability": 0.547467,
+        "books_count": 2,
+        "canonical_edge_pp": 3.465,
+        "canonical_ev_pct": 6.756,
+        "confidence": 69.14,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.95,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_quality_below_min"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.14,
+      "best_edge_pp": 3.465,
+      "best_ev_pct": 6.756,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-20T09:30:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "FC Elva",
+      "league_name": "Estonia - Esiliiga",
+      "match_key": "2026-08-20|elva|maardu linnameeskond",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
     },
     {
       "away_team": "FK Austria Wien",
@@ -927,28 +788,225 @@
       "best_confidence": 67.594,
       "best_edge_pp": 2.42,
       "best_ev_pct": 6.654,
-      "books_max": 3,
-      "candidate_count": 2,
+      "books_max": 2,
+      "candidate_count": 1,
       "commence_time": "2026-08-20T17:00:00+00:00",
       "confirmation_sources_max": 3,
       "context_sources_max": 3,
       "controlled_count": 0,
       "families": {
-        "totals": 2
+        "totals": 1
       },
       "home_team": "Universitatea Craiova",
       "league_name": "Europa League",
       "match_key": "soccer|universitatea_craiova|fc_ararat_armenia|2026-08-20",
       "missing_flags": {
-        "confidence_below_micro_c": 2,
-        "edge_below_micro_c": 2,
-        "ev_below_micro_c": 2,
-        "single_odds_source": 1
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
       },
       "odds_sources_max": 2,
       "origins": {
-        "awaiting_movement_lifecycle": 1,
-        "rescue": 1
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "SC Freiburg",
+      "best_candidate": {
+        "adjusted_probability": 0.438606,
+        "books_count": 2,
+        "canonical_edge_pp": 2.708,
+        "canonical_ev_pct": 6.581,
+        "confidence": 73.562,
+        "confirmation_sources_count": 8,
+        "context_sources_count": 8,
+        "family": "totals",
+        "odds": 2.43,
+        "odds_sources_count": 8,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 8
+      },
+      "best_confidence": 73.562,
+      "best_edge_pp": 2.708,
+      "best_ev_pct": 6.581,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-20T18:30:00+00:00",
+      "confirmation_sources_max": 8,
+      "context_sources_max": 8,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Motherwell",
+      "league_name": "Conference League",
+      "match_key": "2026-08-20|motherwell|freiburg",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 8,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 8
+    },
+    {
+      "away_team": "FC Syunik",
+      "best_candidate": {
+        "adjusted_probability": 0.549238,
+        "books_count": 2,
+        "canonical_edge_pp": 2.976,
+        "canonical_ev_pct": 5.728,
+        "confidence": 68.678,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.925,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_proxy_default_xg_placeholder",
+          "tier_c_quality_below_min",
+          "tier_c_proxy_default_xg_placeholder"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 68.678,
+      "best_edge_pp": 2.976,
+      "best_ev_pct": 5.728,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-20T12:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "FC Van Charentsavan",
+      "league_name": "Armenia - Premier League",
+      "match_key": "2026-08-20|van charentsavan|syunik",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_b_proxy_default_xg_placeholder": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_proxy_default_xg_placeholder": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Kuopion Palloseura",
+      "best_candidate": {
+        "adjusted_probability": 0.57071,
+        "books_count": 2,
+        "canonical_edge_pp": 3.017,
+        "canonical_ev_pct": 5.581,
+        "confidence": 73.112,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 6,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 6
+      },
+      "best_confidence": 73.112,
+      "best_edge_pp": 3.017,
+      "best_ev_pct": 5.581,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-20T19:00:00+00:00",
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Shamrock Rovers",
+      "league_name": "Conference League",
+      "match_key": "2026-08-20|shamrock rovers|kuopion palloseura",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 6,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 6
+    },
+    {
+      "away_team": "Larne FC",
+      "best_candidate": {
+        "adjusted_probability": 0.421448,
+        "books_count": 1,
+        "canonical_edge_pp": 2.145,
+        "canonical_ev_pct": 5.362,
+        "confidence": 65.213,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.5,
+        "odds_sources_count": 2,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.0,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 65.213,
+      "best_edge_pp": 2.145,
+      "best_ev_pct": 5.362,
+      "books_max": 1,
+      "candidate_count": 1,
+      "commence_time": "2026-08-20T16:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Lincoln Red Imps",
+      "league_name": "Conference League",
+      "match_key": "soccer|larne|lincoln red imps|2026-08-20",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_book": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
       },
       "reject_reasons": {},
       "sources_max": 2
