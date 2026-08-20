@@ -26,6 +26,21 @@ OUT = EXPORT / "latest-a-cover-value-promotion.json"
 RESCUE_PATH = EXPORT / "latest-rescue-candidates.json"
 ARTIFACT_RESCUE_PATH = ROOT / "artifacts" / "run-bot" / "latest-rescue-candidates.json"
 
+# Strict-evidence inventory first: only these rows carry explicit provider and
+# context identities, which is what evidence_truth needs to see an A-cover row.
+A_COVER_INVENTORY_PATHS = (
+    EXPORT / "latest-day-inventory-coverage-truth.json",
+    ROOT / "artifacts" / "run-bot" / "latest-day-inventory-coverage-truth.json",
+    EXPORT / "latest-day-inventory-cumulative-coverage.json",
+    ROOT / "artifacts" / "run-bot" / "latest-day-inventory-cumulative-coverage.json",
+)
+
+_RETRYABLE_PRICE_SKIPS = {
+    "promotion_skip_odds_above_max",
+    "promotion_skip_odds_below_min",
+    "promotion_skip_price_outlier",
+}
+
 
 def _as_int(value: Any, default: int = 0) -> int:
     try:
@@ -68,48 +83,49 @@ def _kickoff(row: dict[str, Any]) -> datetime | None:
     return None
 
 
-def _in_active_window(row: dict[str, Any], now: datetime) -> bool:
-    kickoff = _kickoff(row)
-    if kickoff is None:
-        return False
-    min_lead = _as_int(
+def _window_hours() -> float:
+    """Promotion window must match the publisher window, not a 2h default.
+
+    The promotion step runs in its own process, so it does not see the env layer
+    applied by publish_controlled_fallback_guarded_v20.py. Falling back to 2.0
+    silently threw away every row kicking off later today.
+    """
+    return max(
+        0.25,
+        _as_float(
+            os.getenv("PROMOTE_A_COVER_WINDOW_HOURS")
+            or os.getenv("CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS")
+            or os.getenv("PUBLISH_WINDOW_HOURS"),
+            24.0,
+        ),
+    )
+
+
+def _min_lead_minutes() -> int:
+    return _as_int(
         os.getenv("LINE_MOVEMENT_MIN_LEAD_MINUTES")
         or os.getenv("MIN_KICKOFF_LEAD_MINUTES"),
         15,
     )
-    if kickoff < now + timedelta(minutes=max(0, min_lead)):
+
+
+def _in_active_window(row: dict[str, Any], now: datetime) -> bool:
+    kickoff = _kickoff(row)
+    if kickoff is None:
+        return False
+    if kickoff < now + timedelta(minutes=max(0, _min_lead_minutes())):
         return False
     if not _env_bool("PROMOTE_A_COVER_ONLY_PUBLISH_WINDOW", True):
         return True
-    hours = max(
-        0.25,
-        _as_float(
-            os.getenv("CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS")
-            or os.getenv("PUBLISH_WINDOW_HOURS"),
-            2.0,
-        ),
-    )
-    return kickoff <= now + timedelta(hours=hours)
+    return kickoff <= now + timedelta(hours=_window_hours())
 
 
 def _row_in_fallback_window(row: dict[str, Any], now: datetime) -> bool:
     kickoff = _kickoff(row)
     if kickoff is None:
         return _env_bool("CONTROLLED_FALLBACK_ALLOW_UNKNOWN_TIME", False)
-    min_lead = _as_int(
-        os.getenv("LINE_MOVEMENT_MIN_LEAD_MINUTES")
-        or os.getenv("MIN_KICKOFF_LEAD_MINUTES"),
-        15,
-    )
-    hours = max(
-        0.25,
-        _as_float(
-            os.getenv("CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS")
-            or os.getenv("PUBLISH_WINDOW_HOURS"),
-            2.0,
-        ),
-    )
-    return now + timedelta(minutes=max(0, min_lead)) <= kickoff <= now + timedelta(hours=hours)
+    lead = timedelta(minutes=max(0, _min_lead_minutes()))
+    return now + lead <= kickoff <= now + timedelta(hours=_window_hours())
 
 
 def _source_count(row: dict[str, Any]) -> int:
@@ -119,8 +135,161 @@ def _source_count(row: dict[str, Any]) -> int:
 
 
 def _is_a_cover(row: dict[str, Any]) -> bool:
-    truth = evidence_truth(row)
-    return bool(truth["a_cover"])
+    try:
+        return bool(evidence_truth(row)["a_cover"])
+    except Exception:
+        return False
+
+
+def _count_a_cover(rows: list[dict[str, Any]]) -> int:
+    return sum(1 for row in rows if isinstance(row, dict) and _is_a_cover(row))
+
+
+def _load_inventory_for_a_cover(day: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Pick the inventory source that actually exposes strict A-cover evidence.
+
+    bcover.load_inventory_with_meta ranks sources by B-cover row count, which
+    prefers the raw day_inventory file. That file has no per-row provider or
+    context identities, so evidence_truth reported a_cover=False for all 232
+    rows while the gap report counted 172 A-cover rows from coverage truth.
+    """
+    diagnostics: dict[str, Any] = {"sources": [], "basis": "strict_a_cover_row_count"}
+    if not _env_bool("PROMOTE_A_COVER_PREFER_STRICT_EVIDENCE_INVENTORY", True):
+        rows, meta = bcover.load_inventory_with_meta(day)
+        diagnostics["selected_by"] = "bcover_loader_forced"
+        diagnostics["bcover_inventory_load"] = meta
+        diagnostics["selected_rows"] = len(rows)
+        diagnostics["selected_a_cover_rows"] = _count_a_cover(rows)
+        return rows, diagnostics
+
+    best_key: tuple[int, int] | None = None
+    best_path = ""
+    best_rows: list[dict[str, Any]] = []
+    for path in A_COVER_INVENTORY_PATHS:
+        try:
+            payload = bcover.load_json(path, None)
+            rows = bcover._rows_from_payload(payload)
+        except Exception:
+            rows = []
+        if not rows:
+            if path.exists():
+                diagnostics["sources"].append({"path": str(path), "rows": 0, "status": "no_rows"})
+            continue
+        a_cover = _count_a_cover(rows)
+        diagnostics["sources"].append(
+            {"path": str(path), "rows": len(rows), "a_cover_rows": a_cover}
+        )
+        key = (a_cover, len(rows))
+        if best_key is None or key > best_key:
+            best_key = key
+            best_path = str(path)
+            best_rows = rows
+
+    if best_key is None or best_key[0] <= 0:
+        rows, meta = bcover.load_inventory_with_meta(day)
+        diagnostics["selected_by"] = "bcover_loader_fallback"
+        diagnostics["fallback_reason"] = (
+            "no_strict_inventory_rows" if best_key is None else "strict_inventory_has_zero_a_cover"
+        )
+        diagnostics["bcover_inventory_load"] = meta
+        diagnostics["selected_path"] = meta.get("selected_path", "") if isinstance(meta, dict) else ""
+        diagnostics["selected_rows"] = len(rows)
+        diagnostics["selected_a_cover_rows"] = _count_a_cover(rows)
+        return rows, diagnostics
+
+    diagnostics["selected_by"] = "strict_evidence_inventory"
+    diagnostics["selected_path"] = best_path
+    diagnostics["selected_rows"] = len(best_rows)
+    diagnostics["selected_a_cover_rows"] = best_key[0]
+    return best_rows, diagnostics
+
+
+def _price_of(row: dict[str, Any]) -> float | None:
+    return bcover.as_price(
+        row.get("price")
+        or row.get("odds")
+        or row.get("decimal_odds")
+        or row.get("selected_odds")
+    )
+
+
+def _priced_rows(bucket: dict[str, Any]) -> list[tuple[float, dict[str, Any]]]:
+    out: list[tuple[float, dict[str, Any]]] = []
+    for row in bucket.get("rows") or []:
+        if not isinstance(row, dict):
+            continue
+        price = _price_of(row)
+        if price is not None:
+            out.append((price, row))
+    return out
+
+
+def _bucket_from_pairs(pairs: list[tuple[float, dict[str, Any]]]) -> dict[str, Any]:
+    books = set()
+    for _, row in pairs:
+        book = bcover.bookmaker_of(row)
+        if book:
+            books.add(book)
+    return {
+        "rows": [row for _, row in pairs],
+        "books": books,
+        "prices": [price for price, _ in pairs],
+    }
+
+
+def _build_candidate_in_band(
+    inv_row: dict[str, Any], bucket_key: str, bucket: dict[str, Any]
+) -> tuple[dict[str, Any] | None, str]:
+    """Build a candidate from the best publishable price, not the highest one.
+
+    bcover.build_candidate_from_bucket selects max(price) and then rejects the
+    whole bucket if that price is outside the global odds band or deviates from
+    the bucket median. One exchange or stale leaf therefore killed buckets whose
+    remaining prices were fine. Retry with band-filtered prices and, on a median
+    outlier, drop the top price and try the next one. All value, deviation and
+    band checks stay inside the original builder.
+    """
+    candidate, reason = bcover.build_candidate_from_bucket(inv_row, bucket_key, bucket)
+    if candidate is not None or reason not in _RETRYABLE_PRICE_SKIPS:
+        return candidate, reason
+    if not _env_bool("PROMOTE_A_COVER_IN_BAND_PRICE_SELECTION", True):
+        return candidate, reason
+
+    min_odds = _as_float(os.getenv("CONTROLLED_FALLBACK_GLOBAL_MIN_ODDS"), 1.55)
+    max_odds = _as_float(os.getenv("CONTROLLED_FALLBACK_GLOBAL_MAX_ODDS"), 3.05)
+    pairs = [pair for pair in _priced_rows(bucket) if min_odds <= pair[0] <= max_odds]
+    pairs.sort(key=lambda pair: pair[0], reverse=True)
+    if not pairs:
+        return None, reason
+
+    max_attempts = max(1, _as_int(os.getenv("PROMOTE_A_COVER_PRICE_RETRY_ATTEMPTS"), 4))
+    considered = [price for price, _ in pairs]
+    for attempt in range(max_attempts):
+        if not pairs:
+            break
+        retry_candidate, retry_reason = bcover.build_candidate_from_bucket(
+            inv_row, bucket_key, _bucket_from_pairs(pairs)
+        )
+        if retry_candidate is not None:
+            reasons = list(retry_candidate.get("reasons") or [])
+            reasons.append("price_selection=best_in_band_non_outlier")
+            retry_candidate["reasons"] = reasons
+            diagnostics = retry_candidate.get("diagnostics")
+            diagnostics = dict(diagnostics) if isinstance(diagnostics, dict) else {}
+            diagnostics["in_band_price_selection"] = {
+                "original_skip_reason": reason,
+                "band": [min_odds, max_odds],
+                "considered_prices": considered[:20],
+                "selected_price": retry_candidate.get("odds"),
+                "attempts": attempt + 1,
+            }
+            retry_candidate["diagnostics"] = diagnostics
+            return retry_candidate, "promoted"
+        if retry_reason != "promotion_skip_price_outlier":
+            return None, retry_reason
+        # Highest remaining price is the outlier: drop it and try the next one.
+        pairs = pairs[1:]
+    return None, reason
 
 
 def _existing_signatures(rows: list[dict[str, Any]]) -> set[str]:
@@ -219,7 +388,7 @@ def run() -> dict[str, Any]:
     stale_artifact_rescue_removed = _clear_stale_artifact_rescue()
     day = bcover.target_date()
     prebuild = bcover.prebuild_coverage_truth_for_promotion()
-    inventory, inventory_load = bcover.load_inventory_with_meta(day)
+    inventory, inventory_selection = _load_inventory_for_a_cover(day)
     now = datetime.now(UTC)
     offer_buckets, offer_diag = bcover.collect_offer_buckets(day)
 
@@ -242,14 +411,19 @@ def run() -> dict[str, Any]:
             continue
         in_window_rows.append(row)
 
-    in_window_rows.sort(
-        key=lambda row: (
-            evidence_truth(row)["context_sources_count"],
-            evidence_truth(row)["books_count"],
-            evidence_truth(row)["odds_sources_count"],
-        ),
-        reverse=True,
-    )
+    def _sort_key(row: dict[str, Any]) -> tuple[int, int, int, float]:
+        truth = evidence_truth(row)
+        kickoff = _kickoff(row)
+        # Strongest evidence first, then the soonest kickoff so the publisher
+        # sees candidates that are still inside its own window.
+        return (
+            -int(truth["context_sources_count"]),
+            -int(truth["books_count"]),
+            -int(truth["odds_sources_count"]),
+            kickoff.timestamp() if kickoff else float("inf"),
+        )
+
+    in_window_rows.sort(key=_sort_key)
 
     for row in in_window_rows:
         considered += 1
@@ -261,7 +435,7 @@ def run() -> dict[str, Any]:
             continue
         candidates_for_row: list[dict[str, Any]] = []
         for bucket_key, bucket in match_buckets.items():
-            candidate, reason = bcover.build_candidate_from_bucket(row, bucket_key, bucket)
+            candidate, reason = _build_candidate_in_band(row, bucket_key, bucket)
             if candidate is None:
                 reasons[reason] += 1
                 continue
@@ -298,6 +472,7 @@ def run() -> dict[str, Any]:
         "status": "ok",
         "created_at_utc": now.isoformat(),
         "target_date": day,
+        "window_hours": _window_hours(),
         "inventory_rows_seen": len(inventory),
         "active_a_cover_rows": active_a_rows,
         "in_publish_window_a_cover_rows": len(in_window_rows),
@@ -309,7 +484,7 @@ def run() -> dict[str, Any]:
         "existing_rescue_stats": existing_stats,
         "stale_artifact_rescue_removed": stale_artifact_rescue_removed,
         "offer_diagnostics": offer_diag,
-        "inventory_load": inventory_load,
+        "inventory_selection": inventory_selection,
         "prebuild_coverage_truth": prebuild,
         "evidence_truth_basis": "explicit_provider_and_exact_offer_identities",
         "safety_note": (
@@ -339,6 +514,7 @@ def main() -> int:
                 "active_a_cover_rows": payload.get("active_a_cover_rows"),
                 "in_publish_window_a_cover_rows": payload.get("in_publish_window_a_cover_rows"),
                 "promoted_count": payload.get("promoted_count"),
+                "inventory_selection": (payload.get("inventory_selection") or {}).get("selected_path"),
                 "top_reasons": payload.get("reason_counts") or {},
                 "error": payload.get("error"),
             },
