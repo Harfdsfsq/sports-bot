@@ -27,6 +27,20 @@ def _apply_rules_runtime_env() -> None:
         "CONTROLLED_FALLBACK_ALLOW_VALUE_ALIVE_HIGH_DRIFT": "true",
         "CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT": "3.0",
         "CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP": "1.5",
+        # B-tier relief must stay inside the value range the promotion model can
+        # actually produce (median-anchored probability + capped boost), otherwise
+        # the floor is unreachable and every promoted candidate dies on
+        # quality/publication-score minimums.
+        "HARIZON_B_RELIEF_MIN_ODDS": "1.70",
+        "HARIZON_B_RELIEF_MAX_ODDS": "3.20",
+        "HARIZON_B_RELIEF_MIN_EV_PCT": "2.0",
+        "HARIZON_B_RELIEF_MIN_EDGE_PP": "1.0",
+        # A-cover promotion runs in-process below; give it the same window as the
+        # publisher instead of its own 2h fallback default.
+        "PROMOTE_A_COVER_WINDOW_HOURS": "24",
+        "PROMOTE_A_COVER_PREFER_STRICT_EVIDENCE_INVENTORY": "true",
+        "PROMOTE_A_COVER_IN_BAND_PRICE_SELECTION": "true",
+        "PROMOTE_A_COVER_VALUE_CANDIDATE_LIMIT": "18",
     }
     for key, value in defaults.items():
         os.environ[key] = value
@@ -35,7 +49,7 @@ def _apply_rules_runtime_env() -> None:
 def main() -> int:
     _apply_rules_runtime_env()
     v19.run_preflight()
-    for step in ('scripts.build_context_source_index','scripts.restore_awaiting_movement_candidates','scripts.apply_fallback_price_floor'):
+    for step in ('scripts.build_context_source_index','scripts.restore_awaiting_movement_candidates','scripts.promote_a_cover_value_candidates','scripts.apply_fallback_price_floor'):
         try:
             module = __import__(step, fromlist=['main']); fn = getattr(module, 'main', None)
             if callable(fn): fn()
