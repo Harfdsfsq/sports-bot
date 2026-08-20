@@ -6,6 +6,8 @@ import scripts.publish_controlled_fallback_guarded_v19 as v19
 
 
 def _apply_rules_runtime_env() -> None:
+    # NOTE: this layer runs last, so anything set here wins over
+    # scripts/publish_controlled_fallback_guarded.py. Keep the two in sync.
     defaults = {
         "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
         "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1",
@@ -15,7 +17,9 @@ def _apply_rules_runtime_env() -> None:
         "CONTROLLED_FALLBACK_PUBLISH_WINDOW_HOURS": "24",
         "PUBLISH_WINDOW_HOURS": "24",
         "CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER": "true",
-        "CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT": "false",
+        # One context source is only acceptable when that context is a real
+        # provider context (sstats_form/sstats_xg/bzzoiro_stats/odds_comparison).
+        "CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT": "true",
         "CONTROLLED_FALLBACK_ALLOW_CURRENT_BOOK_SUBSTITUTION": "true",
         "CONTROLLED_FALLBACK_CURRENT_PRICE_ABS_TOLERANCE": "0.05",
         "CONTROLLED_FALLBACK_CURRENT_PRICE_PCT_TOLERANCE": "2.5",
