@@ -8,6 +8,14 @@ openligadb, weather or odds_api_io; that made the queue enrich already-rich rows
 while the final coverage-truth still had only ~85/300 with 2+ real context
 sources.  This version counts only actual provider evidence and prioritizes
 rows with fewer than two real context providers.
+
+v4 also instruments xG extraction.  Run 22:06 proved that the B-tier relief
+rejects every candidate on no_hard_context, because the only xG available is
+market-implied (derived from the price we would bet against, home == away).
+This pass made 149 successful calls yet resolved real xG for 8 of 47 rows, so
+the extractor - not the provider budget - is the bottleneck.  The probe artifact
+records the payload structure of failures so the extractor can be written from
+the real field names.
 """
 
 import asyncio
@@ -25,8 +33,13 @@ UTC = timezone.utc
 OUT_DIR = Path(".data/exports")
 JSON_OUT = OUT_DIR / "latest-sstats-deep-inventory-enrichment.json"
 TXT_OUT = OUT_DIR / "latest-sstats-deep-inventory-enrichment.txt"
+XG_PROBE_OUT = OUT_DIR / "latest-sstats-xg-extraction-probe.json"
 CONTEXT_PROVIDERS = {"sstats", "bzzoiro", "thesportsdb", "football_data", "api_football", "sportlogic", "allsportsapi", "highlightly"}
 ODDS_PROVIDERS = {"odds_api_io", "bzzoiro", "sstats", "sportlogic"}
+
+XG_PROBE_LIMIT = 6
+_XG_PROBE: list[dict[str, Any]] = []
+_XG_STATS: dict[str, Any] = {"attempted": 0, "resolved_real": 0, "kept_existing": 0, "missing": 0, "placeholder_rejected": 0, "source_counts": {}}
 
 
 def target_date_msk() -> str:
@@ -84,7 +97,24 @@ def _valid_xg_pair(home: Any, away: Any) -> tuple[float | None, float | None]:
     return round(max(0.15, min(4.5, h)), 3), round(max(0.15, min(4.5, a)), 3)
 
 
+def is_proxy_placeholder(home: Any, away: Any) -> bool:
+    """True for the 1.0/1.0 default that carries no information.
+
+    The rest of the pipeline calls this the proxy default xG placeholder.  It
+    used to satisfy has_valid_xg, which told this queue those rows already had
+    xG coverage and pushed them to the back of the priority list, so the rows
+    that most need real xG were the ones never enriched.
+    """
+    h = _float_or_none(home)
+    a = _float_or_none(away)
+    if h is None or a is None:
+        return False
+    return abs(h - 1.0) < 1e-6 and abs(a - 1.0) < 1e-6
+
+
 def has_valid_xg(row: dict[str, Any]) -> bool:
+    if is_proxy_placeholder(row.get("expected_home"), row.get("expected_away")):
+        return False
     h, a = _valid_xg_pair(row.get("expected_home"), row.get("expected_away"))
     return h is not None and a is not None
 
@@ -169,6 +199,49 @@ def extract_expected_goals(*payloads: Any) -> tuple[float | None, float | None, 
     return None, None, "missing"
 
 
+def describe_shape(payload: Any, depth: int = 0) -> Any:
+    """Describe a payload's structure without dumping the whole thing.
+
+    Keys are what matter here: the extractor above guesses field names, and the
+    probe exists to replace those guesses with the names SStats actually sends.
+    """
+    if depth >= 4:
+        return "..."
+    if isinstance(payload, dict):
+        return {str(key): describe_shape(value, depth + 1) for key, value in list(payload.items())[:40]}
+    if isinstance(payload, list):
+        if not payload:
+            return []
+        return [describe_shape(payload[0], depth + 1), f"...+{max(0, len(payload) - 1)} more items"]
+    if isinstance(payload, str):
+        return f"str:{payload[:60]}"
+    if isinstance(payload, (int, float, bool)) or payload is None:
+        return payload
+    return type(payload).__name__
+
+
+def record_xg_probe(row: dict[str, Any], game_id: str, *, glicko_payload: Any = None, last_stats_payload: Any = None, detail_payload: Any = None) -> None:
+    if len(_XG_PROBE) >= XG_PROBE_LIMIT:
+        return
+    _XG_PROBE.append({
+        "match_key": str(row.get("match_key") or row.get("canonical_match_id") or ""),
+        "home_team": row.get("home_team"),
+        "away_team": row.get("away_team"),
+        "league_name": row.get("league_name"),
+        "game_id": str(game_id),
+        "existing_expected_home": row.get("expected_home"),
+        "existing_expected_away": row.get("expected_away"),
+        "existing_is_proxy_placeholder": is_proxy_placeholder(row.get("expected_home"), row.get("expected_away")),
+        "last_games_stats_shape": describe_shape(last_stats_payload),
+        "glicko_shape": describe_shape(glicko_payload),
+        "game_detail_shape": describe_shape(detail_payload),
+    })
+
+
+def _bump(key: str, amount: int = 1) -> None:
+    _XG_STATS[key] = v2.as_int(_XG_STATS.get(key)) + amount
+
+
 def set_count_from_sources(row: dict[str, Any], key: str, list_key: str, allowed: set[str]) -> int:
     value = len(clean_sources(row, list_key, allowed))
     row[key] = value
@@ -190,10 +263,26 @@ def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds
     if not isinstance(cov, dict):
         cov = {}
         row["coverage"] = cov
+    existing_placeholder = is_proxy_placeholder(row.get("expected_home"), row.get("expected_away"))
     existing_home, existing_away = _valid_xg_pair(row.get("expected_home"), row.get("expected_away"))
+    if existing_placeholder:
+        existing_home, existing_away = None, None
+        _bump("placeholder_rejected")
     xg_home, xg_away, xg_source = extract_expected_goals(("last_games_stats", last_stats_payload), ("glicko", glicko_payload), ("game_detail", detail_payload))
-    if xg_home is None or xg_away is None:
+    _bump("attempted")
+    if xg_home is not None and xg_away is not None:
+        _bump("resolved_real")
+    else:
+        record_xg_probe(row, game_id, glicko_payload=glicko_payload, last_stats_payload=last_stats_payload, detail_payload=detail_payload)
         xg_home, xg_away, xg_source = existing_home, existing_away, "existing_inventory"
+        if xg_home is not None and xg_away is not None:
+            _bump("kept_existing")
+        else:
+            _bump("missing")
+            xg_source = "missing"
+    source_counts = _XG_STATS.setdefault("source_counts", {})
+    if isinstance(source_counts, dict):
+        source_counts[str(xg_source)] = v2.as_int(source_counts.get(str(xg_source))) + 1
     has_xg_pair = xg_home is not None and xg_away is not None
     if has_xg_pair:
         row["expected_home"] = xg_home
@@ -306,7 +395,9 @@ async def run() -> dict[str, Any]:
     counts: dict[str, int] = {}
     for s in statuses:
         counts[str(s.get("status"))] = counts.get(str(s.get("status")), 0) + 1
-    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "inventory_path": str(primary_path), "inventory_aliases_written": [str(p) for p in inventory_aliases(primary_path)], "crosswalk_matched": (cross.get("summary") or {}).get("matched"), "queue_seen": len(raw_queue), "request_count": req, "enriched_matches": len(enriched), "priority_group_counts": group_counts, "command_status_counts": counts, "enriched_sample": enriched[:50], "command_sample": statuses[:20]}
+    xg_extraction = dict(_XG_STATS)
+    v2.write(XG_PROBE_OUT, {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_xg_extraction_probe_v1", "status": "ok", "probe_limit": XG_PROBE_LIMIT, "xg_extraction": xg_extraction, "samples": _XG_PROBE})
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "inventory_path": str(primary_path), "inventory_aliases_written": [str(p) for p in inventory_aliases(primary_path)], "crosswalk_matched": (cross.get("summary") or {}).get("matched"), "queue_seen": len(raw_queue), "request_count": req, "enriched_matches": len(enriched), "priority_group_counts": group_counts, "command_status_counts": counts, "xg_extraction": xg_extraction, "xg_probe_samples": len(_XG_PROBE), "enriched_sample": enriched[:50], "command_sample": statuses[:20]}
     v2.write(JSON_OUT, payload)
     TXT_OUT.write_text(render(payload), encoding="utf-8")
     print(render(payload))
@@ -314,7 +405,7 @@ async def run() -> dict[str, Any]:
 
 
 def render(payload: dict[str, Any]) -> str:
-    lines = ["# SStats deep inventory enrichment v4", f"status: {payload.get('status')}", f"inventory_path: {payload.get('inventory_path')}", f"aliases_written: {', '.join(payload.get('inventory_aliases_written') or [])}", f"crosswalk_matched: {payload.get('crosswalk_matched')}", f"queue_seen: {payload.get('queue_seen')}", f"request_count: {payload.get('request_count')}", f"enriched_matches: {payload.get('enriched_matches')}", f"priority_group_counts: {json.dumps(payload.get('priority_group_counts') or {}, ensure_ascii=False)}", f"command_status_counts: {json.dumps(payload.get('command_status_counts') or {}, ensure_ascii=False)}", "", "## Enriched sample"]
+    lines = ["# SStats deep inventory enrichment v4", f"status: {payload.get('status')}", f"inventory_path: {payload.get('inventory_path')}", f"aliases_written: {', '.join(payload.get('inventory_aliases_written') or [])}", f"crosswalk_matched: {payload.get('crosswalk_matched')}", f"queue_seen: {payload.get('queue_seen')}", f"request_count: {payload.get('request_count')}", f"enriched_matches: {payload.get('enriched_matches')}", f"priority_group_counts: {json.dumps(payload.get('priority_group_counts') or {}, ensure_ascii=False)}", f"command_status_counts: {json.dumps(payload.get('command_status_counts') or {}, ensure_ascii=False)}", f"xg_extraction: {json.dumps(payload.get('xg_extraction') or {}, ensure_ascii=False)}", f"xg_probe_samples: {payload.get('xg_probe_samples')}", "", "## Enriched sample"]
     for item in payload.get("enriched_sample") or []:
         lines.append(f"- {item.get('home_team')} — {item.get('away_team')} | gameId={item.get('game_id')} deep={item.get('deep_ok')} detail={item.get('detail_ok')} odds={item.get('odds_ok')} context:{item.get('before_context')}→{item.get('after_context')} odds:{item.get('before_odds')}→{item.get('after_odds')}")
     return "\n".join(lines) + "\n"
