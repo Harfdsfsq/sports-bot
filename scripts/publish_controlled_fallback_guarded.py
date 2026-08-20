@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import atexit
 import json
 import os
 from typing import Any
@@ -13,6 +14,52 @@ HARD_CONTEXT_TOKENS = (
     'actual_away_xg', 'home_xg', 'away_xg', 'xg_live',
 )
 
+_RELIEF_DIAGNOSTICS: list[dict[str, Any]] = []
+_RELIEF_DIAGNOSTICS_PATH = os.path.join('.data', 'exports', 'latest-b-relief-diagnostics.json')
+
+
+def _write_relief_diagnostics() -> None:
+    """Persist why the B-tier relief fired or not.
+
+    Without this the floor is a bare bool: a relief that evaluated 24 candidates
+    and rejected all of them looks exactly like a relief that never ran.
+    """
+    if not _RELIEF_DIAGNOSTICS:
+        return
+    try:
+        from collections import Counter
+        from datetime import datetime, timezone
+        failed: Counter[str] = Counter()
+        for entry in _RELIEF_DIAGNOSTICS:
+            for name in entry.get('failed_conditions') or []:
+                failed[str(name)] += 1
+        payload = {
+            'created_at_utc': datetime.now(timezone.utc).isoformat(),
+            'evaluated_candidates': len(_RELIEF_DIAGNOSTICS),
+            'passed_count': sum(1 for entry in _RELIEF_DIAGNOSTICS if entry.get('passed')),
+            'failed_condition_counts': dict(failed.most_common()),
+            'thresholds': {
+                'min_books': 2,
+                'min_odds_sources': 1,
+                'min_context_sources': 1,
+                'require_hard_context': True,
+                'min_ev_pct': _env_num('HARIZON_B_RELIEF_MIN_EV_PCT', 2.0),
+                'min_edge_pp': _env_num('HARIZON_B_RELIEF_MIN_EDGE_PP', 1.0),
+                'min_odds': _env_num('HARIZON_B_RELIEF_MIN_ODDS', 1.70),
+                'max_odds': _env_num('HARIZON_B_RELIEF_MAX_ODDS', 3.20),
+            },
+            'rows': _RELIEF_DIAGNOSTICS[:200],
+        }
+        os.makedirs(os.path.dirname(_RELIEF_DIAGNOSTICS_PATH), exist_ok=True)
+        with open(_RELIEF_DIAGNOSTICS_PATH, 'w', encoding='utf-8') as handle:
+            json.dump(payload, handle, ensure_ascii=False, indent=2, sort_keys=True)
+            handle.write('\n')
+    except Exception:
+        pass
+
+
+atexit.register(_write_relief_diagnostics)
+
 
 def _force_runtime_publication_contract() -> None:
     overrides={
@@ -22,7 +69,10 @@ def _force_runtime_publication_contract() -> None:
         'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM':'false','CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM':'false',
         'CONTROLLED_FALLBACK_ALLOW_MARKET_IMPLIED_XG_FOR_B_TIER':'true','CONTROLLED_FALLBACK_BLOCK_PROXY_DEFAULT_XG_ALL_TIERS':'true','CONTROLLED_FALLBACK_B_TIER_BLOCK_LOW_QUALITY_COMPETITIONS':'true',
         'CONTROLLED_FALLBACK_B_TIER_REQUIRE_HARD_CONTEXT':'true',
-        'CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP':'2.3','CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT':'4.0','CONTROLLED_FALLBACK_ALLOW_VALUE_ALIVE_HIGH_DRIFT':'true',
+        # Must match _b_tier_testing_floor. The relief cannot strip
+        # tier_b_canonical_edge_below_min / _ev_below_min, so a higher bar here
+        # silently overrode the relief and blocked every promoted candidate.
+        'CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP':'1.0','CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT':'2.0','CONTROLLED_FALLBACK_ALLOW_VALUE_ALIVE_HIGH_DRIFT':'true',
         'CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EV_PCT':'3.0','CONTROLLED_FALLBACK_CURRENT_RECHECK_MIN_EDGE_PP':'1.5','CONTROLLED_FALLBACK_DAILY_MAX_PUBLISHED':'5','CONTROLLED_FALLBACK_DAILY_MAX_B_TIER':'5',
         'A_TIER_TARGETED_ENRICHMENT_ENABLED':'true','BZZOIRO_TARGETED_ODDS_CONFIRMATION_ENABLED':'true','SSTATS_TARGETED_CONTEXT_PROJECTION_ENABLED':'true','HIGH_VALUE_FAST_RECHECK_ENABLED':'true',
         'DAY_INVENTORY_TARGET_SIZE':'300','DAY_INVENTORY_MAX_MATCHES':'300','DAY_INVENTORY_FORCE_FULL_300':'true','DAY_INVENTORY_FORCE_TOP_300':'true','DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES':'300',
@@ -78,6 +128,14 @@ def _has_hard_context(candidate:dict[str,Any],metrics:dict[str,Any])->bool:
         text=f'{candidate}{metrics}'.lower()
     return any(token in text for token in HARD_CONTEXT_TOKENS)
 
+def _candidate_label(candidate:dict[str,Any])->str:
+    for key in ('match_key','canonical_match_id','event_key'):
+        value=candidate.get(key)
+        if value: return str(value)
+    home=candidate.get('home_team') or candidate.get('home') or '?'
+    away=candidate.get('away_team') or candidate.get('away') or '?'
+    return f'{home} - {away}'
+
 def _b_tier_testing_floor(candidate:dict[str,Any],metrics:dict[str,Any])->bool:
     """RULES.txt B-cover: 1 line source, 2 bookmakers, 1 *real* context.
 
@@ -87,6 +145,10 @@ def _b_tier_testing_floor(candidate:dict[str,Any],metrics:dict[str,Any])->bool:
     published. Volume is bought back with a stricter definition of a context:
     a hard provider context is now mandatory, because market_signal-only picks
     run at -11.6% ROI while sstats_form runs at +54.8%.
+
+    EV/edge minimums must stay in sync with the tier-B env values set in
+    _force_runtime_publication_contract, otherwise the tier guard rejects on
+    value after the relief already passed the candidate.
     """
     books=max(_int(metrics.get('books_count')),_int(metrics.get('bookmaker_count')))
     odds_sources=max(_int(metrics.get('odds_sources_count')),_int(metrics.get('line_sources_count')),_int(metrics.get('sources_count')))
@@ -94,19 +156,38 @@ def _b_tier_testing_floor(candidate:dict[str,Any],metrics:dict[str,Any])->bool:
     ev=max(_num(metrics.get('canonical_ev_pct')),_num(metrics.get('ev_pct')))
     edge=max(_num(metrics.get('canonical_edge_pp')),_num(metrics.get('edge_pp')))
     price=_num(metrics.get('odds'))
+    hard_context=_has_hard_context(candidate,metrics)
     min_price=_env_num('HARIZON_B_RELIEF_MIN_ODDS',1.70)
     max_price=_env_num('HARIZON_B_RELIEF_MAX_ODDS',3.20)
-    min_ev=_env_num('HARIZON_B_RELIEF_MIN_EV_PCT',4.0)
-    min_edge=_env_num('HARIZON_B_RELIEF_MIN_EDGE_PP',2.3)
-    return (
-        books>=2
-        and odds_sources>=1
-        and contexts>=1
-        and _has_hard_context(candidate,metrics)
-        and ev>=min_ev
-        and edge>=min_edge
-        and min_price<=price<=max_price
-    )
+    min_ev=_env_num('HARIZON_B_RELIEF_MIN_EV_PCT',2.0)
+    min_edge=_env_num('HARIZON_B_RELIEF_MIN_EDGE_PP',1.0)
+    checks={
+        'books_below_2':books<2,
+        'odds_sources_below_1':odds_sources<1,
+        'context_sources_below_1':contexts<1,
+        'no_hard_context':not hard_context,
+        'ev_below_min':ev<min_ev,
+        'edge_below_min':edge<min_edge,
+        'price_outside_band':not (min_price<=price<=max_price),
+    }
+    failed=sorted(name for name,is_bad in checks.items() if is_bad)
+    if len(_RELIEF_DIAGNOSTICS)<400:
+        _RELIEF_DIAGNOSTICS.append({
+            'match':_candidate_label(candidate),
+            'selection':candidate.get('selection') or candidate.get('selection_key'),
+            'point':candidate.get('point'),
+            'candidate_source':candidate.get('_candidate_source'),
+            'books_count':books,
+            'odds_sources_count':odds_sources,
+            'context_sources_count':contexts,
+            'hard_context':hard_context,
+            'ev_pct':round(ev,3),
+            'edge_pp':round(edge,3),
+            'odds':round(price,3),
+            'failed_conditions':failed,
+            'passed':not failed,
+        })
+    return not failed
 
 def _install_b_tier_testing_relief(base:Any)->None:
     old=getattr(base,'tier_reasons',None)
@@ -134,6 +215,6 @@ def main()->int:
     except Exception: pass
     _apply_focused_alpha_policy(); _repair_runtime_artifacts_before_fallback(); _build_focused_alpha_decisions(); _force_runtime_publication_contract()
     from scripts.publish_controlled_fallback_guarded_v20 import main as v20_main
-    code=int(v20_main() or 0); _build_focused_alpha_decisions(); _run_step('scripts.target_fallback_provider_enrichment'); return code
+    code=int(v20_main() or 0); _build_focused_alpha_decisions(); _run_step('scripts.target_fallback_provider_enrichment'); _write_relief_diagnostics(); return code
 
 if __name__=='__main__': raise SystemExit(main())
