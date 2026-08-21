@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 8,
-      "rows_seen": 8,
+      "rows_kept": 4,
+      "rows_seen": 4,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 61,
-      "rows_stale": 61
+      "rows_kept": 13,
+      "rows_seen": 67,
+      "rows_stale": 54
     },
     "lifecycle": {
       "files_present": 0,
@@ -25,9 +25,9 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 1,
-      "rows_kept": 2,
-      "rows_seen": 2,
+      "files_present": 0,
+      "rows_kept": 0,
+      "rows_seen": 0,
       "rows_stale": 0
     }
   },
@@ -35,24 +35,27 @@
     "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 1,
-    "controlled_candidates_seen": 4,
+    "contexts_built": 16,
+    "controlled_candidates_seen": 2,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 4,
-    "matches_seen": 24,
-    "matches_with_offers": 1
+    "coverage_candidates_current_date": 9,
+    "matches_seen": 2,
+    "matches_with_offers": 2
   },
-  "created_at": "2026-08-20T23:11:44.302700+00:00",
+  "created_at": "2026-08-21T01:10:34.338179+00:00",
   "family_counts": {
-    "totals": 4
+    "spreads": 6,
+    "totals": 3
   },
-  "matches_with_candidates": 4,
+  "matches_with_candidates": 5,
   "missing_data_flags": {
-    "confidence_below_micro_c": 2,
-    "edge_below_micro_c": 2,
-    "ev_below_micro_c": 2,
-    "single_odds_source": 2
+    "confidence_below_micro_c": 9,
+    "edge_below_micro_c": 9,
+    "ev_below_micro_c": 9,
+    "single_book": 6,
+    "single_context_source": 8,
+    "single_odds_source": 8
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -66,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 4,
+  "positive_near_miss_count": 3,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -75,13 +78,32 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 5,
+      "events_matched": 28,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 535,
+      "offers_parsed": 2504,
       "provider": "account1",
       "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": 5,
+      "direct_event_contexts_built": 5,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "bzzoiro",
+      "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
@@ -99,7 +121,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 710,
+      "matches_built": 729,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -118,7 +140,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 710,
+      "matches_built": 729,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -149,8 +171,27 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 1,
-      "direct_event_contexts_built": 1,
+      "contexts_built": 11,
+      "direct_event_contexts_built": 11,
+      "enabled": true,
+      "events_fetched": 43,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "raw_stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 14,
+      "direct_event_contexts_built": 14,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -161,6 +202,63 @@
       "matches_built": null,
       "offers_parsed": null,
       "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": 11,
+      "direct_event_contexts_built": 11,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "v1_empty_prediction_fallback",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -190,28 +288,6 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors",
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 2,
-      "rows_fetched": null,
-      "status_category": "broken_or_unavailable",
-      "team_form_contexts_built": null
-    },
-    {
       "api_key_present": null,
       "budget_exhausted": null,
       "contexts_built": null,
@@ -229,28 +305,6 @@
       "provider": "v2_primary",
       "rate_limited": null,
       "response_errors": 4,
-      "rows_fetched": null,
-      "status_category": "broken_or_unavailable",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "response_errors",
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 2,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -291,27 +345,6 @@
       "matches_built": 0,
       "offers_parsed": null,
       "provider": "bookies_bootstrap",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "bzzoiro",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -446,12 +479,14 @@
     }
   ],
   "provider_status_counts": {
-    "broken_or_unavailable": 4,
-    "no_data": 9,
-    "working": 5
+    "broken_or_unavailable": 2,
+    "no_data": 8,
+    "working": 10
   },
   "reject_reason_counts_from_rows": {
-    "tier_b_publication_score_below_min": 1,
+    "bad_historical_segment_guard": 1,
+    "tier_b_low_quality_competition_requires_a_tier": 1,
+    "tier_b_publication_score_below_min": 2,
     "tier_b_quality_below_min": 2,
     "tier_c_market_implied_xg_not_hard_confirmation": 2,
     "tier_c_quality_below_min": 2
@@ -461,30 +496,32 @@
     {
       "away_team": "v varen nagasaki",
       "best_candidate": {
-        "adjusted_probability": 0.548158,
+        "adjusted_probability": 0.519428,
         "books_count": 2,
-        "canonical_edge_pp": 6.035,
-        "canonical_ev_pct": 12.372,
-        "confidence": 74.668,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "canonical_edge_pp": -0.689,
+        "canonical_ev_pct": 6.483,
+        "confidence": 73.375,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
         "family": "totals",
         "odds": 2.05,
         "odds_sources_count": 3,
-        "origin": "rescue",
+        "origin": ".logs/debug-last-run.json",
         "point": 2.5,
-        "reject_reasons": [],
+        "reject_reasons": [
+          "bad_historical_segment_guard"
+        ],
         "selection": "Меньше",
         "sources_count": 3
       },
-      "best_confidence": 74.668,
-      "best_edge_pp": 6.035,
-      "best_ev_pct": 12.372,
+      "best_confidence": 73.375,
+      "best_edge_pp": -0.689,
+      "best_ev_pct": 6.483,
       "books_max": 2,
       "candidate_count": 1,
       "commence_time": "2026-08-21T00:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
       "controlled_count": 0,
       "families": {
         "totals": 1
@@ -492,100 +529,6 @@
       "home_team": "kashiwa reysol",
       "league_name": "J1 League",
       "match_key": "soccer|kashiwa_reysol|v_varen_nagasaki|2026-08-21",
-      "missing_flags": {},
-      "odds_sources_max": 3,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
-    },
-    {
-      "away_team": "v varen nagasaki",
-      "best_candidate": {
-        "adjusted_probability": 0.548158,
-        "books_count": 3,
-        "canonical_edge_pp": 6.035,
-        "canonical_ev_pct": 12.372,
-        "confidence": 74.668,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.05,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_b_quality_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_market_implied_xg_not_hard_confirmation"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 74.668,
-      "best_edge_pp": 6.035,
-      "best_ev_pct": 12.372,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-08-21T00:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "kashiwa reysol",
-      "league_name": "J1 League",
-      "match_key": "2026-08-21|kashiwa reysol|v varen nagasaki",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "tier_b_quality_below_min": 1,
-        "tier_c_market_implied_xg_not_hard_confirmation": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "jef united chiba",
-      "best_candidate": {
-        "adjusted_probability": 0.533987,
-        "books_count": 2,
-        "canonical_edge_pp": 2.766,
-        "canonical_ev_pct": 5.462,
-        "confidence": 71.558,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 1.975,
-        "odds_sources_count": 3,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 3
-      },
-      "best_confidence": 71.558,
-      "best_edge_pp": 2.766,
-      "best_ev_pct": 5.462,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-21T00:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "tokyo",
-      "league_name": "J1 League",
-      "match_key": "soccer|tokyo|jef_united_chiba|2026-08-21",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
@@ -593,54 +536,57 @@
       },
       "odds_sources_max": 3,
       "origins": {
-        "rescue": 1
+        ".logs/debug-last-run.json": 1
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
+      },
       "sources_max": 3
     },
     {
-      "away_team": "jef united chiba",
+      "away_team": "1 FC Kaiserslautern",
       "best_candidate": {
-        "adjusted_probability": 0.533987,
-        "books_count": 3,
-        "canonical_edge_pp": 2.766,
-        "canonical_ev_pct": 5.462,
-        "confidence": 71.558,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "adjusted_probability": 0.470559,
+        "books_count": 2,
+        "canonical_edge_pp": 2.611,
+        "canonical_ev_pct": 5.876,
+        "confidence": 68.744,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "family": "totals",
-        "odds": 1.975,
+        "odds": 2.25,
         "odds_sources_count": 1,
         "origin": "controlled",
-        "point": 2.5,
+        "point": 3.5,
         "reject_reasons": [
           "tier_b_quality_below_min",
           "tier_b_publication_score_below_min",
           "tier_c_quality_below_min",
           "tier_c_market_implied_xg_not_hard_confirmation"
         ],
-        "selection": "Меньше",
+        "selection": "Больше",
         "sources_count": 1
       },
-      "best_confidence": 71.558,
-      "best_edge_pp": 2.766,
-      "best_ev_pct": 5.462,
-      "books_max": 3,
+      "best_confidence": 68.744,
+      "best_edge_pp": 2.611,
+      "best_ev_pct": 5.876,
+      "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-21T00:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "commence_time": "2026-08-21T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
       "controlled_count": 1,
       "families": {
         "totals": 1
       },
-      "home_team": "tokyo",
-      "league_name": "J1 League",
-      "match_key": "2026-08-21|tokyo|jef united chiba",
+      "home_team": "SV Waldhof Mannheim 07",
+      "league_name": "Germany - DFB Pokal",
+      "match_key": "2026-08-21|sv waldhof mannheim 07|1 kaiserslautern",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1,
+        "single_context_source": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 1,
@@ -648,6 +594,66 @@
         "controlled": 1
       },
       "reject_reasons": {
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Club America U21",
+      "best_candidate": {
+        "adjusted_probability": 0.597663,
+        "books_count": 2,
+        "canonical_edge_pp": 2.623,
+        "canonical_ev_pct": 4.591,
+        "confidence": 68.166,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.75,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_low_quality_competition_requires_a_tier",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 68.166,
+      "best_edge_pp": 2.623,
+      "best_ev_pct": 4.591,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-21T15:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "FC Juarez U21",
+      "league_name": "Mexico - U21 Liga MX, Apertura",
+      "match_key": "2026-08-21|juarez|america",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_b_low_quality_competition_requires_a_tier": 1,
         "tier_b_publication_score_below_min": 1,
         "tier_b_quality_below_min": 1,
         "tier_c_market_implied_xg_not_hard_confirmation": 1,
