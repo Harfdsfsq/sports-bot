@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 36,
+      "rows_seen": 36,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 23,
-      "rows_seen": 72,
-      "rows_stale": 49
+      "rows_kept": 30,
+      "rows_seen": 119,
+      "rows_stale": 89
     },
     "lifecycle": {
       "files_present": 0,
@@ -25,37 +25,37 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 6,
+      "rows_seen": 6,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 26,
+    "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 1,
-    "controlled_candidates_seen": null,
+    "contexts_built": 9,
+    "controlled_candidates_seen": 18,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 9,
-    "matches_seen": 1,
-    "matches_with_offers": 1
+    "coverage_candidates_current_date": 30,
+    "matches_seen": 28,
+    "matches_with_offers": 28
   },
-  "created_at": "2026-08-22T19:15:00.863601+00:00",
+  "created_at": "2026-08-22T23:14:07.149103+00:00",
   "family_counts": {
-    "spreads": 2,
-    "totals": 7
+    "spreads": 11,
+    "totals": 19
   },
-  "matches_with_candidates": 5,
+  "matches_with_candidates": 21,
   "missing_data_flags": {
-    "confidence_below_micro_c": 6,
-    "edge_below_micro_c": 6,
-    "ev_below_micro_c": 5,
-    "single_book": 3,
-    "single_context_source": 4,
-    "single_odds_source": 6
+    "confidence_below_micro_c": 30,
+    "edge_below_micro_c": 30,
+    "ev_below_micro_c": 30,
+    "single_book": 12,
+    "single_context_source": 13,
+    "single_odds_source": 20
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 5,
+  "positive_near_miss_count": 18,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,12 +78,31 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 2,
+      "events_matched": 28,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 269,
+      "offers_parsed": 2626,
       "provider": "account1",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "football_data",
       "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
@@ -102,11 +121,11 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 716,
+      "matches_built": 700,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 2,
+      "response_errors": 4,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -117,11 +136,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 999,
+      "events_fetched": 1000,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 716,
+      "matches_built": 700,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -140,7 +159,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 3,
+      "matches_built": 4,
       "offers_parsed": null,
       "provider": "openfootball",
       "rate_limited": null,
@@ -171,8 +190,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 1,
-      "direct_event_contexts_built": 1,
+      "contexts_built": 8,
+      "direct_event_contexts_built": 8,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -192,22 +211,39 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
       "enabled": true,
-      "events_fetched": 50,
+      "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [
-        "low_overlap_or_matching_failed"
-      ],
+      "gap_flags": [],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "raw_stats",
+      "provider": "stats",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
-      "status_category": "low_overlap_or_matching_issue",
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
       "team_form_contexts_built": null
     },
     {
@@ -227,7 +263,7 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
-      "response_errors": 2,
+      "response_errors": 4,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -421,312 +457,570 @@
       "rows_fetched": 0,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "v1_empty_prediction_fallback",
-      "rate_limited": null,
-      "response_errors": null,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "low_overlap_or_matching_issue": 1,
-    "no_data": 11,
-    "working": 6
+    "no_data": 8,
+    "working": 9
   },
   "reject_reason_counts_from_rows": {
-    "bad_historical_segment_guard": 1
+    "current_price_recheck_value_lost:-0.4/-0.2": 1,
+    "current_price_recheck_value_lost:-0.9/-0.6": 1,
+    "odds_below_global_min": 6,
+    "tier_a_canonical_edge_below_min": 1,
+    "tier_a_canonical_ev_below_min": 1,
+    "tier_a_confirmation_sources_below_min:1/2": 1,
+    "tier_a_market_implied_xg_not_hard_confirmation": 2,
+    "tier_a_odds_sources_below_min:1/2": 2,
+    "tier_a_publication_score_below_min": 2,
+    "tier_a_quality_below_min": 2,
+    "tier_a_two_plus_context_sources_required:1/2": 1,
+    "tier_a_two_plus_odds_sources_required:1/2": 1,
+    "tier_b_canonical_edge_below_min": 1,
+    "tier_b_publication_score_below_min": 3,
+    "tier_b_quality_below_min": 3,
+    "tier_c_canonical_edge_below_min": 1,
+    "tier_c_canonical_ev_below_min": 1,
+    "tier_c_market_implied_xg_not_hard_confirmation": 2,
+    "tier_c_publication_score_below_min": 1,
+    "tier_c_quality_below_min": 3,
+    "xg_probability_gap_hard_reject": 3
   },
-  "target_date": "2026-08-22",
+  "target_date": "2026-08-23",
   "top_near_miss": [
     {
-      "away_team": "",
+      "away_team": "Gangwon FC",
       "best_candidate": {
-        "adjusted_probability": 0.69412,
+        "adjusted_probability": 0.627818,
         "books_count": 2,
-        "canonical_edge_pp": 11.273,
-        "canonical_ev_pct": 19.389,
-        "confidence": 76.1,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
+        "canonical_edge_pp": 3.958,
+        "canonical_ev_pct": 6.729,
+        "confidence": 72.128,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
         "family": "totals",
-        "odds": 1.72,
+        "odds": 1.7,
         "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "odds_below_global_min"
+        ],
+        "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 76.1,
-      "best_edge_pp": 11.273,
-      "best_ev_pct": 19.389,
+      "best_confidence": 72.128,
+      "best_edge_pp": 3.958,
+      "best_ev_pct": 6.729,
       "books_max": 2,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
+      "candidate_count": 1,
+      "commence_time": "2026-08-23T10:30:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
       "families": {
-        "spreads": 2,
-        "totals": 3
+        "totals": 1
       },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|espanyol|real madrid|2026-08-22",
+      "home_team": "Daejeon Hana Citizen",
+      "league_name": "K League 1",
+      "match_key": "2026-08-23|daejeon hana citizen|gangwon",
       "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 4,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 5
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
       },
       "odds_sources_max": 1,
       "origins": {
-        ".logs/debug-last-run.json": 5
+        "controlled": 1
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "odds_below_global_min": 1
+      },
       "sources_max": 1
     },
     {
-      "away_team": "FC Lorient",
+      "away_team": "FC Dallas",
       "best_candidate": {
-        "adjusted_probability": 0.614118,
+        "adjusted_probability": 0.478935,
         "books_count": 2,
-        "canonical_edge_pp": 6.767,
-        "canonical_ev_pct": 12.384,
-        "confidence": 76.173,
-        "confirmation_sources_count": 9,
-        "context_sources_count": 9,
+        "canonical_edge_pp": 2.439,
+        "canonical_ev_pct": 5.366,
+        "confidence": 71.515,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
         "family": "totals",
-        "odds": 1.83,
-        "odds_sources_count": 6,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
+        "odds": 2.2,
+        "odds_sources_count": 3,
+        "origin": "rescue",
+        "point": 3.0,
         "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 6
+        "sources_count": 3
       },
-      "best_confidence": 76.173,
-      "best_edge_pp": 6.767,
-      "best_ev_pct": 12.384,
+      "best_confidence": 71.515,
+      "best_edge_pp": 2.439,
+      "best_ev_pct": 5.366,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-22T18:45:00+00:00",
-      "confirmation_sources_max": 9,
-      "context_sources_max": 9,
+      "commence_time": "2026-08-23T00:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "OGC Nice",
-      "league_name": "Ligue 1",
-      "match_key": "soccer|ogc_nice|fc_lorient|2026-08-22",
-      "missing_flags": {},
-      "odds_sources_max": 6,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 6
-    },
-    {
-      "away_team": "Stade Brest 29",
-      "best_candidate": {
-        "adjusted_probability": 0.376216,
-        "books_count": 2,
-        "canonical_edge_pp": 3.723,
-        "canonical_ev_pct": 10.984,
-        "confidence": 75.543,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 2.95,
-        "odds_sources_count": 5,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.0,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 5
-      },
-      "best_confidence": 75.543,
-      "best_edge_pp": 3.723,
-      "best_ev_pct": 10.984,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-22T18:45:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Le Mans FC",
-      "league_name": "France - Ligue 1",
-      "match_key": "soccer|le_mans_fc|stade_brest_29|2026-08-22",
+      "home_team": "Vancouver Whitecaps",
+      "league_name": "MLS",
+      "match_key": "soccer|vancouver_whitecaps|fc_dallas|2026-08-23",
       "missing_flags": {
-        "edge_below_micro_c": 1
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
       },
-      "odds_sources_max": 5,
+      "odds_sources_max": 3,
       "origins": {
-        ".logs/debug-last-run.json": 1
+        "rescue": 1
       },
       "reject_reasons": {},
-      "sources_max": 5
+      "sources_max": 3
     },
     {
-      "away_team": "Clube do Remo PA",
+      "away_team": "FC Dallas",
       "best_candidate": {
-        "adjusted_probability": 0.598794,
+        "adjusted_probability": 0.478935,
         "books_count": 2,
-        "canonical_edge_pp": 4.934,
-        "canonical_ev_pct": 8.981,
-        "confidence": 70.141,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
+        "canonical_edge_pp": 2.439,
+        "canonical_ev_pct": 5.366,
+        "confidence": 71.515,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
         "family": "totals",
-        "odds": 1.82,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
+        "odds": 2.2,
+        "odds_sources_count": 2,
+        "origin": "controlled",
+        "point": 3.0,
+        "reject_reasons": [
+          "xg_probability_gap_hard_reject"
+        ],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 71.515,
+      "best_edge_pp": 2.439,
+      "best_ev_pct": 5.366,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-23T00:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Vancouver Whitecaps",
+      "league_name": "MLS",
+      "match_key": "2026-08-23|vancouver whitecaps|dallas",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "xg_probability_gap_hard_reject": 1
+      },
+      "sources_max": 2
+    },
+    {
+      "away_team": "Denver Summit FC",
+      "best_candidate": {
+        "adjusted_probability": 0.63858,
+        "books_count": 2,
+        "canonical_edge_pp": 3.252,
+        "canonical_ev_pct": 5.366,
+        "confidence": 71.515,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
+        "family": "totals",
+        "odds": 1.65,
+        "odds_sources_count": 2,
+        "origin": "controlled",
         "point": 2.5,
-        "reject_reasons": [],
+        "reject_reasons": [
+          "odds_below_global_min",
+          "current_price_recheck_value_lost:-0.4/-0.2"
+        ],
+        "selection": "Больше",
+        "sources_count": 2
+      },
+      "best_confidence": 71.515,
+      "best_edge_pp": 3.252,
+      "best_ev_pct": 5.366,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-23T00:45:00+00:00",
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Portland Thorns FC",
+      "league_name": "NWSL",
+      "match_key": "2026-08-23|portland thorns|denver summit",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "current_price_recheck_value_lost:-0.4/-0.2": 1,
+        "odds_below_global_min": 1
+      },
+      "sources_max": 2
+    },
+    {
+      "away_team": "ADO Den Haag",
+      "best_candidate": {
+        "adjusted_probability": 0.540249,
+        "books_count": 2,
+        "canonical_edge_pp": 2.743,
+        "canonical_ev_pct": 5.349,
+        "confidence": 73.007,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 1.95,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.0,
+        "reject_reasons": [
+          "xg_probability_gap_hard_reject"
+        ],
         "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 70.141,
-      "best_edge_pp": 4.934,
-      "best_ev_pct": 8.981,
+      "best_confidence": 73.007,
+      "best_edge_pp": 2.743,
+      "best_ev_pct": 5.349,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-22T19:00:00+00:00",
+      "commence_time": "2026-08-23T10:15:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Go Ahead Eagles",
+      "league_name": "Eredivisie",
+      "match_key": "2026-08-23|go ahead eagles|ado den haag",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "xg_probability_gap_hard_reject": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Portland Timbers",
+      "best_candidate": {
+        "adjusted_probability": 0.592469,
+        "books_count": 2,
+        "canonical_edge_pp": 2.75,
+        "canonical_ev_pct": 4.867,
+        "confidence": 71.29,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 1.77,
+        "odds_sources_count": 3,
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 3
+      },
+      "best_confidence": 71.29,
+      "best_edge_pp": 2.75,
+      "best_ev_pct": 4.867,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-23T00:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Los Angeles FC",
+      "league_name": "MLS",
+      "match_key": "soccer|los_angeles_fc|portland_timbers|2026-08-23",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
+      "away_team": "Portland Timbers",
+      "best_candidate": {
+        "adjusted_probability": 0.592469,
+        "books_count": 3,
+        "canonical_edge_pp": 2.75,
+        "canonical_ev_pct": 4.867,
+        "confidence": 71.29,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.77,
+        "odds_sources_count": 2,
+        "origin": "controlled",
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 71.29,
+      "best_edge_pp": 2.75,
+      "best_ev_pct": 4.867,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-08-23T00:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Los Angeles FC",
+      "league_name": "MLS",
+      "match_key": "2026-08-23|los angeles|portland timbers",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 2
+    },
+    {
+      "away_team": "Denver Summit FC",
+      "best_candidate": {
+        "adjusted_probability": 0.635465,
+        "books_count": 2,
+        "canonical_edge_pp": 2.94,
+        "canonical_ev_pct": 4.852,
+        "confidence": 65.283,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.65,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 65.283,
+      "best_edge_pp": 2.94,
+      "best_ev_pct": 4.852,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-23T00:45:00+00:00",
       "confirmation_sources_max": 2,
       "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Fluminense FC RJ",
-      "league_name": "Brazil - Brasileiro Serie A",
-      "match_key": "soccer|fluminense_fc_rj|clube_do_remo_pa|2026-08-22",
+      "home_team": "Portland Thorns FC",
+      "league_name": "NWSL",
+      "match_key": "soccer|portland_thorns_fc|denver_summit_fc|2026-08-23",
       "missing_flags": {
         "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 1,
       "origins": {
-        ".logs/debug-last-run.json": 1
+        "rescue": 1
       },
       "reject_reasons": {},
       "sources_max": 1
     },
     {
-      "away_team": "FC Alverca",
+      "away_team": "Denver Summit FC",
       "best_candidate": {
-        "adjusted_probability": 0.584457,
-        "books_count": 2,
-        "canonical_edge_pp": 0.306,
-        "canonical_ev_pct": 6.663,
-        "confidence": 71.435,
+        "adjusted_probability": 0.635465,
+        "books_count": 4,
+        "canonical_edge_pp": 2.94,
+        "canonical_ev_pct": 4.852,
+        "confidence": 65.283,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.65,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "odds_below_global_min",
+          "current_price_recheck_value_lost:-0.9/-0.6"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 65.283,
+      "best_edge_pp": 2.94,
+      "best_ev_pct": 4.852,
+      "books_max": 4,
+      "candidate_count": 4,
+      "commence_time": "2026-08-23T00:45:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "spreads": 2,
+        "totals": 2
+      },
+      "home_team": "Portland Thorns FC",
+      "league_name": "NWSL",
+      "match_key": "soccer|denver summit|portland thorns|2026-08-23",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 4,
+        "single_odds_source": 4
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "current_price_recheck_value_lost:-0.9/-0.6": 1,
+        "odds_below_global_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Houston Dynamo",
+      "best_candidate": {
+        "adjusted_probability": 0.509125,
+        "books_count": 9,
+        "canonical_edge_pp": 2.132,
+        "canonical_ev_pct": 4.371,
+        "confidence": 65.067,
         "confirmation_sources_count": 5,
         "context_sources_count": 5,
         "family": "totals",
-        "odds": 1.825,
-        "odds_sources_count": 4,
-        "origin": ".logs/debug-last-run.json",
-        "point": 3.0,
+        "odds": 2.05,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
         "reject_reasons": [
-          "bad_historical_segment_guard"
+          "tier_a_quality_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_a_two_plus_odds_sources_required:1/2",
+          "tier_a_two_plus_context_sources_required:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
         ],
-        "selection": "Больше",
-        "sources_count": 4
+        "selection": "Меньше",
+        "sources_count": 1
       },
-      "best_confidence": 71.435,
-      "best_edge_pp": 0.306,
-      "best_ev_pct": 6.663,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-22T19:30:00+00:00",
+      "best_confidence": 66.28,
+      "best_edge_pp": 2.132,
+      "best_ev_pct": 4.371,
+      "books_max": 9,
+      "candidate_count": 3,
+      "commence_time": "2026-08-23T00:30:00+00:00",
       "confirmation_sources_max": 5,
       "context_sources_max": 5,
-      "controlled_count": 0,
+      "controlled_count": 1,
       "families": {
+        "spreads": 2,
         "totals": 1
       },
-      "home_team": "Sporting Clube de Portugal",
-      "league_name": "Primeira Liga",
-      "match_key": "soccer|sporting_clube_de_portugal|fc_alverca|2026-08-22",
+      "home_team": "St.Louis City",
+      "league_name": "MLS",
+      "match_key": "soccer|houston dynamo|saint louis city|2026-08-23",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
+        "confidence_below_micro_c": 3,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 3,
+        "single_book": 2,
+        "single_context_source": 2,
+        "single_odds_source": 3
       },
-      "odds_sources_max": 4,
+      "odds_sources_max": 1,
       "origins": {
-        ".logs/debug-last-run.json": 1
+        ".logs/debug-last-run.json": 2,
+        "controlled": 1
       },
       "reject_reasons": {
-        "bad_historical_segment_guard": 1
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_a_two_plus_context_sources_required:1/2": 1,
+        "tier_a_two_plus_odds_sources_required:1/2": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 1
       },
-      "sources_max": 4
+      "sources_max": 1
     }
   ]
 }

@@ -1,18 +1,18 @@
 🧾 Подробный отчёт run — прогнозов нет
 
-🕒 Источник цифр: debug-last-run (7 мин назад) — свежий
+🕒 Источник цифр: debug-last-run (3 мин назад) — свежий
 
 📦 Дневной inventory
-• Матчей всего: 300
-• С линиями: 206/300
-• С контекстом: 181/300
-• Готово к модели: 178/300
-• Ближайшие 6 часов: 3/31 готово
+• Матчей всего: 198
+• С линиями: 192/198
+• С контекстом: 198/198
+• Готово к модели: 192/198
+• Ближайшие 6 часов: 22/30 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 1 | с линиями: 1 | контекстов: 1
-• Кандидаты: raw 0 | до качества 26 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
+• Матчи: 14 | с линиями: 13 | контекстов: 9
+• Кандидаты: raw 0 | до качества 0 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 18 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -21,16 +21,54 @@
 • zero-raw recovery: recovered | recovered_candidates 1
 • match-window recovery: not_needed | recovered_matches 0
 • evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 0
+• provider targeting: ok | fallback_evaluated 18
 
 📡 Источники / фактическая работа
-• odds_api_io: data 4/474, req 0, err 2
-• bzzoiro: data 0/0, req 3, err 0
-• sstats: data 1/1, req 2, err 0
-• football_data: data 0/0, req 0, err 0
+• odds_api_io: data 28/2940, req 0, err 4
+• bzzoiro: data 0/0, req 4, err 0
+• sstats: data 8/8, req 3, err 0
+• football_data: data 1/1, req 3, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
-• openfootball: data 0/0, req 2, err 0
+• openfootball: data 0/0, req 0, err 0
+
+🚫 Почему не прошли
+• odds_below_global_min — 8 (13%)
+• tier_b_quality_below_min — 7 (11%)
+• tier_b_publication_score_below_min — 7 (11%)
+• tier_c_quality_below_min — 7 (11%)
+• tier_c_market_implied_xg_not_hard_confirmation — 7 (11%)
+• tier_a_quality_below_min — 4 (7%)
+• tier_a_publication_score_below_min — 4 (7%)
+• tier_a_odds_sources_below_min:1/2 — 4 (7%)
+• tier_a_market_implied_xg_not_hard_confirmation — 4 (7%)
+• tier_c_publication_score_below_min — 4 (7%)
+
+⚠️ Пограничные кандидаты
+1. Портланд Торнс — Денвер Суммит | Больше @1.65
+   • EV +5.4% | edge +3.3 п.п. | q 0.0
+   • не прошло: odds_below_global_min; current_price_recheck_value_lost:-0.4/-0.2
+2. Ванкувер Ухитекапс — Даллас | Меньше @2.20
+   • EV +5.4% | edge +2.4 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
+3. Ванкувер Ухитекапс — Даллас | Меньше @2.20
+   • EV +5.4% | edge +2.4 п.п. | q 0.0
+   • не прошло: xg_probability_gap_hard_reject
+4. Лос-Анджелес — Портланд Тимберс | Меньше @1.77
+   • EV +4.9% | edge +2.8 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
+5. Портланд Торнс — Денвер Суммит | Больше @1.65
+   • EV +4.9% | edge +2.9 п.п. | q 0.0
+   • не прошло: odds_below_global_min; current_price_recheck_value_lost:-0.9/-0.6
+6. Портланд Торнс — Денвер Суммит | Больше @1.65
+   • EV +4.9% | edge +2.9 п.п. | q 0.0
+   • не прошло: odds_below_global_min; current_price_recheck_value_lost:-0.9/-0.6
+7. Ст.Луис Кити — Хустон Динамо | Меньше @2.05
+   • EV +4.4% | edge +2.1 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2; tier_a_two_plus_odds_sources_required:1/2
+8. Ст.Луис Кити — Хустон Динамо | Меньше @2.05
+   • EV +4.4% | edge +2.1 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2; tier_a_two_plus_odds_sources_required:1/2
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
