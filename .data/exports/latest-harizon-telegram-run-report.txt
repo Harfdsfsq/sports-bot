@@ -1,58 +1,58 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: tier b quality below min
+• Итог: 🟡 кандидаты есть, quality/value не пропустили
+• Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 13 | day inventory: 198
-• С линиями: 7 | с контекстом: 2 | ready model: 192
-• odds-api.io offers: 992 | Bzzoiro secondary offers: 162
-• 2+ букмекера odds-api.io: 9 | 2-source overlap Bzzoiro+odds-api.io: 8
-• Source combinations: odds_api_io: 15
+• Матчи в run: 18 | day inventory: 198
+• С линиями: 16 | с контекстом: 1 | ready model: 192
+• odds-api.io offers: 1661 | Bzzoiro secondary offers: 204
+• 2+ букмекера odds-api.io: 15 | 2-source overlap Bzzoiro+odds-api.io: 14
+• Source combinations: odds_api_io: 9, bzzoiro+odds_api_io: 8
 
-• A-tier enrichment queue: Bzzoiro odds targets 48; context projection targets 47; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 48; context projection targets 46; high-value recheck 1.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 0
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 1 / 1
+• Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 18 | evaluated 18 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 25 | evaluated 25 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
 • Final pre-kickoff checks: 0 | no next regular run: 0
-• Line guard: seen 17 | kept 3 | dropped 6
+• Line guard: seen 34 | kept 9 | dropped 9
 
-• Bzzoiro targeted odds: targets 48; events 1498; matched 46; ids 46; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 31; requests 62; events_with_offers 27; offers 243; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 162; overlap matches 8; same-bucket matches 7.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 9; inventory updated 10; inventory 2-source 2.
-• Bzzoiro source trace: aggregate events 373; persisted rows 373; targeted events 1498; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 18; floor 5; hard 8; relieved 0.
+• Bzzoiro targeted odds: targets 48; events 1494; matched 46; ids 46; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 36; requests 72; events_with_offers 34; offers 306; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 204; overlap matches 14; same-bucket matches 14.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 15; inventory updated 15; inventory 2-source 8.
+• Bzzoiro source trace: aggregate events 372; persisted rows 372; targeted events 1494; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 25; floor 6; hard 9; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 3, matched 10, offers 992, 2+ books 9, err 2, auth_failed False
-• sstats: req 3, ctx 2, rows 15029, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 373 (aggregate; persisted rows 373; trace full_or_provider_rows_available), secondary offers 162, overlap odds-api.io 8, err 0
+• odds_api_io: events req 0, odds req 5, matched 15, offers 1661, 2+ books 15, err 3, auth_failed False
+• sstats: req 3, ctx 0, rows 15029, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 372 (aggregate; persisted rows 372; trace full_or_provider_rows_available), secondary offers 204, overlap odds-api.io 14, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
-• Line movement breakdown: коэффициент ниже минимума 6.
+• Line movement breakdown: коэффициент ниже минимума 7.
 🚫 Почему не опубликовано
-• tier b quality below min: 10 (12%)
-• tier c quality below min: 10 (12%)
-• tier c market implied xg not hard confirmation: 10 (12%)
-• tier b publication score below min: 9 (11%)
-• tier a quality below min: 6 (7%)
-• tier a publication score below min: 6 (7%)
-• tier a odds sources below min:1/2: 6 (7%)
-• tier a market implied xg not hard confirmation: 6 (7%)
+• tier b quality below min: 16 (12%)
+• tier c quality below min: 16 (12%)
+• tier b publication score below min: 15 (12%)
+• tier c market implied xg not hard confirmation: 15 (12%)
+• tier a quality below min: 10 (8%)
+• tier a publication score below min: 10 (8%)
+• tier a odds sources below min:1/2: 10 (8%)
+• tier c publication score below min: 10 (8%)
 
 🔎 Проверенные reserve-кандидаты
-1. Chaves — AVS - Futebol SAD | Больше @1.98 | EV +4.3% | edge +2.2 п.п. | q 69.7 reserve
+1. Go Ahead Eagles — ADO Den Haag | Меньше @1.95 | EV +5.3% | edge +2.7 п.п. | q 76.1 reserve
+   • reject: модель слишком оптимистична относительно xG-ориентира, current price recheck value lost:1.6/0.8
+2. Daejeon Hana Citizen — Gangwon FC | Больше @2.18 | EV +5.6% | edge +2.6 п.п. | q 77.6 reserve
+   • reject: tier b quality below min, tier b publication score below min, tier c quality below min
+3. Gwangju FC — Incheon United | Меньше @2.78 | EV +5.6% | edge +2.0 п.п. | q 71.3 reserve
    • reject: tier a quality below min, tier a publication score below min, tier a odds sources below min:1/2
-2. Go Ahead Eagles — ADO Den Haag | Меньше @1.95 | EV +5.3% | edge +2.7 п.п. | q 76.1 reserve
-   • reject: модель слишком оптимистична относительно xG-ориентира
-3. Machida Zelvia — Urawa Red Diamonds | Меньше @3.00 | EV +7.5% | edge +2.5 п.п. | q 66.4 reserve
+4. Liaoning Tieren FC — Henan FC | Больше @2.75 | EV +8.0% | edge +2.9 п.п. | q 75.2 reserve
    • reject: tier a quality below min, tier a publication score below min, tier a odds sources below min:1/2
-4. Sønderjyske Fodbold — FC Nordsjælland | Меньше @1.67 | EV +2.5% | edge +1.5 п.п. | q 56.7 reserve
-   • reject: odds below global min
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
