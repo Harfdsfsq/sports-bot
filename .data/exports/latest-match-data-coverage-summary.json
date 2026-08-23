@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 10,
+      "rows_seen": 10,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 40,
-      "rows_seen": 73,
-      "rows_stale": 33
+      "rows_kept": 6,
+      "rows_seen": 47,
+      "rows_stale": 41
     },
     "lifecycle": {
       "files_present": 0,
@@ -35,26 +35,27 @@
     "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 0,
-    "controlled_candidates_seen": null,
+    "contexts_built": 2,
+    "controlled_candidates_seen": 5,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 10,
-    "matches_seen": 2,
-    "matches_with_offers": 2
+    "coverage_candidates_current_date": 8,
+    "matches_seen": 7,
+    "matches_with_offers": 7
   },
-  "created_at": "2026-08-23T19:14:39.321042+00:00",
+  "created_at": "2026-08-23T23:12:44.517508+00:00",
   "family_counts": {
-    "totals": 10
+    "spreads": 3,
+    "totals": 5
   },
-  "matches_with_candidates": 2,
+  "matches_with_candidates": 6,
   "missing_data_flags": {
-    "confidence_below_micro_c": 10,
-    "edge_below_micro_c": 8,
-    "ev_below_micro_c": 6,
-    "single_book": 10,
-    "single_context_source": 10,
-    "single_odds_source": 10
+    "confidence_below_micro_c": 8,
+    "edge_below_micro_c": 7,
+    "ev_below_micro_c": 7,
+    "single_book": 3,
+    "single_context_source": 3,
+    "single_odds_source": 6
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -68,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 2,
+  "positive_near_miss_count": 5,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -77,11 +78,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 2,
+      "events_matched": 7,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 253,
+      "offers_parsed": 830,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -101,7 +102,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 419,
+      "matches_built": 358,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -116,11 +117,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 566,
+      "events_fetched": 452,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 419,
+      "matches_built": 358,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -161,6 +162,27 @@
       "matches_built": 4,
       "offers_parsed": null,
       "provider": "openligadb",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -420,135 +442,325 @@
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": false,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "disabled_by_config"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "disabled_by_config",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "disabled_by_config": 1,
     "no_data": 10,
-    "working": 5
+    "working": 6
   },
-  "reject_reason_counts_from_rows": {},
-  "target_date": "2026-08-23",
+  "reject_reason_counts_from_rows": {
+    "odds_below_global_min": 1,
+    "tier_a_canonical_edge_below_min": 2,
+    "tier_a_canonical_ev_below_min": 1,
+    "tier_a_market_implied_xg_not_hard_confirmation": 2,
+    "tier_a_odds_sources_below_min:1/2": 2,
+    "tier_a_publication_score_below_min": 2,
+    "tier_a_quality_below_min": 2,
+    "tier_b_publication_score_below_min": 2,
+    "tier_b_quality_below_min": 2,
+    "tier_c_canonical_edge_below_min": 2,
+    "tier_c_canonical_ev_below_min": 1,
+    "tier_c_market_implied_xg_not_hard_confirmation": 1,
+    "tier_c_publication_score_below_min": 2,
+    "tier_c_quality_below_min": 2,
+    "xg_probability_gap_hard_reject": 2
+  },
+  "target_date": "2026-08-24",
   "top_near_miss": [
     {
-      "away_team": "",
+      "away_team": "Casa Pia",
       "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 69.395,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "adjusted_probability": 0.683189,
+        "books_count": 3,
+        "canonical_edge_pp": 5.819,
+        "canonical_ev_pct": 9.31,
+        "confidence": 70.29,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
         "family": "totals",
-        "odds": 2.75,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
+        "odds": 1.6,
+        "odds_sources_count": 2,
+        "origin": "controlled",
         "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше 2.5",
-        "sources_count": 0
+        "reject_reasons": [
+          "odds_below_global_min"
+        ],
+        "selection": "Меньше",
+        "sources_count": 2
       },
-      "best_confidence": 66.37,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 69.395,
-      "books_max": 0,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
+      "best_confidence": 70.29,
+      "best_edge_pp": 5.819,
+      "best_ev_pct": 9.31,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-08-24T19:15:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
       "families": {
-        "totals": 5
+        "totals": 1
       },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|barcelona|elche|2026-08-23",
+      "home_team": "Gil Vicente",
+      "league_name": "Primeira Liga",
+      "match_key": "2026-08-24|gil vicente|casa pia",
       "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 3,
-        "single_book": 5,
-        "single_context_source": 5,
-        "single_odds_source": 5
+        "confidence_below_micro_c": 1
       },
-      "odds_sources_max": 0,
+      "odds_sources_max": 2,
       "origins": {
-        ".logs/debug-last-run.json": 5
+        "controlled": 1
       },
-      "reject_reasons": {},
-      "sources_max": 0
+      "reject_reasons": {
+        "odds_below_global_min": 1
+      },
+      "sources_max": 2
     },
     {
-      "away_team": "",
+      "away_team": "ACF Fiorentina",
       "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 55.429,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "adjusted_probability": 0.398026,
+        "books_count": 2,
+        "canonical_edge_pp": 1.78,
+        "canonical_ev_pct": 4.681,
+        "confidence": 66.706,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
         "family": "totals",
-        "odds": 2.18,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": 0.5,
-        "reject_reasons": [],
-        "selection": "Больше 0.5",
-        "sources_count": 0
+        "odds": 2.63,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.0,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_canonical_edge_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_canonical_edge_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
       },
-      "best_confidence": 65.86,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 55.429,
-      "books_max": 0,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
+      "best_confidence": 66.706,
+      "best_edge_pp": 1.78,
+      "best_ev_pct": 4.681,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-24T18:45:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 1,
       "families": {
-        "totals": 5
+        "totals": 1
       },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|arouca|porto|2026-08-23",
+      "home_team": "AS Roma",
+      "league_name": "Serie A",
+      "match_key": "soccer|acf fiorentina|as roma|2026-08-24",
       "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 3,
-        "single_book": 5,
-        "single_context_source": 5,
-        "single_odds_source": 5
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
       },
-      "odds_sources_max": 0,
+      "odds_sources_max": 1,
       "origins": {
-        ".logs/debug-last-run.json": 5
+        "controlled": 1
       },
-      "reject_reasons": {},
-      "sources_max": 0
+      "reject_reasons": {
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_canonical_edge_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "RC Deportivo La Coruña",
+      "best_candidate": {
+        "adjusted_probability": 0.538751,
+        "books_count": 2,
+        "canonical_edge_pp": 1.244,
+        "canonical_ev_pct": 2.363,
+        "confidence": 65.663,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.9,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.0,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_canonical_edge_below_min",
+          "tier_a_canonical_ev_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_canonical_edge_below_min",
+          "tier_c_canonical_ev_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 65.663,
+      "best_edge_pp": 1.244,
+      "best_ev_pct": 2.363,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-24T19:30:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Málaga CF",
+      "league_name": "Primera Division",
+      "match_key": "soccer|malaga|rc la coruna|2026-08-24",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_a_canonical_edge_below_min": 1,
+        "tier_a_canonical_ev_below_min": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_canonical_edge_below_min": 1,
+        "tier_c_canonical_ev_below_min": 1,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Chelsea",
+      "best_candidate": {
+        "adjusted_probability": 0.581989,
+        "books_count": 2,
+        "canonical_edge_pp": 1.056,
+        "canonical_ev_pct": 1.848,
+        "confidence": 66.932,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.75,
+        "odds_sources_count": 2,
+        "origin": "controlled",
+        "point": 3.0,
+        "reject_reasons": [
+          "xg_probability_gap_hard_reject"
+        ],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 66.932,
+      "best_edge_pp": 1.056,
+      "best_ev_pct": 1.848,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-24T19:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Fulham",
+      "league_name": "Premier League",
+      "match_key": "2026-08-24|fulham|chelsea",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "xg_probability_gap_hard_reject": 1
+      },
+      "sources_max": 2
+    },
+    {
+      "away_team": "SS Lazio",
+      "best_candidate": {
+        "adjusted_probability": 0.45065,
+        "books_count": 4,
+        "canonical_edge_pp": 0.621,
+        "canonical_ev_pct": 1.396,
+        "confidence": 65.228,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.25,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.0,
+        "reject_reasons": [
+          "xg_probability_gap_hard_reject"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 65.228,
+      "best_edge_pp": 0.621,
+      "best_ev_pct": 1.396,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-08-24T16:30:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Bologna FC 1909",
+      "league_name": "Serie A",
+      "match_key": "soccer|bologna 1909|ss lazio|2026-08-24",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "xg_probability_gap_hard_reject": 1
+      },
+      "sources_max": 1
     }
   ]
 }
