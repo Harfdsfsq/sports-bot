@@ -9,13 +9,19 @@ while the final coverage-truth still had only ~85/300 with 2+ real context
 sources.  This version counts only actual provider evidence and prioritizes
 rows with fewer than two real context providers.
 
-v4 also instruments xG extraction.  Run 22:06 proved that the B-tier relief
+v4 also instruments extraction.  Run 22:06 proved that the B-tier relief
 rejects every candidate on no_hard_context, because the only xG available is
 market-implied (derived from the price we would bet against, home == away).
 This pass made 149 successful calls yet resolved real xG for 8 of 47 rows, so
 the extractor - not the provider budget - is the bottleneck.  The probe artifact
 records the payload structure of failures so the extractor can be written from
 the real field names.
+
+The same applies to prices.  /Odds/{game_id} is called and only its row count is
+kept, so SStats can never act as the second independent price source that A-tier
+requires (a_cover needs len(odds_sources) >= 2, and Bet365 + Unibet are both
+odds_api_io).  The odds payload is now probed the same way, so the offer parser
+can be written from real field names instead of guesses.
 """
 
 import asyncio
@@ -38,7 +44,9 @@ CONTEXT_PROVIDERS = {"sstats", "bzzoiro", "thesportsdb", "football_data", "api_f
 ODDS_PROVIDERS = {"odds_api_io", "bzzoiro", "sstats", "sportlogic"}
 
 XG_PROBE_LIMIT = 6
+ODDS_PROBE_LIMIT = 6
 _XG_PROBE: list[dict[str, Any]] = []
+_ODDS_PROBE: list[dict[str, Any]] = []
 _XG_STATS: dict[str, Any] = {"attempted": 0, "resolved_real": 0, "kept_existing": 0, "missing": 0, "placeholder_rejected": 0, "source_counts": {}}
 
 
@@ -202,8 +210,8 @@ def extract_expected_goals(*payloads: Any) -> tuple[float | None, float | None, 
 def describe_shape(payload: Any, depth: int = 0) -> Any:
     """Describe a payload's structure without dumping the whole thing.
 
-    Keys are what matter here: the extractor above guesses field names, and the
-    probe exists to replace those guesses with the names SStats actually sends.
+    Keys are what matter here: the extractors guess field names, and the probe
+    exists to replace those guesses with the names SStats actually sends.
     """
     if depth >= 4:
         return "..."
@@ -218,6 +226,21 @@ def describe_shape(payload: Any, depth: int = 0) -> Any:
     if isinstance(payload, (int, float, bool)) or payload is None:
         return payload
     return type(payload).__name__
+
+
+def raw_preview(payload: Any, limit: int = 1800) -> str:
+    """A truncated verbatim preview of a payload.
+
+    describe_shape keeps keys but drops values, and a parser needs both: the
+    field name and the kind of value it carries (1.85 vs "1,85" vs "Over 2.5").
+    """
+    try:
+        text = json.dumps(payload, ensure_ascii=False, default=str)
+    except Exception:
+        text = str(payload)
+    if len(text) <= limit:
+        return text
+    return text[:limit] + f"...[truncated, total {len(text)} chars]"
 
 
 def record_xg_probe(row: dict[str, Any], game_id: str, *, glicko_payload: Any = None, last_stats_payload: Any = None, detail_payload: Any = None) -> None:
@@ -235,6 +258,30 @@ def record_xg_probe(row: dict[str, Any], game_id: str, *, glicko_payload: Any = 
         "last_games_stats_shape": describe_shape(last_stats_payload),
         "glicko_shape": describe_shape(glicko_payload),
         "game_detail_shape": describe_shape(detail_payload),
+        "last_games_stats_raw_preview": raw_preview(last_stats_payload, 2400),
+        "glicko_raw_preview": raw_preview(glicko_payload, 900),
+    })
+
+
+def record_odds_probe(row: dict[str, Any], game_id: str, payload: Any, rows_count: int) -> None:
+    """Record the /Odds payload structure for the offer parser.
+
+    A-tier needs two independent price sources.  Bet365 and Unibet both arrive
+    through odds_api_io, so SStats offers are the only second source available
+    without a new subscription - but only if the actual bookmaker, selection,
+    line and price fields are known.
+    """
+    if len(_ODDS_PROBE) >= ODDS_PROBE_LIMIT or payload in (None, ""):
+        return
+    _ODDS_PROBE.append({
+        "match_key": str(row.get("match_key") or row.get("canonical_match_id") or ""),
+        "home_team": row.get("home_team"),
+        "away_team": row.get("away_team"),
+        "league_name": row.get("league_name"),
+        "game_id": str(game_id),
+        "rows_reported": int(rows_count),
+        "odds_shape": describe_shape(payload),
+        "odds_raw_preview": raw_preview(payload, 3000),
     })
 
 
@@ -251,7 +298,7 @@ def set_count_from_sources(row: dict[str, Any], key: str, list_key: str, allowed
     return value
 
 
-def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds_ok: bool, before_context: int, before_odds: int, *, glicko_payload: Any = None, last_stats_payload: Any = None, detail_payload: Any = None) -> None:
+def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds_ok: bool, before_context: int, before_odds: int, *, glicko_payload: Any = None, last_stats_payload: Any = None, detail_payload: Any = None, odds_payload: Any = None) -> None:
     row.setdefault("source_ids", {})["sstats"] = str(game_id)
     row.setdefault("provider_source_ids", {})["sstats"] = str(game_id)
     v2.add_src(row, "sources_seen", "sstats")
@@ -305,6 +352,7 @@ def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds
     if detail_ok:
         cov.update({"lineups": True, "venue_referee": True})
     if odds_ok:
+        record_odds_probe(row, game_id, odds_payload, v2.as_int(row.get("sstats_odds_rows")))
         v2.add_src(row, "odds_sources", "sstats")
         row["odds_sources_count"] = set_count_from_sources(row, "odds_sources_count", "odds_sources", ODDS_PROVIDERS)
         row["price_confirmation_sources_count"] = max(v2.as_int(row.get("price_confirmation_sources_count")), row["odds_sources_count"])
@@ -376,14 +424,15 @@ async def run() -> dict[str, Any]:
                 detail_left -= 1
                 req += 1
             if before_odds < threshold and odds_left and req < max_req:
-                o = await v2.call(client, "odds", f"/Odds/{game_id}", {"opening": "false"})
+                o = await v2.call(client, "odds", f"/Odds/{game_id}", {"opening": "false"}, include_payload=True)
                 odds_left -= 1
                 req += 1
             statuses.extend([{k: v for k, v in item.items() if k != "payload"} for item in (g, l, d, o)])
             deep_ok = g.get("status") == "OK" or l.get("status") == "OK"
             detail_ok = d.get("status") == "OK"
             odds_ok = o.get("status") == "OK" and v2.as_int(o.get("rows")) > 0
-            mark(row, game_id, deep_ok, detail_ok, odds_ok, before_context, before_odds, glicko_payload=g.get("payload"), last_stats_payload=l.get("payload"), detail_payload=d.get("payload"))
+            row["sstats_odds_rows"] = v2.as_int(o.get("rows"))
+            mark(row, game_id, deep_ok, detail_ok, odds_ok, before_context, before_odds, glicko_payload=g.get("payload"), last_stats_payload=l.get("payload"), detail_payload=d.get("payload"), odds_payload=o.get("payload"))
             if deep_ok or detail_ok or odds_ok:
                 enriched.append({"match_key": key, "game_id": game_id, "home_team": row.get("home_team"), "away_team": row.get("away_team"), "deep_ok": deep_ok, "detail_ok": detail_ok, "odds_ok": odds_ok, "before_context": before_context, "after_context": row.get("context_sources_count"), "before_odds": before_odds, "after_odds": row.get("odds_sources_count"), "expected_home": row.get("expected_home"), "expected_away": row.get("expected_away"), "xg_source": row.get("sstats_xg_source")})
     if isinstance(inventory, dict):
@@ -396,8 +445,8 @@ async def run() -> dict[str, Any]:
     for s in statuses:
         counts[str(s.get("status"))] = counts.get(str(s.get("status")), 0) + 1
     xg_extraction = dict(_XG_STATS)
-    v2.write(XG_PROBE_OUT, {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_xg_extraction_probe_v1", "status": "ok", "probe_limit": XG_PROBE_LIMIT, "xg_extraction": xg_extraction, "samples": _XG_PROBE})
-    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "inventory_path": str(primary_path), "inventory_aliases_written": [str(p) for p in inventory_aliases(primary_path)], "crosswalk_matched": (cross.get("summary") or {}).get("matched"), "queue_seen": len(raw_queue), "request_count": req, "enriched_matches": len(enriched), "priority_group_counts": group_counts, "command_status_counts": counts, "xg_extraction": xg_extraction, "xg_probe_samples": len(_XG_PROBE), "enriched_sample": enriched[:50], "command_sample": statuses[:20]}
+    v2.write(XG_PROBE_OUT, {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_xg_extraction_probe_v1", "status": "ok", "probe_limit": XG_PROBE_LIMIT, "odds_probe_limit": ODDS_PROBE_LIMIT, "xg_extraction": xg_extraction, "samples": _XG_PROBE, "odds_samples": _ODDS_PROBE})
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_deep_inventory_enrichment_v4_true_context_gap_priority", "status": "ok", "inventory_path": str(primary_path), "inventory_aliases_written": [str(p) for p in inventory_aliases(primary_path)], "crosswalk_matched": (cross.get("summary") or {}).get("matched"), "queue_seen": len(raw_queue), "request_count": req, "enriched_matches": len(enriched), "priority_group_counts": group_counts, "command_status_counts": counts, "xg_extraction": xg_extraction, "xg_probe_samples": len(_XG_PROBE), "odds_probe_samples": len(_ODDS_PROBE), "enriched_sample": enriched[:50], "command_sample": statuses[:20]}
     v2.write(JSON_OUT, payload)
     TXT_OUT.write_text(render(payload), encoding="utf-8")
     print(render(payload))
@@ -405,7 +454,7 @@ async def run() -> dict[str, Any]:
 
 
 def render(payload: dict[str, Any]) -> str:
-    lines = ["# SStats deep inventory enrichment v4", f"status: {payload.get('status')}", f"inventory_path: {payload.get('inventory_path')}", f"aliases_written: {', '.join(payload.get('inventory_aliases_written') or [])}", f"crosswalk_matched: {payload.get('crosswalk_matched')}", f"queue_seen: {payload.get('queue_seen')}", f"request_count: {payload.get('request_count')}", f"enriched_matches: {payload.get('enriched_matches')}", f"priority_group_counts: {json.dumps(payload.get('priority_group_counts') or {}, ensure_ascii=False)}", f"command_status_counts: {json.dumps(payload.get('command_status_counts') or {}, ensure_ascii=False)}", f"xg_extraction: {json.dumps(payload.get('xg_extraction') or {}, ensure_ascii=False)}", f"xg_probe_samples: {payload.get('xg_probe_samples')}", "", "## Enriched sample"]
+    lines = ["# SStats deep inventory enrichment v4", f"status: {payload.get('status')}", f"inventory_path: {payload.get('inventory_path')}", f"aliases_written: {', '.join(payload.get('inventory_aliases_written') or [])}", f"crosswalk_matched: {payload.get('crosswalk_matched')}", f"queue_seen: {payload.get('queue_seen')}", f"request_count: {payload.get('request_count')}", f"enriched_matches: {payload.get('enriched_matches')}", f"priority_group_counts: {json.dumps(payload.get('priority_group_counts') or {}, ensure_ascii=False)}", f"command_status_counts: {json.dumps(payload.get('command_status_counts') or {}, ensure_ascii=False)}", f"xg_extraction: {json.dumps(payload.get('xg_extraction') or {}, ensure_ascii=False)}", f"xg_probe_samples: {payload.get('xg_probe_samples')}", f"odds_probe_samples: {payload.get('odds_probe_samples')}", "", "## Enriched sample"]
     for item in payload.get("enriched_sample") or []:
         lines.append(f"- {item.get('home_team')} — {item.get('away_team')} | gameId={item.get('game_id')} deep={item.get('deep_ok')} detail={item.get('detail_ok')} odds={item.get('odds_ok')} context:{item.get('before_context')}→{item.get('after_context')} odds:{item.get('before_odds')}→{item.get('after_odds')}")
     return "\n".join(lines) + "\n"
