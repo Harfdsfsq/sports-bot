@@ -2,8 +2,8 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 36,
-      "rows_seen": 36,
+      "rows_kept": 44,
+      "rows_seen": 44,
       "rows_stale": 0
     },
     "debug": {
@@ -35,27 +35,28 @@
     "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 2,
-    "controlled_candidates_seen": 18,
+    "contexts_built": 0,
+    "controlled_candidates_seen": 22,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 22,
-    "matches_seen": 11,
-    "matches_with_offers": 11
+    "coverage_candidates_current_date": 26,
+    "matches_seen": 10,
+    "matches_with_offers": 10
   },
-  "created_at": "2026-08-24T08:55:26.019075+00:00",
+  "created_at": "2026-08-24T09:13:17.782635+00:00",
   "family_counts": {
+    "h2h": 1,
     "spreads": 2,
-    "totals": 20
+    "totals": 23
   },
-  "matches_with_candidates": 16,
+  "matches_with_candidates": 20,
   "missing_data_flags": {
-    "confidence_below_micro_c": 22,
-    "edge_below_micro_c": 17,
-    "ev_below_micro_c": 17,
+    "confidence_below_micro_c": 26,
+    "edge_below_micro_c": 21,
+    "ev_below_micro_c": 21,
     "single_book": 5,
     "single_context_source": 11,
-    "single_odds_source": 11
+    "single_odds_source": 15
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +70,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 15,
+  "positive_near_miss_count": 19,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +79,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 11,
+      "events_matched": 10,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 311,
+      "offers_parsed": 457,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +103,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 329,
+      "matches_built": 331,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -117,11 +118,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 412,
+      "events_fetched": 421,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 329,
+      "matches_built": 331,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -162,27 +163,6 @@
       "matches_built": 4,
       "offers_parsed": null,
       "provider": "openligadb",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "working",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 2,
-      "direct_event_contexts_built": 2,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "team_form_fallback_only"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "sstats",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -404,6 +384,27 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -467,10 +468,23 @@
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "no_data": 11,
-    "working": 6
+    "no_data": 12,
+    "working": 5
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "odds_below_global_min": 2,
+    "tier_a_canonical_edge_below_min": 1,
+    "tier_a_market_implied_xg_not_hard_confirmation": 2,
+    "tier_a_odds_sources_below_min:1/2": 2,
+    "tier_a_publication_score_below_min": 2,
+    "tier_a_quality_below_min": 2,
+    "tier_b_publication_score_below_min": 2,
+    "tier_b_quality_below_min": 2,
+    "tier_c_canonical_edge_below_min": 1,
+    "tier_c_market_implied_xg_not_hard_confirmation": 2,
+    "tier_c_publication_score_below_min": 2,
+    "tier_c_quality_below_min": 2
+  },
   "target_date": "2026-08-24",
   "top_near_miss": [
     {
@@ -703,6 +717,73 @@
       "sources_max": 2
     },
     {
+      "away_team": "Bnei Sakhnin FC",
+      "best_candidate": {
+        "adjusted_probability": 0.358578,
+        "books_count": 2,
+        "canonical_edge_pp": 2.524,
+        "canonical_ev_pct": 7.573,
+        "confidence": 68.008,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 3.0,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_publication_score_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_publication_score_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 68.008,
+      "best_edge_pp": 2.524,
+      "best_ev_pct": 7.573,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-24T17:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Maccabi Netanya FC",
+      "league_name": "Israel - Premier League",
+      "match_key": "soccer|bnei sakhnin|maccabi netanya|2026-08-24",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_a_market_implied_xg_not_hard_confirmation": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_publication_score_below_min": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_b_publication_score_below_min": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_publication_score_below_min": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
       "away_team": "Muaither SC",
       "best_candidate": {
         "adjusted_probability": 0.47741,
@@ -843,98 +924,55 @@
       "sources_max": 2
     },
     {
-      "away_team": "1. FC Cologne",
+      "away_team": "FC Felgueiras 1932",
       "best_candidate": {
-        "adjusted_probability": 0.392448,
-        "books_count": 2,
-        "canonical_edge_pp": 1.862,
-        "canonical_ev_pct": 4.98,
-        "confidence": 65.341,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
+        "adjusted_probability": 0.661124,
+        "books_count": 4,
+        "canonical_edge_pp": 3.612,
+        "canonical_ev_pct": 5.78,
+        "confidence": 67.201,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
         "family": "totals",
-        "odds": 2.675,
+        "odds": 1.6,
         "odds_sources_count": 1,
-        "origin": "awaiting_movement_lifecycle",
+        "origin": "controlled",
         "point": 2.5,
-        "reject_reasons": [],
+        "reject_reasons": [
+          "odds_below_global_min"
+        ],
         "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 65.341,
-      "best_edge_pp": 1.862,
-      "best_ev_pct": 4.98,
-      "books_max": 2,
+      "best_confidence": 67.201,
+      "best_edge_pp": 3.612,
+      "best_ev_pct": 5.78,
+      "books_max": 4,
       "candidate_count": 1,
-      "commence_time": "2026-08-24T16:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
+      "commence_time": "2026-08-24T17:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 1,
       "families": {
         "totals": 1
       },
-      "home_team": "FC Wurzburger Kickers",
-      "league_name": "Germany - DFB Pokal",
-      "match_key": "soccer|1 cologne|wurzburger kickers|2026-08-24",
+      "home_team": "SC Farense",
+      "league_name": "Portugal - Liga Portugal 2",
+      "match_key": "soccer|farense|felgueiras 1932|2026-08-24",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
         "ev_below_micro_c": 1,
-        "single_context_source": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 1,
       "origins": {
-        "awaiting_movement_lifecycle": 1
+        "controlled": 1
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "odds_below_global_min": 1
+      },
       "sources_max": 1
-    },
-    {
-      "away_team": "ACF Fiorentina",
-      "best_candidate": {
-        "adjusted_probability": 0.398026,
-        "books_count": 2,
-        "canonical_edge_pp": 1.78,
-        "canonical_ev_pct": 4.681,
-        "confidence": 66.706,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 2.63,
-        "odds_sources_count": 2,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 3.0,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 2
-      },
-      "best_confidence": 66.706,
-      "best_edge_pp": 1.78,
-      "best_ev_pct": 4.681,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-24T18:45:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "AS Roma",
-      "league_name": "Serie A",
-      "match_key": "soccer|acf fiorentina|as roma|2026-08-24",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
     }
   ]
 }
