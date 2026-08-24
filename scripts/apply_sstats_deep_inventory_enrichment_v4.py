@@ -9,8 +9,8 @@ while the final coverage-truth still had only ~85/300 with 2+ real context
 sources.  This version counts only actual provider evidence and prioritizes
 rows with fewer than two real context providers.
 
-Everything touching xG or prices is written from the run 11:49 probe artifact,
-not from guessed field names:
+Everything touching xG or prices is written from the probe artifacts, not from
+guessed field names:
 
   /Games/glicko/{id}      -> data.glicko.homeXg / data.glicko.awayXg
   /Games/last-games-stats -> home.avgScore / home.avgConceded (+ away mirror,
@@ -19,22 +19,19 @@ not from guessed field names:
                              "Goals Over/Under", odds[].name "Over 2.5",
                              odds[].value
 
-Three defects that probe exposed, and that this version fixes:
+Work is grouped by sstats_game_id rather than by inventory row.  The inventory
+holds several rows for the same fixture (Brondby / Broendby, Bologna / Bologna
+FC 1909, Malmo / Malmoe), the semantic dedupe runs after this pass, and it can
+keep a different copy than the one the queue enriched.  Run 14:29 showed the
+result: 72 of 73 rows resolved real xG, yet every promoted candidate still
+reported provider_xg_source null.  One set of calls per fixture is now applied
+to every row that resolves to it, which fixes that and stops paying twice for
+the same fixture.
 
-1. xG was never missing, it was never read.  The old extractor built candidate
-   keys such as "homexG" and looked for xg, expectedGoals, goalsFor and
-   conceded, none of which exist in these payloads.  Hence attempted 64,
-   resolved_real 0, and hence every candidate falling back to market-implied xG
-   that the quality gates then reject as not-hard confirmation.
-2. Prices were fetched and discarded.  Only the row count was kept, so SStats
-   could never be the second independent price source A-tier requires, while
-   Bet365 and Unibet both arrive through the same odds_api_io vendor.
-3. The queue wrote onto the wrong matches.  by_key kept the empty string as a
-   real key, so every queue item without a match_key resolved to the same
-   arbitrary row: five of six probe samples show one row absorbing the payloads
-   of five unrelated fixtures.  Empty keys are skipped now, and every row is
-   verified against the team names SStats reports for that game id before more
-   budget is spent on it.
+Offers are deliberately not embedded into inventory rows.  The promotion scans
+both the dedicated artifact and eight inventory copies, so embedding made each
+offer appear five times and dragged the bucket median, which is the anchor for
+edge and EV.  Rows keep counts and book names; the artifact carries the offers.
 
 avgOddsXg and avgOddsXgConceded are deliberately not used.  They are xG
 reconstructed from bookmaker odds, so using them would rebuild the very
@@ -66,8 +63,11 @@ XG_PROBE_LIMIT = 6
 ODDS_PROBE_LIMIT = 4
 MISMATCH_SAMPLE_LIMIT = 12
 FORM_MIN_GAMES = 5
-MAX_OFFERS_PER_ROW = 60
+MAX_OFFERS_PER_FIXTURE = 200
+MIN_TOTAL_POINT = 1.5
+MAX_TOTAL_POINT = 4.5
 REAL_XG_SOURCES = {"glicko_xg", "last_games_form_goals"}
+ODDS_NEAR_WINDOW_BUCKETS = {"0_2h", "2_6h", "6_12h"}
 TOTALS_MARKET_IDS = {5}
 TOTALS_MARKET_NAMES = {"goals over/under", "goals over under", "over/under", "total goals"}
 TEAM_STOPWORDS = {"fc", "cf", "sc", "ac", "afc", "cd", "fk", "sk", "club", "team", "the", "and", "sports", "sporting", "academy", "reserves", "women"}
@@ -77,8 +77,8 @@ _ODDS_PROBE: list[dict[str, Any]] = []
 _MISMATCHES: list[dict[str, Any]] = []
 _ALL_OFFERS: list[dict[str, Any]] = []
 _XG_STATS: dict[str, Any] = {"attempted": 0, "resolved_real": 0, "kept_existing": 0, "missing": 0, "placeholder_rejected": 0, "source_counts": {}}
-_ODDS_STATS: dict[str, Any] = {"rows_attempted": 0, "payload_ok": 0, "offers_parsed": 0, "rows_with_offers": 0, "no_totals_market": 0, "book_counts": {}}
-_ID_STATS: dict[str, Any] = {"verified": 0, "unverified": 0, "mismatch": 0, "skipped_empty_key": 0, "skipped_no_row": 0}
+_ODDS_STATS: dict[str, Any] = {"fixtures_attempted": 0, "payload_ok": 0, "offers_parsed": 0, "fixtures_with_offers": 0, "no_totals_market": 0, "book_counts": {}}
+_ID_STATS: dict[str, Any] = {"verified": 0, "unverified": 0, "mismatch": 0, "skipped_empty_key": 0, "skipped_no_row": 0, "fixtures_processed": 0, "duplicate_rows_seen": 0, "sibling_rows_marked": 0}
 
 
 def _inc(stats: dict[str, Any], key: str, amount: int = 1) -> None:
@@ -186,12 +186,7 @@ def count_family(row: dict[str, Any], family: str) -> int:
 
 
 def _side_blocks(payload: Any) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-    """home/away blocks of /Games/last-games-stats.
-
-    The probe shows a bare {"home": {...}, "away": {...}} object with no
-    status/data wrapper; the wrapped form is accepted too so a later API change
-    cannot silently zero this out again.
-    """
+    """home/away blocks of /Games/last-games-stats."""
     holders = [payload, payload.get("data") if isinstance(payload, dict) else None]
     for holder in holders:
         if isinstance(holder, dict):
@@ -226,12 +221,7 @@ def form_lambdas(payload: Any) -> tuple[float | None, float | None, int]:
 
 
 def glicko_xg(payload: Any) -> tuple[float | None, float | None]:
-    """data.glicko.homeXg / data.glicko.awayXg, exactly as the probe shows.
-
-    These come from the provider's rating model rather than from a price, and
-    they are side-specific (1.502 / 1.065 on the first sample), unlike the
-    symmetric market-implied placeholder the quality gates keep rejecting.
-    """
+    """data.glicko.homeXg / data.glicko.awayXg, exactly as the probe shows."""
     if not isinstance(payload, dict):
         return None, None
     data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
@@ -244,12 +234,7 @@ def glicko_xg(payload: Any) -> tuple[float | None, float | None]:
 
 
 def resolve_expected_goals(glicko_payload: Any, last_stats_payload: Any) -> dict[str, Any]:
-    """Resolve provider xG plus the form lambdas behind it.
-
-    glicko xG wins when present because it is fixture-specific; the form blend
-    is the fallback and is also kept alongside it so the totals model can
-    cross-check the two instead of trusting either blindly.
-    """
+    """Resolve provider xG plus the form lambdas behind it."""
     lam_home, lam_away, games = form_lambdas(last_stats_payload)
     g_home, g_away = glicko_xg(glicko_payload)
     out: dict[str, Any] = {"lambda_home": lam_home, "lambda_away": lam_away, "form_games": games, "glicko_home": g_home, "glicko_away": g_away}
@@ -318,11 +303,10 @@ def _tokens_overlap(left: set[str], right: set[str]) -> bool:
 def identity_status(row: dict[str, Any], *payloads: Any) -> tuple[str, str, str]:
     """Check that the SStats game id really is this inventory row's match.
 
-    The probe caught one row receiving the payloads of five unconnected
-    fixtures, so a wrong crosswalk id was silently writing another match's xG
-    and prices onto it.  Rather than trust the crosswalk, compare the row's team
-    names with the ones SStats itself reports for that game id.  Unconfirmable
-    is not treated as wrong: some rows carry neither team names nor a match key.
+    A wrong crosswalk id used to write another match's xG and prices onto a row:
+    the first probe caught one row receiving the payloads of five unconnected
+    fixtures.  Unconfirmable is not treated as wrong, because some rows carry
+    neither team names nor a usable match key.
     """
     home_name, away_name = fixture_team_names(*payloads)
     if not home_name and not away_name:
@@ -344,12 +328,12 @@ def _parse_total_selection(name: Any) -> tuple[str | None, float | None]:
     for prefix, selection in (("over", "over"), ("under", "under")):
         if text.startswith(prefix):
             point = _float_or_none(text[len(prefix):].strip().replace(" ", "."))
-            if point is not None and 0.5 <= point <= 7.5:
+            if point is not None and MIN_TOTAL_POINT <= point <= MAX_TOTAL_POINT:
                 return selection, round(float(point), 2)
     return None, None
 
 
-def parse_sstats_totals_offers(payload: Any, row: dict[str, Any], game_id: str) -> list[dict[str, Any]]:
+def parse_sstats_totals_offers(payload: Any, row: dict[str, Any], game_id: str, record_stats: bool = True) -> list[dict[str, Any]]:
     """Turn /Odds/{id} into full-time totals offers.
 
     Shape from the probe:
@@ -357,18 +341,19 @@ def parse_sstats_totals_offers(payload: Any, row: dict[str, Any], game_id: str) 
                   odds: [{name: "Over 2.5", value: 1.75}]}]}
 
     Only marketId 5 "Goals Over/Under" is accepted.  marketId 6 and 26 carry the
-    same "Over 1.5" labels for first and second half, and merging those into the
-    full-time bucket would manufacture fake price disagreement, which is exactly
-    what the value edge would then be measured against.  data can be null.
+    same "Over 1.5" labels for the first and second half, and merging those into
+    the full-time bucket would manufacture fake price disagreement, which is
+    exactly what the value edge is then measured against.  data can be null.
+    Each bookmaker keeps one best price per line, since a bookmaker repeated in
+    a bucket distorts the median that anchors edge and EV.
     """
-    out: list[dict[str, Any]] = []
     if not isinstance(payload, dict):
-        return out
+        return []
     books = payload.get("data")
     if not isinstance(books, list):
-        return out
+        return []
     match_key = str(row.get("match_key") or row.get("canonical_match_id") or "")
-    seen: set[tuple[str, str, float, float]] = set()
+    best: dict[tuple[str, str, float], dict[str, Any]] = {}
     totals_market_seen = False
     for bookmaker in books:
         if not isinstance(bookmaker, dict):
@@ -389,7 +374,7 @@ def parse_sstats_totals_offers(payload: Any, row: dict[str, Any], game_id: str) 
             if not isinstance(offers, list):
                 continue
             for offer in offers:
-                if not isinstance(offer, dict) or len(out) >= MAX_OFFERS_PER_ROW:
+                if not isinstance(offer, dict):
                     continue
                 selection, point = _parse_total_selection(offer.get("name"))
                 price = _float_or_none(offer.get("value"))
@@ -397,12 +382,12 @@ def parse_sstats_totals_offers(payload: Any, row: dict[str, Any], game_id: str) 
                     continue
                 if price < 1.01 or price > 30.0:
                     continue
-                signature = (book_name.lower(), selection, float(point), round(float(price), 3))
-                if signature in seen:
+                price = round(float(price), 3)
+                signature = (book_name.lower(), selection, float(point))
+                existing = best.get(signature)
+                if existing is not None and float(existing.get("price") or 0.0) >= price:
                     continue
-                seen.add(signature)
-                _inc_map(_ODDS_STATS, "book_counts", book_name.lower())
-                out.append({
+                best[signature] = {
                     "bookmaker": book_name.lower(),
                     "bookmaker_name": book_name,
                     "family": "totals",
@@ -412,8 +397,8 @@ def parse_sstats_totals_offers(payload: Any, row: dict[str, Any], game_id: str) 
                     "selection_key": selection,
                     "point": float(point),
                     "line": float(point),
-                    "price": round(float(price), 3),
-                    "odds": round(float(price), 3),
+                    "price": price,
+                    "odds": price,
                     "source": "sstats",
                     "provider": "sstats",
                     "match_key": match_key,
@@ -422,9 +407,13 @@ def parse_sstats_totals_offers(payload: Any, row: dict[str, Any], game_id: str) 
                     "away_team": row.get("away_team"),
                     "commence_time": row.get("commence_time") or row.get("kickoff_utc"),
                     "sstats_game_id": str(game_id),
-                })
-    if not totals_market_seen:
+                }
+    if record_stats and not totals_market_seen:
         _inc(_ODDS_STATS, "no_totals_market")
+    out = sorted(best.values(), key=lambda item: (str(item["bookmaker"]), float(item["point"]), str(item["selection"])))[:MAX_OFFERS_PER_FIXTURE]
+    if record_stats:
+        for item in out:
+            _inc_map(_ODDS_STATS, "book_counts", str(item["bookmaker"]))
     return out
 
 
@@ -556,9 +545,13 @@ def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds
     if detail_ok:
         cov.update({"lineups": True, "venue_referee": True})
     if offers:
-        row["sstats_offers"] = offers
+        # Counts and book names only. The offers themselves live in the
+        # dedicated artifact, because the promotion scans the artifact and eight
+        # inventory copies, and embedding made each offer appear five times in
+        # the bucket that the median is taken from.
         row["sstats_offer_count"] = len(offers)
         row["sstats_offer_books"] = sorted({str(offer.get("bookmaker")) for offer in offers})
+        row["sstats_offer_points"] = sorted({float(offer.get("point")) for offer in offers if offer.get("point") is not None})
     if odds_ok:
         v2.add_src(row, "odds_sources", "sstats")
         set_count_from_sources(row, "odds_sources_count", "odds_sources", ODDS_PROVIDERS)
@@ -608,60 +601,84 @@ async def run() -> dict[str, Any]:
                 by_key.setdefault(alias, match)
     raw_queue = [q for q in (cross.get("enrichment_queue") or []) if isinstance(q, dict)]
     queue = sorted(raw_queue, key=lambda item: priority(item, by_key))
+    # One fixture can appear as several inventory rows (Brondby / Broendby).
+    # Group by game id so a fixture is paid for once and every copy is updated.
+    fixture_rows: dict[str, list[dict[str, Any]]] = {}
+    fixture_bucket: dict[str, str] = {}
+    order: list[str] = []
+    for item in queue:
+        key = str(item.get("match_key") or "").strip()
+        game_id = str(item.get("sstats_game_id") or "").strip()
+        if not key:
+            _inc(_ID_STATS, "skipped_empty_key")
+            continue
+        row = by_key.get(key)
+        if not game_id or not isinstance(row, dict):
+            _inc(_ID_STATS, "skipped_no_row")
+            continue
+        rows = fixture_rows.setdefault(game_id, [])
+        if any(existing is row for existing in rows):
+            continue
+        if not rows:
+            order.append(game_id)
+            fixture_bucket[game_id] = str(item.get("bucket") or "unknown")
+        else:
+            _inc(_ID_STATS, "duplicate_rows_seen")
+        rows.append(row)
     max_req = max(0, v2.as_int(v2.env("SSTATS_DEEP_DETAIL_LIMIT_PER_RUN"), 100))
     detail_left = max(0, v2.as_int(v2.env("SSTATS_GAME_DETAIL_LIMIT_PER_RUN"), 12))
-    odds_left = max(0, v2.as_int(v2.env("SSTATS_ODDS_RESCUE_LIMIT_PER_RUN"), 30))
-    threshold = max(1, v2.as_int(v2.env("SSTATS_ODDS_RESCUE_ONLY_IF_ODDS_SOURCES_LT"), 2))
+    odds_left = max(0, v2.as_int(v2.env("SSTATS_ODDS_RESCUE_LIMIT_PER_RUN"), 40))
     req = 0
     enriched: list[dict[str, Any]] = []
     statuses: list[dict[str, Any]] = []
     group_counts: dict[str, int] = {}
     timeout = float(v2.env("SSTATS_DEEP_ENRICHMENT_TIMEOUT_SECONDS", "16"))
     async with httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=min(6.0, timeout)), follow_redirects=True, headers={"User-Agent": "HARIZON-sstats-deep-v4"}) as client:
-        for item in queue:
+        for game_id in order:
             if req + 2 > max_req:
                 break
-            key = str(item.get("match_key") or "").strip()
-            game_id = str(item.get("sstats_game_id") or "").strip()
-            if not key:
-                _inc(_ID_STATS, "skipped_empty_key")
+            rows = fixture_rows.get(game_id) or []
+            if not rows:
                 continue
-            row = by_key.get(key)
-            if not game_id or not isinstance(row, dict):
-                _inc(_ID_STATS, "skipped_no_row")
-                continue
-            before_context = count_family(row, "context")
-            before_odds = count_family(row, "odds")
-            group = f"context{before_context}_odds{before_odds}_xg{int(has_valid_xg(row))}"
+            primary = rows[0]
+            before_context = count_family(primary, "context")
+            before_odds = count_family(primary, "odds")
+            group = f"context{before_context}_odds{before_odds}_xg{int(has_valid_xg(primary))}"
             group_counts[group] = group_counts.get(group, 0) + 1
             g = await v2.call(client, "glicko", f"/Games/glicko/{game_id}", {}, include_payload=True)
             req += 1
-            status, fixture_home, fixture_away = identity_status(row, g.get("payload"))
+            status, fixture_home, fixture_away = identity_status(primary, g.get("payload"))
             if status == "mismatch":
                 _inc(_ID_STATS, "mismatch")
                 if len(_MISMATCHES) < MISMATCH_SAMPLE_LIMIT:
-                    _MISMATCHES.append({"match_key": key, "game_id": game_id, "row_home": row.get("home_team"), "row_away": row.get("away_team"), "sstats_home": fixture_home, "sstats_away": fixture_away})
+                    _MISMATCHES.append({"match_key": primary.get("match_key"), "game_id": game_id, "row_home": primary.get("home_team"), "row_away": primary.get("away_team"), "sstats_home": fixture_home, "sstats_away": fixture_away})
                 statuses.append({k: v for k, v in g.items() if k != "payload"})
                 continue
             _inc(_ID_STATS, "verified" if status == "verified" else "unverified")
+            _inc(_ID_STATS, "fixtures_processed")
             l = await v2.call(client, "last_games_stats", "/Games/last-games-stats", {"gameId": game_id, "limit": 25, "sameLeague": "false", "sameSeason": "false", "homeAway": "false"}, include_payload=True)
             req += 1
-            d = {"status": "SKIPPED", "rows": 0}
-            o = {"status": "SKIPPED", "rows": 0}
+            d: dict[str, Any] = {"status": "SKIPPED", "rows": 0}
+            o: dict[str, Any] = {"status": "SKIPPED", "rows": 0}
             offers: list[dict[str, Any]] = []
-            if before_odds < threshold and odds_left and req < max_req:
+            # Eligibility is based on whether this fixture already has SStats
+            # prices, not on the odds_sources labels: rows advertised two or
+            # three sources while the promotion computed one real source from
+            # actual offers, so the label gate skipped exactly the rows that
+            # needed an independent price.
+            wants_odds = bool(odds_left) and req < max_req and not primary.get("sstats_offer_count") and fixture_bucket.get(game_id) in ODDS_NEAR_WINDOW_BUCKETS
+            if wants_odds:
                 o = await v2.call(client, "odds", f"/Odds/{game_id}", {"opening": "false"}, include_payload=True)
                 odds_left -= 1
                 req += 1
-                _inc(_ODDS_STATS, "rows_attempted")
+                _inc(_ODDS_STATS, "fixtures_attempted")
                 if o.get("status") == "OK":
                     _inc(_ODDS_STATS, "payload_ok")
-                    offers = parse_sstats_totals_offers(o.get("payload"), row, game_id)
+                    offers = parse_sstats_totals_offers(o.get("payload"), primary, game_id)
                     _inc(_ODDS_STATS, "offers_parsed", len(offers))
                     if offers:
-                        _inc(_ODDS_STATS, "rows_with_offers")
-                        _ALL_OFFERS.extend(offers)
-                    record_odds_probe(row, game_id, o.get("payload"), offers)
+                        _inc(_ODDS_STATS, "fixtures_with_offers")
+                    record_odds_probe(primary, game_id, o.get("payload"), offers)
             if detail_left and req < max_req:
                 d = await v2.call(client, "game_detail", f"/Games/{game_id}", {}, include_payload=True)
                 detail_left -= 1
@@ -669,14 +686,19 @@ async def run() -> dict[str, Any]:
             statuses.extend([{k: v for k, v in response.items() if k != "payload"} for response in (g, l, d, o)])
             deep_ok = g.get("status") == "OK" or l.get("status") == "OK"
             detail_ok = d.get("status") == "OK"
-            odds_ok = bool(offers)
-            mark(row, game_id, deep_ok, detail_ok, odds_ok, before_context, before_odds, glicko_payload=g.get("payload"), last_stats_payload=l.get("payload"), detail_payload=d.get("payload"), offers=offers)
-            if deep_ok or detail_ok or odds_ok:
-                enriched.append({"match_key": key, "game_id": game_id, "identity": status, "home_team": row.get("home_team"), "away_team": row.get("away_team"), "deep_ok": deep_ok, "detail_ok": detail_ok, "odds_ok": odds_ok, "offer_count": len(offers), "before_context": before_context, "after_context": row.get("context_sources_count"), "before_odds": before_odds, "after_odds": row.get("odds_sources_count"), "expected_home": row.get("expected_home"), "expected_away": row.get("expected_away"), "xg_source": row.get("sstats_xg_source"), "lambda_home": row.get("sstats_lambda_home"), "lambda_away": row.get("sstats_lambda_away")})
+            for index, row in enumerate(rows):
+                row_offers = offers if index == 0 else parse_sstats_totals_offers(o.get("payload"), row, game_id, record_stats=False)
+                _ALL_OFFERS.extend(row_offers)
+                odds_ok = bool(row_offers)
+                mark(row, game_id, deep_ok, detail_ok, odds_ok, before_context, before_odds, glicko_payload=g.get("payload"), last_stats_payload=l.get("payload"), detail_payload=d.get("payload"), offers=row_offers)
+                if index:
+                    _inc(_ID_STATS, "sibling_rows_marked")
+                if deep_ok or detail_ok or odds_ok:
+                    enriched.append({"match_key": row.get("match_key"), "game_id": game_id, "identity": status, "copy_index": index, "home_team": row.get("home_team"), "away_team": row.get("away_team"), "deep_ok": deep_ok, "detail_ok": detail_ok, "odds_ok": odds_ok, "offer_count": len(row_offers), "offer_books": row.get("sstats_offer_books"), "before_context": before_context, "after_context": row.get("context_sources_count"), "before_odds": before_odds, "after_odds": row.get("odds_sources_count"), "expected_home": row.get("expected_home"), "expected_away": row.get("expected_away"), "xg_source": row.get("sstats_xg_source"), "lambda_home": row.get("sstats_lambda_home"), "lambda_away": row.get("sstats_lambda_away")})
     if isinstance(inventory, dict):
         meta = inventory.setdefault("metadata", {})
         if isinstance(meta, dict):
-            meta["sstats_deep_inventory_enrichment"] = {"created_at_utc": datetime.now(UTC).isoformat(), "request_count": req, "enriched_matches": len(enriched), "sstats_offers": len(_ALL_OFFERS), "version": "v5_real_xg_and_second_price_source"}
+            meta["sstats_deep_inventory_enrichment"] = {"created_at_utc": datetime.now(UTC).isoformat(), "request_count": req, "enriched_matches": len(enriched), "sstats_offers": len(_ALL_OFFERS), "version": "v6_fixture_grouped_real_xg_and_second_price_source"}
     for path in inventory_aliases(primary_path):
         v2.write(path, inventory)
     counts: dict[str, int] = {}
@@ -686,8 +708,8 @@ async def run() -> dict[str, Any]:
     odds_extraction = dict(_ODDS_STATS)
     identity = dict(_ID_STATS)
     v2.write(XG_PROBE_OUT, {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_xg_extraction_probe_v2", "status": "ok", "xg_extraction": xg_extraction, "odds_extraction": odds_extraction, "identity": identity, "samples": _XG_PROBE, "odds_samples": _ODDS_PROBE, "identity_mismatch_sample": _MISMATCHES})
-    v2.write(ODDS_OFFERS_OUT, {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_totals_offers_v1", "status": "ok", "source": "sstats", "market_family": "totals", "offer_count": len(_ALL_OFFERS), "book_counts": odds_extraction.get("book_counts"), "offers": _ALL_OFFERS})
-    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_deep_inventory_enrichment_v5_real_xg_and_second_price_source", "status": "ok", "inventory_path": str(primary_path), "inventory_aliases_written": [str(p) for p in inventory_aliases(primary_path)], "crosswalk_matched": (cross.get("summary") or {}).get("matched"), "queue_seen": len(raw_queue), "request_count": req, "enriched_matches": len(enriched), "priority_group_counts": group_counts, "command_status_counts": counts, "xg_extraction": xg_extraction, "odds_extraction": odds_extraction, "identity": identity, "sstats_offers": len(_ALL_OFFERS), "xg_probe_samples": len(_XG_PROBE), "identity_mismatch_sample": _MISMATCHES, "enriched_sample": enriched[:50], "command_sample": statuses[:20]}
+    v2.write(ODDS_OFFERS_OUT, {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_totals_offers_v2", "status": "ok", "source": "sstats", "market_family": "totals", "offer_count": len(_ALL_OFFERS), "book_counts": odds_extraction.get("book_counts"), "offers": _ALL_OFFERS})
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "sstats_deep_inventory_enrichment_v6_fixture_grouped", "status": "ok", "inventory_path": str(primary_path), "inventory_aliases_written": [str(p) for p in inventory_aliases(primary_path)], "crosswalk_matched": (cross.get("summary") or {}).get("matched"), "queue_seen": len(raw_queue), "fixtures_seen": len(order), "request_count": req, "enriched_matches": len(enriched), "priority_group_counts": group_counts, "command_status_counts": counts, "xg_extraction": xg_extraction, "odds_extraction": odds_extraction, "identity": identity, "sstats_offers": len(_ALL_OFFERS), "xg_probe_samples": len(_XG_PROBE), "identity_mismatch_sample": _MISMATCHES, "enriched_sample": enriched[:60], "command_sample": statuses[:20]}
     v2.write(JSON_OUT, payload)
     TXT_OUT.write_text(render(payload), encoding="utf-8")
     print(render(payload))
@@ -695,9 +717,9 @@ async def run() -> dict[str, Any]:
 
 
 def render(payload: dict[str, Any]) -> str:
-    lines = ["# SStats deep inventory enrichment v4", f"status: {payload.get('status')}", f"inventory_path: {payload.get('inventory_path')}", f"aliases_written: {', '.join(payload.get('inventory_aliases_written') or [])}", f"crosswalk_matched: {payload.get('crosswalk_matched')}", f"queue_seen: {payload.get('queue_seen')}", f"request_count: {payload.get('request_count')}", f"enriched_matches: {payload.get('enriched_matches')}", f"sstats_offers: {payload.get('sstats_offers')}", f"priority_group_counts: {json.dumps(payload.get('priority_group_counts') or {}, ensure_ascii=False)}", f"command_status_counts: {json.dumps(payload.get('command_status_counts') or {}, ensure_ascii=False)}", f"xg_extraction: {json.dumps(payload.get('xg_extraction') or {}, ensure_ascii=False)}", f"odds_extraction: {json.dumps(payload.get('odds_extraction') or {}, ensure_ascii=False)}", f"identity: {json.dumps(payload.get('identity') or {}, ensure_ascii=False)}", "", "## Enriched sample"]
+    lines = ["# SStats deep inventory enrichment v4", f"status: {payload.get('status')}", f"inventory_path: {payload.get('inventory_path')}", f"aliases_written: {', '.join(payload.get('inventory_aliases_written') or [])}", f"crosswalk_matched: {payload.get('crosswalk_matched')}", f"queue_seen: {payload.get('queue_seen')}", f"fixtures_seen: {payload.get('fixtures_seen')}", f"request_count: {payload.get('request_count')}", f"enriched_matches: {payload.get('enriched_matches')}", f"sstats_offers: {payload.get('sstats_offers')}", f"priority_group_counts: {json.dumps(payload.get('priority_group_counts') or {}, ensure_ascii=False)}", f"command_status_counts: {json.dumps(payload.get('command_status_counts') or {}, ensure_ascii=False)}", f"xg_extraction: {json.dumps(payload.get('xg_extraction') or {}, ensure_ascii=False)}", f"odds_extraction: {json.dumps(payload.get('odds_extraction') or {}, ensure_ascii=False)}", f"identity: {json.dumps(payload.get('identity') or {}, ensure_ascii=False)}", "", "## Enriched sample"]
     for item in payload.get("enriched_sample") or []:
-        lines.append(f"- {item.get('home_team')} — {item.get('away_team')} | gameId={item.get('game_id')} id={item.get('identity')} deep={item.get('deep_ok')} detail={item.get('detail_ok')} offers={item.get('offer_count')} xg={item.get('xg_source')} context:{item.get('before_context')}→{item.get('after_context')} odds:{item.get('before_odds')}→{item.get('after_odds')}")
+        lines.append(f"- {item.get('home_team')} — {item.get('away_team')} | gameId={item.get('game_id')} copy={item.get('copy_index')} id={item.get('identity')} deep={item.get('deep_ok')} detail={item.get('detail_ok')} offers={item.get('offer_count')} xg={item.get('xg_source')} eh={item.get('expected_home')} ea={item.get('expected_away')} context:{item.get('before_context')}→{item.get('after_context')}")
     if payload.get("identity_mismatch_sample"):
         lines.append("")
         lines.append("## Identity mismatches (crosswalk id pointed at another fixture)")
