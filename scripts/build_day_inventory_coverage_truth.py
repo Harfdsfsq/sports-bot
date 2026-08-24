@@ -6,10 +6,17 @@ This report separates public A-tier readiness from B-tier watchlist readiness.
 Public publication is A-tier only: 2 independent odds/line sources, 2 bookmaker
 price confirmations and 2 context sources. B-tier remains watchlist-only and is
 tracked separately for diagnostics and promotion.
+
+This file is not only a report. ``build_b_cover_candidate_gap_report.py`` prefers
+it as the promotion inventory because it carries per-row books and context, so
+every field dropped here is a field the model cannot use. ``row_truth`` builds a
+new dict, therefore row-level enrichment (provider xG, goal rates, offer
+counters, canonical ids) has to be passed through explicitly.
 """
 
 import csv
 import json
+import math
 import os
 import re
 from datetime import datetime, timezone
@@ -28,6 +35,35 @@ SUMMARY_PATH = EXPORT_DIR / 'latest-day-inventory-summary.json'
 LIVE_ODDS_SOURCES = {'odds_api_io', 'bzzoiro', 'sportlogic'}
 CORE_CONTEXT_SOURCES = {'sstats', 'bzzoiro', 'clubelo', 'sportlogic', 'football_data', 'thesportsdb', 'api_football', 'espn', 'openligadb', 'openfootball', 'futrixmetrics'}
 NON_CONTEXT = {'', 'ensemble', 'market', 'market_signal', 'line_history', 'odds_api_io', 'xg_model_context', 'form_context', 'fixture', 'alias', 'proxy', 'inventory', 'day_inventory'}
+
+# Row fields the downstream model and promotion read directly. They are not
+# coverage counters, so they are copied through untouched; dropping them is what
+# made every promoted candidate arrive with provider_xg_source null while the
+# inventory itself carried real goal rates.
+PASSTHROUGH_FIELDS = (
+    'canonical_match_id',
+    'sstats_game_id',
+    'commence_time',
+    'kickoff_local',
+    'expected_home',
+    'expected_away',
+    'sstats_expected_home',
+    'sstats_expected_away',
+    'sstats_xg_source',
+    'sstats_lambda_home',
+    'sstats_lambda_away',
+    'sstats_form_games',
+    'sstats_offer_count',
+    'sstats_offer_books',
+    'sstats_offer_points',
+    'books',
+    'bookmakers',
+)
+
+EMPTY_VALUES = (None, '', [], {}, ())
+
+# Labels SStats deep enrichment writes when it did not extract anything itself.
+NON_PROVIDER_XG_SOURCES = {'', 'existing_inventory', 'missing'}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -65,6 +101,20 @@ def as_int(value: Any, default: int = 0) -> int:
         return int(float(str(value)))
     except Exception:
         return default
+
+
+def as_float(value: Any) -> float | None:
+    try:
+        if value in (None, ''):
+            return None
+        if isinstance(value, bool):
+            return None
+        number = float(str(value).replace(',', '.'))
+        if math.isfinite(number):
+            return number
+    except Exception:
+        return None
+    return None
 
 
 def norm(value: Any) -> str:
@@ -139,12 +189,57 @@ def count_from_metadata(row: dict[str, Any], *keys: str) -> int:
     return best
 
 
+def provider_xg_source(row: dict[str, Any]) -> str:
+    """The provider-extraction label for this row's xG, or '' if there is none.
+
+    Same contract as ``build_b_cover_candidate_gap_report.provider_xg_source`` on
+    purpose: market-implied and proxy xG are not evidence about the teams, and the
+    market-implied backfill is recognisable by its exact home == away split.
+    """
+    for container in containers(row):
+        source = norm(container.get('sstats_xg_source'))
+        if source in NON_PROVIDER_XG_SOURCES:
+            continue
+        if 'market' in source or 'proxy' in source:
+            continue
+        home = as_float(container.get('sstats_expected_home'))
+        away = as_float(container.get('sstats_expected_away'))
+        if home is None or away is None:
+            continue
+        if abs(home - away) <= 1e-6:
+            continue
+        return source
+    return ''
+
+
+def price_backed_extra_odds_sources(row: dict[str, Any]) -> list[str]:
+    """Vendors that quoted a price for this row outside the live-odds runners.
+
+    SStats totals offers are real bookmaker prices from a second vendor, so they
+    are a genuine independent price source. They are counted only when the row
+    carries actual offers: a context label alone must never create a price
+    source, otherwise a single-source pick can wear an A label.
+    """
+    out: list[str] = []
+    for container in containers(row):
+        offers = as_int(container.get('sstats_offer_count'))
+        books = as_int(container.get('sstats_offer_books'))
+        if offers >= 1 and books >= 1:
+            out.append('sstats')
+            break
+    return out
+
+
 def odds_sources(row: dict[str, Any]) -> list[str]:
     values: list[Any] = []
     for box in containers(row):
         values += list_from_any(box.get('odds_sources')) + list_from_any(box.get('line_sources')) + list_from_any(box.get('verified_odds_sources'))
     sources = unique_norm(values)
-    return sorted(x for x in sources if x in LIVE_ODDS_SOURCES)
+    out = [x for x in sources if x in LIVE_ODDS_SOURCES]
+    for extra in price_backed_extra_odds_sources(row):
+        if extra not in out:
+            out.append(extra)
+    return sorted(out)
 
 
 def context_sources(row: dict[str, Any]) -> list[str]:
@@ -173,6 +268,23 @@ def price_confirmations(row: dict[str, Any]) -> int:
         len(list_from_any(row.get('books'))),
         len(list_from_any(metadata(row).get('verified_bookmakers'))),
     )
+
+
+def passthrough_enrichment(row: dict[str, Any], truth: dict[str, Any]) -> dict[str, Any]:
+    """Copy model-relevant row fields into the truth row without overriding it.
+
+    A computed coverage value always wins: this only fills fields the coverage
+    table does not own, so the promotion can still read goal rates, offer
+    counters and canonical ids from the file it selects.
+    """
+    for key in PASSTHROUGH_FIELDS:
+        if key in truth and truth.get(key) not in EMPTY_VALUES:
+            continue
+        value = row.get(key)
+        if value in EMPTY_VALUES:
+            continue
+        truth[key] = value
+    return truth
 
 
 def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str, Any]:
@@ -209,7 +321,8 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
 
     tier_a_ready = has_odds and has_context and not tier_a_missing
     tier_b_ready = has_odds and has_context and not tier_b_missing
-    return {
+    xg_source = provider_xg_source(row)
+    truth = {
         'match_key': row.get('match_key') or row.get('canonical_match_id') or '',
         'kickoff_utc': row.get('kickoff_utc') or row.get('commence_time') or row.get('kickoff_local') or '',
         'league_name': row.get('league_name') or '',
@@ -223,6 +336,8 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
         'context_sources_count': cc,
         'has_odds': has_odds,
         'has_context': has_context,
+        'provider_xg_source': xg_source,
+        'has_provider_xg': bool(xg_source),
         'ready_for_model': bool(cov.get('ready_for_model')) or tier_b_ready or (has_odds and has_context),
         'ready_for_publish': tier_a_ready,
         'tier_a_coverage_ready': tier_a_ready,
@@ -240,6 +355,7 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
         'tier_a_missing': tier_a_missing,
         'tier_b_missing': tier_b_missing,
     }
+    return passthrough_enrichment(row, truth)
 
 
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -248,6 +364,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         'match_key', 'kickoff_utc', 'league_name', 'home_team', 'away_team',
         'odds_sources_count', 'odds_sources', 'price_confirmations', 'books_count',
         'context_sources_count', 'context_sources', 'has_odds', 'has_context',
+        'provider_xg_source', 'has_provider_xg',
         'ready_for_model', 'ready_for_publish', 'tier_a_coverage_ready',
         'tier_b_coverage_ready', 'tier_b_watch_only', 'need_price_confirmations',
         'need_odds_sources', 'need_context_sources', 'tier_b_need_price_confirmations',
@@ -282,6 +399,8 @@ def main() -> int:
         'matches_with_2plus_price_confirmations': sum(1 for r in rows if r['price_confirmations'] >= 2),
         'matches_with_2plus_odds_sources': sum(1 for r in rows if r['odds_sources_count'] >= 2),
         'matches_with_2plus_context_sources': sum(1 for r in rows if r['context_sources_count'] >= 2),
+        'matches_with_provider_xg': sum(1 for r in rows if r.get('has_provider_xg')),
+        'matches_with_sstats_price_source': sum(1 for r in rows if 'sstats' in (r.get('odds_sources') or [])),
         'matches_ready_for_model': sum(1 for r in rows if r['ready_for_model']),
         'matches_ready_for_publish': sum(1 for r in rows if r['ready_for_publish']),
         'matches_a_tier_coverage_ready': sum(1 for r in rows if r['tier_a_coverage_ready']),
@@ -306,11 +425,14 @@ def main() -> int:
         'gap_examples': gap_examples,
         'rows': rows,
         'notes': [
-            'odds_sources_count is independent live provider count only: odds_api_io, bzzoiro, sportlogic.',
+            'odds_sources_count is independent live provider count only: odds_api_io, bzzoiro, sportlogic, plus sstats when the row carries real SStats offers.',
+            'sstats is added as a price source only from sstats_offer_count/sstats_offer_books, never from a context label.',
             'price_confirmations is bookmaker/line depth and is tracked separately from provider independence.',
             'context_sources_count reads verified context evidence from row, metadata, coverage and runtime bridge fields; fixture-id, alias and proxy are not counted.',
             'ready_for_publish is A-tier only: 2+ price confirmations, 2+ independent odds sources, and 2+ context sources.',
             'tier_b_coverage_ready is watchlist-only and does not mean public publication is allowed.',
+            'row-level enrichment (provider xG, SStats goal rates, form games, offer counters, sstats_game_id, canonical_match_id, book list) is passed through unchanged: the B-cover promotion selects this file, so a dropped field silently disables the xG model.',
+            'provider_xg_source follows the same rule as the promotion: existing_inventory, missing, market-implied and proxy labels are not provider xG, and an exact home == away split is treated as market-implied.',
         ],
     }
     write_json(OUT_JSON, payload)
