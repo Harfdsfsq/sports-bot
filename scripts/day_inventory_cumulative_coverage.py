@@ -16,6 +16,21 @@ UTC = timezone.utc
 OUT = ROOT / '.data' / 'exports' / 'latest-day-inventory-cumulative-coverage.json'
 LIVE_ODDS_SOURCES = {'odds_api_io', 'bzzoiro', 'sportlogic'}
 CONFLICT_MARKERS = ('<' * 7, '=' * 7, '>' * 7)
+ENRICHMENT_FIELDS = (
+    'expected_home',
+    'expected_away',
+    'sstats_expected_home',
+    'sstats_expected_away',
+    'sstats_xg_source',
+    'sstats_lambda_home',
+    'sstats_lambda_away',
+    'sstats_form_games',
+    'sstats_offer_count',
+    'sstats_offer_books',
+    'sstats_offer_points',
+    'sstats_game_id',
+)
+EMPTY_VALUES = (None, '', [], {})
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -69,6 +84,15 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def as_float(value: Any) -> float | None:
+    try:
+        if value in (None, ''):
+            return None
+        return float(value)
+    except Exception:
+        return None
+
+
 def source_count(row: dict[str, Any], *names: str) -> int:
     best = 0
     containers = [row]
@@ -106,6 +130,10 @@ def norm_source(value: Any) -> str:
         'sportlogic_io': 'sportlogic',
     }
     return aliases.get(text, text)
+
+
+def norm_text(value: Any) -> str:
+    return re.sub(r'[^a-z0-9]+', ' ', str(value or '').strip().lower()).strip()
 
 
 def odds_source_count(row: dict[str, Any]) -> int:
@@ -152,6 +180,39 @@ def inventory_date(payload: Any) -> str:
     return ''
 
 
+def has_real_xg(row: dict[str, Any]) -> bool:
+    source = norm_source(row.get('sstats_xg_source'))
+    if not source or 'market' in source or 'proxy' in source:
+        return False
+    home = as_float(row.get('sstats_expected_home'))
+    away = as_float(row.get('sstats_expected_away'))
+    return home is not None and away is not None
+
+
+def real_xg_rows(payload: Any) -> int:
+    return sum(1 for row in rows_from_inventory(payload) if has_real_xg(row))
+
+
+def row_identity_keys(row: dict[str, Any]) -> list[str]:
+    keys: list[str] = []
+    for name in ('match_key', 'canonical_match_id'):
+        value = str(row.get(name) or '').strip().lower()
+        if value:
+            keys.append(value)
+    game_id = str(row.get('sstats_game_id') or '').strip()
+    if game_id:
+        keys.append(f'sstats_game_id:{game_id}')
+    home = norm_text(row.get('home_team'))
+    away = norm_text(row.get('away_team'))
+    if home and away:
+        pair = ' | '.join(sorted((home, away)))
+        kickoff = parse_dt(row.get('kickoff_utc') or row.get('commence_time') or row.get('kickoff_local'))
+        if kickoff is not None:
+            keys.append(f'pair:{pair}|{kickoff.date().isoformat()}')
+        keys.append(f'pair:{pair}')
+    return keys
+
+
 def coverage_score(payload: dict[str, Any]) -> int:
     total = 0
     for row in rows_from_inventory(payload):
@@ -187,11 +248,18 @@ def inventory_candidates(d: str) -> list[Path]:
     return out
 
 
+def file_mtime(path: Path) -> float:
+    try:
+        return float(path.stat().st_mtime)
+    except Exception:
+        return 0.0
+
+
 def best_inventory(d: str) -> tuple[Path, dict[str, Any], dict[str, Any]]:
     date_path = ROOT / '.data' / 'day_inventory' / f'{d}.json'
     best_path = date_path
     best_payload = load_json(date_path, {'matches': []})
-    best_score = (-1, -1, -1, '')
+    best_score = (-1, -1, -1, -1, -1.0, '')
     for path in inventory_candidates(d):
         payload = load_json(path, {})
         if not isinstance(payload, dict):
@@ -201,7 +269,7 @@ def best_inventory(d: str) -> tuple[Path, dict[str, Any], dict[str, Any]]:
             continue
         pdate = inventory_date(payload)
         date_ok = 1 if not pdate or pdate == d else 0
-        score = (date_ok, len(rows), coverage_score(payload), str(path))
+        score = (date_ok, len(rows), coverage_score(payload), real_xg_rows(payload), file_mtime(path), str(path))
         if score > best_score:
             best_score = score
             best_path = path
@@ -209,11 +277,61 @@ def best_inventory(d: str) -> tuple[Path, dict[str, Any], dict[str, Any]]:
     report = {
         'selected_path': str(best_path),
         'selected_rows': len(rows_from_inventory(best_payload)),
+        'selected_real_xg_rows': real_xg_rows(best_payload),
         'date_path': str(date_path),
         'date_path_rows': len(rows_from_inventory(load_json(date_path, {}))),
         'score': list(best_score),
     }
     return date_path, best_payload, report
+
+
+def merge_enrichment(payload: dict[str, Any], d: str) -> dict[str, Any]:
+    target_rows = rows_from_inventory(payload)
+    before = sum(1 for row in target_rows if has_real_xg(row))
+    donors: dict[str, dict[str, Any]] = {}
+    donor_files: list[str] = []
+    for path in inventory_candidates(d):
+        candidate = load_json(path, {})
+        rows = [row for row in rows_from_inventory(candidate) if has_real_xg(row)]
+        if not rows:
+            continue
+        donor_files.append(str(path))
+        for row in rows:
+            for key in row_identity_keys(row):
+                donors.setdefault(key, row)
+    rows_filled = 0
+    fields_written = 0
+    for row in target_rows:
+        if has_real_xg(row):
+            continue
+        donor: dict[str, Any] | None = None
+        for key in row_identity_keys(row):
+            donor = donors.get(key)
+            if donor is not None:
+                break
+        if donor is None:
+            continue
+        wrote = False
+        for field in ENRICHMENT_FIELDS:
+            value = donor.get(field)
+            if value in EMPTY_VALUES:
+                continue
+            if row.get(field) not in EMPTY_VALUES:
+                continue
+            row[field] = value
+            fields_written += 1
+            wrote = True
+        if wrote:
+            rows_filled += 1
+    return {
+        'donor_files': donor_files[:12],
+        'donor_keys': len(donors),
+        'rows_seen': len(target_rows),
+        'rows_filled': rows_filled,
+        'fields_written': fields_written,
+        'real_xg_rows_before': before,
+        'real_xg_rows_after': sum(1 for row in target_rows if has_real_xg(row)),
+    }
 
 
 def write_inventory_aliases(d: str, payload: dict[str, Any]) -> None:
@@ -284,11 +402,21 @@ def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
     return steps
 
 
+def preserve_enrichment_before_pipeline(d: str) -> dict[str, Any]:
+    _, payload, selection = best_inventory(d)
+    merge = merge_enrichment(payload, d)
+    if merge['rows_filled']:
+        write_inventory_aliases(d, payload)
+    return {'inventory_selection': selection, 'merge': merge, 'aliases_written': bool(merge['rows_filled'])}
+
+
 def main() -> int:
+    d = target_date()
+    pre_merge = preserve_enrichment_before_pipeline(d)
     pipeline_steps = ensure_latest_run_coverage_merged()
     now = datetime.now(UTC)
-    d = target_date()
     inv_path, inv, inventory_selection = best_inventory(d)
+    post_merge = merge_enrichment(inv, d)
     matches = rows_from_inventory(inv)
     previous = inv.get('coverage_progress') if isinstance(inv.get('coverage_progress'), dict) else {}
     prev_buckets = previous.get('by_kickoff_window') if isinstance(previous.get('by_kickoff_window'), dict) else {}
@@ -329,16 +457,23 @@ def main() -> int:
                 'context_sources': context_sources,
                 'has_odds': has_odds,
                 'has_context': has_context,
+                'has_real_xg': has_real_xg(row),
             })
     high_watermark: dict[str, dict[str, Any]] = {}
     for name, data in current.items():
         old = prev_buckets.get(name) if isinstance(prev_buckets.get(name), dict) else {}
         high_watermark[name] = {k: max(as_int(old.get(k)), as_int(data.get(k))) for k in empty_bucket().keys()}
     pipeline_errors = [step for step in pipeline_steps if isinstance(step, dict) and step.get('status') == 'error']
+    enrichment_merge = {
+        'before_pipeline': pre_merge,
+        'after_pipeline': post_merge,
+        'real_xg_rows_final': real_xg_rows(inv),
+    }
     progress = {
         'updated_at_utc': now.isoformat(),
         'date_local': d,
         'inventory_selection': inventory_selection,
+        'enrichment_merge': enrichment_merge,
         'min_odds_sources': min_odds_sources,
         'min_context_sources': min_context_sources,
         'coverage_pipeline_steps': pipeline_steps,
@@ -350,6 +485,8 @@ def main() -> int:
             'current_by_kickoff_window is the live rolling window and can shrink when matches start.',
             'by_kickoff_window is the cumulative high watermark and should only grow during the local day.',
             'This script selects the largest valid inventory alias before writing cumulative coverage, so a smaller date-file cannot shrink the day pool.',
+            'Inventory selection also prefers real provider xG coverage and file freshness, so a stale copy cannot replace enriched rows.',
+            'Enrichment fields are merged back onto the surviving rows by match key, canonical id, sstats game id or team pair.',
             'ready_for_publish requires 2+ price confirmations, 2+ independent live odds providers, and 2+ context/confirmation sources by default.',
         ],
     }
@@ -359,7 +496,9 @@ def main() -> int:
         inv['counts']['publish_min_odds_sources'] = min_odds_sources
         inv['counts']['publish_min_context_sources'] = min_context_sources
         inv['counts']['matches_total'] = max(as_int(inv['counts'].get('matches_total')), len(matches))
+        inv['counts']['real_xg_rows'] = real_xg_rows(inv)
     write_inventory_aliases(d, inv)
+    coverage_truth_refresh = run_python_script(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py')
     report_status = 'ok' if matches else 'no_matches'
     if pipeline_errors:
         report_status = 'degraded' if matches else 'error'
@@ -370,9 +509,12 @@ def main() -> int:
         'pipeline_errors': pipeline_errors[:5],
         'inventory_path': str(inv_path),
         'inventory_selection': inventory_selection,
+        'enrichment_merge': enrichment_merge,
+        'coverage_truth_refresh': coverage_truth_refresh,
         'updated_at_utc': now.isoformat(),
         'date_local': d,
         'matches_total': len(matches),
+        'real_xg_rows': real_xg_rows(inv),
         'min_odds_sources': min_odds_sources,
         'min_context_sources': min_context_sources,
         'coverage_pipeline_steps': pipeline_steps,
