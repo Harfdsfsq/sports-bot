@@ -1,53 +1,74 @@
 🧾 Подробный отчёт run — прогнозов нет
 
-🕒 Источник цифр: debug-last-run (3 мин назад) — свежий
+🕒 Источник цифр: debug-last-run (4 мин назад) — свежий
 
 📦 Дневной inventory
-• Матчей всего: 217
-• С линиями: 205/217
-• С контекстом: 209/217
-• Готово к модели: 198/217
-• Ближайшие 6 часов: 17/18 готово
+• Матчей всего: 300
+• С линиями: 54/300
+• С контекстом: 49/300
+• Готово к модели: 19/300
+• Ближайшие 6 часов: 6/20 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 4 | с линиями: 3 | контекстов: 0
-• Кандидаты: raw 0 | до качества 0 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 1 | выбрано: 0
+• Матчи: 17 | с линиями: 9 | контекстов: 7
+• Кандидаты: raw 0 | до качества 26 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 13 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
 • quality shadow: ok
 • current price patch: ok
-• zero-raw recovery: recovered | recovered_candidates 1
+• zero-raw recovery: not_needed | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
-• evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 1
+• evidence/integrity patch: installed | patched_odds_source_metrics 2 | market_probability_guard_softened_without_real_prices 0
+• provider targeting: ok | fallback_evaluated 13
 
 📡 Источники / фактическая работа
-• odds_api_io: data 4/327, req 0, err 2
-• bzzoiro: data 0/0, req 0, err 0
-• sstats: data 0/0, req 3, err 0
+• odds_api_io: data 25/1145, req 0, err 5
+• bzzoiro: data 1/1, req 3, err 0
+• sstats: data 6/6, req 4, err 0
 • football_data: data 0/0, req 0, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
 • openfootball: data 0/0, req 0, err 0
 
 🚫 Почему не прошли
-• tier_a_quality_below_min — 1 (8%)
-• tier_a_canonical_edge_below_min — 1 (8%)
-• tier_a_canonical_ev_below_min — 1 (8%)
-• tier_a_publication_score_below_min — 1 (8%)
-• tier_a_odds_sources_below_min:1/2 — 1 (8%)
-• tier_a_confirmation_sources_below_min:1/2 — 1 (8%)
-• tier_a_two_plus_odds_sources_required:1/2 — 1 (8%)
-• tier_a_two_plus_context_sources_required:1/2 — 1 (8%)
-• tier_a_market_implied_xg_not_hard_confirmation — 1 (8%)
-• tier_b_quality_below_min — 1 (8%)
+• tier_b_quality_below_min — 7 (11%)
+• tier_c_quality_below_min — 7 (11%)
+• tier_c_market_implied_xg_not_hard_confirmation — 7 (11%)
+• tier_a_quality_below_min — 6 (10%)
+• tier_a_odds_sources_below_min:1/2 — 6 (10%)
+• tier_a_market_implied_xg_not_hard_confirmation — 6 (10%)
+• tier_b_publication_score_below_min — 5 (8%)
+• tier_a_publication_score_below_min — 4 (7%)
+• tier_c_publication_score_below_min — 4 (7%)
+• tier_a_confirmation_sources_below_min:1/2 — 3 (5%)
 
 ⚠️ Пограничные кандидаты
-1. Рил Сантандер — Индепендиенте Валле Дел Каука | Больше @2.08
-   • EV +2.5% | edge +1.2 п.п. | q 0.0
-   • не прошло: tier_a_quality_below_min; tier_a_canonical_edge_below_min; tier_a_canonical_ev_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2
+1. Атлас — Клуб Тиджуана де Калиенте | Больше @3.00
+   • EV +10.1% | edge +3.4 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2; tier_a_two_plus_odds_sources_required:1/2; tier_a_two_plus_context_sources_required:1/2
+2. Атлас — Клуб Тиджуана де Калиенте | Больше @3.00
+   • EV +10.1% | edge +3.4 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2; tier_a_two_plus_odds_sources_required:1/2; tier_a_two_plus_context_sources_required:1/2
+3. Алианза Панама — Тауро | Больше @2.15
+   • EV +9.4% | edge +4.4 п.п. | q 0.0
+   • не прошло: current_price_recheck_value_lost:-2.3/-1.2
+4. Алианза Панама — Тауро | Больше @2.15
+   • EV +9.4% | edge +4.4 п.п. | q 0.0
+   • не прошло: current_price_recheck_value_lost:-2.3/-1.2
+5. Лионс — Норт Суншине Иглес | Меньше @2.38
+   • EV +7.0% | edge +3.0 п.п. | q 0.0
+   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
+6. Либертад Лоджа — CSD Макара | Больше @2.25
+   • EV +5.1% | edge +2.3 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2; tier_a_two_plus_odds_sources_required:1/2
+7. Либертад Лоджа — CSD Макара | Больше @2.25
+   • EV +5.1% | edge +2.3 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_market_implied_xg_not_hard_confirmation; tier_b_quality_below_min
+8. Гуадалупе — AD Кармелита | Больше @1.70
+   • EV +4.7% | edge +2.8 п.п. | q 0.0
+   • не прошло: odds_below_global_min; current_price_recheck_value_lost:-0.8/-0.5
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
