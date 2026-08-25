@@ -1,12 +1,12 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: кандидат ждёт следующий cron для второго снимка линии
+• Главная причина: tier c quality below min
 
 📦 Покрытие
-• Матчи в run: 1 | day inventory: 300
-• С линиями: 1 | с контекстом: 5 | ready model: 96
-• odds-api.io offers: 630 | Bzzoiro secondary offers: 90
-• 2+ букмекера odds-api.io: 5 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 11 | day inventory: 300
+• С линиями: 5 | с контекстом: 3 | ready model: 65
+• odds-api.io offers: 604 | Bzzoiro secondary offers: 96
+• 2+ букмекера odds-api.io: 5 | 2-source overlap Bzzoiro+odds-api.io: 1
 • Source combinations: odds_api_io: 4
 
 • A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
@@ -14,45 +14,45 @@
 • Raw/candidates before quality: 0 / 24
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 9 | evaluated 9 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 11 | evaluated 11 | published False (0)
 • Windowed coverage: audit 8 | allowed 4 | blocked 4 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 1 | no next regular run: 1
-• Line guard: seen 22 | kept 1 | dropped 10
+• Final pre-kickoff checks: 0 | no next regular run: 0
+• Line guard: seen 15 | kept 0 | dropped 4
 
-• Bzzoiro targeted odds: targets 80; events 802; matched 21; ids 21; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 16; requests 32; events_with_offers 15; offers 135; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 90; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 5; inventory updated 25; inventory 2-source 0.
+• Bzzoiro targeted odds: targets 80; events 802; matched 22; ids 22; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 17; requests 34; events_with_offers 16; offers 144; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 96; overlap matches 1; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 5; inventory updated 21; inventory 2-source 0.
 • Bzzoiro source trace: aggregate events 125; persisted rows 199; targeted events 802; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 9; floor 3; hard 3; relieved 0.
+• Last-chance line relief: seen 11; floor 3; hard 5; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 9, matched 37, offers 630, 2+ books 5, err 5, auth_failed False
-• sstats: req 17, ctx 3, rows 15983, err 0, deep enriched 0
-• bzzoiro: req 2, ctx 2, events 125 (aggregate; persisted rows 199; trace full_or_provider_rows_available), secondary offers 90, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 9, matched 37, offers 604, 2+ books 5, err 5, auth_failed False
+• sstats: req 3, ctx 1, rows 15980, err 0, deep enriched 0
+• bzzoiro: req 2, ctx 2, events 125 (aggregate; persisted rows 199; trace full_or_provider_rows_available), secondary offers 96, overlap odds-api.io 1, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
-• Line movement breakdown: конфликт направления с xG 2.
+• Line movement breakdown: коэффициент ниже минимума 2; конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 10 (21%)
-• tier c quality below min: 6 (12%)
-• tier a quality below min: 5 (10%)
-• tier b quality below min: 4 (8%)
-• tier b publication score below min: 4 (8%)
-• tier c market implied xg not hard confirmation: 3 (6%)
-• tier a canonical edge below min: 3 (6%)
-• tier a publication score below min: 3 (6%)
+• tier c quality below min: 5 (11%)
+• tier b quality below min: 4 (9%)
+• tier b publication score below min: 4 (9%)
+• tier a quality below min: 4 (9%)
+• tier a canonical edge below min: 4 (9%)
+• tier a publication score below min: 4 (9%)
+• tier c canonical edge below min: 4 (9%)
+• tier c publication score below min: 4 (9%)
 
 🔎 Проверенные reserve-кандидаты
-1. FC Seoul — Bucheon FC 1995 | Меньше @3.02 | EV +12.3% | edge +4.1 п.п. | q 76.0
-   • reject: направление ставки конфликтует с xG
-2. Jeju SK — Pohang Steelers | Меньше @2.15 | EV +11.2% | edge +5.2 п.п. | q 76.0
-   • reject: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-3. Tacoma Defiance — Sporting Kansas City II | Меньше @2.90 | EV +12.7% | edge +4.4 п.п. | q 99.4 reserve
-   • reject: tier a quality below min, tier b low quality competition requires a tier, tier c quality below min
-4. Lions FC — North Sunshine Eagles FC | Меньше @2.38 | EV +7.0% | edge +3.0 п.п. | q 74.8 reserve
+1. Lions FC — North Sunshine Eagles FC | Меньше @2.38 | EV +7.0% | edge +3.0 п.п. | q 76.3 reserve
    • reject: tier b quality below min, tier b publication score below min, tier c quality below min
+2. United Sports Club — Police AC | Больше @2.15 | EV +2.1% | edge +1.0 п.п. | q 71.2 reserve
+   • reject: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min
+3. Lions FC — North Sunshine Eagles FC | Больше @1.91 | EV +10.9% | edge +5.7 п.п. | q 96.2 reserve
+   • reject: модель слишком оптимистична относительно xG-ориентира
+4. FC Seoul — Bucheon FC 1995 | Больше @3.05 | EV +2.2% | edge +0.7 п.п. | q 51.1 reserve
+   • reject: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
