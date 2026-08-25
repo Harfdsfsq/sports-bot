@@ -1,8 +1,8 @@
 # run-bot discovery-first prepare
 status: ok
 mode: runbot_discovery_first_prepare_v5_incremental_reuse
-created_at_utc: 2026-08-25T17:07:00.402282+00:00
-duration_seconds: 133.37
+created_at_utc: 2026-08-25T19:06:53.927743+00:00
+duration_seconds: 130.2
 budget_seconds: 210.0
 
 ## Steps
@@ -14,13 +14,13 @@ budget_seconds: 210.0
 - merge_discovery_pool_into_inventory: skipped {}
   - reason: fresh_same_day_full_prepare_reused
 - apply_cached_sstats_crosswalk_ids: ok {"mode": "sstats_crosswalk_inventory_apply_v1", "status": "ok", "inventory_matches": 337, "matched_rows_seen": 210, "applied": 210}
-- apply_sstats_deep_inventory_enrichment_v4: ok {"mode": "sstats_deep_inventory_enrichment_v6_fixture_grouped", "status": "ok", "crosswalk_matched": 210, "request_count": 150, "enriched_matches": 57}
+- apply_sstats_deep_inventory_enrichment_v4: ok {"mode": "sstats_deep_inventory_enrichment_v6_fixture_grouped", "status": "ok", "crosswalk_matched": 210, "request_count": 150, "enriched_matches": 61}
 - target_bzzoiro_v2_inventory_gaps: skipped {}
   - reason: incremental_mode_runner_provider_refresh
 - semantic_inventory_dedupe_final: ok {"type": "int"}
 - target_expand_final: skipped {}
   - reason: inventory_already_at_or_above_target:337/300
-- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 300, "matches": 300, "fixture_2plus_sources": 256, "odds_2plus_sources": 70, "context_2plus_sources": 15, "ready_for_model": 100, "ready_for_publish": 14}
+- build_source_aware_coverage_matrix: ok {"status": "ok", "matrix_matches": 300, "matches": 300, "fixture_2plus_sources": 255, "odds_2plus_sources": 117, "context_2plus_sources": 26, "ready_for_model": 117, "ready_for_publish": 24}
 - inventory_provider_gap_audit: ok {"type": "int"}
 
 ## Final
@@ -28,8 +28,8 @@ budget_seconds: 210.0
 - semantic_unique_matches: 337
 - semantic_duplicate_rows: 0
 - matrix_matches: 300
-- fixture_2plus_sources: 256
-- odds_2plus_sources: 70
-- context_2plus_sources: 15
-- ready_for_model: 100
-- ready_for_publish: 14
+- fixture_2plus_sources: 255
+- odds_2plus_sources: 117
+- context_2plus_sources: 26
+- ready_for_model: 117
+- ready_for_publish: 24
