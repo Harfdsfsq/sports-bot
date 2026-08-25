@@ -5,13 +5,13 @@ aliases_written: .data/day_inventory/2026-08-25.json, .data/day_inventory/latest
 crosswalk_matched: 210
 queue_seen: 160
 fixtures_seen: 156
-request_count: 150
+request_count: 149
 enriched_matches: 61
-sstats_offers: 204
-priority_group_counts: {"context0_odds1_xg1": 49, "context1_odds1_xg1": 4, "context0_odds1_xg0": 6, "context1_odds1_xg0": 1}
-command_status_counts: {"OK": 150, "SKIPPED": 90}
-xg_extraction: {"attempted": 61, "resolved_real": 56, "kept_existing": 0, "missing": 5, "placeholder_rejected": 0, "source_counts": {"last_games_form_goals": 34, "glicko_xg": 22, "missing": 5}}
-odds_extraction: {"fixtures_attempted": 22, "payload_ok": 22, "offers_parsed": 204, "fixtures_with_offers": 2, "no_totals_market": 0, "book_counts": {"10bet": 6, "1xbet": 52, "betano": 12, "marathonbet": 52, "pinnacle": 28, "superbet": 16, "bet365": 8, "betfair": 8, "betvictor": 16, "sbo": 2, "unibet": 4}}
+sstats_offers: 0
+priority_group_counts: {"context0_odds1_xg1": 42, "context1_odds1_xg1": 13, "context0_odds1_xg0": 4, "context1_odds1_xg0": 1}
+command_status_counts: {"OK": 149, "SKIPPED": 91}
+xg_extraction: {"attempted": 61, "resolved_real": 56, "kept_existing": 0, "missing": 5, "placeholder_rejected": 0, "source_counts": {"last_games_form_goals": 35, "glicko_xg": 21, "missing": 5}}
+odds_extraction: {"fixtures_attempted": 21, "payload_ok": 21, "offers_parsed": 0, "fixtures_with_offers": 0, "no_totals_market": 0, "book_counts": {}}
 identity: {"verified": 28, "unverified": 32, "mismatch": 0, "skipped_empty_key": 0, "skipped_no_row": 0, "fixtures_processed": 60, "duplicate_rows_seen": 4, "sibling_rows_marked": 1}
 
 ## Enriched sample
@@ -20,12 +20,12 @@ identity: {"verified": 28, "unverified": 32, "mismatch": 0, "skipped_empty_key":
 - United Sports Club — Police AC | gameId=1631497 copy=0 id=verified deep=True detail=True offers=0 xg=glicko_xg eh=1.221 ea=1.355 context:1→1
 - Estoril Praia U23 — Moreirense FC U23 | gameId=1598655 copy=0 id=unverified deep=True detail=True offers=0 xg=None eh=None ea=None context:0→1
 - SK Dynamo Ceske Budejovice U19 — FC Zbrojovka Brno U19 | gameId=1565070 copy=0 id=verified deep=True detail=True offers=0 xg=glicko_xg eh=1.585 ea=1.493 context:0→1
-- Swansea City U21 — Peterborough United U21 | gameId=1619118 copy=0 id=verified deep=True detail=True offers=0 xg=glicko_xg eh=1.792 ea=1.537 context:0→1
-- Millwall U21 — Huddersfield Town U21 | gameId=1619122 copy=0 id=verified deep=True detail=True offers=0 xg=glicko_xg eh=1.528 ea=1.684 context:0→1
+- Swansea City U21 — Peterborough United U21 | gameId=1619118 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.935 ea=1.881 context:0→1
+- Millwall U21 — Huddersfield Town U21 | gameId=1619122 copy=0 id=verified deep=True detail=True offers=0 xg=glicko_xg eh=1.519 ea=1.661 context:0→1
 - Andranik — Echmiadzin | gameId=1588809 copy=0 id=unverified deep=True detail=True offers=0 xg=None eh=None ea=None context:0→1
 - Bolton Wanderers U21 — Colchester United U21 | gameId=1619121 copy=0 id=unverified deep=True detail=False offers=0 xg=None eh=None ea=None context:1→1
-- FC Jayxun — FC Yaypan Fergana | gameId=1531089 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.265 ea=1.317 context:0→1
-- Maritimo Madeira U23 — Estrela Amadora U23 | gameId=1598658 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.325 ea=1.134 context:1→1
+- FC Jayxun — FC Yaypan Fergana | gameId=1531089 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.265 ea=1.317 context:1→1
+- Maritimo Madeira U23 — Estrela Amadora U23 | gameId=1598658 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.328 ea=1.123 context:1→1
 - FC Andijon — Xorazm Fk Urganch | gameId=1516113 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.61 ea=0.914 context:0→1
 - NB Bornholm — HIK Hellerup | gameId=1619031 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.94 ea=1.681 context:0→1
 - Umm-Salal SC — Qatar | gameId=1606529 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.412 ea=2.077 context:0→1
@@ -38,31 +38,31 @@ identity: {"verified": 28, "unverified": 32, "mismatch": 0, "skipped_empty_key":
 - PFC CSKA SOFIA II — PFC Ludogorets Razgrad II | gameId=1571521 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.728 ea=0.831 context:1→1
 - FK Varnsdorf — FK Usti nad Labem | gameId=1627580 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.8 ea=1.644 context:0→1
 - Vatanspor — Aalborg BK | gameId=1619049 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.721 ea=1.833 context:0→1
-- AL Karkh — Erbil SC | gameId=1627931 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=0.913 ea=1.411 context:0→1
-- Alleroed FK — Vanloese IF | gameId=1619028 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.752 ea=1.388 context:0→1
+- AL Karkh — Erbil SC | gameId=1627931 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=0.949 ea=1.307 context:1→1
+- Alleroed FK — Vanloese IF | gameId=1619028 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.752 ea=1.388 context:1→1
 - SK Zapy — Bohemians Prague 1905 | gameId=1627586 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.869 ea=1.172 context:0→1
 - FK Horni Redice — Dukla Prague | gameId=1627569 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.895 ea=1.363 context:0→1
 - Frederikssund — Sundby BK | gameId=1619036 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.602 ea=1.517 context:0→1
 - FC Helsingoer — Hoersholm-Usseroed IK | gameId=1627485 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.796 ea=1.508 context:0→1
 - OKS — Middelfart BK | gameId=1619043 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=2.072 ea=2.007 context:0→1
 - FK Motorlet Prague — FC Vysocina Jihlava | gameId=1627573 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.548 ea=1.387 context:0→1
-- PFK Beroe Stara Zagora — PFC Spartak Pleven | gameId=1571520 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.179 ea=1.244 context:0→1
+- PFK Beroe Stara Zagora — PFC Spartak Pleven | gameId=1571520 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.179 ea=1.244 context:1→1
 - SK Unicov — FC Zlin | gameId=1627579 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.806 ea=1.215 context:0→1
-- Kuwait SC — Al Arabi | gameId=1622635 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.535 ea=1.311 context:0→1
+- Kuwait SC — Al Arabi | gameId=1622635 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.535 ea=1.311 context:1→1
 - AL Julan — Al Shorta SC | gameId=1627929 copy=0 id=unverified deep=True detail=False offers=0 xg=None eh=None ea=None context:0→1
-- Zakho FC — Diyala FC | gameId=1627938 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.44 ea=0.876 context:0→1
-- Academico Viseu U23 — FC Vizela U23 | gameId=1598653 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.757 ea=0.928 context:0→1
+- Zakho FC — Diyala FC | gameId=1627938 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.417 ea=0.86 context:1→1
+- Academico Viseu U23 — FC Vizela U23 | gameId=1598653 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.738 ea=0.938 context:0→1
 - SK Brann — FK Austria Wien | gameId=1623459 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=2.03 ea=1.374 context:0→1
 - FC Famalicao U23 — FC Felgueiras 1932 U23 | gameId=1598656 copy=0 id=unverified deep=True detail=False offers=0 xg=None eh=None ea=None context:0→1
-- Leixoes SC U23 — UD Leiria U23 | gameId=1598657 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.674 ea=0.959 context:0→1
-- FK Auda Riga — FK Liepaja | gameId=1515887 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.458 ea=1.156 context:0→1
+- Leixoes SC U23 — UD Leiria U23 | gameId=1598657 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.645 ea=0.954 context:0→1
+- FK Auda Riga — FK Liepaja | gameId=1515887 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.458 ea=1.156 context:1→1
 - FC Sydkysten — BK Frem | gameId=1619047 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.742 ea=1.645 context:0→1
-- AFC Unirea 04 Slobozia — Metaloglobus Bucuresti | gameId=1602452 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.037 ea=1.256 context:0→1
+- AFC Unirea 04 Slobozia — Metaloglobus Bucuresti | gameId=1602452 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.037 ea=1.256 context:1→1
 - Skovshoved IF — Taarnby FF | gameId=1627484 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.571 ea=1.922 context:0→1
-- Vaxjo Norra — Solvesborgs GIF | gameId=1510974 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.751 ea=1.272 context:0→1
+- Vaxjo Norra — Solvesborgs GIF | gameId=1510974 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.751 ea=1.272 context:1→1
 - TJ Hluboka Nad Vlatvou — FK Viktoria Zizkov | gameId=1627568 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=2.118 ea=1.35 context:0→1
 - FSV Pfaffenhofen — SV Heimstetten | gameId=1567249 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.816 ea=1.643 context:0→1
-- Portimonense U23 — SC Farense U23 | gameId=1598659 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.015 ea=1.421 context:0→1
+- Portimonense U23 — SC Farense U23 | gameId=1598659 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.015 ea=1.37 context:0→1
 - AL Waab — AL Rayyan Nextgen | gameId=1606530 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.352 ea=1.836 context:0→1
 - Bayern Munich II — FC Memmingen | gameId=1586181 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.321 ea=1.786 context:0→1
 - Eskilsminne IF — Orgryte IS | gameId=1553083 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.941 ea=1.404 context:0→1
@@ -73,5 +73,5 @@ identity: {"verified": 28, "unverified": 32, "mismatch": 0, "skipped_empty_key":
 - Barcelona Atlètic — Reus FC Reddis | gameId=1618961 copy=1 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.372 ea=1.353 context:0→1
 - 1. FC Lokomotive Leipzig — Chemnitzer FC | gameId=1586838 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.592 ea=1.133 context:0→1
 - BFC Dynamo — BFC Preussen Berlin | gameId=1586834 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.553 ea=1.398 context:0→1
-- FC Magdeburg II — BSG Chemie Leipzig | gameId=1586840 copy=0 id=verified deep=True detail=False offers=88 xg=glicko_xg eh=1.405 ea=1.397 context:0→1
-- Skive IK — Esbjerg FB | gameId=1619045 copy=0 id=unverified deep=True detail=False offers=116 xg=last_games_form_goals eh=1.319 ea=1.53 context:0→1
+- FC Magdeburg II — BSG Chemie Leipzig | gameId=1586840 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.405 ea=1.397 context:0→1
+- Skive IK — Esbjerg FB | gameId=1619045 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.319 ea=1.53 context:0→1
