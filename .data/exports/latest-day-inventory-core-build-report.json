@@ -1,39 +1,42 @@
 {
   "all_source_match_counts": {
-    "bzzoiro": 20,
-    "odds_api_io": 293
+    "bzzoiro": 120,
+    "football_data": 4,
+    "odds_api_io": 115,
+    "sstats": 79,
+    "thesportsdb": 5
   },
   "build_status": "ok",
   "counts": {
-    "fixture_sources_seen": 2,
-    "leagues_seen": 91,
-    "matches_added": 296,
-    "matches_after_core_merge": 296,
-    "matches_after_top_cut": 296,
-    "matches_next_12h": 26,
-    "matches_next_12h_ready": 3,
-    "matches_next_6h": 24,
-    "matches_next_6h_ready": 3,
-    "matches_raw_before_merge": 313,
-    "matches_ready_for_model": 17,
-    "matches_ready_for_publish": 0,
-    "matches_total": 296,
-    "matches_updated": 0,
-    "matches_with_2plus_core_fixture_sources": 17,
-    "matches_with_3_core_fixture_sources": 0,
-    "matches_with_context": 20,
-    "matches_with_form": 0,
+    "fixture_sources_seen": 5,
+    "leagues_seen": 10,
+    "matches_added": 6,
+    "matches_after_core_merge": 20,
+    "matches_after_top_cut": 20,
+    "matches_next_12h": 87,
+    "matches_next_12h_ready": 51,
+    "matches_next_6h": 16,
+    "matches_next_6h_ready": 9,
+    "matches_raw_before_merge": 20,
+    "matches_ready_for_model": 61,
+    "matches_ready_for_publish": 11,
+    "matches_total": 204,
+    "matches_updated": 14,
+    "matches_with_2plus_core_fixture_sources": 77,
+    "matches_with_3_core_fixture_sources": 40,
+    "matches_with_context": 143,
+    "matches_with_form": 79,
     "matches_with_news": 0,
-    "matches_with_odds": 293,
+    "matches_with_odds": 115,
     "matches_with_weather": 0,
-    "matches_with_xg": 20,
-    "multi_source_fixture_matches": 17,
-    "providers_seen": 2,
+    "matches_with_xg": 26,
+    "multi_source_fixture_matches": 81,
+    "providers_seen": 1,
     "target_full": false,
     "target_matches": 300,
-    "target_shortfall": 4
+    "target_shortfall": 280
   },
-  "created_at_utc": "2026-08-25T21:02:55.471319+00:00",
+  "created_at_utc": "2026-08-25T23:04:24.198461+00:00",
   "date_local": "2026-08-26",
   "inventory_policy": "merge-only top-300 core fixture inventory from odds-api.io, Bzzoiro, SStats and quota-governed SportLogic; deep detail endpoints remain runtime shortlist enrichment",
   "max_matches": 300,
@@ -54,60 +57,44 @@
       "response_errors": 0
     },
     "odds_api_io": {
-      "accounts": {
-        "account1": {
-          "daily_limit": 500,
-          "day_used": 7,
-          "hour_used": 7,
-          "hourly_limit": 100
-        }
-      },
-      "api_key_present": true,
-      "auth_error": false,
-      "budget_exhausted": false,
       "enabled": true,
-      "event_http_statuses": [
-        200,
-        200,
-        200,
-        200,
-        200,
-        200,
-        200,
-        200
-      ],
-      "event_requests": 8,
-      "events_fetched": 798,
-      "low_tier_skipped": 254,
-      "matches_built": 542,
-      "matches_for_target_date": 293,
-      "max_http_requests_per_run": 200,
-      "payload_shapes": [
-        "list"
-      ],
-      "plan_restriction": false,
-      "rate_limited": false,
-      "requests": 0,
-      "response_errors": 0,
-      "simulated_skipped": 2,
-      "source": "runner_bootstrap",
-      "stop_reason": ""
-    },
-    "sportlogic": {
-      "api_key_present": false,
-      "contexts_built": 0,
-      "diagnosis": "sportlogic_disabled_zero_rows_guard",
-      "enabled": false,
-      "events_matched": 0,
-      "fixtures_fetched": 0,
-      "games_fetched": 0,
+      "events_fetched": 0,
+      "matches_after_sstats_fixture_source_deduped": 0,
+      "matches_before_sstats_fixture_source": 0,
       "matches_built": 0,
       "matches_for_target_date": 0,
-      "max_requests_per_run": 0,
-      "mode": "matches",
-      "odds_requests": 0,
-      "offers_parsed": 0,
-      "reason": "disabled_zero_rows_guard",
+      "requests": 0,
+      "response_errors": 0,
+      "source": "runner_bootstrap",
+      "sstats_fixture_matches_added_raw": 0,
+      "sstats_fixture_source": {
+        "api_key_present": true,
+        "budget_exhausted": false,
+        "duplicates_inside_sstats": 0,
+        "enabled": true,
+        "endpoint": "/Games/list",
+        "http_statuses": [
+          200
+        ],
+        "last_body_preview": "{\"status\":\"OK\",\"count\":0,\"data\":[],\"offset\":0,\"traceId\":\"00-fd597bba0cab2bf8259dc33e21260c20-b696efd429c160e8-00\"}",
+        "last_error": null,
+        "low_tier_skipped": 0,
+        "matches_built": 0,
+        "matches_for_target_local_date": 0,
+        "parse_fail_reasons": {},
+        "request_date": "2026-08-26",
+        "requests": 1,
+        "response_errors": 0,
+        "rows_fetched": 0,
+        "rows_outside_target_local_date": 0,
+        "rows_parsed_as_match": 0
+      }
+    },
+    "sportlogic": {
+      "api_key_present": true,
+      "enabled": false,
+      "matches_built": 0,
+      "matches_for_target_date": 0,
       "requests": 0,
       "response_errors": 0,
       "source": "sportlogic_provider.fetch_matches"
@@ -134,10 +121,9 @@
     "today_path": ".data/day_inventory/today.json"
   },
   "source_match_counts": {
-    "bzzoiro": 3,
-    "odds_api_io": 293
+    "bzzoiro": 20
   },
   "target_full": false,
   "target_matches": 300,
-  "target_shortfall": 4
+  "target_shortfall": 280
 }

@@ -1,49 +1,42 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: tier b quality below min
+• Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 2 | day inventory: 300
-• С линиями: 2 | с контекстом: 1 | ready model: 145
-• odds-api.io offers: 145 | Bzzoiro secondary offers: 48
-• 2+ букмекера odds-api.io: 1 | 2-source overlap Bzzoiro+odds-api.io: 0
-• Source combinations: odds_api_io: 4
+• Матчи в run: 5 | day inventory: 218
+• С линиями: 4 | с контекстом: 6 | ready model: 171
+• odds-api.io offers: 1378 | Bzzoiro secondary offers: 30
+• 2+ букмекера odds-api.io: 13 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Source combinations: odds_api_io: 22
 
-• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 74; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 24
+• Raw/candidates before quality: 0 / 0
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 2 | evaluated 2 | published False (0)
-• Windowed coverage: audit 8 | allowed 4 | blocked 4 | publish-filter input 0
+• Controlled fallback: status fallback_artifact_stale_or_missing_after_step | seen 0 | evaluated 0 | published False (0)
+• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 5 | no next regular run: 3
-• Line guard: seen 12 | kept 1 | dropped 0
+• Final pre-kickoff checks: 12 | no next regular run: 12
+• Line guard: seen 23 | kept 0 | dropped 7
 
-• Bzzoiro targeted odds: targets 80; events 802; matched 13; ids 13; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 8; requests 16; events_with_offers 8; offers 72; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 48; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 1; inventory updated 2; inventory 2-source 0.
-• Bzzoiro source trace: aggregate events 0; persisted rows 199; targeted events 802; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 2; floor 2; hard 0; relieved 0.
+• Bzzoiro targeted odds: targets 80; events 714; matched 57; ids 57; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 30; requests 60; events_with_offers 5; offers 45; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 30; overlap matches 0; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 13; inventory updated 22; inventory 2-source 0.
+• Bzzoiro source trace: aggregate events 177; persisted rows 177; targeted events 714; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 2; floor 1; hard 1; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 3, matched 2, offers 145, 2+ books 1, err 2, auth_failed False
-• sstats: req 3, ctx 1, rows 15995, err 0, deep enriched 0
-• bzzoiro: req 0, ctx 0, events 0 (aggregate; persisted rows 199; trace full_or_provider_rows_available), secondary offers 48, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 9, matched 32, offers 1378, 2+ books 13, err 5, auth_failed False
+• sstats: req 4, ctx 5, rows 16227, err 0, deep enriched 0
+• bzzoiro: req 2, ctx 0, events 177 (aggregate; persisted rows 177; trace full_or_provider_rows_available), secondary offers 30, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
 🚫 Почему не опубликовано
-• tier b quality below min: 2 (29%)
-• tier c quality below min: 2 (29%)
-• tier c market implied xg not hard confirmation: 2 (29%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (14%)
-
-🔎 Проверенные reserve-кандидаты
-1. Alianza Atletico — UTC de Cajamarca | Меньше @1.98 | EV +7.8% | edge +3.9 п.п. | q 76.0 reserve
-   • reject: tier b quality below min, tier c quality below min, tier c market implied xg not hard confirmation
-2. Alianza Atletico — UTC de Cajamarca | Меньше @1.98 | EV +7.8% | edge +3.9 п.п. | q 77.5 reserve
-   • reject: tier b quality below min, tier c quality below min, tier c market implied xg not hard confirmation
+• кандидат ждёт следующий cron для второго снимка линии: 6 (75%)
+• line movement guard снял кандидата: 1 (12%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (12%)
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
