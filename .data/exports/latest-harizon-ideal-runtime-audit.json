@@ -1,30 +1,32 @@
 {
   "best_near_misses": [],
   "blockers": [
+    "context_coverage_below_85pct",
+    "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers"
   ],
   "bzzoiro_chain": {
-    "merge_after_2plus_books": 10,
+    "merge_after_2plus_books": 6,
     "merge_after_2plus_sources": 0,
-    "overlap_bridge_offers": 48,
+    "overlap_bridge_offers": 18,
     "overlap_matches": 0
   },
-  "created_at_utc": "2026-08-26T03:16:12.874673+00:00",
+  "created_at_utc": "2026-08-26T05:13:35.269196+00:00",
   "ideal_score": 91.5,
   "inventory": {
-    "next_12h_ready": 64,
-    "next_12h_ready_pct": 69.6,
-    "next_12h_total": 92,
-    "next_6h_ready": 14,
-    "next_6h_ready_pct": 87.5,
-    "next_6h_total": 16,
-    "ready": 181,
-    "ready_pct": 78.0,
-    "total": 232,
-    "with_context": 200,
-    "with_context_pct": 86.2,
-    "with_lines": 211,
-    "with_lines_pct": 90.9
+    "next_12h_ready": 86,
+    "next_12h_ready_pct": 74.1,
+    "next_12h_total": 116,
+    "next_6h_ready": 66,
+    "next_6h_ready_pct": 77.6,
+    "next_6h_total": 85,
+    "ready": 176,
+    "ready_pct": 83.0,
+    "total": 212,
+    "with_context": 176,
+    "with_context_pct": 83.0,
+    "with_lines": 204,
+    "with_lines_pct": 96.2
   },
   "line_movement": {
     "class_counts": {},
@@ -37,48 +39,35 @@
     "watchlist_count": 0
   },
   "odds_api_io_account2": {
-    "http_statuses": [],
+    "http_statuses": [
+      403,
+      403,
+      403,
+      403,
+      403
+    ],
     "offers": 0,
-    "plan_restriction": false,
+    "plan_restriction": true,
     "rate_limited": false,
-    "requests": 0
+    "requests": 5
   },
   "proxy_xg_replacement": {
-    "checked": 14,
-    "created_at_utc": "2026-08-26T03:12:07.815436+00:00",
-    "examples": [
-      {
-        "away_team": "1. FC Slovacko U19",
-        "expected_away": 1.5527,
-        "expected_home": 1.5527,
-        "home_team": "FK Teplice U19",
-        "point": 2.5,
-        "selection": "Меньше",
-        "total_xg": 3.1054
-      },
-      {
-        "away_team": "Belugarosso Iwami",
-        "expected_away": 2.2043,
-        "expected_home": 2.2043,
-        "home_team": "Fagiano Okayama",
-        "point": 4.5,
-        "selection": "Больше",
-        "total_xg": 4.4085
-      }
-    ],
+    "checked": 6,
+    "created_at_utc": "2026-08-26T05:12:40.185989+00:00",
+    "examples": [],
     "note": "Market-implied xG replaces only proxy 1:1 placeholders; it is not hard provider xG and does not bypass line/value/source guards.",
-    "replaced": 2,
+    "replaced": 0,
     "skipped": {
       "hard_xg": 0,
       "no_market_implied": 0,
-      "not_placeholder": 12
+      "not_placeholder": 6
     },
     "status": "ok",
-    "touched_files": [
-      "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json"
-    ]
+    "touched_files": []
   },
   "recommended_actions": [
+    "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
+    "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set"
   ],
   "status": "ok",
