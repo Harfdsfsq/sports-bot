@@ -1,7 +1,7 @@
 {
-  "created_at_utc": "2026-08-26T13:12:39.425706+00:00",
+  "created_at_utc": "2026-08-26T17:12:22.782540+00:00",
   "diagnosis": "offers_parsed",
-  "offer_count": 72,
+  "offer_count": 30,
   "payload_samples": [
     {
       "body_preview": {
@@ -44,11 +44,11 @@
     {
       "body_preview": {
         "odds": "{\"event_id\": 588072, \"odds\": {\"home_win\": null, \"draw\": null, \"away_win\": null, \"over_15_goals\": null, \"over_25_goals\": null, \"over_35_goals\": null, \"under_15_goals\": null, \"under_25_goals\": null, \"under_35_goals\": null, \"btts_yes\": null, \"btts_no\": null}, \"last_update_at\": null, \"next_update_at\": null, \"update_interval_seconds\": null, \"update_reason\": \"no further updates scheduled\"}",
-        "odds/comparison": "{\"http_status\": 403, \"body_preview\": \"{\\\"detail\\\":\\\"Per-bookmaker odds require Football Unlimited. Use /api/v2/odds/ for the consensus price. See https://sports.bzzoiro.com/pricing/\\\",\\\"code\\\":\\\"bookmakers_not_entitled\\\"}\"}"
+        "odds/comparison": "{\"event_id\": 588072, \"event_date\": \"2026-08-26T10:00:00Z\", \"league_id\": 51, \"league_name\": \"Emperor Cup\", \"home_team_id\": 1928, \"home_team\": \"Yokohama F. Marinos\", \"away_team_id\": 1997, \"away_team\": \"Fukushima United FC\", \"bookmakers_count\": 0, \"total_odds\": 0, \"markets\": {}}"
       },
       "endpoint_statuses": {
         "odds": 200,
-        "odds/comparison": 403
+        "odds/comparison": 200
       },
       "event_id": "588072",
       "match_key": "2026-08-26|yokohama f marinos|fukushima united",
@@ -74,19 +74,28 @@
           "update_reason": "str"
         },
         "odds/comparison": {
-          "body_preview": "str",
-          "http_status": "int"
+          "away_team": "str",
+          "away_team_id": "int",
+          "bookmakers_count": "int",
+          "event_date": "str",
+          "event_id": "int",
+          "home_team": "str",
+          "home_team_id": "int",
+          "league_id": "int",
+          "league_name": "str",
+          "markets": {},
+          "total_odds": "int"
         }
       }
     },
     {
       "body_preview": {
-        "odds": "{\"event_id\": 212577, \"odds\": {\"home_win\": null, \"draw\": null, \"away_win\": null, \"over_15_goals\": null, \"over_25_goals\": null, \"over_35_goals\": null, \"under_15_goals\": null, \"under_25_goals\": null, \"under_35_goals\": null, \"btts_yes\": 1.78, \"btts_no\": 1.91}, \"last_update_at\": null, \"next_update_at\": null, \"update_interval_seconds\": null, \"update_reason\": \"no further updates scheduled\"}",
-        "odds/comparison": "{\"event_id\": 212577, \"event_date\": \"2026-08-26T10:00:00Z\", \"league_id\": 51, \"league_name\": \"Emperor Cup\", \"home_team_id\": 1984, \"home_team\": \"Iwaki FC\", \"away_team_id\": 1969, \"away_team\": \"Oita Trinita\", \"bookmakers_count\": 7, \"total_odds\": 100, \"markets\": {\"asian_handicap\": {\"HOME@-1.75\": {\"outcome\": \"HOME\", \"line\": -1.75, \"outcome_name\": \"Iwaki FC -1.75\", \"best_odds\": 4.56, \"best_bookmaker_slug\": \"1xbet\", \"best_bookmaker_name\": \"1xBet\", \"bookmakers\": {\"marathon\": {\"decimal_odds\": 4.55, \"movement\": \"SHORTENING\", \"updated_at\": \"2026-08-26T11:20:18Z\"}, \"1xbet\": {\"decimal_odds\": 4.56, \"movement\": \"SHORTENING\", \"updated_at\": \"2026-08-26T11:20:18Z\"}}}, \"AWAY@-1.75\": {\"outcome\": \"AWAY\", \"line\": -1.75, \"outcome_name\": \"Oita Trinita +1.75\", \"best_odds\": 1.132, \"best_bookmaker_slug\": \"1xbet\", \"best_bookmaker_name\": \"1xBet\", \"bookmakers\": {\"marathon\": {\"decimal_odds\": 1.129, \"movement\": \"DRIFTING\", \"updated_at\": \"2026-08-26T11:20:18Z\"}, \"1xbet\": {\"decimal_odds\": 1.132, \"movement\": \"DRIFTING\", \"updated_at\": \"2026-08-26T11:20:18Z\"}}}, \"HOME@-1.25\": {\"outcome\": \"HOME\", \"line\": -1.25, \"outcome_name\": \"Iwaki FC -1.25\", \"best_odds\": 3.31, \"best_bookmaker_slug\": \"1xbet\", \"best_bookmaker_name\": \"1x"
+        "odds": "{\"event_id\": 212577, \"odds\": {\"home_win\": null, \"draw\": null, \"away_win\": null, \"over_15_goals\": null, \"over_25_goals\": null, \"over_35_goals\": null, \"under_15_goals\": null, \"under_25_goals\": null, \"under_35_goals\": null, \"btts_yes\": 1.81, \"btts_no\": 1.88}, \"last_update_at\": null, \"next_update_at\": null, \"update_interval_seconds\": null, \"update_reason\": \"no further updates scheduled\"}",
+        "odds/comparison": "{\"http_status\": 403, \"body_preview\": \"{\\\"detail\\\":\\\"Per-bookmaker odds require Football Unlimited. Use /api/v2/odds/ for the consensus price. See https://sports.bzzoiro.com/pricing/\\\",\\\"code\\\":\\\"bookmakers_not_entitled\\\"}\"}"
       },
       "endpoint_statuses": {
         "odds": 200,
-        "odds/comparison": 200
+        "odds/comparison": 403
       },
       "event_id": "212577",
       "match_key": "2026-08-26|iwaki|oita trinita",
@@ -112,414 +121,8 @@
           "update_reason": "str"
         },
         "odds/comparison": {
-          "away_team": "str",
-          "away_team_id": "int",
-          "bookmakers_count": "int",
-          "event_date": "str",
-          "event_id": "int",
-          "home_team": "str",
-          "home_team_id": "int",
-          "league_id": "int",
-          "league_name": "str",
-          "markets": {
-            "asian_handicap": {
-              "AWAY@-0.75": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "AWAY@-1.25": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "AWAY@-1.75": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "AWAY@0.25": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "AWAY@0.75": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "AWAY@1.25": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "HOME@-0.75": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "HOME@-1.25": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "HOME@-1.75": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "HOME@0.25": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "HOME@0.75": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "HOME@1.25": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "float",
-                "outcome": "str",
-                "outcome_name": "str"
-              }
-            },
-            "btts": {
-              "no": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "10bet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "betway": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "bwin": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "fonbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "sportingbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "NoneType",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "yes": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "10bet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "1xbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "betway": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "bwin": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "fonbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "marathon": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "sportingbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "NoneType",
-                "outcome": "str",
-                "outcome_name": "str"
-              }
-            },
-            "draw_no_bet": {
-              "AWAY": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "10bet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "betway": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "bwin": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "sportingbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "NoneType",
-                "outcome": "str",
-                "outcome_name": "str"
-              },
-              "HOME": {
-                "best_bookmaker_name": "str",
-                "best_bookmaker_slug": "str",
-                "best_odds": "float",
-                "bookmakers": {
-                  "10bet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "betway": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "bwin": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  },
-                  "sportingbet": {
-                    "decimal_odds": "float",
-                    "movement": "str",
-                    "updated_at": "str"
-                  }
-                },
-                "line": "NoneType",
-                "outcome": "str",
-                "outcome_name": "str"
-              }
-            }
-          },
-          "total_odds": "int"
+          "body_preview": "str",
+          "http_status": "int"
         }
       }
     },
@@ -564,11 +167,11 @@
     {
       "body_preview": {
         "odds": "{\"event_id\": 588068, \"odds\": {\"home_win\": null, \"draw\": null, \"away_win\": null, \"over_15_goals\": null, \"over_25_goals\": null, \"over_35_goals\": null, \"under_15_goals\": null, \"under_25_goals\": null, \"under_35_goals\": null, \"btts_yes\": null, \"btts_no\": null}, \"last_update_at\": null, \"next_update_at\": null, \"update_interval_seconds\": null, \"update_reason\": \"no further updates scheduled\"}",
-        "odds/comparison": "{\"event_id\": 588068, \"event_date\": \"2026-08-26T09:30:00Z\", \"league_id\": 51, \"league_name\": \"Emperor Cup\", \"home_team_id\": 1972, \"home_team\": \"Yokohama FC\", \"away_team_id\": 3868, \"away_team\": \"Criacao Shinjuku\", \"bookmakers_count\": 0, \"total_odds\": 0, \"markets\": {}}"
+        "odds/comparison": "{\"http_status\": 403, \"body_preview\": \"{\\\"detail\\\":\\\"Per-bookmaker odds require Football Unlimited. Use /api/v2/odds/ for the consensus price. See https://sports.bzzoiro.com/pricing/\\\",\\\"code\\\":\\\"bookmakers_not_entitled\\\"}\"}"
       },
       "endpoint_statuses": {
         "odds": 200,
-        "odds/comparison": 200
+        "odds/comparison": 403
       },
       "event_id": "588068",
       "match_key": "2026-08-26|yokohama|criacao shinjuku",
@@ -594,17 +197,8 @@
           "update_reason": "str"
         },
         "odds/comparison": {
-          "away_team": "str",
-          "away_team_id": "int",
-          "bookmakers_count": "int",
-          "event_date": "str",
-          "event_id": "int",
-          "home_team": "str",
-          "home_team_id": "int",
-          "league_id": "int",
-          "league_name": "str",
-          "markets": {},
-          "total_odds": "int"
+          "body_preview": "str",
+          "http_status": "int"
         }
       }
     },
@@ -831,542 +425,122 @@
     {
       "bookmaker": "bzzoiro-detail",
       "family": "h2h",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
+      "match_key": "2026-08-26|numancia|utebo",
       "point": null,
-      "price": 3.5,
+      "price": 2.15,
       "selection": "Home",
       "source": "bzzoiro",
-      "source_event_id": "587852"
+      "source_event_id": "600961"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "h2h",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
+      "match_key": "2026-08-26|numancia|utebo",
       "point": null,
-      "price": 3.3,
+      "price": 3.4,
       "selection": "Draw",
       "source": "bzzoiro",
-      "source_event_id": "587852"
+      "source_event_id": "600961"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "h2h",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
+      "match_key": "2026-08-26|numancia|utebo",
       "point": null,
-      "price": 1.95,
+      "price": 2.9,
       "selection": "Away",
       "source": "bzzoiro",
-      "source_event_id": "587852"
+      "source_event_id": "600961"
     },
     {
       "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
-      "point": 1.5,
+      "family": "h2h",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
+      "point": null,
       "price": 1.29,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587852"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
-      "point": 1.5,
-      "price": 3.5,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587852"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
-      "point": 2.5,
-      "price": 1.95,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587852"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
-      "point": 2.5,
-      "price": 1.85,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587852"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
-      "point": 3.5,
-      "price": 3.25,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587852"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|iberia 1999|jagiellonia bia ystok",
-      "point": 3.5,
-      "price": 1.33,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587852"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
-      "point": null,
-      "price": 1.38,
       "selection": "Home",
       "source": "bzzoiro",
-      "source_event_id": "587859"
+      "source_event_id": "213526"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "h2h",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
       "point": null,
-      "price": 4.5,
+      "price": 5.88,
       "selection": "Draw",
       "source": "bzzoiro",
-      "source_event_id": "587859"
+      "source_event_id": "213526"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "h2h",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
       "point": null,
-      "price": 6.0,
+      "price": 9.15,
       "selection": "Away",
       "source": "bzzoiro",
-      "source_event_id": "587859"
+      "source_event_id": "213526"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "totals",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
-      "point": 1.5,
-      "price": 1.25,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587859"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
-      "point": 1.5,
-      "price": 3.75,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587859"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
-      "point": 2.5,
-      "price": 1.8,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587859"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
-      "point": 2.5,
-      "price": 2.0,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587859"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
-      "point": 3.5,
-      "price": 3.0,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587859"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|cska sofia|ofi crete",
-      "point": 3.5,
-      "price": 1.36,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587859"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": null,
-      "price": 3.3,
-      "selection": "Home",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": null,
-      "price": 3.2,
-      "selection": "Draw",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": null,
-      "price": 2.1,
-      "selection": "Away",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": 1.5,
-      "price": 1.33,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": 1.5,
-      "price": 3.25,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": 2.5,
-      "price": 2.08,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": 2.5,
-      "price": 1.73,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": 3.5,
-      "price": 3.75,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|partizan|getafe",
-      "point": 3.5,
-      "price": 1.25,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587893"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": null,
-      "price": 2.63,
-      "selection": "Home",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": null,
-      "price": 3.1,
-      "selection": "Draw",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": null,
-      "price": 2.55,
-      "selection": "Away",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": 1.5,
-      "price": 1.36,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": 1.5,
-      "price": 3.0,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": 2.5,
-      "price": 2.2,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": 2.5,
-      "price": 1.65,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": 3.5,
-      "price": 4.0,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "point": 3.5,
-      "price": 1.22,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587903"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": null,
-      "price": 1.95,
-      "selection": "Home",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": null,
-      "price": 3.7,
-      "selection": "Draw",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": null,
-      "price": 3.25,
-      "selection": "Away",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": 1.5,
-      "price": 1.29,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": 1.5,
-      "price": 3.5,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": 2.5,
-      "price": 1.9,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": 2.5,
-      "price": 1.9,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": 3.5,
-      "price": 3.25,
-      "selection": "Over",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "2026-08-27|larne|lincoln red imps",
-      "point": 3.5,
-      "price": 1.33,
-      "selection": "Under",
-      "source": "bzzoiro",
-      "source_event_id": "587907"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
-      "point": null,
-      "price": 1.21,
-      "selection": "Home",
-      "source": "bzzoiro",
-      "source_event_id": "587811"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
-      "point": null,
-      "price": 6.27,
-      "selection": "Draw",
-      "source": "bzzoiro",
-      "source_event_id": "587811"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "h2h",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
-      "point": null,
-      "price": 10.84,
-      "selection": "Away",
-      "source": "bzzoiro",
-      "source_event_id": "587811"
-    },
-    {
-      "bookmaker": "bzzoiro-detail",
-      "family": "totals",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
       "point": 1.5,
       "price": 1.11,
       "selection": "Over",
       "source": "bzzoiro",
-      "source_event_id": "587811"
+      "source_event_id": "213526"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "totals",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
       "point": 1.5,
-      "price": 5.91,
+      "price": 6.15,
       "selection": "Under",
       "source": "bzzoiro",
-      "source_event_id": "587811"
+      "source_event_id": "213526"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "totals",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
       "point": 2.5,
-      "price": 1.42,
+      "price": 1.41,
       "selection": "Over",
       "source": "bzzoiro",
-      "source_event_id": "587811"
+      "source_event_id": "213526"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "totals",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
       "point": 2.5,
-      "price": 2.76,
+      "price": 2.79,
       "selection": "Under",
       "source": "bzzoiro",
-      "source_event_id": "587811"
+      "source_event_id": "213526"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "totals",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
       "point": 3.5,
-      "price": 2.08,
+      "price": 2.06,
       "selection": "Over",
       "source": "bzzoiro",
-      "source_event_id": "587811"
+      "source_event_id": "213526"
     },
     {
       "bookmaker": "bzzoiro-detail",
       "family": "totals",
-      "match_key": "soccer|charlton athletic|tottenham|2026-08-26",
+      "match_key": "soccer|real madrid|real sociedad|2026-08-26",
       "point": 3.5,
-      "price": 1.72,
+      "price": 1.75,
       "selection": "Under",
       "source": "bzzoiro",
-      "source_event_id": "587811"
+      "source_event_id": "213526"
     }
   ],
   "source": "bzzoiro"
