@@ -1,8 +1,55 @@
 {
   "a_tier_enrichment": {
     "bzzoiro_detail": {
-      "created_at_utc": "2026-08-26T17:12:22.782540+00:00",
+      "created_at_utc": "2026-08-26T19:12:00.756779+00:00",
       "details": [
+        {
+          "away_team": "Utebo FC",
+          "endpoint_statuses": {
+            "odds": 200,
+            "odds/comparison": 403
+          },
+          "event_id": "600961",
+          "home_team": "Numancia",
+          "match_key": "2026-08-26|numancia|utebo",
+          "offers": 3,
+          "payload_shapes": {
+            "odds": "dict",
+            "odds/comparison": "dict"
+          },
+          "sample_offers": [
+            {
+              "bookmaker": "bzzoiro-detail",
+              "family": "h2h",
+              "match_key": "2026-08-26|numancia|utebo",
+              "point": null,
+              "price": 2.15,
+              "selection": "Home",
+              "source": "bzzoiro",
+              "source_event_id": "600961"
+            },
+            {
+              "bookmaker": "bzzoiro-detail",
+              "family": "h2h",
+              "match_key": "2026-08-26|numancia|utebo",
+              "point": null,
+              "price": 3.4,
+              "selection": "Draw",
+              "source": "bzzoiro",
+              "source_event_id": "600961"
+            },
+            {
+              "bookmaker": "bzzoiro-detail",
+              "family": "h2h",
+              "match_key": "2026-08-26|numancia|utebo",
+              "point": null,
+              "price": 2.9,
+              "selection": "Away",
+              "source": "bzzoiro",
+              "source_event_id": "600961"
+            }
+          ]
+        },
         {
           "away_team": "FC Osaka",
           "endpoint_statuses": {
@@ -39,7 +86,7 @@
           "away_team": "Oita Trinita",
           "endpoint_statuses": {
             "odds": 200,
-            "odds/comparison": 403
+            "odds/comparison": 200
           },
           "event_id": "212577",
           "home_team": "Iwaki FC",
@@ -374,53 +421,6 @@
           "sample_offers": []
         },
         {
-          "away_team": "Utebo FC",
-          "endpoint_statuses": {
-            "odds": 200,
-            "odds/comparison": 403
-          },
-          "event_id": "600961",
-          "home_team": "Numancia",
-          "match_key": "2026-08-26|numancia|utebo",
-          "offers": 3,
-          "payload_shapes": {
-            "odds": "dict",
-            "odds/comparison": "dict"
-          },
-          "sample_offers": [
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "h2h",
-              "match_key": "2026-08-26|numancia|utebo",
-              "point": null,
-              "price": 2.15,
-              "selection": "Home",
-              "source": "bzzoiro",
-              "source_event_id": "600961"
-            },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "h2h",
-              "match_key": "2026-08-26|numancia|utebo",
-              "point": null,
-              "price": 3.4,
-              "selection": "Draw",
-              "source": "bzzoiro",
-              "source_event_id": "600961"
-            },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "h2h",
-              "match_key": "2026-08-26|numancia|utebo",
-              "point": null,
-              "price": 2.9,
-              "selection": "Away",
-              "source": "bzzoiro",
-              "source_event_id": "600961"
-            }
-          ]
-        },
-        {
           "away_team": "Club Deportivo Azuaga",
           "endpoint_statuses": {
             "odds": 200,
@@ -451,109 +451,50 @@
             "odds/comparison": "dict"
           },
           "sample_offers": []
-        },
+        }
+      ],
+      "diagnosis": "offers_parsed",
+      "events_with_offers": 3,
+      "offers": 21,
+      "payload_samples": [
         {
-          "away_team": "Real Sociedad",
+          "body_preview": {
+            "odds": "{\"event_id\": 600961, \"odds\": {\"home_win\": 2.15, \"draw\": 3.4, \"away_win\": 2.9, \"over_15_goals\": null, \"over_25_goals\": null, \"over_35_goals\": null, \"under_15_goals\": null, \"under_25_goals\": null, \"under_35_goals\": null, \"btts_yes\": null, \"btts_no\": null}, \"last_update_at\": null, \"next_update_at\": \"2026-08-26T19:11:40Z\", \"update_interval_seconds\": 1800, \"update_reason\": \"kick-off within 24 hours\"}",
+            "odds/comparison": "{\"http_status\": 403, \"body_preview\": \"{\\\"detail\\\":\\\"Per-bookmaker odds require Football Unlimited. Use /api/v2/odds/ for the consensus price. See https://sports.bzzoiro.com/pricing/\\\",\\\"code\\\":\\\"bookmakers_not_entitled\\\"}\"}"
+          },
           "endpoint_statuses": {
             "odds": 200,
             "odds/comparison": 403
           },
-          "event_id": "213526",
-          "home_team": "Real Madrid",
-          "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-          "offers": 9,
+          "event_id": "600961",
+          "match_key": "2026-08-26|numancia|utebo",
           "payload_shapes": {
-            "odds": "dict",
-            "odds/comparison": "dict"
-          },
-          "sample_offers": [
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "h2h",
-              "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-              "point": null,
-              "price": 1.29,
-              "selection": "Home",
-              "source": "bzzoiro",
-              "source_event_id": "213526"
+            "odds": {
+              "event_id": "int",
+              "last_update_at": "NoneType",
+              "next_update_at": "str",
+              "odds": {
+                "away_win": "float",
+                "btts_no": "NoneType",
+                "btts_yes": "NoneType",
+                "draw": "float",
+                "home_win": "float",
+                "over_15_goals": "NoneType",
+                "over_25_goals": "NoneType",
+                "over_35_goals": "NoneType",
+                "under_15_goals": "NoneType",
+                "under_25_goals": "NoneType",
+                "under_35_goals": "NoneType"
+              },
+              "update_interval_seconds": "int",
+              "update_reason": "str"
             },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "h2h",
-              "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-              "point": null,
-              "price": 5.88,
-              "selection": "Draw",
-              "source": "bzzoiro",
-              "source_event_id": "213526"
-            },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "h2h",
-              "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-              "point": null,
-              "price": 9.15,
-              "selection": "Away",
-              "source": "bzzoiro",
-              "source_event_id": "213526"
-            },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "totals",
-              "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-              "point": 1.5,
-              "price": 1.11,
-              "selection": "Over",
-              "source": "bzzoiro",
-              "source_event_id": "213526"
-            },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "totals",
-              "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-              "point": 1.5,
-              "price": 6.15,
-              "selection": "Under",
-              "source": "bzzoiro",
-              "source_event_id": "213526"
-            },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "totals",
-              "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-              "point": 2.5,
-              "price": 1.41,
-              "selection": "Over",
-              "source": "bzzoiro",
-              "source_event_id": "213526"
-            },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "totals",
-              "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-              "point": 2.5,
-              "price": 2.79,
-              "selection": "Under",
-              "source": "bzzoiro",
-              "source_event_id": "213526"
-            },
-            {
-              "bookmaker": "bzzoiro-detail",
-              "family": "totals",
-              "match_key": "soccer|real madrid|real sociedad|2026-08-26",
-              "point": 3.5,
-              "price": 2.06,
-              "selection": "Over",
-              "source": "bzzoiro",
-              "source_event_id": "213526"
+            "odds/comparison": {
+              "body_preview": "str",
+              "http_status": "int"
             }
-          ]
-        }
-      ],
-      "diagnosis": "offers_parsed",
-      "events_with_offers": 4,
-      "offers": 30,
-      "payload_samples": [
+          }
+        },
         {
           "body_preview": {
             "odds": "{\"event_id\": 588078, \"odds\": {\"home_win\": null, \"draw\": null, \"away_win\": null, \"over_15_goals\": null, \"over_25_goals\": null, \"over_35_goals\": null, \"under_15_goals\": null, \"under_25_goals\": null, \"under_35_goals\": null, \"btts_yes\": null, \"btts_no\": null}, \"last_update_at\": null, \"next_update_at\": null, \"update_interval_seconds\": null, \"update_reason\": \"no further updates scheduled\"}",
@@ -642,11 +583,11 @@
         {
           "body_preview": {
             "odds": "{\"event_id\": 212577, \"odds\": {\"home_win\": null, \"draw\": null, \"away_win\": null, \"over_15_goals\": null, \"over_25_goals\": null, \"over_35_goals\": null, \"under_15_goals\": null, \"under_25_goals\": null, \"under_35_goals\": null, \"btts_yes\": 1.81, \"btts_no\": 1.88}, \"last_update_at\": null, \"next_update_at\": null, \"update_interval_seconds\": null, \"update_reason\": \"no further updates scheduled\"}",
-            "odds/comparison": "{\"http_status\": 403, \"body_preview\": \"{\\\"detail\\\":\\\"Per-bookmaker odds require Football Unlimited. Use /api/v2/odds/ for the consensus price. See https://sports.bzzoiro.com/pricing/\\\",\\\"code\\\":\\\"bookmakers_not_entitled\\\"}\"}"
+            "odds/comparison": "{\"event_id\": 212577, \"event_date\": \"2026-08-26T10:00:00Z\", \"league_id\": 51, \"league_name\": \"Emperor Cup\", \"home_team_id\": 1984, \"home_team\": \"Iwaki FC\", \"away_team_id\": 1969, \"away_team\": \"Oita Trinita\", \"bookmakers_count\": 9, \"total_odds\": 118, \"markets\": {\"asian_handicap\": {\"HOME@-1.75\": {\"outcome\": \"HOME\", \"line\": -1.75, \"outcome_name\": \"Iwaki FC -1.75\", \"best_odds\": 4.56, \"best_bookmaker_slug\": \"1xbet\", \"best_bookmaker_name\": \"1xBet\", \"bookmakers\": {\"marathon\": {\"decimal_odds\": 4.55, \"movement\": \"SHORTENING\", \"updated_at\": \"2026-08-26T11:20:18Z\"}, \"1xbet\": {\"decimal_odds\": 4.56, \"movement\": \"SHORTENING\", \"updated_at\": \"2026-08-26T11:20:18Z\"}}}, \"AWAY@-1.75\": {\"outcome\": \"AWAY\", \"line\": -1.75, \"outcome_name\": \"Oita Trinita +1.75\", \"best_odds\": 1.132, \"best_bookmaker_slug\": \"1xbet\", \"best_bookmaker_name\": \"1xBet\", \"bookmakers\": {\"marathon\": {\"decimal_odds\": 1.129, \"movement\": \"DRIFTING\", \"updated_at\": \"2026-08-26T11:20:18Z\"}, \"1xbet\": {\"decimal_odds\": 1.132, \"movement\": \"DRIFTING\", \"updated_at\": \"2026-08-26T11:20:18Z\"}}}, \"HOME@-1.25\": {\"outcome\": \"HOME\", \"line\": -1.25, \"outcome_name\": \"Iwaki FC -1.25\", \"best_odds\": 3.31, \"best_bookmaker_slug\": \"1xbet\", \"best_bookmaker_name\": \"1x"
           },
           "endpoint_statuses": {
             "odds": 200,
-            "odds/comparison": 403
+            "odds/comparison": 200
           },
           "event_id": "212577",
           "match_key": "2026-08-26|iwaki|oita trinita",
@@ -672,8 +613,454 @@
               "update_reason": "str"
             },
             "odds/comparison": {
-              "body_preview": "str",
-              "http_status": "int"
+              "away_team": "str",
+              "away_team_id": "int",
+              "bookmakers_count": "int",
+              "event_date": "str",
+              "event_id": "int",
+              "home_team": "str",
+              "home_team_id": "int",
+              "league_id": "int",
+              "league_name": "str",
+              "markets": {
+                "asian_handicap": {
+                  "AWAY@-0.75": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "AWAY@-1.25": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "AWAY@-1.75": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "AWAY@0.25": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "AWAY@0.75": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "AWAY@1.25": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "HOME@-0.75": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "HOME@-1.25": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "HOME@-1.75": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "HOME@0.25": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "HOME@0.75": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "HOME@1.25": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "float",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  }
+                },
+                "btts": {
+                  "no": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "10bet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "888sport": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "betway": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "bwin": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "fonbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "sportingbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "william-hill": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "NoneType",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "yes": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "10bet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "1xbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "888sport": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "betway": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "bwin": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "fonbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "marathon": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "sportingbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "william-hill": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "NoneType",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  }
+                },
+                "draw_no_bet": {
+                  "AWAY": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "10bet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "888sport": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "betway": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "bwin": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "sportingbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "william-hill": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "NoneType",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  },
+                  "HOME": {
+                    "best_bookmaker_name": "str",
+                    "best_bookmaker_slug": "str",
+                    "best_odds": "float",
+                    "bookmakers": {
+                      "10bet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "888sport": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "betway": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "bwin": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "sportingbet": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      },
+                      "william-hill": {
+                        "decimal_odds": "float",
+                        "movement": "str",
+                        "updated_at": "str"
+                      }
+                    },
+                    "line": "NoneType",
+                    "outcome": "str",
+                    "outcome_name": "str"
+                  }
+                }
+              },
+              "total_odds": "int"
             }
           }
         },
@@ -752,151 +1139,57 @@
               "http_status": "int"
             }
           }
-        },
-        {
-          "body_preview": {
-            "odds": "{\"event_id\": 588086, \"odds\": {\"home_win\": null, \"draw\": null, \"away_win\": null, \"over_15_goals\": null, \"over_25_goals\": null, \"over_35_goals\": null, \"under_15_goals\": null, \"under_25_goals\": null, \"under_35_goals\": null, \"btts_yes\": null, \"btts_no\": null}, \"last_update_at\": null, \"next_update_at\": null, \"update_interval_seconds\": null, \"update_reason\": \"no further updates scheduled\"}",
-            "odds/comparison": "{\"http_status\": 403, \"body_preview\": \"{\\\"detail\\\":\\\"Per-bookmaker odds require Football Unlimited. Use /api/v2/odds/ for the consensus price. See https://sports.bzzoiro.com/pricing/\\\",\\\"code\\\":\\\"bookmakers_not_entitled\\\"}\"}"
-          },
-          "endpoint_statuses": {
-            "odds": 200,
-            "odds/comparison": 403
-          },
-          "event_id": "588086",
-          "match_key": "2026-08-26|jef united chiba|azul claro numazu",
-          "payload_shapes": {
-            "odds": {
-              "event_id": "int",
-              "last_update_at": "NoneType",
-              "next_update_at": "NoneType",
-              "odds": {
-                "away_win": "NoneType",
-                "btts_no": "NoneType",
-                "btts_yes": "NoneType",
-                "draw": "NoneType",
-                "home_win": "NoneType",
-                "over_15_goals": "NoneType",
-                "over_25_goals": "NoneType",
-                "over_35_goals": "NoneType",
-                "under_15_goals": "NoneType",
-                "under_25_goals": "NoneType",
-                "under_35_goals": "NoneType"
-              },
-              "update_interval_seconds": "NoneType",
-              "update_reason": "str"
-            },
-            "odds/comparison": {
-              "body_preview": "str",
-              "http_status": "int"
-            }
-          }
         }
       ],
       "publication_contract_relaxed": false,
-      "requests": 34,
+      "requests": 32,
       "status": "ok",
-      "targets": 17
+      "targets": 16
     },
     "bzzoiro_odds_merge": {
-      "after_2plus_books": 10,
-      "after_2plus_sources": 0,
-      "after_matches": 10,
-      "before_2plus_sources": 0,
-      "before_matches": 10,
-      "bzzoiro": {
-        "cached_matches": 0,
-        "enabled": true,
-        "matches_with_offers": 0,
-        "mode": "v2_then_v1_on_server_failure",
-        "offers_added_to_pool": 0,
-        "offers_parsed": 0,
-        "publication_contract_relaxed": false,
-        "v1_server_failure_fallback": {
-          "reason": "not_needed",
-          "skipped": true
-        },
-        "v2_primary": {
-          "enabled": true,
-          "event_comparison_requests": 0,
-          "event_odds_requests": 0,
-          "events_fetched": 0,
-          "events_matched": 0,
-          "mode": "documented_odds_best_batch_only",
-          "odds_best_matched": 0,
-          "odds_best_requests": 4,
-          "odds_best_rows": 0,
-          "offers_from_best": 0,
-          "offers_from_compact_odds": 0,
-          "offers_from_comparison": 0,
-          "offers_parsed": 0,
-          "publication_contract_relaxed": false,
-          "requests": 4,
-          "response_errors": 4
-        }
-      },
-      "created_at_utc": "2026-08-26T17:10:25.640455+00:00",
-      "day_inventory_annotation": {
-        "date_local": "2026-08-26",
-        "matches_with_2plus_runtime_odds_sources": 5,
-        "matches_with_bzzoiro_event_metadata_context": 0,
-        "matches_with_bzzoiro_source": 5,
-        "matches_with_sportlogic_source": 0,
-        "status": "ok",
-        "updated_matches": 10
-      },
-      "sstats": {
-        "enabled": false,
-        "matched_ids": 0,
-        "offers_added_to_pool": 0,
-        "offers_parsed": 0,
-        "requests": 0,
-        "response_errors": 0,
-        "skip_reason": "sstats_kept_as_context_not_current_line_source",
-        "skipped_no_id": 0
-      },
-      "sstats_current_odds_as_line_source": false
+      "created_at_utc": "2026-08-26T19:05:08.209412+00:00",
+      "sstats_current_odds_as_line_source": false,
+      "sstats_policy": "context_only_by_default",
+      "status": "installed"
     },
     "bzzoiro_odds_target_count": 80,
     "bzzoiro_overlap_bridge": {
-      "bzzoiro_offer_rows": 18,
-      "bzzoiro_unique_offer_matches": 3,
-      "created_at_utc": "2026-08-26T17:13:03.876917+00:00",
+      "bzzoiro_offer_rows": 12,
+      "bzzoiro_unique_offer_matches": 2,
+      "created_at_utc": "2026-08-26T19:12:39.838492+00:00",
       "no_alias_rows": 0,
-      "odds_reference_aliases": 91,
+      "odds_reference_aliases": 83,
       "offers_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-overlap-offers.json",
-      "overlap_match_rows": 6,
-      "overlap_same_bucket_rows": 6,
-      "sample_overlap_matches": [
-        "soccer|real madrid|real sociedad|2026-08-26"
-      ],
+      "overlap_match_rows": 0,
+      "overlap_same_bucket_rows": 0,
+      "sample_overlap_matches": [],
       "sample_unique_matches": [
         "2026-08-25|goianiense go|botafogo sp",
-        "2026-08-26|am rica cali|junior barranquilla",
-        "soccer|real madrid|real sociedad|2026-08-26"
+        "2026-08-26|am rica cali|junior barranquilla"
       ],
       "source_counts": {
-        "latest-bzzoiro-odds-raw.json": 18,
-        "latest-bzzoiro-odds.json": 18
+        "latest-bzzoiro-odds-raw.json": 12,
+        "latest-bzzoiro-odds.json": 12
       },
       "status": "ok",
       "target_date": "2026-08-26",
-      "target_date_offer_rows": 12,
-      "target_date_unique_offer_matches": 2,
-      "unique_overlap_match_count": 1,
-      "unique_overlap_same_bucket_match_count": 1
+      "target_date_offer_rows": 6,
+      "target_date_unique_offer_matches": 1,
+      "unique_overlap_match_count": 0,
+      "unique_overlap_same_bucket_match_count": 0
     },
     "bzzoiro_targeted": {
       "bzzoiro_events_seen": 586,
       "diagnosis": "matched_full_events_without_parseable_offers",
-      "matched_events": 30,
-      "matched_events_with_event_id": 30,
+      "matched_events": 28,
+      "matched_events_with_event_id": 28,
       "odds_detail": null,
       "offers": 0,
       "targets": 80,
       "two_source_promoted": 0
     },
     "bzzoiro_trace": {
-      "debug_preview_rows": 3,
+      "debug_preview_rows": 0,
       "diagnosis": "full_or_provider_rows_available",
       "persisted_event_rows": 145,
       "persisted_events_diagnosis": "normalized_events_persisted",
@@ -910,12 +1203,12 @@
       ],
       "source_stats_contexts": 0,
       "source_stats_errors": 0,
-      "source_stats_events_fetched": 145,
-      "source_stats_requests": 2,
+      "source_stats_events_fetched": 0,
+      "source_stats_requests": 0,
       "status": "ok",
       "targeted_diagnosis": "matched_full_events_without_parseable_offers",
       "targeted_events_seen": 586,
-      "targeted_matched_events": 30,
+      "targeted_matched_events": 28,
       "targeted_offers": 0
     },
     "context_projection_target_count": 80,
@@ -925,20 +1218,20 @@
     "bzzoiro": {
       "contexts": 0,
       "errors": 0,
-      "events": 145,
-      "overlap": 5,
-      "requests": 2,
-      "secondary_offers_added": 18
+      "events": 0,
+      "overlap": 0,
+      "requests": 0,
+      "secondary_offers_added": 12
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 10,
-      "errors": 3,
+      "books_2plus": 0,
+      "errors": 0,
       "events_req": 0,
-      "matched": 12,
-      "odds_req": 5,
-      "offers": 1053,
-      "plan_restricted": true
+      "matched": 0,
+      "odds_req": 0,
+      "offers": 0,
+      "plan_restricted": false
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -952,272 +1245,234 @@
       "runtime_error": ""
     },
     "sstats": {
-      "contexts": 2,
+      "contexts": 0,
       "deep_enriched": 0,
       "errors": 0,
-      "requests": 3,
-      "rows": 15808
+      "requests": 0,
+      "rows": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 3.0090607086817425,
-    "fallback_age_min": 1.2408033847808837,
-    "run_log_age_min": 2.415609113375346,
-    "signal_stack_age_min": 3.0189702113469443
+    "debug_age_min": 2.834134904543559,
+    "fallback_age_min": 1.2580567200978596,
+    "run_log_age_min": 2.268483746051788,
+    "signal_stack_age_min": 2.868602752685547
   },
   "coverage": {
-    "bzzoiro_inventory_matches_with_source": 5,
-    "bzzoiro_odds_overlap_with_odds_api_io": 5,
-    "bzzoiro_runtime_2source_matches": 5,
-    "bzzoiro_same_bucket_overlap_matches": 1,
-    "bzzoiro_secondary_offers_added": 18,
+    "bzzoiro_odds_overlap_with_odds_api_io": 0,
+    "bzzoiro_same_bucket_overlap_matches": 0,
+    "bzzoiro_secondary_offers_added": 12,
     "day_inventory_total": 249,
-    "day_inventory_with_context": 221,
+    "day_inventory_with_context": 214,
     "day_inventory_with_odds": 243,
-    "matches_seen": 9,
-    "matches_with_2plus_books": 10,
-    "matches_with_context": 3,
-    "matches_with_offers": 8,
-    "odds_offers_primary": 1053,
-    "ready_for_model": 217,
-    "secondary_combinations": {
-      "odds_api_io": 10
-    }
+    "matches_seen": 0,
+    "matches_with_2plus_books": 0,
+    "matches_with_context": 0,
+    "matches_with_offers": 0,
+    "odds_offers_primary": 0,
+    "ready_for_model": 210,
+    "secondary_combinations": {}
   },
-  "created_at_utc": "2026-08-26T17:14:17.621883+00:00",
+  "created_at_utc": "2026-08-26T19:13:52.539470+00:00",
   "diagnostic_repairs": {
     "reserve_quality_samples_patched": 0
   },
   "funnel": {
-    "candidates_before_quality": 0,
+    "candidates_before_quality": 1,
     "fallback_candidates_seen": 0,
     "fallback_evaluated": 0,
     "fallback_published": false,
     "fallback_published_count": 0,
-    "fallback_status": "fallback_artifact_stale_or_missing_after_step",
-    "final_publication_status": "not_published",
+    "fallback_status": "skipped_existing_pick",
+    "final_publication_status": "published",
     "main_pipeline_publication_counter_diagnostics": {
       "counter_inconsistent": false,
       "ignored_ledger_sent_pending_count": 0,
       "ignored_ledger_sent_picks_count": 0,
-      "matches_seen": 9,
-      "sent_pending_count": 16,
-      "sent_picks_count": 100,
+      "matches_seen": 0,
+      "sent_pending_count": 18,
+      "sent_picks_count": 102,
       "summary_has_publication_counters": true
     },
-    "main_pipeline_published": false,
-    "main_pipeline_published_count": 0,
-    "passed_candidates": 0,
+    "main_pipeline_published": true,
+    "main_pipeline_published_count": 1,
+    "passed_candidates": 1,
     "publish_filter_blocked": 0,
-    "publish_filter_input": 0,
-    "publish_filter_kept": 0,
-    "publishable_candidates": 0,
-    "published_count": 0,
-    "raw_candidates": 0,
+    "publish_filter_input": 1,
+    "publish_filter_kept": 1,
+    "publishable_candidates": 1,
+    "published_count": 1,
+    "raw_candidates": 1,
     "windowed_audit_candidates": 8,
-    "windowed_publish_allowed": 8,
-    "windowed_publish_blocked": 0
+    "windowed_publish_allowed": 3,
+    "windowed_publish_blocked": 5
   },
   "line_guard": {
-    "dropped": 2,
-    "dropped_final": 1,
-    "final_pre_kickoff_checks": 16,
-    "kept": 1,
+    "dropped": 0,
+    "dropped_final": 0,
+    "final_pre_kickoff_checks": 2,
+    "kept": 0,
     "last_chance_relief": {
       "blocked_by_hard_guard": 0,
-      "created_at_utc": "2026-08-26T17:13:00.787292+00:00",
-      "floor_passed": 1,
+      "created_at_utc": "2026-08-26T19:11:51.410927+00:00",
+      "floor_passed": 0,
       "publication_contract_relaxed": false,
       "relieved": 0,
-      "samples": [
-        {
-          "away": "Real Sociedad",
-          "floor": true,
-          "hard": false,
-          "home": "Real Madrid",
-          "metrics": {
-            "books": 4,
-            "edge": 7.227,
-            "ev": 14.093,
-            "odds": 1.95,
-            "q": 97.5
-          },
-          "missing": false,
-          "no_next": false,
-          "reasons": [],
-          "relief_eligible": false
-        }
-      ],
-      "seen": 1
+      "samples": [],
+      "seen": 0
     },
-    "no_more_regular_run_before_kickoff": 16,
-    "seen": 7,
-    "waiting_next_run": 1
+    "no_more_regular_run_before_kickoff": 2,
+    "seen": 13,
+    "waiting_next_run": 0
   },
-  "reasons": [
-    {
-      "count": 1,
-      "reason": "line_movement_guard_waiting_next_run",
-      "reason_ru": "кандидат ждёт следующий cron для второго снимка линии"
-    },
-    {
-      "count": 1,
-      "reason": "line_movement_guard_dropped",
-      "reason_ru": "line movement guard снял кандидата"
-    },
-    {
-      "count": 1,
-      "reason": "odds_api_io_plan_restricted",
-      "reason_ru": "odds-api.io: выбранные букмекеры недоступны на текущем тарифе"
-    }
-  ],
+  "reasons": [],
   "samples": {
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "Al-Kholood",
-        "home_team": "Al Diriyah",
-        "kickoff_utc": "2026-08-26T18:00:00+00:00",
-        "league_name": "Saudi Pro League",
-        "match_key": "soccer|al diriyah|al kholood|2026-08-26",
-        "minutes_to_kickoff": 47.09,
+        "away_team": "Fortaleza FC",
+        "home_team": "Boyacá Chicó FC",
+        "kickoff_utc": "2026-08-26T21:00:00+00:00",
+        "league_name": "Categoría Primera A",
+        "match_key": "",
+        "minutes_to_kickoff": 107.47,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.304,
+        "priority": 140.176,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
           "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-08-26T17:40:00+00:00",
+          "latest_useful_run_at_utc": "2026-08-26T20:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-26T19:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-26T21:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "San Telmo",
-        "home_team": "Acassuso",
-        "kickoff_utc": "2026-08-26T18:00:00+00:00",
-        "league_name": "Argentinian Primera B Nacional",
-        "match_key": "soccer|acassuso|san telmo|2026-08-26",
-        "minutes_to_kickoff": 47.09,
+        "away_team": "Fortaleza FC",
+        "home_team": "Boyacá Chicó FC",
+        "kickoff_utc": "2026-08-26T21:00:00+00:00",
+        "league_name": "Categoría Primera A",
+        "match_key": "2026-08-26|boyac chic|fortaleza",
+        "minutes_to_kickoff": 107.47,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.304,
+        "priority": 124.176,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-26T17:12:51.560724+00:00",
-          "latest_useful_run_at_utc": "2026-08-26T17:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-26T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "San Miguel",
-        "home_team": "Chaco For Ever",
-        "kickoff_utc": "2026-08-26T18:00:00+00:00",
-        "league_name": "Argentinian Primera B Nacional",
-        "match_key": "soccer|chaco for ever|san miguel|2026-08-26",
-        "minutes_to_kickoff": 47.09,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.304,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-26T17:12:51.559093+00:00",
-          "latest_useful_run_at_utc": "2026-08-26T17:40:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 20,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-26T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Al-Kholood",
-        "home_team": "Al Diriyah",
-        "kickoff_utc": "2026-08-26T18:00:00+00:00",
-        "league_name": "Saudi Pro League",
-        "match_key": "2026-08-26|al diriyah|al kholood",
-        "minutes_to_kickoff": 47.09,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.304,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-26T11:14:21.028474+00:00",
-          "latest_useful_run_at_utc": "2026-08-26T17:40:00+00:00",
+          "last_odds_refresh_utc": "2026-08-26T17:12:51.561274+00:00",
+          "latest_useful_run_at_utc": "2026-08-26T20:40:00+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-26T19:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-08-26T21:00:00+00:00",
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Club Deportivo Azuaga",
-        "home_team": "Villanovense",
-        "kickoff_utc": "2026-08-26T18:30:00+00:00",
-        "league_name": "Club Friendlies",
-        "match_key": "2026-08-26|villanovense|deportivo azuaga",
-        "minutes_to_kickoff": 77.09,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.304,
+        "away_team": "Junior Barranquilla",
+        "home_team": "América de Cali",
+        "kickoff_utc": "2026-08-26T23:20:00+00:00",
+        "league_name": "Categoría Primera A",
+        "match_key": "",
+        "minutes_to_kickoff": 247.47,
+        "pre_kickoff_status": "near_window",
+        "priority": 95.689,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": null,
+          "latest_useful_run_at_utc": "2026-08-26T23:00:00+00:00",
+          "max_current_line_age_minutes": 90,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-08-26T21:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Junior Barranquilla",
+        "home_team": "América de Cali",
+        "kickoff_utc": "2026-08-26T23:20:00+00:00",
+        "league_name": "Categoría Primera A",
+        "match_key": "2026-08-26|am rica cali|junior barranquilla",
+        "minutes_to_kickoff": 247.47,
+        "pre_kickoff_status": "near_window",
+        "priority": 79.689,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
           "last_odds_refresh_utc": "2026-08-25T23:12:21.520389+00:00",
-          "latest_useful_run_at_utc": "2026-08-26T18:10:00+00:00",
-          "max_current_line_age_minutes": 35,
+          "latest_useful_run_at_utc": "2026-08-26T23:00:00+00:00",
+          "max_current_line_age_minutes": 90,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-08-26T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
+          "next_scheduled_run_at_utc": "2026-08-26T21:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
         }
       },
       {
-        "away_team": "West Bromwich Albion",
-        "home_team": "Newcastle United",
-        "kickoff_utc": "2026-08-26T18:45:00+00:00",
-        "league_name": "Carabao Cup",
-        "match_key": "soccer|newcastle united|west bromwich albion|2026-08-26",
-        "minutes_to_kickoff": 92.09,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 129.304,
+        "away_team": "Angel City FC",
+        "home_team": "North Carolina Courage",
+        "kickoff_utc": "2026-08-27T00:00:00+00:00",
+        "league_name": "NWSL",
+        "match_key": "2026-08-27|north carolina courage|angel city",
+        "minutes_to_kickoff": 287.47,
+        "pre_kickoff_status": "near_window",
+        "priority": 78.022,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-08-26T17:12:51.560835+00:00",
-          "latest_useful_run_at_utc": "2026-08-26T18:25:00+00:00",
-          "max_current_line_age_minutes": 35,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": "2026-08-25T23:12:21.520389+00:00",
+          "latest_useful_run_at_utc": "2026-08-26T23:40:00+00:00",
+          "max_current_line_age_minutes": 90,
           "min_kickoff_lead_minutes": 20,
           "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-08-26T19:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-08-26T21:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Independiente Santa Fe",
+        "home_team": "River Plate",
+        "kickoff_utc": "2026-08-27T00:30:00+00:00",
+        "league_name": "Copa Sudamericana",
+        "match_key": "2026-08-27|river plate|independiente santa fe",
+        "minutes_to_kickoff": 317.47,
+        "pre_kickoff_status": "near_window",
+        "priority": 76.772,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": "2026-08-25T23:12:21.520389+00:00",
+          "latest_useful_run_at_utc": "2026-08-27T00:10:00+00:00",
+          "max_current_line_age_minutes": 90,
+          "min_kickoff_lead_minutes": 20,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-08-26T21:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
         }
       }
     ]
   },
-  "status": "lines_but_no_raw_candidates",
-  "status_ru": "🟠 линии есть, raw-кандидатов нет",
+  "status": "published",
+  "status_ru": "✅ прогноз опубликован",
   "telegram_sent": false,
-  "text_length": 2481,
-  "top_reason": "line_movement_guard_dropped",
+  "text_length": 2235,
+  "top_reason": "main_pipeline_published",
   "version": "harizon-telegram-report-v6-standalone-single-source"
 }
