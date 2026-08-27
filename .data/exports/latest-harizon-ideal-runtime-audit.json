@@ -1,30 +1,96 @@
 {
-  "best_near_misses": [],
+  "best_near_misses": [
+    {
+      "away_team": "Sint-Truidense VV",
+      "books": 10,
+      "context_sources": 2,
+      "edge_pp": 0.868,
+      "ev_pct": 1.562,
+      "home_team": "Omonia Nicosia",
+      "league_name": "Europa League",
+      "odds": 1.8,
+      "odds_sources": 2,
+      "point": 2.5,
+      "quality": 69.2,
+      "reasons": [
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_canonical_ev_below_min",
+        "tier_a_publication_score_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_b_publication_score_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_canonical_ev_below_min",
+        "tier_c_publication_score_below_min"
+      ],
+      "selection": "Меньше"
+    },
+    {
+      "away_team": "FC Sion",
+      "books": 8,
+      "context_sources": 3,
+      "edge_pp": 4.456,
+      "ev_pct": 11.141,
+      "home_team": "AFC Ajax",
+      "league_name": "Conference League",
+      "odds": 2.5,
+      "odds_sources": 2,
+      "point": 4.0,
+      "quality": 96.5,
+      "reasons": [
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
+      ],
+      "selection": "Больше"
+    },
+    {
+      "away_team": "CA Osasuna",
+      "books": 4,
+      "context_sources": 4,
+      "edge_pp": 2.617,
+      "ev_pct": 6.151,
+      "home_team": "RC Celta de Vigo",
+      "league_name": "Primera Division",
+      "odds": 2.35,
+      "odds_sources": 1,
+      "point": 2.0,
+      "quality": 80.5,
+      "reasons": [
+        "xg_direction_conflict",
+        "current_price_recheck_value_lost:-0.6/-0.3"
+      ],
+      "selection": "Меньше"
+    }
+  ],
   "blockers": [
-    "odds_api_io_account2_zero_offers"
+    "odds_api_io_account2_zero_offers",
+    "final_edge_explainability_gap"
   ],
   "bzzoiro_chain": {
     "merge_after_2plus_books": 24,
     "merge_after_2plus_sources": 0,
-    "overlap_bridge_offers": 92,
-    "overlap_matches": 14
+    "overlap_bridge_offers": 12,
+    "overlap_matches": 0
   },
-  "created_at_utc": "2026-08-27T09:15:17.915799+00:00",
+  "created_at_utc": "2026-08-27T11:11:13.113255+00:00",
   "ideal_score": 92.0,
   "inventory": {
-    "next_12h_ready": 43,
+    "next_12h_ready": 46,
     "next_12h_ready_pct": 100.0,
-    "next_12h_total": 43,
-    "next_6h_ready": 6,
+    "next_12h_total": 46,
+    "next_6h_ready": 22,
     "next_6h_ready_pct": 100.0,
-    "next_6h_total": 6,
-    "ready": 92,
-    "ready_pct": 86.8,
-    "total": 106,
-    "with_context": 93,
-    "with_context_pct": 87.7,
-    "with_lines": 104,
-    "with_lines_pct": 98.1
+    "next_6h_total": 22,
+    "ready": 54,
+    "ready_pct": 100.0,
+    "total": 54,
+    "with_context": 54,
+    "with_context_pct": 100.0,
+    "with_lines": 54,
+    "with_lines_pct": 100.0
   },
   "line_movement": {
     "class_counts": {},
@@ -37,29 +103,51 @@
     "watchlist_count": 0
   },
   "odds_api_io_account2": {
-    "http_statuses": [],
+    "http_statuses": [
+      403,
+      403,
+      403,
+      403
+    ],
     "offers": 0,
-    "plan_restriction": false,
+    "plan_restriction": true,
     "rate_limited": false,
-    "requests": 0
+    "requests": 4
   },
   "proxy_xg_replacement": {
-    "checked": 7,
-    "created_at_utc": "2026-08-27T09:10:53.576735+00:00",
+    "checked": 0,
+    "created_at_utc": "2026-08-27T11:10:20.346756+00:00",
     "examples": [],
     "note": "Market-implied xG replaces only proxy 1:1 placeholders; it is not hard provider xG and does not bypass line/value/source guards.",
     "replaced": 0,
     "skipped": {
       "hard_xg": 0,
       "no_market_implied": 0,
-      "not_placeholder": 7
+      "not_placeholder": 0
     },
     "status": "ok",
     "touched_files": []
   },
   "recommended_actions": [
-    "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set"
+    "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set",
+    "expose displayed vs canonical vs post-recheck EV/edge in near-miss report"
   ],
   "status": "ok",
-  "top_reason_counts": {}
+  "top_reason_counts": {
+    "current_price_recheck_value_lost:-0.6/-0.3": 1,
+    "tier_a_canonical_edge_below_min": 1,
+    "tier_a_canonical_ev_below_min": 1,
+    "tier_a_publication_score_below_min": 1,
+    "tier_a_quality_below_min": 1,
+    "tier_b_canonical_edge_below_min": 1,
+    "tier_b_canonical_ev_below_min": 1,
+    "tier_b_publication_score_below_min": 1,
+    "tier_b_quality_below_min": 1,
+    "tier_c_canonical_edge_below_min": 1,
+    "tier_c_canonical_ev_below_min": 1,
+    "tier_c_publication_score_below_min": 1,
+    "tier_c_quality_below_min": 1,
+    "xg_direction_conflict": 2,
+    "xg_probability_gap_hard_reject": 1
+  }
 }

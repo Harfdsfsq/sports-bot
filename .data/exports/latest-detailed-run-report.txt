@@ -1,36 +1,59 @@
 🧾 Подробный отчёт run — прогнозов нет
 
-🕒 Источник цифр: debug-last-run (3 мин назад) — свежий
+🕒 Источник цифр: debug-last-run (2 мин назад) — свежий
 
 📦 Дневной inventory
 • Матчей всего: 106
 • С линиями: 104/106
-• С контекстом: 93/106
-• Готово к модели: 92/106
-• Ближайшие 6 часов: 6/6 готово
+• С контекстом: 78/106
+• Готово к модели: 77/106
+• Ближайшие 6 часов: 22/22 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 25 | с линиями: 19 | контекстов: 2
+• Матчи: 5 | с линиями: 3 | контекстов: 1
 • Кандидаты: raw 0 | до качества 0 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
+• Резерв проверил: 0 | оценено в отчёте: 3 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
 • quality shadow: ok
 • current price patch: ok
 • zero-raw recovery: not_needed | recovered_candidates 0
-• match-window recovery: recovered | recovered_matches 43
+• match-window recovery: not_needed | recovered_matches 0
 • evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 0
+• provider targeting: ok | fallback_evaluated 3
 
 📡 Источники / фактическая работа
-• odds_api_io: data 26/2882, req 0, err 4
+• odds_api_io: data 26/3189, req 0, err 4
 • bzzoiro: data 0/0, req 2, err 0
 • sstats: data 1/1, req 3, err 0
 • football_data: data 0/0, req 0, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
-• openfootball: data 1/1, req 1, err 0
+• openfootball: data 0/0, req 0, err 0
+
+🚫 Почему не прошли
+• xg_direction_conflict — 2 (15%)
+• tier_a_quality_below_min — 1 (8%)
+• tier_a_canonical_edge_below_min — 1 (8%)
+• tier_a_canonical_ev_below_min — 1 (8%)
+• tier_a_publication_score_below_min — 1 (8%)
+• tier_b_quality_below_min — 1 (8%)
+• tier_b_canonical_edge_below_min — 1 (8%)
+• tier_b_canonical_ev_below_min — 1 (8%)
+• tier_b_publication_score_below_min — 1 (8%)
+• tier_c_quality_below_min — 1 (8%)
+
+⚠️ Пограничные кандидаты
+1. Аджакс — Сион | Больше @2.50
+   • EV +11.1% | edge +4.5 п.п. | q 0.0
+   • не прошло: xg_direction_conflict; xg_probability_gap_hard_reject
+2. RC Келта де Виго — Осасуна | Меньше @2.35
+   • EV +6.2% | edge +2.6 п.п. | q 0.0
+   • не прошло: xg_direction_conflict; current_price_recheck_value_lost:-0.6/-0.3
+3. Омониа Никосиа — Синт-Труиденсе VV | Меньше @1.80
+   • EV +1.6% | edge +0.9 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_canonical_edge_below_min; tier_a_canonical_ev_below_min; tier_a_publication_score_below_min; tier_b_quality_below_min
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.

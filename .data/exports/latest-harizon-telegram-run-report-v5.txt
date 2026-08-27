@@ -1,41 +1,56 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: кандидат ждёт следующий cron для второго снимка линии
+• Главная причина: направление ставки конфликтует с xG
 
 📦 Покрытие
-• Матчи в run: 25 | day inventory: 106
-• С линиями: 19 | с контекстом: 2 | ready model: 92
-• odds-api.io offers: 2632 | Bzzoiro secondary offers: 92
-• 2+ букмекера odds-api.io: 24 | 2-source overlap Bzzoiro+odds-api.io: 14
-• Source combinations: bzzoiro+odds_api_io: 14, odds_api_io: 13
+• Матчи в run: 5 | day inventory: 106
+• С линиями: 3 | с контекстом: 1 | ready model: 77
+• odds-api.io offers: 2588 | Bzzoiro secondary offers: 12
+• 2+ букмекера odds-api.io: 24 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Source combinations: bzzoiro+odds_api_io: 14, odds_api_io: 12
 
-• A-tier enrichment queue: Bzzoiro odds targets 50; context projection targets 32; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 50; context projection targets 32; high-value recheck 1.
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0 / 0
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status fallback_artifact_stale_or_missing_after_step | seen 0 | evaluated 0 | published False (0)
-• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
+• Controlled fallback: status no_viable_controlled_fallback | seen 3 | evaluated 3 | published False (0)
+• Windowed coverage: audit 8 | allowed 6 | blocked 2 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 0 | no next regular run: 0
-• Line guard: seen 15 | kept 4 | dropped 3
+• Final pre-kickoff checks: 5 | no next regular run: 5
+• Line guard: seen 7 | kept 0 | dropped 0
 
 • Bzzoiro targeted odds: targets 50; events 646; matched 48; ids 48; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 16; requests 32; events_with_offers 16; offers 140; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 92; overlap matches 14; same-bucket matches 14.
+• Bzzoiro odds detail: targets 2; requests 4; events_with_offers 2; offers 18; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 12; overlap matches 0; same-bucket matches 0.
 • Bzzoiro odds merge: 2-source matches 0; 2+ books 24; inventory updated 23; inventory 2-source 10.
 • Bzzoiro source trace: aggregate events 160; persisted rows 160; targeted events 646; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 1; floor 0; hard 0; relieved 0.
+• Last-chance line relief: seen 3; floor 1; hard 2; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 7, matched 26, offers 2632, 2+ books 24, err 4, auth_failed False
+• odds_api_io: events req 0, odds req 7, matched 26, offers 2588, 2+ books 24, err 4, auth_failed False
 • sstats: req 3, ctx 1, rows 14948, err 0, deep enriched 0
-• bzzoiro: req 2, ctx 0, events 160 (aggregate; persisted rows 160; trace full_or_provider_rows_available), secondary offers 92, overlap odds-api.io 14, err 0
+• bzzoiro: req 2, ctx 0, events 160 (aggregate; persisted rows 160; trace full_or_provider_rows_available), secondary offers 12, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
+• Line movement breakdown: конфликт направления с xG 2.
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 3 (75%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (25%)
+• направление ставки конфликтует с xG: 2 (15%)
+• tier a quality below min: 1 (8%)
+• tier a canonical edge below min: 1 (8%)
+• tier a canonical ev below min: 1 (8%)
+• tier a publication score below min: 1 (8%)
+• tier b quality below min: 1 (8%)
+• tier b canonical edge below min: 1 (8%)
+• tier b canonical ev below min: 1 (8%)
+
+🔎 Проверенные reserve-кандидаты
+1. Omonia Nicosia — Sint-Truidense VV | Меньше @1.80 | EV +1.6% | edge +0.9 п.п. | q 69.2 reserve
+   • reject: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min
+2. AFC Ajax — FC Sion | Больше @2.50 | EV +11.1% | edge +4.5 п.п. | q 96.5 reserve
+   • reject: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+3. RC Celta de Vigo — CA Osasuna | Меньше @2.35 | EV +6.2% | edge +2.6 п.п. | q 80.5 reserve
+   • reject: направление ставки конфликтует с xG, current price recheck value lost:-0.6/-0.3
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
