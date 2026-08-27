@@ -4,10 +4,10 @@
 
 📦 Покрытие
 • Матчи в run: 25 | day inventory: 105
-• С линиями: 21 | с контекстом: 6 | ready model: 90
-• odds-api.io offers: 2639 | Bzzoiro secondary offers: 92
+• С линиями: 21 | с контекстом: 2 | ready model: 89
+• odds-api.io offers: 2637 | Bzzoiro secondary offers: 92
 • 2+ букмекера odds-api.io: 24 | 2-source overlap Bzzoiro+odds-api.io: 14
-• Source combinations: odds_api_io: 28, bzzoiro: 1, bzzoiro+odds_api_io: 1
+• Source combinations: bzzoiro+odds_api_io: 14, odds_api_io: 14
 
 • A-tier enrichment queue: Bzzoiro odds targets 50; context projection targets 32; high-value recheck 0.
 🧪 Воронка кандидатов
@@ -19,24 +19,24 @@
 
 🛡️ Pre-publish / line movement
 • Final pre-kickoff checks: 0 | no next regular run: 0
-• Line guard: seen 19 | kept 3 | dropped 8
+• Line guard: seen 16 | kept 4 | dropped 4
 
 • Bzzoiro targeted odds: targets 50; events 642; matched 48; ids 48; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
 • Bzzoiro odds detail: targets 16; requests 32; events_with_offers 16; offers 140; diag offers_parsed.
 • Bzzoiro overlap bridge: offers 92; overlap matches 14; same-bucket matches 14.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 24; inventory updated 24; inventory 2-source 4.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 24; inventory updated 24; inventory 2-source 7.
 • Bzzoiro source trace: aggregate events 159; persisted rows 159; targeted events 642; diag full_or_provider_rows_available.
 • Last-chance line relief: seen 1; floor 0; hard 0; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 7, matched 26, offers 2639, 2+ books 24, err 4, auth_failed False
-• sstats: req 3, ctx 2, rows 14944, err 0, deep enriched 0
+• odds_api_io: events req 0, odds req 7, matched 26, offers 2637, 2+ books 24, err 4, auth_failed False
+• sstats: req 3, ctx 1, rows 14944, err 0, deep enriched 0
 • bzzoiro: req 2, ctx 0, events 159 (aggregate; persisted rows 159; trace full_or_provider_rows_available), secondary offers 92, overlap odds-api.io 14, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 6 (67%)
-• line movement guard снял кандидата: 2 (22%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (11%)
+• кандидат ждёт следующий cron для второго снимка линии: 3 (60%)
+• line movement guard снял кандидата: 1 (20%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (20%)
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
