@@ -1,16 +1,17 @@
 {
   "blocker_counts": {
-    "bookmaker_2plus": 198,
+    "bookmaker_2plus": 202,
     "context_source_2plus": 233,
-    "odds_source_2plus": 224
+    "odds_source_2plus": 224,
+    "semantic_duplicate": 4
   },
-  "created_at_utc": "2026-08-27T01:08:07.106027+00:00",
+  "created_at_utc": "2026-08-27T03:07:05.537965+00:00",
   "inventory_rows": 300,
   "provider_hit_counts": {
-    "bzzoiro_v2": 9
+    "bzzoiro_v2": 2
   },
   "providers_indexed": {
-    "bzzoiro_v2": 6
+    "bzzoiro_v2": 1
   },
   "rows": [
     {
@@ -107,49 +108,56 @@
       "semantic_key": "2026-08-27|north carolina courage|angel city"
     },
     {
-      "away_team": "river plate",
-      "books_count": 3,
-      "context_sources": [
-        "bzzoiro",
-        "unknown"
-      ],
-      "home_team": "independiente santa fe",
+      "away_team": "millonarios",
+      "books_count": 0,
+      "context_sources": [],
+      "home_team": "llaneros",
       "kickoff": "2026-08-27",
-      "league_name": "Copa Sudamericana",
-      "match_key": "soccer|independiente santa fe|river plate|2026-08-27",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|independiente santa fe|river plate"
-    },
-    {
-      "away_team": "North Carolina Courage",
-      "books_count": 2,
-      "context_sources": [
-        "unknown"
-      ],
-      "home_team": "Angel City",
-      "kickoff": "2026-08-27T00:00:00+00:00",
-      "league_name": "NWSL",
-      "match_key": "soccer|angel city|north carolina courage|2026-08-27",
+      "league_name": "Categoría Primera A",
+      "match_key": "2026-08-27|llaneros|millonarios",
       "missing": [
-        "context_source_2plus"
+        "odds_source_2plus",
+        "bookmaker_2plus",
+        "context_source_2plus",
+        "semantic_duplicate"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill",
+        "collapse_semantic_duplicate"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "oddsapiio"
+        "bzzoiro"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|angel city|north carolina courage"
+      "semantic_key": "2026-08-27|llaneros|millonarios"
+    },
+    {
+      "away_team": "gr mio",
+      "books_count": 0,
+      "context_sources": [],
+      "home_team": "internacional",
+      "kickoff": "2026-08-27",
+      "league_name": "Copa do Brasil",
+      "match_key": "2026-08-27|internacional|gr mio",
+      "missing": [
+        "odds_source_2plus",
+        "bookmaker_2plus",
+        "context_source_2plus",
+        "semantic_duplicate"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill",
+        "collapse_semantic_duplicate"
+      ],
+      "odds_sources": [
+        "bzzoiro"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|internacional|gr mio"
     },
     {
       "away_team": "Independiente Santa Fe",
@@ -157,6 +165,7 @@
       "context_sources": [
         "bzzoiro",
         "day inventory",
+        "day_inventory",
         "model_xg",
         "odds_api_io",
         "oddsapiio",
@@ -299,6 +308,28 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-27|atl tico nacional|deportivo cali"
+    },
+    {
+      "away_team": "New Mexico United",
+      "books_count": 2,
+      "context_sources": [
+        "bzzoiro",
+        "sstats",
+        "sstatsform"
+      ],
+      "home_team": "Lexington",
+      "kickoff": "2026-08-27T01:30:00+00:00",
+      "league_name": "USL Championship",
+      "match_key": "soccer|lexington|new mexico united|2026-08-27",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "sstatsform"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|lexington|new mexico united"
     },
     {
       "away_team": "Motherwell",
@@ -457,28 +488,6 @@
       "semantic_key": "2026-08-27|el paso locomotive|pittsburgh riverhounds"
     },
     {
-      "away_team": "New Mexico United",
-      "books_count": 2,
-      "context_sources": [
-        "bzzoiro",
-        "sstats",
-        "sstatsform"
-      ],
-      "home_team": "Lexington",
-      "kickoff": "2026-08-27T12:00:00+00:00",
-      "league_name": "",
-      "match_key": "soccer|lexington|new mexico united|2026-08-27",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "sstatsform"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|lexington|new mexico united"
-    },
-    {
       "away_team": "maccabi tel aviv",
       "books_count": 3,
       "context_sources": [
@@ -500,31 +509,6 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-27|lugano|maccabi tel aviv"
-    },
-    {
-      "away_team": "k benhavn",
-      "books_count": 3,
-      "context_sources": [
-        "bzzoiro"
-      ],
-      "home_team": "inter turku",
-      "kickoff": "2026-08-27T12:00:00+00:00",
-      "league_name": "",
-      "match_key": "soccer|inter turku|k benhavn|2026-08-27",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
-      ],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|inter turku|k benhavn"
     },
     {
       "away_team": "Sion",
@@ -569,6 +553,75 @@
       "semantic_key": "2026-08-27|drita|inter d escaldes"
     },
     {
+      "away_team": "k benhavn",
+      "books_count": 3,
+      "context_sources": [
+        "bzzoiro"
+      ],
+      "home_team": "inter turku",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "",
+      "match_key": "soccer|inter turku|k benhavn|2026-08-27",
+      "missing": [
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context"
+      ],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|inter turku|k benhavn"
+    },
+    {
+      "away_team": "river plate",
+      "books_count": 3,
+      "context_sources": [
+        "bzzoiro",
+        "unknown"
+      ],
+      "home_team": "independiente santa fe",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "Copa Sudamericana",
+      "match_key": "soccer|independiente santa fe|river plate|2026-08-27",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|independiente santa fe|river plate"
+    },
+    {
+      "away_team": "Hapoel Tel Aviv",
+      "books_count": 6,
+      "context_sources": [],
+      "home_team": "Atalanta",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "",
+      "match_key": "soccer|atalanta|hapoel tel aviv|2026-08-27",
+      "missing": [
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_sstats_deep_context"
+      ],
+      "odds_sources": [
+        "odds_api_io",
+        "oddsapiio"
+      ],
+      "provider_artifact_hits": [
+        "bzzoiro_v2"
+      ],
+      "semantic_key": "2026-08-27|atalanta|hapoel tel aviv"
+    },
+    {
       "away_team": "Pafos",
       "books_count": 2,
       "context_sources": [],
@@ -591,32 +644,6 @@
       "semantic_key": "2026-08-27|dinamo city|pafos"
     },
     {
-      "away_team": "Wimbledon",
-      "books_count": 2,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Fulham",
-      "kickoff": "2026-08-27T12:00:00+00:00",
-      "league_name": "",
-      "match_key": "soccer|fulham|wimbledon|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "2026-08-27|fulham|wimbledon"
-    },
-    {
       "away_team": "Lillestr M Sk",
       "books_count": 2,
       "context_sources": [],
@@ -637,6 +664,28 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-27|kf egnatia|lillestr m sk"
+    },
+    {
+      "away_team": "Saint Gallen 1879",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "Nordsj Lland",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "",
+      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-27",
+      "missing": [
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context"
+      ],
+      "odds_sources": [
+        "odds_api_io",
+        "oddsapiio"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|nordsj lland|saint gallen 1879"
     },
     {
       "away_team": "Sk Brann",
@@ -684,13 +733,38 @@
       "semantic_key": "2026-08-27|getafe|partizan"
     },
     {
-      "away_team": "Hapoel Tel Aviv",
-      "books_count": 6,
+      "away_team": "Rsc Anderlecht",
+      "books_count": 2,
       "context_sources": [],
-      "home_team": "Atalanta",
+      "home_team": "Kairat Almaty",
       "kickoff": "2026-08-27T12:00:00+00:00",
       "league_name": "",
-      "match_key": "soccer|atalanta|hapoel tel aviv|2026-08-27",
+      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|kairat almaty|rsc anderlecht"
+    },
+    {
+      "away_team": "North Carolina Courage",
+      "books_count": 2,
+      "context_sources": [
+        "unknown"
+      ],
+      "home_team": "Angel City",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "NWSL",
+      "match_key": "soccer|angel city|north carolina courage|2026-08-27",
       "missing": [
         "context_source_2plus"
       ],
@@ -703,7 +777,32 @@
         "oddsapiio"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|atalanta|hapoel tel aviv"
+      "semantic_key": "2026-08-27|angel city|north carolina courage"
+    },
+    {
+      "away_team": "Wimbledon",
+      "books_count": 2,
+      "context_sources": [
+        "sstats"
+      ],
+      "home_team": "Fulham",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "",
+      "match_key": "soccer|fulham|wimbledon|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|fulham|wimbledon"
     },
     {
       "away_team": "Barcelona",
@@ -718,58 +817,13 @@
         "context_source_2plus"
       ],
       "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "2026-08-27|athletic|barcelona"
-    },
-    {
-      "away_team": "Rsc Anderlecht",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "Kairat Almaty",
-      "kickoff": "2026-08-27T12:00:00+00:00",
-      "league_name": "",
-      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "2026-08-27|kairat almaty|rsc anderlecht"
-    },
-    {
-      "away_team": "Saint Gallen 1879",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "Nordsj Lland",
-      "kickoff": "2026-08-27T12:00:00+00:00",
-      "league_name": "",
-      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-27",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
       ],
-      "odds_sources": [
-        "odds_api_io",
-        "oddsapiio"
-      ],
+      "odds_sources": [],
       "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|nordsj lland|saint gallen 1879"
+      "semantic_key": "2026-08-27|athletic|barcelona"
     },
     {
       "away_team": "Shamrock Rovers",
@@ -955,6 +1009,36 @@
       "semantic_key": "2026-08-27|inter d escaldes|drita"
     },
     {
+      "away_team": "PAOK",
+      "books_count": 12,
+      "context_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstats",
+        "sstatsform",
+        "unknown",
+        "weather"
+      ],
+      "home_team": "SK Brann",
+      "kickoff": "2026-08-27T17:00:00+00:00",
+      "league_name": "Conference League",
+      "match_key": "2026-08-27|sk brann|paok",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstatsform",
+        "unknown"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|sk brann|paok"
+    },
+    {
       "away_team": "Inter Turku",
       "books_count": 106,
       "context_sources": [
@@ -1075,36 +1159,6 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-27|lillestr m sk|kf egnatia"
-    },
-    {
-      "away_team": "PAOK",
-      "books_count": 5,
-      "context_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstats",
-        "sstatsform",
-        "unknown",
-        "weather"
-      ],
-      "home_team": "SK Brann",
-      "kickoff": "2026-08-27T17:00:00+00:00",
-      "league_name": "Conference League",
-      "match_key": "2026-08-27|sk brann|paok",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstatsform",
-        "unknown"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|sk brann|paok"
     },
     {
       "away_team": "Panathinaikos FC",
@@ -1286,38 +1340,8 @@
       "semantic_key": "2026-08-27|riga|klaksv kar tr ttarfelag"
     },
     {
-      "away_team": "Benfica",
-      "books_count": 10,
-      "context_sources": [
-        "bzzoiro",
-        "model_xg",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstatsform",
-        "unknown",
-        "weather"
-      ],
-      "home_team": "AGF",
-      "kickoff": "2026-08-27T18:00:00+00:00",
-      "league_name": "Europa League",
-      "match_key": "2026-08-27|agf|benfica",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstatsform",
-        "unknown"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|agf|benfica"
-    },
-    {
       "away_team": "FC Sion",
-      "books_count": 10,
+      "books_count": 12,
       "context_sources": [
         "bzzoiro",
         "model_xg",
@@ -1346,6 +1370,36 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-27|afc ajax|sion"
+    },
+    {
+      "away_team": "Benfica",
+      "books_count": 11,
+      "context_sources": [
+        "bzzoiro",
+        "model_xg",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstatsform",
+        "unknown",
+        "weather"
+      ],
+      "home_team": "AGF",
+      "kickoff": "2026-08-27T18:00:00+00:00",
+      "league_name": "Europa League",
+      "match_key": "2026-08-27|agf|benfica",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstatsform",
+        "unknown"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|agf|benfica"
     },
     {
       "away_team": "Atalanta",
@@ -1470,6 +1524,68 @@
       "semantic_key": "2026-08-27|thun|lech pozna"
     },
     {
+      "away_team": "Kairat Almaty",
+      "books_count": 12,
+      "context_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstats",
+        "sstatsform",
+        "unknown",
+        "weather"
+      ],
+      "home_team": "RSC Anderlecht",
+      "kickoff": "2026-08-27T18:30:00+00:00",
+      "league_name": "Europa League",
+      "match_key": "2026-08-27|rsc anderlecht|kairat almaty",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstatsform",
+        "unknown"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|rsc anderlecht|kairat almaty"
+    },
+    {
+      "away_team": "Luton Town",
+      "books_count": 10,
+      "context_sources": [
+        "bzzoiro",
+        "model_xg",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstats",
+        "sstats_xg",
+        "sstatsform",
+        "unknown",
+        "weather"
+      ],
+      "home_team": "Chelsea",
+      "kickoff": "2026-08-27T18:30:00+00:00",
+      "league_name": "Carabao Cup",
+      "match_key": "2026-08-27|chelsea|luton town",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstatsform",
+        "unknown"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|chelsea|luton town"
+    },
+    {
       "away_team": "Tromsø IL",
       "books_count": 10,
       "context_sources": [
@@ -1563,68 +1679,8 @@
       "semantic_key": "2026-08-27|austria wien|sporting braga"
     },
     {
-      "away_team": "Luton Town",
-      "books_count": 6,
-      "context_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstats",
-        "sstatsform",
-        "unknown",
-        "weather"
-      ],
-      "home_team": "Chelsea",
-      "kickoff": "2026-08-27T18:30:00+00:00",
-      "league_name": "Carabao Cup",
-      "match_key": "2026-08-27|chelsea|luton town",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstatsform",
-        "unknown"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|chelsea|luton town"
-    },
-    {
-      "away_team": "Kairat Almaty",
-      "books_count": 5,
-      "context_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstats",
-        "sstatsform",
-        "unknown",
-        "weather"
-      ],
-      "home_team": "RSC Anderlecht",
-      "kickoff": "2026-08-27T18:30:00+00:00",
-      "league_name": "Europa League",
-      "match_key": "2026-08-27|rsc anderlecht|kairat almaty",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstatsform",
-        "unknown"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|rsc anderlecht|kairat almaty"
-    },
-    {
       "away_team": "CA Osasuna",
-      "books_count": 7,
+      "books_count": 9,
       "context_sources": [
         "bzzoiro",
         "dayinventory",
@@ -1771,7 +1827,7 @@
     },
     {
       "away_team": "Athletic Club",
-      "books_count": 8,
+      "books_count": 9,
       "context_sources": [
         "bzzoiro",
         "football_data",
@@ -1803,38 +1859,8 @@
       "semantic_key": "2026-08-27|barcelona|athletic"
     },
     {
-      "away_team": "KAA Gent",
-      "books_count": 6,
-      "context_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstats",
-        "sstatsform",
-        "unknown",
-        "weather"
-      ],
-      "home_team": "Hibernian",
-      "kickoff": "2026-08-27T19:00:00+00:00",
-      "league_name": "Conference League",
-      "match_key": "2026-08-27|hibernian|kaa gent",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io",
-        "oddsapiio",
-        "providerdaydiscoverycanonicalpool",
-        "sstatsform",
-        "unknown"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|hibernian|kaa gent"
-    },
-    {
       "away_team": "Getafe",
-      "books_count": 8,
+      "books_count": 9,
       "context_sources": [
         "bzzoiro",
         "model_xg",
@@ -1895,6 +1921,36 @@
       "semantic_key": "2026-08-27|larne|lincoln red imps"
     },
     {
+      "away_team": "KAA Gent",
+      "books_count": 6,
+      "context_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstats",
+        "sstatsform",
+        "unknown",
+        "weather"
+      ],
+      "home_team": "Hibernian",
+      "kickoff": "2026-08-27T19:00:00+00:00",
+      "league_name": "Conference League",
+      "match_key": "2026-08-27|hibernian|kaa gent",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io",
+        "oddsapiio",
+        "providerdaydiscoverycanonicalpool",
+        "sstatsform",
+        "unknown"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|hibernian|kaa gent"
+    },
+    {
       "away_team": "AFC Wimbledon",
       "books_count": 6,
       "context_sources": [
@@ -1938,8 +1994,12 @@
       "kickoff": "2026-08-27T23:00:00+00:00",
       "league_name": "Copa do Brasil",
       "match_key": "2026-08-27|internacional|gr mio",
-      "missing": [],
-      "next_actions": [],
+      "missing": [
+        "semantic_duplicate"
+      ],
+      "next_actions": [
+        "collapse_semantic_duplicate"
+      ],
       "odds_sources": [
         "bzzoiro",
         "dayinventory"
@@ -1961,8 +2021,12 @@
       "kickoff": "2026-08-27T23:10:00+00:00",
       "league_name": "Categoría Primera A",
       "match_key": "2026-08-27|llaneros|millonarios",
-      "missing": [],
-      "next_actions": [],
+      "missing": [
+        "semantic_duplicate"
+      ],
+      "next_actions": [
+        "collapse_semantic_duplicate"
+      ],
       "odds_sources": [
         "bzzoiro",
         "dayinventory"
@@ -1989,6 +2053,26 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "soccer ararat armenia universitatea craiova 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 3,
+      "context_sources": [
+        "bzzoiro",
+        "sstats"
+      ],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|drita|inter d escaldes|2026-08-27",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer drita inter d escaldes 2026 08 27"
     },
     {
       "away_team": "",
@@ -2040,6 +2124,26 @@
       "home_team": "",
       "kickoff": null,
       "league_name": "",
+      "match_key": "soccer|lugano|maccabi tel aviv|2026-08-27",
+      "missing": [],
+      "next_actions": [],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer lugano maccabi tel aviv 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 3,
+      "context_sources": [
+        "bzzoiro",
+        "sstats"
+      ],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
       "match_key": "soccer|palmeiras|santos|2026-08-27",
       "missing": [],
       "next_actions": [],
@@ -2049,30 +2153,6 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "soccer palmeiras santos 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 3,
-      "context_sources": [
-        "bzzoiro"
-      ],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|independiente santa fe|river plate|2026-08-27",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
-      ],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer independiente santa fe river plate 2026 08 27"
     },
     {
       "away_team": "",
@@ -2130,7 +2210,7 @@
         "sstats"
       ],
       "home_team": "",
-      "kickoff": null,
+      "kickoff": "",
       "league_name": "",
       "match_key": "soccer|lexington|new mexico united|2026-08-27",
       "missing": [],
@@ -2168,71 +2248,6 @@
     },
     {
       "away_team": "",
-      "books_count": 2,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "",
-      "kickoff": "",
-      "league_name": "",
-      "match_key": "soccer|central norte|moron|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer central norte moron 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 3,
-      "context_sources": [
-        "bzzoiro",
-        "sstats"
-      ],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|drita|inter d escaldes|2026-08-27",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer drita inter d escaldes 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 3,
-      "context_sources": [
-        "bzzoiro",
-        "sstats"
-      ],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|lugano|maccabi tel aviv|2026-08-27",
-      "missing": [],
-      "next_actions": [],
-      "odds_sources": [
-        "bzzoiro",
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer lugano maccabi tel aviv 2026 08 27"
-    },
-    {
-      "away_team": "",
       "books_count": 8,
       "context_sources": [],
       "home_team": "",
@@ -2256,12 +2271,12 @@
     },
     {
       "away_team": "",
-      "books_count": 2,
+      "books_count": 6,
       "context_sources": [],
       "home_team": "",
       "kickoff": null,
       "league_name": "",
-      "match_key": "soccer|angel city|north carolina courage|2026-08-27",
+      "match_key": "soccer|ajax|sion|2026-08-27",
       "missing": [
         "odds_source_2plus",
         "context_source_2plus"
@@ -2275,7 +2290,77 @@
         "odds_api_io"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "soccer angel city north carolina courage 2026 08 27"
+      "semantic_key": "soccer ajax sion 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 6,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|atalanta|hapoel tel aviv|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [
+        "bzzoiro_v2"
+      ],
+      "semantic_key": "soccer atalanta hapoel tel aviv 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 6,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|austria wien|sporting braga|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer austria wien sporting braga 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 6,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|brighton hove albion|troms il|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer brighton hove albion troms il 2026 08 27"
     },
     {
       "away_team": "",
@@ -2299,6 +2384,52 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "soccer ca osasuna rc celta vigo 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|celta vigo|osasuna|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer celta vigo osasuna 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|chelsea|luton town|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer chelsea luton town 2026 08 27"
     },
     {
       "away_team": "",
@@ -2397,6 +2528,53 @@
     },
     {
       "away_team": "",
+      "books_count": 3,
+      "context_sources": [
+        "bzzoiro"
+      ],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|independiente santa fe|river plate|2026-08-27",
+      "missing": [
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context"
+      ],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer independiente santa fe river plate 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer kairat almaty rsc anderlecht 2026 08 27"
+    },
+    {
+      "away_team": "",
       "books_count": 2,
       "context_sources": [],
       "home_team": "",
@@ -2448,6 +2626,29 @@
       "home_team": "",
       "kickoff": null,
       "league_name": "",
+      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer nordsj lland saint gallen 1879 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
       "match_key": "soccer|paok|sk brann|2026-08-27",
       "missing": [
         "odds_source_2plus",
@@ -2467,90 +2668,27 @@
     {
       "away_team": "",
       "books_count": 2,
-      "context_sources": [],
+      "context_sources": [
+        "sstats"
+      ],
       "home_team": "",
       "kickoff": null,
       "league_name": "",
-      "match_key": "soccer|athletic|barcelona|2026-08-27",
+      "match_key": "soccer|central norte|moron|2026-08-27",
       "missing": [
         "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
+      "odds_sources": [
+        "odds_api_io"
       ],
-      "semantic_key": "soccer athletic barcelona 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|fulham|wimbledon|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer fulham wimbledon 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|hibernian|kaa gent|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer hibernian kaa gent 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|hnk rijeka|midtjylland|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer hnk rijeka midtjylland 2026 08 27"
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer central norte moron 2026 08 27"
     },
     {
       "away_team": "",
@@ -2575,28 +2713,6 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "soccer iberia 1999 jagiellonia bia ystok 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer kairat almaty rsc anderlecht 2026 08 27"
     },
     {
       "away_team": "Reus FC Reddis",
@@ -2646,127 +2762,12 @@
     },
     {
       "away_team": "",
-      "books_count": 6,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|ajax|sion|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer ajax sion 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 6,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|atalanta|hapoel tel aviv|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer atalanta hapoel tel aviv 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 6,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|austria wien|sporting braga|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer austria wien sporting braga 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 1,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|boreham wood|boston united|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "bookmaker_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer boreham wood boston united 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 6,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|brighton hove albion|troms il|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer brighton hove albion troms il 2026 08 27"
-    },
-    {
-      "away_team": "",
       "books_count": 2,
       "context_sources": [],
       "home_team": "",
       "kickoff": null,
       "league_name": "",
-      "match_key": "soccer|celta vigo|osasuna|2026-08-27",
+      "match_key": "soccer|angel city|north carolina courage|2026-08-27",
       "missing": [
         "odds_source_2plus",
         "context_source_2plus"
@@ -2780,53 +2781,7 @@
         "odds_api_io"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "soccer celta vigo osasuna 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|chelsea|luton town|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer chelsea luton town 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer nordsj lland saint gallen 1879 2026 08 27"
+      "semantic_key": "soccer angel city north carolina courage 2026 08 27"
     },
     {
       "away_team": "SC Paderborn 07",
@@ -2837,6 +2792,30 @@
       "home_team": "1.FC Phönix Lübeck",
       "kickoff": null,
       "league_name": "",
+      "match_key": "",
+      "missing": [
+        "odds_source_2plus",
+        "bookmaker_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": ""
+    },
+    {
+      "away_team": "S.S. Reyes",
+      "books_count": 0,
+      "context_sources": [
+        "weather"
+      ],
+      "home_team": "CD Ebro",
+      "kickoff": null,
+      "league_name": null,
       "match_key": "",
       "missing": [
         "odds_source_2plus",
@@ -7459,35 +7438,107 @@
       "odds_sources": [],
       "provider_artifact_hits": [],
       "semantic_key": ""
-    }
-  ],
-  "semantic_duplicate_rows": 0,
-  "semantic_unique_matches": 105,
-  "status": "ok",
-  "worst_gaps": [
+    },
     {
-      "away_team": "North Carolina Courage",
-      "books_count": 2,
-      "context_sources": [
-        "unknown"
-      ],
-      "home_team": "Angel City",
-      "kickoff": "2026-08-27T00:00:00+00:00",
-      "league_name": "NWSL",
-      "match_key": "soccer|angel city|north carolina courage|2026-08-27",
+      "away_team": "",
+      "books_count": 0,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "2026-08-27|internacional|gr mio",
       "missing": [
+        "odds_source_2plus",
+        "bookmaker_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
         "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026 08 27 internacional gr mio"
+    },
+    {
+      "away_team": "",
+      "books_count": 0,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "2026-08-27|llaneros|millonarios",
+      "missing": [
+        "odds_source_2plus",
+        "bookmaker_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026 08 27 llaneros millonarios"
+    }
+  ],
+  "semantic_duplicate_rows": 2,
+  "semantic_unique_matches": 102,
+  "status": "ok",
+  "worst_gaps": [
+    {
+      "away_team": "millonarios",
+      "books_count": 0,
+      "context_sources": [],
+      "home_team": "llaneros",
+      "kickoff": "2026-08-27",
+      "league_name": "Categoría Primera A",
+      "match_key": "2026-08-27|llaneros|millonarios",
+      "missing": [
+        "odds_source_2plus",
+        "bookmaker_2plus",
+        "context_source_2plus",
+        "semantic_duplicate"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill",
+        "collapse_semantic_duplicate"
       ],
       "odds_sources": [
-        "odds_api_io",
-        "oddsapiio"
+        "bzzoiro"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|angel city|north carolina courage"
+      "semantic_key": "2026-08-27|llaneros|millonarios"
+    },
+    {
+      "away_team": "gr mio",
+      "books_count": 0,
+      "context_sources": [],
+      "home_team": "internacional",
+      "kickoff": "2026-08-27",
+      "league_name": "Copa do Brasil",
+      "match_key": "2026-08-27|internacional|gr mio",
+      "missing": [
+        "odds_source_2plus",
+        "bookmaker_2plus",
+        "context_source_2plus",
+        "semantic_duplicate"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill",
+        "collapse_semantic_duplicate"
+      ],
+      "odds_sources": [
+        "bzzoiro"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|internacional|gr mio"
     },
     {
       "away_team": "k benhavn",
@@ -7515,6 +7566,29 @@
       "semantic_key": "2026-08-27|inter turku|k benhavn"
     },
     {
+      "away_team": "Hapoel Tel Aviv",
+      "books_count": 6,
+      "context_sources": [],
+      "home_team": "Atalanta",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "",
+      "match_key": "soccer|atalanta|hapoel tel aviv|2026-08-27",
+      "missing": [
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_sstats_deep_context"
+      ],
+      "odds_sources": [
+        "odds_api_io",
+        "oddsapiio"
+      ],
+      "provider_artifact_hits": [
+        "bzzoiro_v2"
+      ],
+      "semantic_key": "2026-08-27|atalanta|hapoel tel aviv"
+    },
+    {
       "away_team": "Pafos",
       "books_count": 2,
       "context_sources": [],
@@ -7537,32 +7611,6 @@
       "semantic_key": "2026-08-27|dinamo city|pafos"
     },
     {
-      "away_team": "Wimbledon",
-      "books_count": 2,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "Fulham",
-      "kickoff": "2026-08-27T12:00:00+00:00",
-      "league_name": "",
-      "match_key": "soccer|fulham|wimbledon|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "sstats"
-      ],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "2026-08-27|fulham|wimbledon"
-    },
-    {
       "away_team": "Lillestr M Sk",
       "books_count": 2,
       "context_sources": [],
@@ -7583,6 +7631,28 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "2026-08-27|kf egnatia|lillestr m sk"
+    },
+    {
+      "away_team": "Saint Gallen 1879",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "Nordsj Lland",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "",
+      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-27",
+      "missing": [
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context"
+      ],
+      "odds_sources": [
+        "odds_api_io",
+        "oddsapiio"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|nordsj lland|saint gallen 1879"
     },
     {
       "away_team": "Sk Brann",
@@ -7630,13 +7700,38 @@
       "semantic_key": "2026-08-27|getafe|partizan"
     },
     {
-      "away_team": "Hapoel Tel Aviv",
-      "books_count": 6,
+      "away_team": "Rsc Anderlecht",
+      "books_count": 2,
       "context_sources": [],
-      "home_team": "Atalanta",
+      "home_team": "Kairat Almaty",
       "kickoff": "2026-08-27T12:00:00+00:00",
       "league_name": "",
-      "match_key": "soccer|atalanta|hapoel tel aviv|2026-08-27",
+      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|kairat almaty|rsc anderlecht"
+    },
+    {
+      "away_team": "North Carolina Courage",
+      "books_count": 2,
+      "context_sources": [
+        "unknown"
+      ],
+      "home_team": "Angel City",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "NWSL",
+      "match_key": "soccer|angel city|north carolina courage|2026-08-27",
       "missing": [
         "context_source_2plus"
       ],
@@ -7649,7 +7744,32 @@
         "oddsapiio"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|atalanta|hapoel tel aviv"
+      "semantic_key": "2026-08-27|angel city|north carolina courage"
+    },
+    {
+      "away_team": "Wimbledon",
+      "books_count": 2,
+      "context_sources": [
+        "sstats"
+      ],
+      "home_team": "Fulham",
+      "kickoff": "2026-08-27T12:00:00+00:00",
+      "league_name": "",
+      "match_key": "soccer|fulham|wimbledon|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "sstats"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|fulham|wimbledon"
     },
     {
       "away_team": "Barcelona",
@@ -7664,82 +7784,67 @@
         "context_source_2plus"
       ],
       "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
       "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
+      "provider_artifact_hits": [],
       "semantic_key": "2026-08-27|athletic|barcelona"
     },
     {
-      "away_team": "Rsc Anderlecht",
+      "away_team": "Grêmio",
       "books_count": 2,
-      "context_sources": [],
-      "home_team": "Kairat Almaty",
-      "kickoff": "2026-08-27T12:00:00+00:00",
-      "league_name": "",
-      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "2026-08-27|kairat almaty|rsc anderlecht"
-    },
-    {
-      "away_team": "Saint Gallen 1879",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "Nordsj Lland",
-      "kickoff": "2026-08-27T12:00:00+00:00",
-      "league_name": "",
-      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-27",
-      "missing": [
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
-      ],
-      "odds_sources": [
-        "odds_api_io",
-        "oddsapiio"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "2026-08-27|nordsj lland|saint gallen 1879"
-    },
-    {
-      "away_team": "",
-      "books_count": 3,
       "context_sources": [
-        "bzzoiro"
+        "bzzoiro",
+        "dayinventory",
+        "sstats",
+        "unknown",
+        "weather"
       ],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|independiente santa fe|river plate|2026-08-27",
+      "home_team": "Internacional",
+      "kickoff": "2026-08-27T23:00:00+00:00",
+      "league_name": "Copa do Brasil",
+      "match_key": "2026-08-27|internacional|gr mio",
       "missing": [
-        "context_source_2plus"
+        "semantic_duplicate"
       ],
       "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context"
+        "collapse_semantic_duplicate"
       ],
       "odds_sources": [
         "bzzoiro",
-        "odds_api_io"
+        "dayinventory"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "soccer independiente santa fe river plate 2026 08 27"
+      "semantic_key": "2026-08-27|internacional|gr mio"
+    },
+    {
+      "away_team": "Millonarios",
+      "books_count": 2,
+      "context_sources": [
+        "bzzoiro",
+        "dayinventory",
+        "sstats",
+        "unknown",
+        "weather"
+      ],
+      "home_team": "Llaneros FC",
+      "kickoff": "2026-08-27T23:10:00+00:00",
+      "league_name": "Categoría Primera A",
+      "match_key": "2026-08-27|llaneros|millonarios",
+      "missing": [
+        "semantic_duplicate"
+      ],
+      "next_actions": [
+        "collapse_semantic_duplicate"
+      ],
+      "odds_sources": [
+        "bzzoiro",
+        "dayinventory"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "2026-08-27|llaneros|millonarios"
     },
     {
       "away_team": "",
@@ -7815,31 +7920,6 @@
     },
     {
       "away_team": "",
-      "books_count": 2,
-      "context_sources": [
-        "sstats"
-      ],
-      "home_team": "",
-      "kickoff": "",
-      "league_name": "",
-      "match_key": "soccer|central norte|moron|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer central norte moron 2026 08 27"
-    },
-    {
-      "away_team": "",
       "books_count": 8,
       "context_sources": [],
       "home_team": "",
@@ -7863,12 +7943,12 @@
     },
     {
       "away_team": "",
-      "books_count": 2,
+      "books_count": 6,
       "context_sources": [],
       "home_team": "",
       "kickoff": null,
       "league_name": "",
-      "match_key": "soccer|angel city|north carolina courage|2026-08-27",
+      "match_key": "soccer|ajax|sion|2026-08-27",
       "missing": [
         "odds_source_2plus",
         "context_source_2plus"
@@ -7882,7 +7962,77 @@
         "odds_api_io"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "soccer angel city north carolina courage 2026 08 27"
+      "semantic_key": "soccer ajax sion 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 6,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|atalanta|hapoel tel aviv|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [
+        "bzzoiro_v2"
+      ],
+      "semantic_key": "soccer atalanta hapoel tel aviv 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 6,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|austria wien|sporting braga|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer austria wien sporting braga 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 6,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|brighton hove albion|troms il|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer brighton hove albion troms il 2026 08 27"
     },
     {
       "away_team": "",
@@ -7906,6 +8056,52 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "soccer ca osasuna rc celta vigo 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|celta vigo|osasuna|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer celta vigo osasuna 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|chelsea|luton town|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer chelsea luton town 2026 08 27"
     },
     {
       "away_team": "",
@@ -8004,6 +8200,53 @@
     },
     {
       "away_team": "",
+      "books_count": 3,
+      "context_sources": [
+        "bzzoiro"
+      ],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|independiente santa fe|river plate|2026-08-27",
+      "missing": [
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context"
+      ],
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer independiente santa fe river plate 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
+      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer kairat almaty rsc anderlecht 2026 08 27"
+    },
+    {
+      "away_team": "",
       "books_count": 2,
       "context_sources": [],
       "home_team": "",
@@ -8055,6 +8298,29 @@
       "home_team": "",
       "kickoff": null,
       "league_name": "",
+      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-27",
+      "missing": [
+        "odds_source_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer nordsj lland saint gallen 1879 2026 08 27"
+    },
+    {
+      "away_team": "",
+      "books_count": 2,
+      "context_sources": [],
+      "home_team": "",
+      "kickoff": null,
+      "league_name": "",
       "match_key": "soccer|paok|sk brann|2026-08-27",
       "missing": [
         "odds_source_2plus",
@@ -8074,90 +8340,27 @@
     {
       "away_team": "",
       "books_count": 2,
-      "context_sources": [],
+      "context_sources": [
+        "sstats"
+      ],
       "home_team": "",
       "kickoff": null,
       "league_name": "",
-      "match_key": "soccer|athletic|barcelona|2026-08-27",
+      "match_key": "soccer|central norte|moron|2026-08-27",
       "missing": [
         "odds_source_2plus",
         "context_source_2plus"
       ],
       "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
         "target_sstats_deep_context",
         "target_odds_api_price_backfill"
       ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
+      "odds_sources": [
+        "odds_api_io"
       ],
-      "semantic_key": "soccer athletic barcelona 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|fulham|wimbledon|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer fulham wimbledon 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|hibernian|kaa gent|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer hibernian kaa gent 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|hnk rijeka|midtjylland|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer hnk rijeka midtjylland 2026 08 27"
+      "provider_artifact_hits": [],
+      "semantic_key": "soccer central norte moron 2026 08 27"
     },
     {
       "away_team": "",
@@ -8182,28 +8385,6 @@
       ],
       "provider_artifact_hits": [],
       "semantic_key": "soccer iberia 1999 jagiellonia bia ystok 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|kairat almaty|rsc anderlecht|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer kairat almaty rsc anderlecht 2026 08 27"
     },
     {
       "away_team": "Reus FC Reddis",
@@ -8253,127 +8434,12 @@
     },
     {
       "away_team": "",
-      "books_count": 6,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|ajax|sion|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer ajax sion 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 6,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|atalanta|hapoel tel aviv|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer atalanta hapoel tel aviv 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 6,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|austria wien|sporting braga|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer austria wien sporting braga 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 1,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|boreham wood|boston united|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "bookmaker_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [],
-      "provider_artifact_hits": [
-        "bzzoiro_v2"
-      ],
-      "semantic_key": "soccer boreham wood boston united 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 6,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|brighton hove albion|troms il|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer brighton hove albion troms il 2026 08 27"
-    },
-    {
-      "away_team": "",
       "books_count": 2,
       "context_sources": [],
       "home_team": "",
       "kickoff": null,
       "league_name": "",
-      "match_key": "soccer|celta vigo|osasuna|2026-08-27",
+      "match_key": "soccer|angel city|north carolina courage|2026-08-27",
       "missing": [
         "odds_source_2plus",
         "context_source_2plus"
@@ -8387,53 +8453,7 @@
         "odds_api_io"
       ],
       "provider_artifact_hits": [],
-      "semantic_key": "soccer celta vigo osasuna 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|chelsea|luton town|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer chelsea luton town 2026 08 27"
-    },
-    {
-      "away_team": "",
-      "books_count": 2,
-      "context_sources": [],
-      "home_team": "",
-      "kickoff": null,
-      "league_name": "",
-      "match_key": "soccer|nordsj lland|saint gallen 1879|2026-08-27",
-      "missing": [
-        "odds_source_2plus",
-        "context_source_2plus"
-      ],
-      "next_actions": [
-        "target_bzzoiro_v2_context_or_odds",
-        "target_sstats_deep_context",
-        "target_odds_api_price_backfill"
-      ],
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "provider_artifact_hits": [],
-      "semantic_key": "soccer nordsj lland saint gallen 1879 2026 08 27"
+      "semantic_key": "soccer angel city north carolina courage 2026 08 27"
     },
     {
       "away_team": "SC Paderborn 07",
@@ -8444,6 +8464,30 @@
       "home_team": "1.FC Phönix Lübeck",
       "kickoff": null,
       "league_name": "",
+      "match_key": "",
+      "missing": [
+        "odds_source_2plus",
+        "bookmaker_2plus",
+        "context_source_2plus"
+      ],
+      "next_actions": [
+        "target_bzzoiro_v2_context_or_odds",
+        "target_sstats_deep_context",
+        "target_odds_api_price_backfill"
+      ],
+      "odds_sources": [],
+      "provider_artifact_hits": [],
+      "semantic_key": ""
+    },
+    {
+      "away_team": "S.S. Reyes",
+      "books_count": 0,
+      "context_sources": [
+        "weather"
+      ],
+      "home_team": "CD Ebro",
+      "kickoff": null,
+      "league_name": null,
       "match_key": "",
       "missing": [
         "odds_source_2plus",
