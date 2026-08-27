@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 38,
-      "rows_seen": 38,
+      "rows_kept": 2,
+      "rows_seen": 2,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 18,
-      "rows_seen": 59,
-      "rows_stale": 41
+      "rows_kept": 6,
+      "rows_seen": 51,
+      "rows_stale": 45
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 3,
-      "rows_seen": 3,
+      "rows_kept": 1,
+      "rows_seen": 1,
       "rows_stale": 0
     }
   },
@@ -35,27 +35,27 @@
     "candidates_before_quality": 0,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 6,
-    "controlled_candidates_seen": 15,
+    "contexts_built": 1,
+    "controlled_candidates_seen": 1,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 23,
-    "matches_seen": 27,
-    "matches_with_offers": 27
+    "coverage_candidates_current_date": 4,
+    "matches_seen": 28,
+    "matches_with_offers": 28
   },
-  "created_at": "2026-08-26T23:12:05.707134+00:00",
+  "created_at": "2026-08-27T01:12:40.849891+00:00",
   "family_counts": {
-    "spreads": 8,
-    "totals": 15
+    "spreads": 3,
+    "totals": 1
   },
-  "matches_with_candidates": 16,
+  "matches_with_candidates": 2,
   "missing_data_flags": {
-    "confidence_below_micro_c": 21,
-    "edge_below_micro_c": 23,
-    "ev_below_micro_c": 23,
-    "single_book": 8,
-    "single_context_source": 12,
-    "single_odds_source": 17
+    "confidence_below_micro_c": 4,
+    "edge_below_micro_c": 4,
+    "ev_below_micro_c": 4,
+    "single_book": 3,
+    "single_context_source": 3,
+    "single_odds_source": 3
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 15,
+  "positive_near_miss_count": 1,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +78,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 26,
+      "events_matched": 25,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2560,
+      "offers_parsed": 2547,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +102,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 691,
+      "matches_built": 699,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -117,11 +117,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 886,
+      "events_fetched": 898,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 691,
+      "matches_built": 699,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -171,8 +171,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 6,
-      "direct_event_contexts_built": 6,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -449,31 +449,14 @@
     "no_data": 10,
     "working": 6
   },
-  "reject_reason_counts_from_rows": {
-    "final_edge_below_min": 2,
-    "final_ev_below_min": 3,
-    "odds_below_global_min": 4,
-    "tier_a_canonical_edge_below_min": 1,
-    "tier_a_canonical_ev_below_min": 1,
-    "tier_a_confirmation_sources_below_min:1/2": 1,
-    "tier_a_market_implied_xg_not_hard_confirmation": 1,
-    "tier_a_odds_sources_below_min:1/2": 1,
-    "tier_a_publication_score_below_min": 1,
-    "tier_a_quality_below_min": 1,
-    "tier_a_two_plus_context_sources_required:1/2": 1,
-    "tier_a_two_plus_odds_sources_required:1/2": 1,
-    "tier_b_canonical_edge_below_min": 1,
-    "tier_b_canonical_ev_below_min": 1,
-    "tier_b_quality_below_min": 1,
-    "xg_direction_conflict": 4
-  },
+  "reject_reason_counts_from_rows": {},
   "target_date": "2026-08-27",
   "top_near_miss": [
     {
       "away_team": "CA Osasuna",
       "best_candidate": {
         "adjusted_probability": 0.451706,
-        "books_count": 4,
+        "books_count": 2,
         "canonical_edge_pp": 2.617,
         "canonical_ev_pct": 6.151,
         "confidence": 71.868,
@@ -481,24 +464,22 @@
         "context_sources_count": 3,
         "family": "totals",
         "odds": 2.35,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 3,
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.0,
-        "reject_reasons": [
-          "xg_direction_conflict"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 3
       },
       "best_confidence": 71.868,
       "best_edge_pp": 2.617,
       "best_ev_pct": 6.151,
-      "books_max": 4,
+      "books_max": 2,
       "candidate_count": 1,
       "commence_time": "2026-08-27T18:30:00+00:00",
       "confirmation_sources_max": 3,
       "context_sources_max": 3,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
@@ -508,468 +489,14 @@
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "xg_direction_conflict": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "Shamrock Rovers",
-      "best_candidate": {
-        "adjusted_probability": 0.645538,
-        "books_count": 2,
-        "canonical_edge_pp": 2.442,
-        "canonical_ev_pct": 3.932,
-        "confidence": 64.869,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 1.61,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 64.869,
-      "best_edge_pp": 2.442,
-      "best_ev_pct": 3.932,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-27T00:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Kuopion Palloseura",
-      "league_name": "Conference League",
-      "match_key": "soccer|kuopion_palloseura|shamrock_rovers|2026-08-27",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_context_source": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Shamrock Rovers",
-      "best_candidate": {
-        "adjusted_probability": 0.645538,
-        "books_count": 3,
-        "canonical_edge_pp": 2.442,
-        "canonical_ev_pct": 3.932,
-        "confidence": 64.869,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 1.61,
-        "odds_sources_count": 2,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "odds_below_global_min"
-        ],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 64.869,
-      "best_edge_pp": 2.442,
-      "best_ev_pct": 3.932,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-08-27T00:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Kuopion Palloseura",
-      "league_name": "Conference League",
-      "match_key": "2026-08-27|kuopion palloseura|shamrock rovers",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_context_source": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "odds_below_global_min": 1
-      },
-      "sources_max": 2
-    },
-    {
-      "away_team": "Motherwell",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 6,
-        "canonical_edge_pp": 1.467,
-        "canonical_ev_pct": 3.925,
-        "confidence": 72.866,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.675,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "final_edge_below_min",
-          "final_ev_below_min"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 72.866,
-      "best_edge_pp": 1.467,
-      "best_ev_pct": 3.925,
-      "books_max": 6,
-      "candidate_count": 1,
-      "commence_time": "2026-08-27T00:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Freiburg",
-      "league_name": "Conference League",
-      "match_key": "soccer|freiburg|motherwell|2026-08-27",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "final_edge_below_min": 1,
-        "final_ev_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "Athletic Club",
-      "best_candidate": {
-        "adjusted_probability": 0.575035,
-        "books_count": 2,
-        "canonical_edge_pp": 1.948,
-        "canonical_ev_pct": 3.506,
-        "confidence": 74.178,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.8,
-        "odds_sources_count": 4,
-        "origin": "rescue",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 4
-      },
-      "best_confidence": 74.178,
-      "best_edge_pp": 1.948,
-      "best_ev_pct": 3.506,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-27T00:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "FC Barcelona",
-      "league_name": "La Liga",
-      "match_key": "soccer|fc_barcelona|athletic_club|2026-08-27",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 4,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 4
-    },
-    {
-      "away_team": "Athletic Club",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 3,
-        "canonical_edge_pp": 1.948,
-        "canonical_ev_pct": 3.506,
-        "confidence": 74.178,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.8,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 3.5,
-        "reject_reasons": [
-          "final_ev_below_min"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 74.178,
-      "best_edge_pp": 1.948,
-      "best_ev_pct": 3.506,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-08-27T00:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "FC Barcelona",
-      "league_name": "La Liga",
-      "match_key": "2026-08-27|barcelona|athletic",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "final_ev_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "Independiente Santa Fe",
-      "best_candidate": {
-        "adjusted_probability": 0.606073,
-        "books_count": 2,
-        "canonical_edge_pp": 1.784,
-        "canonical_ev_pct": 3.032,
-        "confidence": 72.465,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.7,
-        "odds_sources_count": 3,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 3
-      },
-      "best_confidence": 72.465,
-      "best_edge_pp": 1.784,
-      "best_ev_pct": 3.032,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-27T00:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "River Plate",
-      "league_name": "Copa Sudamericana",
-      "match_key": "soccer|river_plate|independiente_santa_fe|2026-08-27",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
         "ev_below_micro_c": 1
       },
       "odds_sources_max": 3,
       "origins": {
-        "rescue": 1
+        "awaiting_movement_lifecycle": 1
       },
       "reject_reasons": {},
       "sources_max": 3
-    },
-    {
-      "away_team": "Independiente Santa Fe",
-      "best_candidate": {
-        "adjusted_probability": 0.606073,
-        "books_count": 3,
-        "canonical_edge_pp": 1.784,
-        "canonical_ev_pct": 3.032,
-        "confidence": 72.465,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 1.7,
-        "odds_sources_count": 2,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "odds_below_global_min"
-        ],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 72.465,
-      "best_edge_pp": 1.784,
-      "best_ev_pct": 3.032,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-08-27T00:00:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "River Plate",
-      "league_name": "Copa Sudamericana",
-      "match_key": "2026-08-27|river plate|independiente santa fe",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "odds_below_global_min": 1
-      },
-      "sources_max": 2
-    },
-    {
-      "away_team": "Independiente Santa Fe",
-      "best_candidate": {
-        "adjusted_probability": 0.604735,
-        "books_count": 10,
-        "canonical_edge_pp": 1.65,
-        "canonical_ev_pct": 2.805,
-        "confidence": 72.662,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 1.7,
-        "odds_sources_count": 2,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "odds_below_global_min"
-        ],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 72.662,
-      "best_edge_pp": 1.65,
-      "best_ev_pct": 2.805,
-      "books_max": 10,
-      "candidate_count": 3,
-      "commence_time": "2026-08-27T00:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 1,
-      "families": {
-        "spreads": 2,
-        "totals": 1
-      },
-      "home_team": "River Plate",
-      "league_name": "Copa Sudamericana",
-      "match_key": "soccer|independiente santa fe|river plate|2026-08-27",
-      "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 3,
-        "ev_below_micro_c": 3,
-        "single_book": 2,
-        "single_context_source": 2,
-        "single_odds_source": 2
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        ".logs/debug-last-run.json": 2,
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "odds_below_global_min": 1
-      },
-      "sources_max": 2
-    },
-    {
-      "away_team": "Getafe",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 3,
-        "canonical_edge_pp": 1.275,
-        "canonical_ev_pct": 2.244,
-        "confidence": 72.11,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 1.76,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "final_edge_below_min",
-          "final_ev_below_min"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 72.11,
-      "best_edge_pp": 1.275,
-      "best_ev_pct": 2.244,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-08-27T00:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "FK Partizan",
-      "league_name": "Conference League",
-      "match_key": "2026-08-27|partizan|getafe",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "final_edge_below_min": 1,
-        "final_ev_below_min": 1
-      },
-      "sources_max": 1
     }
   ]
 }
