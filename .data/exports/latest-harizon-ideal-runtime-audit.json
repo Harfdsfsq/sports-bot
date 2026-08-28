@@ -1,6 +1,9 @@
 {
   "best_near_misses": [],
   "blockers": [
+    "line_coverage_below_80pct",
+    "context_coverage_below_85pct",
+    "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers"
   ],
   "bzzoiro_chain": {
@@ -9,26 +12,26 @@
     "overlap_bridge_offers": 66,
     "overlap_matches": 1
   },
-  "created_at_utc": "2026-08-28T13:10:25.092534+00:00",
-  "ideal_score": 92.0,
+  "created_at_utc": "2026-08-28T13:13:08.524299+00:00",
+  "ideal_score": 72.8,
   "inventory": {
-    "next_12h_ready": 191,
-    "next_12h_ready_pct": 88.8,
-    "next_12h_total": 215,
-    "next_6h_ready": 191,
-    "next_6h_ready_pct": 88.8,
-    "next_6h_total": 215,
-    "ready": 255,
-    "ready_pct": 85.0,
+    "next_12h_ready": 40,
+    "next_12h_ready_pct": 28.0,
+    "next_12h_total": 143,
+    "next_6h_ready": 40,
+    "next_6h_ready_pct": 28.4,
+    "next_6h_total": 141,
+    "ready": 148,
+    "ready_pct": 49.3,
     "total": 300,
-    "with_context": 255,
-    "with_context_pct": 85.0,
-    "with_lines": 291,
-    "with_lines_pct": 97.0
+    "with_context": 149,
+    "with_context_pct": 49.7,
+    "with_lines": 217,
+    "with_lines_pct": 72.3
   },
   "line_movement": {
     "class_counts": {},
-    "created_at_utc": "2026-08-28T11:10:57.585628+00:00",
+    "created_at_utc": "2026-08-28T13:10:38.949550+00:00",
     "evaluated": 0,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
@@ -37,17 +40,11 @@
     "watchlist_count": 0
   },
   "odds_api_io_account2": {
-    "http_statuses": [
-      403,
-      403,
-      403,
-      403,
-      403
-    ],
+    "http_statuses": [],
     "offers": 0,
-    "plan_restriction": true,
+    "plan_restriction": false,
     "rate_limited": false,
-    "requests": 5
+    "requests": 0
   },
   "proxy_xg_replacement": {
     "checked": 1,
@@ -76,6 +73,9 @@
     ]
   },
   "recommended_actions": [
+    "raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill",
+    "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
+    "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set"
   ],
   "status": "ok",
