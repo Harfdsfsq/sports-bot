@@ -2,7 +2,7 @@
   "bzzoiro_targets": [
     {
       "away_team": "Elche",
-      "context_confirmations": 4,
+      "context_confirmations": 3,
       "fixture_sources": [
         "bzzoiro",
         "football_data"
@@ -11,9 +11,9 @@
       "kickoff_utc": "2026-08-28T17:00:00+00:00",
       "league_name": "La Liga",
       "match_key": "2026-08-28|real racing|elche",
-      "need_price_confirmations": 1,
+      "need_price_confirmations": 2,
       "odds_api_io_attempts": 0,
-      "price_confirmations": 1,
+      "price_confirmations": 0,
       "routes": [
         "bzzoiro:current_odds_or_prediction"
       ],
@@ -21,9 +21,81 @@
         "bzzoiro": "213547",
         "football_data": "564654"
       }
+    },
+    {
+      "away_team": "US Boulogne Côte-d'Opale",
+      "context_confirmations": 3,
+      "fixture_sources": [
+        "bzzoiro",
+        "sstats"
+      ],
+      "home_team": "Montpellier",
+      "kickoff_utc": "2026-08-28T18:00:00+00:00",
+      "league_name": "Ligue 2",
+      "match_key": "2026-08-28|montpellier|us boulogne c te d opale",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "580498",
+        "sstats": "1552455"
+      }
+    },
+    {
+      "away_team": "Śląsk Wrocław",
+      "context_confirmations": 3,
+      "fixture_sources": [
+        "bzzoiro",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "Legia Warszawa",
+      "kickoff_utc": "2026-08-28T18:30:00+00:00",
+      "league_name": "Ekstraklasa",
+      "match_key": "2026-08-28|legia warszawa|slask wrocaw",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "211879",
+        "sstats": "1553147"
+      }
+    },
+    {
+      "away_team": "Paris Saint-Germain",
+      "context_confirmations": 4,
+      "fixture_sources": [
+        "bzzoiro",
+        "football_data",
+        "sstats"
+      ],
+      "home_team": "Lille",
+      "kickoff_utc": "2026-08-28T18:45:00+00:00",
+      "league_name": "Ligue 1",
+      "match_key": "2026-08-28|lille|paris saint germain",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "210448",
+        "football_data": "559702",
+        "sstats": "1552746"
+      }
     }
   ],
-  "context_ready_price_thin": 2,
+  "context_ready_price_thin": 8,
   "date_local": "2026-08-28",
   "duplicate_odds_api_io_event_ids_skipped": 0,
   "execution": {
@@ -34,51 +106,80 @@
   "matches_total": 300,
   "min_context_sources": 2,
   "min_price_confirmations": 2,
-  "missing_2plus_price": 3,
-  "needs_provider_match_first": [],
+  "missing_2plus_price": 23,
+  "needs_provider_match_first": [
+    {
+      "away_team": "Chemik Bydgoszcz",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "day_inventory"
+      ],
+      "home_team": "Kss Kotwica Kornik",
+      "kickoff_utc": "2026-08-28T15:30:00+00:00",
+      "league_name": "Poland - III Liga, Group 2",
+      "match_key": "soccer|chemik bydgoszcz|kss kotwica kornik|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "needs_provider_match_first"
+      ],
+      "source_ids": {
+        "day_inventory": "72515920"
+      }
+    }
+  ],
   "notes": [
     "Planner itself does not call external APIs.",
     "In provider-smoke-minimal-repair it chains one guarded executor pass: at most two odds-api.io odds/multi requests.",
     "Selected odds_api_io eventIds are unique and attempt-marked before execution so persisted day_inventory can rotate future runs."
   ],
   "odds_api_io_event_ids": [
+    "72439822",
+    "74077778",
+    "74100652",
+    "72230712",
     "72576198",
-    "72439822"
+    "72513822",
+    "73463592",
+    "73352768",
+    "73352836",
+    "73352832",
+    "73352824",
+    "73352826",
+    "73352834",
+    "74073908",
+    "74073906",
+    "73487128",
+    "73352820",
+    "73352822"
   ],
-  "odds_api_io_event_ids_csv": "72576198,72439822",
+  "odds_api_io_event_ids_csv": "72439822,74077778,74100652,72230712,72576198,72513822,73463592,73352768,73352836,73352832,73352824,73352826,73352834,74073908,74073906,73487128,73352820,73352822",
   "odds_api_io_event_ids_selected": [
+    "72439822",
+    "74077778",
+    "74100652",
+    "72230712",
     "72576198",
-    "72439822"
+    "72513822",
+    "73463592",
+    "73352768",
+    "73352836",
+    "73352832",
+    "73352824",
+    "73352826",
+    "73352834",
+    "74073908",
+    "74073906",
+    "73487128",
+    "73352820",
+    "73352822"
   ],
   "previously_attempted_targets": 0,
   "sstats_targets": [
     {
-      "away_team": "FC Zimbru Chisinau 2",
-      "context_confirmations": 1,
-      "fixture_sources": [
-        "odds_api_io",
-        "provider_day_discovery_canonical_pool",
-        "sstats"
-      ],
-      "home_team": "Vulturii Cutezatori",
-      "kickoff_utc": "2026-08-28T14:00:00+00:00",
-      "league_name": "Moldova - Liga 1, Group A",
-      "match_key": "2026-08-28|vulturii cutezatori|zimbru chisinau 2",
-      "need_price_confirmations": 1,
-      "odds_api_io_attempts": 0,
-      "price_confirmations": 1,
-      "routes": [
-        "odds_api_io:odds_multi",
-        "sstats:odds_snapshot_if_present"
-      ],
-      "source_ids": {
-        "odds_api_io": "72576198",
-        "sstats": "1576900"
-      }
-    },
-    {
       "away_team": "Sassuolo Calcio",
-      "context_confirmations": 4,
+      "context_confirmations": 1,
       "fixture_sources": [
         "odds_api_io",
         "provider_day_discovery_canonical_pool",
@@ -98,6 +199,152 @@
       "source_ids": {
         "odds_api_io": "72439822",
         "sstats": "1569352"
+      }
+    },
+    {
+      "away_team": "Bruk-Bet Termalica Nieciecza",
+      "context_confirmations": 1,
+      "fixture_sources": [
+        "odds_api_io",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "Pogon Grodzisk Mazowiecki",
+      "kickoff_utc": "2026-08-28T16:15:00+00:00",
+      "league_name": "Poland - 1. Liga",
+      "match_key": "2026-08-28|pogon grodzisk mazowiecki|bruk bet termalica nieciecza",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "odds_api_io:odds_multi",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "odds_api_io": "72230712",
+        "sstats": "1558196"
+      }
+    },
+    {
+      "away_team": "FC Zimbru Chisinau 2",
+      "context_confirmations": 2,
+      "fixture_sources": [
+        "day_inventory",
+        "odds_api_io",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "Vulturii Cutezatori",
+      "kickoff_utc": "2026-08-28T14:00:00+00:00",
+      "league_name": "Moldova - Liga 1, Group A",
+      "match_key": "2026-08-28|vulturii cutezatori|zimbru chisinau 2",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "odds_api_io:odds_multi",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "day_inventory": "72576198",
+        "odds_api_io": "72576198",
+        "sstats": "1576900"
+      }
+    },
+    {
+      "away_team": "VfL 1899 Osnabruck",
+      "context_confirmations": 1,
+      "fixture_sources": [
+        "odds_api_io",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "VfL Bochum",
+      "kickoff_utc": "2026-08-28T16:30:00+00:00",
+      "league_name": "Germany - 2. Bundesliga",
+      "match_key": "2026-08-28|vfl bochum|vfl 1899 osnabruck",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "odds_api_io": "72513822",
+        "sstats": "1576152"
+      }
+    },
+    {
+      "away_team": "US Boulogne Côte-d'Opale",
+      "context_confirmations": 3,
+      "fixture_sources": [
+        "bzzoiro",
+        "sstats"
+      ],
+      "home_team": "Montpellier",
+      "kickoff_utc": "2026-08-28T18:00:00+00:00",
+      "league_name": "Ligue 2",
+      "match_key": "2026-08-28|montpellier|us boulogne c te d opale",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "580498",
+        "sstats": "1552455"
+      }
+    },
+    {
+      "away_team": "Śląsk Wrocław",
+      "context_confirmations": 3,
+      "fixture_sources": [
+        "bzzoiro",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "Legia Warszawa",
+      "kickoff_utc": "2026-08-28T18:30:00+00:00",
+      "league_name": "Ekstraklasa",
+      "match_key": "2026-08-28|legia warszawa|slask wrocaw",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "211879",
+        "sstats": "1553147"
+      }
+    },
+    {
+      "away_team": "Paris Saint-Germain",
+      "context_confirmations": 4,
+      "fixture_sources": [
+        "bzzoiro",
+        "football_data",
+        "sstats"
+      ],
+      "home_team": "Lille",
+      "kickoff_utc": "2026-08-28T18:45:00+00:00",
+      "league_name": "Ligue 1",
+      "match_key": "2026-08-28|lille|paris saint germain",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "210448",
+        "football_data": "559702",
+        "sstats": "1552746"
       }
     }
   ],
@@ -105,32 +352,8 @@
   "target_limit": 120,
   "targets": [
     {
-      "away_team": "FC Zimbru Chisinau 2",
-      "context_confirmations": 1,
-      "fixture_sources": [
-        "odds_api_io",
-        "provider_day_discovery_canonical_pool",
-        "sstats"
-      ],
-      "home_team": "Vulturii Cutezatori",
-      "kickoff_utc": "2026-08-28T14:00:00+00:00",
-      "league_name": "Moldova - Liga 1, Group A",
-      "match_key": "2026-08-28|vulturii cutezatori|zimbru chisinau 2",
-      "need_price_confirmations": 1,
-      "odds_api_io_attempts": 0,
-      "price_confirmations": 1,
-      "routes": [
-        "odds_api_io:odds_multi",
-        "sstats:odds_snapshot_if_present"
-      ],
-      "source_ids": {
-        "odds_api_io": "72576198",
-        "sstats": "1576900"
-      }
-    },
-    {
       "away_team": "Sassuolo Calcio",
-      "context_confirmations": 4,
+      "context_confirmations": 1,
       "fixture_sources": [
         "odds_api_io",
         "provider_day_discovery_canonical_pool",
@@ -153,8 +376,162 @@
       }
     },
     {
-      "away_team": "Elche",
+      "away_team": "Narpes Kraft",
       "context_confirmations": 4,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Jakobstads Bollklubb",
+      "kickoff_utc": "2026-08-28T15:30:00+00:00",
+      "league_name": "Finland - Kakkonen, Championship Round, Group C",
+      "match_key": "soccer|jakobstads bollklubb|narpes kraft|2026-08-28",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "74077778"
+      }
+    },
+    {
+      "away_team": "Chemik Bydgoszcz",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "day_inventory"
+      ],
+      "home_team": "Kss Kotwica Kornik",
+      "kickoff_utc": "2026-08-28T15:30:00+00:00",
+      "league_name": "Poland - III Liga, Group 2",
+      "match_key": "soccer|chemik bydgoszcz|kss kotwica kornik|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "needs_provider_match_first"
+      ],
+      "source_ids": {
+        "day_inventory": "72515920"
+      }
+    },
+    {
+      "away_team": "Reboceros de La Piedad",
+      "context_confirmations": 4,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Tritones Vallarta MFC",
+      "kickoff_utc": "2026-08-28T16:00:00+00:00",
+      "league_name": "Mexico - Liga Primera Premier, Group Stage",
+      "match_key": "soccer|reboceros la piedad|tritones vallarta mfc|2026-08-28",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "74100652"
+      }
+    },
+    {
+      "away_team": "Bruk-Bet Termalica Nieciecza",
+      "context_confirmations": 1,
+      "fixture_sources": [
+        "odds_api_io",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "Pogon Grodzisk Mazowiecki",
+      "kickoff_utc": "2026-08-28T16:15:00+00:00",
+      "league_name": "Poland - 1. Liga",
+      "match_key": "2026-08-28|pogon grodzisk mazowiecki|bruk bet termalica nieciecza",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "odds_api_io:odds_multi",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "odds_api_io": "72230712",
+        "sstats": "1558196"
+      }
+    },
+    {
+      "away_team": "FC Zimbru Chisinau 2",
+      "context_confirmations": 2,
+      "fixture_sources": [
+        "day_inventory",
+        "odds_api_io",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "Vulturii Cutezatori",
+      "kickoff_utc": "2026-08-28T14:00:00+00:00",
+      "league_name": "Moldova - Liga 1, Group A",
+      "match_key": "2026-08-28|vulturii cutezatori|zimbru chisinau 2",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "odds_api_io:odds_multi",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "day_inventory": "72576198",
+        "odds_api_io": "72576198",
+        "sstats": "1576900"
+      }
+    },
+    {
+      "away_team": "VfL 1899 Osnabruck",
+      "context_confirmations": 1,
+      "fixture_sources": [
+        "odds_api_io",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "VfL Bochum",
+      "kickoff_utc": "2026-08-28T16:30:00+00:00",
+      "league_name": "Germany - 2. Bundesliga",
+      "match_key": "2026-08-28|vfl bochum|vfl 1899 osnabruck",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "odds_api_io": "72513822",
+        "sstats": "1576152"
+      }
+    },
+    {
+      "away_team": "Ceramica Cleopatra",
+      "context_confirmations": 4,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Al Ittihad Alexandria Club",
+      "kickoff_utc": "2026-08-28T17:00:00+00:00",
+      "league_name": "Egypt - Premier League",
+      "match_key": "soccer|al ittihad alexandria|ceramica cleopatra|2026-08-28",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73463592"
+      }
+    },
+    {
+      "away_team": "Elche",
+      "context_confirmations": 3,
       "fixture_sources": [
         "bzzoiro",
         "football_data"
@@ -163,9 +540,9 @@
       "kickoff_utc": "2026-08-28T17:00:00+00:00",
       "league_name": "La Liga",
       "match_key": "2026-08-28|real racing|elche",
-      "need_price_confirmations": 1,
+      "need_price_confirmations": 2,
       "odds_api_io_attempts": 0,
-      "price_confirmations": 1,
+      "price_confirmations": 0,
       "routes": [
         "bzzoiro:current_odds_or_prediction"
       ],
@@ -173,7 +550,299 @@
         "bzzoiro": "213547",
         "football_data": "564654"
       }
+    },
+    {
+      "away_team": "US Boulogne Côte-d'Opale",
+      "context_confirmations": 3,
+      "fixture_sources": [
+        "bzzoiro",
+        "sstats"
+      ],
+      "home_team": "Montpellier",
+      "kickoff_utc": "2026-08-28T18:00:00+00:00",
+      "league_name": "Ligue 2",
+      "match_key": "2026-08-28|montpellier|us boulogne c te d opale",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "580498",
+        "sstats": "1552455"
+      }
+    },
+    {
+      "away_team": "Śląsk Wrocław",
+      "context_confirmations": 3,
+      "fixture_sources": [
+        "bzzoiro",
+        "provider_day_discovery_canonical_pool",
+        "sstats"
+      ],
+      "home_team": "Legia Warszawa",
+      "kickoff_utc": "2026-08-28T18:30:00+00:00",
+      "league_name": "Ekstraklasa",
+      "match_key": "2026-08-28|legia warszawa|slask wrocaw",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "211879",
+        "sstats": "1553147"
+      }
+    },
+    {
+      "away_team": "Paris Saint-Germain",
+      "context_confirmations": 4,
+      "fixture_sources": [
+        "bzzoiro",
+        "football_data",
+        "sstats"
+      ],
+      "home_team": "Lille",
+      "kickoff_utc": "2026-08-28T18:45:00+00:00",
+      "league_name": "Ligue 1",
+      "match_key": "2026-08-28|lille|paris saint germain",
+      "need_price_confirmations": 1,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 1,
+      "routes": [
+        "bzzoiro:current_odds_or_prediction",
+        "sstats:odds_snapshot_if_present"
+      ],
+      "source_ids": {
+        "bzzoiro": "210448",
+        "football_data": "559702",
+        "sstats": "1552746"
+      }
+    },
+    {
+      "away_team": "Portland Pilots",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Washington Huskies",
+      "kickoff_utc": "2026-08-28T03:00:00+00:00",
+      "league_name": "USA - NCAA",
+      "match_key": "soccer|portland pilots|washington huskies|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73352768"
+      }
+    },
+    {
+      "away_team": "California Golden Bears",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Santa Clara Broncos",
+      "kickoff_utc": "2026-08-28T02:30:00+00:00",
+      "league_name": "USA - NCAA",
+      "match_key": "soccer|california golden bears|santa clara broncos|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73352836"
+      }
+    },
+    {
+      "away_team": "San Jose State Spartans",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Cal Poly Mustangs",
+      "kickoff_utc": "2026-08-28T02:00:00+00:00",
+      "league_name": "USA - NCAA",
+      "match_key": "soccer|cal poly mustangs|san jose state spartans|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73352832"
+      }
+    },
+    {
+      "away_team": "Oral Roberts Golden Eagles",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Cal State Fullerton Titans",
+      "kickoff_utc": "2026-08-28T02:00:00+00:00",
+      "league_name": "USA - NCAA",
+      "match_key": "soccer|cal state fullerton titans|oral roberts golden eagles|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73352824"
+      }
+    },
+    {
+      "away_team": "The Masters Mustangs",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Cal State Northridge Matadors",
+      "kickoff_utc": "2026-08-28T02:00:00+00:00",
+      "league_name": "USA - NCAA",
+      "match_key": "soccer|cal state northridge matadors|masters mustangs|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73352826"
+      }
+    },
+    {
+      "away_team": "Utah Tech Trailblazers",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Gonzaga Bulldogs",
+      "kickoff_utc": "2026-08-28T02:00:00+00:00",
+      "league_name": "USA - NCAA",
+      "match_key": "soccer|gonzaga bulldogs|utah tech trailblazers|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73352834"
+      }
+    },
+    {
+      "away_team": "Universidad Latina",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "SD Atletico Nacional",
+      "kickoff_utc": "2026-08-28T01:00:00+00:00",
+      "league_name": "Panama - Liga Prom, Apertura",
+      "match_key": "soccer|atletico nacional|universidad latina|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "74073908"
+      }
+    },
+    {
+      "away_team": "San Francisco FC B",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Veraguas United FC B",
+      "kickoff_utc": "2026-08-28T01:00:00+00:00",
+      "league_name": "Panama - Liga Prom, Apertura",
+      "match_key": "soccer|san francisco b|veraguas united b|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "74073906"
+      }
+    },
+    {
+      "away_team": "Academia del Balompie Boliviano",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Club Bolivar",
+      "kickoff_utc": "2026-08-28T00:30:00+00:00",
+      "league_name": "Bolivia - Division Profesional",
+      "match_key": "soccer|academia balompie boliviano|bolivar|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73487128"
+      }
+    },
+    {
+      "away_team": "San Francisco Dons",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Creighton Bluejays",
+      "kickoff_utc": "2026-08-28T00:30:00+00:00",
+      "league_name": "USA - NCAA",
+      "match_key": "soccer|creighton bluejays|san francisco dons|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73352820"
+      }
+    },
+    {
+      "away_team": "UC San Diego Tritons",
+      "context_confirmations": 0,
+      "fixture_sources": [
+        "odds_api_io"
+      ],
+      "home_team": "Houston Christian Huskies",
+      "kickoff_utc": "2026-08-28T00:30:00+00:00",
+      "league_name": "USA - NCAA",
+      "match_key": "soccer|houston christian huskies|uc san diego tritons|2026-08-28",
+      "need_price_confirmations": 2,
+      "odds_api_io_attempts": 0,
+      "price_confirmations": 0,
+      "routes": [
+        "odds_api_io:odds_multi"
+      ],
+      "source_ids": {
+        "odds_api_io": "73352822"
+      }
     }
   ],
-  "updated_at_utc": "2026-08-28T11:09:47.344429+00:00"
+  "updated_at_utc": "2026-08-28T15:12:08.629203+00:00"
 }
