@@ -4,15 +4,15 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 197/300
-• С контекстом: 151/300
-• Готово к модели: 147/300
-• Ближайшие 6 часов: 23/86 готово
+• С линиями: 231/300
+• С контекстом: 193/300
+• Готово к модели: 180/300
+• Ближайшие 6 часов: 4/5 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 24 | с линиями: 17 | контекстов: 19
-• Кандидаты: raw 0 | до качества 30 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 27 | выбрано: 0
+• Матчи: 3 | с линиями: 3 | контекстов: 2
+• Кандидаты: raw 0 | до качества 26 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 2 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -20,55 +20,37 @@
 • current price patch: ok
 • zero-raw recovery: not_needed | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
-• evidence/integrity patch: installed | patched_odds_source_metrics 6 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 27
+• evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
+• provider targeting: ok | fallback_evaluated 2
 
 📡 Источники / фактическая работа
-• odds_api_io: data 32/2654, req 0, err 5
-• bzzoiro: data 10/10, req 3, err 0
-• sstats: data 11/11, req 2, err 0
+• odds_api_io: data 3/280, req 0, err 2
+• bzzoiro: data 1/1, req 3, err 0
+• sstats: data 2/2, req 2, err 0
 • football_data: data 0/0, req 0, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
-• openfootball: data 0/0, req 5, err 0
+• openfootball: data 1/1, req 1, err 0
 
 🚫 Почему не прошли
-• odds_below_global_min — 10 (17%)
-• tier_b_quality_below_min — 9 (15%)
-• tier_c_quality_below_min — 9 (15%)
-• tier_c_market_implied_xg_not_hard_confirmation — 9 (15%)
-• tier_b_publication_score_below_min — 6 (10%)
-• price_integrity:selected_price_vs_bookmaker_median_outlier — 6 (10%)
-• price_integrity:external_snapshot_bookmaker_median_outlier — 4 (7%)
-• price_integrity:selected_price_vs_market_probability_outlier — 2 (3%)
-• xg_direction_conflict — 1 (2%)
-• current_price_recheck_value_lost:-2.4/-1.5 — 1 (2%)
+• xg_direction_conflict — 1 (9%)
+• xg_probability_gap_hard_reject — 1 (9%)
+• tier_a_quality_below_min — 1 (9%)
+• tier_a_publication_score_below_min — 1 (9%)
+• tier_a_odds_sources_below_min:1/2 — 1 (9%)
+• tier_a_market_implied_xg_not_hard_confirmation — 1 (9%)
+• tier_b_quality_below_min — 1 (9%)
+• tier_b_publication_score_below_min — 1 (9%)
+• tier_c_quality_below_min — 1 (9%)
+• tier_c_publication_score_below_min — 1 (9%)
 
 ⚠️ Пограничные кандидаты
-1. Трефелин BGC — Амманфорд | Меньше @2.10
-   • EV +10.7% | edge +5.1 п.п. | q 0.0
-   • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-2. Барри Тоун Унитед — Айрбус UK Бругхтон | Больше @1.85
-   • EV +10.7% | edge +5.8 п.п. | q 0.0
-   • не прошло: current_price_recheck_value_lost:-2.4/-1.5
-3. Ал-Халидж Клуб — Ал Хилал SFC | Меньше @1.70
-   • EV +9.0% | edge +5.3 п.п. | q 0.0
-   • не прошло: odds_below_global_min
-4. CSKA 1948 Софиа — Локомотив Пловдив | Меньше @1.85
-   • EV +7.4% | edge +4.0 п.п. | q 0.0
-   • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-5. Монтпеллиер HSC — US Булогне | Меньше @1.71
-   • EV +6.4% | edge +3.8 п.п. | q 0.0
-   • не прошло: odds_below_global_min
-6. Моиола Парк — Армагх Кити | Меньше @2.50
-   • EV +5.8% | edge +2.3 п.п. | q 0.0
-   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-7. Клермонт Фут — Сочаукс | Меньше @1.68
-   • EV +5.8% | edge +3.5 п.п. | q 0.0
-   • не прошло: odds_below_global_min
-8. Родез Авейрон Футбалл — Пау | Меньше @2.15
-   • EV +5.7% | edge +2.7 п.п. | q 0.0
-   • не прошло: xg_direction_conflict
+1. Мушук Руна — Делфин | Больше @2.05
+   • EV +4.4% | edge +2.1 п.п. | q 0.0
+   • не прошло: xg_direction_conflict; xg_probability_gap_hard_reject
+2. Мушук Руна — Делфин | Больше @2.05
+   • EV +4.4% | edge +2.1 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_market_implied_xg_not_hard_confirmation; tier_b_quality_below_min
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
