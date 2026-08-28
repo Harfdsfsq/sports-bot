@@ -1,19 +1,74 @@
 {
-  "command_sample": [],
-  "command_status_counts": {},
-  "created_at_utc": "2026-08-27T11:07:08.430568+00:00",
-  "crosswalk_matched": 121,
-  "enriched_matches": 0,
-  "enriched_sample": [],
-  "fixtures_seen": 0,
+  "command_sample": [
+    {
+      "attempt": 1,
+      "http_status": 200,
+      "ms": 594.0,
+      "name": "glicko",
+      "rows": 1,
+      "status": "OK"
+    },
+    {
+      "attempt": 1,
+      "http_status": 200,
+      "ms": 195.5,
+      "name": "last_games_stats",
+      "rows": 1,
+      "status": "OK"
+    },
+    {
+      "attempt": 1,
+      "http_status": 200,
+      "ms": 371.0,
+      "name": "game_detail",
+      "rows": 1,
+      "status": "OK"
+    },
+    {
+      "rows": 0,
+      "status": "SKIPPED"
+    }
+  ],
+  "command_status_counts": {
+    "OK": 3,
+    "SKIPPED": 1
+  },
+  "created_at_utc": "2026-08-28T01:04:35.467607+00:00",
+  "crosswalk_matched": 122,
+  "enriched_matches": 1,
+  "enriched_sample": [
+    {
+      "after_context": 1,
+      "after_odds": null,
+      "away_team": "AFC Wimbledon",
+      "before_context": 0,
+      "before_odds": 1,
+      "copy_index": 0,
+      "deep_ok": true,
+      "detail_ok": true,
+      "expected_away": 1.143,
+      "expected_home": 1.357,
+      "game_id": "1623103",
+      "home_team": "Fulham FC",
+      "identity": "unverified",
+      "lambda_away": 1.1425,
+      "lambda_home": 1.3569,
+      "match_key": "soccer|fulham|wimbledon|2026-08-27",
+      "odds_ok": false,
+      "offer_books": null,
+      "offer_count": 0,
+      "xg_source": "last_games_form_goals"
+    }
+  ],
+  "fixtures_seen": 1,
   "identity": {
     "duplicate_rows_seen": 0,
-    "fixtures_processed": 0,
+    "fixtures_processed": 1,
     "mismatch": 0,
     "sibling_rows_marked": 0,
-    "skipped_empty_key": 72,
-    "skipped_no_row": 0,
-    "unverified": 0,
+    "skipped_empty_key": 71,
+    "skipped_no_row": 1,
+    "unverified": 1,
     "verified": 0
   },
   "identity_mismatch_sample": [],
@@ -21,7 +76,8 @@
     ".data/day_inventory/2026-08-27.json",
     ".data/day_inventory/latest.json",
     ".data/day_inventory/current.json",
-    ".data/day_inventory/today.json"
+    ".data/day_inventory/today.json",
+    ".data/day_inventory/2026-08-28.json"
   ],
   "inventory_path": ".data/day_inventory/2026-08-27.json",
   "mode": "sstats_deep_inventory_enrichment_v6_fixture_grouped",
@@ -33,18 +89,22 @@
     "offers_parsed": 0,
     "payload_ok": 0
   },
-  "priority_group_counts": {},
-  "queue_seen": 72,
-  "request_count": 0,
+  "priority_group_counts": {
+    "context0_odds1_xg0": 1
+  },
+  "queue_seen": 73,
+  "request_count": 3,
   "sstats_offers": 0,
   "status": "ok",
   "xg_extraction": {
-    "attempted": 0,
+    "attempted": 1,
     "kept_existing": 0,
     "missing": 0,
     "placeholder_rejected": 0,
-    "resolved_real": 0,
-    "source_counts": {}
+    "resolved_real": 1,
+    "source_counts": {
+      "last_games_form_goals": 1
+    }
   },
   "xg_probe_samples": 0
 }
