@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 30,
-      "rows_seen": 30,
+      "rows_kept": 56,
+      "rows_seen": 56,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 6,
-      "rows_seen": 55,
-      "rows_stale": 49
+      "rows_kept": 131,
+      "rows_seen": 176,
+      "rows_stale": 45
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,34 +26,38 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 8,
-      "rows_seen": 8,
+      "rows_kept": 15,
+      "rows_seen": 15,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 24,
+    "candidates_before_quality": 30,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 5,
-    "controlled_candidates_seen": 15,
+    "contexts_built": 19,
+    "controlled_candidates_seen": 27,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 21,
-    "matches_seen": 14,
-    "matches_with_offers": 0
+    "coverage_candidates_current_date": 77,
+    "matches_seen": 24,
+    "matches_with_offers": 17
   },
-  "created_at": "2026-08-28T15:13:17.498864+00:00",
+  "created_at": "2026-08-28T17:12:29.900326+00:00",
   "family_counts": {
-    "totals": 21
+    "dnb": 1,
+    "spreads": 41,
+    "teamtotals": 1,
+    "totals": 34
   },
-  "matches_with_candidates": 20,
+  "matches_with_candidates": 34,
   "missing_data_flags": {
-    "confidence_below_micro_c": 14,
-    "edge_below_micro_c": 20,
-    "ev_below_micro_c": 17,
-    "single_context_source": 4,
-    "single_odds_source": 9
+    "confidence_below_micro_c": 71,
+    "edge_below_micro_c": 71,
+    "ev_below_micro_c": 67,
+    "single_book": 45,
+    "single_context_source": 48,
+    "single_odds_source": 60
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -67,7 +71,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 20,
+  "positive_near_miss_count": 26,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -76,13 +80,32 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 14,
+      "events_matched": 32,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 1031,
+      "offers_parsed": 2658,
       "provider": "account1",
       "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": 10,
+      "direct_event_contexts_built": 10,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "bzzoiro",
+      "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
@@ -100,7 +123,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 807,
+      "matches_built": 783,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -119,7 +142,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 807,
+      "matches_built": 783,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -138,7 +161,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 37,
+      "matches_built": 40,
       "offers_parsed": null,
       "provider": "openfootball",
       "rate_limited": null,
@@ -157,7 +180,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 26,
+      "matches_built": 24,
       "offers_parsed": null,
       "provider": "openligadb",
       "rate_limited": null,
@@ -169,8 +192,27 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 5,
-      "direct_event_contexts_built": 5,
+      "contexts_built": 14,
+      "direct_event_contexts_built": 14,
+      "enabled": true,
+      "events_fetched": 50,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "raw_stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 11,
+      "direct_event_contexts_built": 11,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -181,6 +223,63 @@
       "matches_built": null,
       "offers_parsed": null,
       "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 16,
+      "direct_event_contexts_built": 16,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": 14,
+      "direct_event_contexts_built": 14,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "v1_empty_prediction_fallback",
+      "rate_limited": null,
+      "response_errors": null,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 16,
+      "direct_event_contexts_built": 16,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -269,27 +368,6 @@
       "provider": "bookies_bootstrap",
       "rate_limited": null,
       "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "bzzoiro",
-      "rate_limited": null,
-      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -419,557 +497,505 @@
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "no_data": 11,
-    "working": 6
+    "no_data": 8,
+    "working": 11
   },
   "reject_reason_counts_from_rows": {
-    "bad_historical_segment_guard": 1,
-    "market_sanity_totals_xg_contradiction": 1,
-    "post_calibration_edge_guard": 1,
-    "post_calibration_probability_guard": 2,
-    "tier_b_low_quality_competition_requires_a_tier": 1,
-    "tier_b_publication_score_below_min": 4,
-    "tier_b_quality_below_min": 7,
-    "tier_c_market_implied_xg_not_hard_confirmation": 7,
-    "tier_c_quality_below_min": 7
+    "bad_historical_segment_guard": 2,
+    "odds_below_global_min": 4,
+    "tier_b_publication_score_below_min": 3,
+    "tier_b_quality_below_min": 4,
+    "tier_c_market_implied_xg_not_hard_confirmation": 4,
+    "tier_c_quality_below_min": 4,
+    "xg_probability_gap_hard_reject": 1
   },
   "target_date": "2026-08-28",
   "top_near_miss": [
     {
-      "away_team": "FC Velke Mezirici",
+      "away_team": "VfB Stuttgart",
       "best_candidate": {
-        "adjusted_probability": 0.678317,
-        "books_count": 4,
-        "canonical_edge_pp": 6.482,
-        "canonical_ev_pct": 10.566,
-        "confidence": 77.955,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 1.63,
-        "odds_sources_count": 2,
-        "origin": ".logs/debug-last-run.json",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 77.955,
-      "best_edge_pp": 6.482,
-      "best_ev_pct": 10.566,
-      "books_max": 4,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T15:00:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "TJ Tatran Bohunice",
-      "league_name": "Czechia - Divize D",
-      "match_key": "soccer|tj tatran bohunice|velke mezirici|2026-08-28",
-      "missing_flags": {},
-      "odds_sources_max": 2,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
-    },
-    {
-      "away_team": "ASC Otelul Galati",
-      "best_candidate": {
-        "adjusted_probability": 0.367725,
-        "books_count": 5,
-        "canonical_edge_pp": 3.439,
-        "canonical_ev_pct": 10.317,
-        "confidence": 75.143,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 3.0,
-        "odds_sources_count": 2,
-        "origin": ".logs/debug-last-run.json",
-        "point": 3.0,
-        "reject_reasons": [
-          "market_sanity_totals_xg_contradiction"
-        ],
-        "selection": "Больше",
-        "sources_count": 2
-      },
-      "best_confidence": 75.143,
-      "best_edge_pp": 3.439,
-      "best_ev_pct": 10.317,
-      "books_max": 5,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T15:00:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "SC FC Voluntari",
-      "league_name": "Romania - Superliga",
-      "match_key": "soccer|asc otelul galati|voluntari|2026-08-28",
-      "missing_flags": {
-        "edge_below_micro_c": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {
-        "market_sanity_totals_xg_contradiction": 1
-      },
-      "sources_max": 2
-    },
-    {
-      "away_team": "Al Sadd SC",
-      "best_candidate": {
-        "adjusted_probability": 0.515735,
+        "adjusted_probability": 0.675424,
         "books_count": 2,
-        "canonical_edge_pp": 3.954,
-        "canonical_ev_pct": 8.304,
-        "confidence": 74.337,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 2.1,
-        "odds_sources_count": 4,
-        "origin": "rescue",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 4
-      },
-      "best_confidence": 74.337,
-      "best_edge_pp": 3.954,
-      "best_ev_pct": 8.304,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T16:30:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Qatar SC",
-      "league_name": "Qatar - Stars League",
-      "match_key": "soccer|qatar_sc|al_sadd_sc|2026-08-28",
-      "missing_flags": {
-        "edge_below_micro_c": 1
-      },
-      "odds_sources_max": 4,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 4
-    },
-    {
-      "away_team": "Al Sadd SC",
-      "best_candidate": {
-        "adjusted_probability": 0.515735,
-        "books_count": 2,
-        "canonical_edge_pp": 3.954,
-        "canonical_ev_pct": 8.304,
-        "confidence": 74.337,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 2.1,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 3.5,
-        "reject_reasons": [
-          "tier_b_quality_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_market_implied_xg_not_hard_confirmation"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 74.337,
-      "best_edge_pp": 3.954,
-      "best_ev_pct": 8.304,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T16:30:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Qatar SC",
-      "league_name": "Qatar - Stars League",
-      "match_key": "2026-08-28|qatar|al sadd",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "tier_b_quality_below_min": 1,
-        "tier_c_market_implied_xg_not_hard_confirmation": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "NK Dugopolje",
-      "best_candidate": {
-        "adjusted_probability": 0.490801,
-        "books_count": 5,
-        "canonical_edge_pp": 1.003,
-        "canonical_ev_pct": 7.485,
-        "confidence": 74.35,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 2.19,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 2.0,
-        "reject_reasons": [
-          "post_calibration_edge_guard"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 74.35,
-      "best_edge_pp": 1.003,
-      "best_ev_pct": 7.485,
-      "books_max": 5,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T15:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "NK Sesvete",
-      "league_name": "Croatia - Prva NL",
-      "match_key": "soccer|nk dugopolje|nk sesvete|2026-08-28",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {
-        "post_calibration_edge_guard": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "RS Gimnastica de Torrelavega",
-      "best_candidate": {
-        "adjusted_probability": 0.47741,
-        "books_count": 2,
-        "canonical_edge_pp": 3.297,
-        "canonical_ev_pct": 7.417,
-        "confidence": 73.938,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 2.25,
-        "odds_sources_count": 4,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 4
-      },
-      "best_confidence": 73.938,
-      "best_edge_pp": 3.297,
-      "best_ev_pct": 7.417,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T16:30:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Club Portugalete",
-      "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "soccer|club_portugalete|rs_gimnastica_de_torrelavega|2026-08-28",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 4,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 4
-    },
-    {
-      "away_team": "RS Gimnastica de Torrelavega",
-      "best_candidate": {
-        "adjusted_probability": 0.47741,
-        "books_count": 2,
-        "canonical_edge_pp": 3.297,
-        "canonical_ev_pct": 7.417,
-        "confidence": 73.938,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 2.25,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_b_quality_below_min",
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min",
-          "tier_c_market_implied_xg_not_hard_confirmation"
-        ],
-        "selection": "Больше",
-        "sources_count": 1
-      },
-      "best_confidence": 73.938,
-      "best_edge_pp": 3.297,
-      "best_ev_pct": 7.417,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T16:30:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Club Portugalete",
-      "league_name": "International Clubs - Club Friendly Games",
-      "match_key": "2026-08-28|portugalete|rs gimnastica torrelavega",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_b_quality_below_min": 1,
-        "tier_c_market_implied_xg_not_hard_confirmation": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "FC Luanda",
-      "best_candidate": {
-        "adjusted_probability": 0.460708,
-        "books_count": 5,
-        "canonical_edge_pp": 1.026,
-        "canonical_ev_pct": 7.345,
-        "confidence": 77.344,
+        "canonical_edge_pp": 2.607,
+        "canonical_ev_pct": 29.681,
+        "confidence": 75.698,
         "confirmation_sources_count": 6,
         "context_sources_count": 6,
         "family": "totals",
-        "odds": 2.33,
-        "odds_sources_count": 3,
-        "origin": ".logs/debug-last-run.json",
+        "odds": 1.92,
+        "odds_sources_count": 1,
+        "origin": "latest_rescue_candidates",
         "point": 2.5,
-        "reject_reasons": [
-          "post_calibration_probability_guard"
-        ],
-        "selection": "Больше",
-        "sources_count": 3
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 1
       },
-      "best_confidence": 77.344,
-      "best_edge_pp": 1.026,
-      "best_ev_pct": 7.345,
-      "books_max": 5,
+      "best_confidence": 75.698,
+      "best_edge_pp": 2.607,
+      "best_ev_pct": 29.681,
+      "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-28T14:30:00+00:00",
+      "commence_time": "2026-08-28T18:30:00+00:00",
       "confirmation_sources_max": 6,
       "context_sources_max": 6,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "GD Interclube",
-      "league_name": "Angola - Girabola",
-      "match_key": "soccer|gd interclube|luanda|2026-08-28",
+      "home_team": "Bayern Munich",
+      "league_name": "Germany - Bundesliga",
+      "match_key": "soccer|bayern_munich|vfb_stuttgart|2026-08-28",
       "missing_flags": {
         "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        ".logs/debug-last-run.json": 1
-      },
-      "reject_reasons": {
-        "post_calibration_probability_guard": 1
-      },
-      "sources_max": 3
-    },
-    {
-      "away_team": "Austria Salzburg",
-      "best_candidate": {
-        "adjusted_probability": 0.540741,
-        "books_count": 2,
-        "canonical_edge_pp": 3.441,
-        "canonical_ev_pct": 6.796,
-        "confidence": 73.658,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.975,
-        "odds_sources_count": 4,
-        "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 4
-      },
-      "best_confidence": 73.658,
-      "best_edge_pp": 3.441,
-      "best_ev_pct": 6.796,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T16:30:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "SKN St Polten",
-      "league_name": "Austria - 2. Liga",
-      "match_key": "soccer|skn_st_polten|austria_salzburg|2026-08-28",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 4,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 4
-    },
-    {
-      "away_team": "Austria Salzburg",
-      "best_candidate": {
-        "adjusted_probability": 0.540741,
-        "books_count": 2,
-        "canonical_edge_pp": 3.441,
-        "canonical_ev_pct": 6.796,
-        "confidence": 73.658,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.975,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_b_quality_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_market_implied_xg_not_hard_confirmation"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 73.658,
-      "best_edge_pp": 3.441,
-      "best_ev_pct": 6.796,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-28T16:30:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "SKN St Polten",
-      "league_name": "Austria - 2. Liga",
-      "match_key": "2026-08-28|skn st polten|austria salzburg",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1,
         "single_odds_source": 1
       },
       "odds_sources_max": 1,
       "origins": {
+        "latest_rescue_candidates": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "VfB Stuttgart",
+      "best_candidate": {
+        "adjusted_probability": 0.675424,
+        "books_count": 2,
+        "canonical_edge_pp": 2.607,
+        "canonical_ev_pct": 29.681,
+        "confidence": 75.698,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 1.92,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.698,
+      "best_edge_pp": 2.607,
+      "best_ev_pct": 29.681,
+      "books_max": 2,
+      "candidate_count": 5,
+      "commence_time": "2026-08-28T18:30:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 2,
+        "totals": 3
+      },
+      "home_team": "Bayern Munich",
+      "league_name": "Germany - Bundesliga",
+      "match_key": "soccer|bayern munich|vfb stuttgart|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 4,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Paris Saint-Germain",
+      "best_candidate": {
+        "adjusted_probability": 0.66472,
+        "books_count": 2,
+        "canonical_edge_pp": 2.607,
+        "canonical_ev_pct": 22.973,
+        "confidence": 75.698,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 1,
+        "origin": "latest_rescue_candidates",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше 1.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.698,
+      "best_edge_pp": 2.607,
+      "best_ev_pct": 22.973,
+      "books_max": 2,
+      "candidate_count": 2,
+      "commence_time": "2026-08-28T18:45:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Lille",
+      "league_name": "Ligue 1",
+      "match_key": "soccer|lille|paris_saint_germain|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 2
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "latest_rescue_candidates": 1,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Paris Saint-Germain",
+      "best_candidate": {
+        "adjusted_probability": 0.66472,
+        "books_count": 2,
+        "canonical_edge_pp": 2.607,
+        "canonical_ev_pct": 22.973,
+        "confidence": 75.698,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше 1.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.698,
+      "best_edge_pp": 2.607,
+      "best_ev_pct": 22.973,
+      "books_max": 2,
+      "candidate_count": 5,
+      "commence_time": "2026-08-28T18:45:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "dnb": 1,
+        "teamtotals": 1,
+        "totals": 3
+      },
+      "home_team": "Lille",
+      "league_name": "Ligue 1",
+      "match_key": "soccer|lille|paris saint germain|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 4,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Fortuna Sittard",
+      "best_candidate": {
+        "adjusted_probability": 0.721956,
+        "books_count": 2,
+        "canonical_edge_pp": 2.221,
+        "canonical_ev_pct": 16.957,
+        "confidence": 75.524,
+        "confirmation_sources_count": 9,
+        "context_sources_count": 9,
+        "family": "totals",
+        "odds": 1.62,
+        "odds_sources_count": 1,
+        "origin": "latest_rescue_candidates",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше 1.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.524,
+      "best_edge_pp": 2.221,
+      "best_ev_pct": 16.957,
+      "books_max": 2,
+      "candidate_count": 2,
+      "commence_time": "2026-08-28T18:00:00+00:00",
+      "confirmation_sources_max": 9,
+      "context_sources_max": 9,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "FC Groningen",
+      "league_name": "Netherlands - Eredivisie",
+      "match_key": "soccer|fc_groningen|fortuna_sittard|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "latest_rescue_candidates": 1,
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
+      "away_team": "Fortuna Sittard",
+      "best_candidate": {
+        "adjusted_probability": 0.721956,
+        "books_count": 2,
+        "canonical_edge_pp": 2.221,
+        "canonical_ev_pct": 16.957,
+        "confidence": 75.524,
+        "confirmation_sources_count": 7,
+        "context_sources_count": 7,
+        "family": "totals",
+        "odds": 1.62,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше 1.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.524,
+      "best_edge_pp": 2.221,
+      "best_ev_pct": 16.957,
+      "books_max": 2,
+      "candidate_count": 6,
+      "commence_time": "2026-08-28T18:00:00+00:00",
+      "confirmation_sources_max": 7,
+      "context_sources_max": 7,
+      "controlled_count": 1,
+      "families": {
+        "spreads": 3,
+        "totals": 3
+      },
+      "home_team": "FC Groningen",
+      "league_name": "Netherlands - Eredivisie",
+      "match_key": "soccer|fortuna sittard|groningen|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 6,
+        "ev_below_micro_c": 5,
+        "single_book": 3,
+        "single_context_source": 4,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 5,
         "controlled": 1
       },
       "reject_reasons": {
-        "tier_b_quality_below_min": 1,
-        "tier_c_market_implied_xg_not_hard_confirmation": 1,
-        "tier_c_quality_below_min": 1
+        "xg_probability_gap_hard_reject": 1
       },
-      "sources_max": 1
+      "sources_max": 2
+    },
+    {
+      "away_team": "Ammanford",
+      "best_candidate": {
+        "adjusted_probability": 0.527342,
+        "books_count": 2,
+        "canonical_edge_pp": 5.115,
+        "canonical_ev_pct": 10.742,
+        "confidence": 70.934,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.1,
+        "odds_sources_count": 3,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 3
+      },
+      "best_confidence": 70.934,
+      "best_edge_pp": 5.115,
+      "best_ev_pct": 10.742,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-28T18:45:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Trefelin BGC",
+      "league_name": "Wales - Cymru Premier",
+      "match_key": "soccer|trefelin_bgc|ammanford|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
+      "away_team": "Airbus UK Broughton",
+      "best_candidate": {
+        "adjusted_probability": 0.598563,
+        "books_count": 2,
+        "canonical_edge_pp": 5.802,
+        "canonical_ev_pct": 10.734,
+        "confidence": 70.93,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 3,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 3
+      },
+      "best_confidence": 70.93,
+      "best_edge_pp": 5.802,
+      "best_ev_pct": 10.734,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-28T18:45:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Barry Town United FC",
+      "league_name": "Wales - Cymru Premier",
+      "match_key": "soccer|barry_town_united_fc|airbus_uk_broughton|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
+      "away_team": "Al Hilal SFC",
+      "best_candidate": {
+        "adjusted_probability": 0.641453,
+        "books_count": 2,
+        "canonical_edge_pp": 5.322,
+        "canonical_ev_pct": 9.047,
+        "confidence": 68.671,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.7,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 68.671,
+      "best_edge_pp": 5.322,
+      "best_ev_pct": 9.047,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-28T18:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Al-Khaleej Club",
+      "league_name": "Saudi Arabia - Saudi Professional League",
+      "match_key": "soccer|al_khaleej_club|al_hilal_sfc|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Al Hilal SFC",
+      "best_candidate": {
+        "adjusted_probability": 0.641453,
+        "books_count": 3,
+        "canonical_edge_pp": 5.322,
+        "canonical_ev_pct": 9.047,
+        "confidence": 68.671,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.7,
+        "odds_sources_count": 2,
+        "origin": "controlled",
+        "point": 3.5,
+        "reject_reasons": [
+          "odds_below_global_min"
+        ],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 68.671,
+      "best_edge_pp": 5.322,
+      "best_ev_pct": 9.047,
+      "books_max": 3,
+      "candidate_count": 4,
+      "commence_time": "2026-08-28T18:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 1,
+      "families": {
+        "spreads": 3,
+        "totals": 1
+      },
+      "home_team": "Al-Khaleej Club",
+      "league_name": "Saudi Arabia - Saudi Professional League",
+      "match_key": "soccer|al hilal sfc|al khaleej|2026-08-28",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 3,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "odds_below_global_min": 1
+      },
+      "sources_max": 2
     }
   ]
 }
