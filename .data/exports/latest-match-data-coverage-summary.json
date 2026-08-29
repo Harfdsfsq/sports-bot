@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 20,
+      "rows_seen": 20,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 358,
-      "rows_seen": 386,
-      "rows_stale": 28
+      "rows_kept": 7,
+      "rows_seen": 55,
+      "rows_stale": 48
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,36 +26,34 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 24,
-      "rows_seen": 24,
+      "rows_kept": 4,
+      "rows_seen": 4,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 46,
+    "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 14,
-    "controlled_candidates_seen": null,
+    "contexts_built": 11,
+    "controlled_candidates_seen": 10,
     "controlled_published": false,
-    "controlled_status": "fallback_artifact_stale_or_missing_after_step",
-    "coverage_candidates_current_date": 155,
-    "matches_seen": 37,
-    "matches_with_offers": 37
+    "controlled_status": "no_viable_controlled_fallback",
+    "coverage_candidates_current_date": 17,
+    "matches_seen": 3,
+    "matches_with_offers": 3
   },
-  "created_at": "2026-08-29T13:11:15.824466+00:00",
+  "created_at": "2026-08-29T15:11:26.545025+00:00",
   "family_counts": {
-    "spreads": 109,
-    "totals": 46
+    "totals": 17
   },
-  "matches_with_candidates": 55,
+  "matches_with_candidates": 17,
   "missing_data_flags": {
-    "confidence_below_micro_c": 128,
-    "edge_below_micro_c": 146,
-    "ev_below_micro_c": 129,
-    "single_book": 111,
-    "single_context_source": 121,
-    "single_odds_source": 143
+    "confidence_below_micro_c": 10,
+    "edge_below_micro_c": 11,
+    "ev_below_micro_c": 10,
+    "single_context_source": 4,
+    "single_odds_source": 9
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +67,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 29,
+  "positive_near_miss_count": 17,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +76,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 40,
+      "events_matched": 26,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 4549,
+      "offers_parsed": 2259,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -121,11 +119,11 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 862,
+      "matches_built": 750,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 5,
+      "response_errors": 4,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -140,7 +138,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 862,
+      "matches_built": 750,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -152,14 +150,14 @@
     {
       "api_key_present": null,
       "budget_exhausted": null,
-      "contexts_built": 4,
-      "direct_event_contexts_built": 4,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 36,
+      "matches_built": 26,
       "offers_parsed": null,
       "provider": "openfootball",
       "rate_limited": null,
@@ -178,7 +176,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 16,
+      "matches_built": 10,
       "offers_parsed": null,
       "provider": "openligadb",
       "rate_limited": null,
@@ -211,8 +209,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 11,
-      "direct_event_contexts_built": 11,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -230,8 +228,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 11,
-      "direct_event_contexts_built": 11,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -263,7 +261,7 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
-      "response_errors": 5,
+      "response_errors": 4,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -457,502 +455,546 @@
       "rows_fetched": 0,
       "status_category": "no_data",
       "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats_pari_odds",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
-    "no_data": 8,
+    "no_data": 9,
     "working": 9
   },
   "reject_reason_counts_from_rows": {
-    "market_sanity_totals_xg_contradiction": 1
+    "bad_historical_segment_guard": 7,
+    "odds_below_global_min": 3,
+    "tier_a_confirmation_sources_below_min:1/2": 1,
+    "tier_a_market_implied_xg_not_hard_confirmation": 1,
+    "tier_a_odds_sources_below_min:1/2": 1,
+    "tier_a_quality_below_min": 1,
+    "tier_a_two_plus_context_sources_required:1/2": 1,
+    "tier_a_two_plus_odds_sources_required:1/2": 1,
+    "tier_b_low_quality_competition_requires_a_tier": 1,
+    "tier_b_publication_score_below_min": 1,
+    "tier_b_quality_below_min": 3,
+    "tier_c_market_implied_xg_not_hard_confirmation": 3,
+    "tier_c_quality_below_min": 3
   },
   "target_date": "2026-08-29",
   "top_near_miss": [
     {
-      "away_team": "",
+      "away_team": "CD Trofense",
       "best_candidate": {
-        "adjusted_probability": 0.592737,
+        "adjusted_probability": 0.370179,
         "books_count": 2,
-        "canonical_edge_pp": 14.829,
-        "canonical_ev_pct": 33.366,
-        "confidence": 76.1,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
+        "canonical_edge_pp": 3.685,
+        "canonical_ev_pct": 11.054,
+        "confidence": 71.074,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.25,
+        "odds": 3.0,
         "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
+        "origin": "rescue",
         "point": 1.5,
         "reject_reasons": [],
-        "selection": "Больше 1.5",
+        "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 76.1,
-      "best_edge_pp": 14.829,
-      "best_ev_pct": 33.366,
-      "books_max": 2,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 2
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|arouca|cs maritimo|2026-08-29",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 4,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "CS Marítimo",
-      "best_candidate": {
-        "adjusted_probability": 0.592737,
-        "books_count": 2,
-        "canonical_edge_pp": 14.829,
-        "canonical_ev_pct": 33.366,
-        "confidence": 76.1,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 2.25,
-        "odds_sources_count": 1,
-        "origin": "latest_rescue_candidates",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 76.1,
-      "best_edge_pp": 14.829,
-      "best_ev_pct": 33.366,
+      "best_confidence": 71.074,
+      "best_edge_pp": 3.685,
+      "best_ev_pct": 11.054,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-08-29T14:30:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
+      "commence_time": "2026-08-29T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "FC Arouca",
-      "league_name": "Liga Portugal Betclic",
-      "match_key": "soccer|fc_arouca|cs_mar_timo|2026-08-29",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "latest_rescue_candidates": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.653043,
-        "books_count": 2,
-        "canonical_edge_pp": 3.985,
-        "canonical_ev_pct": 27.996,
-        "confidence": 76.318,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 1.96,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 76.318,
-      "best_edge_pp": 3.985,
-      "best_ev_pct": 27.996,
-      "books_max": 2,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 2
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|levante|real betis|2026-08-29",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 4,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Real Betis",
-      "best_candidate": {
-        "adjusted_probability": 0.653043,
-        "books_count": 2,
-        "canonical_edge_pp": 3.985,
-        "canonical_ev_pct": 27.996,
-        "confidence": 76.318,
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
-        "family": "totals",
-        "odds": 1.96,
-        "odds_sources_count": 1,
-        "origin": "latest_rescue_candidates",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 76.318,
-      "best_edge_pp": 3.985,
-      "best_ev_pct": 27.996,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-29T15:00:00+00:00",
-      "confirmation_sources_max": 6,
-      "context_sources_max": 6,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Levante UD",
-      "league_name": "La Liga",
-      "match_key": "soccer|levante_ud|real_betis|2026-08-29",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "latest_rescue_candidates": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.506844,
-        "books_count": 2,
-        "canonical_edge_pp": 1.185,
-        "canonical_ev_pct": 26.711,
-        "confidence": 75.058,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 2.5,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [
-          "market_sanity_totals_xg_contradiction"
-        ],
-        "selection": "Меньше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 75.058,
-      "best_edge_pp": 1.185,
-      "best_ev_pct": 26.711,
-      "books_max": 2,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 2
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|alverca|santa clara|2026-08-29",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 4,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {
-        "market_sanity_totals_xg_contradiction": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.636714,
-        "books_count": 2,
-        "canonical_edge_pp": 3.045,
-        "canonical_ev_pct": 26.069,
-        "confidence": 75.895,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.98,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 75.895,
-      "best_edge_pp": 3.045,
-      "best_ev_pct": 26.069,
-      "books_max": 2,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 2,
-        "totals": 3
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|coventry city|hull city|2026-08-29",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 4,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Hull City",
-      "best_candidate": {
-        "adjusted_probability": 0.636714,
-        "books_count": 2,
-        "canonical_edge_pp": 3.045,
-        "canonical_ev_pct": 26.069,
-        "confidence": 75.895,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 1.98,
-        "odds_sources_count": 1,
-        "origin": "latest_rescue_candidates",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 75.895,
-      "best_edge_pp": 3.045,
-      "best_ev_pct": 26.069,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-29T14:00:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Coventry City",
-      "league_name": "Premier League",
-      "match_key": "soccer|coventry_city|hull_city|2026-08-29",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "latest_rescue_candidates": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "Everton",
-      "best_candidate": {
-        "adjusted_probability": 0.639402,
-        "books_count": 2,
-        "canonical_edge_pp": 3.045,
-        "canonical_ev_pct": 25.323,
-        "confidence": 75.895,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.96,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 75.895,
-      "best_edge_pp": 3.045,
-      "best_ev_pct": 25.323,
-      "books_max": 2,
-      "candidate_count": 5,
-      "commence_time": "2026-08-29T14:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 2
-      },
-      "home_team": "Bournemouth",
-      "league_name": "Premier League",
-      "match_key": "soccer|bournemouth|everton|2026-08-29",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 4,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.714497,
-        "books_count": 2,
-        "canonical_edge_pp": 3.045,
-        "canonical_ev_pct": 21.464,
-        "confidence": 75.895,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.7,
-        "odds_sources_count": 1,
-        "origin": ".logs/debug-last-run.json",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 75.895,
-      "best_edge_pp": 3.045,
-      "best_ev_pct": 21.464,
-      "books_max": 2,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 2,
-        "totals": 3
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|1 fsv mainz 05|paderborn 07|2026-08-29",
-      "missing_flags": {
-        "confidence_below_micro_c": 4,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 4,
-        "single_book": 3,
-        "single_context_source": 4,
-        "single_odds_source": 5
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "SC Paderborn 07",
-      "best_candidate": {
-        "adjusted_probability": 0.714497,
-        "books_count": 2,
-        "canonical_edge_pp": 3.045,
-        "canonical_ev_pct": 21.464,
-        "confidence": 75.895,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
-        "family": "totals",
-        "odds": 1.7,
-        "odds_sources_count": 1,
-        "origin": "latest_rescue_candidates",
-        "point": 1.5,
-        "reject_reasons": [],
-        "selection": "Больше 1.5",
-        "sources_count": 1
-      },
-      "best_confidence": 75.895,
-      "best_edge_pp": 3.045,
-      "best_ev_pct": 21.464,
-      "books_max": 2,
-      "candidate_count": 2,
-      "commence_time": "2026-08-29T13:30:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
-      "controlled_count": 0,
-      "families": {
-        "totals": 2
-      },
-      "home_team": "1. FSV Mainz 05",
-      "league_name": "Bundesliga",
-      "match_key": "soccer|1_fsv_mainz_05|sc_paderborn_07|2026-08-29",
+      "home_team": "Varzim SC",
+      "league_name": "Taça de Portugal",
+      "match_key": "soccer|varzim_sc|cd_trofense|2026-08-29",
       "missing_flags": {
         "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 2,
-        "ev_below_micro_c": 1,
-        "single_odds_source": 2
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
       },
       "odds_sources_max": 1,
       "origins": {
-        "latest_rescue_candidates": 1,
         "rescue": 1
       },
       "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "CD Trofense",
+      "best_candidate": {
+        "adjusted_probability": 0.370179,
+        "books_count": 3,
+        "canonical_edge_pp": 3.685,
+        "canonical_ev_pct": 11.054,
+        "confidence": 71.074,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 3.0,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 1.5,
+        "reject_reasons": [
+          "tier_a_quality_below_min",
+          "tier_a_odds_sources_below_min:1/2",
+          "tier_a_confirmation_sources_below_min:1/2",
+          "tier_a_two_plus_odds_sources_required:1/2",
+          "tier_a_two_plus_context_sources_required:1/2",
+          "tier_a_market_implied_xg_not_hard_confirmation",
+          "tier_b_quality_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 71.074,
+      "best_edge_pp": 3.685,
+      "best_ev_pct": 11.054,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Varzim SC",
+      "league_name": "Taça de Portugal",
+      "match_key": "2026-08-29|varzim|trofense",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_a_confirmation_sources_below_min:1/2": 1,
+        "tier_a_market_implied_xg_not_hard_confirmation": 1,
+        "tier_a_odds_sources_below_min:1/2": 1,
+        "tier_a_quality_below_min": 1,
+        "tier_a_two_plus_context_sources_required:1/2": 1,
+        "tier_a_two_plus_odds_sources_required:1/2": 1,
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "FC Luzern",
+      "best_candidate": {
+        "adjusted_probability": 0.659771,
+        "books_count": 2,
+        "canonical_edge_pp": 6.097,
+        "canonical_ev_pct": 10.182,
+        "confidence": 70.682,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.67,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 70.682,
+      "best_edge_pp": 6.097,
+      "best_ev_pct": 10.182,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T16:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Servette FC",
+      "league_name": "Super League",
+      "match_key": "soccer|servette_fc|fc_luzern|2026-08-29",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "FC Luzern",
+      "best_candidate": {
+        "adjusted_probability": 0.659771,
+        "books_count": 3,
+        "canonical_edge_pp": 6.097,
+        "canonical_ev_pct": 10.182,
+        "confidence": 70.682,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.67,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.5,
+        "reject_reasons": [
+          "odds_below_global_min"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 70.682,
+      "best_edge_pp": 6.097,
+      "best_ev_pct": 10.182,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Servette FC",
+      "league_name": "Super League",
+      "match_key": "2026-08-29|servette|luzern",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "odds_below_global_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Barnsley",
+      "best_candidate": {
+        "adjusted_probability": 0.532123,
+        "books_count": 2,
+        "canonical_edge_pp": 0.856,
+        "canonical_ev_pct": 9.085,
+        "confidence": 76.059,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 2.05,
+        "odds_sources_count": 3,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "bad_historical_segment_guard"
+        ],
+        "selection": "Меньше",
+        "sources_count": 3
+      },
+      "best_confidence": 76.059,
+      "best_edge_pp": 0.856,
+      "best_ev_pct": 9.085,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T14:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Leyton Orient",
+      "league_name": "League One",
+      "match_key": "2026-08-29|leyton orient|barnsley",
+      "missing_flags": {
+        "edge_below_micro_c": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
+      },
+      "sources_max": 3
+    },
+    {
+      "away_team": "FC Porto",
+      "best_candidate": {
+        "adjusted_probability": 0.52547,
+        "books_count": 2,
+        "canonical_edge_pp": 4.354,
+        "canonical_ev_pct": 9.035,
+        "confidence": 74.666,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 2.075,
+        "odds_sources_count": 5,
+        "origin": "rescue",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 5
+      },
+      "best_confidence": 74.666,
+      "best_edge_pp": 4.354,
+      "best_ev_pct": 9.035,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T17:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Académico Viseu FC",
+      "league_name": "Liga Portugal Betclic",
+      "match_key": "soccer|acad_mico_viseu_fc|fc_porto|2026-08-29",
+      "missing_flags": {},
+      "odds_sources_max": 5,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 5
+    },
+    {
+      "away_team": "FC Porto",
+      "best_candidate": {
+        "adjusted_probability": 0.52547,
+        "books_count": 2,
+        "canonical_edge_pp": 4.354,
+        "canonical_ev_pct": 9.035,
+        "confidence": 74.666,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 2.075,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.0,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 74.666,
+      "best_edge_pp": 4.354,
+      "best_ev_pct": 9.035,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T17:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Académico Viseu FC",
+      "league_name": "Liga Portugal Betclic",
+      "match_key": "2026-08-29|academico viseu|porto",
+      "missing_flags": {
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Bristol Rovers",
+      "best_candidate": {
+        "adjusted_probability": 0.50948,
+        "books_count": 2,
+        "canonical_edge_pp": 0.187,
+        "canonical_ev_pct": 6.991,
+        "confidence": 75.67,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 2.1,
+        "odds_sources_count": 3,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "bad_historical_segment_guard"
+        ],
+        "selection": "Меньше",
+        "sources_count": 3
+      },
+      "best_confidence": 75.67,
+      "best_edge_pp": 0.187,
+      "best_ev_pct": 6.991,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T14:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Crawley Town",
+      "league_name": "League Two",
+      "match_key": "2026-08-29|crawley town|bristol rovers",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
+      },
+      "sources_max": 3
+    },
+    {
+      "away_team": "Kocaelispor",
+      "best_candidate": {
+        "adjusted_probability": 0.652189,
+        "books_count": 2,
+        "canonical_edge_pp": 4.243,
+        "canonical_ev_pct": 6.959,
+        "confidence": 69.232,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.64,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.232,
+      "best_edge_pp": 4.243,
+      "best_ev_pct": 6.959,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T16:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Konyaspor",
+      "league_name": "Trendyol Super Lig",
+      "match_key": "soccer|konyaspor|kocaelispor|2026-08-29",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Kocaelispor",
+      "best_candidate": {
+        "adjusted_probability": 0.652189,
+        "books_count": 3,
+        "canonical_edge_pp": 4.243,
+        "canonical_ev_pct": 6.959,
+        "confidence": 69.232,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.64,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "odds_below_global_min"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.232,
+      "best_edge_pp": 4.243,
+      "best_ev_pct": 6.959,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-08-29T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Konyaspor",
+      "league_name": "Trendyol Super Lig",
+      "match_key": "2026-08-29|konyaspor|kocaelispor",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "odds_below_global_min": 1
+      },
       "sources_max": 1
     }
   ]
