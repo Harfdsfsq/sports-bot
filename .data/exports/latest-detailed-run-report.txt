@@ -1,18 +1,18 @@
 🧾 Подробный отчёт run — прогнозов нет
 
-🕒 Источник цифр: debug-last-run (4 мин назад) — свежий
+🕒 Источник цифр: debug-last-run (2 мин назад) — свежий
 
 📦 Дневной inventory
-• Матчей всего: 300
-• С линиями: 219/300
-• С контекстом: 197/300
-• Готово к модели: 189/300
-• Ближайшие 6 часов: 6/29 готово
+• Матчей всего: 259
+• С линиями: 173/259
+• С контекстом: 244/259
+• Готово к модели: 161/259
+• Ближайшие 6 часов: 26/30 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 4 | с линиями: 4 | контекстов: 1
-• Кандидаты: raw 0 | до качества 28 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 18 | выбрано: 0
+• Матчи: 16 | с линиями: 15 | контекстов: 10
+• Кандидаты: raw 0 | до качества 0 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -20,55 +20,17 @@
 • current price patch: ok
 • zero-raw recovery: not_needed | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
-• evidence/integrity patch: installed | patched_odds_source_metrics 4 | market_probability_guard_softened_without_real_prices 0
+• evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
 • provider targeting: ok | fallback_evaluated 18
 
 📡 Источники / фактическая работа
-• odds_api_io: data 5/711, req 0, err 2
-• bzzoiro: data 0/0, req 3, err 0
-• sstats: data 1/1, req 2, err 0
-• football_data: data 0/0, req 0, err 0
+• odds_api_io: data 32/3717, req 0, err 5
+• bzzoiro: data 0/0, req 4, err 0
+• sstats: data 9/9, req 3, err 0
+• football_data: data 1/1, req 3, err 0
 • thesportsdb: data 0/0, req 0, err 0
 • sportlogic: data 0/0, req 0, err 0
-• openfootball: data 1/1, req 1, err 0
-
-🚫 Почему не прошли
-• tier_b_quality_below_min — 8 (11%)
-• tier_c_quality_below_min — 8 (11%)
-• tier_c_market_implied_xg_not_hard_confirmation — 8 (11%)
-• tier_b_publication_score_below_min — 7 (10%)
-• tier_a_quality_below_min — 6 (8%)
-• tier_a_publication_score_below_min — 6 (8%)
-• tier_a_odds_sources_below_min:1/2 — 6 (8%)
-• tier_a_market_implied_xg_not_hard_confirmation — 6 (8%)
-• tier_c_publication_score_below_min — 6 (8%)
-• price_integrity:selected_price_vs_bookmaker_median_outlier — 4 (6%)
-
-⚠️ Пограничные кандидаты
-1. Севилья — Атлетико Мадрид | Больше 1.5 @2.08
-   • EV +25.1% | edge +12.0 п.п. | q 88.5
-   • не прошло: price_integrity:selected_price_vs_bookmaker_median_outlier; price_integrity:external_snapshot_bookmaker_median_outlier
-2. Ситтле Сундерс — Чикаго Фире | Больше 1.5 @1.77
-   • EV +24.4% | edge +13.8 п.п. | q 100.0
-   • не прошло: price_integrity:selected_price_vs_bookmaker_median_outlier; price_integrity:external_snapshot_bookmaker_median_outlier; price_integrity:selected_price_vs_market_probability_outlier
-3. Гирона — Лас Палмас | Меньше @2.00
-   • EV +11.5% | edge +5.7 п.п. | q 0.0
-   • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-4. Ситтле Сундерс — Чикаго Фире | Меньше @1.57
-   • EV +7.9% | edge +5.0 п.п. | q 0.0
-   • не прошло: odds_below_global_min
-5. Ситтле Сундерс — Чикаго Фире | Меньше @1.95
-   • EV +7.2% | edge +3.7 п.п. | q 0.0
-   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-6. Севилья — Атлетико Мадрид | Больше @3.00
-   • EV +6.7% | edge +2.2 п.п. | q 0.0
-   • не прошло: tier_a_quality_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_market_implied_xg_not_hard_confirmation; tier_b_quality_below_min
-7. Севилья — Атлетико Мадрид | Меньше @2.55
-   • EV +6.3% | edge +2.5 п.п. | q 0.0
-   • не прошло: xg_probability_gap_hard_reject
-8. Севилья — Атлетико Мадрид | Больше @3.00
-   • EV +6.1% | edge +2.0 п.п. | q 0.0
-   • не прошло: tier_a_quality_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2; tier_a_market_implied_xg_not_hard_confirmation; tier_b_quality_below_min
+• openfootball: data 0/0, req 0, err 0
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
