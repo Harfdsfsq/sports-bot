@@ -48,6 +48,7 @@
     }
   ],
   "blockers": [
+    "line_coverage_below_80pct",
     "context_coverage_below_85pct",
     "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers",
@@ -59,65 +60,48 @@
     "overlap_bridge_offers": 354,
     "overlap_matches": 0
   },
-  "created_at_utc": "2026-08-29T01:13:06.444284+00:00",
-  "ideal_score": 80.2,
+  "created_at_utc": "2026-08-29T01:15:46.467008+00:00",
+  "ideal_score": 44.2,
   "inventory": {
-    "next_12h_ready": 114,
-    "next_12h_ready_pct": 73.1,
+    "next_12h_ready": 11,
+    "next_12h_ready_pct": 7.1,
     "next_12h_total": 156,
-    "next_6h_ready": 35,
-    "next_6h_ready_pct": 45.5,
+    "next_6h_ready": 6,
+    "next_6h_ready_pct": 7.8,
     "next_6h_total": 77,
-    "ready": 176,
-    "ready_pct": 58.7,
+    "ready": 42,
+    "ready_pct": 14.0,
     "total": 300,
-    "with_context": 177,
-    "with_context_pct": 59.0,
-    "with_lines": 299,
-    "with_lines_pct": 99.7
+    "with_context": 49,
+    "with_context_pct": 16.3,
+    "with_lines": 119,
+    "with_lines_pct": 39.7
   },
   "line_movement": {
     "class_counts": {
-      "other": 2
+      "odds_below_min": 1,
+      "other": 1
     },
-    "created_at_utc": "2026-08-28T23:11:01.527359+00:00",
+    "created_at_utc": "2026-08-29T01:13:22.357774+00:00",
     "evaluated": 2,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
     "samples": [
       {
-        "away_team": "CD Cuenca",
+        "away_team": "Kingborough Lions United FC",
         "classes": [
           "other"
         ],
-        "edge_pp": 2.617,
-        "ev_pct": 6.346,
-        "home_team": "CD Tecnico Universitario",
-        "key": "soccer|cd_tecnico_universitario|cd_cuenca|2026-08-29|CD Tecnico Universitario|CD Cuenca|Больше|2.5",
-        "odds": 2.425,
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_b_quality_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_market_implied_xg_not_hard_confirmation"
-        ],
-        "reserve_quality_score": 71.3,
-        "selection": "Больше"
-      },
-      {
-        "away_team": "Club Leon",
-        "classes": [
-          "other"
-        ],
-        "edge_pp": 2.928,
-        "ev_pct": 8.784,
-        "home_team": "Deportivo Toluca FC",
-        "key": "soccer|deportivo_toluca_fc|club_leon|2026-08-29|Deportivo Toluca FC|Club Leon|Меньше|2.5",
-        "odds": 3.0,
+        "edge_pp": 0.982,
+        "ev_pct": 2.65,
+        "home_team": "South Hobart FC",
+        "key": "2026-08-29|south hobart|kingborough lions united|South Hobart FC|Kingborough Lions United FC|Меньше|2.5",
+        "odds": 2.7,
         "point": 2.5,
         "reject_reasons": [
           "tier_a_quality_below_min",
+          "tier_a_canonical_edge_below_min",
+          "tier_a_canonical_ev_below_min",
           "tier_a_publication_score_below_min",
           "tier_a_odds_sources_below_min:1/2",
           "tier_a_confirmation_sources_below_min:1/2",
@@ -125,31 +109,45 @@
           "tier_a_two_plus_context_sources_required:1/2",
           "tier_a_market_implied_xg_not_hard_confirmation",
           "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
           "tier_b_publication_score_below_min",
-          "tier_b_low_quality_competition_requires_a_tier",
           "tier_c_quality_below_min",
+          "tier_c_canonical_edge_below_min",
+          "tier_c_canonical_ev_below_min",
           "tier_c_publication_score_below_min",
           "tier_c_market_implied_xg_not_hard_confirmation"
         ],
-        "reserve_quality_score": 67.1,
+        "reserve_quality_score": 57.9,
         "selection": "Меньше"
+      },
+      {
+        "away_team": "Queenland Lions FC",
+        "classes": [
+          "odds_below_min"
+        ],
+        "edge_pp": 4.251,
+        "ev_pct": 7.227,
+        "home_team": "Gold Coast Knights",
+        "key": "2026-08-29|gold coast knights|queenland lions|Gold Coast Knights|Queenland Lions FC|Больше|2.5",
+        "odds": 1.7,
+        "point": 2.5,
+        "reject_reasons": [
+          "odds_below_global_min",
+          "current_price_recheck_value_lost:-1.6/-1.0"
+        ],
+        "reserve_quality_score": 73.6,
+        "selection": "Больше"
       }
     ],
     "status": "ok",
     "watchlist_count": 0
   },
   "odds_api_io_account2": {
-    "http_statuses": [
-      403,
-      403,
-      403,
-      403,
-      403
-    ],
+    "http_statuses": [],
     "offers": 0,
-    "plan_restriction": true,
+    "plan_restriction": false,
     "rate_limited": false,
-    "requests": 5
+    "requests": 0
   },
   "proxy_xg_replacement": {
     "checked": 2,
@@ -178,6 +176,7 @@
     ]
   },
   "recommended_actions": [
+    "raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill",
     "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
     "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set",
