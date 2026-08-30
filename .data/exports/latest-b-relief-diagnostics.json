@@ -1,8 +1,12 @@
 {
-  "created_at_utc": "2026-08-30T03:11:46.384689+00:00",
-  "evaluated_candidates": 0,
-  "evaluation_calls": 0,
-  "failed_condition_counts": {},
+  "created_at_utc": "2026-08-30T05:13:00.535768+00:00",
+  "evaluated_candidates": 3,
+  "evaluation_calls": 6,
+  "failed_condition_counts": {
+    "edge_below_min": 1,
+    "ev_below_min": 1,
+    "no_hard_context": 1
+  },
   "install_count": 2,
   "install_events": [
     {
@@ -21,9 +25,60 @@
       "status": "installed"
     }
   ],
-  "passed_count": 0,
-  "rows": [],
-  "status": "installed_but_never_evaluated",
+  "passed_count": 1,
+  "rows": [
+    {
+      "books_count": 5,
+      "candidate_source": "a_cover_market_promotion",
+      "context_sources_count": 3,
+      "edge_pp": 1.406,
+      "ev_pct": 4.219,
+      "failed_conditions": [
+        "no_hard_context"
+      ],
+      "hard_context": false,
+      "match": "soccer|ado den haag|feyenoord rotterdam|2026-08-30",
+      "odds": 3.0,
+      "odds_sources_count": 3,
+      "passed": false,
+      "point": 3.0,
+      "selection": "Меньше"
+    },
+    {
+      "books_count": 2,
+      "candidate_source": "awaiting_movement_lifecycle",
+      "context_sources_count": 5,
+      "edge_pp": 0.795,
+      "ev_pct": 1.988,
+      "failed_conditions": [
+        "edge_below_min",
+        "ev_below_min"
+      ],
+      "hard_context": true,
+      "match": "2026-08-30|lions|peninsula power",
+      "odds": 2.5,
+      "odds_sources_count": 5,
+      "passed": false,
+      "point": 2.5,
+      "selection": "Меньше"
+    },
+    {
+      "books_count": 6,
+      "candidate_source": "awaiting_movement_lifecycle",
+      "context_sources_count": 2,
+      "edge_pp": 1.9,
+      "ev_pct": 3.42,
+      "failed_conditions": [],
+      "hard_context": true,
+      "match": "2026-08-30|jeju sk|daejeon hana citizen",
+      "odds": 1.8,
+      "odds_sources_count": 2,
+      "passed": true,
+      "point": 2.5,
+      "selection": "Меньше"
+    }
+  ],
+  "status": "evaluated_with_passes",
   "thresholds": {
     "max_odds": 3.2,
     "min_books": 2,
