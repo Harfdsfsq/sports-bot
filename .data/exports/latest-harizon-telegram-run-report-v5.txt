@@ -1,42 +1,41 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: line movement guard снял кандидата
+• Главная причина: кандидат ждёт следующий cron для второго снимка линии
 
 📦 Покрытие
-• Матчи в run: 8 | day inventory: 285
-• С линиями: 7 | с контекстом: 4 | ready model: 251
-• odds-api.io offers: 2174 | Bzzoiro secondary offers: 114
-• 2+ букмекера odds-api.io: 19 | 2-source overlap Bzzoiro+odds-api.io: 3
-• Source combinations: bzzoiro+odds_api_io: 10, odds_api_io: 10
+• Матчи в run: 13 | day inventory: 285
+• С линиями: 12 | с контекстом: 2 | ready model: 264
+• odds-api.io offers: 951 | Bzzoiro secondary offers: 110
+• 2+ букмекера odds-api.io: 8 | 2-source overlap Bzzoiro+odds-api.io: 6
+• Source combinations: odds_api_io: 9, odds_api_io+sstats_pari: 5, sstats_pari: 4
 
-• A-tier enrichment queue: Bzzoiro odds targets 78; context projection targets 65; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 73; context projection targets 65; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 1
+• Raw/candidates before quality: 0 / 0
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
 • Controlled fallback: status fallback_artifact_stale_or_missing_after_step | seen 0 | evaluated 0 | published False (0)
-• Windowed coverage: audit 8 | allowed 7 | blocked 1 | publish-filter input 0
+• Windowed coverage: audit 8 | allowed 8 | blocked 0 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 16 | no next regular run: 15
-• Line guard: seen 15 | kept 4 | dropped 5
+• Final pre-kickoff checks: 27 | no next regular run: 26
+• Line guard: seen 21 | kept 9 | dropped 8
 
-• Bzzoiro targeted odds: targets 78; events 1482; matched 75; ids 75; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 26; requests 52; events_with_offers 23; offers 183; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 114; overlap matches 3; same-bucket matches 3.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 19; inventory updated 19; inventory 2-source 17.
-• Bzzoiro source trace: aggregate events 369; persisted rows 369; targeted events 1482; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 4; floor 2; hard 1; relieved 0.
+• Bzzoiro targeted odds: targets 73; events 1482; matched 70; ids 70; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 27; requests 54; events_with_offers 25; offers 185; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 110; overlap matches 6; same-bucket matches 5.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 8; inventory updated 7; inventory 2-source 7.
+• Bzzoiro source trace: aggregate events 0; persisted rows 369; targeted events 1482; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 4; floor 4; hard 3; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 5, matched 20, offers 2174, 2+ books 19, err 3, auth_failed False
-• sstats: req 3, ctx 1, rows 16380, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 369 (aggregate; persisted rows 369; trace full_or_provider_rows_available), secondary offers 114, overlap odds-api.io 3, err 0
+• odds_api_io: events req 0, odds req 3, matched 8, offers 951, 2+ books 8, err 2, auth_failed False
+• sstats: req 0, ctx 0, rows 0, err 0, deep enriched 0
+• bzzoiro: req 0, ctx 0, events 0 (aggregate; persisted rows 369; trace full_or_provider_rows_available), secondary offers 110, overlap odds-api.io 6, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 3 (50%)
-• line movement guard снял кандидата: 2 (33%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (17%)
+• кандидат ждёт следующий cron для второго снимка линии: 8 (89%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (11%)
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
