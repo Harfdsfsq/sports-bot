@@ -1,41 +1,42 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: кандидат ждёт следующий cron для второго снимка линии
+• Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 6 | day inventory: 268
-• С линиями: 6 | с контекстом: 6 | ready model: 177
-• odds-api.io offers: 2941 | Bzzoiro secondary offers: 72
-• 2+ букмекера odds-api.io: 24 | 2-source overlap Bzzoiro+odds-api.io: 12
-• Source combinations: odds_api_io: 28, bzzoiro+odds_api_io: 1
+• Матчи в run: 22 | day inventory: 275
+• С линиями: 8 | с контекстом: 8 | ready model: 206
+• odds-api.io offers: 1137 | Bzzoiro secondary offers: 114
+• 2+ букмекера odds-api.io: 11 | 2-source overlap Bzzoiro+odds-api.io: 11
+• Source combinations: odds_api_io: 16, bzzoiro+odds_api_io: 10
 
-• A-tier enrichment queue: Bzzoiro odds targets 55; context projection targets 58; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 62; context projection targets 64; high-value recheck 0.
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0 / 0
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
 • Controlled fallback: status fallback_artifact_stale_or_missing_after_step | seen 0 | evaluated 0 | published False (0)
-• Windowed coverage: audit 8 | allowed 6 | blocked 2 | publish-filter input 0
+• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 6 | no next regular run: 6
-• Line guard: seen 20 | kept 1 | dropped 11
+• Final pre-kickoff checks: 0 | no next regular run: 0
+• Line guard: seen 15 | kept 1 | dropped 6
 
-• Bzzoiro targeted odds: targets 55; events 1482; matched 52; ids 52; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 13; requests 26; events_with_offers 13; offers 111; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 72; overlap matches 12; same-bucket matches 12.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 24; inventory updated 28; inventory 2-source 3.
+• Bzzoiro targeted odds: targets 62; events 1482; matched 59; ids 59; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 23; requests 46; events_with_offers 21; offers 177; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 114; overlap matches 11; same-bucket matches 7.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 11; inventory updated 12; inventory 2-source 2.
 • Bzzoiro source trace: aggregate events 369; persisted rows 369; targeted events 1482; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 2; floor 2; hard 1; relieved 0.
+• Last-chance line relief: seen 1; floor 1; hard 0; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 7, matched 29, offers 2941, 2+ books 24, err 4, auth_failed False
-• sstats: req 20, ctx 6, rows 16382, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 369 (aggregate; persisted rows 369; trace full_or_provider_rows_available), secondary offers 72, overlap odds-api.io 12, err 0
+• odds_api_io: events req 0, odds req 5, matched 13, offers 1137, 2+ books 11, err 3, auth_failed False
+• sstats: req 3, ctx 4, rows 16379, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 369 (aggregate; persisted rows 369; trace full_or_provider_rows_available), secondary offers 114, overlap odds-api.io 11, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 11 (92%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (8%)
+• кандидат ждёт следующий cron для второго снимка линии: 3 (43%)
+• line movement guard снял кандидата: 3 (43%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (14%)
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
