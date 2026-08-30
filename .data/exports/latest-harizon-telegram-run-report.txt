@@ -1,41 +1,42 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: кандидат ждёт следующий cron для второго снимка линии
+• Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 26 | day inventory: 285
-• С линиями: 7 | с контекстом: 7 | ready model: 256
-• odds-api.io offers: 728 | Bzzoiro secondary offers: 120
-• 2+ букмекера odds-api.io: 7 | 2-source overlap Bzzoiro+odds-api.io: 10
-• Source combinations: odds_api_io: 21, bzzoiro+odds_api_io: 1
+• Матчи в run: 8 | day inventory: 285
+• С линиями: 7 | с контекстом: 4 | ready model: 251
+• odds-api.io offers: 2174 | Bzzoiro secondary offers: 114
+• 2+ букмекера odds-api.io: 19 | 2-source overlap Bzzoiro+odds-api.io: 3
+• Source combinations: bzzoiro+odds_api_io: 10, odds_api_io: 10
 
-• A-tier enrichment queue: Bzzoiro odds targets 72; context projection targets 64; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 78; context projection targets 65; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 0
+• Raw/candidates before quality: 0 / 1
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
 • Controlled fallback: status fallback_artifact_stale_or_missing_after_step | seen 0 | evaluated 0 | published False (0)
-• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
+• Windowed coverage: audit 8 | allowed 7 | blocked 1 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 0 | no next regular run: 0
-• Line guard: seen 25 | kept 4 | dropped 13
+• Final pre-kickoff checks: 16 | no next regular run: 15
+• Line guard: seen 15 | kept 4 | dropped 5
 
-• Bzzoiro targeted odds: targets 72; events 1482; matched 69; ids 69; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 24; requests 48; events_with_offers 22; offers 186; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 120; overlap matches 10; same-bucket matches 5.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 7; inventory updated 8; inventory 2-source 6.
+• Bzzoiro targeted odds: targets 78; events 1482; matched 75; ids 75; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 26; requests 52; events_with_offers 23; offers 183; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 114; overlap matches 3; same-bucket matches 3.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 19; inventory updated 19; inventory 2-source 17.
 • Bzzoiro source trace: aggregate events 369; persisted rows 369; targeted events 1482; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 3; floor 1; hard 1; relieved 0.
+• Last-chance line relief: seen 4; floor 2; hard 1; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 3, matched 8, offers 728, 2+ books 7, err 2, auth_failed False
-• sstats: req 3, ctx 0, rows 16380, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 369 (aggregate; persisted rows 369; trace full_or_provider_rows_available), secondary offers 120, overlap odds-api.io 10, err 0
+• odds_api_io: events req 0, odds req 5, matched 20, offers 2174, 2+ books 19, err 3, auth_failed False
+• sstats: req 3, ctx 1, rows 16380, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 369 (aggregate; persisted rows 369; trace full_or_provider_rows_available), secondary offers 114, overlap odds-api.io 3, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 13 (93%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (7%)
+• кандидат ждёт следующий cron для второго снимка линии: 3 (50%)
+• line movement guard снял кандидата: 2 (33%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (17%)
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
