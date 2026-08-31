@@ -8,9 +8,9 @@
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 4,
+      "rows_kept": 8,
       "rows_seen": 55,
-      "rows_stale": 51
+      "rows_stale": 47
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 18,
-      "rows_seen": 18,
+      "rows_kept": 22,
+      "rows_seen": 22,
       "rows_stale": 0
     }
   },
@@ -35,25 +35,25 @@
     "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 17,
+    "contexts_built": 6,
     "controlled_candidates_seen": null,
     "controlled_published": false,
     "controlled_status": "fallback_artifact_stale_or_missing_after_step",
-    "coverage_candidates_current_date": 18,
-    "matches_seen": 10,
+    "coverage_candidates_current_date": 30,
+    "matches_seen": 88,
     "matches_with_offers": 0
   },
-  "created_at": "2026-08-31T11:11:04.729500+00:00",
+  "created_at": "2026-08-31T13:11:45.051503+00:00",
   "family_counts": {
-    "totals": 18
+    "totals": 30
   },
-  "matches_with_candidates": 16,
+  "matches_with_candidates": 29,
   "missing_data_flags": {
-    "confidence_below_micro_c": 5,
-    "edge_below_micro_c": 14,
-    "ev_below_micro_c": 12,
-    "single_context_source": 1,
-    "single_odds_source": 1
+    "confidence_below_micro_c": 12,
+    "edge_below_micro_c": 19,
+    "ev_below_micro_c": 15,
+    "single_context_source": 6,
+    "single_odds_source": 9
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -67,7 +67,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 16,
+  "positive_near_miss_count": 29,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -76,11 +76,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 30,
+      "events_matched": 21,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 1173,
+      "offers_parsed": 1121,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -100,7 +100,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 508,
+      "matches_built": 532,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -115,11 +115,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 605,
+      "events_fetched": 619,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 508,
+      "matches_built": 532,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -169,8 +169,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 17,
-      "direct_event_contexts_built": 17,
+      "contexts_built": 6,
+      "direct_event_contexts_built": 6,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -468,36 +468,82 @@
     "no_data": 11,
     "working": 6
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "bad_historical_segment_guard": 3,
+    "market_sanity_totals_xg_contradiction": 1,
+    "post_calibration_probability_guard": 1
+  },
   "target_date": "2026-08-31",
   "top_near_miss": [
     {
+      "away_team": "Leighton Town",
+      "best_candidate": {
+        "adjusted_probability": 0.531413,
+        "books_count": 8,
+        "canonical_edge_pp": 7.058,
+        "canonical_ev_pct": 15.317,
+        "confidence": 80.0,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.17,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 2
+      },
+      "best_confidence": 80.0,
+      "best_edge_pp": 7.058,
+      "best_ev_pct": 15.317,
+      "books_max": 8,
+      "candidate_count": 1,
+      "commence_time": "2026-08-31T14:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Real Bedford",
+      "league_name": "England Amateur - Southern League, Premier Division Central",
+      "match_key": "soccer|real_bedford|leighton_town|2026-08-31",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
       "away_team": "Trefelin BGC",
       "best_candidate": {
-        "adjusted_probability": 0.389778,
+        "adjusted_probability": 0.399738,
         "books_count": 10,
-        "canonical_edge_pp": 4.256,
-        "canonical_ev_pct": 12.256,
-        "confidence": 82.0,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
+        "canonical_edge_pp": 3.277,
+        "canonical_ev_pct": 15.125,
+        "confidence": 82.448,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
         "family": "totals",
         "odds": 2.88,
         "odds_sources_count": 7,
-        "origin": "awaiting_movement_lifecycle",
+        "origin": ".logs/debug-last-run.json",
         "point": 3.5,
         "reject_reasons": [],
         "selection": "Больше",
         "sources_count": 7
       },
-      "best_confidence": 82.0,
-      "best_edge_pp": 4.256,
-      "best_ev_pct": 12.256,
+      "best_confidence": 82.448,
+      "best_edge_pp": 3.277,
+      "best_ev_pct": 15.125,
       "books_max": 10,
       "candidate_count": 1,
       "commence_time": "2026-08-31T13:30:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
       "controlled_count": 0,
       "families": {
         "totals": 1
@@ -505,26 +551,70 @@
       "home_team": "Haverfordwest County AFC",
       "league_name": "Wales - Cymru Premier",
       "match_key": "2026-08-31|haverfordwest county afc|trefelin bgc",
-      "missing_flags": {},
+      "missing_flags": {
+        "edge_below_micro_c": 1
+      },
       "odds_sources_max": 7,
       "origins": {
-        "awaiting_movement_lifecycle": 1
+        ".logs/debug-last-run.json": 1
       },
       "reject_reasons": {},
       "sources_max": 7
     },
     {
-      "away_team": "Barry Town United FC",
+      "away_team": "Maidstone United FC",
       "best_candidate": {
-        "adjusted_probability": 0.498264,
-        "books_count": 2,
-        "canonical_edge_pp": 5.382,
-        "canonical_ev_pct": 12.109,
-        "confidence": 75.049,
+        "adjusted_probability": 0.477397,
+        "books_count": 4,
+        "canonical_edge_pp": 5.367,
+        "canonical_ev_pct": 12.666,
+        "confidence": 78.4,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.36,
+        "odds_sources_count": 3,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 3
+      },
+      "best_confidence": 78.4,
+      "best_edge_pp": 5.367,
+      "best_ev_pct": 12.666,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-08-31T14:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Hampton & Richmond Borough",
+      "league_name": "England Amateur - National League South",
+      "match_key": "2026-08-31|hampton richmond borough|maidstone united",
+      "missing_flags": {},
+      "odds_sources_max": 3,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
+      "away_team": "Darlington FC",
+      "best_candidate": {
+        "adjusted_probability": 0.467256,
+        "books_count": 10,
+        "canonical_edge_pp": 5.059,
+        "canonical_ev_pct": 12.142,
+        "confidence": 79.464,
         "confirmation_sources_count": 2,
         "context_sources_count": 2,
         "family": "totals",
-        "odds": 2.25,
+        "odds": 2.4,
         "odds_sources_count": 2,
         "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
@@ -532,21 +622,21 @@
         "selection": "Меньше",
         "sources_count": 2
       },
-      "best_confidence": 75.049,
-      "best_edge_pp": 5.382,
-      "best_ev_pct": 12.109,
-      "books_max": 2,
+      "best_confidence": 79.464,
+      "best_edge_pp": 5.059,
+      "best_ev_pct": 12.142,
+      "books_max": 10,
       "candidate_count": 1,
-      "commence_time": "2026-08-31T13:30:00+00:00",
+      "commence_time": "2026-08-31T14:00:00+00:00",
       "confirmation_sources_max": 2,
       "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Briton Ferry",
-      "league_name": "Wales - Cymru Premier",
-      "match_key": "2026-08-31|briton ferry|barry town united",
+      "home_team": "Radcliffe FC",
+      "league_name": "England Amateur - National League North",
+      "match_key": "2026-08-31|radcliffe|darlington",
       "missing_flags": {},
       "odds_sources_max": 2,
       "origins": {
@@ -556,6 +646,92 @@
       "sources_max": 2
     },
     {
+      "away_team": "Stratford Town",
+      "best_candidate": {
+        "adjusted_probability": 0.509554,
+        "books_count": 9,
+        "canonical_edge_pp": 5.501,
+        "canonical_ev_pct": 12.102,
+        "confidence": 79.446,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.2,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 79.446,
+      "best_edge_pp": 5.501,
+      "best_ev_pct": 12.102,
+      "books_max": 9,
+      "candidate_count": 1,
+      "commence_time": "2026-08-31T14:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "RC Warwick",
+      "league_name": "England Amateur - Southern League, Premier Division Central",
+      "match_key": "soccer|rc_warwick|stratford_town|2026-08-31",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Spalding United",
+      "best_candidate": {
+        "adjusted_probability": 0.369435,
+        "books_count": 4,
+        "canonical_edge_pp": 3.94,
+        "canonical_ev_pct": 11.939,
+        "confidence": 78.072,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 3.03,
+        "odds_sources_count": 3,
+        "origin": "rescue",
+        "point": 4.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 3
+      },
+      "best_confidence": 78.072,
+      "best_edge_pp": 3.94,
+      "best_ev_pct": 11.939,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-08-31T14:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "South Shields",
+      "league_name": "England Amateur - National League North",
+      "match_key": "soccer|south_shields|spalding_united|2026-08-31",
+      "missing_flags": {
+        "edge_below_micro_c": 1
+      },
+      "odds_sources_max": 3,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 3
+    },
+    {
       "away_team": "Cardiff Metropolitan University FC",
       "best_candidate": {
         "adjusted_probability": 0.376079,
@@ -563,14 +739,16 @@
         "canonical_edge_pp": 3.938,
         "canonical_ev_pct": 11.696,
         "confidence": 77.963,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
         "family": "totals",
         "odds": 2.97,
         "odds_sources_count": 3,
-        "origin": "awaiting_movement_lifecycle",
+        "origin": ".logs/debug-last-run.json",
         "point": 2.0,
-        "reject_reasons": [],
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
         "selection": "Меньше",
         "sources_count": 3
       },
@@ -580,8 +758,8 @@
       "books_max": 4,
       "candidate_count": 1,
       "commence_time": "2026-08-31T13:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
       "controlled_count": 0,
       "families": {
         "totals": 1
@@ -594,10 +772,58 @@
       },
       "odds_sources_max": 3,
       "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
+      "sources_max": 3
+    },
+    {
+      "away_team": "Racing Club",
+      "best_candidate": {
+        "adjusted_probability": 0.474371,
+        "books_count": 2,
+        "canonical_edge_pp": 4.884,
+        "canonical_ev_pct": 11.477,
+        "confidence": 71.265,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.35,
+        "odds_sources_count": 1,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 71.265,
+      "best_edge_pp": 4.884,
+      "best_ev_pct": 11.477,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-08-31T14:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Social Atletico Television",
+      "league_name": "Argentina - Primera Division A, Women, Clausura",
+      "match_key": "2026-08-31|social atletico television|racing",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
         "awaiting_movement_lifecycle": 1
       },
       "reject_reasons": {},
-      "sources_max": 3
+      "sources_max": 1
     },
     {
       "away_team": "Holywell Town",
@@ -607,12 +833,12 @@
         "canonical_edge_pp": 3.6,
         "canonical_ev_pct": 10.584,
         "confidence": 77.163,
-        "confirmation_sources_count": 7,
-        "context_sources_count": 7,
+        "confirmation_sources_count": 6,
+        "context_sources_count": 6,
         "family": "totals",
         "odds": 2.94,
         "odds_sources_count": 7,
-        "origin": "awaiting_movement_lifecycle",
+        "origin": ".logs/debug-last-run.json",
         "point": 4.0,
         "reject_reasons": [],
         "selection": "Больше",
@@ -624,8 +850,8 @@
       "books_max": 3,
       "candidate_count": 2,
       "commence_time": "2026-08-31T13:30:00+00:00",
-      "confirmation_sources_max": 7,
-      "context_sources_max": 7,
+      "confirmation_sources_max": 6,
+      "context_sources_max": 6,
       "controlled_count": 0,
       "families": {
         "totals": 2
@@ -640,47 +866,49 @@
       },
       "odds_sources_max": 7,
       "origins": {
-        "awaiting_movement_lifecycle": 2
+        ".logs/debug-last-run.json": 2
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
+      },
       "sources_max": 7
     },
     {
-      "away_team": "Pen-y-Bont FC",
+      "away_team": "Scarborough Athletic",
       "best_candidate": {
-        "adjusted_probability": 0.549867,
-        "books_count": 2,
-        "canonical_edge_pp": 4.987,
-        "canonical_ev_pct": 9.973,
-        "confidence": 70.588,
+        "adjusted_probability": 0.374156,
+        "books_count": 4,
+        "canonical_edge_pp": 3.402,
+        "canonical_ev_pct": 10.002,
+        "confidence": 74.201,
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.0,
+        "odds": 2.94,
         "odds_sources_count": 1,
         "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
+        "point": 2.0,
         "reject_reasons": [],
         "selection": "Меньше",
         "sources_count": 1
       },
-      "best_confidence": 70.588,
-      "best_edge_pp": 4.987,
-      "best_ev_pct": 9.973,
-      "books_max": 2,
+      "best_confidence": 74.201,
+      "best_edge_pp": 3.402,
+      "best_ev_pct": 10.002,
+      "books_max": 4,
       "candidate_count": 1,
-      "commence_time": "2026-08-31T13:30:00+00:00",
+      "commence_time": "2026-08-31T14:00:00+00:00",
       "confirmation_sources_max": 1,
       "context_sources_max": 1,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Cambrian United",
-      "league_name": "Wales - Cymru Premier",
-      "match_key": "2026-08-31|cambrian united|pen y bont",
+      "home_team": "King's Lynn Town",
+      "league_name": "England Amateur - National League North",
+      "match_key": "2026-08-31|king s lynn town|scarborough athletic",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
         "single_context_source": 1,
         "single_odds_source": 1
       },
@@ -690,234 +918,6 @@
       },
       "reject_reasons": {},
       "sources_max": 1
-    },
-    {
-      "away_team": "Connah's Quay Nomads FC",
-      "best_candidate": {
-        "adjusted_probability": 0.645598,
-        "books_count": 5,
-        "canonical_edge_pp": 5.036,
-        "canonical_ev_pct": 8.46,
-        "confidence": 77.307,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 1.68,
-        "odds_sources_count": 3,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 3.0,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 3
-      },
-      "best_confidence": 77.307,
-      "best_edge_pp": 5.036,
-      "best_ev_pct": 8.46,
-      "books_max": 5,
-      "candidate_count": 2,
-      "commence_time": "2026-08-31T13:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "totals": 2
-      },
-      "home_team": "Flint Town United",
-      "league_name": "Wales - Cymru Premier",
-      "match_key": "2026-08-31|flint town united|connah s quay nomads",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        "awaiting_movement_lifecycle": 2
-      },
-      "reject_reasons": {},
-      "sources_max": 3
-    },
-    {
-      "away_team": "Llanelli Town",
-      "best_candidate": {
-        "adjusted_probability": 0.498916,
-        "books_count": 3,
-        "canonical_edge_pp": 3.38,
-        "canonical_ev_pct": 7.267,
-        "confidence": 74.17,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 2.15,
-        "odds_sources_count": 3,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 3.0,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 3
-      },
-      "best_confidence": 74.17,
-      "best_edge_pp": 3.38,
-      "best_ev_pct": 7.267,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-08-31T13:30:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Aberystwyth Town FC",
-      "league_name": "Wales - Cymru Championship, South",
-      "match_key": "2026-08-31|aberystwyth town|llanelli town",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
-    },
-    {
-      "away_team": "Llantwit Major",
-      "best_candidate": {
-        "adjusted_probability": 0.376885,
-        "books_count": 4,
-        "canonical_edge_pp": 2.101,
-        "canonical_ev_pct": 5.905,
-        "confidence": 75.857,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 2.81,
-        "odds_sources_count": 2,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 75.857,
-      "best_edge_pp": 2.101,
-      "best_ev_pct": 5.905,
-      "books_max": 4,
-      "candidate_count": 1,
-      "commence_time": "2026-08-31T13:30:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Pontypridd Town",
-      "league_name": "Wales - Cymru Championship, South",
-      "match_key": "2026-08-31|pontypridd town|llantwit major",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
-    },
-    {
-      "away_team": "National Bank of Egypt SC",
-      "best_candidate": {
-        "adjusted_probability": 0.383713,
-        "books_count": 2,
-        "canonical_edge_pp": 2.008,
-        "canonical_ev_pct": 5.521,
-        "confidence": 72.084,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 2.75,
-        "odds_sources_count": 2,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 2
-      },
-      "best_confidence": 72.084,
-      "best_edge_pp": 2.008,
-      "best_ev_pct": 5.521,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-08-31T14:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Asyut Petroleum",
-      "league_name": "Egypt - Premier League",
-      "match_key": "2026-08-31|asyut petroleum|national bank of egypt",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
-    },
-    {
-      "away_team": "Dhofar SCSC",
-      "best_candidate": {
-        "adjusted_probability": 0.560944,
-        "books_count": 3,
-        "canonical_edge_pp": 2.903,
-        "canonical_ev_pct": 5.457,
-        "confidence": 73.356,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
-        "family": "totals",
-        "odds": 1.88,
-        "odds_sources_count": 3,
-        "origin": "awaiting_movement_lifecycle",
-        "point": 2.0,
-        "reject_reasons": [],
-        "selection": "Больше",
-        "sources_count": 3
-      },
-      "best_confidence": 73.356,
-      "best_edge_pp": 2.903,
-      "best_ev_pct": 5.457,
-      "books_max": 3,
-      "candidate_count": 1,
-      "commence_time": "2026-08-31T13:40:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Oman Club",
-      "league_name": "Oman - Omani League",
-      "match_key": "2026-08-31|oman|dhofar scsc",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 3,
-      "origins": {
-        "awaiting_movement_lifecycle": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 3
     }
   ]
 }
