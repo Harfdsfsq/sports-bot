@@ -1,14 +1,14 @@
 🧾 HARIZON run report v6 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: odds-api.io: выбранные букмекеры недоступны на текущем тарифе
+• Главная причина: line movement guard снял кандидата
 
 📦 Покрытие
-• Матчи в run: 1 | day inventory: 300
-• С линиями: 1 | с контекстом: 13 | ready model: 141
-• odds-api.io offers: 997 | Bzzoiro secondary offers: 6
-• 2+ букмекера odds-api.io: 1 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Матчи в run: 2 | day inventory: 300
+• С линиями: 1 | с контекстом: 5 | ready model: 125
+• odds-api.io offers: 712 | Bzzoiro secondary offers: 0
+• 2+ букмекера odds-api.io: 9 | 2-source overlap Bzzoiro+odds-api.io: 0
 
-• A-tier enrichment queue: Bzzoiro odds targets 55; context projection targets 59; high-value recheck 0.
+• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0 / 24
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
@@ -17,23 +17,25 @@
 • Windowed coverage: audit 8 | allowed 5 | blocked 3 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 1 | no next regular run: 1
-• Line guard: seen 11 | kept 0 | dropped 0
+• Final pre-kickoff checks: 6 | no next regular run: 6
+• Line guard: seen 35 | kept 1 | dropped 23
 
-• Bzzoiro targeted odds: targets 55; events 1486; matched 10; ids 10; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 1; requests 2; events_with_offers 1; offers 9; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 6; overlap matches 0; same-bucket matches 0.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 1; inventory updated 21; inventory 2-source 3.
+• Bzzoiro targeted odds: targets 80; events 1486; matched 19; ids 19; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 0; requests 0; events_with_offers 0; offers 0; diag no_matched_event_ids.
+• Bzzoiro overlap bridge: offers 0; overlap matches 0; same-bucket matches 0.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 9; inventory updated 26; inventory 2-source 2.
 • Bzzoiro source trace: aggregate events 249; persisted rows 370; targeted events 1486; diag full_or_provider_rows_available.
 • Last-chance line relief: seen 3; floor 1; hard 1; relieved 0.
 📡 Core API
-• odds_api_io: events req 0, odds req 9, matched 40, offers 997, 2+ books 1, err 5, auth_failed False
-• sstats: req 4, ctx 13, rows 16733, err 0, deep enriched 0
-• bzzoiro: req 3, ctx 0, events 249 (aggregate; persisted rows 370; trace full_or_provider_rows_available), secondary offers 6, overlap odds-api.io 0, err 0
+• odds_api_io: events req 0, odds req 9, matched 40, offers 712, 2+ books 9, err 5, auth_failed False
+• sstats: req 4, ctx 5, rows 16726, err 0, deep enriched 0
+• bzzoiro: req 3, ctx 0, events 249 (aggregate; persisted rows 370; trace full_or_provider_rows_available), secondary offers 0, overlap odds-api.io 0, err 0
 • sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
 🚫 Почему не опубликовано
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (100%)
+• кандидат ждёт следующий cron для второго снимка линии: 20 (83%)
+• line movement guard снял кандидата: 3 (12%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (4%)
 
 📌 Вывод
 • Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
