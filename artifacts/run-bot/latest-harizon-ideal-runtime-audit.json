@@ -1,37 +1,36 @@
 {
   "best_near_misses": [],
   "blockers": [
-    "line_coverage_below_80pct",
     "context_coverage_below_85pct",
     "near_6h_model_ready_below_80pct",
     "odds_api_io_account2_zero_offers"
   ],
   "bzzoiro_chain": {
-    "merge_after_2plus_books": 9,
+    "merge_after_2plus_books": 5,
     "merge_after_2plus_sources": 0,
-    "overlap_bridge_offers": 0,
+    "overlap_bridge_offers": 12,
     "overlap_matches": 0
   },
-  "created_at_utc": "2026-08-31T09:12:39.546429+00:00",
-  "ideal_score": 73.1,
+  "created_at_utc": "2026-08-31T11:13:51.991504+00:00",
+  "ideal_score": 77.8,
   "inventory": {
-    "next_12h_ready": 35,
-    "next_12h_ready_pct": 15.0,
-    "next_12h_total": 234,
-    "next_6h_ready": 35,
-    "next_6h_ready_pct": 24.5,
-    "next_6h_total": 143,
-    "ready": 125,
-    "ready_pct": 41.7,
+    "next_12h_ready": 54,
+    "next_12h_ready_pct": 23.3,
+    "next_12h_total": 232,
+    "next_6h_ready": 54,
+    "next_6h_ready_pct": 27.3,
+    "next_6h_total": 198,
+    "ready": 149,
+    "ready_pct": 49.7,
     "total": 300,
-    "with_context": 158,
-    "with_context_pct": 52.7,
-    "with_lines": 229,
-    "with_lines_pct": 76.3
+    "with_context": 175,
+    "with_context_pct": 58.3,
+    "with_lines": 247,
+    "with_lines_pct": 82.3
   },
   "line_movement": {
     "class_counts": {},
-    "created_at_utc": "2026-08-31T09:10:10.049511+00:00",
+    "created_at_utc": "2026-08-31T11:11:11.859579+00:00",
     "evaluated": 0,
     "note": "diagnostic/watchlist only; hard guards are unchanged",
     "publication_contract_relaxed": false,
@@ -48,20 +47,31 @@
   },
   "proxy_xg_replacement": {
     "checked": 24,
-    "created_at_utc": "2026-08-31T09:09:04.656742+00:00",
-    "examples": [],
+    "created_at_utc": "2026-08-31T11:09:48.601151+00:00",
+    "examples": [
+      {
+        "away_team": "Halesowen Town FC",
+        "expected_away": 1.2952,
+        "expected_home": 1.2952,
+        "home_team": "Redditch United",
+        "point": 2.5,
+        "selection": "Меньше",
+        "total_xg": 2.5904
+      }
+    ],
     "note": "Market-implied xG replaces only proxy 1:1 placeholders; it is not hard provider xG and does not bypass line/value/source guards.",
-    "replaced": 0,
+    "replaced": 1,
     "skipped": {
       "hard_xg": 0,
       "no_market_implied": 0,
-      "not_placeholder": 24
+      "not_placeholder": 23
     },
     "status": "ok",
-    "touched_files": []
+    "touched_files": [
+      "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json"
+    ]
   },
   "recommended_actions": [
-    "raise usable line coverage: account2 fallback, Bzzoiro/SportLogic secondary odds, same-side 2-book backfill",
     "raise context coverage: Bzzoiro near-window match, SStats deep context, weather only for top candidates",
     "prioritize next-6h inventory for odds/context before wider inventory",
     "enable account2 entitlement fallback/unfiltered retry diagnostics or replace Betfair/Sbobet set"
