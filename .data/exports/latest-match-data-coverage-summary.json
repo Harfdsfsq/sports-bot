@@ -2,14 +2,14 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 4,
-      "rows_seen": 4,
+      "rows_kept": 14,
+      "rows_seen": 14,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 24,
-      "rows_seen": 79,
+      "rows_kept": 6,
+      "rows_seen": 61,
       "rows_stale": 55
     },
     "lifecycle": {
@@ -25,9 +25,9 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 4,
+      "rows_seen": 4,
       "rows_stale": 0
     }
   },
@@ -35,27 +35,28 @@
     "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 6,
-    "controlled_candidates_seen": 2,
+    "contexts_built": 0,
+    "controlled_candidates_seen": 7,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 14,
-    "matches_seen": 20,
-    "matches_with_offers": 4
+    "coverage_candidates_current_date": 10,
+    "matches_seen": 1,
+    "matches_with_offers": 1
   },
-  "created_at": "2026-09-01T03:09:31.249016+00:00",
+  "created_at": "2026-09-01T05:11:25.522702+00:00",
   "family_counts": {
-    "spreads": 8,
-    "totals": 6
+    "h2h": 1,
+    "spreads": 2,
+    "totals": 7
   },
-  "matches_with_candidates": 6,
+  "matches_with_candidates": 7,
   "missing_data_flags": {
-    "confidence_below_micro_c": 14,
-    "edge_below_micro_c": 14,
-    "ev_below_micro_c": 13,
-    "single_book": 12,
-    "single_context_source": 14,
-    "single_odds_source": 14
+    "confidence_below_micro_c": 10,
+    "edge_below_micro_c": 7,
+    "ev_below_micro_c": 6,
+    "single_book": 3,
+    "single_context_source": 7,
+    "single_odds_source": 10
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +70,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 2,
+  "positive_near_miss_count": 6,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +79,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 16,
+      "events_matched": 23,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 230,
+      "offers_parsed": 410,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +103,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 550,
+      "matches_built": 553,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -117,11 +118,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 657,
+      "events_fetched": 660,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 550,
+      "matches_built": 553,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -162,27 +163,6 @@
       "matches_built": 2,
       "offers_parsed": null,
       "provider": "openligadb",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "working",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 6,
-      "direct_event_contexts_built": 6,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "team_form_fallback_only"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "sstats",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -450,6 +430,27 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -514,32 +515,179 @@
   "provider_status_counts": {
     "broken_or_unavailable": 4,
     "low_overlap_or_matching_issue": 1,
-    "no_data": 10,
-    "working": 6
+    "no_data": 11,
+    "working": 5
   },
   "reject_reason_counts_from_rows": {
-    "tier_a_canonical_edge_below_min": 1,
-    "tier_a_canonical_ev_below_min": 1,
-    "tier_a_confirmation_sources_below_min:1/2": 2,
-    "tier_a_market_implied_xg_not_hard_confirmation": 2,
-    "tier_a_odds_sources_below_min:1/2": 2,
-    "tier_a_publication_score_below_min": 1,
-    "tier_a_quality_below_min": 2,
-    "tier_a_two_plus_context_sources_required:1/2": 2,
-    "tier_a_two_plus_odds_sources_required:1/2": 2,
-    "tier_b_canonical_edge_below_min": 1,
+    "tier_b_low_quality_competition_requires_a_tier": 1,
     "tier_b_publication_score_below_min": 1,
-    "tier_b_quality_below_min": 2,
-    "tier_c_market_implied_xg_not_hard_confirmation": 1,
-    "tier_c_quality_below_min": 1
+    "tier_b_quality_below_min": 3,
+    "tier_c_market_implied_xg_not_hard_confirmation": 3,
+    "tier_c_quality_below_min": 3
   },
   "target_date": "2026-09-01",
   "top_near_miss": [
     {
+      "away_team": "Shanghai Port FC",
+      "best_candidate": {
+        "adjusted_probability": 0.605831,
+        "books_count": 2,
+        "canonical_edge_pp": 6.529,
+        "canonical_ev_pct": 12.079,
+        "confidence": 73.035,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 73.035,
+      "best_edge_pp": 6.529,
+      "best_ev_pct": 12.079,
+      "books_max": 2,
+      "candidate_count": 2,
+      "commence_time": "2026-09-01T11:35:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 1,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Shandong Taishan FC",
+      "league_name": "China - FA Cup",
+      "match_key": "soccer|shandong taishan|shanghai port|2026-09-01",
+      "missing_flags": {
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 2
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "awaiting_movement_lifecycle": 1,
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Antalyaspor",
+      "best_candidate": {
+        "adjusted_probability": 0.59569,
+        "books_count": 2,
+        "canonical_edge_pp": 5.515,
+        "canonical_ev_pct": 10.203,
+        "confidence": 70.691,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 70.691,
+      "best_edge_pp": 5.515,
+      "best_ev_pct": 10.203,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-09-01T13:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Bandirmaspor",
+      "league_name": "Turkiye - 1. Lig",
+      "match_key": "soccer|bandirmaspor|antalyaspor|2026-09-01",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Antalyaspor",
+      "best_candidate": {
+        "adjusted_probability": 0.59569,
+        "books_count": 2,
+        "canonical_edge_pp": 5.515,
+        "canonical_ev_pct": 10.203,
+        "confidence": 70.691,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 70.691,
+      "best_edge_pp": 5.515,
+      "best_ev_pct": 10.203,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-09-01T13:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Bandirmaspor",
+      "league_name": "Turkiye - 1. Lig",
+      "match_key": "soccer|antalyaspor|bandirmaspor|2026-09-01",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "controlled": 1
+      },
+      "reject_reasons": {
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_quality_below_min": 1
+      },
+      "sources_max": 1
+    },
+    {
       "away_team": "Piast Gliwice",
       "best_candidate": {
         "adjusted_probability": 0.39855,
-        "books_count": 3,
+        "books_count": 2,
         "canonical_edge_pp": 3.491,
         "canonical_ev_pct": 9.601,
         "confidence": 70.421,
@@ -548,31 +696,21 @@
         "family": "totals",
         "odds": 2.75,
         "odds_sources_count": 1,
-        "origin": "controlled",
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
-        "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_a_confirmation_sources_below_min:1/2",
-          "tier_a_two_plus_odds_sources_required:1/2",
-          "tier_a_two_plus_context_sources_required:1/2",
-          "tier_a_market_implied_xg_not_hard_confirmation",
-          "tier_b_quality_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_market_implied_xg_not_hard_confirmation"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
         "sources_count": 1
       },
       "best_confidence": 70.421,
       "best_edge_pp": 3.491,
       "best_ev_pct": 9.601,
-      "books_max": 3,
+      "books_max": 2,
       "candidate_count": 1,
       "commence_time": "2026-09-01T14:00:00+00:00",
       "confirmation_sources_max": 1,
       "context_sources_max": 1,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
@@ -587,73 +725,45 @@
       },
       "odds_sources_max": 1,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_a_confirmation_sources_below_min:1/2": 1,
-        "tier_a_market_implied_xg_not_hard_confirmation": 1,
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_quality_below_min": 1,
-        "tier_a_two_plus_context_sources_required:1/2": 1,
-        "tier_a_two_plus_odds_sources_required:1/2": 1,
-        "tier_b_quality_below_min": 1,
-        "tier_c_market_implied_xg_not_hard_confirmation": 1,
-        "tier_c_quality_below_min": 1
-      },
+      "reject_reasons": {},
       "sources_max": 1
     },
     {
-      "away_team": "Shanghai Port FC",
+      "away_team": "RKS Radomiak Radom",
       "best_candidate": {
-        "adjusted_probability": 0.408103,
+        "adjusted_probability": 0.579008,
         "books_count": 2,
-        "canonical_edge_pp": 0.81,
-        "canonical_ev_pct": 2.026,
-        "confidence": 67.012,
+        "canonical_edge_pp": 3.847,
+        "canonical_ev_pct": 7.117,
+        "confidence": 69.302,
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.5,
+        "odds": 1.85,
         "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 2.5,
-        "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_canonical_edge_below_min",
-          "tier_a_canonical_ev_below_min",
-          "tier_a_publication_score_below_min",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_a_confirmation_sources_below_min:1/2",
-          "tier_a_two_plus_odds_sources_required:1/2",
-          "tier_a_two_plus_context_sources_required:1/2",
-          "tier_a_market_implied_xg_not_hard_confirmation",
-          "tier_b_quality_below_min",
-          "tier_b_canonical_edge_below_min",
-          "tier_b_publication_score_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_canonical_edge_below_min",
-          "tier_c_canonical_ev_below_min",
-          "tier_c_publication_score_below_min",
-          "tier_c_market_implied_xg_not_hard_confirmation"
-        ],
-        "selection": "Меньше",
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Больше",
         "sources_count": 1
       },
-      "best_confidence": 67.012,
-      "best_edge_pp": 0.81,
-      "best_ev_pct": 2.026,
+      "best_confidence": 69.302,
+      "best_edge_pp": 3.847,
+      "best_ev_pct": 7.117,
       "books_max": 2,
       "candidate_count": 1,
-      "commence_time": "2026-09-01T11:35:00+00:00",
+      "commence_time": "2026-09-01T12:30:00+00:00",
       "confirmation_sources_max": 1,
       "context_sources_max": 1,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "Shandong Taishan FC",
-      "league_name": "China - FA Cup",
-      "match_key": "soccer|shandong taishan|shanghai port|2026-09-01",
+      "home_team": "Korona II Kielce SA",
+      "league_name": "Poland - Puchar Polski",
+      "match_key": "soccer|korona_ii_kielce_sa|rks_radomiak_radom|2026-09-01",
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
@@ -663,21 +773,67 @@
       },
       "odds_sources_max": 1,
       "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "RKS Radomiak Radom",
+      "best_candidate": {
+        "adjusted_probability": 0.579008,
+        "books_count": 2,
+        "canonical_edge_pp": 3.847,
+        "canonical_ev_pct": 7.116,
+        "confidence": 69.302,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 1.85,
+        "odds_sources_count": 1,
+        "origin": "controlled",
+        "point": 3.5,
+        "reject_reasons": [
+          "tier_b_quality_below_min",
+          "tier_b_publication_score_below_min",
+          "tier_b_low_quality_competition_requires_a_tier",
+          "tier_c_quality_below_min",
+          "tier_c_market_implied_xg_not_hard_confirmation"
+        ],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.302,
+      "best_edge_pp": 3.847,
+      "best_ev_pct": 7.116,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-09-01T12:30:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 1,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Korona II Kielce SA",
+      "league_name": "Poland - Puchar Polski",
+      "match_key": "soccer|korona 2 kielce sa|rks radomiak radom|2026-09-01",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
         "controlled": 1
       },
       "reject_reasons": {
-        "tier_a_canonical_edge_below_min": 1,
-        "tier_a_canonical_ev_below_min": 1,
-        "tier_a_confirmation_sources_below_min:1/2": 1,
-        "tier_a_market_implied_xg_not_hard_confirmation": 1,
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_publication_score_below_min": 1,
-        "tier_a_quality_below_min": 1,
-        "tier_a_two_plus_context_sources_required:1/2": 1,
-        "tier_a_two_plus_odds_sources_required:1/2": 1,
-        "tier_b_canonical_edge_below_min": 1,
+        "tier_b_low_quality_competition_requires_a_tier": 1,
         "tier_b_publication_score_below_min": 1,
-        "tier_b_quality_below_min": 1
+        "tier_b_quality_below_min": 1,
+        "tier_c_market_implied_xg_not_hard_confirmation": 1,
+        "tier_c_quality_below_min": 1
       },
       "sources_max": 1
     }
