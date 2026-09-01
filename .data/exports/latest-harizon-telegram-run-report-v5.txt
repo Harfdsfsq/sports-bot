@@ -1,41 +1,57 @@
-🧾 HARIZON run report v6 — единая фактическая сводка
-• Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: кандидат ждёт следующий cron для второго снимка линии
+🧾 HARIZON — понятный отчёт по запуску
+🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
+• Главная причина: odds-api.io: выбранные букмекеры недоступны на текущем тарифе
 
-📦 Покрытие
-• Матчи в run: 3 | day inventory: 300
-• С линиями: 2 | с контекстом: 3 | ready model: 122
-• odds-api.io offers: 394 | Bzzoiro secondary offers: 18
-• 2+ букмекера odds-api.io: 7 | 2-source overlap Bzzoiro+odds-api.io: 2
+📦 Инвентарь и покрытие
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 10 (это не размер inventory).
+• Очередь provider-enrichment: 139 активных матчей; model scope 24; назначений по ролям 125. Очередь сбора не расширяет публикационный scope.
+• 1+ линия: 300/300 (100%) | 1+ контекст: 263/300 (88%)
+• 2+ букмекера: 288/300 (96%)
+• Raw 2+ букмекера odds-api.io current snapshot: 14 | normalized cumulative inventory: 288.
+• Odds-api offer snapshot: rows 1740, matches 28, same-side 2+ books 14
+• 2+ independent odds-source: 1/300 (0%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ контекста: 56/300 (19%)
+• Готово для модели: 263/300 (88%)
 
-• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
+🏷️ A/B-tier публикация
+• A-tier strict-ready: 1 | main опубликовано: 0
+  A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 263 | fallback опубликовано: 0
+  B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 1 матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до 263 матчей.
+• A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
+• 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
+• Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
+• Ledger: unique published 107; pending 15; duplicates removed 325; policy semantic match market selection point kickoff.
+
+🛡️ Движение линии и финальный фильтр
+• Pre-kickoff проверок: 53 | матчей без следующего регулярного run: 20
+• Line guard: увидел 0, оставил 0, снял 0
+
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 24
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
-• Main pipeline: published False (0)
-• Controlled fallback: status fallback_artifact_stale_or_missing_after_step | seen 0 | evaluated 0 | published False (0)
-• Windowed coverage: audit 8 | allowed 5 | blocked 3 | publish-filter input 0
+• Raw/candidates before quality: 0/2
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
-🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 1 | no next regular run: 1
-• Line guard: seen 27 | kept 1 | dropped 15
-
-• Bzzoiro targeted odds: targets 80; events 1486; matched 3; ids 3; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
-• Bzzoiro odds detail: targets 3; requests 6; events_with_offers 3; offers 27; diag offers_parsed.
-• Bzzoiro overlap bridge: offers 18; overlap matches 2; same-bucket matches 2.
-• Bzzoiro odds merge: 2-source matches 0; 2+ books 7; inventory updated 19; inventory 2-source 0.
-• Bzzoiro source trace: aggregate events 147; persisted rows 370; targeted events 1486; diag full_or_provider_rows_available.
-• Last-chance line relief: seen 17; floor 11; hard 6; relieved 0.
-📡 Core API
-• odds_api_io: events req 0, odds req 9, matched 36, offers 394, 2+ books 7, err 5, auth_failed False
-• sstats: req 4, ctx 3, rows 17508, err 0, deep enriched 0
-• bzzoiro: req 2, ctx 0, events 147 (aggregate; persisted rows 370; trace full_or_provider_rows_available), secondary offers 18, overlap odds-api.io 2, err 0
-• sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
+📡 Провайдеры: запросы и полезные данные
+• odds-api.io: events req 0, odds req 9; смэтчил матчей 33; offers 1740; 2+ букмекера 14; ошибок 5.
+• Bzzoiro: direct req 2, v2 req 2; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 20; сырых строк 16695; контекстов 7; deep-enriched 15; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
+• Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 15 (94%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (6%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (100%)
 
-📌 Вывод
-• Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
-• Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
+🔎 Проверенные reserve-кандидаты
+• Нет проверенных reserve-кандидатов в свежем fallback report.
+
+📌 Что это значит
+• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
+• Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
+
+🔗 GitHub Actions
+• Run ID: 33525719420
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/33525719420
+• Artifact: run-bot-33525719420
+• workflow run-bot, attempt 1
