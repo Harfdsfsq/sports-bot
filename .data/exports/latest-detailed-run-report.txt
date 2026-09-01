@@ -4,15 +4,15 @@
 
 📦 Дневной inventory
 • Матчей всего: 300
-• С линиями: 261/300
-• С контекстом: 55/300
-• Готово к модели: 55/300
-• Ближайшие 6 часов: 4/15 готово
+• С линиями: 259/300
+• С контекстом: 109/300
+• Готово к модели: 108/300
+• Ближайшие 6 часов: 21/31 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 1 | с линиями: 1 | контекстов: 0
+• Матчи: 3 | с линиями: 1 | контекстов: 0
 • Кандидаты: raw 0 | до качества 24 | publishable 0
-• Резерв проверил: 0 | оценено в отчёте: 7 | выбрано: 0
+• Резерв проверил: 0 | оценено в отчёте: 20 | выбрано: 0
 
 🧩 Диагностика патчей
 • confirmation bridge: installed | patched_hard_reject_inputs 0
@@ -20,11 +20,11 @@
 • current price patch: ok
 • zero-raw recovery: not_recovered | recovered_candidates 0
 • match-window recovery: not_needed | recovered_matches 0
-• evidence/integrity patch: installed | patched_odds_source_metrics 0 | market_probability_guard_softened_without_real_prices 0
-• provider targeting: ok | fallback_evaluated 7
+• evidence/integrity patch: installed | patched_odds_source_metrics 2 | market_probability_guard_softened_without_real_prices 0
+• provider targeting: ok | fallback_evaluated 20
 
 📡 Источники / фактическая работа
-• odds_api_io: data 23/544, req 0, err 5
+• odds_api_io: data 19/560, req 0, err 5
 • bzzoiro: data 0/0, req 2, err 0
 • sstats: data 0/0, req 4, err 0
 • football_data: data 0/0, req 0, err 0
@@ -33,39 +33,42 @@
 • openfootball: data 0/0, req 0, err 0
 
 🚫 Почему не прошли
-• tier_b_quality_below_min — 7 (18%)
-• tier_c_quality_below_min — 7 (18%)
-• tier_c_market_implied_xg_not_hard_confirmation — 7 (18%)
-• tier_b_publication_score_below_min — 3 (8%)
-• tier_b_low_quality_competition_requires_a_tier — 2 (5%)
-• tier_a_quality_below_min — 2 (5%)
-• tier_a_odds_sources_below_min:1/2 — 2 (5%)
-• tier_a_confirmation_sources_below_min:1/2 — 2 (5%)
-• tier_a_two_plus_odds_sources_required:1/2 — 2 (5%)
-• tier_a_two_plus_context_sources_required:1/2 — 2 (5%)
+• tier_c_quality_below_min — 12 (23%)
+• tier_b_quality_below_min — 7 (13%)
+• tier_c_market_implied_xg_not_hard_confirmation — 6 (12%)
+• tier_b_low_quality_competition_requires_a_tier — 6 (12%)
+• xg_direction_conflict — 4 (8%)
+• tier_a_quality_below_min — 3 (6%)
+• tier_a_odds_sources_below_min:1/2 — 3 (6%)
+• tier_b_publication_score_below_min — 3 (6%)
+• final_ev_below_min — 2 (4%)
+• tier_a_confirmation_sources_below_min:1/2 — 2 (4%)
 
 ⚠️ Пограничные кандидаты
-1. Шандонг Тайшан — Шангхай Порт | Меньше @1.85
+1. Бристол Кити U21 — Шеффиелд Унитед U21 | Меньше @3.00
+   • EV +17.3% | edge +5.8 п.п. | q 0.0
+   • не прошло: tier_a_quality_below_min; tier_a_odds_sources_below_min:1/2; tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min
+2. Худдерсфиелд Тоун U21 — Квинс Парк Рангерс U21 | Меньше @2.10
+   • EV +15.0% | edge +7.1 п.п. | q 0.0
+   • не прошло: tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min
+3. Флитууд Тоун U21 — Миллуалл U21 | Меньше @1.93
+   • EV +14.3% | edge +7.4 п.п. | q 0.0
+   • не прошло: tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min
+4. Чарлтон Атлетик U21 — Уиган Атлетик U21 | Меньше @2.26
+   • EV +12.7% | edge +5.6 п.п. | q 0.0
+   • не прошло: tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min
+5. Шандонг Тайшан — Шангхай Порт | Меньше @1.85
    • EV +12.1% | edge +6.5 п.п. | q 0.0
    • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-2. Бандирмаспор — Анталиаспор | Меньше @1.85
-   • EV +10.2% | edge +5.5 п.п. | q 0.0
+6. Сиарка Тарнобрзег — Заглебие Лубин | Меньше @1.57
+   • EV +11.9% | edge +7.6 п.п. | q 0.0
+   • не прошло: odds_below_global_min
+7. Хулл Кити U21 — Суанси Кити U21 | Меньше @2.05
+   • EV +11.3% | edge +5.5 п.п. | q 0.0
+   • не прошло: tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min
+8. Прогресул 1944 Спартак — CS Конкордиа Чиаджна | Меньше @1.95
+   • EV +10.4% | edge +5.4 п.п. | q 0.0
    • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-3. Бандирмаспор — Анталиаспор | Меньше @1.85
-   • EV +10.2% | edge +5.5 п.п. | q 0.0
-   • не прошло: tier_b_quality_below_min; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-4. BKS Чемик Бидгосзкз — Пиаст Глиуике | Меньше @2.75
-   • EV +9.6% | edge +3.5 п.п. | q 0.0
-   • не прошло: tier_a_quality_below_min; tier_a_odds_sources_below_min:1/2; tier_a_confirmation_sources_below_min:1/2; tier_a_two_plus_odds_sources_required:1/2; tier_a_two_plus_context_sources_required:1/2
-5. Корона II Киелке SA — RKS Радомиак Радом | Больше @1.85
-   • EV +7.1% | edge +3.8 п.п. | q 0.0
-   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-6. Корона II Киелке SA — RKS Радомиак Радом | Больше @1.85
-   • EV +7.1% | edge +3.8 п.п. | q 0.0
-   • не прошло: tier_b_quality_below_min; tier_b_publication_score_below_min; tier_b_low_quality_competition_requires_a_tier; tier_c_quality_below_min; tier_c_market_implied_xg_not_hard_confirmation
-7. Шандонг Тайшан — Шангхай Порт | Меньше @2.50
-   • EV +2.0% | edge +0.8 п.п. | q 0.0
-   • не прошло: tier_a_quality_below_min; tier_a_canonical_edge_below_min; tier_a_canonical_ev_below_min; tier_a_publication_score_below_min; tier_a_odds_sources_below_min:1/2
 
 📌 Вывод
 • Прогнозов нет из-за комбинации value, качества, источников и финальных safety-guard’ов.
