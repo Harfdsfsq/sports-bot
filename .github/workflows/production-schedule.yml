@@ -3,6 +3,7 @@ name: production-schedule
 on:
   schedule:
     # 21,23,01,... UTC => 00,02,04,... Europe/Moscow.
+    # Daily inventory is managed separately by the existing cron-job.org job.
     - cron: "0 1-23/2 * * *"
   workflow_dispatch:
 
@@ -18,16 +19,6 @@ jobs:
   dispatch:
     runs-on: ubuntu-latest
     steps:
-      - name: Build daily inventory at 00:00 Moscow
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        shell: bash
-        run: |
-          local_hour="$(TZ=Europe/Moscow date +%H)"
-          if [[ "$local_hour" == "00" ]]; then
-            gh workflow run build-day-inventory.yml --repo "$GH_REPO" || true
-          fi
       - name: Dispatch rules-compliant production run
         env:
           GH_TOKEN: ${{ github.token }}
