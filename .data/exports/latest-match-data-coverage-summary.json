@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 44,
-      "rows_seen": 44,
+      "rows_kept": 0,
+      "rows_seen": 0,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 9,
-      "rows_seen": 61,
-      "rows_stale": 52
+      "rows_kept": 16,
+      "rows_seen": 67,
+      "rows_stale": 51
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 6,
-      "rows_seen": 6,
+      "rows_kept": 14,
+      "rows_seen": 14,
       "rows_stale": 0
     }
   },
@@ -35,27 +35,27 @@
     "candidates_before_quality": 24,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 0,
-    "controlled_candidates_seen": 20,
+    "contexts_built": 3,
+    "controlled_candidates_seen": null,
     "controlled_published": false,
-    "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 23,
+    "controlled_status": "fallback_artifact_stale_or_missing_after_step",
+    "coverage_candidates_current_date": 22,
     "matches_seen": 3,
-    "matches_with_offers": 1
+    "matches_with_offers": 2
   },
-  "created_at": "2026-09-01T07:12:52.236197+00:00",
+  "created_at": "2026-09-01T09:11:56.697976+00:00",
   "family_counts": {
-    "spreads": 2,
-    "totals": 21
+    "spreads": 3,
+    "totals": 19
   },
-  "matches_with_candidates": 20,
+  "matches_with_candidates": 17,
   "missing_data_flags": {
     "confidence_below_micro_c": 15,
-    "edge_below_micro_c": 14,
-    "ev_below_micro_c": 12,
-    "single_book": 3,
-    "single_context_source": 8,
-    "single_odds_source": 19
+    "edge_below_micro_c": 16,
+    "ev_below_micro_c": 13,
+    "single_book": 6,
+    "single_context_source": 11,
+    "single_odds_source": 12
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 19,
+  "positive_near_miss_count": 15,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +78,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 19,
+      "events_matched": 21,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 480,
+      "offers_parsed": 394,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,7 +102,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 551,
+      "matches_built": 548,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -121,7 +121,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 551,
+      "matches_built": 548,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -162,6 +162,65 @@
       "matches_built": 2,
       "offers_parsed": null,
       "provider": "openligadb",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 3,
+      "direct_event_contexts_built": 3,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 3,
+      "direct_event_contexts_built": 3,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 3,
+      "direct_event_contexts_built": 3,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -383,27 +442,6 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
@@ -421,68 +459,16 @@
       "rows_fetched": 0,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 2,
     "low_overlap_or_matching_issue": 1,
-    "no_data": 11,
-    "working": 5
+    "no_data": 8,
+    "working": 8
   },
   "reject_reason_counts_from_rows": {
-    "bad_historical_segment_guard": 2,
-    "final_ev_below_min": 1,
-    "tier_a_odds_sources_below_min:1/2": 1,
-    "tier_a_quality_below_min": 1,
-    "tier_b_low_quality_competition_requires_a_tier": 5,
-    "tier_b_publication_score_below_min": 1,
-    "tier_b_quality_below_min": 2,
-    "tier_c_market_implied_xg_not_hard_confirmation": 1,
-    "tier_c_quality_below_min": 7,
-    "xg_direction_conflict": 4,
-    "xg_probability_gap_hard_reject": 2
+    "bad_historical_segment_guard": 2
   },
   "target_date": "2026-09-01",
   "top_near_miss": [
@@ -498,17 +484,12 @@
         "context_sources_count": 2,
         "family": "totals",
         "odds": 3.0,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 2,
+        "origin": "awaiting_movement_lifecycle",
         "point": 2.5,
-        "reject_reasons": [
-          "tier_a_quality_below_min",
-          "tier_a_odds_sources_below_min:1/2",
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 2
       },
       "best_confidence": 80.0,
       "best_edge_pp": 5.775,
@@ -518,27 +499,20 @@
       "commence_time": "2026-09-01T12:00:00+00:00",
       "confirmation_sources_max": 2,
       "context_sources_max": 2,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
       "home_team": "Bristol City U21",
       "league_name": "England Amateur - U21 Professional Development League",
       "match_key": "2026-09-01|bristol city|sheffield united",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
+      "missing_flags": {},
+      "odds_sources_max": 2,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_a_odds_sources_below_min:1/2": 1,
-        "tier_a_quality_below_min": 1,
-        "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "reject_reasons": {},
+      "sources_max": 2
     },
     {
       "away_team": "Queens Park Rangers U21",
@@ -552,15 +526,12 @@
         "context_sources_count": 2,
         "family": "totals",
         "odds": 2.1,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 2,
+        "origin": "awaiting_movement_lifecycle",
         "point": 3.5,
-        "reject_reasons": [
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 2
       },
       "best_confidence": 80.0,
       "best_edge_pp": 7.148,
@@ -570,25 +541,20 @@
       "commence_time": "2026-09-01T12:00:00+00:00",
       "confirmation_sources_max": 2,
       "context_sources_max": 2,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
       "home_team": "Huddersfield Town U21",
       "league_name": "England Amateur - U21 Professional Development League",
       "match_key": "2026-09-01|huddersfield town|queens park rangers",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
+      "missing_flags": {},
+      "odds_sources_max": 2,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "reject_reasons": {},
+      "sources_max": 2
     },
     {
       "away_team": "Millwall U21",
@@ -602,15 +568,12 @@
         "context_sources_count": 5,
         "family": "totals",
         "odds": 1.93,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 5,
+        "origin": "awaiting_movement_lifecycle",
         "point": 3.5,
-        "reject_reasons": [
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 5
       },
       "best_confidence": 82.0,
       "best_edge_pp": 7.407,
@@ -620,25 +583,20 @@
       "commence_time": "2026-09-01T12:00:00+00:00",
       "confirmation_sources_max": 5,
       "context_sources_max": 5,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
       "home_team": "Fleetwood Town U21",
       "league_name": "England Amateur - U21 Professional Development League",
       "match_key": "2026-09-01|fleetwood town|millwall",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
+      "missing_flags": {},
+      "odds_sources_max": 5,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "reject_reasons": {},
+      "sources_max": 5
     },
     {
       "away_team": "Wigan Athletic U21",
@@ -646,49 +604,41 @@
         "adjusted_probability": 0.498706,
         "books_count": 7,
         "canonical_edge_pp": 5.623,
-        "canonical_ev_pct": 12.708,
+        "canonical_ev_pct": 12.707,
         "confidence": 82.0,
         "confirmation_sources_count": 5,
         "context_sources_count": 5,
         "family": "totals",
         "odds": 2.26,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 5,
+        "origin": "awaiting_movement_lifecycle",
         "point": 3.5,
-        "reject_reasons": [
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 5
       },
       "best_confidence": 82.0,
       "best_edge_pp": 5.623,
-      "best_ev_pct": 12.708,
+      "best_ev_pct": 12.707,
       "books_max": 7,
       "candidate_count": 1,
       "commence_time": "2026-09-01T12:00:00+00:00",
       "confirmation_sources_max": 5,
       "context_sources_max": 5,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
       "home_team": "Charlton Athletic U21",
       "league_name": "England Amateur - U21 Professional Development League",
       "match_key": "2026-09-01|charlton athletic|wigan athletic",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
+      "missing_flags": {},
+      "odds_sources_max": 5,
       "origins": {
-        "controlled": 1
+        "awaiting_movement_lifecycle": 1
       },
-      "reject_reasons": {
-        "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "reject_reasons": {},
+      "sources_max": 5
     },
     {
       "away_team": "Shanghai Port FC",
@@ -739,48 +689,6 @@
       "sources_max": 2
     },
     {
-      "away_team": "Zaglebie Lubin",
-      "best_candidate": {
-        "adjusted_probability": 0.712792,
-        "books_count": 8,
-        "canonical_edge_pp": 7.585,
-        "canonical_ev_pct": 11.908,
-        "confidence": 79.359,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 1.57,
-        "odds_sources_count": 2,
-        "origin": "rescue",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 79.359,
-      "best_edge_pp": 7.585,
-      "best_ev_pct": 11.908,
-      "books_max": 8,
-      "candidate_count": 1,
-      "commence_time": "2026-09-01T14:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "Siarka Tarnobrzeg",
-      "league_name": "Poland - Puchar Polski",
-      "match_key": "soccer|siarka_tarnobrzeg|zaglebie_lubin|2026-09-01",
-      "missing_flags": {},
-      "odds_sources_max": 2,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
-    },
-    {
       "away_team": "Swansea City U21",
       "best_candidate": {
         "adjusted_probability": 0.543093,
@@ -792,15 +700,12 @@
         "context_sources_count": 5,
         "family": "totals",
         "odds": 2.05,
-        "odds_sources_count": 1,
-        "origin": "controlled",
+        "odds_sources_count": 5,
+        "origin": "awaiting_movement_lifecycle",
         "point": 3.5,
-        "reject_reasons": [
-          "tier_b_low_quality_competition_requires_a_tier",
-          "tier_c_quality_below_min"
-        ],
+        "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 1
+        "sources_count": 5
       },
       "best_confidence": 82.0,
       "best_edge_pp": 5.529,
@@ -810,124 +715,20 @@
       "commence_time": "2026-09-01T12:00:00+00:00",
       "confirmation_sources_max": 5,
       "context_sources_max": 5,
-      "controlled_count": 1,
+      "controlled_count": 0,
       "families": {
         "totals": 1
       },
       "home_team": "Hull City U21",
       "league_name": "England Amateur - U21 Professional Development League",
       "match_key": "2026-09-01|hull city|swansea city",
-      "missing_flags": {
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
+      "missing_flags": {},
+      "odds_sources_max": 5,
       "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "tier_b_low_quality_competition_requires_a_tier": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
-    },
-    {
-      "away_team": "CS Concordia Chiajna",
-      "best_candidate": {
-        "adjusted_probability": 0.566393,
-        "books_count": 2,
-        "canonical_edge_pp": 5.357,
-        "canonical_ev_pct": 10.447,
-        "confidence": 70.801,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
-        "family": "totals",
-        "odds": 1.95,
-        "odds_sources_count": 1,
-        "origin": "rescue",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 70.801,
-      "best_edge_pp": 5.357,
-      "best_ev_pct": 10.447,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-09-01T13:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "AFC Progresul 1944 Spartac",
-      "league_name": "Romania - Cupa Romaniei, Group D",
-      "match_key": "soccer|afc_progresul_1944_spartac|cs_concordia_chiajna|2026-09-01",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "single_context_source": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "rescue": 1
+        "awaiting_movement_lifecycle": 1
       },
       "reject_reasons": {},
-      "sources_max": 1
-    },
-    {
-      "away_team": "CS Concordia Chiajna",
-      "best_candidate": {
-        "adjusted_probability": 0.566393,
-        "books_count": 2,
-        "canonical_edge_pp": 5.357,
-        "canonical_ev_pct": 10.447,
-        "confidence": 70.801,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 1.95,
-        "odds_sources_count": 1,
-        "origin": "controlled",
-        "point": 3.5,
-        "reject_reasons": [
-          "tier_b_quality_below_min",
-          "tier_c_quality_below_min",
-          "tier_c_market_implied_xg_not_hard_confirmation"
-        ],
-        "selection": "Меньше",
-        "sources_count": 1
-      },
-      "best_confidence": 70.801,
-      "best_edge_pp": 5.357,
-      "best_ev_pct": 10.447,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-09-01T13:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 1,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "AFC Progresul 1944 Spartac",
-      "league_name": "Romania - Cupa Romaniei, Group D",
-      "match_key": "soccer|cs concordia chiajna|progresul 1944 spartac|2026-09-01",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "single_odds_source": 1
-      },
-      "odds_sources_max": 1,
-      "origins": {
-        "controlled": 1
-      },
-      "reject_reasons": {
-        "tier_b_quality_below_min": 1,
-        "tier_c_market_implied_xg_not_hard_confirmation": 1,
-        "tier_c_quality_below_min": 1
-      },
-      "sources_max": 1
+      "sources_max": 5
     },
     {
       "away_team": "Piast Gliwice",
@@ -966,6 +767,152 @@
       "missing_flags": {
         "confidence_below_micro_c": 1,
         "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "awaiting_movement_lifecycle": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "CS Concordia Chiajna",
+      "best_candidate": {
+        "adjusted_probability": 0.556123,
+        "books_count": 2,
+        "canonical_edge_pp": 0.967,
+        "canonical_ev_pct": 8.444,
+        "confidence": 70.339,
+        "confirmation_sources_count": 4,
+        "context_sources_count": 4,
+        "family": "totals",
+        "odds": 1.95,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.5,
+        "reject_reasons": [
+          "bad_historical_segment_guard"
+        ],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 70.339,
+      "best_edge_pp": 0.967,
+      "best_ev_pct": 8.444,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-09-01T13:00:00+00:00",
+      "confirmation_sources_max": 4,
+      "context_sources_max": 4,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "AFC Progresul 1944 Spartac",
+      "league_name": "Romania - Cupa Romaniei, Group D",
+      "match_key": "soccer|afc_progresul_1944_spartac|cs_concordia_chiajna|2026-09-01",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Zaglebie Lubin",
+      "best_candidate": {
+        "adjusted_probability": 0.689372,
+        "books_count": 8,
+        "canonical_edge_pp": 2.712,
+        "canonical_ev_pct": 8.231,
+        "confidence": 78.305,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 1.57,
+        "odds_sources_count": 2,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.5,
+        "reject_reasons": [
+          "bad_historical_segment_guard"
+        ],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 78.305,
+      "best_edge_pp": 2.712,
+      "best_ev_pct": 8.231,
+      "books_max": 8,
+      "candidate_count": 1,
+      "commence_time": "2026-09-01T14:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Siarka Tarnobrzeg",
+      "league_name": "Poland - Puchar Polski",
+      "match_key": "soccer|siarka_tarnobrzeg|zaglebie_lubin|2026-09-01",
+      "missing_flags": {
+        "edge_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "bad_historical_segment_guard": 1
+      },
+      "sources_max": 2
+    },
+    {
+      "away_team": "Radomiak Radom",
+      "best_candidate": {
+        "adjusted_probability": 0.419957,
+        "books_count": 4,
+        "canonical_edge_pp": 3.085,
+        "canonical_ev_pct": 7.929,
+        "confidence": 73.268,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.57,
+        "odds_sources_count": 1,
+        "origin": "awaiting_movement_lifecycle",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 73.268,
+      "best_edge_pp": 3.085,
+      "best_ev_pct": 7.929,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-09-01T12:30:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Korona II Kielce",
+      "league_name": "Puchar Polski",
+      "match_key": "2026-09-01|korona kielce|radomiak radom",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
         "single_context_source": 1,
         "single_odds_source": 1
       },
