@@ -1,0 +1,36 @@
+name: production-schedule
+
+on:
+  schedule:
+    # Odd UTC hours are 00:00, 02:00, ... Europe/Moscow (UTC+3).
+    - cron: "0 1-23/2 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: production-schedule
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build daily inventory at 00:00 Moscow
+        if: github.event_name == 'schedule' && github.event.schedule == '0 1-23/2 * * *'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          local_hour="$(TZ=Europe/Moscow date +%H)"
+          if [[ "$local_hour" == "00" ]]; then
+            gh workflow run build-day-inventory.yml --repo "$GH_REPO" || true
+          fi
+      - name: Dispatch two-hour production run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run run-bot.yml --repo "$GH_REPO" -f mode=normal -f provider_smoke=false -f run_tests=false
