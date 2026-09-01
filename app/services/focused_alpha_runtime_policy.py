@@ -1,9 +1,4 @@
-"""Optional Focused Alpha shadow policy.
-
-Production uses the rules-compliant A/B contract. Focused Alpha is installed
-only when explicitly enabled, so importing the CLI cannot silently replace the
-publication policy.
-"""
+"""Optional Focused Alpha shadow policy and production rules bootstrap."""
 import os
 from typing import Any
 from app.services.focused_alpha_runtime_contract import POLICY
@@ -35,9 +30,14 @@ RULES_AB_INVARIANTS = {
 def _enabled() -> bool:
     return os.getenv("FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
 
-def _apply_rules_ab_invariants() -> None:
+def _apply_rules_ab_invariants() -> dict[str, object]:
     for key, value in RULES_AB_INVARIANTS.items():
         os.environ[key] = value
+    try:
+        from app.services.rules_source_integrity import install
+        return install()
+    except Exception as exc:
+        return {"installed": False, "error": f"{type(exc).__name__}: {exc}"}
 
 def _install_runtime_patches() -> None:
     global ACCUMULATION_PATCH, SETTLEMENT_PAGINATION_PATCH, _PATCHES_INSTALLED
@@ -57,8 +57,8 @@ def _install_runtime_patches() -> None:
 
 def apply(*, force: bool = False) -> dict[str, Any]:
     if not _enabled():
-        _apply_rules_ab_invariants()
-        return {"enabled": False, "status": "disabled_for_rules_ab", "publication_contract_relaxed": False, "rules_invariants_applied": True}
+        integrity = _apply_rules_ab_invariants()
+        return {"enabled": False, "status": "disabled_for_rules_ab", "publication_contract_relaxed": False, "rules_invariants_applied": True, "source_integrity": integrity}
     _install_runtime_patches()
     return _apply_contract(force=force)
 
