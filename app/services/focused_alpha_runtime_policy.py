@@ -13,8 +13,31 @@ ACCUMULATION_PATCH: dict[str, Any] = {"status": "disabled", "publication_contrac
 SETTLEMENT_PAGINATION_PATCH: dict[str, Any] = {"status": "disabled", "publication_contract_relaxed": False}
 _PATCHES_INSTALLED = False
 
+RULES_AB_INVARIANTS = {
+    "PUBLICATION_PROFILE": "rules_ab",
+    "PUBLISH_ALLOW_B_TIER": "true",
+    "PUBLISH_COVERAGE_TIER_MODE": "a_or_b",
+    "HARIZON_PUBLICATION_TIER_MODE": "a_or_b",
+    "PUBLISH_TIER_B_MIN_BOOKS": "2",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
+    "PUBLISH_MIN_ODDS_SOURCES": "1",
+    "MIN_SOURCES_PUBLISH": "1",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "1",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "1",
+    "FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES": "true",
+    "FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT": "0",
+    "NO_BET_QUALITY_SCORE_ENABLED": "false",
+    "HARIZON_AUTONOMOUS_ACCUMULATION_MODE": "false",
+    "LEGACY_RUNTIME_EXTENSIONS_ENABLED": "false",
+}
+
 def _enabled() -> bool:
     return os.getenv("FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+
+def _apply_rules_ab_invariants() -> None:
+    for key, value in RULES_AB_INVARIANTS.items():
+        os.environ[key] = value
 
 def _install_runtime_patches() -> None:
     global ACCUMULATION_PATCH, SETTLEMENT_PAGINATION_PATCH, _PATCHES_INSTALLED
@@ -34,8 +57,9 @@ def _install_runtime_patches() -> None:
 
 def apply(*, force: bool = False) -> dict[str, Any]:
     if not _enabled():
-        return {"enabled": False, "status": "disabled_for_rules_ab", "publication_contract_relaxed": False}
+        _apply_rules_ab_invariants()
+        return {"enabled": False, "status": "disabled_for_rules_ab", "publication_contract_relaxed": False, "rules_invariants_applied": True}
     _install_runtime_patches()
     return _apply_contract(force=force)
 
-__all__ = ["ACCUMULATION_PATCH", "POLICY", "SETTLEMENT_PAGINATION_PATCH", "apply"]
+__all__ = ["ACCUMULATION_PATCH", "POLICY", "RULES_AB_INVARIANTS", "SETTLEMENT_PAGINATION_PATCH", "apply"]
