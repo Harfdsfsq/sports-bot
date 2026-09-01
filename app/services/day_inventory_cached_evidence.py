@@ -160,15 +160,15 @@ def _merge_cached_evidence(dst: dict[str, Any], src: dict[str, Any], now_iso: st
 
     price_count = max(_price_count(dst), _price_count(src))
     context_count = max(_context_count(dst), _context_count(src))
-    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
-    min_context = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
+    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_BOOKS") or os.getenv("MIN_BOOKS_PUBLISH"), 2))
+    min_context = max(1, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 1))
 
     coverage = dst.get("coverage") if isinstance(dst.get("coverage"), dict) else {}
     src_coverage = src.get("coverage") if isinstance(src.get("coverage"), dict) else {}
     coverage["odds"] = bool(coverage.get("odds")) or bool(src_coverage.get("odds")) or price_count > 0
     coverage["context"] = bool(coverage.get("context")) or bool(src_coverage.get("context")) or context_count > 0
-    coverage["odds_2plus_sources"] = price_count >= min_price
-    coverage["context_2plus_sources"] = context_count >= min_context
+    coverage["odds_2plus_sources"] = price_count >= 2
+    coverage["context_2plus_sources"] = context_count >= 2
     coverage["ready_for_model"] = bool(coverage.get("ready_for_model")) or bool(src_coverage.get("ready_for_model")) or (price_count > 0 and context_count > 0)
     coverage["ready_for_publish"] = bool(coverage.get("ready_for_publish")) or bool(src_coverage.get("ready_for_publish")) or (price_count >= min_price and context_count >= min_context)
     dst["coverage"] = coverage
@@ -185,8 +185,8 @@ def _merge_cached_evidence(dst: dict[str, Any], src: dict[str, Any], now_iso: st
 
 
 def _recompute_counts(rows: list[dict[str, Any]], counts: dict[str, Any], now_iso: str) -> dict[str, Any]:
-    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
-    min_context = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
+    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_BOOKS") or os.getenv("MIN_BOOKS_PUBLISH"), 2))
+    min_context = max(1, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 1))
     price2 = context2 = odds_any = context_any = ready_model = ready_publish = 0
     for row in rows:
         price_count = _price_count(row)
@@ -194,8 +194,8 @@ def _recompute_counts(rows: list[dict[str, Any]], counts: dict[str, Any], now_is
         coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
         odds_any += int(bool(coverage.get("odds")) or price_count > 0)
         context_any += int(bool(coverage.get("context")) or context_count > 0)
-        price2 += int(price_count >= min_price)
-        context2 += int(context_count >= min_context)
+        price2 += int(price_count >= 2)
+        context2 += int(context_count >= 2)
         ready_model += int(bool(coverage.get("ready_for_model")))
         ready_publish += int(bool(coverage.get("ready_for_publish")))
     out = dict(counts or {})

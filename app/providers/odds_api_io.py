@@ -21,6 +21,11 @@ from app.utils import (
 
 
 class OddsApiIoProvider:
+    ACCOUNT_BOOKMAKER_ALLOWLIST = {
+        "account1": ("Bet365", "Unibet"),
+        "account2": ("Betfair Exchange", "Sbobet"),
+    }
+
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.base_url = "https://api.odds-api.io/v3"
@@ -33,6 +38,170 @@ class OddsApiIoProvider:
         }
         self._account_requests_used: dict[str, int] = defaultdict(int)
 
+    def _account_quota_path(self) -> Path:
+        raw = str(os.getenv("ODDS_API_IO_ACCOUNT_QUOTA_STATE_PATH") or "").strip()
+        if raw:
+            return Path(raw)
+        return Path(".data/odds_api_io_account_quota_state.json")
+
+    def _account_quota_enabled(self) -> bool:
+        raw = str(os.getenv("ODDS_API_IO_ACCOUNT_QUOTA_ENABLED", "true")).strip().lower()
+        return raw not in {"0", "false", "no", "off"}
+
+    def _account_quota_limit(self, account_name: str, scope: str) -> int:
+        suffix = "HOURLY_LIMIT" if scope == "hour" else "DAILY_LIMIT"
+        default = 100 if scope == "hour" else 500
+        account_key = str(account_name or "").upper()
+        env_names = (
+            f"ODDS_API_IO_{account_key}_{suffix}",
+            f"ODDS_API_IO_ACCOUNT_{suffix}",
+        )
+        for name in env_names:
+            raw = str(os.getenv(name) or "").strip()
+            if not raw:
+                continue
+            try:
+                return max(0, int(float(raw)))
+            except Exception:
+                continue
+        return default
+
+    def _load_account_quota_state(self) -> dict[str, Any]:
+        path = self._account_quota_path()
+        try:
+            if path.exists() and path.stat().st_size <= 1048576:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    return payload
+        except Exception:
+            pass
+        return {"providers": {}}
+
+    def _write_account_quota_state(self, state: dict[str, Any]) -> None:
+        try:
+            path = self._account_quota_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            state["updated_at"] = datetime.now(UTC).isoformat()
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            tmp.write_text(
+                json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            tmp.replace(path)
+        except Exception:
+            pass
+
+    def _quota_row(
+        self,
+        state: dict[str, Any],
+        account_name: str,
+        now: datetime,
+    ) -> dict[str, Any]:
+        provider_key = f"odds_api_io_{account_name}"
+        providers = state.setdefault("providers", {})
+        row = providers.setdefault(provider_key, {})
+        hour_key = now.strftime("%Y-%m-%dT%H")
+        day_key = now.strftime("%Y-%m-%d")
+        if str(row.get("hour_window") or "") != hour_key:
+            row["hour_window"] = hour_key
+            row["hour_used"] = 0
+        if str(row.get("day") or "") != day_key:
+            row["day"] = day_key
+            row["day_used"] = 0
+        return row
+
+    def _account_quota_allows(
+        self,
+        account_name: str,
+    ) -> tuple[bool, str | None, dict[str, Any]]:
+        if not account_name or not self._account_quota_enabled():
+            return True, None, {}
+        now = datetime.now(UTC)
+        hourly_limit = self._account_quota_limit(account_name, "hour")
+        daily_limit = self._account_quota_limit(account_name, "day")
+        state = self._load_account_quota_state()
+        row = self._quota_row(state, account_name, now)
+        row["hourly_limit"] = hourly_limit
+        row["daily_limit"] = daily_limit
+        if hourly_limit <= 0:
+            self._write_account_quota_state(state)
+            return False, "hourly_limit_zero", row
+        if daily_limit <= 0:
+            self._write_account_quota_state(state)
+            return False, "daily_limit_zero", row
+        if int(row.get("hour_used") or 0) >= hourly_limit:
+            self._write_account_quota_state(state)
+            return False, f"hourly_quota_exhausted:{row.get('hour_used')}/{hourly_limit}", row
+        if int(row.get("day_used") or 0) >= daily_limit:
+            self._write_account_quota_state(state)
+            return False, f"daily_quota_exhausted:{row.get('day_used')}/{daily_limit}", row
+        self._write_account_quota_state(state)
+        return True, None, row
+
+    def _record_account_quota(self, account_name: str) -> None:
+        if not account_name or not self._account_quota_enabled():
+            return
+        now = datetime.now(UTC)
+        state = self._load_account_quota_state()
+        row = self._quota_row(state, account_name, now)
+        row["hourly_limit"] = self._account_quota_limit(account_name, "hour")
+        row["daily_limit"] = self._account_quota_limit(account_name, "day")
+        row["hour_used"] = int(row.get("hour_used") or 0) + 1
+        row["day_used"] = int(row.get("day_used") or 0) + 1
+        row["last_request_at"] = now.isoformat()
+        self._write_account_quota_state(state)
+
+    def _cooldown_path(self) -> Path:
+        raw = str(os.getenv("ODDS_API_IO_COOLDOWN_PATH") or "").strip()
+        if raw:
+            return Path(raw)
+        return Path(".data/provider_cooldowns/odds_api_io.json")
+
+    def _cooldown_until(self) -> datetime | None:
+        path = self._cooldown_path()
+        if not path.exists():
+            return None
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            raw_until = payload.get("cooldown_until")
+            until = parse_datetime(raw_until)
+        except Exception:
+            return None
+        if until <= datetime.now(UTC):
+            return None
+        return until
+
+    def _activate_auth_cooldown(self) -> None:
+        minutes = max(
+            60,
+            int(float(os.getenv("ODDS_API_IO_AUTH_ERROR_COOLDOWN_MINUTES") or 1440)),
+        )
+        until = datetime.now(UTC) + timedelta(minutes=minutes)
+        payload = {
+            "cooldown_until": until.isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "reason": "auth_error",
+        }
+        try:
+            path = self._cooldown_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
+    def _cooldown_stats(self) -> dict[str, Any]:
+        cooldown_until = self._cooldown_until()
+        if cooldown_until is None:
+            return {}
+        return {
+            "cooldown_active": True,
+            "cooldown_until": cooldown_until.isoformat(),
+            "stop_reason": "cooldown_active",
+            "last_body_preview": f"odds-api.io cooldown active until {cooldown_until.isoformat()}",
+        }
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -48,6 +217,7 @@ class OddsApiIoProvider:
             "payload_shapes": [],
             "last_body_preview": None,
             "auth_error": False,
+            "plan_restriction": False,
             "stop_reason": "",
             "rate_limited": False,
             "max_http_requests_per_run": self.max_http_requests,
@@ -56,6 +226,10 @@ class OddsApiIoProvider:
         preview: dict[str, Any] = {"sample_events": [], "sample_matches": []}
         api_key = getattr(self.settings, "odds_api_io_key", None)
         if not api_key:
+            return [], stats, preview
+        cooldown = self._cooldown_stats()
+        if cooldown:
+            stats.update(cooldown)
             return [], stats, preview
 
         now = datetime.now(UTC)
@@ -193,22 +367,30 @@ class OddsApiIoProvider:
             "bookmakers_seen": 0,
             "last_body_preview": None,
             "auth_error": False,
+            "plan_restriction": False,
             "stop_reason": "",
             "simulated_skipped": 0,
             "requested_bookmakers": None,
             "requested_bookmakers_by_account": [
-                {"account": account["name"], "bookmakers": account["bookmakers"]}
+                {
+                    "account": account["name"],
+                    "bookmakers": account["bookmakers"],
+                    "fallback_bookmakers": account.get("fallback_bookmakers", ""),
+                }
                 for account in accounts
             ],
             "accounts": {
                 account["name"]: {
                     "bookmakers": account["bookmakers"],
+                    "fallback_bookmakers": account.get("fallback_bookmakers", ""),
+                    "effective_bookmakers": account["bookmakers"],
                     "api_key_present": bool(account.get("api_key")),
                     "odds_requests": 0,
                     "response_errors": 0,
                     "offers_parsed": 0,
                     "events_matched": 0,
                     "rate_limited": False,
+                    "plan_restriction": False,
                     "http_statuses": [],
                 }
                 for account in accounts
@@ -221,6 +403,10 @@ class OddsApiIoProvider:
         preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
 
         if not accounts:
+            return {}, stats, preview
+        cooldown = self._cooldown_stats()
+        if cooldown:
+            stats.update(cooldown)
             return {}, stats, preview
         event_account = accounts[0]
         api_key = str(event_account["api_key"])
@@ -367,6 +553,7 @@ class OddsApiIoProvider:
                         str(account["bookmakers"]),
                         stats,
                         account_name=str(account["name"]),
+                        fallback_books=str(account.get("fallback_bookmakers") or ""),
                     )
                     if stats.get("rate_limited"):
                         break
@@ -382,7 +569,16 @@ class OddsApiIoProvider:
                             continue
                         for offer in parsed:
                             offer.metadata["odds_api_io_account"] = str(account["name"])
-                            offer.metadata["requested_bookmakers"] = str(account["bookmakers"])
+                            account_stats = stats["accounts"].setdefault(str(account["name"]), {})
+                            effective_books = str(
+                                account_stats.get("effective_bookmakers")
+                                or account["bookmakers"]
+                            )
+                            offer.metadata["requested_bookmakers"] = effective_books
+                            offer.metadata["configured_bookmakers"] = str(account["bookmakers"])
+                            offer.metadata["entitlement_fallback_used"] = bool(
+                                account_stats.get("entitlement_fallback_used")
+                            )
                         offers_by_match[row["match"].match_key].extend(parsed)
                         stats["offers_parsed"] += len(parsed)
                         stats["markets_parsed"] += len({(offer.bookmaker, offer.family, offer.market_name, offer.point) for offer in parsed})
@@ -561,13 +757,14 @@ class OddsApiIoProvider:
         client: httpx.AsyncClient,
         api_key: str,
         event_ids: list[int],
-        target_books: str,
+        target_books: str | None,
     ) -> httpx.Response | None:
         params = {
             "apiKey": api_key,
             "eventIds": ",".join(str(item) for item in event_ids),
-            "bookmakers": target_books,
         }
+        if str(target_books or "").strip():
+            params["bookmakers"] = str(target_books).strip()
         return await client.get(f"{self.base_url}/odds/multi", params=params)
 
     async def _fetch_odds_multi_chunk(
@@ -578,12 +775,36 @@ class OddsApiIoProvider:
         target_books: str,
         stats: dict[str, Any],
         account_name: str = "account1",
+        fallback_books: str = "",
     ) -> list[dict[str, Any]]:
         if not event_ids:
             return []
+        default_books = list(
+            self.ACCOUNT_BOOKMAKER_ALLOWLIST.get(
+                str(account_name or ""),
+                self.ACCOUNT_BOOKMAKER_ALLOWLIST["account1"],
+            )
+        )
+        target_books = self._bookmakers_param_for_account(
+            account_name,
+            target_books,
+            default_books,
+        )
+        fallback_books = self._bookmakers_param_for_account(
+            account_name,
+            fallback_books,
+            [],
+        )
         account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
         account_stats.setdefault("bookmakers", target_books)
+        account_stats.setdefault("fallback_bookmakers", fallback_books)
+        account_stats.setdefault("effective_bookmakers", target_books)
         account_stats.setdefault("http_statuses", [])
+        if bool(account_stats.get("auth_error")):
+            return []
+        if bool(account_stats.get("plan_restriction")):
+            return []
+        request_books = str(account_stats.get("effective_bookmakers") or target_books)
         attempts = 0
         while attempts < 2:
             if not self._request_budget_allows(stats, account_name=account_name):
@@ -593,7 +814,7 @@ class OddsApiIoProvider:
             account_stats["odds_requests"] = int(account_stats.get("odds_requests") or 0) + 1
             self._record_request(account_name=account_name)
             try:
-                response = await self._request_odds_multi(client, api_key, event_ids, target_books)
+                response = await self._request_odds_multi(client, api_key, event_ids, request_books)
             except Exception as exc:
                 stats["response_errors"] += 1
                 account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
@@ -604,6 +825,30 @@ class OddsApiIoProvider:
             stats["odds_http_statuses"].append(response.status_code)
             account_stats["http_statuses"].append(response.status_code)
             stats["last_body_preview"] = response.text[:2000]
+            if self._is_plan_restriction(response):
+                stats["plan_restriction_responses"] = int(
+                    stats.get("plan_restriction_responses") or 0
+                ) + 1
+                account_stats["plan_restriction_responses"] = int(
+                    account_stats.get("plan_restriction_responses") or 0
+                ) + 1
+                can_fallback = (
+                    bool(str(fallback_books or "").strip())
+                    and str(fallback_books).strip() != request_books
+                    and not bool(account_stats.get("entitlement_fallback_attempted"))
+                )
+                if can_fallback:
+                    account_stats["entitlement_fallback_attempted"] = True
+                    account_stats["configured_bookmakers"] = target_books
+                    request_books = str(fallback_books).strip()
+                    account_stats["effective_bookmakers"] = request_books
+                    continue
+                self._mark_plan_restriction(
+                    stats,
+                    response.status_code,
+                    account_name=account_name,
+                )
+                return []
             if response.status_code in (401, 403):
                 self._mark_auth_error(stats, response.status_code, account_name=account_name)
                 return []
@@ -621,11 +866,32 @@ class OddsApiIoProvider:
                 shape = self._payload_shape(payload)
                 if shape not in stats["payload_shapes"]:
                     stats["payload_shapes"].append(shape)
+                account_stats["effective_bookmakers"] = request_books
+                if bool(account_stats.get("entitlement_fallback_attempted")):
+                    account_stats["entitlement_fallback_used"] = True
+                    account_stats["plan_restriction_recovered"] = True
+                    stats["plan_restriction_recovered"] = True
                 return [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
             if response.status_code >= 500 and len(event_ids) > 1:
                 mid = max(1, len(event_ids) // 2)
-                left = await self._fetch_odds_multi_chunk(client, api_key, event_ids[:mid], target_books, stats, account_name=account_name)
-                right = await self._fetch_odds_multi_chunk(client, api_key, event_ids[mid:], target_books, stats, account_name=account_name)
+                left = await self._fetch_odds_multi_chunk(
+                    client,
+                    api_key,
+                    event_ids[:mid],
+                    target_books,
+                    stats,
+                    account_name=account_name,
+                    fallback_books=fallback_books,
+                )
+                right = await self._fetch_odds_multi_chunk(
+                    client,
+                    api_key,
+                    event_ids[mid:],
+                    target_books,
+                    stats,
+                    account_name=account_name,
+                    fallback_books=fallback_books,
+                )
                 return left + right
             stats["response_errors"] += 1
             account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
@@ -638,11 +904,47 @@ class OddsApiIoProvider:
         stats["auth_error"] = True
         stats["auth_status_code"] = status_code
         stats["stop_reason"] = "auth_error"
+        if account_name is None:
+            self._activate_auth_cooldown()
         if account_name:
             account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
             account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
             account_stats["auth_error"] = True
             account_stats["auth_status_code"] = status_code
+
+    @staticmethod
+    def _is_plan_restriction(response: httpx.Response) -> bool:
+        if response.status_code != 403:
+            return False
+        body = str(response.text or "").lower()
+        markers = (
+            "only available on our paid plan",
+            "only available on our paid plans",
+            "sharp or exchange book",
+            "sharp/exchange",
+            "not included in your plan",
+        )
+        return any(marker in body for marker in markers)
+
+    def _mark_plan_restriction(
+        self,
+        stats: dict[str, Any],
+        status_code: int,
+        account_name: str | None = None,
+    ) -> None:
+        stats["response_errors"] = int(stats.get("response_errors") or 0) + 1
+        stats["plan_restriction"] = True
+        stats["plan_restriction_status_code"] = status_code
+        stats["stop_reason"] = "plan_restriction"
+        if account_name:
+            account_stats = stats.setdefault("accounts", {}).setdefault(
+                account_name, {}
+            )
+            account_stats["response_errors"] = int(
+                account_stats.get("response_errors") or 0
+            ) + 1
+            account_stats["plan_restriction"] = True
+            account_stats["plan_restriction_status_code"] = status_code
 
     def _request_budget_allows(self, stats: dict[str, Any], account_name: str | None = None) -> bool:
         if self.max_http_requests <= 0:
@@ -661,24 +963,50 @@ class OddsApiIoProvider:
                 account_stats["request_limit"] = limit
                 account_stats["requests_used"] = used
                 return False
+            allowed, reason, quota_row = self._account_quota_allows(account_name)
+            account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
+            account_stats["hourly_limit"] = int(quota_row.get("hourly_limit") or self._account_quota_limit(account_name, "hour"))
+            account_stats["daily_limit"] = int(quota_row.get("daily_limit") or self._account_quota_limit(account_name, "day"))
+            account_stats["hour_used"] = int(quota_row.get("hour_used") or 0)
+            account_stats["day_used"] = int(quota_row.get("day_used") or 0)
+            if not allowed:
+                stats["budget_exhausted"] = True
+                stats["quota_exhausted"] = True
+                stats["stop_reason"] = reason or "account_quota_exhausted"
+                account_stats["budget_exhausted"] = True
+                account_stats["quota_exhausted"] = True
+                account_stats["quota_stop_reason"] = reason or "account_quota_exhausted"
+                return False
         return True
 
     def _record_request(self, account_name: str | None = None) -> None:
         self._requests_used += 1
         if account_name:
             self._account_requests_used[account_name] = int(self._account_requests_used.get(account_name, 0) or 0) + 1
+            self._record_account_quota(account_name)
 
     def _bookmakers_param(self) -> str:
         return ",".join(account["bookmakers"] for account in self._odds_accounts()) or "Bet365,Unibet"
 
-    def _bookmakers_param_from_values(self, preferred: list[str], fallback: list[str]) -> str:
+    @staticmethod
+    def _split_bookmakers(value: str | list[str] | tuple[str, ...]) -> list[str]:
+        if isinstance(value, (list, tuple)):
+            raw_items = value
+        else:
+            raw_items = str(value or "").split(",")
+        return [str(item or "").strip() for item in raw_items if str(item or "").strip()]
+
+    def _bookmakers_param_from_values(
+        self,
+        preferred: list[str],
+        fallback: list[str],
+        allowed_names: tuple[str, ...],
+    ) -> str:
         values: list[str] = []
         allowed = {
-            "bet365": "Bet365",
-            "unibet": "Unibet",
-            "betfair": "Betfair Exchange",
-            "betfairexchange": "Betfair Exchange",
-            "sbobet": "Sbobet",
+            normalize_bookmaker_name(item): item
+            for item in allowed_names
+            if str(item or "").strip()
         }
         for item in preferred:
             raw = str(item or "").strip()
@@ -689,15 +1017,32 @@ class OddsApiIoProvider:
                 values.append(value)
         return ",".join(values or fallback)
 
+    def _bookmakers_param_for_account(
+        self,
+        account_name: str,
+        preferred: str | list[str] | tuple[str, ...],
+        fallback: list[str] | None = None,
+    ) -> str:
+        allowed = self.ACCOUNT_BOOKMAKER_ALLOWLIST.get(
+            str(account_name or ""),
+            self.ACCOUNT_BOOKMAKER_ALLOWLIST["account1"],
+        )
+        return self._bookmakers_param_from_values(
+            self._split_bookmakers(preferred),
+            list(fallback or []),
+            allowed,
+        )
+
     def _odds_accounts(self) -> list[dict[str, str]]:
         account1_key = str(getattr(self.settings, "odds_api_io_key", "") or "").strip()
         account2_key = str(getattr(self.settings, "odds_api_io_key_2", "") or "").strip()
-        account1_books = self._bookmakers_param_from_values(
-            list(getattr(self.settings, "odds_api_io_bookmakers_account1", []) or [])
-            or list(getattr(self.settings, "odds_api_io_bookmakers", []) or []),
+        account1_books = self._bookmakers_param_for_account(
+            "account1",
+            list(getattr(self.settings, "odds_api_io_bookmakers_account1", []) or []),
             ["Bet365", "Unibet"],
         )
-        account2_books = self._bookmakers_param_from_values(
+        account2_books = self._bookmakers_param_for_account(
+            "account2",
             list(getattr(self.settings, "odds_api_io_bookmakers_account2", []) or []),
             ["Betfair Exchange", "Sbobet"],
         )
@@ -705,7 +1050,14 @@ class OddsApiIoProvider:
         if account1_key:
             accounts.append({"name": "account1", "api_key": account1_key, "bookmakers": account1_books})
         if account2_key:
-            accounts.append({"name": "account2", "api_key": account2_key, "bookmakers": account2_books})
+            accounts.append(
+                {
+                    "name": "account2",
+                    "api_key": account2_key,
+                    "bookmakers": account2_books,
+                    "fallback_bookmakers": "",
+                }
+            )
         return accounts
 
     @staticmethod

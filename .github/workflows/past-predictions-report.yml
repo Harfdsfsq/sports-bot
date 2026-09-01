@@ -1,0 +1,177 @@
+name: Past predictions report
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Report scope
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - last_n_days
+      days:
+        description: Used only when scope=last_n_days
+        required: false
+        default: '7'
+        type: string
+      force_send:
+        description: Send Telegram report even if nothing changed
+        required: false
+        default: true
+        type: boolean
+      backfill_actions_artifacts:
+        description: Backfill old published picks from available run-bot artifacts before reporting
+        required: false
+        default: true
+        type: boolean
+      backfill_lookback_days:
+        description: How many days of GitHub Actions artifacts to scan
+        required: false
+        default: '30'
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: past-predictions-report
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+  GITHUB_TOKEN: ${{ github.token }}
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+  ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+  ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+  ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+  API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+  PUBLISH_DRY_RUN: 'false'
+  PREDICTION_PUBLICATION_ENABLED: 'false'
+  CONTROLLED_FALLBACK_ENABLED: 'false'
+  CONTROLLED_FALLBACK_SEND_TELEGRAM: 'false'
+  CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT: 'false'
+  RUN_REPORT_ENABLED: 'false'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
+  DAILY_REPORT_ENABLED: 'false'
+  DAILY_REPORT_SEND_TELEGRAM: 'false'
+  NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: 'false'
+  SETTLEMENT_ENABLED: 'true'
+  SETTLEMENT_GRACE_MINUTES: '180'
+  SETTLEMENT_LOOKBACK_DAYS: '3650'
+  SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
+  HARIZON_PUBLICATION_LEDGER_BOOTSTRAP_SYNC_ENABLED: 'true'
+  PAST_PREDICTIONS_REPORT_AUTOSEND_ENABLED: 'false'
+
+jobs:
+  past-predictions-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Prepare state folders
+        shell: bash
+        run: mkdir -p .data .data/bets .data/exports .data/imports .logs artifacts/past-predictions-report
+
+      - name: Backfill ledger from Actions artifacts
+        if: ${{ inputs.backfill_actions_artifacts }}
+        shell: bash
+        env:
+          ACTIONS_BACKFILL_LOOKBACK_DAYS: ${{ inputs.backfill_lookback_days }}
+        run: |
+          python scripts/backfill_publication_ledger_from_actions_with_path.py \
+            --lookback-days "$ACTIONS_BACKFILL_LOOKBACK_DAYS" \
+            --max-runs 160 \
+            --artifact-filter "" || true
+          cat .data/exports/latest-actions-artifact-publication-backfill.json || true
+
+      - name: Import fallback sent index
+        shell: bash
+        run: |
+          python scripts/import_fallback_sent_index_to_ledger.py || true
+          cat .data/exports/latest-fallback-sent-index-ledger-import.json || true
+
+      - name: Sync ledger before settlement
+        shell: bash
+        run: python scripts/sync_publication_ledger.py --phase manual-past-report-before-settlement || true
+
+      - name: Run settlement only
+        shell: bash
+        run: python -m app.cli run-once || true
+
+      - name: Sync ledger after settlement
+        shell: bash
+        run: python scripts/sync_publication_ledger.py --phase manual-past-report-after-settlement || true
+
+      - name: Fix pending settlements
+        shell: bash
+        run: |
+          python scripts/fix_pending_settlements_from_report.py || true
+          cat .data/exports/latest-pending-settlement-fixer.json || true
+
+      - name: Build and send report
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXTRA=""
+          if [ "${{ inputs.force_send }}" = "true" ]; then EXTRA="$EXTRA --force"; fi
+          if [ "${{ inputs.scope }}" = "all" ]; then
+            python scripts/send_all_time_predictions_report_with_sent_index.py --all --send-telegram $EXTRA
+          else
+            python scripts/send_all_time_predictions_report_with_sent_index.py --days "${{ inputs.days }}" --send-telegram $EXTRA
+          fi
+          cat .data/exports/latest-past-predictions-report.txt || true
+
+      - name: Collect artifacts
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts/past-predictions-report
+          cp -f .data/exports/latest-actions-artifact-publication-backfill.json artifacts/past-predictions-report/latest-actions-artifact-publication-backfill.json 2>/dev/null || true
+          cp -f .data/exports/latest-fallback-sent-index-ledger-import.json artifacts/past-predictions-report/latest-fallback-sent-index-ledger-import.json 2>/dev/null || true
+          cp -f .data/exports/latest-pending-settlement-fixer.json artifacts/past-predictions-report/latest-pending-settlement-fixer.json 2>/dev/null || true
+          cp -f .data/exports/latest-past-predictions-report.json artifacts/past-predictions-report/latest-past-predictions-report.json 2>/dev/null || true
+          cp -f .data/exports/latest-past-predictions-report.txt artifacts/past-predictions-report/latest-past-predictions-report.txt 2>/dev/null || true
+          cp -f .data/bets/performance-summary.json artifacts/past-predictions-report/performance-summary.json 2>/dev/null || true
+          cp -rf .data/bets artifacts/past-predictions-report/bets 2>/dev/null || true
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: past-predictions-report-current
+          path: artifacts/past-predictions-report
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Sync persistent state
+        if: always()
+        shell: bash
+        env:
+          PERSISTENT_STATE_COMMIT_MESSAGE: Update past predictions report state
+        run: |
+          git add -f .data/bets .data/past-predictions-report-sent.json || true
+          python scripts/sync_persistent_state.py || true

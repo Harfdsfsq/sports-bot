@@ -250,7 +250,7 @@ def install_env_defaults() -> None:
     _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0)
     _set_default("CONTROLLED_FALLBACK_ALLOWED_FAMILIES", "totals,dnb,btts")
     _set_default("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", "true")
-    _set_default("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", "1")
+    _set_default("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", "2")
     _set_default("CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS", "true")
     _set_default("CONTROLLED_FALLBACK_SINGLE_SOURCE_MIN_BOOKS", "3")
     _set_default("CONTROLLED_CONSENSUS_CANDIDATE_RESCUE_ENABLED", "true")
@@ -270,8 +270,14 @@ def install_env_defaults() -> None:
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", "Bet365,Unibet")
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", "Betfair Exchange,Sbobet")
     _set_default("ODDS_API_IO_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
-    _set_default("TARGET_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
-    _set_default("CONSENSUS_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
+    _set_default(
+        "TARGET_BOOKMAKERS",
+        "Bet365,Unibet,Betfair Exchange,Sbobet",
+    )
+    _set_default(
+        "CONSENSUS_BOOKMAKERS",
+        "Bet365,Unibet,Betfair Exchange,Sbobet",
+    )
     os.environ["ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED"] = "false"
     os.environ["ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED"] = "false"
     if _env_present("ODDS_API_IO_KEY"):

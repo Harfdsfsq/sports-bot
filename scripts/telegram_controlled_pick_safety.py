@@ -177,7 +177,7 @@ def _reasons(candidate: Any) -> list[str]:
     if edge < min_edge:
         reasons.append(f"main_pick_edge_below_min:{edge:.2f}/{min_edge:.2f}")
 
-    min_sources = max(2, _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 2), _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2))
+    min_sources = max(1, _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 1), _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 1))
     if sources < min_sources:
         reasons.append(f"main_pick_odds_sources_below_min:{sources}/{min_sources}")
         if _b("TELEGRAM_MAIN_PICK_STRICT_SINGLE_SOURCE", True):
@@ -260,11 +260,25 @@ def _text_sources(text: str) -> list[int]:
     return found
 
 
+def _weak_profile_text(text: str) -> bool:
+    low = str(text or "").lower()
+    if "single-source" in low or "non-core" in low:
+        return True
+    return bool(re.search(r"\bc\s+[0-9]+(?:[.,][0-9]+)?\s*/\s*100\b", str(text or ""), re.I) and "quality" in low)
+
+
 def _text_reasons(text: str) -> list[str]:
-    if not _pick_text(text):
+    if not (_pick_text(text) or _weak_profile_text(text)):
         return []
     reasons: list[str] = []
-    min_sources = max(2, _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2), _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 2))
+    low = str(text or "").lower()
+    if _b("TELEGRAM_BLOCK_C_SIGNAL_PROFILE", True):
+        if re.search(r"\bc\s+[0-9]+(?:[.,][0-9]+)?\s*/\s*100\b", text, re.I) and "quality" in low:
+            reasons.append("telegram_signal_profile_c_blocked")
+    if _b("TELEGRAM_BLOCK_SINGLE_SOURCE_NON_CORE", True):
+        if "single-source" in low and "non-core" in low:
+            reasons.append("telegram_single_source_non_core_blocked")
+    min_sources = max(1, _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 1), _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 1))
     source_values = _text_sources(text)
     for value in source_values:
         if value < min_sources:
@@ -275,6 +289,13 @@ def _text_reasons(text: str) -> list[str]:
         min_edge = _ef("TELEGRAM_MAIN_PICK_MIN_EDGE_PP", 3.0)
         if edge < min_edge:
             reasons.append(f"telegram_pick_edge_below_min:{edge:.2f}/{min_edge:.2f}")
+    total_line = re.search(
+        r"(?:total|тотал|ставка|рынок)[^\n\r]{0,80}?\b([0-9]+(?:[.,](?:25|75)))\b",
+        text,
+        re.I,
+    )
+    if total_line:
+        reasons.append(f"telegram_quarter_total_line_not_allowed:{total_line.group(1).replace(',', '.')}")
     over15 = re.search(r"Ставка:\s*Тотал\s*[—-]\s*(?:Больше|Over|ТБ)\s*\(?1[,.]5\)?", text, re.I)
     odds = re.search(r"Коэффициент:\s*([0-9]+(?:[.,][0-9]+)?)", text)
     if over15 and odds:

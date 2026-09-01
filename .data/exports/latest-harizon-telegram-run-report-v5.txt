@@ -1,75 +1,41 @@
-🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+🧾 HARIZON run report v6 — единая фактическая сводка
+• Итог: 🟠 линии есть, raw-кандидатов нет
+• Главная причина: кандидат ждёт следующий cron для второго снимка линии
 
-📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 122 (это не размер inventory).
-• 1+ линия: 195/300 (65%) | 1+ контекст: 157/300 (52%)
-• 2+ букмекера: 182/300 (61%)
-• Raw 2+ букмекера odds-api.io: 18 | normalized inventory: 182 | mapping gap: 0
-• Odds-api offer snapshot: rows 4198, matches 48, same-side 2+ books 17
-• 2+ независимых odds-source: 46/300 (15%) — диагностика, не блок публикации
-• 2+ контекста: 123/300 (41%)
-• Готово для модели: 155/300 (52%)
+📦 Покрытие
+• Матчи в run: 3 | day inventory: 300
+• С линиями: 2 | с контекстом: 3 | ready model: 122
+• odds-api.io offers: 394 | Bzzoiro secondary offers: 18
+• 2+ букмекера odds-api.io: 7 | 2-source overlap Bzzoiro+odds-api.io: 2
 
-🏷️ A/B-tier публикация
-• A-tier strict-ready: 31 | опубликовано: 0
-  A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 157 | fallback опубликовано: 0
-  B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 157 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 123 матчей.
-• A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
-• 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
-
-🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 1 | матчей без следующего регулярного run: 1
-• Line guard: увидел 5, оставил 1, снял 0
-
+• A-tier enrichment queue: Bzzoiro odds targets 80; context projection targets 80; high-value recheck 0.
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 4/8
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 5 | evaluated 5 | published 0
+• Raw/candidates before quality: 0 / 24
+• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Main pipeline: published False (0)
+• Controlled fallback: status fallback_artifact_stale_or_missing_after_step | seen 0 | evaluated 0 | published False (0)
+• Windowed coverage: audit 8 | allowed 5 | blocked 3 | publish-filter input 0
 
-📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 26; смэтчил матчей 122; offers 5396; 2+ букмекера 18; ошибок 0.
-• Bzzoiro: direct req 61, v2 req 61; v2 ctx 16; v2 odds 11; secondary offers 0; overlap odds-api.io 13; ошибок 0.
-• SStats: запросы 32; сырых строк 26959; контекстов 97; deep-enriched 13; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 35, bzzoiro+odds_api_io: 13, bzzoiro: 3
+🛡️ Pre-publish / line movement
+• Final pre-kickoff checks: 1 | no next regular run: 1
+• Line guard: seen 27 | kept 1 | dropped 15
+
+• Bzzoiro targeted odds: targets 80; events 1486; matched 3; ids 3; offers 0; 2-source promoted 0; diag matched_full_events_without_parseable_offers.
+• Bzzoiro odds detail: targets 3; requests 6; events_with_offers 3; offers 27; diag offers_parsed.
+• Bzzoiro overlap bridge: offers 18; overlap matches 2; same-bucket matches 2.
+• Bzzoiro odds merge: 2-source matches 0; 2+ books 7; inventory updated 19; inventory 2-source 0.
+• Bzzoiro source trace: aggregate events 147; persisted rows 370; targeted events 1486; diag full_or_provider_rows_available.
+• Last-chance line relief: seen 17; floor 11; hard 6; relieved 0.
+📡 Core API
+• odds_api_io: events req 0, odds req 9, matched 36, offers 394, 2+ books 7, err 5, auth_failed False
+• sstats: req 4, ctx 3, rows 17508, err 0, deep enriched 0
+• bzzoiro: req 2, ctx 0, events 147 (aggregate; persisted rows 370; trace full_or_provider_rows_available), secondary offers 18, overlap odds-api.io 2, err 0
+• sportlogic: enabled False, req 30, odds req 0, matched 0, offers 0, err 30
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 4 (22%)
-• controlled fallback next regular run before kickoff: 4 (22%)
-• quality post calibration edge guard: 4 (22%)
-• tier a publication score below min: 1 (6%)
-• tier a proxy quality not allowed: 1 (6%)
-• tier b confidence below min: 1 (6%)
-• tier b canonical edge below min: 1 (6%)
-• tier b publication score below min: 1 (6%)
+• кандидат ждёт следующий cron для второго снимка линии: 15 (94%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (6%)
 
-🔎 Проверенные reserve-кандидаты
-1. AD Comerciantes FC — Sporting Cristal | Больше @2.76 | EV +8.3% | edge +3.0 п.п. | q 75.7
-   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b confidence below min, tier b canonical edge below min
-2. El Paso Locomotive FC — Phoenix Rising | Меньше 3.5 @1.61 | EV -0.2% | edge -0.1 п.п. | q 75.2
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, controlled fallback next regular run before kickoff
-3. Huntsville City FC — Orlando City B | Меньше 3.5 @1.80 | EV -7.5% | edge -4.2 п.п. | q 68.8
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, controlled fallback next regular run before kickoff
-4. North Carolina — Salem City FC | Меньше 3.5 @1.80 | EV -4.2% | edge -2.3 п.п. | q 66.1
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, controlled fallback next regular run before kickoff
-
-🧯 Диагностика новых стопоров
-• Inventory target repair: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 36; normalized 134→1; gap after 35.
-• B-cover promotion: considered 147; promoted 0; top skips promotion_skip_edge_below_min 3; promotion_skip_no_offer_bucket 146; promotion_skip_odds_above_max 12; promotion_skip_odds_below_min 13; inventory rows 286; selected B-cover rows 147 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• B-cover funnel: B-cover 147; candidates seen 14; B-covered без кандидата 146.
-
-📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
-• Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
-
-🔗 GitHub Actions
-• Run ID: 27476899771
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27476899771
-• Artifact: run-bot-27476899771
-• workflow run-bot, attempt 1
+📌 Вывод
+• Главный текущий стопор: line movement/freshness/current-price; Bzzoiro detail, overlap bridge и last-chance relief диагностируются отдельно.
+• Отчёт использует один payload, поэтому секции не должны противоречить друг другу.

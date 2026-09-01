@@ -42,3 +42,56 @@ def test_post_integrity_install_does_not_overwrite_existing_run_report(tmp_path,
 
     assert result["status"] == "already_installed"
     assert json.loads(report.read_text(encoding="utf-8")) == {"stage": "rescued", "returned": 3}
+
+
+def test_controlled_rescue_appends_when_model_pool_is_not_empty(monkeypatch):
+    import app.services as services_pkg
+    from app.services import controlled_candidate_rescue as rescue
+
+    base_candidate = types.SimpleNamespace(
+        match_key="match-1",
+        family="totals",
+        selection_key="totals|over|2.5|",
+        point=2.5,
+        team_side=None,
+        reasons=[],
+        source_summary={},
+        publication_score=10.0,
+        ev_pct=1.0,
+        confidence=60.0,
+    )
+    rescue_candidate = types.SimpleNamespace(
+        match_key="match-2",
+        family="totals",
+        selection_key="totals|under|3.5|",
+        point=3.5,
+        team_side=None,
+        reasons=[],
+        source_summary={},
+        publication_score=80.0,
+        ev_pct=8.0,
+        confidence=72.0,
+    )
+
+    class CandidateFactory:
+        def build_candidates(self, *args, **kwargs):
+            return [base_candidate], {}, {"matches": []}
+
+        def _filter_and_rank(self, candidates, rejections):
+            return list(candidates)
+
+    fake_model = types.SimpleNamespace(CandidateFactory=CandidateFactory)
+    monkeypatch.setattr(services_pkg, "model", fake_model, raising=False)
+    monkeypatch.setitem(sys.modules, "app.services.model", fake_model)
+    monkeypatch.setattr(rescue, "_build_rescue", lambda *args, **kwargs: ([rescue_candidate], [{"match_key": "match-2"}]))
+    monkeypatch.setenv("CONTROLLED_CONSENSUS_CANDIDATE_RESCUE_ENABLED", "true")
+    monkeypatch.setenv("CONTROLLED_RESCUE_APPEND_TO_EXISTING_CANDIDATES", "true")
+
+    result = rescue.install()
+    candidates, rejections, debug = CandidateFactory().build_candidates([], {"match-2": []}, {}, None)
+
+    assert result["status"] == "installed"
+    assert candidates == [base_candidate, rescue_candidate]
+    assert rejections["controlled_rescue_candidates_appended"] == 1
+    assert debug["controlled_consensus_rescue"]["mode"] == "append"
+    assert rescue_candidate.source_summary["controlled_rescue_append"] is True

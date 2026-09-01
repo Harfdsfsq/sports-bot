@@ -1,0 +1,194 @@
+name: run-bot-rules
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: run-bot-rules-main
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}
+      TZ: Europe/Moscow
+      APP_TIMEZONE: Europe/Moscow
+      APP_ENV: production
+      PUBLICATION_PROFILE: rules_ab
+      RULES_COMPLIANT_PIPELINE_ENABLED: "true"
+      PREDICTION_PUBLICATION_ENABLED: "true"
+      PUBLISH_DRY_RUN: "false"
+      PUBLISH_ALLOW_B_TIER: "true"
+      PUBLISH_COVERAGE_TIER_MODE: a_or_b
+      HARIZON_PUBLICATION_TIER_MODE: a_or_b
+      FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED: "false"
+      HARIZON_AUTONOMOUS_ACCUMULATION_MODE: "false"
+      LEGACY_RUNTIME_EXTENSIONS_ENABLED: "false"
+      PUBLISH_WINDOW_HOURS: "24"
+      RUN_DAYS_AHEAD: "2"
+      MIN_KICKOFF_LEAD_MINUTES: "20"
+      MAX_PICKS_PER_RUN: "5"
+      DAY_INVENTORY_TARGET_SIZE: "300"
+      DAY_INVENTORY_MAX_MATCHES: "300"
+      DAY_INVENTORY_MIN_UPCOMING_MATCHES: "0"
+      DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE: "true"
+      DAY_INVENTORY_NEAR_WINDOW_HOURS: "24"
+      HARIZON_DATA_COLLECTION_WINDOW_HOURS: "24"
+      CONTEXT_ENRICHMENT_REQUIRES_OFFERS: "false"
+      CONTEXT_ENRICHMENT_MATCH_LIMIT: "300"
+      MAX_MATCHES_FOR_ODDS_FETCH: "300"
+      PUBLISH_TIER_A_MIN_BOOKS: "2"
+      PUBLISH_TIER_A_MIN_ODDS_SOURCES: "2"
+      PUBLISH_TIER_A_MIN_CONTEXT_SOURCES: "2"
+      PUBLISH_TIER_B_MIN_BOOKS: "2"
+      PUBLISH_TIER_B_MIN_ODDS_SOURCES: "1"
+      PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "1"
+      PUBLISH_MIN_BOOKS: "2"
+      MIN_BOOKS_PUBLISH: "2"
+      PUBLISH_MIN_ODDS_SOURCES: "1"
+      MIN_SOURCES_PUBLISH: "1"
+      PUBLISH_MIN_CONTEXT_SOURCES: "1"
+      MIN_CONTEXT_SOURCES_PUBLISH: "1"
+      STRICT_PRICE_INTEGRITY_ENABLED: "true"
+      STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES: "1"
+      STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS: "2"
+      PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION: "true"
+      PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE: "true"
+      STRICT_PRICE_COUNT_API_ACCOUNTS_AS_SOURCES: "false"
+      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
+      CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"
+      CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM: "false"
+      CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "1"
+      CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES: "1"
+      CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES: "1"
+      PUBLICATION_ALLOWED_MARKET_FAMILIES: totals,spreads,h2h,btts,dnb,doubleChance,teamTotals
+      HARIZON_ALLOWED_PUBLICATION_FAMILIES: totals,spreads,h2h,btts,dnb,doubleChance,teamTotals
+      PUBLISH_REQUIRE_LINE_MOVEMENT: "true"
+      LINE_MOVEMENT_GUARD_ENABLED: "true"
+      LINE_MOVEMENT_MIN_SNAPSHOTS: "2"
+      LINE_MOVEMENT_MIN_MINUTES_BETWEEN_SNAPSHOTS: "8"
+      LINE_MOVEMENT_MAX_STALE_MINUTES: "360"
+      LINE_MOVEMENT_ALLOW_LAST_CHANCE_SINGLE_SNAPSHOT: "true"
+      LINE_MOVEMENT_LAST_CHANCE_MINUTES_TO_KICKOFF: "45"
+      FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES: "true"
+      FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT: "0"
+      NO_BET_QUALITY_SCORE_ENABLED: "false"
+      FORCE_PUBLISH_WHEN_EMPTY_ENABLED: "false"
+      QUALITY_EMERGENCY_PUBLISH_ENABLED: "false"
+      QUALITY_LAST_RESORT_PUBLISH_ENABLED: "false"
+      ODDS_API_IO_ENABLED: "true"
+      ENABLE_ODDS_API_IO: "true"
+      ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "200"
+      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "100"
+      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "100"
+      ODDS_API_IO_MAX_ODDS_EVENTS_PER_RUN: "300"
+      BZZOIRO_ENABLED: "true"
+      ENABLE_BZZOIRO_CONTEXT: "true"
+      BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "180"
+      BZZOIRO_CONTEXT_MATCH_LIMIT: "300"
+      BZZOIRO_V2_MATCH_LIMIT: "300"
+      BZZOIRO_RUNTIME_PROVIDER_DEADLINE_SECONDS: "420"
+      SSTATS_ENABLED: "true"
+      ENABLE_SSTATS_CONTEXT: "true"
+      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "150"
+      SSTATS_CONTEXT_MATCH_LIMIT: "300"
+      SSTATS_LOOKBACK_DAYS: "45"
+      SPORTLOGIC_ENABLED: "true"
+      ENABLE_SPORTLOGIC: "true"
+      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "30"
+      SPORTLOGIC_MATCH_LIMIT: "100"
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+      ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+      ODDS_API_IO_KEY2: ${{ secrets.ODDS_API_IO_KEY2 || secrets.ODDS_API_IO_KEY_2 }}
+      BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Prepare state paths
+        run: |
+          mkdir -p .data/exports .data/day_inventory .data/cache/day_inventory .data/line_history artifacts/run-bot-rules
+          echo "CACHE_DATE=$(TZ=Europe/Moscow date +%F)" >> "$GITHUB_ENV"
+      - name: Restore cumulative inventory and publication state
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .data/day_inventory
+            .data/cache/day_inventory
+            .data/line_history
+            .data/state.json
+            .data/candidate-lifecycle-state.json
+            .data/published-candidate-index.json
+            .data/fallback-sent-index.json
+          key: rules-state-${{ env.CACHE_DATE }}-${{ github.run_id }}
+          restore-keys: |
+            rules-state-${{ env.CACHE_DATE }}-
+            run-bot-day-inventory-${{ env.CACHE_DATE }}-
+            provider-smoke-day-inventory-${{ env.CACHE_DATE }}-
+      - name: Install dependencies
+        run: pip install --disable-pip-version-check -r requirements.txt
+      - name: Build inventory only when missing
+        shell: bash
+        run: |
+          if [[ ! -s .data/day_inventory/today.json && ! -s .data/day_inventory/current.json && ! -s .data/day_inventory/latest.json ]]; then
+            python -u scripts/build_day_inventory_core_v3.py
+          fi
+          python -u scripts/expand_day_inventory_to_target.py || true
+          python -u scripts/guard_day_inventory_no_shrink.py snapshot || true
+      - name: Run prediction pipeline
+        shell: bash
+        run: timeout 1500s python -u -m app.cli run-once 2>&1 | tee .data/exports/latest-run-bot-rules.log
+      - name: Evaluate guarded B-tier fallback
+        if: always()
+        run: |
+          python -u scripts/publish_controlled_fallback_guarded.py || true
+          python -u scripts/persist_awaiting_movement_candidates.py || true
+      - name: Accumulate coverage without rebuilding identities
+        if: always()
+        run: |
+          python -u scripts/accumulate_latest_matches_into_day_inventory.py || true
+          python -u scripts/merge_run_coverage_into_day_inventory.py || true
+          python -u scripts/guard_day_inventory_no_shrink.py repair || true
+      - name: Save cumulative state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .data/day_inventory
+            .data/cache/day_inventory
+            .data/line_history
+            .data/state.json
+            .data/candidate-lifecycle-state.json
+            .data/published-candidate-index.json
+            .data/fallback-sent-index.json
+          key: rules-state-${{ env.CACHE_DATE }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: run-bot-rules-${{ github.run_id }}
+          path: |
+            .data/exports/latest-*.json
+            .data/exports/latest-*.txt
+            .data/exports/latest-*.log
+            .data/day_inventory/*.json
+            .data/line_history/*.json
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 14

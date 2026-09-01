@@ -22,6 +22,7 @@ UTC = timezone.utc
 ROOT = Path(".").resolve()
 EXPORT_PATH = ROOT / ".data" / "exports" / "latest-day-inventory-accumulation.json"
 SUMMARY_PATH = ROOT / ".data" / "exports" / "latest-day-inventory-summary.json"
+HIGHWATER_NAMES = ("best-day-inventory-highwater.json", "highwater.json", "largest.json")
 
 
 def app_tz() -> ZoneInfo:
@@ -280,6 +281,31 @@ def recompute_counts(rows: list[dict[str, Any]], previous: dict[str, Any], lates
     return counts
 
 
+def highwater_paths(local_date: str) -> list[Path]:
+    inv_dir = ROOT / ".data" / "day_inventory"
+    cache_dir = ROOT / ".data" / "cache" / "day_inventory"
+    return [
+        *(inv_dir / name for name in HIGHWATER_NAMES),
+        *(cache_dir / name for name in HIGHWATER_NAMES),
+        inv_dir / f"{local_date}-highwater.json",
+        cache_dir / f"{local_date}-highwater.json",
+        ROOT / ".data" / "inventory_guard" / "best-day-inventory.json",
+    ]
+
+
+def write_full_highwater(local_date: str, inventory: dict[str, Any]) -> list[str]:
+    matches = inventory.get("matches") if isinstance(inventory.get("matches"), list) else []
+    if not matches:
+        return []
+    clone = dict(inventory)
+    clone["highwater_updated_at_utc"] = datetime.now(UTC).isoformat()
+    written: list[str] = []
+    for path in highwater_paths(local_date):
+        write_json(path, clone)
+        written.append(str(path))
+    return written
+
+
 def main() -> int:
     now = datetime.now(UTC)
     local_date = target_date()
@@ -342,6 +368,7 @@ def main() -> int:
 
     inv_dir.mkdir(parents=True, exist_ok=True)
     write_json(inventory_path, inventory)
+    highwater_paths_written = write_full_highwater(local_date, inventory)
     alias_update = write_current_aliases(ROOT, local_date, inventory, write_json)
     summary = {
         "date_local": local_date,
@@ -353,6 +380,7 @@ def main() -> int:
         "league_match_counts": dict(inventory.get("league_match_counts") or {}),
         "sources": dict(inventory.get("sources") or {}),
         "alias_update": alias_update,
+        "highwater_paths": highwater_paths_written,
     }
     if should_update_current_aliases(local_date):
         write_json(SUMMARY_PATH, summary)
@@ -363,6 +391,7 @@ def main() -> int:
         "inventory_path": str(inventory_path),
         "summary_path": str(SUMMARY_PATH) if should_update_current_aliases(local_date) else None,
         "alias_update": alias_update,
+        "highwater_paths": highwater_paths_written,
         "latest_rows_seen": len(latest_rows),
         "matches_before": len(matches),
         "matches_after": len(sorted_rows),
@@ -373,6 +402,7 @@ def main() -> int:
         "notes": [
             "This runs after run-once, so the day inventory grows from actual latest-matches exports, not only from the pre-run bootstrap.",
             "Telegram detailed report reads latest-day-inventory-summary.json, so matches_total now represents the cumulative daily high watermark.",
+            "The full accumulated inventory rows are persisted to day_inventory highwater files so later top-cut/alias steps cannot reduce the daily pool.",
         ],
     }
     write_json(EXPORT_PATH, report)

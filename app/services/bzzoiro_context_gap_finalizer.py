@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Bzzoiro context-gap finalizer.
 
 The v8 reports showed a precise bottleneck: core odds 2+ is healthy, while core
@@ -13,12 +11,16 @@ It does not relax publication guards. It only increases Bzzoiro context coverage
 for upcoming progressive gaps.
 """
 
+from __future__ import annotations
+
+import asyncio
 import json
 import os
 import re
 import unicodedata
+from contextlib import suppress
+from datetime import UTC, datetime, timedelta
 from difflib import SequenceMatcher
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +28,6 @@ import httpx
 
 from app.schemas import Match, MatchContext
 
-UTC = timezone.utc
 ROOT = Path(__file__).resolve().parents[2]
 EXPORT_DIR = ROOT / ".data" / "exports"
 PLAN_PATH = EXPORT_DIR / "latest-progressive-coverage-plan.json"
@@ -138,7 +139,7 @@ def _source_ids(match: Match) -> dict[str, Any]:
 
 def _bzzoiro_id_from_match(match: Match) -> str | None:
     ids = _source_ids(match)
-    for key in ("bzzoiro", "bzzoiro_v1", "bzzoiro_v2", "bsd", "bsd_v2"):
+    for key in ("bzzoiro_v2", "bsd_v2", "bzzoiro", "bsd", "bzzoiro_v1"):
         value = ids.get(key)
         if value not in (None, ""):
             if isinstance(value, dict):
@@ -522,10 +523,8 @@ def _inventory_alias_keys(*, key: Any = "", home: Any = "", away: Any = "", date
 
 def _match_alias_keys(match: Match) -> set[str]:
     date = ""
-    try:
+    with suppress(Exception):
         date = match.commence_time.astimezone(UTC).date().isoformat()
-    except Exception:
-        pass
     return _inventory_alias_keys(key=_match_key(match), home=getattr(match, "home_team", ""), away=getattr(match, "away_team", ""), date=date)
 
 
@@ -848,6 +847,231 @@ async def _fetch_v2_resources(
             resources[name] = payload
             stats[f"{name}_resources"] = _to_int(stats.get(f"{name}_resources"), 0) + 1
     return resources
+
+
+async def _fetch_v2_context_resources(
+    client: httpx.AsyncClient,
+    headers: dict[str, str],
+    event_id: Any,
+    stats: dict[str, Any],
+    max_requests: int,
+) -> dict[str, Any]:
+    """Fetch only context resources; current odds use the separate offers lane."""
+
+    resources: dict[str, Any] = {}
+    if event_id in (None, ""):
+        return resources
+    for name, url in [
+        ("stats", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/stats/"),
+        (
+            "metadata",
+            f"https://sports.bzzoiro.com/api/v2/events/{event_id}/metadata/",
+        ),
+        (
+            "lineups",
+            f"https://sports.bzzoiro.com/api/v2/events/{event_id}/lineups/",
+        ),
+    ]:
+        if _to_int(stats.get("requests"), 0) >= max_requests:
+            break
+        payload = await _fetch_json(client, url, headers, stats)
+        if isinstance(payload, dict):
+            resources[name] = payload
+            stats[f"{name}_resources"] = (
+                _to_int(stats.get(f"{name}_resources"), 0) + 1
+            )
+    return resources
+
+
+def _nonempty_resource_value(value: Any) -> bool:
+    if value in (None, "", False, [], {}):
+        return False
+    if isinstance(value, dict):
+        return any(
+            _nonempty_resource_value(item)
+            for key, item in value.items()
+            if str(key).lower()
+            not in {"id", "event_id", "status", "success", "message", "detail"}
+        )
+    if isinstance(value, (list, tuple, set)):
+        return any(_nonempty_resource_value(item) for item in value)
+    return True
+
+
+def _resources_have_context_information(resources: dict[str, Any]) -> bool:
+    """Require provider context data; an odds response alone is not context."""
+
+    stats = resources.get("stats")
+    if isinstance(stats, (dict, list)) and _nonempty_resource_value(stats):
+        return True
+    lineups = resources.get("lineups")
+    if isinstance(lineups, (dict, list)) and _nonempty_resource_value(lineups):
+        return True
+    metadata = resources.get("metadata")
+    if isinstance(metadata, dict):
+        context_keys = {
+            "ai_preview",
+            "analysis",
+            "facts",
+            "form",
+            "fun_facts",
+            "h2h",
+            "head_to_head",
+            "injuries",
+            "insights",
+            "preview",
+            "standings",
+            "weather",
+        }
+        if any(
+            key in metadata and _nonempty_resource_value(metadata.get(key))
+            for key in context_keys
+        ):
+            return True
+    return False
+
+
+async def _source_id_prefetch(
+    self: Any,
+    matches: list[Match],
+) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+    """Fetch documented v2 resources for exact saved Bzzoiro event ids first."""
+
+    token = str(
+        os.getenv("BZZOIRO_API_KEY")
+        or getattr(getattr(self, "settings", None), "bzzoiro_api_key", "")
+        or ""
+    ).strip()
+    enabled = _truthy(os.getenv("BZZOIRO_SOURCE_ID_PREFETCH_ENABLED"), True)
+    stats: dict[str, Any] = {
+        "enabled": enabled and bool(token),
+        "source_ids_seen": 0,
+        "target_matches": 0,
+        "requests": 0,
+        "errors": 0,
+        "contexts_added": 0,
+        "stats_resources": 0,
+        "metadata_resources": 0,
+        "lineups_resources": 0,
+        "odds_resources": 0,
+    }
+    preview: dict[str, Any] = {"added": [], "without_context_information": []}
+    if not enabled or not token or not matches:
+        return {}, stats, preview
+
+    now = datetime.now(UTC)
+    candidates: list[tuple[Match, str, float]] = []
+    seen_ids: set[str] = set()
+    for match in matches:
+        if getattr(match, "sport_key", "") != "soccer":
+            continue
+        event_id = _bzzoiro_id_from_match(match)
+        if not event_id or event_id in seen_ids:
+            continue
+        seen_ids.add(event_id)
+        try:
+            hours = (
+                match.commence_time.astimezone(UTC) - now
+            ).total_seconds() / 3600.0
+        except Exception:
+            hours = 999999.0
+        if hours < -0.05:
+            continue
+        candidates.append((match, event_id, hours))
+    stats["source_ids_seen"] = len(candidates)
+    candidates.sort(
+        key=lambda item: (
+            0 if item[2] <= 4 else 1 if item[2] <= 12 else 2,
+            abs(item[2]),
+            _match_key(item[0]),
+        )
+    )
+    match_limit = max(
+        1, _to_int(os.getenv("BZZOIRO_SOURCE_ID_PREFETCH_MATCH_LIMIT") or 20, 20)
+    )
+    max_requests = max(
+        3, _to_int(os.getenv("BZZOIRO_SOURCE_ID_PREFETCH_MAX_REQUESTS") or 60, 60)
+    )
+    candidates = candidates[: min(match_limit, max_requests // 3)]
+    stats["target_matches"] = len(candidates)
+    if not candidates:
+        return {}, stats, preview
+
+    headers = {"Authorization": f"Token {token}"}
+    concurrency = max(
+        1,
+        min(
+            12,
+            _to_int(os.getenv("BZZOIRO_SOURCE_ID_PREFETCH_CONCURRENCY") or 8, 8),
+        ),
+    )
+    semaphore = asyncio.Semaphore(concurrency)
+    timeout = float(
+        getattr(getattr(self, "settings", None), "bzzoiro_timeout_seconds", 20.0)
+        or 20.0
+    )
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        async def fetch_one(
+            match: Match, event_id: str, hours: float
+        ) -> tuple[Match, str, float, dict[str, Any], dict[str, Any]]:
+            local_stats: dict[str, Any] = {"requests": 0, "errors": 0}
+            async with semaphore:
+                resources = await _fetch_v2_context_resources(
+                    client, headers, event_id, local_stats, 3
+                )
+            return match, event_id, hours, resources, local_stats
+
+        results = await asyncio.gather(
+            *(fetch_one(match, event_id, hours) for match, event_id, hours in candidates),
+            return_exceptions=True,
+        )
+
+    added: dict[str, MatchContext] = {}
+    for result in results:
+        if isinstance(result, BaseException):
+            stats["errors"] = _to_int(stats.get("errors"), 0) + 1
+            continue
+        match, event_id, hours, resources, local_stats = result
+        for field in (
+            "requests",
+            "errors",
+            "stats_resources",
+            "metadata_resources",
+            "lineups_resources",
+            "odds_resources",
+        ):
+            stats[field] = _to_int(stats.get(field), 0) + _to_int(
+                local_stats.get(field), 0
+            )
+        if not _resources_have_context_information(resources):
+            if len(preview["without_context_information"]) < 20:
+                preview["without_context_information"].append(
+                    {"match_key": _match_key(match), "event_id": event_id}
+                )
+            continue
+        event = {
+            "id": event_id,
+            "event_id": event_id,
+            "home_team": match.home_team,
+            "away_team": match.away_team,
+            "start_time": match.commence_time.astimezone(UTC).isoformat(),
+        }
+        context = _context_from_resources(event, resources, 100.0, "source_id")
+        context.details["bzzoiro_source_id_prefetch"] = True
+        context.details["bzzoiro_hours_to_kickoff"] = round(hours, 3)
+        added[_match_key(match)] = context
+        if len(preview["added"]) < 20:
+            preview["added"].append(
+                {
+                    "match_key": _match_key(match),
+                    "event_id": event_id,
+                    "has_xg": context.expected_home is not None
+                    or context.expected_away is not None,
+                }
+            )
+    stats["contexts_added"] = len(added)
+    return added, stats, preview
 
 
 def _merge_context(base: MatchContext | None, resources_context: MatchContext | None) -> MatchContext | None:
@@ -1312,14 +1536,23 @@ def install() -> dict[str, Any]:
         return payload
 
     async def fetch_context_with_gap_pass(self, matches: list[Match]):  # type: ignore[no-untyped-def]
-        contexts, stats, preview = await current(self, matches)
+        prefetched, prefetch_stats, prefetch_preview = await _source_id_prefetch(
+            self, matches
+        )
+        prefetched_keys = set(prefetched)
+        remaining = [match for match in matches if _match_key(match) not in prefetched_keys]
+        contexts, stats, preview = await current(self, remaining)
         contexts = dict(contexts or {})
+        contexts.update(prefetched)
         stats = dict(stats or {})
+        stats["source_id_prefetch"] = prefetch_stats
+        stats["source_id_prefetch_contexts"] = len(prefetched)
         preview = dict(preview or {})
+        preview["source_id_prefetch"] = prefetch_preview
         if not _truthy(os.getenv("BZZOIRO_CONTEXT_GAP_PASS_ENABLED"), True):
             return contexts, stats, preview
         try:
-            added, gap_stats, gap_preview = await _gap_pass(self, matches, contexts)
+            added, gap_stats, gap_preview = await _gap_pass(self, remaining, contexts)
             contexts.update(added)
             evidence_contexts, evidence_stats = _contexts_from_bzzoiro_line_evidence(matches, contexts)
             contexts.update(evidence_contexts)

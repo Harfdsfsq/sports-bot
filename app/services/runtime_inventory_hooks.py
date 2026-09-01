@@ -145,9 +145,11 @@ def run_post_prediction_hooks() -> list[dict[str, Any]]:
     if _truthy(os.getenv("DAY_INVENTORY_COVERAGE_REPAIR_ENABLED"), True):
         results.append(_run_script("scripts/repair_day_inventory_coverage.py"))
     # Update kickoff priority and line movement guard before the workflow's
-    # controlled fallback publication step reads candidate artifacts.
+    # controlled fallback publication step reads candidate artifacts. Use the
+    # safe-clock wrapper so stale debug timestamps cannot push near-kickoff
+    # candidates back into an impossible next-cron wait state.
     if _truthy(os.getenv("LINE_MOVEMENT_GUARD_ENABLED"), True):
-        results.append(_run_script("scripts/update_day_inventory_priority_and_line_state.py"))
+        results.append(_run_script("scripts/update_day_inventory_priority_and_line_state_safe_clock.py"))
     # Make the exported top-level counters match row-level refresh_plan flags.
     # This runs after priority planning because that script mutates row refresh plans.
     if _truthy(os.getenv("REFRESH_PLAN_COUNT_REPAIR_ENABLED"), True):

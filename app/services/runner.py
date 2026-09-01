@@ -859,6 +859,25 @@ class PredictionRunner:
             summary['sheet_export'] = sheet_export_result
 
             run_created_at = datetime.now(UTC).isoformat()
+            try:
+                summary_path = Path(self.settings.storage_export_dir) / 'latest-run-summary.json'
+                summary_path.parent.mkdir(parents=True, exist_ok=True)
+                summary_path.write_text(
+                    json.dumps(
+                        {
+                            'created_at': run_created_at,
+                            'created_at_utc': run_created_at,
+                            'summary': summary,
+                            'status': 'ok',
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                        default=str,
+                    ),
+                    encoding='utf-8',
+                )
+            except Exception as exc:
+                self.provider_runtime_errors['run_summary_export'].append(self._format_exception(exc))
             base_run_payload = {
                 'created_at': run_created_at,
                 'summary': summary,
@@ -950,6 +969,12 @@ class PredictionRunner:
             )
             summary['history'] = history_result
             self.state.save_run('ok', summary=summary)
+            try:
+                from app.services.focused_alpha_runtime_contract import complete_lifecycle
+
+                complete_lifecycle('ok', summary=summary)
+            except Exception as exc:
+                self.provider_runtime_errors['run_lifecycle'].append(self._format_exception(exc))
             logger.info(
                 'Prediction run finished: matches=%s candidates=%s publishable=%s telegram=%s',
                 summary.get('matches_seen'),
@@ -963,6 +988,30 @@ class PredictionRunner:
             logger.exception('Prediction run failed: %s', error_text)
             self.state.save_run('error', error_text=error_text)
             error_payload = {'created_at': datetime.now(UTC).isoformat(), 'error': error_text}
+            try:
+                summary_path = Path(self.settings.storage_export_dir) / 'latest-run-summary.json'
+                summary_path.parent.mkdir(parents=True, exist_ok=True)
+                summary_path.write_text(
+                    json.dumps(
+                        {
+                            'created_at': error_payload['created_at'],
+                            'created_at_utc': error_payload['created_at'],
+                            'status': 'error',
+                            'error': error_text,
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                    ),
+                    encoding='utf-8',
+                )
+            except Exception:
+                pass
+            try:
+                from app.services.focused_alpha_runtime_contract import complete_lifecycle
+
+                complete_lifecycle('error', error=error_text)
+            except Exception:
+                pass
             self.state.write_debug(error_payload)
             self.state.archive_run_payload(error_payload, settings=self.settings)
             raise

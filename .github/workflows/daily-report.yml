@@ -22,16 +22,12 @@ on:
         required: false
         default: false
         type: boolean
-  schedule:
-    - cron: '45 20 * * *' # 23:45 MSK
-    - cron: '40 23 * * *' # 02:40 MSK final settlement/revision
-    - cron: '40 2 * * *' # 05:40 MSK completed settlement review
 
 permissions:
   contents: write
 
 concurrency:
-  group: daily-report-${{ github.event.schedule || github.event_name }}
+  group: daily-report-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -149,9 +145,6 @@ jobs:
         shell: bash
         run: |
           REPORT_OFFSET="${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}"
-          if [ "${{ github.event.schedule }}" = "40 23 * * *" ] || [ "${{ github.event.schedule }}" = "40 2 * * *" ]; then
-            REPORT_OFFSET="1"
-          fi
           echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_SEND_TELEGRAM=false" >> "$GITHUB_ENV"

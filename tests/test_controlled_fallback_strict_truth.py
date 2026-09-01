@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from uuid import uuid4
 
 from scripts.publish_controlled_fallback import candidate_metrics, final_publish_guard_reasons
 
 
-def write_truth(tmp_path: Path, row: dict) -> None:
-    path = tmp_path / "artifacts" / "run-bot" / "latest-day-inventory-coverage-truth.json"
+def isolated_workspace(monkeypatch, name: str) -> Path:
+    base = Path.cwd() / ".codex_tmp" / f"{name}-{uuid4().hex}"
+    base.mkdir(parents=True, exist_ok=True)
+    monkeypatch.chdir(base)
+    return base
+
+
+def write_truth(base: Path, row: dict) -> None:
+    path = base / "artifacts" / "run-bot" / "latest-day-inventory-coverage-truth.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"rows": [row]}, ensure_ascii=False), encoding="utf-8")
 
@@ -35,11 +43,11 @@ def base_candidate() -> dict:
     }
 
 
-def test_controlled_fallback_blocks_candidate_not_ready_by_strict_truth(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def test_controlled_fallback_blocks_candidate_not_ready_by_strict_truth(monkeypatch):
+    workspace = isolated_workspace(monkeypatch, "strict-truth-not-ready")
     monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", "true")
     monkeypatch.setenv("CONTROLLED_FALLBACK_REJECT_QUALITY_REASONS_FOR_TELEGRAM", "false")
-    write_truth(tmp_path, {
+    write_truth(workspace, {
         "match_key": "soccer|caracas|racing avellaneda|2026-05-22",
         "home_team": "Racing Club Avellaneda",
         "away_team": "Caracas FC",
@@ -59,11 +67,11 @@ def test_controlled_fallback_blocks_candidate_not_ready_by_strict_truth(tmp_path
     assert "strict_truth_missing:independent_odds_sources" in reasons
 
 
-def test_controlled_fallback_blocks_quality_stop_by_default(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def test_controlled_fallback_blocks_quality_stop_by_default(monkeypatch):
+    workspace = isolated_workspace(monkeypatch, "strict-truth-quality-stop")
     monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", "true")
     monkeypatch.delenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", raising=False)
-    write_truth(tmp_path, {
+    write_truth(workspace, {
         "match_key": "soccer|caracas|racing avellaneda|2026-05-22",
         "home_team": "Racing Club Avellaneda",
         "away_team": "Caracas FC",

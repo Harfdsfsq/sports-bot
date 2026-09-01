@@ -75,7 +75,7 @@ class MatchCoverageRow:
             "has_news": self.has_news,
             "has_line_movement": self.has_line_movement,
             "ready_for_model": odds_count >= 1 and context_count >= 1,
-            "ready_for_publish": odds_count >= 2 and context_count >= 2 and len(self.books) >= 2,
+            "ready_for_publish": odds_count >= 1 and context_count >= 1 and len(self.books) >= 2,
             "hours_to_kickoff": round(self.hours_to_kickoff, 3),
             "priority": round(self.priority, 3),
         }
@@ -96,8 +96,8 @@ class CoveragePlanner:
 
     def __init__(self, settings: Any) -> None:
         self.settings = settings
-        self.min_odds_sources = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or getattr(settings, "min_sources_publish", 2), 2))
-        self.min_context_sources = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or getattr(settings, "min_context_sources_publish", 2), 2))
+        self.min_odds_sources = max(1, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or getattr(settings, "min_sources_publish", 1), 1))
+        self.min_context_sources = max(1, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or getattr(settings, "min_context_sources_publish", 1), 1))
         self.min_books = max(2, _as_int(os.getenv("PUBLISH_MIN_BOOKS") or getattr(settings, "min_books_publish", 2), 2))
         self.context_limit = max(0, _as_int(getattr(settings, "context_enrichment_match_limit", 420), 420))
         self.export_path = Path(os.getenv("COVERAGE_PLANNER_EXPORT_PATH", ".data/exports/latest-coverage-planner.json"))

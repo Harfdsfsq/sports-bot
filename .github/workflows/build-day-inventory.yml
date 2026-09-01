@@ -89,10 +89,14 @@ jobs:
       ENABLE_SSTATS_CONTEXT: "true"
       SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "3"
 
-      # Other APIs are not part of nightly broad inventory. They remain runtime
-      # shortlist/backfill only, so they do not waste quota on 300-match discovery.
+      # SportLogic is part of the core provider set, but stays quota-capped in
+      # broad inventory discovery. Other APIs remain runtime shortlist/backfill.
       DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "false"
-      DAY_INVENTORY_ENABLE_SPORTLOGIC: "false"
+      DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"
+      SPORTLOGIC_MATCH_LIMIT: "40"
+      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "4"
+      SPORTLOGIC_REQUESTS_MAX_PER_RUN: "4"
+      SPORTLOGIC_PER_RUN_MAX: "4"
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
 
@@ -100,8 +104,8 @@ jobs:
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
       PROVIDER_QUOTA_RUNS_PER_DAY: "12"
       PROVIDER_QUOTA_SAFETY_FACTOR: "0.78"
-      PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
-      PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
+      PROVIDER_REQUEST_BUDGET_MODE: "per_run_with_daily_guards"
+      PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "false"
 
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}

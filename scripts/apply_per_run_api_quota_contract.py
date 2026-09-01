@@ -38,6 +38,13 @@ def _present(*names: str) -> bool:
     return any(str(os.getenv(name) or "").strip() for name in names)
 
 
+def _truthy(name: str, default: bool = False) -> bool:
+    raw = str(os.getenv(name) or "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on", "force"}
+
+
 def _local_now() -> datetime:
     tz_name = os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow"
     try:
@@ -111,8 +118,8 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "HARIZON_RUN_PHASE_EFFECTIVE": phase,
         "HARIZON_ALLOWED_PROVIDER_SET": ",".join(ALLOWED_CORE),
         "HARIZON_PROVIDER_PROBE_MODE": "false",
-        "PROVIDER_REQUEST_BUDGET_MODE": "per_run_only",
-        "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "true",
+        "PROVIDER_REQUEST_BUDGET_MODE": "per_run_with_daily_guards",
+        "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "false",
         "ALL_SOURCES_FREE_MAXIMIZE": "true",
         "RUN_DAYS_AHEAD": "1",
         "PUBLISH_WINDOW_HOURS": "24" if phase == "full_inventory" else "12",
@@ -143,18 +150,18 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "PUBLISH_COVERAGE_TIER_MODE": "hybrid",
         "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "true",
         "MIN_BOOKS_FOR_CONSENSUS": "2",
-        "MIN_BOOKS_PUBLISH": "1",
+        "MIN_BOOKS_PUBLISH": "2",
         "MIN_SOURCES_PUBLISH": "1",
-        "MARKET_DERIVED_MIN_BOOKS": "1",
+        "MARKET_DERIVED_MIN_BOOKS": "2",
         "MARKET_DERIVED_MIN_SOURCES": "1",
         "CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES": "1",
         "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "false",
         "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
         "CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS": "true",
-        "TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES": "2",
+        "TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES": "1",
         "TELEGRAM_MAIN_PICK_MIN_EDGE_PP": "3.0",
-        "TELEGRAM_MAIN_PICK_STRICT_SINGLE_SOURCE": "true",
+        "TELEGRAM_MAIN_PICK_STRICT_SINGLE_SOURCE": "false",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_BOOKS": "3",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EDGE_PP": "4.0",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EV_PCT": "8.0",
@@ -239,17 +246,22 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
     })
     _put_limit(env, "ALLSPORTSAPI", allsportsapi if _present("ALLSPORTSAPI_API_KEY") else 0)
 
+    sportlogic_enabled = _present(
+        "SPORTLOGIC_API_KEY",
+        "SPORTLOGIC_KEY",
+        "SPORTLOGIC_TOKEN",
+    )
     env.update({
-        "ENABLE_SPORTLOGIC": "true" if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else "false",
-        "SPORTLOGIC_ENABLED": "true" if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else "false",
-        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
-        "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "true",
-        "SPORTLOGIC_MATCH_LIMIT": "40",
-        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "60",
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": "20",
+        "ENABLE_SPORTLOGIC": "true" if sportlogic_enabled else "false",
+        "SPORTLOGIC_ENABLED": "true" if sportlogic_enabled else "false",
+        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true" if sportlogic_enabled else "false",
+        "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "false",
+        "SPORTLOGIC_MATCH_LIMIT": "40" if sportlogic_enabled else "0",
+        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "60" if sportlogic_enabled else "0",
+        "SPORTLOGIC_ODDS_MATCH_LIMIT": "20" if sportlogic_enabled else "0",
         "SPORTLOGIC_MIN_SECONDS_BETWEEN_REQUESTS": "7",
     })
-    _put_limit(env, "SPORTLOGIC", sportlogic if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else 0)
+    _put_limit(env, "SPORTLOGIC", sportlogic if sportlogic_enabled else 0)
 
     disabled = {
         "OPENWEATHERMAP": "not_in_allowed_core_use_weatherapi_openmeteo",

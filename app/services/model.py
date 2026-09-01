@@ -6,7 +6,7 @@ from statistics import mean
 from typing import Any
 
 from app.config import Settings
-from app.schemas import CandidateBet, Match, MatchContext, Offer
+from app.schemas import CandidateBet, Match, MatchContext, MatchContextBundle, Offer
 from app.utils import (
     candidate_selection_key,
     clamp,
@@ -1278,6 +1278,8 @@ class CandidateFactory:
                 'match_tier': getattr(match, 'tier', None),
                 'context_source': context_source or None,
                 'context_sources': context_sources,
+                'context_sources_count': len(context_sources),
+                'context_observation_count': len(context_details.get('context_observations') or []),
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode') or ('market_signal' if market_signal_derived else None),
                 'home_recent_count': context_details.get('home_recent_count'),
@@ -3335,6 +3337,8 @@ class CandidateFactory:
     def _coerce_context(value: Any) -> MatchContext | None:
         if value is None:
             return None
+        if isinstance(value, MatchContextBundle):
+            return value.merged_context
         if isinstance(value, MatchContext):
             return value
         if isinstance(value, dict):

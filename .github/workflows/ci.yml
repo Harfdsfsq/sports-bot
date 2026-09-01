@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -23,10 +25,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install ruff mypy
-      - name: Ruff lint
-        run: ruff check app scripts --config pyproject.toml
-      - name: Mypy type smoke
-        run: mypy app scripts --config-file pyproject.toml
+      - name: Ruff lint changed Python files
+        shell: bash
+        run: |
+          mapfile -t files < <(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- app scripts | grep -E '\\.py$' || true)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No changed Python files to lint"
+          else
+            printf 'Linting %s changed Python files\\n' "${#files[@]}"
+            ruff check "${files[@]}" --config pyproject.toml
+          fi
+      - name: Mypy type smoke changed Python files
+        shell: bash
+        run: |
+          mapfile -t files < <(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- app scripts | grep -E '\\.py$' || true)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No changed Python files to type-check"
+          else
+            mypy "${files[@]}" --config-file pyproject.toml
+          fi
       - name: Import smoke
         run: |
           python -m compileall app scripts

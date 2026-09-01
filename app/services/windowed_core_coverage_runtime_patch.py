@@ -599,9 +599,9 @@ def _apply_env_defaults() -> None:
         "PUBLISH_COVERAGE_TIER_MODE": "hybrid",
         "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "true",
         "MARKET_DERIVED_MIN_SOURCES": "1",
-        "MARKET_DERIVED_MIN_BOOKS": "1",
+        "MARKET_DERIVED_MIN_BOOKS": "2",
         "MIN_SOURCES_PUBLISH": "1",
-        "MIN_BOOKS_PUBLISH": "1",
+        "MIN_BOOKS_PUBLISH": "2",
     }
     for key, value in defaults.items():
         os.environ[key] = str(value)

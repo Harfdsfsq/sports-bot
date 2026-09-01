@@ -33,6 +33,13 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def as_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(str(value).replace(',', '.')) if value not in (None, "") else default
+    except Exception:
+        return default
+
+
 def load(path: Path, default: Any) -> Any:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -139,22 +146,37 @@ def mark(row: dict[str, Any], game_id: str, deep_ok: bool, detail_ok: bool, odds
         cov.update({"odds": True, "odds_sources_count": row["odds_sources_count"]})
 
 
-async def call(client: httpx.AsyncClient, name: str, path: str, params: dict[str, Any]) -> dict[str, Any]:
+async def call(client: httpx.AsyncClient, name: str, path: str, params: dict[str, Any], *, include_payload: bool = False) -> dict[str, Any]:
     params = dict(params)
     key = env("SSTATS_API_KEY")
     if key:
         params.setdefault("apikey", key)
     started = time.perf_counter()
-    try:
-        response = await client.get(BASE_URL + path, params=params)
-        status = response.status_code
+    sleep_s = max(0.0, as_float(env("SSTATS_DEEP_REQUEST_SLEEP_SECONDS"), 0.42))
+    max_retries = max(0, as_int(env("SSTATS_DEEP_429_RETRIES"), 2))
+    last: dict[str, Any] | None = None
+    for attempt in range(max_retries + 1):
+        if attempt > 0:
+            await asyncio.sleep(max(1.0, sleep_s) * attempt)
         try:
-            payload = response.json()
-        except Exception:
-            payload = response.text
-        return {"name": name, "status": "OK" if 200 <= status < 300 else str(status), "http_status": status, "rows": len(rows(payload)), "ms": round((time.perf_counter() - started) * 1000, 1)}
-    except Exception as exc:
-        return {"name": name, "status": "ERROR", "error": f"{type(exc).__name__}: {exc}", "rows": 0}
+            response = await client.get(BASE_URL + path, params=params)
+            status = response.status_code
+            try:
+                payload = response.json()
+            except Exception:
+                payload = response.text
+            result = {"name": name, "status": "OK" if 200 <= status < 300 else str(status), "http_status": status, "rows": len(rows(payload)), "ms": round((time.perf_counter() - started) * 1000, 1), "attempt": attempt + 1}
+            if include_payload:
+                result["payload"] = payload
+            last = result
+            if status != 429:
+                break
+        except Exception as exc:
+            last = {"name": name, "status": "ERROR", "error": f"{type(exc).__name__}: {exc}", "rows": 0, "attempt": attempt + 1}
+            break
+    if sleep_s > 0:
+        await asyncio.sleep(sleep_s)
+    return last or {"name": name, "status": "ERROR", "error": "no_result", "rows": 0}
 
 
 async def run() -> dict[str, Any]:

@@ -1,12 +1,12 @@
-from __future__ import annotations
-
 """HARIZON Telegram run report v8.
 
 Readable bookmaker-quorum report. Publication price contract:
 - selected market side confirmed by 2+ real bookmakers;
 - price-integrity guard stays mandatory;
-- 2+ independent odds sources are diagnostic, not a publication blocker.
+- 2+ independent odds sources are an A-tier strict metric, not a B-tier block.
 """
+
+from __future__ import annotations
 
 import importlib.util
 import json
@@ -17,6 +17,7 @@ from typing import Any
 V7_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v7.py")
 EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
+DAILY_COVERAGE_PLAN = EXPORT_DIR / "latest-daily-coverage-plan.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 PRICE_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-price-integrity-guard.json"
@@ -25,6 +26,7 @@ TIMING_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-publication-timing-
 BOOKMAKER_BACKFILL_PATH = EXPORT_DIR / "latest-odds-api-bookmaker-quorum-mapping-backfill.json"
 ODDS_API_OFFER_SNAPSHOT_PATH = EXPORT_DIR / "latest-odds-api-io-offer-snapshot.json"
 PUBLICATION_LEDGER_SYNC_PATH = EXPORT_DIR / "latest-publication-ledger-sync.json"
+RUN_BOT_STEP_STATUS_PATH = EXPORT_DIR / "latest-run-bot-step-status.json"
 
 
 def _load_v7() -> Any:
@@ -103,6 +105,9 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
     errors = _as_int(row.get("response_errors")) or _as_int(row.get("v1_response_errors")) or _as_int(v1.get("response_errors"))
     deep = _as_int(_first_dict(row.get("sstats_deep")).get("contexts_enriched"))
     deep = deep or _as_int(row.get("v1_last_games_stats_fetched")) or _as_int(v1.get("last_games_stats_fetched"))
+    deep_report = _load_json(EXPORT_DIR / "latest-sstats-deep-inventory-enrichment.json")
+    if deep_report:
+        deep = deep or _as_int(deep_report.get("enriched_matches"))
     api = payload.setdefault("api", {})
     sstats_api = dict(api.get("sstats") or {})
     if requests:
@@ -119,16 +124,75 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
     api["sstats"] = sstats_api
 
 
+def _line_lifecycle_reason(reason: Any) -> bool:
+    text = str(reason or "").strip()
+    if not text:
+        return False
+    return text in {
+        "line_movement_guard_waiting_next_run",
+        "line_movement_guard_dropped",
+        "needs_next_cron_line_movement_recheck",
+    } or "line_movement" in text
+
+
+def _best_non_line_reject_reason(payload: dict[str, Any]) -> str:
+    reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
+    for row in reasons:
+        if not isinstance(row, dict):
+            continue
+        reason = str(row.get("reason") or "").strip()
+        if reason and not _line_lifecycle_reason(reason):
+            return reason
+    samples = payload.get("samples") if isinstance(payload.get("samples"), dict) else {}
+    evaluated = samples.get("fallback_evaluated") if isinstance(samples.get("fallback_evaluated"), list) else []
+    try:
+        if v7.v5.has_non_line_candidate_rejections(evaluated):
+            for row in evaluated:
+                if not isinstance(row, dict):
+                    continue
+                for reason in row.get("reject_reasons") or []:
+                    text = str(reason or "").strip()
+                    if text and not _line_lifecycle_reason(text):
+                        return text
+    except Exception:
+        pass
+    return ""
+
+
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     _normalize_runtime_patched_sstats(payload)
     plan = _load_json(PROGRESSIVE_PLAN)
+    daily_plan = _load_json(DAILY_COVERAGE_PLAN)
     payload["version"] = "harizon-telegram-report-v8-bookmaker-mapping-guard"
     payload.setdefault("diagnostics", {})["progressive_core_coverage"] = {
         "contract": plan.get("contract") if isinstance(plan.get("contract"), dict) else {},
         "counts": plan.get("counts") if isinstance(plan.get("counts"), dict) else {},
         "gap_sample_size": len(plan.get("core_gap_sample") or plan.get("gap_sample") or []) if isinstance(plan, dict) else 0,
     }
+    provider_health = (
+        daily_plan.get("provider_assignment_health")
+        if isinstance(daily_plan.get("provider_assignment_health"), dict)
+        else {}
+    )
+    if provider_health:
+        payload.setdefault("diagnostics", {})["provider_coverage_routing"] = {
+            "provider_targets": _as_int(
+                provider_health.get("provider_coverage_targets")
+                or daily_plan.get("provider_coverage_target_count")
+            ),
+            "model_targets": _as_int(
+                provider_health.get("focused_targets")
+                or daily_plan.get("phase_cumulative_target")
+            ),
+            "role_assignments": _as_int(
+                provider_health.get("provider_role_assignments")
+            ),
+            "active_provider_eligible_rows": _as_int(
+                provider_health.get("active_provider_eligible_rows")
+            ),
+            "publication_scope_widened": False,
+        }
     day_summary = _load_json(EXPORT_DIR / "latest-day-inventory-summary.json")
     truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
     truth_report = _load_json(TRUTH_REPORT)
@@ -169,15 +233,25 @@ def build_payload() -> dict[str, Any]:
             "matches_with_2plus_books_any_market": _as_int(odds_api_snapshot.get("matches_with_2plus_books_any_market")),
             "matches_with_2plus_books_same_side_market": _as_int(odds_api_snapshot.get("matches_with_2plus_books_same_side_market")),
         }
+    inventory_target_expand = _load_json(EXPORT_DIR / "latest-day-inventory-target-expand.json")
+    if inventory_target_expand:
+        payload.setdefault("diagnostics", {})["inventory_target_expand"] = inventory_target_expand
     publication_ledger_sync = _load_json(PUBLICATION_LEDGER_SYNC_PATH)
     if publication_ledger_sync:
         payload.setdefault("diagnostics", {})["publication_ledger_sync"] = publication_ledger_sync
+    run_bot_step_status = _load_json(RUN_BOT_STEP_STATUS_PATH)
+    if run_bot_step_status:
+        payload.setdefault("diagnostics", {})["run_bot_step_status"] = run_bot_step_status
     payload.setdefault("diagnostics", {})["github_actions"] = {
         "run_id": os.getenv("GITHUB_RUN_ID") or "",
         "run_attempt": os.getenv("GITHUB_RUN_ATTEMPT") or "",
         "workflow": os.getenv("GITHUB_WORKFLOW") or "run-bot",
         "repository": os.getenv("GITHUB_REPOSITORY") or "Harfdsfsq/sports-bot",
     }
+    if str(payload.get("top_reason") or "") == "line_movement_guard_waiting_next_run":
+        replacement = _best_non_line_reject_reason(payload)
+        if replacement:
+            payload["top_reason"] = replacement
     return payload
 
 
@@ -226,7 +300,7 @@ def _top_reasons(payload: dict[str, Any], limit: int = 8) -> list[str]:
         ru = row.get("reason_ru") or _reason_ru(row.get("reason"))
         out.append(f"• {ru}: {count} ({round(count * 100.0 / total)}%)")
     if diagnostic_odds_source_count:
-        out.append(f"• Диагностика legacy odds-source: {diagnostic_odds_source_count} — не блок публикации при 2+ букмекерах")
+        out.append(f"• Диагностика legacy odds-source: {diagnostic_odds_source_count} — не заменяет обязательные 2+ odds-source")
     return out or ["• Нет reject reasons в свежих артефактах."]
 
 
@@ -259,7 +333,19 @@ def _candidate_lines(payload: dict[str, Any], limit: int = 4) -> list[str]:
         if visible_reasons:
             out.append("   • причина: " + ", ".join(_reason_ru(x) for x in visible_reasons[:4]))
         elif legacy_count:
-            out.append("   • причина: только legacy odds-source диагностика; публикацию решают 2+ букмекера/price-integrity/value")
+            out.append("   • причина: только legacy odds-source диагностика; публикацию решают 2+ odds-source + 2+ букмекера + 2+ контекста + value")
+        thresholds = metrics.get("proxy_single_source_thresholds") if isinstance(metrics.get("proxy_single_source_thresholds"), dict) else {}
+        if thresholds and thresholds.get("applies"):
+            out.append(
+                "   • proxy single-source: "
+                f"fact edge {edge:.1f}pp / EV {ev:.1f}% / conf {_as_float(metrics.get('confidence')):.1f}; "
+                f"min edge {_as_float(thresholds.get('min_edge_pp')):.1f}pp / "
+                f"EV {_as_float(thresholds.get('min_ev_pct')):.1f}% / "
+                f"conf {_as_float(thresholds.get('min_confidence')):.1f}"
+            )
+        xg = metrics.get("xg_sanity") if isinstance(metrics.get("xg_sanity"), dict) else {}
+        if xg and not bool(xg.get("enabled")):
+            out.append(f"   • xG sanity: missing ({xg.get('reason') or 'no usable xG'})")
     return out
 
 
@@ -281,8 +367,11 @@ def render(payload: dict[str, Any]) -> str:
     bookmaker_backfill = diag.get("bookmaker_quorum_backfill") if isinstance(diag.get("bookmaker_quorum_backfill"), dict) else {}
     odds_api_snapshot = diag.get("odds_api_io_offer_snapshot") if isinstance(diag.get("odds_api_io_offer_snapshot"), dict) else {}
     timing_guard = diag.get("publication_timing_guard") if isinstance(diag.get("publication_timing_guard"), dict) else {}
+    inventory_target_expand = diag.get("inventory_target_expand") if isinstance(diag.get("inventory_target_expand"), dict) else {}
+    run_bot_step_status = diag.get("run_bot_step_status") if isinstance(diag.get("run_bot_step_status"), dict) else {}
     github_actions = diag.get("github_actions") if isinstance(diag.get("github_actions"), dict) else {}
     publication_ledger_sync = diag.get("publication_ledger_sync") if isinstance(diag.get("publication_ledger_sync"), dict) else {}
+    provider_routing = diag.get("provider_coverage_routing") if isinstance(diag.get("provider_coverage_routing"), dict) else {}
     window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
 
     inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
@@ -294,17 +383,55 @@ def render(payload: dict[str, Any]) -> str:
     ready_model = _as_int(truth_counts.get("matches_ready_for_model")) or _as_int(coverage.get("ready_for_model"))
     ready_publish = _as_int(truth_counts.get("matches_ready_for_publish"))
     run_matches = _as_int(coverage.get("matches_seen"))
+    inv_target = (
+        _as_int(inventory_target_expand.get("target"))
+        or _as_int(truth_counts.get("target_matches"))
+        or _as_int(coverage.get("day_inventory_target"))
+        or 300
+    )
+    target_shortfall = max(0, inv_target - inv_total) if inv_target else 0
+    expand_matches_after = _as_int(inventory_target_expand.get("matches_after"))
+    expand_target_shortfall = _as_int(inventory_target_expand.get("target_shortfall"))
+    target_status = str(inventory_target_expand.get("status") or "").strip()
+    target_note = f"; shortfall {target_shortfall}" if target_shortfall else ""
+    if expand_matches_after and expand_matches_after != inv_total:
+        target_note += f"; target-expand stage {expand_matches_after}/{inv_target}"
+        if expand_target_shortfall:
+            target_note += f", shortfall {expand_target_shortfall}"
+    if target_status:
+        target_note += f"; status {target_status}"
 
     raw_top_reason = str(payload.get("top_reason") or "").strip()
+    if _line_lifecycle_reason(raw_top_reason):
+        replacement_reason = _best_non_line_reject_reason(payload)
+        if replacement_reason:
+            raw_top_reason = replacement_reason
     timing_deferred_total = _as_int(timing_guard.get("deferred_total"))
     top_reason = _reason_ru(raw_top_reason)
+    waiting_line_next_run = _as_int(line.get("waiting_next_run"))
+    dropped_final_line = _as_int(line.get("dropped_final"))
     published_count = _as_int(funnel.get("published_count"))
     fallback_published = _as_int(funnel.get("fallback_published_count"))
     published = published_count > 0 or payload.get("status") == "published"
+    runtime_status_raw = str(run_bot_step_status.get("status") if run_bot_step_status else "").strip()
+    runtime_failed = bool(runtime_status_raw) and runtime_status_raw not in {"0", "0.0", "ok", "success"}
     if not published and timing_deferred_total > 0 and raw_top_reason.lower() in {"", "no viable controlled fallback", "no_viable_controlled_fallback", "none"}:
         top_reason = f"кандидаты отложены до финального run перед матчем ({timing_deferred_total})"
+    if (
+        not published
+        and waiting_line_next_run > 0
+        and raw_top_reason.lower() in {
+            "line_movement_guard_dropped",
+            "line_movement_guard_waiting_next_run",
+            "needs_next_cron_line_movement_recheck",
+        }
+    ):
+        top_reason = f"кандидаты ждут следующий cron для второго снимка линии ({waiting_line_next_run})"
     if published:
         status_line = "✅ прогноз опубликован"
+    elif runtime_failed:
+        status_line = "🔴 Прогнозный прогон не завершился: ниже post-run диагностика по сохранённым артефактам."
+        top_reason = f"runtime failed: run-once завершился status {runtime_status_raw}"
     elif timing_deferred_total > 0 and raw_top_reason.lower() in {"", "no viable controlled fallback", "no_viable_controlled_fallback", "none"}:
         status_line = "🟡 Прогнозов нет: есть кандидаты, но timing guard отложил их до финального run."
     else:
@@ -326,7 +453,13 @@ def render(payload: dict[str, Any]) -> str:
     lost_mapping = max(0, raw_books2 - price2) if raw_books2 else _as_int(bookmaker_norm.get("lost_mapping"))
     raw_book_line = None
     if raw_books2:
-        raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | mapping gap: {lost_mapping}"
+        if price2 > raw_books2:
+            raw_book_line = (
+                f"• Raw 2+ букмекера odds-api.io current snapshot: {raw_books2} | "
+                f"normalized cumulative inventory: {price2}."
+            )
+        else:
+            raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | mapping gap: {lost_mapping}"
     backfill_line = None
     if bookmaker_backfill:
         backfill_line = (
@@ -355,16 +488,38 @@ def render(payload: dict[str, Any]) -> str:
                 f"duplicates removed {duplicates_removed}; policy {policy}."
             )
 
+    line_guard_text = (
+        f"• Line guard: увидел {_as_int(line.get('seen'))}, "
+        f"оставил {_as_int(line.get('kept'))}, "
+    )
+    if waiting_line_next_run and dropped_final_line <= 0:
+        line_guard_text += f"отложил {waiting_line_next_run} до следующего cron"
+    elif waiting_line_next_run:
+        line_guard_text += f"отложил {waiting_line_next_run}, снял {dropped_final_line}"
+    else:
+        line_guard_text += f"снял {_as_int(line.get('dropped'))}"
+
     lines: list[str] = [
         "🧾 HARIZON — понятный отчёт по запуску",
         status_line,
         f"• Главная причина: {top_reason}",
         "",
         "📦 Инвентарь и покрытие",
-        f"• Инвентарь дня: {inv_total} матчей. Runtime rows processed: {run_matches} (это не размер inventory).",
+        f"• Инвентарь дня: собрано {inv_total}/{inv_target} матчей (цель: 300 лучших, добор каждый run{target_note}). Runtime rows processed: {run_matches} (это не размер inventory).",
+    ]
+    provider_targets = _as_int(provider_routing.get("provider_targets"))
+    if provider_targets:
+        lines.append(
+            "• Очередь provider-enrichment: "
+            f"{provider_targets} активных матчей; model scope "
+            f"{_as_int(provider_routing.get('model_targets'))}; назначений по ролям "
+            f"{_as_int(provider_routing.get('role_assignments'))}. "
+            "Очередь сбора не расширяет публикационный scope."
+        )
+    lines.extend([
         f"• 1+ линия: {with_odds}/{inv_total} ({_pct(with_odds, inv_total)}) | 1+ контекст: {with_context}/{inv_total} ({_pct(with_context, inv_total)})",
         f"• 2+ букмекера: {price2}/{inv_total} ({_pct(price2, inv_total)})",
-    ]
+    ])
     if raw_book_line:
         lines.append(raw_book_line)
     if backfill_line:
@@ -372,7 +527,7 @@ def render(payload: dict[str, Any]) -> str:
     if snapshot_line:
         lines.append(snapshot_line)
     lines.extend([
-        f"• 2+ независимых odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — диагностика, не блок публикации",
+        f"• 2+ independent odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — обязательный блок публикации",
         f"• 2+ контекста: {context2}/{inv_total} ({_pct(context2, inv_total)})",
         f"• Готово для модели: {ready_model}/{inv_total} ({_pct(ready_model, inv_total)})",
     ])
@@ -399,7 +554,7 @@ def render(payload: dict[str, Any]) -> str:
         "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
         f"• Пересечение 2+ букмекера ∩ 2+ контекста: до {min(price2, context2)} матчей; exact-ready считается после movement/value/xG.",
         "• A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.",
-        "• 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.",
+        "• 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.",
     ])
     if price_guard:
         lines.append(f"• Price-integrity guard: снял {_as_int(price_guard.get('removed_total'))} подозрительных кандидатов до fallback.")
@@ -414,7 +569,7 @@ def render(payload: dict[str, Any]) -> str:
         "",
         "🛡️ Движение линии и финальный фильтр",
         f"• Pre-kickoff проверок: {_as_int(line.get('final_pre_kickoff_checks'))} | матчей без следующего регулярного run: {_as_int(line.get('no_more_regular_run_before_kickoff'))}",
-        f"• Line guard: увидел {_as_int(line.get('seen'))}, оставил {_as_int(line.get('kept'))}, снял {_as_int(line.get('dropped'))}",
+        line_guard_text,
         "",
         "🧪 Воронка кандидатов",
         f"• Raw/candidates before quality: {_as_int(funnel.get('raw_candidates'))}/{_as_int(funnel.get('candidates_before_quality'))}",
@@ -442,8 +597,10 @@ def render(payload: dict[str, Any]) -> str:
         lines.append(f"• Есть кандидаты, но timing guard отложил {timing_deferred_total} до финального регулярного run перед стартом. Сейчас публикацию не форсируем.")
     elif _as_int(price_guard.get('removed_total')) > 0 and _as_int(funnel.get('fallback_candidates_seen')) == 0:
         lines.append("• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.")
-    elif "line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason")):
+    elif ("line movement" in top_reason.lower() or "line_movement" in raw_top_reason) and waiting_line_next_run > 0:
         lines.append("• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.")
+    elif ("line movement" in top_reason.lower() or "line_movement" in raw_top_reason) and dropped_final_line > 0:
+        lines.append("• Кандидат был проверен финальным line guard и снят: публикацию не форсируем, пока edge/EV/movement ниже порога.")
     else:
         lines.append("• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.")
     if lost_mapping > 0:

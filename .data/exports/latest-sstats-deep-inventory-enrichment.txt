@@ -1,46 +1,77 @@
 # SStats deep inventory enrichment v4
 status: ok
-inventory_path: .data/day_inventory/2026-06-13.json
-aliases_written: .data/day_inventory/2026-06-13.json, .data/day_inventory/latest.json, .data/day_inventory/current.json, .data/day_inventory/today.json
-crosswalk_matched: 226
+inventory_path: .data/day_inventory/2026-09-01.json
+aliases_written: .data/day_inventory/2026-09-01.json, .data/day_inventory/latest.json, .data/day_inventory/current.json, .data/day_inventory/today.json
+crosswalk_matched: 218
 queue_seen: 160
-request_count: 100
-enriched_matches: 34
-priority_group_counts: {"context2_odds0": 2, "context2_odds1": 6, "context1_odds1": 26}
-command_status_counts: {"OK": 100, "SKIPPED": 36}
+fixtures_seen: 145
+request_count: 149
+enriched_matches: 64
+sstats_offers: 1590
+priority_group_counts: {"context0_odds1_xg1": 6, "context1_odds1_xg1": 12, "context1_odds0_xg1": 9, "context1_odds1_xg0": 23, "context0_odds0_xg1": 2, "context0_odds1_xg0": 2}
+command_status_counts: {"OK": 149, "SKIPPED": 67}
+xg_extraction: {"attempted": 64, "resolved_real": 62, "kept_existing": 0, "missing": 2, "placeholder_rejected": 0, "source_counts": {"last_games_form_goals": 47, "glicko_xg": 15, "missing": 2}}
+odds_extraction: {"fixtures_attempted": 33, "payload_ok": 33, "offers_parsed": 1488, "fixtures_with_offers": 16, "no_totals_market": 0, "book_counts": {"10bet": 66, "1xbet": 324, "bet365": 46, "betano": 148, "betfair": 96, "betvictor": 110, "marathonbet": 345, "pinnacle": 144, "sbo": 26, "superbet": 101, "unibet": 82}}
+identity: {"verified": 20, "unverified": 34, "mismatch": 0, "skipped_empty_key": 0, "skipped_no_row": 0, "fixtures_processed": 54, "duplicate_rows_seen": 15, "sibling_rows_marked": 10}
 
 ## Enriched sample
-- Pittsburgh Riveters SC — Erie Sports Center | gameId=1532173 deep=True detail=True odds=True context:2→2 odds:0→1
-- Birmingham Legion FC — One Knoxville | gameId=1532187 deep=True detail=True odds=True context:2→2 odds:1→2
-- Long Island — FC Motown STA | gameId=1524878 deep=True detail=True odds=True context:2→2 odds:1→2
-- Midlakes United — West Seattle Junction FC | gameId=1524875 deep=True detail=True odds=True context:1→1 odds:1→2
-- Rally Madison FC — Rochester FC | gameId=1532442 deep=True detail=True odds=True context:2→2 odds:0→1
-- USA — Paraguay | gameId=1489370 deep=True detail=True odds=True context:2→2 odds:1→2
-- Baranovichi — Minsk | gameId=1525887 deep=True detail=True odds=True context:1→1 odds:1→2
-- Berga — Torns | gameId=1510953 deep=True detail=True odds=True context:1→1 odds:1→2
-- Eskilstuna United — Malmo FF | gameId=1495489 deep=True detail=False odds=True context:2→2 odds:1→2
-- Fittja IF — Karlslunds | gameId=1511147 deep=True detail=False odds=True context:1→1 odds:1→2
-- Frem — Sundby | gameId=1540564 deep=True detail=False odds=True context:1→1 odds:1→2
-- Varegg — Gneist | gameId=1496812 deep=True detail=False odds=True context:1→1 odds:1→2
-- Ullensaker/Kisa — Grorud | gameId=1496266 deep=True detail=False odds=True context:1→1 odds:1→2
-- Stroemsgodset 2 — Harstad | gameId=1497175 deep=True detail=False odds=True context:1→1 odds:1→2
-- HIFK — PEPO | gameId=1541622 deep=True detail=False odds=True context:1→1 odds:1→2
-- Koege — Kolding | gameId=1534625 deep=True detail=False odds=True context:1→1 odds:1→2
-- Luleaa — Storfors | gameId=1515755 deep=True detail=False odds=True context:1→1 odds:1→2
-- Lyseng — Odder | gameId=1540566 deep=True detail=False odds=True context:1→1 odds:1→2
-- Nykoebing — Vanlose | gameId=1540539 deep=True detail=False odds=True context:1→1 odds:1→2
-- Oppsal — Sandefjord 2 | gameId=1497355 deep=True detail=False odds=True context:1→1 odds:1→2
-- Vidar — Pors Grenland | gameId=1496084 deep=True detail=False odds=True context:1→1 odds:1→2
-- Vaxjo Norra — Trelleborg | gameId=1510954 deep=True detail=False odds=True context:1→1 odds:1→2
-- HB Torshavn II — FC Suduroy | gameId=1506620 deep=True detail=False odds=True context:1→1 odds:1→2
-- Eik Toensberg — Arendal | gameId=1496078 deep=True detail=False odds=True context:2→2 odds:1→2
-- Chicken Inn — Herentals FC | gameId=1548208 deep=True detail=False odds=False context:1→1 odds:1→None
-- Odishi — Dusheti | gameId=1507176 deep=True detail=False odds=False context:1→1 odds:1→None
-- Dynamos Harare FC — Telone FC | gameId=1548215 deep=True detail=False odds=False context:1→1 odds:1→None
-- Galtabacks BK — Kongahalla | gameId=1511328 deep=True detail=False odds=False context:1→1 odds:1→None
-- Mwos FC — FC Hunters | gameId=1548209 deep=True detail=False odds=False context:1→1 odds:1→None
-- Samtredia — Kolkheti Poti | gameId=1507177 deep=True detail=False odds=False context:1→1 odds:1→None
-- Mjoendalen — Kvik Halden | gameId=1496081 deep=True detail=False odds=False context:2→2 odds:1→None
-- Rosenborg 2 — Molde 2 | gameId=1496629 deep=True detail=False odds=False context:1→1 odds:1→None
-- Raade IL — Raelingen | gameId=1497357 deep=True detail=False odds=False context:1→1 odds:1→None
-- Herd — Nardo | gameId=1496625 deep=True detail=False odds=False context:1→1 odds:1→None
+- Perak FA — Kuala Lumpur City FC | gameId=1635847 copy=0 id=unverified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.623 ea=1.213 context:0→1
+- FC BKMA Vagharshapat 2 — FC Bentonit | gameId=1605059 copy=0 id=unverified deep=True detail=True offers=0 xg=last_games_form_goals eh=2.094 ea=1.242 context:1→1
+- Korona II Kielce — Radomiak Radom | gameId=1612611 copy=0 id=unverified deep=True detail=True offers=0 xg=last_games_form_goals eh=2.128 ea=1.646 context:1→1
+- Bandirmaspor — Antalyaspor | gameId=1585729 copy=0 id=unverified deep=True detail=True offers=142 xg=last_games_form_goals eh=1.514 ea=0.933 context:1→1
+- AFC Progresul 1944 Spartac — CS Concordia Chiajna | gameId=1632263 copy=0 id=unverified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.797 ea=1.812 context:1→1
+- Entebbe UPPC FC — Updf FC | gameId=1635242 copy=0 id=verified deep=True detail=True offers=0 xg=glicko_xg eh=1.378 ea=0.875 context:1→1
+- Gor Mahia FC — Muranga Seal | gameId=1629061 copy=0 id=verified deep=True detail=True offers=0 xg=glicko_xg eh=1.712 ea=0.751 context:1→1
+- Kelantan Red Warrior FC — Kuching City FC | gameId=1635846 copy=0 id=unverified deep=True detail=True offers=0 xg=last_games_form_goals eh=0.523 ea=2.661 context:1→1
+- NEC FC — Lugazi Municipal FC | gameId=1635243 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.529 ea=0.788 context:1→1
+- FK Akron Tolyatti — Lokomotiv Moscow | gameId=1563651 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.075 ea=1.665 context:1→1
+- Podhale Nowy Targ — Pogoń Grodzisk Mazowiecki | gameId=1612619 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.689 ea=1.345 context:1→1
+- CSF Spartanii Selemet — Univer Comrat | gameId=1619909 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.839 ea=2.472 context:1→1
+- FC Victoria Ialoveni — FC Falesti | gameId=1619910 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.532 ea=1.805 context:1→1
+- FC Oguz — Vulturii Cutezatori | gameId=1619908 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.751 ea=1.844 context:1→1
+- BKS Chemik Bydgoszcz — Piast Gliwice | gameId=1612607 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.936 ea=1.49 context:1→1
+- Chemik Bydgoszcz — GKS Piast Gliwice | gameId=1612607 copy=1 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.936 ea=1.49 context:1→1
+- Kluczevia Stargard — Pogoń Siedlce | gameId=1612610 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.673 ea=1.255 context:1→1
+- Zks Kluczevia Stargard — Pogon Siedlce | gameId=1612610 copy=1 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.673 ea=1.255 context:1→1
+- Siarka Tarnobrzeg — Zagłębie Lubin | gameId=1612623 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.048 ea=1.425 context:1→1
+- Siarka Tarnobrzeg — Zaglebie Lubin | gameId=1612623 copy=1 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.048 ea=1.425 context:1→1
+- Wisła II Płock — Puszcza Niepołomice | gameId=1612618 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.567 ea=1.376 context:1→1
+- Wisla Plock II — Puszcza Niepolomice | gameId=1612618 copy=1 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.567 ea=1.376 context:1→1
+- Ghazl El Mahallah — Al Sharqiya Enppi | gameId=1612223 copy=0 id=verified deep=True detail=False offers=127 xg=glicko_xg eh=1.005 ea=1.119 context:1→1
+- Noah Yerevan 2 — Andranik | gameId=1605062 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.388 ea=2.363 context:1→1
+- FC Ararat-Armenia 2 — FC Mika Yerevan | gameId=1605058 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.752 ea=1.661 context:1→1
+- Umraniyespor — Muglaspor | gameId=1585737 copy=0 id=unverified deep=True detail=False offers=136 xg=last_games_form_goals eh=0.908 ea=1.244 context:1→1
+- Primeiro de Agosto — GD Interclube | gameId=1627265 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.318 ea=0.993 context:1→1
+- SK Tomasov — FK Inter Bratislava | gameId=1630297 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.213 ea=1.727 context:1→1
+- ACS Sepsi OSK Sfantu Gheorghe — FC CFR 1907 Cluj | gameId=1632264 copy=0 id=unverified deep=True detail=False offers=136 xg=last_games_form_goals eh=1.215 ea=0.928 context:1→1
+- CSM Corona Brasov — FC Bihor Oradea | gameId=1632256 copy=0 id=unverified deep=True detail=False offers=86 xg=last_games_form_goals eh=1.599 ea=1.372 context:1→1
+- FK Minija — Dainava Alytus | gameId=1567422 copy=0 id=unverified deep=True detail=False offers=102 xg=last_games_form_goals eh=1.87 ea=1.177 context:1→1
+- FK Minija 2017 — Dfk Dainava Alytus | gameId=1567422 copy=1 id=unverified deep=True detail=False offers=102 xg=last_games_form_goals eh=1.87 ea=1.177 context:1→1
+- FC Fakel Voronezh — FK Krasnodar | gameId=1563654 copy=0 id=verified deep=True detail=False offers=82 xg=glicko_xg eh=0.811 ea=1.724 context:1→1
+- Volos NPS — PAE PS Kalamata | gameId=1635494 copy=0 id=unverified deep=True detail=False offers=122 xg=last_games_form_goals eh=0.844 ea=1.879 context:1→1
+- LSK Kvinner FK — Bodoe/Glimt | gameId=1495382 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=2.522 ea=1.347 context:0→1
+- OKS Odra Opole — Wisła Kraków | gameId=1612616 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.127 ea=1.509 context:1→1
+- Odra Opole — Wisla Krakow | gameId=1612616 copy=1 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.127 ea=1.509 context:1→1
+- Trelleborgs FF — Malmo FF | gameId=1636781 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.429 ea=1.766 context:0→1
+- Gol Gohar Sirjan FC — Aluminium Arak | gameId=1631571 copy=0 id=verified deep=True detail=False offers=37 xg=glicko_xg eh=1.228 ea=0.894 context:1→1
+- Esteghlal Khuzestan FC — Chadormalu Ardakan SC | gameId=1631570 copy=0 id=verified deep=True detail=False offers=46 xg=glicko_xg eh=0.943 ea=1.214 context:1→1
+- AL Jeel — Jeddah Club | gameId=1603985 copy=0 id=verified deep=True detail=False offers=114 xg=glicko_xg eh=1.021 ea=1.132 context:1→1
+- Kazma SC — Al Sahel | gameId=1632237 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.022 ea=1.211 context:1→1
+- Shams Azar Qazvin — Tractor Tabriz | gameId=1631572 copy=0 id=verified deep=True detail=False offers=6 xg=glicko_xg eh=0.81 ea=1.525 context:1→1
+- FK Austria Wien — SK Brann | gameId=1623468 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.325 ea=2.022 context:0→1
+- Estrela Amadora U23 — Sporting CP U23 | gameId=1598664 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=0.915 ea=1.511 context:0→1
+- FC Felgueiras 1932 U23 — Estoril Praia U23 | gameId=1598665 copy=0 id=unverified deep=True detail=False offers=0 xg=None eh=None ea=None context:0→1
+- Gil Vicente FC U23 — Rio Ave U23 | gameId=1598666 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.343 ea=1.326 context:0→1
+- Moreirense FC U23 — Portimonense U23 | gameId=1598668 copy=0 id=unverified deep=True detail=False offers=0 xg=None eh=None ea=None context:0→1
+- Parma — Cremonese | gameId=1629056 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.124 ea=1.022 context:1→1
+- Parma Calcio — US Cremonese | gameId=1629056 copy=1 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.124 ea=1.022 context:1→1
+- UD Leiria U23 — Maritimo Madeira U23 | gameId=1598667 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.544 ea=1.045 context:0→1
+- IF Lyseng — AC Horsens | gameId=1619039 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.163 ea=1.564 context:1→1
+- Singida Black Stars SC — Namungo FC | gameId=1600767 copy=0 id=verified deep=True detail=False offers=70 xg=glicko_xg eh=1.676 ea=0.883 context:1→1
+- Al-Orobah — Al-Zulfi FC | gameId=1603986 copy=0 id=verified deep=True detail=False offers=114 xg=glicko_xg eh=1.207 ea=1.195 context:1→1
+- Al-Shamal — Al Rayyan SC | gameId=1635605 copy=0 id=unverified deep=True detail=False offers=58 xg=last_games_form_goals eh=1.463 ea=1.769 context:1→1
+- FK Sloga Doboj — NK Celik Zenica | gameId=1582787 copy=0 id=unverified deep=True detail=False offers=110 xg=last_games_form_goals eh=0.724 ea=1.697 context:1→1
+- Nordstrand — SF Grei | gameId=1496495 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=2.612 ea=2.197 context:1→1
+- MKS Kluczbork — KS Lechia Gdańsk | gameId=1612609 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.978 ea=1.292 context:1→1
+- MKS Kluczbork — KS Lechia Gdansk | gameId=1612609 copy=1 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.978 ea=1.292 context:1→1
+- FC Nordsjaelland — Kolding IF | gameId=1582112 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=2.436 ea=1.252 context:0→1

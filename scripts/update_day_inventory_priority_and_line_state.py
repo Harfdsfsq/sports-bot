@@ -168,6 +168,10 @@ def parse_dt(value: Any) -> datetime | None:
 
 
 def now_utc_from_debug() -> datetime:
+    for name in ("HARIZON_RUN_NOW_UTC", "RUN_NOW_UTC", "CURRENT_TIME_UTC"):
+        dt = parse_dt(env(name))
+        if dt is not None:
+            return dt
     debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
     for value in (
         (debug.get("summary") or {}).get("current_time_utc") if isinstance(debug.get("summary"), dict) else None,

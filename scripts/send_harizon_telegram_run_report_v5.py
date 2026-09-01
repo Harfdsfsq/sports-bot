@@ -144,6 +144,61 @@ def fallback_sent_count(fallback: dict[str, Any]) -> int:
     return 0
 
 
+def main_pipeline_sent_count(
+    *,
+    summary: dict[str, Any],
+    publishable: int,
+    sent_picks_count: int,
+    sent_pending_count: int,
+) -> tuple[int, dict[str, Any]]:
+    """Return fresh main-pipeline Telegram sends for this run only."""
+    summary_has_publication_counters = any(
+        key in summary
+        for key in ("published_to_telegram", "telegram_picks_sent", "telegram_messages_sent", "published")
+    )
+    diagnostics = {
+        "summary_has_publication_counters": summary_has_publication_counters,
+        "sent_picks_count": int(sent_picks_count or 0),
+        "sent_pending_count": int(sent_pending_count or 0),
+        "matches_seen": as_int(summary.get("matches_seen"), 0),
+        "ignored_ledger_sent_picks_count": 0,
+        "ignored_ledger_sent_pending_count": 0,
+        "counter_inconsistent": False,
+    }
+    matches_seen = as_int(summary.get("matches_seen"), 0)
+    no_fresh_run_publication_possible = matches_seen <= 0 and publishable <= 0
+    if summary_has_publication_counters:
+        count = max(
+            as_int(summary.get("published_to_telegram"), 0),
+            as_int(summary.get("telegram_picks_sent"), 0),
+            as_int(summary.get("telegram_messages_sent"), 0),
+            as_int(summary.get("published"), 0),
+        )
+        if count > 0 and (no_fresh_run_publication_possible or (publishable <= 0 and sent_picks_count <= 0)):
+            diagnostics["counter_inconsistent"] = True
+            diagnostics["ignored_summary_published_count"] = count
+            diagnostics["reason"] = "publication_counter_inconsistent"
+            return 0, diagnostics
+        return count, diagnostics
+
+    if no_fresh_run_publication_possible:
+        diagnostics["counter_inconsistent"] = bool(sent_picks_count or sent_pending_count)
+        diagnostics["ignored_ledger_sent_picks_count"] = int(sent_picks_count or 0)
+        diagnostics["ignored_ledger_sent_pending_count"] = int(sent_pending_count or 0)
+        if diagnostics["counter_inconsistent"]:
+            diagnostics["reason"] = "publication_counter_inconsistent"
+        return 0, diagnostics
+
+    if sent_picks_count > 0:
+        return int(sent_picks_count), diagnostics
+
+    # latest-pending-bets/latest-bets are cumulative ledger exports.  They can
+    # contain earlier Telegram-confirmed rows for the same day, so they must not
+    # make a later no-pick run look like it published again.
+    diagnostics["ignored_ledger_sent_pending_count"] = int(sent_pending_count or 0)
+    return 0, diagnostics
+
+
 def final_publish_status(
     *,
     main_pipeline_count: int,
@@ -192,6 +247,55 @@ def first_positive(*values: Any) -> int:
     return 0
 
 
+def line_guard_waiting_next_run_count(line_guard: dict[str, Any]) -> int:
+    dropped = as_int(line_guard.get("candidates_dropped"))
+    if dropped <= 0:
+        return 0
+    waiting = 0
+    samples = []
+    for file_row in line_guard.get("files") or []:
+        if isinstance(file_row, dict):
+            value = file_row.get("dropped_sample")
+            if isinstance(value, list):
+                samples.extend(value)
+    for item in samples:
+        if not isinstance(item, dict):
+            continue
+        guard = first_dict(item.get("guard"))
+        reasons = [str(reason) for reason in guard.get("reasons") or []]
+        status = str(guard.get("line_movement_lifecycle_status") or "")
+        if status == "awaiting_next_run" or "needs_next_cron_line_movement_recheck" in reasons:
+            waiting += 1
+    if waiting:
+        return min(dropped, waiting)
+    return 0
+
+
+def has_non_line_candidate_rejections(evaluated: list[Any]) -> bool:
+    """Return True when candidates are blocked by safety/quality, not just line lifecycle."""
+    line_reasons = {
+        "line_movement_guard_waiting_next_run",
+        "line_movement_guard_dropped",
+        "needs_next_cron_line_movement_recheck",
+    }
+    for row in evaluated:
+        if not isinstance(row, dict):
+            continue
+        for reason in row.get("reject_reasons") or []:
+            text = str(reason or "").strip()
+            if not text:
+                continue
+            if text in line_reasons or "line_movement" in text:
+                continue
+            return True
+        metrics = first_dict(row.get("metrics"))
+        for reason in metrics.get("quality_reasons") or []:
+            text = str(reason or "").strip()
+            if text:
+                return True
+    return False
+
+
 def freshness_minutes(path: str | Path) -> float | None:
     try:
         p = Path(path)
@@ -218,10 +322,13 @@ def reason_ru(reason: str) -> str:
         "controlled_rescue_no_candidate": "controlled reserve не нашёл безопасного кандидата",
         "fallback_publish_no_candidate": "fallback-публикация: нет кандидата",
         "line_movement_guard_dropped": "line movement guard снял кандидата",
+        "line_movement_guard_waiting_next_run": "кандидат ждёт следующий cron для второго снимка линии",
         "odds_api_io_auth_failed": "odds-api.io auth failed: invalid API key",
+        "odds_api_io_plan_restricted": "odds-api.io: выбранные букмекеры недоступны на текущем тарифе",
         "main_pipeline_published": "опубликовано основным пайплайном",
         "fallback_published": "опубликовано fallback-пайплайном",
         "telegram_sent": "Telegram подтвердил отправку",
+        "publication_counter_inconsistent": "счётчик публикации противоречит fresh-воронке",
     }
     return mapping.get(str(reason), str(reason).replace("_", " "))
 
@@ -275,7 +382,41 @@ def source_stats(data: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+def provider_plan_restricted(row: dict[str, Any]) -> bool:
+    if bool(row.get("plan_restriction")):
+        return True
+    accounts = row.get("accounts")
+    if isinstance(accounts, dict) and any(
+        bool(account.get("plan_restriction"))
+        for account in accounts.values()
+        if isinstance(account, dict)
+    ):
+        return True
+    if bool(row.get("plan_restriction_recovered")):
+        return False
+    preview = str(row.get("last_body_preview") or "").lower()
+    markers = (
+        "only available on our paid plan",
+        "only available on our paid plans",
+        "sharp or exchange book",
+        "sharp/exchange",
+        "not included in your plan",
+    )
+    return any(marker in preview for marker in markers)
+
+
 def provider_auth_failed(row: dict[str, Any]) -> bool:
+    if provider_plan_restricted(row):
+        return False
+    useful_counts = (
+        as_int(row.get("offers_parsed")),
+        as_int(row.get("events_matched")),
+        as_int(row.get("events_fetched")),
+        as_int(row.get("matches_built")),
+        as_int(row.get("matches_with_2plus_books")),
+    )
+    if any(value > 0 for value in useful_counts):
+        return False
     if bool(row.get("auth_error")):
         return True
     statuses: list[int] = []
@@ -293,7 +434,11 @@ def provider_auth_failed(row: dict[str, Any]) -> bool:
             value = account.get("http_statuses")
             if isinstance(value, list):
                 statuses.extend(as_int(item) for item in value)
-    if any(status in (401, 403) for status in statuses):
+    if any(status == 401 for status in statuses):
+        return True
+    if any(status == 403 for status in statuses) and not bool(
+        row.get("plan_restriction_recovered")
+    ):
         return True
     preview = str(row.get("last_body_preview") or "").lower()
     return "valid apikey" in preview or "api key" in preview and "invalid" in preview
@@ -316,6 +461,7 @@ def build_payload() -> dict[str, Any]:
     pool_counts = first_dict(fallback.get("pool_counts"))
     stats = source_stats(data)
     odds = first_dict(stats.get("odds_api_io"))
+    odds_plan_restricted = provider_plan_restricted(odds)
     odds_auth_failed = provider_auth_failed(odds)
     sstats = first_dict(stats.get("sstats"))
     bzz = first_dict(stats.get("bzzoiro"))
@@ -330,23 +476,12 @@ def build_payload() -> dict[str, Any]:
     publishable = first_positive(summary.get("publishable_candidates"), rescue_counts.get("publishable_candidates"), windowed_filter.get("kept"))
     sent_picks = [x for x in picks if is_sent_pick_row(x)]
     sent_pending = [x for x in pending if is_sent_pick_row(x)]
-    # For the factual run report, count only picks sent by *this* run when
-    # fresh debug summary is available.  latest-picks/latest-bets are committed
-    # state artifacts and may contain an older Telegram-confirmed pick; using
-    # them as a publication counter made later no-pick runs look like they had
-    # published the same pick again.
-    summary_has_publication_counters = any(
-        key in summary
-        for key in ("published_to_telegram", "telegram_picks_sent", "published")
+    main_pipeline_published_count, publication_counter_diagnostics = main_pipeline_sent_count(
+        summary=summary,
+        publishable=publishable,
+        sent_picks_count=len(sent_picks),
+        sent_pending_count=len(sent_pending),
     )
-    if summary_has_publication_counters:
-        main_pipeline_published_count = max(
-            as_int(summary.get("published_to_telegram"), 0),
-            as_int(summary.get("telegram_picks_sent"), 0),
-            as_int(summary.get("published"), 0),
-        )
-    else:
-        main_pipeline_published_count = max(len(sent_picks), len(sent_pending))
     fallback_status = str(fallback.get("status") or "").strip()
     fallback_published_count = fallback_sent_count(fallback)
     publish_status = final_publish_status(
@@ -385,10 +520,18 @@ def build_payload() -> dict[str, Any]:
         if isinstance(src, dict):
             for key, value in src.items():
                 reasons[str(key)] += as_int(value)
-    if as_int(line_guard.get("candidates_dropped")) > 0:
-        reasons["line_movement_guard_dropped"] += as_int(line_guard.get("candidates_dropped"))
+    line_waiting_next_run = line_guard_waiting_next_run_count(line_guard)
+    line_dropped = max(0, as_int(line_guard.get("candidates_dropped")) - line_waiting_next_run)
+    if line_waiting_next_run > 0:
+        reasons["line_movement_guard_waiting_next_run"] += line_waiting_next_run
+    if line_dropped > 0:
+        reasons["line_movement_guard_dropped"] += line_dropped
     if odds_auth_failed:
         reasons["odds_api_io_auth_failed"] += 1
+    elif odds_plan_restricted:
+        reasons["odds_api_io_plan_restricted"] += 1
+    if bool(publication_counter_diagnostics.get("counter_inconsistent")):
+        reasons["publication_counter_inconsistent"] += 1
 
     coverage = {
         "matches_seen": as_int(summary.get("matches_seen")),
@@ -407,11 +550,12 @@ def build_payload() -> dict[str, Any]:
     funnel = {
         "raw_candidates": raw_candidates,
         "candidates_before_quality": candidates_before_quality,
-        "passed_candidates": as_int(rescue_counts.get("passed_candidates")),
+        "passed_candidates": first_positive(rescue_counts.get("passed_candidates"), summary.get("candidates_raw"), raw_candidates),
         "publishable_candidates": publishable,
         "published_count": published_count,
         "main_pipeline_published_count": main_pipeline_published_count,
         "main_pipeline_published": bool(publish_status.get("main_pipeline_published")),
+        "main_pipeline_publication_counter_diagnostics": publication_counter_diagnostics,
         "fallback_candidates_seen": as_int(fallback.get("candidates_seen")),
         "fallback_evaluated": len(evaluated),
         "fallback_status": fallback_status or "n/a",
@@ -426,12 +570,12 @@ def build_payload() -> dict[str, Any]:
         "publish_filter_blocked": as_int(windowed_filter.get("blocked")),
     }
     api = {
-        "odds_api_io": {"events_req": as_int(odds.get("event_requests")), "odds_req": as_int(odds.get("odds_requests")), "matched": as_int(odds.get("events_matched")), "offers": as_int(odds.get("offers_parsed")), "books_2plus": as_int(odds.get("matches_with_2plus_books")), "errors": as_int(odds.get("response_errors")), "auth_failed": odds_auth_failed},
+        "odds_api_io": {"events_req": as_int(odds.get("event_requests")), "odds_req": as_int(odds.get("odds_requests")), "matched": as_int(odds.get("events_matched")), "offers": as_int(odds.get("offers_parsed")), "books_2plus": as_int(odds.get("matches_with_2plus_books")), "errors": as_int(odds.get("response_errors")), "auth_failed": odds_auth_failed, "plan_restricted": odds_plan_restricted},
         "sstats": {"requests": as_int(sstats.get("requests")), "contexts": as_int(sstats.get("contexts_built")), "rows": as_int(sstats.get("rows_fetched")), "errors": as_int(sstats.get("response_errors")), "deep_enriched": as_int(first_dict(sstats.get("sstats_deep")).get("contexts_enriched"))},
         "bzzoiro": {"requests": as_int(bzz.get("requests")), "contexts": as_int(bzz.get("contexts_built")), "events": as_int(bzz.get("events_fetched"), as_int(bzz.get("rows_fetched"))), "secondary_offers_added": as_int(bzz.get("secondary_offers_added")), "overlap": as_int(bzz.get("combo_with_odds_api_io")), "errors": as_int(bzz.get("response_errors"))},
-        "sportlogic": {"enabled": bool(first_dict(data.get("sportlogic_final")).get("sportlogic", {}).get("enabled") if isinstance(first_dict(data.get("sportlogic_final")).get("sportlogic"), dict) else sport.get("enabled")), "requests": as_int(sport.get("requests")), "odds_requests": as_int(sport.get("odds_requests")), "matched": as_int(sport.get("events_matched")), "offers": as_int(sport.get("offers_parsed")), "errors": as_int(sport.get("response_errors")), "runtime_error": str(sport.get("runtime_error") or "")},
+        "sportlogic": {"enabled": bool(first_dict(data.get("sportlogic_final")).get("sportlogic", {}).get("enabled") if isinstance(first_dict(data.get("sportlogic_final")).get("sportlogic"), dict) else sport.get("enabled")), "requests": as_int(sport.get("requests")), "fixtures": max(as_int(sport.get("fixtures_fetched")), as_int(sport.get("games_fetched"))), "odds_requests": as_int(sport.get("odds_requests")), "matched": as_int(sport.get("events_matched")), "offers": as_int(sport.get("offers_parsed")), "errors": as_int(sport.get("response_errors")), "diagnosis": str(sport.get("diagnosis") or ""), "runtime_error": str(sport.get("runtime_error") or "")},
     }
-    line = {"final_pre_kickoff_checks": as_int(refresh.get("final_pre_kickoff_checks")), "no_more_regular_run_before_kickoff": as_int(refresh.get("no_more_regular_run_before_kickoff")), "seen": as_int(line_guard.get("candidates_seen")), "kept": as_int(line_guard.get("candidates_kept")), "dropped": as_int(line_guard.get("candidates_dropped"))}
+    line = {"final_pre_kickoff_checks": as_int(refresh.get("final_pre_kickoff_checks")), "no_more_regular_run_before_kickoff": as_int(refresh.get("no_more_regular_run_before_kickoff")), "seen": as_int(line_guard.get("candidates_seen")), "kept": as_int(line_guard.get("candidates_kept")), "dropped": as_int(line_guard.get("candidates_dropped")), "waiting_next_run": line_waiting_next_run, "dropped_final": line_dropped}
 
     if published_count > 0:
         status, status_ru = "published", "✅ прогноз опубликован"
@@ -446,8 +590,14 @@ def build_payload() -> dict[str, Any]:
 
     if published_count > 0:
         top_reason = str(publish_status.get("top_reason_when_published") or "telegram_sent")
+    elif bool(publication_counter_diagnostics.get("counter_inconsistent")):
+        top_reason = "publication_counter_inconsistent"
     elif odds_auth_failed and raw_candidates <= 0:
         top_reason = "odds_api_io_auth_failed"
+    elif line_dropped > 0:
+        top_reason = "line_movement_guard_dropped"
+    elif line_waiting_next_run > 0 and not has_non_line_candidate_rejections(evaluated):
+        top_reason = "line_movement_guard_waiting_next_run"
     else:
         top_reason = reasons.most_common(1)[0][0] if reasons else str(fallback_status or "n/a")
     return {
@@ -564,7 +714,7 @@ def send_telegram(text: str) -> bool:
             part = f"🧾 Подробный отчёт run — часть {idx}/{len(chunks)}\n\n" + part
         data = parse.urlencode({"chat_id": chat_id, "text": part, "disable_web_page_preview": "true"}).encode("utf-8")
         try:
-            req = request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=data, method="POST")
+            req = request.Request(f"{{https://api.telegram.org/bot{token}}}/sendMessage", data=data, method="POST")
             with request.urlopen(req, timeout=20) as resp:
                 body = resp.read().decode("utf-8", errors="replace")
             try:

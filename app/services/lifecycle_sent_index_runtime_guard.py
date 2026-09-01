@@ -222,11 +222,23 @@ def _run() -> None:
     print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True), flush=True)
 
 
+def _install_rules_lifecycle_gate() -> bool:
+    try:
+        from app.services.rules_lifecycle_runtime_gate import install as install_rules_gate
+        result = install_rules_gate()
+        if isinstance(result, dict):
+            return bool(result.get("installed"))
+        return bool(result)
+    except Exception:
+        return False
+
+
 def install() -> bool:
+    rules_gate_installed = _install_rules_lifecycle_gate()
     if getattr(sys, PATCH_MARKER, False):
-        return False
+        return rules_gate_installed
     if not _is_lifecycle_process():
-        return False
+        return rules_gate_installed
     setattr(sys, PATCH_MARKER, True)
     atexit.register(_run)
     return True

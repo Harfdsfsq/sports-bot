@@ -1,0 +1,246 @@
+name: focused-alpha-ci
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/cli.py"
+      - "app/schemas.py"
+      - "app/services/evidence.py"
+      - "app/services/autonomous_accumulation_runtime.py"
+      - "app/services/focused_alpha*.py"
+      - "app/services/model.py"
+      - "app/services/daily_coverage_plan.py"
+      - "app/services/daily_coverage_assignments.py"
+      - "app/services/daily_coverage_runtime_patch.py"
+      - "app/services/daily_coverage_full_inventory_provider_patch.py"
+      - "app/config.py"
+      - "app/providers/odds_api_io.py"
+      - "app/services/api_full_data_runtime_patch.py"
+      - "app/services/api_runtime_enhancements.py"
+      - "app/services/bookmaker_universe_runtime_guard.py"
+      - "app/services/bzzoiro_context_gap_finalizer.py"
+      - "app/services/primary_provider_tier_runtime_guard.py"
+      - "scripts/apply_per_run_api_quota_contract.py"
+      - "scripts/apply_provider_quota_governor.py"
+      - "scripts/build_focused_alpha_decisions*.py"
+      - "scripts/enrich_rescue_candidates_xg_confirmation.py"
+      - "scripts/enrich_inventory_bzzoiro_v2_targets.py"
+      - "scripts/promote_a_cover_value_candidates.py"
+      - "scripts/patch_focused_alpha_candidate_rank.py"
+      - "scripts/publish_controlled_fallback_guarded.py"
+      - "scripts/repair_synthetic_publication_timestamps.py"
+      - "scripts/send_harizon_telegram_run_report_v13.py"
+      - "scripts/send_harizon_telegram_run_report_v14.py"
+      - "scripts/send_harizon_telegram_run_report_v8.py"
+      - "scripts/send_harizon_telegram_run_report_v14/**"
+      - "tests/test_focused_alpha*.py"
+      - "tests/test_evidence_bundle_serving.py"
+      - "tests/test_autonomous_accumulation_runtime.py"
+      - "tests/test_bzzoiro_source_id_prefetch.py"
+      - "tests/test_daily_coverage_plan.py"
+      - "tests/test_providers_and_telegram.py"
+      - "tests/test_harizon_provider_backlog_report.py"
+      - ".github/workflows/run-bot.yml"
+      - ".github/workflows/focused-alpha-ci.yml"
+  pull_request:
+    paths:
+      - "app/cli.py"
+      - "app/schemas.py"
+      - "app/services/evidence.py"
+      - "app/services/autonomous_accumulation_runtime.py"
+      - "app/services/focused_alpha*.py"
+      - "app/services/model.py"
+      - "app/services/daily_coverage_plan.py"
+      - "app/services/daily_coverage_assignments.py"
+      - "app/services/daily_coverage_runtime_patch.py"
+      - "app/services/daily_coverage_full_inventory_provider_patch.py"
+      - "app/config.py"
+      - "app/providers/odds_api_io.py"
+      - "app/services/api_full_data_runtime_patch.py"
+      - "app/services/api_runtime_enhancements.py"
+      - "app/services/bookmaker_universe_runtime_guard.py"
+      - "app/services/bzzoiro_context_gap_finalizer.py"
+      - "app/services/primary_provider_tier_runtime_guard.py"
+      - "scripts/apply_per_run_api_quota_contract.py"
+      - "scripts/apply_provider_quota_governor.py"
+      - "scripts/build_focused_alpha_decisions*.py"
+      - "scripts/enrich_rescue_candidates_xg_confirmation.py"
+      - "scripts/enrich_inventory_bzzoiro_v2_targets.py"
+      - "scripts/promote_a_cover_value_candidates.py"
+      - "scripts/patch_focused_alpha_candidate_rank.py"
+      - "scripts/publish_controlled_fallback_guarded.py"
+      - "scripts/repair_synthetic_publication_timestamps.py"
+      - "scripts/send_harizon_telegram_run_report_v13.py"
+      - "scripts/send_harizon_telegram_run_report_v14.py"
+      - "scripts/send_harizon_telegram_run_report_v8.py"
+      - "scripts/send_harizon_telegram_run_report_v14/**"
+      - "tests/test_focused_alpha*.py"
+      - "tests/test_evidence_bundle_serving.py"
+      - "tests/test_autonomous_accumulation_runtime.py"
+      - "tests/test_bzzoiro_source_id_prefetch.py"
+      - "tests/test_daily_coverage_plan.py"
+      - "tests/test_providers_and_telegram.py"
+      - "tests/test_harizon_provider_backlog_report.py"
+      - ".github/workflows/run-bot.yml"
+      - ".github/workflows/focused-alpha-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-alpha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+      - name: Compile Focused Alpha modules
+        run: |
+          python -m py_compile \
+            app/cli.py \
+            app/services/model.py \
+            app/services/focused_alpha.py \
+            app/services/focused_alpha_assignments.py \
+            app/services/focused_alpha_assignments_v2.py \
+            app/services/focused_alpha_accumulation_runtime_patch.py \
+            app/services/focused_alpha_accumulation_runtime_patch_v2.py \
+            app/services/focused_alpha_evidence_truth.py \
+            app/services/focused_alpha_history.py \
+            app/services/focused_alpha_learning_ledger.py \
+            app/services/focused_alpha_runtime_contract.py \
+            app/services/focused_alpha_runtime_policy.py \
+            app/services/focused_alpha_filter_contract_patch.py \
+            app/services/daily_coverage_plan.py \
+            app/services/daily_coverage_assignments.py \
+            app/services/daily_coverage_runtime_patch.py \
+            app/services/daily_coverage_full_inventory_provider_patch.py \
+            app/config.py \
+            app/providers/odds_api_io.py \
+            app/services/api_full_data_runtime_patch.py \
+            app/services/api_runtime_enhancements.py \
+            app/services/bookmaker_universe_runtime_guard.py \
+            app/services/bzzoiro_context_gap_finalizer.py \
+            app/services/primary_provider_tier_runtime_guard.py \
+            scripts/apply_per_run_api_quota_contract.py \
+            scripts/apply_provider_quota_governor.py \
+            scripts/build_focused_alpha_decisions.py \
+            scripts/build_focused_alpha_decisions_v2.py \
+            scripts/enrich_rescue_candidates_xg_confirmation.py \
+            scripts/enrich_inventory_bzzoiro_v2_targets.py \
+            scripts/promote_a_cover_value_candidates.py \
+            scripts/patch_focused_alpha_candidate_rank.py \
+            scripts/publish_controlled_fallback_guarded.py \
+            scripts/repair_synthetic_publication_timestamps.py \
+            scripts/send_harizon_telegram_run_report_v13.py \
+            scripts/send_harizon_telegram_run_report_v14.py \
+            scripts/send_harizon_telegram_run_report_v8.py
+      - name: Ruff Focused Alpha change set
+        run: |
+          mkdir -p .data/exports
+          set -o pipefail
+          ruff check --config pyproject.toml \
+            app/cli.py \
+            app/services/focused_alpha.py \
+            app/services/focused_alpha_assignments.py \
+            app/services/focused_alpha_assignments_v2.py \
+            app/services/focused_alpha_accumulation_runtime_patch.py \
+            app/services/focused_alpha_accumulation_runtime_patch_v2.py \
+            app/services/focused_alpha_evidence_truth.py \
+            app/services/focused_alpha_history.py \
+            app/services/focused_alpha_learning_ledger.py \
+            app/services/focused_alpha_runtime_contract.py \
+            app/services/focused_alpha_runtime_policy.py \
+            app/services/focused_alpha_filter_contract_patch.py \
+            app/services/daily_coverage_plan.py \
+            app/services/daily_coverage_assignments.py \
+            app/services/daily_coverage_runtime_patch.py \
+            app/services/daily_coverage_full_inventory_provider_patch.py \
+            scripts/build_focused_alpha_decisions.py \
+            scripts/build_focused_alpha_decisions_v2.py \
+            scripts/enrich_rescue_candidates_xg_confirmation.py \
+            scripts/enrich_inventory_bzzoiro_v2_targets.py \
+            scripts/promote_a_cover_value_candidates.py \
+            scripts/patch_focused_alpha_candidate_rank.py \
+            scripts/publish_controlled_fallback_guarded.py \
+            scripts/repair_synthetic_publication_timestamps.py \
+            scripts/send_harizon_telegram_run_report_v13.py \
+            scripts/send_harizon_telegram_run_report_v14.py \
+            scripts/send_harizon_telegram_run_report_v8.py \
+            tests/test_autonomous_accumulation_runtime.py \
+            tests/test_evidence_bundle_serving.py \
+            tests/test_bzzoiro_source_id_prefetch.py \
+            tests/test_daily_coverage_plan.py \
+            tests/test_harizon_provider_backlog_report.py \
+            tests/test_focused_alpha*.py 2>&1 | tee .data/exports/latest-focused-alpha-ruff.txt
+      - name: Run Focused Alpha tests
+        run: >-
+          python -m pytest -q
+          tests/test_autonomous_accumulation_runtime.py
+          tests/test_evidence_bundle_serving.py
+          tests/test_focused_alpha*.py
+          tests/test_bzzoiro_source_id_prefetch.py
+          tests/test_daily_coverage_plan.py
+          tests/test_harizon_provider_backlog_report.py
+          tests/test_providers_and_telegram.py::test_odds_api_io_keeps_valid_second_account_bookmakers
+          tests/test_providers_and_telegram.py::test_odds_api_io_recovers_plan_restricted_account_with_recreational_books
+          tests/test_providers_and_telegram.py::test_odds_api_io_stops_restricted_account_after_fallback_is_rejected
+          tests/test_harizon_report_v13_sportlogic_runtime.py
+      - name: Build repository history and decision baseline
+        run: |
+          python - <<'PY'
+          import json
+          from app.services.focused_alpha_history import build_history_audit
+          from scripts.build_focused_alpha_decisions_v2 import build_decisions
+          from app.services.focused_alpha_accumulation_runtime_patch_v2 import install
+
+          install()
+          from app.services.focused_alpha_learning_ledger import update_learning_ledger
+
+          audit = build_history_audit()
+          board = build_decisions()
+          ledger = update_learning_ledger(board)
+          print(json.dumps({
+              "history": {
+                  "raw_rows": audit.get("raw_rows"),
+                  "canonical_rows": audit.get("canonical_rows"),
+                  "telegram_sent_rows": audit.get("telegram_sent_rows"),
+                  "settled_rows": audit.get("settled_rows"),
+                  "duplicates_collapsed": audit.get("duplicates_collapsed"),
+                  "live_learning_ready": audit.get("live_learning_ready"),
+                  "live_learning_blockers": audit.get("live_learning_blockers"),
+              },
+              "decisions": {
+                  "candidate_pool": board.get("candidate_pool"),
+                  "candidates_seen": board.get("candidates_seen"),
+                  "passes_shadow_contract": board.get("passes_shadow_contract"),
+                  "selected_count": board.get("selected_count"),
+              },
+              "ledger": ledger.get("summary"),
+              "accumulation": ledger.get("accumulation"),
+          }, ensure_ascii=False, indent=2))
+          PY
+      - name: Upload Focused Alpha baseline
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: focused-alpha-baseline-${{ github.run_id }}
+          path: |
+            .data/exports/latest-focused-alpha-*.json
+            .data/exports/latest-focused-alpha-*.txt
+            .data/exports/latest-a-cover-value-promotion.json
+            .data/exports/latest-synthetic-publication-timestamp-repair.json
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 7

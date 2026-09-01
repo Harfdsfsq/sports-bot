@@ -4,1192 +4,407 @@ import hashlib
 import json
 import os
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib import parse, request
-from zoneinfo import ZoneInfo
-
-try:
-    from app.services.telegram_i18n import (
-        normalize_telegram_text,
-        translate_league_name,
-        translate_reject_reason,
-        translate_selection_text,
-        translate_team_name,
-    )
-except Exception:
-    _FALLBACK_REASONS = {
-        "canonical_negative_value": "отрицательная контрольная ценность",
-        "xg_probability_gap_hard_reject": "модель слишком оптимистична относительно xG",
-        "xg_direction_conflict": "конфликт направления ставки с xG",
-        "match_time_outside_window": "слишком мало времени до начала матча",
-        "family_not_allowed:spreads": "закрытая семья рынка: форы",
-        "family_not_allowed:teamtotals": "закрытая семья рынка: индивидуальные тоталы",
-        "family_not_allowed:btts": "закрытая семья рынка: обе забьют",
-        "family_not_allowed:h2h": "закрытая семья рынка: исходы 1X2",
-        "tier_a_quality_below_min": "качество ниже минимума уровня A",
-        "tier_a_proxy_quality_not_allowed": "уровень A не принимает proxy-качество",
-        "tier_c_confidence_below_min": "уверенность ниже минимума уровня C",
-        "tier_a_confidence_below_min": "уверенность ниже минимума уровня A",
-        "tier_a_canonical_edge_below_min": "запас value ниже минимума уровня A",
-        "tier_a_canonical_ev_below_min": "EV ниже минимума уровня A",
-        "tier_a_odds_above_max": "уровень A: коэффициент выше безопасного максимума",
-        "tier_b_odds_above_max": "уровень B: коэффициент выше безопасного максимума",
-        "tier_c_odds_above_max": "уровень C: коэффициент выше безопасного максимума",
-        "tier_a_odds_below_min": "уровень A: коэффициент ниже минимума",
-        "tier_b_odds_below_min": "уровень B: коэффициент ниже минимума",
-        "tier_c_odds_below_min": "уровень C: коэффициент ниже минимума",
-        "tier_a_books_below_min": "линий букмекеров меньше минимума уровня A",
-        "tier_b_books_below_min": "линий букмекеров меньше минимума уровня B",
-        "tier_c_books_below_min": "линий букмекеров меньше минимума уровня C",
-        "tier_a_sources_below_min": "источников меньше минимума уровня A",
-        "tier_b_sources_below_min": "источников меньше минимума уровня B",
-        "tier_c_sources_below_min": "источников меньше минимума уровня C",
-        "tier_a_xg_gap_above_max": "уровень A: оптимизм модели против xG выше лимита",
-        "tier_b_xg_gap_above_max": "уровень B: оптимизм модели против xG выше лимита",
-        "tier_c_xg_gap_above_max": "уровень C: оптимизм модели против xG выше лимита",
-        "tier_a_xg_confirmation_missing": "уровень A: xG не подтверждает запас модели",
-        "tier_b_xg_confirmation_missing": "уровень B: xG не подтверждает запас модели",
-        "tier_c_xg_confirmation_missing": "уровень C: xG не подтверждает запас модели",
-        "tier_a_market_confirmation_missing": "уровень A: нет рыночного подтверждения",
-        "tier_b_market_confirmation_missing": "уровень B: нет рыночного подтверждения",
-        "tier_c_market_confirmation_missing": "уровень C: нет рыночного подтверждения",
-        "tier_b_canonical_edge_below_min": "запас value ниже минимума уровня B",
-        "tier_b_canonical_ev_below_min": "EV ниже минимума уровня B",
-        "tier_c_canonical_edge_below_min": "запас value ниже минимума уровня C",
-        "tier_c_canonical_ev_below_min": "EV ниже минимума уровня C",
-        "duplicate_fallback_sent_index": "такой прогноз уже отправлялся ранее",
-        "duplicate_same_match:fallback_sent_index": "матч уже был опубликован ранее",
-        "btts_probability_gap_hard_reject": "BTTS-модель слишком расходится с xG",
-        "proxy_single_source_edge_below_min": "proxy-источник: запас value ниже минимума",
-        "proxy_single_source_ev_below_min": "proxy-источник: EV ниже минимума",
-        "proxy_single_source_confidence_below_min": "proxy-источник: уверенность ниже минимума",
-        "telegram_publish_books_guard": "недостаточно линий для публикации в Telegram",
-        "proxy_single_book_guard": "proxy-кандидат только с одной линией",
-        "proxy_without_market_confirmation": "proxy-кандидат без рыночного подтверждения",
-        "tier_c_watch_only": "уровень C оставлен только для наблюдения",
-        "final_edge_below_min": "финальный запас value ниже минимума",
-        "final_ev_below_min": "финальный EV ниже минимума",
-    }
-
-    _TEAM_FALLBACK = {
-        "AC Milan": "Милан",
-        "Juventus Turin": "Ювентус",
-        "Club Santos Laguna": "Сантос Лагуна",
-        "CF Monterrey": "Монтеррей",
-        "Llaneros FC": "Льянерос",
-        "Alianza FC Valledupar": "Альянса Вальедупар",
-        "Tacoma Defiance": "Такома Дифайенс",
-        "Los Angeles FC 2": "Лос-Анджелес 2",
-        "Tepatitlan FC": "Тепатитлан",
-        "Atlante FC": "Атланте",
-        "Los Angeles Galaxy": "Лос-Анджелес Гэлакси",
-        "Real Salt Lake": "Реал Солт-Лейк",
-        "Atletico Tucuman": "Атлетико Тукуман",
-        "CA Banfield": "Банфилд",
-        "Oriente Petrolero": "Ориенте Петролеро",
-        "Real Potosi": "Реал Потоси",
-        "Christchurch United FC": "Крайстчерч Юнайтед",
-        "Christchurch United": "Крайстчерч Юнайтед",
-        "Northern AFC": "Нортерн",
-        "Atletico Mineiro MG": "Атлетико Минейро",
-        "CR Flamengo RJ": "Фламенго",
-    }
-
-    def _fallback_translit(value: Any) -> str:
-        text = str(value or "")
-        table = str.maketrans({
-            "a":"а","b":"б","c":"к","d":"д","e":"е","f":"ф","g":"г","h":"х","i":"и","j":"дж","k":"к","l":"л","m":"м",
-            "n":"н","o":"о","p":"п","q":"к","r":"р","s":"с","t":"т","u":"у","v":"в","w":"у","x":"кс","y":"и","z":"з",
-            "A":"А","B":"Б","C":"К","D":"Д","E":"Е","F":"Ф","G":"Г","H":"Х","I":"И","J":"Дж","K":"К","L":"Л","M":"М",
-            "N":"Н","O":"О","P":"П","Q":"К","R":"Р","S":"С","T":"Т","U":"У","V":"В","W":"У","X":"Кс","Y":"И","Z":"З",
-        })
-        return text.translate(table)
-
-    def normalize_telegram_text(text: Any) -> str: return str(text or "")
-    def translate_league_name(name: Any) -> str:
-        text = str(name or "")
-        for en, ru in {"Mexico": "Мексика", "USA": "США", "Italy": "Италия", "Spain": "Испания"}.items():
-            text = text.replace(en, ru)
-        return text
-    def translate_reject_reason(reason: Any) -> str:
-        text = str(reason or "")
-        if text in _FALLBACK_REASONS:
-            return _FALLBACK_REASONS[text]
-        if text.startswith("family_not_allowed:"):
-            return "закрытая семья рынка: " + text.split(":", 1)[1]
-        return text.replace("_", " ")
-    def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str:
-        text = str(selection or "")
-        text = text.replace("Over", "Больше").replace("Under", "Меньше")
-        if home_team:
-            text = text.replace(str(home_team), translate_team_name(home_team))
-        if away_team:
-            text = text.replace(str(away_team), translate_team_name(away_team))
-        return text
-    def translate_team_name(name: Any) -> str:
-        text = str(name or "")
-        return _TEAM_FALLBACK.get(text, _fallback_translit(text))
 
 UTC = timezone.utc
-EXPORT_DIR = Path(".data/exports")
-OUT_JSON = EXPORT_DIR / "latest-detailed-run-report.json"
-OUT_TXT = EXPORT_DIR / "latest-detailed-run-report.txt"
-SENT_STATE = Path(".data/detailed-run-report-sent.json")
-FRESHNESS_MINUTES = 45
+EXPORT = Path('.data/exports')
+OUT_JSON = EXPORT / 'latest-detailed-run-report.json'
+OUT_TXT = EXPORT / 'latest-detailed-run-report.txt'
+SENT_STATE = Path('.data/detailed-run-report-sent.json')
 
 
-def env_bool(name: str, default: bool = False) -> bool:
-    raw = os.getenv(name)
-    if raw is None or str(raw).strip() == "":
-        return default
-    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
-
-
-def env_int(name: str, default: int) -> int:
-    raw = os.getenv(name)
+def _load(path: str | Path, default: Any) -> Any:
     try:
-        return int(float(str(raw).strip())) if raw not in (None, "") else default
+        p = Path(path)
+        if p.exists() and p.stat().st_size > 0:
+            return json.loads(p.read_text(encoding='utf-8', errors='replace'))
     except Exception:
-        return default
-
-
-def as_float(value: Any, default: float = 0.0) -> float:
-    try:
-        if value in (None, ""):
-            return default
-        return float(value)
-    except Exception:
-        return default
-
-
-def as_int(value: Any, default: int = 0) -> int:
-    try:
-        if value in (None, ""):
-            return default
-        return int(float(value))
-    except Exception:
-        return default
-
-
-def load_json(path: str | Path, default: Any) -> Any:
-    try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
-    except Exception:
-        return default
-
-
-def write_json(path: str | Path, payload: Any) -> None:
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def write_text(path: str | Path, text: str) -> None:
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(text, encoding="utf-8")
-
-
-def parse_dt(value: Any):
-    if value in (None, ""):
-        return None
-    try:
-        text = str(value)
-        if text.endswith("Z"):
-            text = text[:-1] + "+00:00"
-        dt = datetime.fromisoformat(text)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=UTC)
-        return dt.astimezone(UTC)
-    except Exception:
-        return None
-
-
-def payload_timestamp(payload: dict[str, Any]) -> datetime | None:
-    if not isinstance(payload, dict):
-        return None
-    candidates = [
-        payload.get("created_at_utc"),
-        payload.get("created_at"),
-        payload.get("updated_at"),
-        payload.get("reference_run_utc"),
-    ]
-    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
-    candidates.extend([
-        summary.get("current_time_utc"),
-        summary.get("started_time_utc"),
-        summary.get("current_time_local"),
-        summary.get("started_time_local"),
-    ])
-    for value in candidates:
-        dt = parse_dt(value)
-        if dt is not None:
-            return dt
-    return None
-
-
-def newest_timestamp(*payloads: dict[str, Any]) -> datetime | None:
-    timestamps = [payload_timestamp(payload) for payload in payloads if isinstance(payload, dict)]
-    timestamps = [ts for ts in timestamps if ts is not None]
-    return max(timestamps) if timestamps else None
-
-
-def is_fresh(payload: dict[str, Any], reference: datetime | None, max_minutes: int = FRESHNESS_MINUTES) -> bool:
-    if not isinstance(payload, dict) or not payload:
-        return False
-    ts = payload_timestamp(payload)
-    if ts is None:
-        return False
-    if reference is None:
-        return ts >= datetime.now(UTC) - timedelta(minutes=max_minutes)
-    return abs((reference - ts).total_seconds()) <= max_minutes * 60
-
-
-def freshness_row(name: str, payload: dict[str, Any], reference: datetime | None) -> dict[str, Any]:
-    ts = payload_timestamp(payload) if isinstance(payload, dict) else None
-    age_minutes = None
-    if ts is not None and reference is not None:
-        age_minutes = round((reference - ts).total_seconds() / 60.0, 1)
-    return {
-        "name": name,
-        "present": bool(isinstance(payload, dict) and payload),
-        "fresh": is_fresh(payload, reference),
-        "timestamp_utc": ts.isoformat() if ts else None,
-        "age_minutes_vs_reference": age_minutes,
-    }
-
-
-def app_tz():
-    try:
-        return ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
-    except Exception:
-        return UTC
-
-
-def fmt_time(value: Any) -> str:
-    dt = parse_dt(value)
-    if dt is None:
-        return "н/д"
-    return dt.astimezone(app_tz()).strftime("%d.%m.%Y %H:%M MSK")
-
-
-def latest_existing(paths: list[str | Path]) -> dict[str, Any]:
-    for path in paths:
-        payload = load_json(path, None)
-        if isinstance(payload, dict):
-            return payload
-    return {}
-
-
-def fallback_report(reference: datetime | None = None) -> dict[str, Any]:
-    payload = latest_existing([
-        "artifacts/controlled-fallback-report.json",
-        ".data/exports/latest-controlled-fallback-report.json",
-    ])
-    if reference is not None and not is_fresh(payload, reference):
-        return {}
-    return payload
-
-
-def debug_last_run() -> dict[str, Any]:
-    return load_json(".logs/debug-last-run.json", {})
-
-
-def run_summary_report() -> dict[str, Any]:
-    return load_json(".data/exports/latest-run-summary.json", {})
-
-
-def quota_report() -> dict[str, Any]:
-    for path in (
-        ".data/exports/latest-provider-request-budget.json",
-        ".data/exports/latest-provider-quota-governor.json",
-    ):
-        payload = load_json(path, {})
-        if isinstance(payload, dict) and payload:
-            return payload
-    return {}
-
-
-def runtime_policy_report() -> dict[str, Any]:
-    return load_json(".data/exports/latest-harizon-runtime-policy.json", {})
-
-
-def day_inventory_summary() -> dict[str, Any]:
-    return load_json(".data/exports/latest-day-inventory-summary.json", {})
-
-
-def extract_evaluated(report: dict[str, Any]) -> list[dict[str, Any]]:
-    for key in ("evaluated", "candidates", "checked_candidates", "rejected_candidates"):
-        rows = report.get(key)
-        if isinstance(rows, list):
-            return [row for row in rows if isinstance(row, dict)]
-    return []
-
-
-def unwrap_candidate(row: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
-    candidate = row.get("candidate") if isinstance(row.get("candidate"), dict) else row
-    metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
-    if not metrics:
-        metrics = candidate.get("metrics") if isinstance(candidate.get("metrics"), dict) else {}
-
-    reasons = (
-        row.get("reject_reasons")
-        or row.get("reasons")
-        or row.get("hard_reject_reasons")
-        or candidate.get("reject_reasons")
-        or candidate.get("reasons")
-        or []
-    )
-    if isinstance(reasons, str):
-        reasons = [reasons]
-    reasons = [str(item) for item in reasons if str(item).strip()]
-    return candidate, metrics, reasons
-
-
-def metric(candidate: dict[str, Any], metrics: dict[str, Any], *keys: str, default: float = 0.0) -> float:
-    for key in keys:
-        if key in metrics:
-            return as_float(metrics.get(key), default)
-        if key in candidate:
-            return as_float(candidate.get(key), default)
+        pass
     return default
 
 
-def candidate_identity(candidate: dict[str, Any]) -> dict[str, str]:
-    home = str(candidate.get("home_team_ru") or "").strip() or translate_team_name(candidate.get("home_team") or candidate.get("home") or "")
-    away = str(candidate.get("away_team_ru") or "").strip() or translate_team_name(candidate.get("away_team") or candidate.get("away") or "")
-    league = (
-        str(candidate.get("league_name_ru") or "").strip()
-        or translate_league_name(candidate.get("league_name") or candidate.get("league") or candidate.get("competition") or candidate.get("tournament") or "")
-    )
-    selection = translate_selection_text(candidate.get("selection") or candidate.get("market") or "", candidate.get("home_team"), candidate.get("away_team"))
-    return {"home": home, "away": away, "league": league, "selection": selection}
+def _write(path: str | Path, data: Any) -> None:
+    p = Path(path); p.parent.mkdir(parents=True, exist_ok=True)
+    if isinstance(data, str):
+        p.write_text(data, encoding='utf-8')
+    else:
+        p.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
 
 
-def candidate_key(candidate: dict[str, Any]) -> tuple[str, str, str, str, str, str]:
-    point = candidate.get("point")
-    odds = candidate.get("odds")
-    return (
-        str(candidate.get("match_key") or ""),
-        str(candidate.get("home_team") or candidate.get("home") or ""),
-        str(candidate.get("away_team") or candidate.get("away") or ""),
-        str(candidate.get("selection") or candidate.get("market") or ""),
-        "" if point in (None, "") else str(point),
-        "" if odds in (None, "") else str(odds),
-    )
+def _int(v: Any) -> int:
+    try:
+        if isinstance(v, (list, tuple, set, dict)):
+            return len(v)
+        return int(float(str(v).replace(',', '.'))) if v not in (None, '') else 0
+    except Exception:
+        return 0
 
 
-def reason_counter(report: dict[str, Any], evaluated: list[dict[str, Any]]) -> Counter:
-    counter = Counter()
-    for key in ("reject_reasons", "reason_counts", "rejection_reasons"):
+def _float(v: Any) -> float:
+    try:
+        return float(str(v).replace(',', '.')) if v not in (None, '') else 0.0
+    except Exception:
+        return 0.0
+
+
+def _rows(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if isinstance(payload, dict):
+        for key in ('evaluated', 'candidates', 'checked_candidates', 'rejected_candidates', 'near_misses'):
+            if isinstance(payload.get(key), list):
+                return [x for x in payload[key] if isinstance(x, dict)]
+    return []
+
+
+def _unwrap(row: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    c = row.get('candidate') if isinstance(row.get('candidate'), dict) else row
+    m = row.get('metrics') if isinstance(row.get('metrics'), dict) else c.get('metrics') if isinstance(c.get('metrics'), dict) else {}
+    rs = row.get('reject_reasons') or row.get('reasons') or row.get('hard_reject_reasons') or c.get('reject_reasons') or c.get('reasons') or []
+    if isinstance(rs, str):
+        rs = [rs]
+    return c, m, [str(x) for x in rs if str(x).strip()]
+
+
+def _metric(c: dict[str, Any], m: dict[str, Any], *keys: str) -> float:
+    for k in keys:
+        if m.get(k) not in (None, ''):
+            return _float(m.get(k))
+        if c.get(k) not in (None, ''):
+            return _float(c.get(k))
+    return 0.0
+
+
+def _reason_counts(report: dict[str, Any], rows: list[dict[str, Any]]) -> Counter:
+    out = Counter()
+    for key in ('reject_reasons', 'reason_counts', 'rejection_reasons'):
         raw = report.get(key)
         if isinstance(raw, dict):
-            for reason, count in raw.items():
-                counter[str(reason)] += as_int(count)
-    if not counter:
-        for row in evaluated:
-            _, _, reasons = unwrap_candidate(row)
-            counter.update(reasons)
-    return counter
-
-
-def is_positive_value(candidate: dict[str, Any], metrics: dict[str, Any]) -> bool:
-    ev = metric(candidate, metrics, "canonical_ev_pct", "ev_pct")
-    edge = metric(candidate, metrics, "canonical_edge_pp", "edge_pp")
-    return ev > 0 or edge > 0
-
-
-def near_miss_score(candidate: dict[str, Any], metrics: dict[str, Any], reasons: list[str]) -> tuple:
-    ev = metric(candidate, metrics, "canonical_ev_pct", "ev_pct")
-    edge = metric(candidate, metrics, "canonical_edge_pp", "edge_pp")
-    confidence = metric(candidate, metrics, "confidence")
-    quality = metric(candidate, metrics, "quality_score")
-    hard_penalty = sum(1 for reason in reasons if reason in {
-        "canonical_negative_value",
-        "match_time_outside_window",
-        "match_already_started",
-        "xg_probability_gap_hard_reject",
-        "xg_direction_conflict",
-        "btts_probability_gap_hard_reject",
-        "btts_direction_conflict",
-    } or reason.startswith("family_not_allowed:"))
-    return (hard_penalty == 0, ev, edge, confidence, quality, -len(reasons))
-
-
-def pick_near_misses(evaluated: list[dict[str, Any]], limit: int, selected: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
-    rows = []
-    seen = set()
-    selected_keys = {candidate_key(row) for row in (selected or [])}
-    for row in evaluated:
-        candidate, metrics, reasons = unwrap_candidate(row)
-        if candidate_key(candidate) in selected_keys:
-            continue
-        ident = candidate_identity(candidate)
-        key = (
-            ident["home"],
-            ident["away"],
-            ident["selection"],
-            str(candidate.get("point") or ""),
-            str(candidate.get("odds") or ""),
-        )
-        if key in seen:
-            continue
-        seen.add(key)
-
-        # Borderline candidates should have at least some value or have failed only by tier thresholds.
-        tierish = any("tier_" in reason or "proxy_single_source" in reason for reason in reasons)
-        if not is_positive_value(candidate, metrics) and not tierish:
-            continue
-
-        rows.append({
-            "candidate": candidate,
-            "metrics": metrics,
-            "reasons": reasons,
-            "score": near_miss_score(candidate, metrics, reasons),
-        })
-    rows.sort(key=lambda item: item["score"], reverse=True)
-    return rows[:limit]
-
-
-def selected_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
-    rows = report.get("selected_all")
-    if isinstance(rows, list):
-        return [row for row in rows if isinstance(row, dict)]
-    row = report.get("selected")
-    return [row] if isinstance(row, dict) else []
-
-
-def explain_thresholds(candidate: dict[str, Any], metrics: dict[str, Any], reasons: list[str]) -> list[str]:
-    out: list[str] = []
-    ev = metric(candidate, metrics, "canonical_ev_pct", "ev_pct")
-    edge = metric(candidate, metrics, "canonical_edge_pp", "edge_pp")
-    confidence = metric(candidate, metrics, "confidence")
-    quality = metric(candidate, metrics, "quality_score")
-    books = as_int(metrics.get("books_count", candidate.get("books_count", 0)))
-    sources = as_int(metrics.get("sources_count", candidate.get("sources_count", 0)))
-    odds_sources = as_int(metrics.get("odds_sources_count", candidate.get("odds_sources_count", 0)))
-    confirmation_sources = as_int(metrics.get("confirmation_sources_count", candidate.get("confirmation_sources_count", sources)))
-    if odds_sources or confirmation_sources:
-        out.append(f"odds sources {odds_sources}, confirmation sources {confirmation_sources}")
-        names = metrics.get("confirmation_sources") or candidate.get("confirmation_sources") or []
-        if isinstance(names, list) and names:
-            out.append("confirmation sources: " + ", ".join(str(item) for item in names[:5]))
-
-    if ev > 0:
-        out.append(f"EV {ev:+.1f}%")
-    if edge > 0:
-        out.append(f"запас {edge:+.1f} п.п.")
-    if confidence > 0:
-        out.append(f"уверенность {confidence:.1f}%")
-    if quality > 0:
-        out.append(f"качество {quality:.1f}")
-    if books or sources:
-        out.append(f"линии {books}, источники {sources}")
-
-    translated_reasons = [translate_reject_reason(reason) for reason in reasons[:4]]
-    if translated_reasons:
-        out.append("не прошло: " + "; ".join(translated_reasons))
+            for k, v in raw.items():
+                out[str(k)] += _int(v)
+    if not out:
+        for row in rows:
+            _, _, rs = _unwrap(row); out.update(rs)
     return out
 
 
-def explain_selected(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+def _patch_lines() -> list[str]:
     out: list[str] = []
-    tier = str(candidate.get("tier") or "").strip()
-    stake = metric(candidate, metrics, "stake", default=as_float(candidate.get("stake")))
-    ev = metric(candidate, metrics, "canonical_ev_pct", "ev_pct")
-    edge = metric(candidate, metrics, "canonical_edge_pp", "edge_pp")
-    confidence = metric(candidate, metrics, "confidence")
-    quality = metric(candidate, metrics, "quality_score")
-    books = as_int(metrics.get("books_count", candidate.get("books_count", 0)))
-    sources = as_int(metrics.get("sources_count", candidate.get("sources_count", 0)))
-    odds_sources = as_int(metrics.get("odds_sources_count", candidate.get("odds_sources_count", 0)))
-    confirmation_sources = as_int(metrics.get("confirmation_sources_count", candidate.get("confirmation_sources_count", sources)))
-    if odds_sources or confirmation_sources:
-        out.append(f"odds sources {odds_sources}, confirmation sources {confirmation_sources}")
-        names = metrics.get("confirmation_sources") or candidate.get("confirmation_sources") or []
-        if isinstance(names, list) and names:
-            out.append("confirmation sources: " + ", ".join(str(item) for item in names[:5]))
-    if tier:
-        out.append(f"уровень {tier.replace('уровень ', '')}")
-    if ev or edge:
-        out.append(f"EV {ev:+.1f}% | запас {edge:+.1f} п.п.")
-    if confidence or quality:
-        out.append(f"уверенность {confidence:.1f}% | качество {quality:.1f}")
-    if books or sources:
-        out.append(f"линии {books}, источники {sources}")
-    if stake > 0:
-        out.append(f"ставка {stake:.2f}")
-    xg = metrics.get("xg_sanity") if isinstance(metrics.get("xg_sanity"), dict) else {}
-    if xg and bool(xg.get("enabled")):
-        xg_prob = as_float(xg.get("xg_probability_pct"))
-        gap = as_float(xg.get("xg_model_gap_pp"))
-        out.append(f"xG-ориентир {xg_prob:.1f}% | разрыв {gap:+.1f} п.п.")
-    return out
-
-
-def provider_summary() -> list[str]:
-    payload = quota_report()
-    runtime_env = runtime_policy_report().get("env_updates")
-    if not isinstance(runtime_env, dict):
-        runtime_env = {}
-    decisions = payload.get("decisions") if isinstance(payload, dict) else []
-    if isinstance(decisions, list) and decisions:
-        important = {
-            "odds_api_io",
-            "bzzoiro",
-            "sstats",
-            "api_football",
-            "football_data",
-            "thesportsdb",
-            "sportlogic",
-            "futrixmetrics",
-            "weatherapi",
-            "openweathermap",
-            "meteostat",
-            "newsapi",
-            "currents",
-            "gnews",
-            "oddspapi",
-            "oddsfeed",
-            "sportsbook_api",
-        }
-        lines = []
-        for row in decisions:
-            if not isinstance(row, dict):
-                continue
-            provider = str(row.get("provider") or "")
-            if provider not in important:
-                continue
-            grant = as_int(row.get("grant"))
-            reason = str(row.get("reason") or "unknown")
-            parts = [f"grant {grant}", f"reason {reason}"]
-            if provider == "odds_api_io":
-                effective = as_int(runtime_env.get("ODDS_API_IO_PER_RUN_MAX"))
-                if effective > grant:
-                    parts.append(f"effective max {effective}")
-
-            daily_budget = as_int(row.get("daily_budget"))
-            daily_used_before = as_int(row.get("daily_used_before"))
-            daily_remaining_after = row.get("daily_remaining_after")
-            if daily_budget > 0:
-                daily_used_after = daily_budget - as_int(daily_remaining_after, daily_budget) if daily_remaining_after is not None else daily_used_before
-                parts.append(f"day {daily_used_after}/{daily_budget}")
-
-            monthly_budget = as_int(row.get("monthly_budget"))
-            monthly_used_before = as_int(row.get("monthly_used_before"))
-            monthly_remaining_after = row.get("monthly_remaining_after")
-            if monthly_budget > 0:
-                monthly_used_after = monthly_budget - as_int(monthly_remaining_after, monthly_budget) if monthly_remaining_after is not None else monthly_used_before
-                parts.append(f"month {monthly_used_after}/{monthly_budget}")
-
-            cooldown = row.get("cooldown_until")
-            if cooldown:
-                parts.append(f"cooldown {cooldown}")
-            lines.append(f"• {provider}: " + ", ".join(parts))
-        return lines
-
-    providers = payload.get("providers") if isinstance(payload, dict) else []
-    if not isinstance(providers, list):
-        return []
-    important = {"odds_api_io", "bzzoiro", "sstats", "api_football", "football_data", "thesportsdb", "futrixmetrics", "sportlogic", "weather"}
-    lines = []
-    for row in providers:
-        if not isinstance(row, dict):
-            continue
-        provider = str(row.get("provider") or "")
-        if provider not in important:
-            continue
-        grant = as_int(row.get("granted"))
-        after = row.get("tokens_after")
-        skip = row.get("skip_reason")
-        tail = f", пропуск: {skip}" if skip else ""
-        lines.append(f"• {provider}: grant {grant}, остаток {after}{tail}")
-    return lines
-
-
-def provider_work_lines(debug: dict[str, Any]) -> list[str]:
-    diagnostics = debug.get("provider_diagnostics") if isinstance(debug.get("provider_diagnostics"), dict) else {}
-    summary = diagnostics.get("summary") if isinstance(diagnostics.get("summary"), dict) else {}
-    providers = summary.get("providers") if isinstance(summary.get("providers"), dict) else {}
-    statuses = summary.get("provider_status") if isinstance(summary.get("provider_status"), dict) else {}
-    runtime_errors = summary.get("provider_runtime_errors") if isinstance(summary.get("provider_runtime_errors"), dict) else {}
-    rate_limits = summary.get("provider_rate_limits") if isinstance(summary.get("provider_rate_limits"), dict) else {}
-    important = [
-        "odds_api_io",
-        "bzzoiro",
-        "sstats",
-        "api_football",
-        "football_data",
-        "thesportsdb",
-        "sportlogic",
-        "openfootball",
-        "weather",
-        "newsapi",
-        "gnews",
+    specs = [
+        ('confirmation bridge', 'latest-controlled-fallback-confirmation-bridge.json'),
+        ('quality shadow', 'latest-quality-shadow-diagnostics.json'),
+        ('current price patch', 'latest-current-price-recheck-value.json'),
+        ('zero-raw recovery', 'latest-zero-raw-candidate-recovery.json'),
+        ('match-window recovery', 'latest-runtime-match-window-recovery.json'),
+        ('evidence/integrity patch', 'latest-fallback-evidence-integrity-runtime-patch.json'),
+        ('provider targeting', 'latest-fallback-provider-enrichment-targets.json'),
     ]
-    lines: list[str] = []
-    for name in important:
+    for label, name in specs:
+        p = _load(EXPORT / name, {})
+        if isinstance(p, dict) and p:
+            bits = [str(p.get('status') or p.get('version') or 'ok')]
+            for k in ('recovered_matches', 'recovered_candidates', 'patched_odds_source_metrics', 'patched_hard_reject_inputs', 'market_probability_guard_softened_without_real_prices', 'fallback_evaluated'):
+                if p.get(k) not in (None, ''):
+                    bits.append(f'{k} {p.get(k)}')
+            out.append(f'\u2022 {label}: ' + ' | '.join(bits[:5]))
+    return out
+
+
+def _provider_lines(debug: dict[str, Any]) -> list[str]:
+    summary = (((debug.get('provider_diagnostics') or {}).get('summary') or {}) if isinstance(debug.get('provider_diagnostics'), dict) else {})
+    providers = summary.get('providers') if isinstance(summary.get('providers'), dict) else {}
+    out: list[str] = []
+    for name in ('odds_api_io', 'bzzoiro', 'sstats', 'football_data', 'thesportsdb', 'sportlogic', 'openfootball'):
         row = providers.get(name) if isinstance(providers.get(name), dict) else {}
-        status = statuses.get(name) if isinstance(statuses.get(name), dict) else {}
-        if not row and not status:
-            continue
-        stats = row.get("stats") if isinstance(row.get("stats"), dict) else {}
-        if isinstance(stats.get("stats"), dict):
-            stats = stats.get("stats")
-        if not isinstance(stats, dict):
-            stats = {}
-        matches = as_int(row.get("matches_with_data"))
-        items = as_int(row.get("items_total"))
-        requests_count = stats.get("requests", status.get("requests"))
-        max_requests = stats.get("max_http_requests_per_run", status.get("max_http_requests_per_run"))
-        response_errors = stats.get("response_errors", status.get("response_errors"))
-        parts = [f"data {matches}/{items}"]
-        if requests_count is not None:
-            parts.append(f"req {requests_count}")
-        if name == "weather":
-            weatherapi_requests = stats.get("weatherapi_requests", status.get("weatherapi_requests"))
-            openweathermap_requests = stats.get("openweathermap_requests", status.get("openweathermap_requests"))
-            cache_hits = stats.get("cache_hits", status.get("cache_hits"))
-            weatherapi_cap = ""
-            openweathermap_cap = ""
-            if isinstance(max_requests, str) and "+" in max_requests:
-                first, second = max_requests.split("+", 1)
-                weatherapi_cap = first.strip()
-                openweathermap_cap = second.strip()
-            if weatherapi_requests is not None:
-                suffix = f"/{weatherapi_cap}" if weatherapi_cap else ""
-                parts.append(f"weatherapi cap {weatherapi_requests}{suffix}")
-            if openweathermap_requests is not None:
-                suffix = f"/{openweathermap_cap}" if openweathermap_cap else ""
-                parts.append(f"openweathermap cap {openweathermap_requests}{suffix}")
-            if cache_hits:
-                parts.append(f"cache {cache_hits}")
-        if name == "bzzoiro":
-            for key in ("target_matches", "pages_requested", "rows_seen", "exact_matches", "fuzzy_matches", "near_miss_matches_closed", "stop_reason"):
-                value = stats.get(key, status.get(key))
-                if value is not None:
-                    parts.append(f"{key} {value}")
-            stop_reasons = stats.get("stop_reasons") or status.get("stop_reasons")
-            if isinstance(stop_reasons, dict) and stop_reasons:
-                parts.append(
-                    "stop_reasons "
-                    + "/".join(f"{str(path).strip('/')}:{reason}" for path, reason in list(stop_reasons.items())[:3])
-                )
-        if name == "sstats":
-            for key in ("target_matches", "event_contexts", "team_form_contexts", "exact_event_matches", "fuzzy_event_matches", "unmatched_after_alias", "confirmation_added"):
-                value = stats.get(key, status.get(key))
-                if value is not None:
-                    parts.append(f"{key} {value}")
-        if name == "sportlogic":
-            for key in ("games_fetched", "events_matched", "odds_requests", "rows_before_parse", "odds_payload_rows", "offers_parsed", "empty_odds_payloads"):
-                value = stats.get(key, status.get(key))
-                if value is not None:
-                    parts.append(f"{key} {value}")
-            keys = stats.get("top_level_keys") or status.get("top_level_keys")
-            if isinstance(keys, list) and keys:
-                parts.append("top_keys " + "/".join(str(item) for item in keys[:4]))
-            for key, label in (
-                ("market_keys_seen", "market_keys"),
-                ("option_keys_seen", "option_keys"),
-                ("price_keys_seen", "price_keys"),
-            ):
-                values = stats.get(key) or status.get(key)
-                if isinstance(values, list) and values:
-                    parts.append(f"{label} " + "/".join(str(item) for item in values[:3]))
-            reject = stats.get("parse_reject_reasons") or status.get("parse_reject_reasons")
-            if isinstance(reject, dict) and reject:
-                parts.append(
-                    "parse_reject "
-                    + "/".join(f"{reason}:{as_int(count)}" for reason, count in list(reject.items())[:4])
-                )
-            disabled_reason = stats.get("odds_disabled_reason") or status.get("odds_disabled_reason")
-            if disabled_reason:
-                parts.append(f"odds_off:{disabled_reason}")
-        if max_requests:
-            parts.append(f"max {max_requests}")
-        if response_errors:
-            parts.append(f"err {response_errors}")
-        if stats.get("budget_exhausted") or status.get("budget_exhausted"):
-            parts.append("per_run_cap_reached" if name == "weather" else "budget_exhausted")
-        if status.get("loaded") is False:
-            parts.append(f"off:{status.get('reason') or 'not_loaded'}")
-        elif status.get("rate_limited") or name in rate_limits:
-            parts.append("rate_limited")
-        elif status.get("degraded"):
-            parts.append("degraded")
-        errors = runtime_errors.get(name)
-        if isinstance(errors, list) and errors:
-            parts.append(f"runtime_err {len(errors)}")
-        lines.append(f"• {name}: " + ", ".join(parts))
-    return lines
+        stats = row.get('stats') if isinstance(row.get('stats'), dict) else {}
+        if isinstance(stats.get('stats'), dict): stats = stats.get('stats')
+        if row or stats:
+            out.append(f"\u2022 {name}: data {_int(row.get('matches_with_data'))}/{_int(row.get('items_total'))}, req {stats.get('requests', 0)}, err {stats.get('response_errors', 0)}")
+    return out
 
 
-def coverage_pipeline_lines(payload: dict[str, Any]) -> list[str]:
-    inventory = payload.get("day_inventory") if isinstance(payload.get("day_inventory"), dict) else {}
-    counts = inventory.get("counts") if isinstance(inventory.get("counts"), dict) else {}
+def _inventory_lines() -> list[str]:
+    inv = _load(EXPORT / 'latest-day-inventory-summary.json', {})
+    counts = inv.get('counts') if isinstance(inv, dict) and isinstance(inv.get('counts'), dict) else {}
     if not counts:
         return []
-    total = as_int(counts.get("matches_total"))
-    with_odds = as_int(counts.get("matches_with_odds"))
-    with_context = as_int(counts.get("matches_with_context"))
-    ready = as_int(counts.get("matches_ready_for_model"))
-    next_6h = as_int(counts.get("matches_next_6h"))
-    next_6h_ready = as_int(counts.get("matches_next_6h_ready"))
-    next_12h = as_int(counts.get("matches_next_12h"))
-    next_12h_ready = as_int(counts.get("matches_next_12h_ready"))
+    total = _int(counts.get('matches_total'))
     return [
-        "📦 Дневной inventory",
-        f"• Матчей всего: {total}",
-        f"• С линиями: {with_odds}/{total}",
-        f"• С контекстом: {with_context}/{total}",
-        f"• Готово к модели: {ready}/{total}",
-        f"• Ближайшие 6 часов: {next_6h_ready}/{next_6h} готово",
-        f"• Следующие 12 часов: {next_12h_ready}/{next_12h} готово",
+        '\U0001F4E6 \u0414\u043d\u0435\u0432\u043d\u043e\u0439 inventory',
+        f"\u2022 \u041c\u0430\u0442\u0447\u0435\u0439 \u0432\u0441\u0435\u0433\u043e: {total}",
+        f"\u2022 \u0421 \u043b\u0438\u043d\u0438\u044f\u043c\u0438: {_int(counts.get('matches_with_odds'))}/{total}",
+        f"\u2022 \u0421 \u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442\u043e\u043c: {_int(counts.get('matches_with_context'))}/{total}",
+        f"\u2022 \u0413\u043e\u0442\u043e\u0432\u043e \u043a \u043c\u043e\u0434\u0435\u043b\u0438: {_int(counts.get('matches_ready_for_model'))}/{total}",
+        f"\u2022 \u0411\u043b\u0438\u0436\u0430\u0439\u0448\u0438\u0435 6 \u0447\u0430\u0441\u043e\u0432: {_int(counts.get('matches_next_6h_ready'))}/{_int(counts.get('matches_next_6h'))} \u0433\u043e\u0442\u043e\u0432\u043e",
     ]
 
 
-def odds_account_lines(debug: dict[str, Any]) -> list[str]:
-    diagnostics = debug.get("provider_diagnostics") if isinstance(debug.get("provider_diagnostics"), dict) else {}
-    summary = diagnostics.get("summary") if isinstance(diagnostics.get("summary"), dict) else {}
-    providers = summary.get("providers") if isinstance(summary.get("providers"), dict) else {}
-    odds_provider = providers.get("odds_api_io") if isinstance(providers.get("odds_api_io"), dict) else {}
-    stats = odds_provider.get("stats") if isinstance(odds_provider.get("stats"), dict) else {}
-    if isinstance(stats.get("stats"), dict):
-        stats = stats.get("stats")
-    accounts = stats.get("accounts") if isinstance(stats.get("accounts"), dict) else {}
-    requested = stats.get("requested_bookmakers_by_account") if isinstance(stats.get("requested_bookmakers_by_account"), list) else []
-    if not accounts and not requested:
-        return []
-    lines = ["📈 odds-api.io routing"]
-    requested_map = {
-        str(row.get("account")): str(row.get("bookmakers") or "")
-        for row in requested
-        if isinstance(row, dict)
-    }
-    for name in ("account1", "account2"):
-        row = accounts.get(name) if isinstance(accounts.get(name), dict) else {}
-        books = requested_map.get(name) or str(row.get("bookmakers") or "")
-        missing = name == "account2" and bool(stats.get("account2_missing"))
-        suffix = " | missing key" if missing else ""
-        lines.append(
-            f"• {name}: {books or 'н/д'} | req {as_int(row.get('odds_requests'))} | offers {as_int(row.get('offers_parsed'))}{suffix}"
-        )
-    if stats.get("bookmakers_seen_names"):
-        lines.append("• Букмекеры в ответах: " + ", ".join(str(item) for item in (stats.get("bookmakers_seen_names") or [])[:8]))
-    if stats.get("matches_with_2plus_books") is not None:
-        lines.append(f"• Матчи с 2+ букмекерами: {as_int(stats.get('matches_with_2plus_books'))}; с 1 букмекером: {as_int(stats.get('matches_with_1_book'))}")
-    return lines
+# --- Run summary freshness -------------------------------------------------
+#
+# `.logs/debug-last-run.json` is removed between runs (stale_debug_removed) and
+# is not always recreated. The builder used to fall back to whatever
+# `latest-run-summary.json` happened to be committed in the repository, so the
+# same two-day-old numbers were rendered and re-sent on every run. Resolve the
+# summary by freshness instead, and say out loud which source was used.
+
+SUMMARY_KEYS = (
+    'matches_seen',
+    'matches_with_offers',
+    'contexts_built',
+    'candidates_raw',
+    'candidates_before_quality',
+    'candidates_publishable',
+    'published_to_telegram',
+)
+
+SUMMARY_SOURCES = (
+    ('debug-last-run', Path('.logs/debug-last-run.json')),
+    ('main-run-lifecycle', EXPORT / 'latest-main-run-lifecycle.json'),
+    ('run-summary', EXPORT / 'latest-run-summary.json'),
+    ('committed-debug-artifact', Path('artifacts/run-bot/debug-last-run.json')),
+)
+
+TIMESTAMP_KEYS = (
+    'created_at_utc',
+    'created_at',
+    'finished_at_utc',
+    'finished_at',
+    'started_at_utc',
+    'started_at',
+    'updated_at_utc',
+    'updated_at',
+    'generated_at',
+    'timestamp',
+)
 
 
-def run_diagnostic_lines(debug: dict[str, Any]) -> list[str]:
-    diagnostics = debug.get("provider_diagnostics") if isinstance(debug.get("provider_diagnostics"), dict) else {}
-    summary = diagnostics.get("summary") if isinstance(diagnostics.get("summary"), dict) else {}
-    if not summary:
-        return []
-    keys = [
-        ("matches_with_any_offer_source", "матчей с линиями из любого источника"),
-        ("matches_with_any_context_source", "матчей с любым контекстом"),
-        ("matches_with_merged_context", "матчей с объединенным контекстом"),
-        ("raw_candidates_with_derived_market_signal", "raw с market-derived сигналом"),
-    ]
-    parts = []
-    for key, label in keys:
-        value = summary.get(key)
-        if value is not None:
-            parts.append(f"{label}: {as_int(value)}")
-    return [f"• {part}" for part in parts]
-
-
-
-def learning_lines() -> list[str]:
-    payload = load_json(".data/exports/latest-auto-learning-report.json", {})
-    if not isinstance(payload, dict) or not payload:
-        return []
-    overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
-    overrides = payload.get("runtime_overrides") if isinstance(payload.get("runtime_overrides"), dict) else {}
-    n = as_int(overall.get("n"))
-    min_total = 30
+def _parse_ts(value: Any) -> datetime | None:
+    if value in (None, ''):
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.endswith('Z'):
+        text = text[:-1] + '+00:00'
     try:
-        pol = load_json("config/auto_learning_policy.json", {})
-        if isinstance(pol, dict):
-            min_total = as_int(pol.get("min_settled_total"), 30)
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+
+def _payload_ts(payload: Any, path: str | Path) -> datetime | None:
+    if isinstance(payload, dict):
+        for key in TIMESTAMP_KEYS:
+            parsed = _parse_ts(payload.get(key))
+            if parsed is not None:
+                return parsed
+        nested = payload.get('summary')
+        if isinstance(nested, dict):
+            for key in TIMESTAMP_KEYS:
+                parsed = _parse_ts(nested.get(key))
+                if parsed is not None:
+                    return parsed
+    try:
+        return datetime.fromtimestamp(Path(path).stat().st_mtime, tz=UTC)
     except Exception:
-        pass
-    mode = str(overrides.get("AUTO_LEARNING_MODE") or "unknown")
-    ready = str(overrides.get("AUTO_LEARNING_SAMPLE_READY") or "false")
-    lines = [
-        "🧠 Автообучение",
-        f"• Выборка: {n}/{min_total} закрытых ставок | sample_ready={ready}",
-        f"• Режим: {mode}",
-    ]
-    if n < min_total:
-        lines.append("• Фильтры не менялись: идёт накопление статистики.")
-    else:
-        roi = as_float(overall.get("roi")) * 100.0
-        bias = as_float(overall.get("calibration_bias_pp"))
-        lines.append(f"• ROI {roi:+.1f}% | bias {bias:+.1f} п.п.")
-    lines.append("")
-    return lines
+        return None
 
-def build_payload() -> dict[str, Any]:
-    debug_raw = debug_last_run()
-    run_summary_raw = run_summary_report()
-    reference = newest_timestamp(debug_raw, run_summary_raw, fallback_report()) or datetime.now(UTC)
-    debug = debug_raw if is_fresh(debug_raw, reference) else {}
-    run_summary = run_summary_raw if is_fresh(run_summary_raw, reference) else {}
-    report = fallback_report(reference)
-    summary = {}
-    if isinstance(debug.get("summary"), dict):
-        summary = debug.get("summary") or {}
-    elif isinstance(run_summary.get("summary"), dict):
-        summary = run_summary.get("summary") or {}
-    evaluated = extract_evaluated(report)
-    reasons = reason_counter(report, evaluated)
-    selected = selected_rows(report)
-    near = pick_near_misses(evaluated, env_int("DETAILED_RUN_REPORT_TOP_NEAR_MISSES", 8), selected)
 
-    published = bool(report.get("published") or report.get("telegram_sent") or report.get("selected_count"))
-    return {
-        "created_at": datetime.now(UTC).isoformat(),
-        "reference_run_utc": reference.isoformat(),
-        "source_freshness": [
-            freshness_row("debug", debug_raw, reference),
-            freshness_row("run_summary", run_summary_raw, reference),
-            freshness_row("fallback", fallback_report(), reference),
-        ],
-        "runtime_policy": runtime_policy_report(),
-        "day_inventory": day_inventory_summary(),
-        "published": published,
-        "status": report.get("status") or run_summary.get("status") or ("published" if published else "no_pick"),
-        "summary": summary,
-        "candidate_counts": {
-            "evaluated": len(evaluated),
-            "rescue_checked": as_int(report.get("rescue_candidates_checked") or report.get("checked") or len(evaluated)),
-            "selected_count": as_int(report.get("selected_count")),
-        },
-        "reason_counts": dict(reasons.most_common(20)),
-        "selected": selected,
-        "near_misses": near,
-        "diagnostic_gap": {
-            "fresh_fallback_present": bool(report),
-            "fresh_debug_present": bool(debug),
-            "fresh_run_summary_present": bool(run_summary),
-            "reason_counts_present": bool(reasons),
-        },
-        "diagnostic_lines": run_diagnostic_lines(debug),
-        "provider_work_lines": provider_work_lines(debug),
-        "coverage_pipeline_lines": coverage_pipeline_lines({"day_inventory": day_inventory_summary()}),
-        "odds_account_lines": odds_account_lines(debug),
-        "provider_lines": provider_summary(),
+def _extract_summary(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {}
+    nested = payload.get('summary')
+    if isinstance(nested, dict) and any(key in nested for key in SUMMARY_KEYS):
+        return dict(nested)
+    if any(key in payload for key in SUMMARY_KEYS):
+        return {key: payload.get(key) for key in SUMMARY_KEYS if payload.get(key) is not None}
+    if isinstance(nested, dict) and nested:
+        return dict(nested)
+    return {}
+
+
+def _resolve_summary() -> tuple[dict[str, Any], dict[str, Any]]:
+    max_age = _float(os.getenv('DETAILED_RUN_REPORT_MAX_SOURCE_AGE_MINUTES') or 180) or 180.0
+    now = datetime.now(UTC)
+    considered: list[dict[str, Any]] = []
+    best: tuple[dict[str, Any], dict[str, Any]] | None = None
+    for name, path in SUMMARY_SOURCES:
+        payload = _load(path, None)
+        if not isinstance(payload, dict) or not payload:
+            considered.append({'source': name, 'path': str(path), 'status': 'missing'})
+            continue
+        summary = _extract_summary(payload)
+        if not summary:
+            considered.append({'source': name, 'path': str(path), 'status': 'no_summary'})
+            continue
+        ts = _payload_ts(payload, path)
+        age = ((now - ts).total_seconds() / 60.0) if ts is not None else None
+        row = {
+            'source': name,
+            'path': str(path),
+            'status': 'ok',
+            'timestamp_utc': ts.isoformat() if ts is not None else None,
+            'age_minutes': round(age, 1) if age is not None else None,
+            'stale': bool(age is None or age > max_age),
+        }
+        considered.append(row)
+        if best is None:
+            best = (row, summary)
+            continue
+        best_row = best[0]
+        if best_row['stale'] and not row['stale']:
+            best = (row, summary)
+        elif best_row['stale'] and row['stale']:
+            best_age = best_row.get('age_minutes')
+            if age is not None and (best_age is None or age < best_age):
+                best = (row, summary)
+    if best is None:
+        return {}, {
+            'selected': None,
+            'selected_path': None,
+            'selected_timestamp_utc': None,
+            'selected_age_minutes': None,
+            'max_age_minutes': max_age,
+            'stale': True,
+            'sources': considered,
+        }
+    row, summary = best
+    return summary, {
+        'selected': row['source'],
+        'selected_path': row['path'],
+        'selected_timestamp_utc': row['timestamp_utc'],
+        'selected_age_minutes': row['age_minutes'],
+        'max_age_minutes': max_age,
+        'stale': row['stale'],
+        'sources': considered,
     }
+
+
+def _freshness_lines(freshness: dict[str, Any]) -> list[str]:
+    if not isinstance(freshness, dict) or not freshness.get('selected'):
+        return [
+            '\U0001F552 \u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u0446\u0438\u0444\u0440: \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d',
+            '\u2022 \u041d\u0438 debug-last-run, \u043d\u0438 main-run-lifecycle, \u043d\u0438 run-summary \u044d\u0442\u043e\u0433\u043e \u043f\u0440\u043e\u0433\u043e\u043d\u0430 \u043d\u0435 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b.',
+            '',
+        ]
+    age = freshness.get('selected_age_minutes')
+    age_text = f'{_float(age):.0f} \u043c\u0438\u043d \u043d\u0430\u0437\u0430\u0434' if age is not None else '\u0432\u043e\u0437\u0440\u0430\u0441\u0442 \u043d\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u0435\u043d'
+    if freshness.get('stale'):
+        return [
+            f"\U0001F552 \u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u0446\u0438\u0444\u0440: {freshness.get('selected')} ({age_text}) \u2014 \u26a0\ufe0f \u0423\u0421\u0422\u0410\u0420\u0415\u041b",
+            '\u2022 \u0421\u0432\u0435\u0436\u0438\u0439 debug/run summary \u0442\u0435\u043a\u0443\u0449\u0435\u0433\u043e \u043f\u0440\u043e\u0433\u043e\u043d\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d: \u0446\u0438\u0444\u0440\u044b \u043d\u0438\u0436\u0435 \u043e\u0442\u043d\u043e\u0441\u044f\u0442\u0441\u044f \u043a \u043f\u0440\u0435\u0434\u044b\u0434\u0443\u0449\u0435\u043c\u0443 \u043f\u0440\u043e\u0433\u043e\u043d\u0443.',
+            '',
+        ]
+    return [f"\U0001F552 \u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u0446\u0438\u0444\u0440: {freshness.get('selected')} ({age_text}) \u2014 \u0441\u0432\u0435\u0436\u0438\u0439", '']
+
+
+def build() -> dict[str, Any]:
+    debug = _load('.logs/debug-last-run.json', {})
+    if not isinstance(debug, dict):
+        debug = {}
+    fallback = _load(EXPORT / 'latest-controlled-fallback-report.json', {}) or _load('artifacts/controlled-fallback-report.json', {})
+    rows = _rows(fallback)
+    reasons = _reason_counts(fallback if isinstance(fallback, dict) else {}, rows)
+    summary, freshness = _resolve_summary()
+    near = []
+    for row in rows[:12]:
+        c, m, rs = _unwrap(row)
+        near.append({'candidate': c, 'metrics': m, 'reasons': rs, 'score': [_metric(c,m,'canonical_ev_pct','ev_pct'), _metric(c,m,'canonical_edge_pp','edge_pp'), _metric(c,m,'quality_score','quality')]})
+    near.sort(key=lambda x: x['score'], reverse=True)
+    return {'created_at': datetime.now(UTC).isoformat(), 'summary': summary, 'summary_freshness': freshness, 'candidate_counts': {'evaluated': len(rows), 'rescue_checked': _int((fallback or {}).get('rescue_candidates_checked') if isinstance(fallback, dict) else len(rows)), 'selected_count': _int((fallback or {}).get('selected_count') if isinstance(fallback, dict) else 0)}, 'reason_counts': dict(reasons.most_common(12)), 'near_misses': near[:8], 'patch_lines': _patch_lines(), 'provider_work_lines': _provider_lines(debug), 'coverage_pipeline_lines': _inventory_lines(), 'published': bool(isinstance(fallback, dict) and (fallback.get('published') or fallback.get('selected_count')))}
 
 
 def render(payload: dict[str, Any]) -> str:
-    summary = payload.get("summary") or {}
-    counts = payload.get("candidate_counts") or {}
-    reasons = Counter(payload.get("reason_counts") or {})
-    selected = payload.get("selected") or []
-    near = payload.get("near_misses") or []
-    has_duplicate_block = any(str(reason).startswith("duplicate") for reason in reasons)
-
-    lines = []
-    title = "🧾 Подробный отчёт run"
-    if payload.get("published"):
-        title += " — прогноз опубликован"
-    elif has_duplicate_block:
-        title += " — новых прогнозов нет"
+    lines = ['\U0001F9FE \u041f\u043e\u0434\u0440\u043e\u0431\u043d\u044b\u0439 \u043e\u0442\u0447\u0451\u0442 run \u2014 ' + ('\u043f\u0440\u043e\u0433\u043d\u043e\u0437 \u043e\u043f\u0443\u0431\u043b\u0438\u043a\u043e\u0432\u0430\u043d' if payload.get('published') else '\u043f\u0440\u043e\u0433\u043d\u043e\u0437\u043e\u0432 \u043d\u0435\u0442'), '']
+    lines += _freshness_lines(payload.get('summary_freshness') or {})
+    if payload.get('coverage_pipeline_lines'):
+        lines += payload['coverage_pipeline_lines'] + ['']
+    s = payload.get('summary') or {}; c = payload.get('candidate_counts') or {}
+    lines += ['\u2699\ufe0f \u0427\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u043b \u0441\u043a\u0440\u0438\u043f\u0442', f"\u2022 \u041c\u0430\u0442\u0447\u0438: {_int(s.get('matches_seen'))} | \u0441 \u043b\u0438\u043d\u0438\u044f\u043c\u0438: {_int(s.get('matches_with_offers'))} | \u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442\u043e\u0432: {_int(s.get('contexts_built'))}", f"\u2022 \u041a\u0430\u043d\u0434\u0438\u0434\u0430\u0442\u044b: raw {_int(s.get('candidates_raw'))} | \u0434\u043e \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0430 {_int(s.get('candidates_before_quality'))} | publishable {_int(s.get('candidates_publishable'))}", f"\u2022 \u0420\u0435\u0437\u0435\u0440\u0432 \u043f\u0440\u043e\u0432\u0435\u0440\u0438\u043b: {c.get('rescue_checked', 0)} | \u043e\u0446\u0435\u043d\u0435\u043d\u043e \u0432 \u043e\u0442\u0447\u0451\u0442\u0435: {c.get('evaluated', 0)} | \u0432\u044b\u0431\u0440\u0430\u043d\u043e: {c.get('selected_count', 0)}", '']
+    if payload.get('patch_lines'):
+        lines += ['\U0001F9E9 \u0414\u0438\u0430\u0433\u043d\u043e\u0441\u0442\u0438\u043a\u0430 \u043f\u0430\u0442\u0447\u0435\u0439'] + payload['patch_lines'] + ['']
+    if payload.get('provider_work_lines'):
+        lines += ['\U0001F4E1 \u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 / \u0444\u0430\u043a\u0442\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u0440\u0430\u0431\u043e\u0442\u0430'] + payload['provider_work_lines'] + ['']
     else:
-        title += " — прогнозов нет"
-    lines.append(title)
-    lines.append("")
-
-    source_freshness = payload.get("source_freshness") if isinstance(payload.get("source_freshness"), list) else []
-    if source_freshness:
-        lines.append("🧭 Состояние артефактов")
-        for row in source_freshness:
-            if not isinstance(row, dict):
-                continue
-            status = "свежий" if row.get("fresh") else ("устарел" if row.get("present") else "нет")
-            age = row.get("age_minutes_vs_reference")
-            suffix = f", Δ {age:+.1f} мин" if isinstance(age, (int, float)) else ""
-            lines.append(f"• {row.get('name')}: {status} | {row.get('timestamp_utc') or 'н/д'}{suffix}")
-        lines.append("")
-
-    runtime_policy = payload.get("runtime_policy") if isinstance(payload.get("runtime_policy"), dict) else {}
-    if runtime_policy:
-        lines.append("🧭 Runtime policy")
-        lines.append(f"• Версия: {runtime_policy.get('policy_version') or 'н/д'}")
-        env_updates = runtime_policy.get("env_updates") if isinstance(runtime_policy.get("env_updates"), dict) else {}
-        if env_updates:
-            lines.append(f"• Inventory bootstrap: {env_updates.get('DAY_INVENTORY_BOOTSTRAP_PROVIDER') or 'н/д'} | provider merge: {env_updates.get('DAY_INVENTORY_FORCE_PROVIDER_MERGE') or 'false'}")
-        lines.append("")
-
-    coverage_lines = payload.get("coverage_pipeline_lines") or []
-    if coverage_lines:
-        lines.extend(coverage_lines)
-        lines.append("")
-
-    lines.append("⚙️ Что сделал скрипт")
-    lines.append(f"• Матчи: {as_int(summary.get('matches_seen'))} | с линиями: {as_int(summary.get('matches_with_offers'))} | контекстов: {as_int(summary.get('contexts_built'))}")
-    lines.append(f"• Кандидаты: raw {as_int(summary.get('candidates_raw'))} | до качества {as_int(summary.get('candidates_before_quality'))} | publishable {as_int(summary.get('candidates_publishable'))}")
-    lines.append(f"• Резерв проверил: {counts.get('rescue_checked', 0)} | оценено в отчёте: {counts.get('evaluated', 0)} | выбрано: {counts.get('selected_count', 0)}")
-    diagnostic_lines = payload.get("diagnostic_lines") or []
-    if diagnostic_lines:
-        lines.extend(diagnostic_lines[:4])
-    lines.append("")
-
-    provider_work = payload.get("provider_work_lines") or []
-    if provider_work:
-        lines.append("📡 Источники / фактическая работа")
-        lines.extend(provider_work[:8])
-        lines.append("")
-
-    odds_lines = payload.get("odds_account_lines") or []
-    if odds_lines:
-        lines.extend(odds_lines)
-        lines.append("")
-
+        lines += ['\U0001F4E1 \u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 / \u0444\u0430\u043a\u0442\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u0440\u0430\u0431\u043e\u0442\u0430', '\u2022 \u0421\u0432\u0435\u0436\u0430\u044f \u0434\u0438\u0430\u0433\u043d\u043e\u0441\u0442\u0438\u043a\u0430 \u043f\u0440\u043e\u0432\u0430\u0439\u0434\u0435\u0440\u043e\u0432 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0430: .logs/debug-last-run.json \u043d\u0435 \u0431\u044b\u043b \u0441\u043e\u0437\u0434\u0430\u043d \u044d\u0442\u0438\u043c \u043f\u0440\u043e\u0433\u043e\u043d\u043e\u043c.', '']
+    reasons = Counter(payload.get('reason_counts') or {})
     if reasons:
-        total = sum(reasons.values())
-        lines.append("🚫 Почему не прошли")
-        for reason, count in reasons.most_common(10):
-            pct = count / total * 100.0 if total else 0.0
-            lines.append(f"• {translate_reject_reason(reason)} — {count} ({pct:.0f}%)")
-        lines.append("")
-    else:
-        gap = payload.get("diagnostic_gap") if isinstance(payload.get("diagnostic_gap"), dict) else {}
-        lines.append("🚫 Почему не прошли")
-        if as_int(summary.get("candidates_before_quality")) > 0 and as_int(summary.get("candidates_publishable")) == 0:
-            lines.append("• Воронка видит кандидатов, но свежий fallback/detailed слой не выгрузил причины отказа.")
-        elif not gap.get("fresh_fallback_present"):
-            lines.append("• Нет свежего fallback-отчёта для текущего run; старые кандидаты намеренно не подмешиваются.")
-        else:
-            lines.append("• В свежих артефактах нет детальной расшифровки reject reasons.")
-        lines.append("")
-
-    if selected:
-        lines.append("✅ Опубликовано")
-        for idx, candidate in enumerate(selected, start=1):
-            metrics = candidate.get("metrics") if isinstance(candidate.get("metrics"), dict) else {}
-            ident = candidate_identity(candidate)
-            odds = metric(candidate, metrics, "odds", default=as_float(candidate.get("odds")))
-            kickoff = candidate.get("commence_time_display") or fmt_time(candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff"))
-            point = candidate.get("point")
-            point_text = f" ({point})" if point not in (None, "") else ""
-            match = f"{ident['home']} — {ident['away']}".strip(" —")
-            lines.append(f"{idx}. {match}")
-            if ident["league"]:
-                lines.append(f"   🏆 {ident['league']}")
-            lines.append(f"   🎯 {ident['selection']}{point_text} @{odds:.2f} | 🕒 {kickoff}")
-            for part in explain_selected(candidate, metrics):
-                lines.append(f"   • {part}")
-        lines.append("")
-
+        total = sum(reasons.values()) or 1
+        lines.append('\U0001F6AB \u041f\u043e\u0447\u0435\u043c\u0443 \u043d\u0435 \u043f\u0440\u043e\u0448\u043b\u0438')
+        for r, n in reasons.most_common(10):
+            lines.append(f'\u2022 {r} \u2014 {n} ({n/total*100:.0f}%)')
+        lines.append('')
+    near = payload.get('near_misses') or []
     if near:
-        lines.append("⚠️ Остальные пограничные кандидаты" if selected else "⚠️ Пограничные кандидаты")
-        for idx, item in enumerate(near[: env_int("DETAILED_RUN_REPORT_TOP_NEAR_MISSES", 8)], start=1):
-            candidate = item["candidate"]
-            metrics = item["metrics"]
-            ident = candidate_identity(candidate)
-            odds = metric(candidate, metrics, "odds", default=as_float(candidate.get("odds")))
-            kickoff = fmt_time(candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff"))
-            match = f"{ident['home']} — {ident['away']}".strip(" —")
-            lines.append(f"{idx}. {match}")
-            if ident["league"]:
-                lines.append(f"   🏆 {ident['league']}")
-            lines.append(f"   🎯 {ident['selection']} @{odds:.2f} | 🕒 {kickoff}")
-            for part in explain_thresholds(candidate, metrics, item["reasons"]):
-                lines.append(f"   • {part}")
-        lines.append("")
+        lines.append('\u26a0\ufe0f \u041f\u043e\u0433\u0440\u0430\u043d\u0438\u0447\u043d\u044b\u0435 \u043a\u0430\u043d\u0434\u0438\u0434\u0430\u0442\u044b')
+        for i, item in enumerate(near[:8], 1):
+            cand = item.get('candidate') or {}; m = item.get('metrics') or {}; rs = item.get('reasons') or []
+            home = cand.get('home_team_ru') or cand.get('home_team') or cand.get('home') or '\u043d/\u0434'
+            away = cand.get('away_team_ru') or cand.get('away_team') or cand.get('away') or '\u043d/\u0434'
+            sel = cand.get('selection') or cand.get('market') or '\u043d/\u0434'
+            odds = _metric(cand, m, 'odds', 'selected_odds')
+            lines.append(f"{i}. {home} \u2014 {away} | {sel} @{odds:.2f}")
+            lines.append(f"   \u2022 EV {_metric(cand,m,'canonical_ev_pct','ev_pct'):+.1f}% | edge {_metric(cand,m,'canonical_edge_pp','edge_pp'):+.1f} \u043f.\u043f. | q {_metric(cand,m,'quality_score','quality'):.1f}")
+            if rs: lines.append('   \u2022 \u043d\u0435 \u043f\u0440\u043e\u0448\u043b\u043e: ' + '; '.join(str(x) for x in rs[:5]))
+        lines.append('')
+    top = reasons.most_common(1)[0][0] if reasons else ''
+    lines += ['\U0001F4CC \u0412\u044b\u0432\u043e\u0434']
+    if (payload.get('summary_freshness') or {}).get('stale'):
+        lines.append('\u2022 \u041e\u0442\u0447\u0451\u0442 \u043f\u043e\u0441\u0442\u0440\u043e\u0435\u043d \u043d\u0430 \u0443\u0441\u0442\u0430\u0440\u0435\u0432\u0448\u0435\u043c \u0441\u0440\u0435\u0437\u0435: \u0441\u043d\u0430\u0447\u0430\u043b\u0430 \u043d\u0443\u0436\u043d\u043e \u0432\u0435\u0440\u043d\u0443\u0442\u044c \u0441\u0432\u0435\u0436\u0438\u0439 debug/run summary.')
+    if 'price_integrity' in top or 'price integrity' in top:
+        lines.append('\u2022 \u0413\u043b\u0430\u0432\u043d\u044b\u0439 \u0431\u043b\u043e\u043a\u0435\u0440 \u2014 price integrity: \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u0430\u044f \u0446\u0435\u043d\u0430 \u0432\u044b\u0433\u043b\u044f\u0434\u0438\u0442 \u0432\u044b\u0431\u0440\u043e\u0441\u043e\u043c \u043e\u0442\u043d\u043e\u0441\u0438\u0442\u0435\u043b\u044c\u043d\u043e \u0440\u044b\u043d\u043a\u0430.')
+    elif 'recheck' in top or 'line' in top:
+        lines.append('\u2022 \u0413\u043b\u0430\u0432\u043d\u044b\u0439 \u0431\u043b\u043e\u043a\u0435\u0440 \u2014 \u043e\u0436\u0438\u0434\u0430\u043d\u0438\u0435 \u0444\u0438\u043d\u0430\u043b\u044c\u043d\u043e\u0433\u043e line/current-price recheck \u043f\u0435\u0440\u0435\u0434 \u043f\u0443\u0431\u043b\u0438\u043a\u0430\u0446\u0438\u0435\u0439.')
     else:
-        if not (payload.get("diagnostic_gap") or {}).get("fresh_fallback_present"):
-            lines.append("⚠️ Пограничные кандидаты: нет свежего fallback-отчёта, поэтому старый watchlist скрыт.")
-        else:
-            lines.append("⚠️ Пограничные кандидаты: не найдено ставок с положительным EV/edge после жёстких guard’ов.")
-        lines.append("")
-
-    lines.extend(learning_lines())
-
-    provider_lines = payload.get("provider_lines") or []
-    if provider_lines:
-        lines.append("🔌 API / квоты последнего run")
-        lines.extend(provider_lines[:10])
-        lines.append("")
-
-    # Operational conclusion.
-    if selected:
-        lines.append("📌 Вывод")
-        lines.append("• Система штатно опубликовала контролируемый прогноз; причины отказа выше относятся только к оставшимся кандидатам.")
-        if any("xg" in str(reason) for reason in reasons):
-            lines.append("• xG-фильтр теперь отсекает именно чрезмерный оптимизм модели, не блокируя подтверждающие xG-сценарии.")
-    elif reasons:
-        top_reason = reasons.most_common(1)[0][0]
-        top_near_reasons = set()
-        if near and isinstance(near[0], dict):
-            top_near_reasons = {str(reason) for reason in (near[0].get("reasons") or [])}
-        lines.append("📌 Вывод")
-        if "duplicate_fallback_sent_index" in top_near_reasons or any(reason.startswith("duplicate_same_match:") for reason in top_near_reasons):
-            lines.append("• Лучший пограничный кандидат уже был отправлен ранее, поэтому текущий run не стал публиковать дубль.")
-        elif top_reason == "canonical_negative_value":
-            lines.append("• Главный фильтр — отрицательная контрольная ценность. Скрипт видел матчи, но рынок не дал достаточного value.")
-        elif top_reason == "match_time_outside_window":
-            lines.append("• Главный фильтр — время. Кандидаты были слишком близко к началу матча или вне окна публикации.")
-        elif top_reason.startswith("family_not_allowed:"):
-            lines.append("• Главный фильтр — закрытые семьи рынков. Они остаются в watchlist, но не публикуются в Telegram без отдельного safe-tier.")
-        elif "xg" in top_reason:
-            lines.append("• Главный фильтр — оптимизм модели против xG. Value есть, но xG-ориентир не подтверждает такой запас.")
-        else:
-            lines.append("• Прогнозов нет из-за комбинации value, xG, качества и ограничений семейств рынков.")
-        if has_duplicate_block:
-            lines.append("• Уже опубликованный ранее матч не дублировался повторно.")
-    else:
-        lines.append("📌 Вывод")
-        if as_int(summary.get("candidates_before_quality")) > 0 and as_int(summary.get("candidates_publishable")) == 0:
-            lines.append("• Главная проблема текущего состояния — не качество отчёта Telegram, а диагностический разрыв: candidates есть, publishable нет, но причины отказа не попали в свежие артефакты.")
-        else:
-            lines.append("• Прогнозов нет, а свежих reject reasons для уверенной причины недостаточно.")
-        lines.append("• Исправлено: отчёт больше не смешивает старый fallback/watchlist с новым run-summary.")
-
-    lines.append("")
-    lines.append("🛠 Исправления по аудиту")
-    lines.append("• Нужны unit-тесты daily top-5/fallback и общий модуль подсчёта дневной квоты.")
-    lines.append("• Историю run лучше перенести из JSON в SQLite, чтобы отчётность и backtest не зависели от одиночных stale-файлов.")
-    lines.append("• API/матчинг надо оценивать по свежести, покрытию контекста и причинам отказа, а не только по числу запросов.")
-    lines.append("")
-    lines.append("⚖️ Дисклеймер: аналитика бота не гарантирует результат и не является финансовой рекомендацией.")
-    return normalize_telegram_text("\n".join(lines))
+        lines.append('\u2022 \u041f\u0440\u043e\u0433\u043d\u043e\u0437\u043e\u0432 \u043d\u0435\u0442 \u0438\u0437-\u0437\u0430 \u043a\u043e\u043c\u0431\u0438\u043d\u0430\u0446\u0438\u0438 value, \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0430, \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u043e\u0432 \u0438 \u0444\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0445 safety-guard\u2019\u043e\u0432.')
+    lines += ['', '\u2696\ufe0f \u0414\u0438\u0441\u043a\u043b\u0435\u0439\u043c\u0435\u0440: \u0430\u043d\u0430\u043b\u0438\u0442\u0438\u043a\u0430 \u0431\u043e\u0442\u0430 \u043d\u0435 \u0433\u0430\u0440\u0430\u043d\u0442\u0438\u0440\u0443\u0435\u0442 \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442 \u0438 \u043d\u0435 \u044f\u0432\u043b\u044f\u0435\u0442\u0441\u044f \u0444\u0438\u043d\u0430\u043d\u0441\u043e\u0432\u043e\u0439 \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0430\u0446\u0438\u0435\u0439.']
+    return '\n'.join(lines)
 
 
-
-def semantic_message_hash(payload: dict[str, Any]) -> str:
-    """Stable hash for cooldown/dedupe that ignores tiny token/quota/count drift."""
-    reasons = payload.get("reason_counts") or {}
-    top_reasons = []
-    if isinstance(reasons, dict):
-        top_reasons = [str(k) for k, _ in Counter(reasons).most_common(5)]
-    near = []
-    for item in (payload.get("near_misses") or [])[:5]:
-        try:
-            candidate = item["candidate"]
-            ident = candidate_identity(candidate)
-            near.append([ident.get("home"), ident.get("away"), ident.get("selection"), str(candidate.get("odds") or "")])
-        except Exception:
-            continue
-    raw = {
-        "published": bool(payload.get("published")),
-        "status": payload.get("status"),
-        "top_reasons": top_reasons,
-        "near": near,
-    }
-    return hashlib.sha1(json.dumps(raw, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
-
-
-def split_text(text: str, limit: int = 3900) -> list[str]:
-    if len(text) <= limit:
-        return [text]
-    parts, current, size = [], [], 0
+def _split(text: str, limit: int) -> list[str]:
+    if len(text) <= limit: return [text]
+    parts, cur, size = [], [], 0
     for line in text.splitlines():
         add = len(line) + 1
-        if current and size + add > limit:
-            parts.append("\n".join(current))
-            current, size = [], 0
-        current.append(line)
-        size += add
-    if current:
-        parts.append("\n".join(current))
-
-    if len(parts) > 1:
-        total = len(parts)
-        parts = [f"🧾 Подробный отчёт run — часть {idx}/{total}\n\n{part}" for idx, part in enumerate(parts, start=1)]
-    return parts
+        if cur and size + add > limit:
+            parts.append('\n'.join(cur)); cur=[]; size=0
+        cur.append(line); size += add
+    if cur: parts.append('\n'.join(cur))
+    total = len(parts)
+    return [f'\U0001F9FE \u041f\u043e\u0434\u0440\u043e\u0431\u043d\u044b\u0439 \u043e\u0442\u0447\u0451\u0442 run \u2014 \u0447\u0430\u0441\u0442\u044c {i}/{total}\n\n{p}' for i, p in enumerate(parts, 1)]
 
 
-
-def send_telegram(text: str) -> dict[str, Any]:
-    token = os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
-    if not token or not chat_id:
-        return {"sent": False, "reason": "missing_credentials"}
-
-    h = hashlib.sha1(text.encode("utf-8")).hexdigest()
-    state = load_json(SENT_STATE, {})
-    if not isinstance(state, dict):
-        state = {}
-
-    if state.get("last_hash") == h and not env_bool("DETAILED_RUN_REPORT_FORCE_SEND", False):
-        return {"sent": False, "reason": "unchanged", "hash": h}
-
-    cooldown = env_int("DETAILED_RUN_REPORT_MIN_INTERVAL_MINUTES", 20)
-    sent_at_raw = state.get("sent_at")
-    if sent_at_raw and cooldown > 0 and not env_bool("DETAILED_RUN_REPORT_FORCE_SEND", False):
-        try:
-            sent_at = datetime.fromisoformat(str(sent_at_raw).replace("Z", "+00:00"))
-            if sent_at.tzinfo is None:
-                sent_at = sent_at.replace(tzinfo=UTC)
-            age_minutes = (datetime.now(UTC) - sent_at.astimezone(UTC)).total_seconds() / 60.0
-            if age_minutes < cooldown:
-                return {
-                    "sent": False,
-                    "reason": "cooldown_active",
-                    "age_minutes": round(age_minutes, 1),
-                    "cooldown_minutes": cooldown,
-                    "hash": h,
-                }
-        except Exception:
-            pass
-
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    parts = split_text(text)
+def send(text: str) -> dict[str, Any]:
+    token = os.getenv('TELEGRAM_TOKEN') or os.getenv('TELEGRAM_BOT_TOKEN'); chat = os.getenv('TELEGRAM_CHAT_ID')
+    if not token or not chat: return {'sent': False, 'reason': 'missing_credentials'}
+    h = hashlib.sha1(text.encode('utf-8')).hexdigest(); state = _load(SENT_STATE, {})
+    if isinstance(state, dict) and state.get('last_hash') == h and str(os.getenv('DETAILED_RUN_REPORT_FORCE_SEND','')).lower() not in {'1','true','yes','on','force'}:
+        return {'sent': False, 'reason': 'unchanged', 'hash': h}
+    url = 'https://api.telegram.org/bot' + str(token) + '/sendMessage'
+    parts = _split(text, _int(os.getenv('TELEGRAM_MESSAGE_SOFT_LIMIT') or 3900) or 3900)
     try:
         for part in parts:
-            data = parse.urlencode({
-                "chat_id": chat_id,
-                "text": part,
-                "disable_web_page_preview": "true",
-            }).encode("utf-8")
-            req = request.Request(url, data=data, method="POST")
-            with request.urlopen(req, timeout=20) as response:
-                response.read()
+            data = parse.urlencode({'chat_id': chat, 'text': part, 'disable_web_page_preview': 'true'}).encode('utf-8')
+            req = request.Request(url, data=data, method='POST')
+            with request.urlopen(req, timeout=20) as resp: resp.read()
     except Exception as exc:
-        return {"sent": False, "reason": "telegram_send_error", "error": repr(exc), "hash": h}
-
-    state["last_hash"] = h
-    state["sent_at"] = datetime.now(UTC).isoformat()
-    state["parts"] = len(parts)
-    write_json(SENT_STATE, state)
-    return {"sent": True, "parts": len(parts), "hash": h}
+        return {'sent': False, 'reason': 'telegram_send_error', 'error': repr(exc), 'hash': h}
+    _write(SENT_STATE, {'last_hash': h, 'sent_at': datetime.now(UTC).isoformat(), 'parts': len(parts)})
+    return {'sent': True, 'parts': len(parts), 'hash': h}
 
 
 def main() -> int:
-    payload = build_payload()
-    text = render(payload)
-    payload["text"] = text
-
-    should_send = env_bool("DETAILED_RUN_REPORT_SEND_TELEGRAM", False)
-    # By default send detailed report only when no forecast was published.
-    if payload.get("published") and not env_bool("DETAILED_RUN_REPORT_SEND_WHEN_PUBLISHED", False):
-        should_send = False
-
-    if should_send:
-        try:
-            payload["telegram"] = send_telegram(text)
-        except Exception as exc:
-            payload["telegram"] = {
-                "sent": False,
-                "reason": "telegram_send_error",
-                "error": str(exc),
-            }
-            print(f"Telegram send failed: {exc}")
-    else:
-        payload["telegram"] = {"sent": False, "reason": "disabled_or_published"}
-
-    write_json(OUT_JSON, payload)
-    write_text(OUT_TXT, text)
-    print(text)
+    payload = build(); text = render(payload); payload['text'] = text
+    should_send = str(os.getenv('DETAILED_RUN_REPORT_SEND_TELEGRAM','')).lower() in {'1','true','yes','on','force'}
+    payload['telegram'] = send(text) if should_send else {'sent': False, 'reason': 'disabled'}
+    _write(OUT_JSON, payload); _write(OUT_TXT, text); print(text)
     return 0
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())

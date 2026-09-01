@@ -166,18 +166,18 @@ def _drop_legacy_limited_provider_disables(env: dict[str, str]) -> dict[str, str
 
 
 def manual_probe_without_force_publish() -> bool:
+    if truthy(os.getenv("HARIZON_MANUAL_DRY_RUN")) or str(os.getenv("RUN_MODE") or "").strip().lower() == "dry_run":
+        return True
     if str(os.getenv("GITHUB_EVENT_NAME") or "").strip() != "workflow_dispatch":
         return False
-    if truthy(os.getenv("MANUAL_CONTROLLED_PUBLISH_ENABLED") or "true"):
-        return False
-    return not truthy(os.getenv("AUTORUN_INPUT_FORCE_PUBLISH") or os.getenv("FORCE_PUBLISH"))
+    return truthy(os.getenv("PUBLISH_DRY_RUN"))
 
 
 def final_market_integrity_env() -> dict[str, str]:
     manual_dry_run = manual_probe_without_force_publish()
-    fast_inventory = truthy(os.getenv("HARIZON_FAST_INVENTORY_LOCK") or os.getenv("DAY_INVENTORY_FAST_MODE") or "true")
-    inventory_merge = "false" if fast_inventory else str(os.getenv("DAY_INVENTORY_FORCE_PROVIDER_MERGE") or "false").lower()
-    runtime_version = "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory"
+    fast_inventory = truthy(os.getenv("HARIZON_FAST_INVENTORY_LOCK") or os.getenv("DAY_INVENTORY_FAST_MODE") or "false")
+    inventory_merge = "false" if fast_inventory else str(os.getenv("DAY_INVENTORY_FORCE_PROVIDER_MERGE") or "true").lower()
+    runtime_version = "harizon-runtime-policy-v6-strict-full-inventory"
     env = {
         "HARIZON_RUNTIME_POLICY_VERSION": runtime_version,
         "PUBLISH_ALLOW_B_TIER": "true",
@@ -186,8 +186,8 @@ def final_market_integrity_env() -> dict[str, str]:
         "HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION": runtime_version,
         "HARIZON_FAST_INVENTORY_LOCK": "true" if fast_inventory else "false",
         "HARIZON_MANUAL_DRY_RUN": str(manual_dry_run).lower(),
-        "MANUAL_CONTROLLED_PUBLISH_ENABLED": "true",
-        "PUBLISH_DRY_RUN": "true" if manual_dry_run else "false",
+        "MANUAL_CONTROLLED_PUBLISH_ENABLED": str(os.getenv("MANUAL_CONTROLLED_PUBLISH_ENABLED") or "false").lower(),
+        "PUBLISH_DRY_RUN": "true" if manual_dry_run or truthy(os.getenv("PUBLISH_DRY_RUN")) else "false",
         "CONTROLLED_FALLBACK_DRY_RUN": "true" if manual_dry_run else "false",
         "CONTROLLED_FALLBACK_SEND_TELEGRAM": "false" if manual_dry_run else "true",
         "CONTROLLED_FALLBACK_TELEGRAM_ENABLED": "false" if manual_dry_run else "true",
@@ -195,19 +195,23 @@ def final_market_integrity_env() -> dict[str, str]:
         "DAY_INVENTORY_BOOTSTRAP_PROVIDER": os.getenv("DAY_INVENTORY_BOOTSTRAP_PROVIDER") or "odds_api_io",
         "DAY_INVENTORY_FORCE_PROVIDER_MERGE": inventory_merge,
         "DAY_INVENTORY_USE_FOR_RUN": "true",
-        "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false" if fast_inventory else str(os.getenv("DAY_INVENTORY_COVERAGE_MAX_REBUILD") or "false").lower(),
+        "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false" if fast_inventory else str(os.getenv("DAY_INVENTORY_COVERAGE_MAX_REBUILD") or "true").lower(),
         "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
         "DAY_INVENTORY_NEAR_WINDOW_HOURS": os.getenv("DAY_INVENTORY_NEAR_WINDOW_HOURS") or "12",
-        "MARKET_DERIVED_MIN_BOOKS": "1",
-        "MARKET_DERIVED_MIN_SOURCES": "1",
-        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS": "1",
-        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_SOURCES": "1",
+        "MARKET_DERIVED_MIN_BOOKS": "2",
+        "MARKET_DERIVED_MIN_SOURCES": "2",
+        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS": "2",
+        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_SOURCES": "2",
         "CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES": "1",
         "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
-        "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "false",
+        "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
+        "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "2",
+        "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
-        "CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS": "false",
-        "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": "false",
+        "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "false",
+        "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "false",
+        "CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS": "true",
+        "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": "true",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE": "78.0",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP": "8.0",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT": "15.0",
@@ -218,8 +222,22 @@ def final_market_integrity_env() -> dict[str, str]:
         "CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED": "false",
         "CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS": "2",
         "CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES": "2",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "1",
+        "CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES": "2",
+        "CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES": "true",
+        "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": "false",
+        "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_SINGLE_LINE_ENABLED": "true",
+        "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_CONTEXT_SOURCES": "2",
+        "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_CONFIDENCE": "76.0",
+        "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_QUALITY": "78.0",
+        "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_EDGE_PP": "4.0",
+        "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_MIN_EV_PCT": "7.0",
+        "CONTROLLED_FALLBACK_TIER_B_WEIGHTED_REQUIRE_XG_HARD_CONFIRMATION": "true",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
         "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "1",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "2",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "2",
+        "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "2",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "2",
         "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "6.0",
         "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "3.0",
         "DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED": "false",
@@ -266,6 +284,10 @@ def market_integrity_check(env: dict[str, str], policy_version: str | None) -> d
         failures.append("TEAM_TOTALS_PUBLICATION_ENABLED=true")
     if as_int(env.get("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES")) < 1:
         failures.append("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES_below_1")
+    if as_int(env.get("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS")) < 2:
+        failures.append("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS_below_2")
+    if not truthy(env.get("DAY_INVENTORY_FORCE_PROVIDER_MERGE")) and not truthy(env.get("HARIZON_FAST_INVENTORY_LOCK")):
+        failures.append("DAY_INVENTORY_FORCE_PROVIDER_MERGE_false")
     return {
         "status": "failed" if failures else "ok",
         "failures": failures,
@@ -293,8 +315,8 @@ def load_policy() -> dict[str, Any]:
         "mode": "per_run_only",
         "deleted_providers": sorted(REMOVED_PROVIDERS),
         "base_env": {
-            "PROVIDER_REQUEST_BUDGET_MODE": "per_run_only",
-            "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "true",
+            "PROVIDER_REQUEST_BUDGET_MODE": "per_run_with_daily_guards",
+            "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "false",
             "ALL_SOURCES_FREE_MAXIMIZE": "true",
             "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "true",
         },

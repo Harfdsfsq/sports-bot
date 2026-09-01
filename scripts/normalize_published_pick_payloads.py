@@ -185,18 +185,35 @@ def walk_and_normalize(value: Any) -> tuple[Any, int, int]:
                 changed += normalize_row(item)
         return value, rows, changed
     if isinstance(value, dict):
-        # Normalize common container keys first.
         for key in ("picks", "bets", "pending", "published", "published_candidates", "selected", "candidates", "data", "rows"):
             if isinstance(value.get(key), list):
                 _, r, c = walk_and_normalize(value[key])
                 rows += r
                 changed += c
-        # A single pick-like object.
         if any(k in value for k in ("match_key", "home_team", "away_team", "selection", "telegram_sent", "source_summary")):
             rows += 1
             changed += normalize_row(value)
         return value, rows, changed
     return value, rows, changed
+
+
+def run_post_quality_reports(report: dict[str, Any]) -> None:
+    for name in (
+        "repair_bzzoiro_v2_report_metrics",
+        "sync_prediction_calibration_ledger",
+        "build_line_decision_cards",
+        "build_live_source_quorum_report",
+        "build_publication_readiness_report",
+        "build_two_plus_coverage_report",
+    ):
+        try:
+            module = __import__(f"scripts.{name}", fromlist=["main"])
+            main_func = getattr(module, "main", None)
+            if callable(main_func):
+                main_func()
+                report.setdefault("post_quality_reports", []).append({"script": name, "status": "ok"})
+        except Exception as exc:
+            report.setdefault("post_quality_reports", []).append({"script": name, "status": "error", "error": f"{type(exc).__name__}: {exc}"})
 
 
 def main() -> int:
@@ -217,6 +234,7 @@ def main() -> int:
         report["files"].append({"path": str(path), "rows_seen": rows, "changes": changes})
         report["total_rows_seen"] += rows
         report["total_changes"] += changes
+    run_post_quality_reports(report)
     write_json(OUT_PATH, report)
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     return 0

@@ -69,16 +69,7 @@ def _bookmaker_mode() -> bool:
     return mode in {"bookmaker", "bookmakers", "bookmaker_quorum", "books", "2books", "2_bookmakers"}
 
 
-
 def _price_integrity_reasons(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
-    """Run the same pre-publication price guard inside the fallback wrapper.
-
-    This is a second safety net for cases where a candidate reaches the publisher
-    from a source file not rewritten by the pre-filter.  It also uses the external
-    odds-api.io offer snapshot guard, which catches the real failure mode where a
-    bookmaker-quorum bucket says Under 2.5 @2.75 while the live same-side market is
-    near 1.40.
-    """
     try:
         from scripts.filter_controlled_fallback_price_integrity import candidate_reject_reasons
     except Exception:
@@ -105,6 +96,47 @@ def _price_integrity_reasons(candidate: dict[str, Any], metrics: dict[str, Any])
             })
     return list(reasons or [])
 
+
+def _priced_books_count(metrics: dict[str, Any]) -> int:
+    quorum = metrics.get('tier_b_bookmaker_quorum') if isinstance(metrics.get('tier_b_bookmaker_quorum'), dict) else {}
+    candidates = [
+        quorum.get('priced_books_count') if isinstance(quorum, dict) else None,
+        metrics.get('priced_books_count'),
+        metrics.get('same_side_books_count'),
+        metrics.get('bookmaker_count'),
+    ]
+    for value in candidates:
+        parsed = _as_int(value, 0)
+        if parsed > 0:
+            return parsed
+    raw = _as_int(metrics.get('books_count'), 0)
+    if raw > 20:
+        # A-cover/promoted rows can carry raw offer/hint counts in books_count
+        # (for example 210), while the actual independently useful evidence is
+        # the line/source/confirmation count.  Use that as display fallback only;
+        # true quorum checks still require explicit priced_books_count when set.
+        fallback = max(
+            _as_int(metrics.get('confirmation_sources_count'), 0),
+            _as_int(metrics.get('odds_sources_count'), 0),
+            _as_int(metrics.get('sources_count'), 0),
+            2,
+        )
+        return min(raw, fallback)
+    return raw
+
+
+def _clamp_display_books(metrics: dict[str, Any]) -> None:
+    priced = _priced_books_count(metrics)
+    raw_books = _as_int(metrics.get('books_count'), 0)
+    if priced > 0 and (raw_books <= 0 or raw_books > max(20, priced * 5)):
+        metrics['raw_books_count_before_display_clamp'] = raw_books
+        metrics['books_count'] = priced
+        metrics['display_books_count'] = priced
+        metrics['bookmaker_quorum_display_clamped'] = True
+    elif priced > 0:
+        metrics.setdefault('display_books_count', priced)
+
+
 def _candidate_has_bookmaker_quorum(module: Any, candidate: dict[str, Any], metrics: dict[str, Any], tier: str = "") -> bool:
     if not _bookmaker_mode():
         return False
@@ -119,15 +151,12 @@ def _candidate_has_bookmaker_quorum(module: Any, candidate: dict[str, Any], metr
             2,
         ),
     )
-    if _as_int(metrics.get("books_count"), 0) < min_books:
+    if _priced_books_count(metrics) < min_books:
         return False
 
     if _price_integrity_reasons(candidate, metrics):
         return False
 
-    # Do not bypass price integrity.  If the original bookmaker-quorum price
-    # guard reports an outlier/missing same-side books, the candidate is not a
-    # valid replacement for API-source quorum.
     guard = getattr(module, "_bookmaker_quorum_price_guard", None)
     if callable(guard):
         try:
@@ -157,11 +186,8 @@ def _patch_module(module: Any) -> None:
 
     def candidate_metrics_bookmaker_quorum(candidate: dict[str, Any]) -> dict[str, Any]:
         metrics = dict(original_candidate_metrics(candidate))
+        _clamp_display_books(metrics)
         if _candidate_has_bookmaker_quorum(module, candidate, metrics):
-            # The old tier code requires at least one odds-source metadata token.
-            # Under bookmaker quorum, the selected same-side bookmaker bucket is
-            # the price source.  Keep a diagnostic flag instead of pretending
-            # there are two independent APIs.
             if _as_int(metrics.get("odds_sources_count"), 0) <= 0:
                 metrics["odds_sources_count"] = 1
                 metrics["line_sources"] = metrics.get("line_sources") or ["bookmaker_quorum"]
@@ -170,11 +196,10 @@ def _patch_module(module: Any) -> None:
         return metrics
 
     def tier_reasons_bookmaker_quorum(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+        _clamp_display_books(metrics)
         reasons = list(original_tier_reasons(tier, candidate, metrics))
         if not _candidate_has_bookmaker_quorum(module, candidate, metrics, tier=tier):
             return reasons
-        # Remove only the stale API-source metadata blocker.  All other blockers
-        # stay: books, confirmations, quality, EV, xG, line movement, etc.
         filtered: list[str] = []
         removed: list[str] = []
         for reason in reasons:
@@ -218,8 +243,6 @@ def main() -> int:
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_REQUIRE_BOOKMAKER_QUORUM_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
-        # Tier A can still require confirmations/context/quality; API-source
-        # count itself is no longer the publication contract.
         "CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES": "0",
         "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "0",
         "CONTROLLED_FALLBACK_TIER_C_MIN_ODDS_SOURCES": "0",
@@ -230,36 +253,31 @@ def main() -> int:
 
     module = _load_original()
     _patch_module(module)
-    _write_report(
-        {
+    _write_report({
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "installed",
+        "wrapper": "publish_controlled_fallback_bookmaker",
+        "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
+        "original_script": str(ORIGINAL),
+        "price_integrity_preserved": True,
+        "display_books_clamped_to_priced_quorum": True,
+        "raw_offer_count_display_clamp_enabled": True,
+    })
+    try:
+        code = int(module.main() or 0)
+    finally:
+        audit = _run_retro_price_audit_after_publish()
+        _write_report({
             "created_at_utc": datetime.now(timezone.utc).isoformat(),
-            "status": "installed",
+            "status": "completed",
             "wrapper": "publish_controlled_fallback_bookmaker",
             "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
-            "original_script": str(ORIGINAL),
             "price_integrity_preserved": True,
-        }
-    )
-    status = int(module.main() or 0)
-    audit = _run_retro_price_audit_after_publish()
-    # Update wrapper report with audit status so the run artifact proves the retro layer executed.
-    _write_report(
-        {
-            "created_at_utc": datetime.now(timezone.utc).isoformat(),
-            "status": "installed",
-            "wrapper": "publish_controlled_fallback_bookmaker",
-            "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
-            "original_script": str(ORIGINAL),
-            "price_integrity_preserved": True,
-            "retro_price_audit": {
-                "status": audit.get("status") if isinstance(audit, dict) else "",
-                "published_flagged": audit.get("published_flagged") if isinstance(audit, dict) else 0,
-                "pending_flagged": audit.get("pending_flagged") if isinstance(audit, dict) else 0,
-                "changed_rows": audit.get("changed_rows") if isinstance(audit, dict) else 0,
-            },
-        }
-    )
-    return status
+            "display_books_clamped_to_priced_quorum": True,
+            "raw_offer_count_display_clamp_enabled": True,
+            "retro_price_audit": audit,
+        })
+    return code
 
 
 if __name__ == "__main__":

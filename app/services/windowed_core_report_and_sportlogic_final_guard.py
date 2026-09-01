@@ -2,14 +2,8 @@ from __future__ import annotations
 
 """Final post-finalizer guard.
 
-This module fixes two runtime issues seen in the 2026-05-12 logs:
-
-1. `latest-windowed-core-coverage.json` can be overwritten by an install-only
-   report when later workflow steps import usercustomize again. We keep a stable
-   candidate-audit copy and restore it over install-only payloads.
-2. Bzzoiro provides useful secondary odds, but only overlaps odds-api.io on a
-   small match subset. SportLogic has a configured key/quota and should be used
-   as a controlled near-window secondary odds source, not as a broad scraper.
+Keeps the rich windowed candidate audit from being overwritten and prevents the
+known-zero SportLogic path from being re-enabled after the runtime budget guard.
 """
 
 import json
@@ -25,6 +19,25 @@ AUDIT_PATH = EXPORT_DIR / "latest-windowed-core-candidate-audit.json"
 COVERAGE_PATH = EXPORT_DIR / "latest-windowed-core-coverage.json"
 INSTALL_PATH = EXPORT_DIR / "latest-windowed-core-install.json"
 REPORT_PATH = EXPORT_DIR / "latest-windowed-core-report-and-sportlogic-final-guard.json"
+
+SPORTLOGIC_ZERO = {
+    "ENABLE_SPORTLOGIC": "false",
+    "SPORTLOGIC_ENABLED": "false",
+    "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "false",
+    "SPORTLOGIC_BROAD_FALLBACK_ENABLED": "false",
+    "SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED": "false",
+    "SPORTLOGIC_PER_RUN_MAX": "0",
+    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "0",
+    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "0",
+    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "0",
+    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "0",
+    "SPORTLOGIC_MATCH_LIMIT": "0",
+    "SPORTLOGIC_ODDS_MATCH_LIMIT": "0",
+    "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "0",
+    "SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES": "0",
+    "SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT": "0",
+    "SPORTLOGIC_DISABLED_ZERO_ROWS_GUARD": "true",
+}
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:
@@ -46,11 +59,7 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _is_candidate_audit(payload: Any) -> bool:
-    return isinstance(payload, dict) and (
-        "candidates_in" in payload
-        or "publish_blocked_by_coverage" in payload
-        or payload.get("stage") in {"candidate_audit_publish_block_only", "publishable_filter"}
-    )
+    return isinstance(payload, dict) and ("candidates_in" in payload or "publish_blocked_by_coverage" in payload or payload.get("stage") in {"candidate_audit_publish_block_only", "publishable_filter"})
 
 
 def _install_report_guard() -> dict[str, Any]:
@@ -75,12 +84,10 @@ def _install_report_guard() -> dict[str, Any]:
             _write_json(AUDIT_PATH, payload)
             _write_json(COVERAGE_PATH, payload)
             return
-        # Keep install/status payloads, but do not let them overwrite the richer
-        # run-level coverage audit once it exists.
         _write_json(INSTALL_PATH, payload if isinstance(payload, dict) else {"payload": payload})
         audit = _read_json(AUDIT_PATH)
         if _is_candidate_audit(audit):
-            _write_json(COVERAGE_PATH, audit)  # restore rich report
+            _write_json(COVERAGE_PATH, audit)
             return
         try:
             original(payload)
@@ -90,9 +97,6 @@ def _install_report_guard() -> dict[str, Any]:
     guarded_write_report._harizon_windowed_report_guard = True  # type: ignore[attr-defined]
     patch._write_report = guarded_write_report
     result["installed"] = True
-
-    # If a later workflow step already overwrote coverage with install-only data,
-    # restore the audit copy immediately.
     audit = _read_json(AUDIT_PATH)
     coverage = _read_json(COVERAGE_PATH)
     if _is_candidate_audit(audit) and not _is_candidate_audit(coverage):
@@ -101,48 +105,14 @@ def _install_report_guard() -> dict[str, Any]:
     return result
 
 
-def _env_positive_int(name: str, default: str) -> str:
-    raw = os.getenv(name)
-    try:
-        if raw is None or str(raw).strip() == "":
-            return default
-        value = int(float(str(raw)))
-        return str(value if value > 0 else int(float(default)))
-    except Exception:
-        return default
-
-
-def _enable_controlled_sportlogic() -> dict[str, Any]:
-    has_key = bool(os.getenv("SPORTLOGIC_API_KEY") or os.getenv("SPORTLOGIC_KEY") or os.getenv("SPORTLOGIC_TOKEN"))
-    payload = {"api_key_present": has_key, "enabled": False, "mode": "controlled_near_window_secondary_odds"}
-    if not has_key:
-        return payload
-    overrides = {
-        "ENABLE_SPORTLOGIC": "true",
-        "SPORTLOGIC_ENABLED": "true",
-        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
-        "SPORTLOGIC_PER_RUN_MAX": _env_positive_int("SPORTLOGIC_PER_RUN_MAX", "30"),
-        "SPORTLOGIC_MAX_REQUESTS_PER_RUN": _env_positive_int("SPORTLOGIC_MAX_REQUESTS_PER_RUN", "30"),
-        "SPORTLOGIC_MATCH_LIMIT": _env_positive_int("SPORTLOGIC_MATCH_LIMIT", "80"),
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": _env_positive_int("SPORTLOGIC_ODDS_MATCH_LIMIT", "24"),
-        "SPORTLOGIC_TIMEOUT_SECONDS": os.getenv("SPORTLOGIC_TIMEOUT_SECONDS") or "20",
-        "SPORTLOGIC_NEAR_WINDOW_HOURS": os.getenv("SPORTLOGIC_NEAR_WINDOW_HOURS") or "12",
-        "SPORTLOGIC_ODDS_ONLY_IF_PRIMARY_HAS_ONE": "true",
-        "SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED": "true",
-        "SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES": os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES") or "2",
-        "SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT": os.getenv("SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT") or "24",
-    }
-    for key, value in overrides.items():
-        os.environ[key] = str(value)
-    payload.update({"enabled": True, "overrides": overrides})
-    return payload
+def _disable_sportlogic() -> dict[str, Any]:
+    previous = {key: os.getenv(key) for key in SPORTLOGIC_ZERO}
+    for key, value in SPORTLOGIC_ZERO.items():
+        os.environ[key] = value
+    return {"enabled": False, "mode": "disabled_zero_rows_guard", "previous": previous, "overrides": SPORTLOGIC_ZERO}
 
 
 def install() -> dict[str, Any]:
-    report = {
-        "created_at_utc": datetime.now(UTC).isoformat(),
-        "report_guard": _install_report_guard(),
-        "sportlogic": _enable_controlled_sportlogic(),
-    }
+    report = {"created_at_utc": datetime.now(UTC).isoformat(), "report_guard": _install_report_guard(), "sportlogic": _disable_sportlogic()}
     _write_json(REPORT_PATH, report)
     return report

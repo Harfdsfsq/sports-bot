@@ -85,6 +85,10 @@ class Settings(BaseSettings):
         default_factory=lambda: ["Betfair Exchange", "Sbobet"],
         validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS_ACCOUNT2"),
     )
+    odds_api_io_bookmakers_account2_fallback: CsvList = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS_ACCOUNT2_FALLBACK"),
+    )
     bookies_api_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("BOOKIES_API_SPORTS"))
     allow_low_tier: bool = Field(default=False, validation_alias=AliasChoices("ALLOW_LOW_TIER", "EXCLUDE_EXOTIC_LEAGUES"))
 
@@ -718,6 +722,7 @@ class Settings(BaseSettings):
         "odds_api_io_bookmakers",
         "odds_api_io_bookmakers_account1",
         "odds_api_io_bookmakers_account2",
+        "odds_api_io_bookmakers_account2_fallback",
         "bookies_api_sports",
         "espn_soccer_leagues",
         "espn_soft_fail_statuses",

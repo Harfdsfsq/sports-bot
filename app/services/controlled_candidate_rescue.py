@@ -405,7 +405,7 @@ def install() -> dict[str, Any]:
 
     def build_candidates_patched(self: Any, matches: list[Any], offers_by_match: dict[str, list[Offer]], contexts_by_match: dict[str, Any], market_signals_by_match: dict[str, dict[str, Any]] | None = None):
         candidates, rejections, debug = original(self, matches, offers_by_match, contexts_by_match, market_signals_by_match)
-        if candidates or not _env_bool("CONTROLLED_CONSENSUS_CANDIDATE_RESCUE_ENABLED", True) or not offers_by_match:
+        if not _env_bool("CONTROLLED_CONSENSUS_CANDIDATE_RESCUE_ENABLED", True) or not offers_by_match:
             return candidates, rejections, debug
         if not isinstance(rejections, dict):
             rejections = {}
@@ -416,10 +416,32 @@ def install() -> dict[str, Any]:
         rescue_candidates.sort(key=lambda item: (float(item.publication_score), float(item.ev_pct), float(item.confidence)), reverse=True)
         debug = dict(debug or {})
         debug["matches"] = (list(debug.get("matches") or []) + rescue_debug)[:200]
-        debug["controlled_consensus_rescue"] = {"enabled": True, "built": len(rescue_candidates), "returned": min(len(rescue_candidates), _env_int("CONTROLLED_RESCUE_RETURN_LIMIT", 24))}
+        limit = _env_int("CONTROLLED_RESCUE_RETURN_LIMIT", 24)
+        returned = rescue_candidates[:limit]
+        if _env_bool("CONTROLLED_RESCUE_APPEND_TO_EXISTING_CANDIDATES", True) and candidates:
+            seen = {(c.match_key, c.family, c.selection_key, c.point, c.team_side) for c in candidates}
+            merged = list(candidates)
+            appended = 0
+            for item in returned:
+                key = (item.match_key, item.family, item.selection_key, item.point, item.team_side)
+                if key in seen:
+                    continue
+                seen.add(key)
+                item.reasons.append("controlled_rescue_append:main_pool_not_empty")
+                item.source_summary["controlled_rescue_append"] = True
+                merged.append(item)
+                appended += 1
+            debug["controlled_consensus_rescue"] = {"enabled": True, "mode": "append", "built": len(rescue_candidates), "returned": len(returned), "appended": appended, "input_candidates": len(candidates), "output_candidates": len(merged)}
+            _inc(rejections, "controlled_rescue_candidates_built", len(rescue_candidates))
+            _inc(rejections, "controlled_rescue_candidates_appended", appended)
+            try:
+                return self._filter_and_rank(merged, rejections), rejections, debug
+            except Exception:
+                return merged, rejections, debug
+        debug["controlled_consensus_rescue"] = {"enabled": True, "mode": "replace_empty", "built": len(rescue_candidates), "returned": len(returned)}
         _inc(rejections, "controlled_rescue_candidates_built", len(rescue_candidates))
-        return rescue_candidates[: _env_int("CONTROLLED_RESCUE_RETURN_LIMIT", 24)], rejections, debug
+        return returned, rejections, debug
 
     cls.build_candidates = build_candidates_patched
     cls._harizon_controlled_rescue_patch = True
-    return {"status": "installed", "version": "controlled-consensus-rescue-v2-prefilter", "filter_patch": filter_patch}
+    return {"status": "installed", "version": "controlled-consensus-rescue-v3-append", "filter_patch": filter_patch}

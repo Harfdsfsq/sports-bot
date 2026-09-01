@@ -124,7 +124,7 @@ def tier_reasons_with_honest_ab_rules(tier: str, candidate: dict[str, Any], metr
         # B-tier contract is intentionally 1+ independent odds source. Do not let
         # global/A-tier env vars accidentally turn B-tier into A-tier.
         min_odds = 1
-        min_conf = max(1, _env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 1))
+        min_conf = max(2, _env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 2))
         if odds_sources < min_odds:
             reasons.append(f"tier_b_odds_sources_below_min:{odds_sources}/{min_odds}")
         if confirmations < min_conf:
@@ -139,7 +139,7 @@ def final_publish_guard_reasons_with_b_tier_lifecycle(candidate: dict[str, Any],
         return reasons
 
     confirmations = _as_int(metrics.get("confirmation_sources_count"), _as_int(metrics.get("sources_count")))
-    min_conf = max(1, _env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 1))
+    min_conf = max(2, _env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 2))
     if confirmations >= min_conf:
         prefix = "controlled_fallback_confirmation_sources_below_min:"
         reasons = [r for r in reasons if not str(r).startswith(prefix)]

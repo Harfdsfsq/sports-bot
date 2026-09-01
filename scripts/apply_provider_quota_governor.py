@@ -142,7 +142,7 @@ def strict_market_integrity_env() -> dict[str, str]:
 
 
 def odds_api_io_env(grant: int) -> dict[str, str]:
-    account1, account2 = account_split(grant, 140)
+    account1, account2 = account_split(grant, 100)
     out = {
         "ENABLE_ODDS_API_IO": bool_text(grant > 0),
         "ODDS_API_IO_ENABLED": bool_text(grant > 0),

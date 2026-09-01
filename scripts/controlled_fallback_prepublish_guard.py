@@ -203,9 +203,10 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
     if parsed_tier == "B":
         # B-tier requires one independent odds provider; 2+ is A-tier.
         # Ignore any inherited global/env min=2 here so B-tier no-next-cron
-        # candidates are not blocked by an A-tier publication threshold.
+        # candidates are not blocked by an A-tier publication threshold.  Context
+        # confirmation still stays strict at 2 sources for Telegram publication.
         min_odds_sources = 1
-        min_context_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_B_TELEGRAM_MIN_CONTEXT_SOURCES", 1))
+        min_context_sources = max(2, _env_int("CONTROLLED_FALLBACK_TIER_B_TELEGRAM_MIN_CONTEXT_SOURCES", 2))
     elif parsed_tier == "C":
         min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_C_TELEGRAM_MIN_ODDS_SOURCES", 1))
         min_context_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_C_TELEGRAM_MIN_CONTEXT_SOURCES", 1))

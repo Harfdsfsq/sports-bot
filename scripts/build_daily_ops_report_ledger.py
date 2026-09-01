@@ -4,9 +4,10 @@ from __future__ import annotations
 
 This wrapper keeps the legacy report renderer, but patches its data readers so
 it sees durable .data/bets ledgers and counts unique semantic bets rather than
-raw runtime rows.  Without this layer one Telegram pick can appear twice because
-latest-picks, fallback-report and pending snapshots carry different technical
-runtime dedupe keys.
+raw runtime rows.  It also runs publication-ledger sync immediately before the
+report, so state settlements from the report-only app.cli run are mirrored back
+to .data/bets and daily reports no longer show zero published picks when the
+Telegram fallback actually sent forecasts.
 """
 
 import hashlib
@@ -31,6 +32,15 @@ def _load_original() -> Any:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _sync_publication_ledger() -> dict[str, Any]:
+    try:
+        from scripts import sync_publication_ledger
+
+        return sync_publication_ledger.sync_bets()
+    except Exception as exc:
+        return {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
 
 
 def _json(path: Path, default: Any) -> Any:
@@ -122,6 +132,15 @@ def _kickoff(row: dict[str, Any]) -> str:
     return str(value or "")[:16]
 
 
+def _selection_key(value: Any) -> str:
+    text = _norm(value)
+    if any(token in text for token in ("меньше", "under", "тм", "tm")):
+        return "under"
+    if any(token in text for token in ("больше", "over", "тб", "tb")):
+        return "over"
+    return text
+
+
 def _key(row: dict[str, Any]) -> str:
     payload = _nested(row, "bet_payload")
     raw = "|".join([
@@ -130,7 +149,7 @@ def _key(row: dict[str, Any]) -> str:
         _norm(_first(row.get("away_team"), row.get("away"), payload.get("away_team"), payload.get("away")) or ""),
         _kickoff(row),
         _norm(_first(row.get("family"), row.get("market_family"), payload.get("family"), payload.get("market_family")) or ""),
-        _norm(_first(row.get("selection"), row.get("selection_key"), payload.get("selection"), payload.get("selection_key")) or ""),
+        _selection_key(_first(row.get("selection_key"), row.get("selection"), payload.get("selection_key"), payload.get("selection")) or ""),
         _point(_first(row.get("point"), row.get("line"), row.get("handicap"), payload.get("point"), payload.get("line"), payload.get("handicap"))),
     ])
     if raw.strip("|"):
@@ -150,7 +169,7 @@ def _as_float(value: Any) -> float:
 def _row_score(row: dict[str, Any]) -> tuple[int, int, int, float, int]:
     metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
     stake = max(_as_float(row.get("stake")), _as_float(row.get("stake_amount")), _as_float(_nested(row, "bet_payload").get("stake")), _as_float(_nested(row, "bet_payload").get("stake_amount")))
-    sent = 1 if (row.get("telegram_sent") is True or str(row.get("publication_lifecycle_status") or row.get("status") or "").lower() in {"telegram_sent", "published", "sent", "pending"}) else 0
+    sent = 1 if (row.get("telegram_sent") is True or str(row.get("publication_lifecycle_status") or row.get("status") or "").lower() in {"telegram_sent", "published", "sent", "pending", "open", "active", "won", "lost", "push", "void", "half_won", "half_lost"}) else 0
     confirmations = row.get("confirmation_sources") or metrics.get("confirmation_sources") or []
     conf_count = len(confirmations) if isinstance(confirmations, list) else 0
     metric_size = len(json.dumps(metrics, ensure_ascii=False, sort_keys=True)) if metrics else 0
@@ -160,9 +179,9 @@ def _row_score(row: dict[str, Any]) -> tuple[int, int, int, float, int]:
 def _normalize_bet_row(row: dict[str, Any], source: str) -> dict[str, Any]:
     out = dict(row)
     out.setdefault("ledger_source", source)
+    status = str(out.get("status") or "").strip().lower()
     if out.get("telegram_sent") is True or str(out.get("publication_lifecycle_status") or "").lower() in {"telegram_sent", "sent", "published"}:
         out.setdefault("published", True)
-    status = str(out.get("status") or "").strip().lower()
     if status in {"published", "telegram_sent", "sent"} and not isinstance(out.get("settlement"), dict):
         out["status"] = "pending"
     stake = max(_as_float(out.get("stake")), _as_float(out.get("stake_amount")), _as_float(_nested(out, "bet_payload").get("stake")), _as_float(_nested(out, "bet_payload").get("stake_amount")))
@@ -328,7 +347,6 @@ def _patch(module: Any) -> dict[str, Any]:
     module.bet_date = bet_date_with_ledger
     module.settlement_date = settlement_date_with_ledger
 
-    # Force one read so the status file records duplicate diagnostics.
     try:
         unique_preview = tracked_bets_with_ledger()
     except Exception:
@@ -345,8 +363,10 @@ def _patch(module: Any) -> dict[str, Any]:
 
 
 def main() -> int:
+    ledger_sync = _sync_publication_ledger()
     module = _load_original()
     status = _patch(module)
+    status["publication_ledger_sync"] = ledger_sync
     _write_status(status)
     return int(module.main() or 0)
 

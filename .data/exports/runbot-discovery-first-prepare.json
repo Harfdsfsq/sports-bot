@@ -1,20 +1,20 @@
 {
-  "created_at_utc": "2026-06-13T19:45:42.011004+00:00",
-  "duration_seconds": 150.84,
+  "created_at_utc": "2026-06-14T22:25:47.488603+00:00",
+  "duration_seconds": 18.06,
   "final": {
-    "context_2plus_sources": 113,
-    "fixture_2plus_sources": 264,
-    "inventory_matches": 427,
-    "matrix_matches": 300,
-    "odds_2plus_sources": 230,
-    "ready_for_model": 92,
-    "ready_for_publish": 92
+    "context_2plus_sources": 25,
+    "fixture_2plus_sources": 82,
+    "inventory_matches": 98,
+    "matrix_matches": 98,
+    "odds_2plus_sources": 21,
+    "ready_for_model": 32,
+    "ready_for_publish": 21
   },
   "mode": "runbot_discovery_first_prepare_v1",
   "status": "ok",
   "steps": [
     {
-      "duration_seconds": 0.01,
+      "duration_seconds": 0.0,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
         "status": "skipped_existing_inventory"
@@ -22,88 +22,52 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 47.19,
+      "duration_seconds": 7.12,
+      "error": "UnicodeEncodeError: 'charmap' codec can't encode character '\\xe1' in position 795: character maps to <undefined>",
       "name": "pre_merge_sstats_crosswalk_v2",
-      "result_summary": {
-        "match_rate_pct": 75.33,
-        "matched": 226,
-        "mode": "sstats_crosswalk_probe_v2_full_matched"
-      },
-      "status": "ok"
+      "status": "error_ignored"
     },
     {
-      "duration_seconds": 20.69,
+      "duration_seconds": 2.95,
       "name": "provider_day_discovery_canonical_pool_v2",
       "result_summary": {
-        "canonical_matches": 354,
-        "canonical_with_2plus_primary_sources": 48,
-        "canonical_with_all_3_primary_sources": 1,
+        "canonical_matches": 0,
+        "canonical_with_2plus_primary_sources": 0,
+        "canonical_with_all_3_primary_sources": 0,
         "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 17.38,
+      "duration_seconds": 0.02,
+      "error": "PermissionError: [Errno 13] Permission denied: '.data\\\\day_inventory\\\\2026-06-15.json'",
       "name": "merge_discovery_pool_into_inventory",
-      "result_summary": {
-        "appended": 127,
-        "canonical_rows_seen": 354,
-        "inventory_matches_after": 427,
-        "matched_existing": 227,
-        "mode": "provider_day_discovery_inventory_merge_v2_full_pool",
-        "status": "ok"
-      },
-      "status": "ok"
+      "status": "error_ignored"
     },
     {
-      "duration_seconds": 46.95,
+      "duration_seconds": 7.02,
+      "error": "UnicodeEncodeError: 'charmap' codec can't encode character '\\xe1' in position 795: character maps to <undefined>",
       "name": "post_merge_sstats_crosswalk_v2",
-      "result_summary": {
-        "match_rate_pct": 75.33,
-        "matched": 226,
-        "mode": "sstats_crosswalk_probe_v2_full_matched"
-      },
-      "status": "ok"
+      "status": "error_ignored"
     },
     {
-      "duration_seconds": 0.18,
+      "duration_seconds": 0.02,
+      "error": "PermissionError: [Errno 13] Permission denied: '.data\\\\day_inventory\\\\latest.json'",
       "name": "apply_sstats_crosswalk_ids_to_inventory",
-      "result_summary": {
-        "applied": 226,
-        "inventory_matches": 427,
-        "matched_rows_seen": 226,
-        "mode": "sstats_crosswalk_inventory_apply_v1",
-        "status": "ok"
-      },
-      "status": "ok"
+      "status": "error_ignored"
     },
     {
-      "duration_seconds": 18.37,
+      "duration_seconds": 0.9,
+      "error": "PermissionError: [Errno 13] Permission denied: '.data\\\\day_inventory\\\\latest.json'",
       "name": "apply_sstats_deep_inventory_enrichment_v4",
-      "result_summary": {
-        "crosswalk_matched": 226,
-        "enriched_matches": 34,
-        "mode": "sstats_deep_inventory_enrichment_v4",
-        "request_count": 100,
-        "status": "ok"
-      },
-      "status": "ok"
+      "status": "error_ignored"
     },
     {
-      "duration_seconds": 0.06,
+      "duration_seconds": 0.02,
+      "error": "UnicodeEncodeError: 'charmap' codec can't encode character '\\xf4' in position 2808: character maps to <undefined>",
       "name": "build_source_aware_coverage_matrix",
-      "result_summary": {
-        "context_2plus_sources": 113,
-        "fixture_2plus_sources": 264,
-        "matches": 300,
-        "matrix_matches": 300,
-        "odds_2plus_sources": 230,
-        "ready_for_model": 92,
-        "ready_for_publish": 92,
-        "status": "ok"
-      },
-      "status": "ok"
+      "status": "error_ignored"
     }
   ]
 }

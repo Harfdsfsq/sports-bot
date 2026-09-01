@@ -18,8 +18,8 @@ def _load_module(path: Path, name: str):
 def test_controlled_fallback_b_tier_allows_single_bookmaker_contract(monkeypatch):
     mod = _load_module(Path("scripts/publish_controlled_fallback.py"), "publish_controlled_fallback_test")
     monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", "1")
-    monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", "1")
-    monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", "1")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", "2")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", "2")
     monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES", "false")
     monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM", "false")
     monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES", "false")
@@ -37,9 +37,9 @@ def test_controlled_fallback_b_tier_allows_single_bookmaker_contract(monkeypatch
         "odds": 1.91,
         "books_count": 1,
         "odds_sources_count": 0,
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
-        "confirmation_sources": ["sstats"],
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
+        "confirmation_sources": ["sstats", "bzzoiro"],
         "confidence": 72.0,
         "quality_score": 74.0,
         "quality_score_source": "raw",

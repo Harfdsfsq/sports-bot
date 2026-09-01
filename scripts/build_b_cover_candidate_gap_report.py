@@ -19,6 +19,21 @@ limited to rows with:
 
 It does not publish picks.  Controlled fallback still applies quality, value,
 xG, line movement, price-integrity and duplicate guards.
+
+Two defects were fixed in build_candidate_from_bucket.
+
+odds_sources_count was the literal 1.  Inventory rows enriched with SStats prices
+carry odds_sources ['odds_api_io', 'sstats'], and that evidence was discarded at
+promotion time, so tier A could never see two price sources no matter what the
+providers returned.  It is now derived from the offers in the bucket.  account1
+and account2 of odds-api.io collapse to one source on purpose: Bet365 and Unibet
+arrive through one vendor on one feed, and calling them two independent prices is
+how a single-source pick would get an A label.
+
+model_probability was market_probability * (1 + boost), i.e. there was no model.
+When real provider xG is available the totals probability now comes from a
+Poisson model on those goal rates, blended with the market because no pick has
+settled yet, and the sstats_xg hard-context token is claimed only in that case.
 """
 
 import csv
@@ -184,6 +199,98 @@ _NEUTRAL_CONTEXT_SOURCES = {
     'market', 'odds_api_io', 'line_history', 'ensemble', 'market_signal',
     'xg_model_context', 'form_context',
 }
+
+# Price-side labels that describe our own pipeline rather than a vendor that
+# actually quoted a price. Counting these as odds sources is what makes a
+# single-source pick look confirmed.
+_PSEUDO_ODDS_SOURCES = {
+    'raw_offer_artifacts', 'market', 'market_signal', 'market_implied', 'market_probability',
+    'day_inventory', 'dayinventory', 'inventory', 'line_history', 'ensemble', 'self_history',
+    'b_cover_market_promotion', 'a_cover_market_promotion', 'controlled_consensus_rescue',
+    'controlled_fallback', 'reserve', 'unknown', 'none', 'null',
+}
+
+_REAL_ODDS_PROVIDERS = {
+    'odds_api_io', 'sstats', 'bzzoiro', 'sportlogic', 'allsportsapi', 'oddsfeed',
+    'sportsbook_api', 'sportapi', 'freeapilivefootball',
+}
+
+
+def normalize_provider(value: Any) -> str:
+    """Collapse a raw source label to the vendor that served the price.
+
+    odds-api.io account1 and account2 collapse to one name deliberately.  They
+    are one vendor on one feed with different bookmaker filters, so Bet365 plus
+    Unibet is one price source, not two, and A-tier must not be reachable by
+    counting the same feed twice.
+    """
+    text = norm(value).replace(' ', '_').replace('.', '_')
+    if not text:
+        return ''
+    for prefix, canonical in (
+        ('odds_api_io', 'odds_api_io'),
+        ('oddsapiio', 'odds_api_io'),
+        ('oddsapi_io', 'odds_api_io'),
+        ('sstats', 'sstats'),
+        ('bzzoiro', 'bzzoiro'),
+        ('sportlogic', 'sportlogic'),
+        ('allsportsapi', 'allsportsapi'),
+        ('oddsfeed', 'oddsfeed'),
+    ):
+        if text.startswith(prefix):
+            return canonical
+    return text
+
+
+def bucket_odds_sources(rows: list[dict[str, Any]]) -> list[str]:
+    """Distinct price vendors that actually quoted this bucket.
+
+    The promoted candidate used to declare odds_sources_count = 1 as a literal,
+    so an inventory row already enriched to odds_sources ['odds_api_io',
+    'sstats'] still arrived at the guards as single-source.  That constant, not
+    the providers, is what kept tier_a_odds_sources_below_min:1/2 in the reports.
+    """
+    out: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for key in ('source', 'provider', 'provider_name', 'feed', 'odds_source', 'origin'):
+            name = normalize_provider(row.get(key))
+            if not name or name in _PSEUDO_ODDS_SOURCES:
+                continue
+            if name not in out:
+                out.append(name)
+            break
+    known = [name for name in out if name in _REAL_ODDS_PROVIDERS]
+    if known:
+        return known
+    # A price exists but its vendor is unlabelled. Report one unresolved source
+    # instead of inventing a vendor name or silently claiming two.
+    return ['unresolved_price_source']
+
+
+def poisson_under_probability(lambda_total: float, point: float) -> float | None:
+    """P(total goals < point) from a Poisson total, half lines only.
+
+    Integer lines push on an exact total and need two-way renormalization; that
+    is not worth guessing while no pick has settled.
+    """
+    try:
+        lam = float(lambda_total)
+        line = float(point)
+    except Exception:
+        return None
+    if not math.isfinite(lam) or not math.isfinite(line) or lam <= 0 or line <= 0:
+        return None
+    if abs(abs(line - math.floor(line)) - 0.5) > 1e-9:
+        return None
+    k_max = int(math.floor(line))
+    if k_max > 20 or lam > 12.0:
+        return None
+    total = 0.0
+    for k in range(0, k_max + 1):
+        total += math.exp(-lam) * (lam ** k) / math.factorial(k)
+    return max(0.0, min(1.0, total))
 
 
 def _context_hint(row: dict[str, Any]) -> bool:
@@ -359,6 +466,29 @@ def xg_values(row: dict[str, Any]) -> tuple[float | None, float | None]:
 def has_xg(row: dict[str, Any]) -> bool:
     h, a = xg_values(row)
     return h is not None and a is not None
+
+
+def provider_xg_source(row: dict[str, Any]) -> str:
+    """The provider-extraction label for this row's xG, or '' if there is none.
+
+    Only SStats deep enrichment sets sstats_xg_source, and it sets it to
+    existing_inventory or missing when its own extraction failed.  Market-implied
+    xG is excluded here: it is derived from the price being bet against and it
+    arrives as an exact home == away split, which is not evidence about the teams.
+    """
+    source = norm(row.get('sstats_xg_source')).replace(' ', '_')
+    if source in {'', 'existing_inventory', 'missing'}:
+        return ''
+    if 'market' in source or 'proxy' in source:
+        return ''
+    home = float_or_none(row.get('sstats_expected_home'))
+    away = float_or_none(row.get('sstats_expected_away'))
+    if home is None or away is None:
+        return ''
+    if abs(home - away) <= 1e-6:
+        # The market-implied backfill writes an exact 50/50 split.
+        return ''
+    return source
 
 
 def _rows_from_payload(payload: Any) -> list[dict[str, Any]]:
@@ -658,6 +788,7 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
     books = sorted(str(x) for x in (bucket.get('books') or set()) if str(x))
     prices = [as_price(r.get('price') or r.get('odds') or r.get('decimal_odds') or r.get('selected_odds')) for r in rows]
     prices = [p for p in prices if p is not None]
+    odds_sources = bucket_odds_sources(rows)
     min_books = env_int('PROMOTE_B_COVER_MIN_BOOKS', 1, 1)
     if len(books) < min_books:
         return None, 'promotion_skip_books_below_min'
@@ -689,6 +820,11 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         return None, 'promotion_skip_bad_point'
     selection_ru = 'Больше' if sel == 'over' else 'Меньше'
 
+    h_xg, a_xg = xg_values(inv_row)
+    require_xg = env_bool('PROMOTE_B_COVER_REQUIRE_XG_FOR_TOTALS', False)
+    if require_xg and (h_xg is None or a_xg is None):
+        return None, 'promotion_skip_missing_xg'
+
     # Conservative market-consensus probability: median price is treated as the
     # fair market anchor, then a very small boost is allowed only for non-outlier
     # best-vs-median edge and multi-book/context coverage. Final fallback still
@@ -700,8 +836,36 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
     # final fallback review, but keep the boost small so weak rows still fail final EV/edge.
     boost_pct += min(0.8, max(0, len(books) - 1) * 0.20)
     ctx_sources = context_sources(inv_row)
+    if h_xg is None or a_xg is None:
+        ctx_sources = [src for src in ctx_sources if src != 'model_xg']
     boost_pct += min(1.0, max(1, len(ctx_sources)) * 0.25)
     adjusted = max(0.02, min(0.95, market_prob * (1.0 + boost_pct / 100.0)))
+
+    # A real model, used only when provider xG exists. Until then the number
+    # above is a market anchor with a small boost, which is not a model at all:
+    # its edge is measured against the same price it is derived from. That is the
+    # market_signal segment, and it runs at -11.64% ROI over 39 picks.
+    model_mode = 'conservative_median_market_anchor'
+    poisson_prob = None
+    model_weight = None
+    xg_source = provider_xg_source(inv_row)
+    if xg_source and h_xg is not None and a_xg is not None:
+        under_prob = poisson_under_probability(float(h_xg) + float(a_xg), point)
+        if under_prob is not None:
+            poisson_prob = under_prob if sel == 'under' else 1.0 - under_prob
+            gap_pp = abs(poisson_prob - market_prob) * 100.0
+            if gap_pp > env_float('PROMOTE_B_COVER_MAX_MODEL_MARKET_GAP_PP', 15.0):
+                # A gap this wide is almost always broken goal rates rather than
+                # a real edge the whole market missed.
+                return None, 'promotion_skip_model_market_gap_implausible'
+            model_weight = min(1.0, max(0.0, env_float('PROMOTE_B_COVER_MODEL_WEIGHT', 0.5)))
+            adjusted = max(0.02, min(0.95, poisson_prob * model_weight + market_prob * (1.0 - model_weight)))
+            model_mode = 'poisson_provider_xg_blended_with_market'
+            # Claim the hard-context token only here: the model actually consumed
+            # provider xG for this pick.
+            if 'sstats_xg' not in ctx_sources:
+                ctx_sources = ctx_sources + ['sstats_xg']
+
     implied = 1.0 / best_price
     edge_pp = (adjusted - implied) * 100.0
     ev_pct = (adjusted * best_price - 1.0) * 100.0
@@ -710,16 +874,12 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
     if ev_pct < env_float('PROMOTE_B_COVER_MIN_EV_PCT', 0.7):
         return None, 'promotion_skip_ev_below_min'
 
-    h_xg, a_xg = xg_values(inv_row)
-    require_xg = env_bool('PROMOTE_B_COVER_REQUIRE_XG_FOR_TOTALS', False)
-    if require_xg and (h_xg is None or a_xg is None):
-        return None, 'promotion_skip_missing_xg'
-
     confidence = 58.0
     confidence += min(8.0, len(books) * 1.8)
     confidence += min(6.0, len(ctx_sources) * 1.5)
     confidence += min(6.0, max(0.0, ev_pct) * 0.45)
     confidence += 3.0 if h_xg is not None and a_xg is not None else 0.0
+    confidence += 2.0 if poisson_prob is not None else 0.0
     confidence = round(max(50.0, min(82.0, confidence)), 3)
     publication_score = round(max(0.0, ev_pct * 1.15 + edge_pp * 2.0 + min(len(books), 4) * 1.2 + min(len(ctx_sources), 3) * 1.1), 3)
 
@@ -755,7 +915,8 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         'bookmaker': selected_book,
         'books_count': len(books),
         'sources_count': max(1, len(ctx_sources)),
-        'odds_sources_count': 1,
+        'odds_sources': odds_sources,
+        'odds_sources_count': len(odds_sources),
         'confirmation_sources_count': max(1, len(ctx_sources)),
         'confirmation_sources': ctx_sources,
         'market_probability': round(market_prob, 6),
@@ -769,8 +930,9 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         'edge_pct': round(edge_pp, 3),
         'reasons': [
             'mode=b_cover_market_promotion',
-            'model=conservative_median_market_anchor',
+            f'model={model_mode}',
             f'books={len(books)}',
+            f'odds_sources={len(odds_sources)}',
             f'context_sources={len(ctx_sources)}',
             f'best_vs_median={best_vs_median_pct:.2f}%',
         ],
@@ -780,6 +942,8 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
             'bookmaker': selected_book,
             'books': books,
             'books_count': len(books),
+            'odds_sources': odds_sources,
+            'odds_sources_count': len(odds_sources),
             'prices': [round(p, 4) for p in prices[:50]],
             'median_price': round(median_price, 4),
             'selected_vs_median_deviation_pct': round(deviation_pct, 3),
@@ -800,7 +964,19 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
                 'selected_vs_median_deviation_pct': round(deviation_pct, 3),
                 'canonical_edge_pp': round(edge_pp, 3),
                 'canonical_ev_pct': round(ev_pct, 3),
-            }
+                'odds_sources': odds_sources,
+                'odds_sources_count': len(odds_sources),
+            },
+            'model': {
+                'mode': model_mode,
+                'market_probability': round(market_prob, 6),
+                'poisson_probability': round(poisson_prob, 6) if poisson_prob is not None else None,
+                'blended_probability': round(adjusted, 6),
+                'model_weight': model_weight,
+                'provider_xg_source': xg_source or None,
+                'lambda_home': h_xg,
+                'lambda_away': a_xg,
+            },
         },
     }
     return candidate, 'promoted'
@@ -857,6 +1033,11 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
             reasons['promotion_zero_inventory_rows'] += 1
         else:
             reasons['promotion_zero_b_cover_rows_after_local_counting'] += 1
+    model_modes = Counter(
+        str(((cand.get('diagnostics') or {}).get('model') or {}).get('mode') or 'unknown')
+        for cand in promoted
+    )
+    odds_source_histogram = Counter(str(count_any(cand.get('odds_sources'))) for cand in promoted)
     report = {
         'enabled': True,
         'status': 'ok',
@@ -865,6 +1046,8 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
         'inventory_rows_seen': len(inventory),
         'considered_b_cover_rows': considered,
         'promoted_count': len(promoted),
+        'promoted_model_modes': dict(model_modes.most_common()),
+        'promoted_odds_sources_histogram': dict(odds_source_histogram.most_common()),
         'reason_counts': dict(reasons.most_common()),
         'offer_diagnostics': offer_diag,
         'sample': promoted[:12],
@@ -982,6 +1165,7 @@ def main() -> int:
                 'books_count': b,
                 'context_count': c,
                 'has_xg_like_context': has_xg(row),
+                'provider_xg_source': provider_xg_source(row) or '',
                 'has_candidate_in_latest_run': has_candidate,
                 'gap_reason': reason,
             })
@@ -994,6 +1178,7 @@ def main() -> int:
         'candidate_rows_seen_before_promotion': len(cands_initial),
         'b_cover_rows': b_cover,
         'b_cover_without_candidate': sum(1 for r in rows_out if r['gap_reason'].startswith('b_cover_no_candidate')),
+        'provider_xg_rows': sum(1 for r in rows_out if r.get('provider_xg_source')),
         'reason_counts': dict(reasons.most_common()),
         'promotion': {**promotion, 'inventory_load': inventory_load} if isinstance(promotion, dict) else promotion,
         'promoted_count': int((promotion or {}).get('promoted_count') or 0) if isinstance(promotion, dict) else 0,
@@ -1002,7 +1187,7 @@ def main() -> int:
     write_json(REPORT_JSON, report)
     REPORT_CSV.parent.mkdir(parents=True, exist_ok=True)
     with REPORT_CSV.open('w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=['match_key', 'home_team', 'away_team', 'kickoff', 'books_count', 'context_count', 'has_xg_like_context', 'has_candidate_in_latest_run', 'gap_reason'])
+        writer = csv.DictWriter(f, fieldnames=['match_key', 'home_team', 'away_team', 'kickoff', 'books_count', 'context_count', 'has_xg_like_context', 'provider_xg_source', 'has_candidate_in_latest_run', 'gap_reason'])
         writer.writeheader()
         writer.writerows(rows_out)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
