@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-"""Native startup/preflight layer for production prediction runs.
+"""Deterministic production preflight.
 
-The older codebase grew a long monkey-patch startup chain.  This module keeps
-critical run preparation in normal, testable code and treats legacy runtime
-extensions as optional compatibility hooks instead of the source of truth.
+Deployment configuration is the source of truth. This module fills missing
+values but never silently replaces workflow values. In particular, the
+rules-compliant B tier remains publishable.
 """
 
 import json
 import logging
 import os
-from importlib import import_module
 from dataclasses import dataclass, field
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 
@@ -19,205 +19,88 @@ from app.services.day_inventory_preflight import repair_runtime_json_files
 
 logger = logging.getLogger(__name__)
 
-
-SAFE_RUNTIME_DEFAULTS = {
-    "PUBLISH_ALLOW_B_TIER": "false",
-    "PUBLISH_COVERAGE_TIER_MODE": "strict_a",
-    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "false",
+SAFE_RUNTIME_DEFAULTS: dict[str, str] = {
+    "PUBLICATION_PROFILE": "rules_ab",
+    "PUBLISH_ALLOW_B_TIER": "true",
+    "PUBLISH_COVERAGE_TIER_MODE": "a_or_b",
+    "HARIZON_PUBLICATION_TIER_MODE": "a_or_b",
+    "PUBLISH_TIER_A_MIN_BOOKS": "2",
+    "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_BOOKS": "2",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "1",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
+    "PUBLISH_MIN_BOOKS": "2",
+    "MIN_BOOKS_PUBLISH": "2",
+    "PUBLISH_MIN_ODDS_SOURCES": "1",
+    "MIN_SOURCES_PUBLISH": "1",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "1",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "1",
     "STRICT_PRICE_INTEGRITY_ENABLED": "true",
-    "STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES": "2",
+    "STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES": "1",
     "STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS": "2",
+    "MIN_BOOKS_FOR_CONSENSUS": "2",
     "PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION": "true",
     "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
-    "MIN_BOOKS_FOR_CONSENSUS": "2",
-    "MIN_BOOKS_PUBLISH": "2",
-    "PUBLISH_MIN_BOOKS": "2",
-    "MIN_SOURCES_PUBLISH": "2",
-    "PUBLISH_MIN_ODDS_SOURCES": "2",
-    "MIN_CONTEXT_SOURCES_PUBLISH": "2",
-    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
-    "MARKET_DERIVED_MIN_BOOKS": "2",
-    "MARKET_DERIVED_MIN_SOURCES": "2",
+    "ODDS_SOURCE_INDEPENDENCE_ENABLED": "true",
+    "BOOKMAKER_QUORUM_ENABLED": "true",
+    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "true",
     "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
+    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "false",
     "CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY": "true",
     "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "true",
-    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
-    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
-    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "2",
-    "TELEGRAM_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "1",
+    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "1",
+    "TELEGRAM_MIN_ODDS_SOURCES": "1",
     "HARIZON_TELEGRAM_PICK_SAFETY_ENABLED": "true",
     "TELEGRAM_BLOCK_C_SIGNAL_PROFILE": "true",
-    "TELEGRAM_BLOCK_SINGLE_SOURCE_NON_CORE": "true",
-    "FALLBACK_PUBLISH_MODE_ENABLED": "false",
-    "MODEL_RELAXED_FALLBACK_ENABLED": "false",
-    "FORCE_PUBLISH_WHEN_EMPTY_ENABLED": "false",
-    "QUALITY_EMERGENCY_PUBLISH_ENABLED": "false",
-    "QUALITY_LAST_RESORT_PUBLISH_ENABLED": "false",
-    "HISTORICAL_SEGMENT_RELIEF_ENABLED": "false",
-    "MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS": "1.45",
-    "MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS": "3",
-    "MATCH_TOTAL_OVER15_ABSOLUTE_PRICE_GUARD_ENABLED": "true",
-    "MATCH_TOTAL_OVER15_ABSOLUTE_MAX_ODDS": "1.55",
-    "ENABLE_QUARTER_TOTAL_LINES": "true",
-    "QUARTER_TOTAL_MIN_BOOKS": "2",
-}
-
-
-# This policy is intentionally authoritative. The project is now operated in an
-# autonomous accumulation phase: weak candidates are collected as shadow data,
-# while Telegram/publication remains strict A-tier. Reapplying it after runtime
-# installers prevents older compatibility patches from silently reducing 2+ to 1.
-AUTONOMOUS_ACCUMULATION_POLICY = {
-    "HARIZON_AUTONOMOUS_ACCUMULATION_MODE": "true",
-    "AUTONOMOUS_ACCUMULATION_LEDGER_ENABLED": "true",
-    "AUTONOMOUS_PUBLIC_MODEL_MODES": "xg_total,xg_spread",
-    "AUTONOMOUS_PUBLIC_FAMILIES": "totals,spreads",
-    "AUTONOMOUS_MIN_MODEL_EDGE_PP": "1.0",
-    "AUTONOMOUS_MAX_MODEL_EDGE_PP": "12.0",
-    "AUTONOMOUS_MIN_POST_SHRINK_EV_PCT": "1.5",
-    "AUTONOMOUS_MIN_CONFIDENCE": "55.0",
-    "AUTONOMOUS_MAX_PROVIDER_CONFLICT_SCORE": "0.45",
-    "PUBLISH_ALLOW_B_TIER": "false",
-    "PUBLISH_COVERAGE_TIER_MODE": "strict_a",
-    "HARIZON_PUBLICATION_TIER_MODE": "a_only",
-    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "false",
-    "PUBLISH_MIN_BOOKS": "2",
-    "MIN_BOOKS_PUBLISH": "2",
-    "PUBLISH_MIN_ODDS_SOURCES": "2",
-    "MIN_SOURCES_PUBLISH": "2",
-    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
-    "MIN_CONTEXT_SOURCES_PUBLISH": "2",
-    "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
-    "PUBLISH_TIER_A_MIN_BOOKS": "2",
-    "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
-    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
-    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
-    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "2",
-    "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY": "true",
-    "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "true",
-    "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
-    "PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION": "true",
-    "FALLBACK_PUBLISH_MODE_ENABLED": "false",
-    "MODEL_RELAXED_FALLBACK_ENABLED": "false",
-    "FORCE_PUBLISH_WHEN_EMPTY_ENABLED": "false",
-    "QUALITY_EMERGENCY_PUBLISH_ENABLED": "false",
-    "QUALITY_LAST_RESORT_PUBLISH_ENABLED": "false",
-    "HISTORICAL_SEGMENT_RELIEF_ENABLED": "false",
-    # Discovery/coverage: all 300 matches are retained and enriched cumulatively.
+    "TELEGRAM_BLOCK_SINGLE_SOURCE_NON_CORE": "false",
+    "PUBLISH_REQUIRE_LINE_MOVEMENT": "true",
+    "LINE_MOVEMENT_MIN_SNAPSHOTS": "2",
+    "LINE_MOVEMENT_MIN_MINUTES_BETWEEN_SNAPSHOTS": "8",
+    "LINE_MOVEMENT_MAX_STALE_MINUTES": "360",
+    "LINE_MOVEMENT_ALLOW_LAST_CHANCE_SINGLE_SNAPSHOT": "true",
+    "LINE_MOVEMENT_LAST_CHANCE_MINUTES_TO_KICKOFF": "45",
+    "FINAL_ENRICHMENT_ONLY_FOR_VALUE_CANDIDATES": "true",
+    "FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT": "0",
     "DAY_INVENTORY_TARGET_SIZE": "300",
     "DAY_INVENTORY_MAX_MATCHES": "300",
-    "DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES": "300",
-    "DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES": "300",
-    "MAX_MATCHES_FOR_ODDS_FETCH": "300",
-    "ANALYSIS_MATCH_CAP_PER_RUN": "300",
-    "DAILY_ANALYSIS_MATCH_LIMIT": "300",
-    "CONTEXT_ENRICHMENT_MATCH_LIMIT": "300",
-    "DIAGNOSTICS_MATCH_LIMIT": "300",
+    "DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE": "true",
     "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
-    "DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED": "true",
-    "DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT": "300",
-    "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
-    "DAY_INVENTORY_NEAR_WINDOW_HOURS": "24",
-    "NEAR_WINDOW_CONTEXT_PRIORITY_ENABLED": "true",
-    "NEAR_WINDOW_CONTEXT_HOURS": "24",
-    "NEAR_WINDOW_CONTEXT_MIN_MATCHES": "64",
-    "NEAR_WINDOW_PROVIDER_CONTEXT_MIN_MATCHES": "48",
-    # odds-api.io free quota is per account, so two configured accounts may each
-    # use up to 100 requests in the hourly window.
-    "ODDS_API_IO_MAX_REQUESTS_PER_RUN": "200",
-    "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "200",
-    "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
-    "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "100",
-    "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "10",
-    "ODDS_API_IO_PAGE_LIMIT": "100",
-    # Primary contexts.
-    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "200",
-    "BZZOIRO_MAX_REQUESTS_PER_RUN": "200",
-    "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
-    "BZZOIRO_V2_MATCH_LIMIT": "300",
-    "BZZOIRO_V2_MAX_HTTP_REQUESTS_PER_RUN": "200",
-    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150",
-    "SSTATS_MAX_REQUESTS_PER_RUN": "150",
-    "SSTATS_CONTEXT_MATCH_LIMIT": "300",
-    "SSTATS_DEEP_ENRICHMENT_ENABLED": "true",
-    "SSTATS_DEEP_DETAIL_LIMIT_PER_RUN": "80",
-    "SSTATS_GAME_DETAIL_LIMIT_PER_RUN": "8",
-    "SSTATS_ODDS_RESCUE_LIMIT_PER_RUN": "120",
-    "SSTATS_ODDS_RESCUE_ONLY_IF_ODDS_SOURCES_LT": "2",
-    # SportLogic free plan is 500/day. Thirty per regular run plus a separate
-    # inventory reserve keeps twelve two-hour runs below the daily ceiling.
-    "SPORTLOGIC_ENABLED": "true",
-    "ENABLE_SPORTLOGIC": "true",
-    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "30",
-    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "30",
-    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "30",
-    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "30",
-    "SPORTLOGIC_MATCH_LIMIT": "100",
-    "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "100",
-    "SPORTLOGIC_ODDS_MATCH_LIMIT": "30",
-    "DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS": "80",
-    "DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT": "300",
-    # Keep weak modes for shadow/backtest accumulation; the native autonomous
-    # publication guard excludes them from public picks.
-    "MARKET_DERIVED_CANDIDATES_ENABLED": "true",
-    "SIMPLE_MARKET_FALLBACK_ENABLED": "true",
-    "PARTIAL_CONTEXT_MARKET_FALLBACK_ENABLED": "true",
-    "MARKET_DERIVED_MIN_BOOKS": "2",
-    "MARKET_DERIVED_MIN_SOURCES": "2",
+    "FALLBACK_PUBLISH_MODE_ENABLED": "false",
+    "MODEL_RELAXED_FALLBACK_ENABLED": "false",
+    "FORCE_PUBLISH_WHEN_EMPTY_ENABLED": "false",
+    "QUALITY_EMERGENCY_PUBLISH_ENABLED": "false",
+    "QUALITY_LAST_RESORT_PUBLISH_ENABLED": "false",
+    "HISTORICAL_SEGMENT_RELIEF_ENABLED": "false",
+    "NO_BET_QUALITY_SCORE_ENABLED": "false",
+    "FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED": "false",
+    "HARIZON_AUTONOMOUS_ACCUMULATION_MODE": "false",
+    "LEGACY_RUNTIME_EXTENSIONS_ENABLED": "false",
 }
 
-
 DISCOVERY_FIRST_DEFAULTS = {
-    "HARIZON_PROVIDER_TIER_STRATEGY_VERSION": "primary-three-v2-autonomous-coverage",
     "HARIZON_PRIMARY_PROVIDERS": "odds_api_io,bzzoiro,sstats,sportlogic",
     "HARIZON_SUPPLEMENTAL_API_MODE": "top_pick_backfill_only",
     "SUPPLEMENTAL_PROVIDERS_REQUIRE_SHORTLIST": "true",
     "SUPPLEMENTAL_PROVIDERS_REQUIRE_MISSING_ROLE": "true",
-    "SUPPLEMENTAL_BACKFILL_AFTER_PRIMARY_SHORTLIST": "true",
-    "ODDS_API_IO_MAX_REQUESTS_PER_RUN": "200",
-    "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "200",
-    "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
-    "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "100",
-    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "200",
-    "BZZOIRO_MAX_REQUESTS_PER_RUN": "200",
-    "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
-    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150",
-    "SSTATS_MAX_REQUESTS_PER_RUN": "150",
-    "SSTATS_CONTEXT_MATCH_LIMIT": "300",
-    "SSTATS_DEEP_ENRICHMENT_ENABLED": "true",
-    "SSTATS_DEEP_DETAIL_LIMIT_PER_RUN": "80",
-    "SSTATS_GAME_DETAIL_LIMIT_PER_RUN": "8",
-    "SSTATS_ODDS_RESCUE_LIMIT_PER_RUN": "120",
-    "SSTATS_ODDS_RESCUE_ONLY_IF_ODDS_SOURCES_LT": "2",
     "PROVIDER_DAY_DISCOVERY_MAX_SECONDS": "120",
     "PROVIDER_DAY_DISCOVERY_TIMEOUT_SECONDS": "16",
     "PROVIDER_DAY_DISCOVERY_CONCURRENCY": "5",
-    "PROVIDER_DAY_DISCOVERY_MIN_SCORE": "0.74",
-    "SPORTLOGIC_ENABLED": "true",
-    "ENABLE_SPORTLOGIC": "true",
-    "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "30",
-    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "30",
-    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "30",
-    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "30",
-    "SPORTLOGIC_MATCH_LIMIT": "100",
 }
 
-
+# Compatibility export only; this policy is no longer applied authoritatively.
+AUTONOMOUS_ACCUMULATION_POLICY = SAFE_RUNTIME_DEFAULTS
 LEGACY_DIRECT_INSTALLERS = (
     ("app.services.sstats_bzzoiro_odds_merge_patch", "install"),
     ("app.services.candidate_value_final_reinstall", "install"),
 )
-
 LEGACY_FINAL_INSTALLERS = (
     ("app.services.bzzoiro_exact_offer_bridge_patch", "install"),
     ("app.services.candidate_factory_runtime_diagnostics", "install"),
 )
-
 
 @dataclass
 class PreflightReport:
@@ -226,13 +109,9 @@ class PreflightReport:
     discovery_first: dict[str, Any] = field(default_factory=dict)
     legacy_extensions: dict[str, Any] = field(default_factory=dict)
 
-
 def _truthy(value: Any, default: bool = False) -> bool:
     raw = str(value if value is not None else "").strip().lower()
-    if not raw:
-        return default
-    return raw in {"1", "true", "yes", "on", "force"}
-
+    return default if not raw else raw in {"1", "true", "yes", "on", "force"}
 
 def setdefault_env(values: dict[str, str]) -> int:
     applied = 0
@@ -242,15 +121,14 @@ def setdefault_env(values: dict[str, str]) -> int:
             applied += 1
     return applied
 
-
 def apply_authoritative_env(values: dict[str, str]) -> int:
+    """Backward-compatible helper; production preflight never calls it."""
     changed = 0
     for key, value in values.items():
         if os.getenv(key) != value:
             os.environ[key] = value
             changed += 1
     return changed
-
 
 class RuntimePreflight:
     def __init__(self, settings: Any | None = None, *, export_dir: str | Path = ".data/exports") -> None:
@@ -259,58 +137,24 @@ class RuntimePreflight:
 
     def apply_safe_defaults(self) -> int:
         applied = setdefault_env(SAFE_RUNTIME_DEFAULTS)
-        if _truthy(os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True):
-            applied += apply_authoritative_env(AUTONOMOUS_ACCUMULATION_POLICY)
         self._install_native_integrity_hooks()
-        # Older compatibility installers can write legacy B-tier/one-source env.
-        # Reapply once after installation, before Settings is created.
-        if _truthy(os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True):
-            applied += apply_authoritative_env(AUTONOMOUS_ACCUMULATION_POLICY)
         return applied
 
     def apply_phase_policy(self, phase: str = "run-once") -> dict[str, Any]:
-        """Apply lightweight command-phase policy before Settings is created.
-
-        `app.cli` calls this hook before `get_settings()` so env-driven runtime
-        contracts are visible to Pydantic/settings loading.  The method must stay
-        cheap and non-fatal: the expensive discovery/context work is still done by
-        `run_before_prediction()` after settings are loaded.
-
-        This method intentionally exists as a stable compatibility hook.  A missing
-        hook crashed run-bot before `PredictionRunner` started, which made reports
-        show line_guard=0 and skipped controlled fallback even though A/B-tier
-        coverage was present.
-        """
         payload: dict[str, Any] = {
-            "stage": "phase_policy",
-            "phase": str(phase or "run-once"),
-            "safe_defaults_applied": 0,
-            "runtime_json_repair": {},
-            "status": "ok",
+            "stage": "phase_policy", "phase": str(phase or "run-once"),
+            "safe_defaults_applied": 0, "runtime_json_repair": {}, "status": "ok",
         }
         try:
             payload["safe_defaults_applied"] = self.apply_safe_defaults()
-            payload["autonomous_accumulation_mode"] = _truthy(
-                os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True
-            )
         except Exception as exc:
-            payload["status"] = "safe_defaults_error_ignored"
-            payload["safe_defaults_error"] = f"{type(exc).__name__}: {exc}"
-            logger.warning("phase policy safe defaults failed; continuing: %s: %s", type(exc).__name__, exc)
+            payload.update(status="safe_defaults_error_ignored", safe_defaults_error=f"{type(exc).__name__}: {exc}")
         try:
             repair_runtime_json_files()
             payload["runtime_json_repair"] = {"status": "ok"}
         except Exception as exc:
             payload["runtime_json_repair"] = {"status": "error_ignored", "error": f"{type(exc).__name__}: {exc}"}
-            logger.warning("phase policy runtime JSON repair failed; continuing: %s: %s", type(exc).__name__, exc)
-        try:
-            self.export_dir.mkdir(parents=True, exist_ok=True)
-            (self.export_dir / "latest-runtime-phase-policy.json").write_text(
-                json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
-        except Exception:
-            logger.debug("failed to write runtime phase policy report", exc_info=True)
+        self._write_json("latest-runtime-phase-policy.json", payload)
         return payload
 
     def prepare_discovery_first_inventory(self) -> dict[str, Any]:
@@ -318,18 +162,13 @@ class RuntimePreflight:
             return {"enabled": False, "reason": "disabled"}
         if os.getenv("RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING") == "1":
             return {"enabled": True, "status": "skipped_reentrant"}
-
         os.environ["RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING"] = "1"
         setdefault_env(DISCOVERY_FIRST_DEFAULTS)
-        if _truthy(os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True):
-            apply_authoritative_env(AUTONOMOUS_ACCUMULATION_POLICY)
         try:
             from scripts import runbot_discovery_first_prepare
-
-            result = runbot_discovery_first_prepare.main()
-            return {"enabled": True, "status": "ok", "result": result}
+            return {"enabled": True, "status": "ok", "result": runbot_discovery_first_prepare.main()}
         except Exception as exc:
-            logger.warning("discovery-first runbot preparation failed; continuing run-once: %s: %s", type(exc).__name__, exc)
+            logger.warning("discovery-first preparation failed; continuing: %s", exc)
             return {"enabled": True, "status": "error_ignored", "error": f"{type(exc).__name__}: {exc}"}
         finally:
             os.environ.pop("RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING", None)
@@ -337,17 +176,14 @@ class RuntimePreflight:
     def install_legacy_runtime_extensions(self, stage: str = "pre_runner") -> dict[str, Any]:
         if not _truthy(os.getenv("LEGACY_RUNTIME_EXTENSIONS_ENABLED"), False):
             return {"enabled": False, "reason": "disabled"}
-
         results: dict[str, Any] = {}
         for module_path, attr in LEGACY_DIRECT_INSTALLERS:
             results[module_path] = self._run_installer(module_path, attr, stage)
         try:
             from app.services import runtime_startup_chain
-
             results["app.services.runtime_startup_chain"] = runtime_startup_chain.install_all()
         except Exception as exc:
             results["app.services.runtime_startup_chain"] = f"{type(exc).__name__}: {exc}"
-            logger.warning("runtime startup chain install failed at %s: %s: %s", stage, type(exc).__name__, exc)
         for module_path, attr in LEGACY_FINAL_INSTALLERS:
             results[f"{module_path}:final"] = self._run_installer(module_path, attr, stage)
         return {"enabled": True, "stage": stage, "results": results}
@@ -357,40 +193,35 @@ class RuntimePreflight:
         report.safe_defaults_applied = self.apply_safe_defaults()
         try:
             repair_runtime_json_files()
-        except Exception as exc:
-            logger.warning("runtime JSON preflight repair failed; continuing: %s: %s", type(exc).__name__, exc)
+        except Exception:
+            logger.warning("runtime JSON repair failed", exc_info=True)
         report.discovery_first = self.prepare_discovery_first_inventory()
-        try:
-            repair_runtime_json_files()
-        except Exception as exc:
-            logger.warning("post-discovery runtime JSON repair failed; continuing: %s: %s", type(exc).__name__, exc)
         report.legacy_extensions = self.install_legacy_runtime_extensions(stage=stage)
         self.write_report(report)
         return report
 
     def write_report(self, report: PreflightReport) -> None:
+        keys = ("PUBLISH_ALLOW_B_TIER", "PUBLISH_TIER_A_MIN_ODDS_SOURCES", "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", "PUBLISH_TIER_B_MIN_ODDS_SOURCES", "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", "MIN_BOOKS_PUBLISH", "FINAL_ENRICHMENT_FALLBACK_NEAREST_MATCH_LIMIT")
+        self._write_json("latest-runtime-preflight.json", {
+            "stage": report.stage,
+            "safe_defaults_applied": report.safe_defaults_applied,
+            "publication_profile": os.getenv("PUBLICATION_PROFILE", "rules_ab"),
+            "effective_contract": {key: os.getenv(key) for key in keys},
+            "discovery_first": report.discovery_first,
+            "legacy_extensions": report.legacy_extensions,
+        })
+
+    def _write_json(self, name: str, payload: dict[str, Any]) -> None:
         try:
             self.export_dir.mkdir(parents=True, exist_ok=True)
-            payload = {
-                "stage": report.stage,
-                "safe_defaults_applied": report.safe_defaults_applied,
-                "autonomous_accumulation_mode": _truthy(
-                    os.getenv("HARIZON_AUTONOMOUS_ACCUMULATION_MODE"), True
-                ),
-                "discovery_first": report.discovery_first,
-                "legacy_extensions": report.legacy_extensions,
-            }
-            (self.export_dir / "latest-runtime-preflight.json").write_text(
-                json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
+            (self.export_dir / name).write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         except Exception:
-            logger.debug("failed to write runtime preflight report", exc_info=True)
+            logger.debug("failed to write preflight report", exc_info=True)
 
     @staticmethod
     def _install_native_integrity_hooks() -> None:
+        # Excludes autonomous/focused-alpha patches that replace the A/B contract.
         for module_path in (
-            "app.services.core_coverage_quota_runtime_override",
             "app.services.inventory_coverage_source_runtime_patch",
             "app.services.near_window_priority_runtime_patch",
             "app.services.api_runtime_enhancements",
@@ -398,9 +229,6 @@ class RuntimePreflight:
             "app.services.quality_stage_gate",
             "app.providers.odds_api_io_startup_compat",
             "scripts.telegram_controlled_pick_safety",
-            # Must be last: it wraps the final candidate/quality functions and
-            # records both public-safe and shadow candidates.
-            "app.services.autonomous_accumulation_runtime",
         ):
             try:
                 module = import_module(module_path)
@@ -414,8 +242,7 @@ class RuntimePreflight:
     def _run_installer(module_path: str, attr: str, stage: str) -> Any:
         try:
             module = import_module(module_path)
-            installer = getattr(module, attr)
-            return installer()
+            return getattr(module, attr)()
         except Exception as exc:
-            logger.warning("legacy runtime extension failed at %s: %s: %s: %s", stage, module_path, type(exc).__name__, exc)
+            logger.warning("legacy extension failed at %s: %s", stage, module_path)
             return f"{type(exc).__name__}: {exc}"
