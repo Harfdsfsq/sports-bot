@@ -1,6 +1,8 @@
 name: run-bot
 
 on:
+  schedule:
+    - cron: "0 1-23/2 * * *" # Every 2 hours in Europe/Moscow.
   workflow_dispatch:
     inputs:
       mode:
@@ -30,20 +32,22 @@ jobs:
       PUBLISH_DRY_RUN: "false"
       PUBLISH_ALLOW_B_TIER: "true"
       PUBLISH_COVERAGE_TIER_MODE: "hybrid"
-      MIN_BOOKS_PUBLISH: "1"
-      PUBLISH_MIN_BOOKS: "1"
+      MIN_BOOKS_PUBLISH: "2"
+      PUBLISH_MIN_BOOKS: "2"
+      PUBLISH_TIER_A_MIN_ODDS_SOURCES: "2"
       PUBLISH_TIER_A_MIN_BOOKS: "2"
       PUBLISH_TIER_A_MIN_CONTEXT_SOURCES: "2"
-      PUBLISH_TIER_B_MIN_BOOKS: "1"
-      PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "1"
-      MIN_SOURCES_PUBLISH: "1"
+      PUBLISH_TIER_B_MIN_ODDS_SOURCES: "2"
+      PUBLISH_TIER_B_MIN_BOOKS: "2"
+      PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "2"
+      MIN_SOURCES_PUBLISH: "2"
       PREDICTION_PUBLICATION_ENABLED: "true"
       REPUBLISH_SEEN_CANDIDATES_WHEN_EMPTY: "false"
       SEEN_CANDIDATE_LOOKBACK_HOURS: "96"
       RUN_REPORT_ENABLED: "false"
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
-      MANUAL_CONTROLLED_PUBLISH_ENABLED: "true"
+      MANUAL_CONTROLLED_PUBLISH_ENABLED: "false"
 
       DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE: "true"
       CORE_PROVIDER_INVENTORY_BRIDGE_ENABLED: "true"
@@ -80,22 +84,29 @@ jobs:
       TEAM_TOTALS_PUBLICATION_ENABLED: "false"
       TOTALS_PUBLICATION_ENABLED: "true"
       SPREADS_PUBLICATION_ENABLED: "true"
-      PUBLISH_MIN_ODDS_SOURCES: "1"
-      PUBLISH_MIN_CONTEXT_SOURCES: "1"
-      MIN_CONTEXT_SOURCES_PUBLISH: "1"
-      CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "1"
-      CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES: "false"
+      PUBLISH_MIN_ODDS_SOURCES: "2"
+      PUBLISH_MIN_CONTEXT_SOURCES: "2"
+      MIN_CONTEXT_SOURCES_PUBLISH: "2"
+      CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "2"
+      CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES: "2"
+      CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES: "2"
+      CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES: "true"
+      CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES: "2"
       CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS: "2"
       CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES: "2"
-      CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS: "1"
-      CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES: "1"
+      CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES: "true"
+      CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES: "true"
+      CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES: "2"
+      CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS: "2"
+      CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES: "2"
+      CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES: "2"
       CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD: "true"
-      CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM: "false"
-      CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES: "false"
-      CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM: "false"
-      CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "false"
-      CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES: "false"
-      CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"
+      CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES: "true"
+      CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM: "true"
       CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: "70"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: "false"
@@ -116,6 +127,12 @@ jobs:
       BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: "true"
       SSTATS_ROLLING_METRICS_ENABLED: "true"
       SSTATS_HISTORICAL_ODDS_AS_LINES: "false"
+      FALLBACK_PUBLISH_MODE_ENABLED: "false"
+      MODEL_RELAXED_FALLBACK_ENABLED: "false"
+      FORCE_PUBLISH_WHEN_EMPTY_ENABLED: "false"
+      QUALITY_EMERGENCY_PUBLISH_ENABLED: "false"
+      QUALITY_LAST_RESORT_PUBLISH_ENABLED: "false"
+      HISTORICAL_SEGMENT_RELIEF_ENABLED: "false"
 
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
@@ -406,18 +423,17 @@ jobs:
           cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
           exit ${status}
 
-      - name: Publish controlled fallback
+      - name: Persist movement watchlist and diagnostics
         if: always()
         shell: bash
         run: |
           set -uo pipefail
           if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip controlled fallback: fresh run-bot log was not created"
+            echo "skip post-run diagnostics: fresh run-bot log was not created"
             exit 0
           fi
           python -u scripts/apply_publication_family_policy.py || true
           python -u scripts/restore_awaiting_movement_candidates.py || true
-          python scripts/publish_controlled_fallback_guarded.py || python scripts/publish_controlled_fallback.py || true
           python -u scripts/persist_awaiting_movement_candidates.py || true
           python -u scripts/build_fresh_b_cover_diagnostics.py || true
           cp .data/exports/latest-awaiting-movement-candidates.json artifacts/run-bot/latest-awaiting-movement-candidates.json 2>/dev/null || true

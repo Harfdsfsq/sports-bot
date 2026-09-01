@@ -179,7 +179,7 @@ class PredictionQualityService:
                 **payload,
             })
 
-        if not passed and candidates and bool(self._setting('quality_emergency_publish_enabled', True)):
+        if not passed and candidates and bool(self._setting('quality_emergency_publish_enabled', False)):
             fallback_candidate = self._select_emergency_publish_candidate(candidates)
             if fallback_candidate is not None:
                 passed = [fallback_candidate]
@@ -218,7 +218,7 @@ class PredictionQualityService:
                 historical_relief.diagnostics['quality']['status'] = 'passed_quality_historical_relief'
                 historical_relief.diagnostics['quality']['reasons'] = ['quality_historical_guard_relief']
 
-        if not passed and candidates:
+        if not passed and candidates and bool(self._setting('quality_last_resort_publish_enabled', False)):
             last_resort = self._select_last_resort_quality_candidate(candidates, decisions)
             if last_resort is not None:
                 passed = [last_resort]
@@ -256,7 +256,7 @@ class PredictionQualityService:
         candidates: list[CandidateBet],
         decisions: list[dict[str, Any]],
     ) -> CandidateBet | None:
-        if not bool(self._setting('historical_segment_relief_enabled', True)):
+        if not bool(self._setting('historical_segment_relief_enabled', False)):
             return None
         if not decisions:
             return None

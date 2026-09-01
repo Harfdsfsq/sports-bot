@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from app.config import Settings
 from app.schemas import CandidateBet
@@ -85,10 +86,11 @@ def test_publish_contract_accepts_two_price_and_two_context_sources(monkeypatch)
     assert decision.report["context_sources"] == ["football_data", "sstats"]
 
 
-def test_runner_publish_filter_blocks_single_source_candidate(monkeypatch, tmp_path):
+def test_runner_publish_filter_blocks_single_source_candidate(monkeypatch):
     monkeypatch.setenv("PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE", "true")
-    monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", str(tmp_path / "line_movement_state.json"))
-    monkeypatch.setenv("CANDIDATE_LIFECYCLE_STATE_PATH", str(tmp_path / "candidate_lifecycle_state.json"))
+    state_root = f".data/test-coverage-contract/{uuid4().hex}"
+    monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", f"{state_root}/line_movement_state.json")
+    monkeypatch.setenv("CANDIDATE_LIFECYCLE_STATE_PATH", f"{state_root}/candidate_lifecycle_state.json")
     settings = Settings(_env_file=None, PUBLISH_DRY_RUN=True)
     runner = PredictionRunner(settings)
     item = candidate(
@@ -108,9 +110,10 @@ def test_runner_publish_filter_blocks_single_source_candidate(monkeypatch, tmp_p
     publishable = runner._filter_publishable_candidates([item])
 
     assert publishable == []
-    assert item.source_summary["publication_tier"] == "B_wait"
-    assert item.source_summary["can_publish"] is False
-    assert any("tier_b_line_movement_not_confirmed" in reason for reason in item.source_summary["publish_coverage_reasons"])
+    assert item.source_summary["publish_coverage_passed"] is False
+    assert "insufficient_odds_sources:1/2" in item.source_summary["publish_coverage_reasons"]
+    assert "insufficient_context_sources:1/2" in item.source_summary["publish_coverage_reasons"]
+    assert "insufficient_books:1/2" in item.source_summary["publish_coverage_reasons"]
 
 
 def test_odds_api_accounts_are_one_source_by_default(monkeypatch):

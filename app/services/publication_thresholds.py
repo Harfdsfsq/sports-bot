@@ -2,16 +2,14 @@ from __future__ import annotations
 
 """Shared publication threshold helpers for HARIZON.
 
-The project rules define two public-quality tiers:
+The production publication contract is strict:
 
-* A-tier: 2+ bookmakers/price confirmations and 2+ context sources.
-* B-tier: 1+ bookmaker/price confirmation and 1+ context source, but still with the normal
-  value, line-movement, xG/context and final Telegram guards.
+* at least 2 independent odds sources;
+* at least 2 bookmaker/price confirmations;
+* at least 2 independent context sources.
 
-Several legacy runtime scripts used hard-coded ``max(2, ...)`` floors.  That
-made B-tier impossible even when the workflow/env requested it.  This module is
-small on purpose so application code and standalone scripts can share the same
-contract without importing the full settings object.
+Tiers still exist for ranking and threshold labels, but B-tier is not allowed to
+downgrade source coverage below the documented minimums.
 """
 
 import os
@@ -55,7 +53,7 @@ def b_tier_enabled(settings: Any | None = None) -> bool:
 
 
 def publish_floor(settings: Any | None = None) -> int:
-    return 1 if b_tier_enabled(settings) else 2
+    return 2
 
 
 def publish_min_odds_sources(settings: Any | None = None, default: int | None = None) -> int:

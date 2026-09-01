@@ -332,7 +332,8 @@ def test_football_data_zero_request_budget_short_circuits():
     assert stats["budget_exhausted"] is True
 
 
-def test_quality_historical_relief_accepts_multi_source_totals_near_edge():
+def test_quality_historical_relief_accepts_multi_source_totals_near_edge(monkeypatch):
+    monkeypatch.setenv("HISTORICAL_SEGMENT_RELIEF_ENABLED", "true")
     service = PredictionQualityService(Settings(_env_file=None))
     candidate = CandidateBet(
         match_key="soccer|sarpsborg 08|vaalerenga if|2026-05-16",

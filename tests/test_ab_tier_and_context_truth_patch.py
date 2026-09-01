@@ -12,7 +12,8 @@ def test_context_truth_merges_context_source_index():
     }
     out = truth.row_truth(row, 2, 2, {"soccer|a|b|2026-05-29": ["clubelo"]})
     assert out["context_sources_count"] == 2
-    assert out["tier_b_coverage_ready"] is True
+    assert out["tier_b_coverage_ready"] is False
+    assert out["need_odds_sources"] == 1
 
 
 def test_context_truth_keeps_single_context_when_no_index():
@@ -28,7 +29,7 @@ def test_context_truth_keeps_single_context_when_no_index():
     assert out["tier_a_coverage_ready"] is False
 
 
-def test_tier_b_truth_uses_bookmaker_quorum_with_one_odds_source(monkeypatch):
+def test_tier_b_truth_requires_independent_odds_sources(monkeypatch):
     monkeypatch.setenv("PUBLISH_TIER_B_MIN_BOOKS", "2")
     row = {
         "match_key": "soccer|a|b|2026-05-29",
@@ -40,9 +41,9 @@ def test_tier_b_truth_uses_bookmaker_quorum_with_one_odds_source(monkeypatch):
 
     out = truth.row_truth(row, 2, 2, {})
 
-    assert out["tier_b_coverage_ready"] is True
-    assert out["tier_b_bookmaker_quorum_ready"] is True
-    assert out["tier_b_confirmation_mode"] == "bookmaker_quorum"
+    assert out["tier_b_coverage_ready"] is False
+    assert out["tier_b_bookmaker_quorum_ready"] is False
+    assert out["tier_b_confirmation_mode"] == "none"
 
 
 def test_tier_b_truth_blocks_one_book_with_one_odds_source(monkeypatch):
