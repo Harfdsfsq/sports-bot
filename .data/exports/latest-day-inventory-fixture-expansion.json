@@ -1,82 +1,95 @@
 {
   "alias_update": {
-    "paths": [
-      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
-      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
-      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+    "paths": [],
+    "skipped": [
+      {
+        "existing_rows": 185,
+        "incoming_rows": 181,
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+        "reason": "prevented_alias_shrink"
+      },
+      {
+        "existing_rows": 185,
+        "incoming_rows": 181,
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+        "reason": "prevented_alias_shrink"
+      },
+      {
+        "existing_rows": 185,
+        "incoming_rows": 181,
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json",
+        "reason": "prevented_alias_shrink"
+      }
     ],
-    "skipped": [],
-    "status": "ok",
-    "target_date": "2026-09-02"
+    "status": "skipped_no_shrink",
+    "target_date": "2026-09-03"
   },
   "counts": {
-    "bookmaker_backfill_mapping_gap_after": 0,
-    "bookmaker_backfill_normalized_2plus_after": 298,
-    "bookmaker_backfill_normalized_2plus_before": 298,
-    "bookmaker_backfill_raw_2plus_matches": 206,
-    "coverage_progress_updated_utc": "2026-09-02T12:12:04.975009+00:00",
-    "coverage_rows_seen_last_run": 15,
-    "matches_after_target_expand": 306,
-    "matches_coverage_updated_last_run": 15,
-    "matches_next_12h": 38,
-    "matches_next_12h_ready": 0,
-    "matches_next_6h": 38,
-    "matches_next_6h_ready": 0,
-    "matches_ready_for_model": 40,
+    "fixture_sources_seen": 2,
+    "leagues_seen": 87,
+    "matches_added": 177,
+    "matches_after_core_merge": 177,
+    "matches_after_target_expand": 185,
+    "matches_after_top_cut": 177,
+    "matches_next_12h": 61,
+    "matches_next_12h_ready": 3,
+    "matches_next_6h": 59,
+    "matches_next_6h_ready": 3,
+    "matches_raw_before_merge": 180,
+    "matches_ready_for_model": 3,
     "matches_ready_for_publish": 0,
-    "matches_total": 306,
-    "matches_total_high_watermark": 306,
-    "matches_with_2plus_context_sources": 299,
-    "matches_with_2plus_price_confirmations": 298,
-    "matches_with_context": 77,
-    "matches_with_form": 42,
+    "matches_total": 185,
+    "matches_total_high_watermark": 185,
+    "matches_updated": 0,
+    "matches_with_2plus_core_fixture_sources": 3,
+    "matches_with_3_core_fixture_sources": 0,
+    "matches_with_context": 3,
+    "matches_with_form": 0,
     "matches_with_news": 0,
-    "matches_with_odds": 87,
+    "matches_with_odds": 177,
     "matches_with_weather": 0,
-    "matches_with_xg": 75,
-    "publish_min_context_sources": 2,
-    "publish_min_odds_sources": 2,
-    "real_xg_rows": 30,
-    "runtime_matches_with_context_last_run": 5,
-    "runtime_matches_with_odds_last_run": 10,
+    "matches_with_xg": 3,
+    "multi_source_fixture_matches": 3,
+    "providers_seen": 1,
     "target_expand_artifact_aliases_written": true,
-    "target_expand_existing_before": 306,
+    "target_expand_existing_before": 177,
     "target_expand_horizon_days": 2,
-    "target_expand_no_shrink_applied": true,
-    "target_expand_rows_collected": 378,
+    "target_expand_no_shrink_applied": false,
+    "target_expand_rows_collected": 185,
     "target_expand_semantic_keys": true,
+    "target_full": false,
     "target_matches": 300,
-    "target_shortfall": 0
+    "target_shortfall": 115
   },
-  "matches_added": 1,
-  "matches_after": 306,
-  "matches_before": 306,
+  "matches_added": 4,
+  "matches_after": 181,
+  "matches_before": 185,
   "matches_updated": 0,
   "notes": [
     "Runs before prediction so run-once can see a broader daily fixture inventory.",
     "Fixture-only expansion does not create publishable predictions by itself; odds/context guards still apply."
   ],
-  "provider_rows_fetched": 1,
+  "provider_rows_fetched": 4,
   "providers": {
     "allsportsapi": {
-      "body_preview": "{\"success\":1}",
+      "body_preview": "{\"success\":1,\"result\":[{\"event_key\":1798230,\"event_date\":\"2026-09-03\",\"event_time\":\"14:15\",\"event_home_team\":\"FA Siauliai\",\"home_team_key\":5238,\"event_away_team\":\"Kauno Zalgiris\",\"away_team_key\":5251,\"event_halftime_result\":\"\",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"\",\"country_name\":\"Lithuania\",\"league_name\":\"Cup - Semi-finals\",\"league_key\":423,\"league_round\":\"Semi-finals\",\"league_season\":\"2026\",\"event_live\":\"0\",\"event_stadium\":\"Siauliai central st",
       "http_status": 200,
       "payload_type": "dict",
-      "rows_parsed": 0
+      "rows_parsed": 1
     },
     "football_data": {
-      "body_preview": "{\"filters\":{\"dateFrom\":\"2026-09-02\",\"dateTo\":\"2026-09-02\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
+      "body_preview": "{\"filters\":{\"dateFrom\":\"2026-09-03\",\"dateTo\":\"2026-09-03\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
       "http_status": 200,
       "payload_type": "dict",
       "rows_parsed": 0
     },
     "thesportsdb": {
-      "body_preview": "{\"events\":[{\"idEvent\":\"2397302\",\"idAPIfootball\":\"1493666\",\"strTimestamp\":\"2026-09-02T23:00:00\",\"strEvent\":\"Charleston Battery vs Hartford Athletic\",\"strEventAlternate\":\"Hartford Athletic @ Charleston Battery\",\"strFilename\":\"American USL Championship 2026-09-02 Charleston Battery vs Hartford Athletic\",\"strSport\":\"Soccer\",\"idLeague\":\"4684\",\"strLeague\":\"American USL Championship\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/uh4zas1688513782.png\",\"strSeason\":\"2026\",\"",
+      "body_preview": "{\"events\":[{\"idEvent\":\"2397628\",\"idAPIfootball\":\"1493974\",\"strTimestamp\":\"2026-09-03T00:00:00\",\"strEvent\":\"Forward Madison vs One Knoxville\",\"strEventAlternate\":\"One Knoxville @ Forward Madison\",\"strFilename\":\"American USL League One 2026-09-03 Forward Madison vs One Knoxville\",\"strSport\":\"Soccer\",\"idLeague\":\"5076\",\"strLeague\":\"American USL League One\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/wupe6s1625336127.png\",\"strSeason\":\"2026\",\"strDescriptionEN\":\"\",\"str",
       "http_status": 200,
       "payload_type": "dict",
-      "rows_parsed": 1
+      "rows_parsed": 3
     }
   },
   "status": "ok",
-  "target_date": "2026-09-02"
+  "target_date": "2026-09-03"
 }
