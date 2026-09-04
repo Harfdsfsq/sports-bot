@@ -1,0 +1,271 @@
+{
+  "allowed_core_providers": [
+    "odds_api_io",
+    "sstats",
+    "bzzoiro",
+    "football_data",
+    "thesportsdb",
+    "weatherapi",
+    "open_meteo",
+    "clubelo"
+  ],
+  "checks": [
+    {
+      "body_preview": "[{\"id\":70252096,\"home\":\"FC Krylia Sovetov Samara-2\",\"away\":\"FC Orenburg-2\",\"homeId\":357486,\"awayId\":357472,\"date\":\"2026-05-18T09:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Russia - 2. Liga, Division B, Group 4\",\"slug\":\"russia-2-liga-division-b-group-4\"},\"status\":\"pending",
+      "enabled": true,
+      "http_status": 200,
+      "item_count": 5,
+      "key2_present": true,
+      "key_present": true,
+      "ok": true,
+      "payload_shape": "list",
+      "provider": "odds_api_io",
+      "status": "ok"
+    },
+    {
+      "body_preview": "{\"status\":\"OK\",\"count\":5,\"data\":[{\"id\":1446235,\"flashId\":\"pdSLnBZg\",\"date\":\"2026-05-16T21:00:00+00:00\",\"dateUtc\":1778965200,\"status\":8,\"periods\":[\"2026-05-16T21:00:00+00:00\",\"2026-05-16T22:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"extraMinutes\":6,\"homeResult\":1,\"awayResult\":0,\"homeHTResult",
+      "enabled": true,
+      "http_status": 200,
+      "item_count": 5,
+      "key_present": true,
+      "ok": true,
+      "payload_shape": "count,data,offset,status,traceId",
+      "provider": "sstats",
+      "status": "ok"
+    },
+    {
+      "enabled": true,
+      "key_present": true,
+      "note": "Main runtime fetch uses /api/predictions/; smoke is skipped to avoid spending scarce Bzzoiro quota or triggering short cooldowns.",
+      "ok": true,
+      "provider": "bzzoiro",
+      "smoke_skipped": true,
+      "status": "skipped_preserve_runtime_quota"
+    },
+    {
+      "body_preview": "{\"filters\":{\"dateFrom\":\"2026-05-18\",\"dateTo\":\"2026-05-18\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
+      "enabled": true,
+      "http_status": 200,
+      "item_count": 0,
+      "key_present": true,
+      "ok": true,
+      "payload_shape": "filters,matches,resultSet",
+      "provider": "football_data",
+      "status": "ok"
+    },
+    {
+      "body_preview": "{\"teams\":[{\"idTeam\":\"133604\",\"idESPN\":\"359\",\"idAPIfootball\":\"42\",\"intLoved\":\"9\",\"strTeam\":\"Arsenal\",\"strTeamAlternate\":\"Arsenal Football Club, AFC, Arsenal FC\",\"strTeamShort\":\"ARS\",\"intFormedYear\":\"1892\",\"strSport\":\"Soccer\",\"strLeague\":\"English Premier League\",\"idLeague\":\"4328\",\"strLeague2\":\"FA Cup\"",
+      "enabled": true,
+      "http_status": 200,
+      "item_count": 1,
+      "key_present": true,
+      "ok": true,
+      "payload_shape": "teams",
+      "provider": "thesportsdb",
+      "status": "ok",
+      "using_free_key": false
+    },
+    {
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1779087719,\"localtime\":\"2026-05-18 08:01\"},\"current\":{\"last_updated_epoch\":1779087600,\"last_updated\":\"2026-05-18 08:00\",\"temp_c\":9.1",
+      "enabled": true,
+      "http_status": 200,
+      "item_count": 2,
+      "key_present": true,
+      "ok": true,
+      "payload_shape": "current,location",
+      "provider": "weatherapi",
+      "status": "ok"
+    },
+    {
+      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":8.276820182800293,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curren",
+      "enabled": true,
+      "http_status": 200,
+      "item_count": 9,
+      "key_present": true,
+      "key_required": false,
+      "ok": true,
+      "payload_shape": "current,current_units,elevation,generationtime_ms,latitude,longitude,timezone,timezone_abbreviation,utc_offset_seconds",
+      "provider": "open_meteo",
+      "status": "ok"
+    },
+    {
+      "enabled": true,
+      "key_required": false,
+      "ok": false,
+      "provider": "clubelo",
+      "status": "ConnectTimeout: "
+    }
+  ],
+  "created_at_utc": "2026-05-18T07:02:30.664672+00:00",
+  "non_core_env_audit": [
+    {
+      "bad_enabled": {
+        "ALLSPORTSAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN": "6",
+        "ALLSPORTSAPI_PER_RUN_MAX": "6",
+        "ALLSPORTSAPI_REQUESTS_MAX_PER_RUN": "6",
+        "ALLSPORTSAPI_REQUEST_BUDGET_GRANTED": "6"
+      },
+      "ok": false,
+      "prefix": "ALLSPORTSAPI"
+    },
+    {
+      "bad_enabled": {
+        "SPORTLOGIC_BROAD_FALLBACK_ENABLED": "true",
+        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
+        "SPORTLOGIC_ENABLED": "true",
+        "SPORTLOGIC_QUERY_GUARD_ENABLED": "true"
+      },
+      "bad_limits": {
+        "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "40",
+        "SPORTLOGIC_PER_RUN_MAX": "40",
+        "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "40",
+        "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "40"
+      },
+      "ok": false,
+      "prefix": "SPORTLOGIC"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "ODDSPAPI"
+    },
+    {
+      "bad_enabled": {
+        "ODDS_FEED_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {},
+      "ok": false,
+      "prefix": "ODDS_FEED"
+    },
+    {
+      "bad_enabled": {
+        "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true"
+      },
+      "bad_limits": {},
+      "ok": false,
+      "prefix": "RAPIDAPI_ODDS_FEED"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "HIGHLIGHTLY"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "API_FOOTBALL"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "FUTRIXMETRICS"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "NEWSAPI"
+    },
+    {
+      "bad_enabled": {
+        "CURRENTS_NEWS_CONTEXT_ENABLED": "true"
+      },
+      "bad_limits": {},
+      "ok": false,
+      "prefix": "CURRENTS"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "GNEWS"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "NEWSDATA"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "GUARDIAN"
+    },
+    {
+      "bad_enabled": {
+        "METEOSTAT_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN": "1"
+      },
+      "ok": false,
+      "prefix": "METEOSTAT"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "OPENWEATHERMAP"
+    },
+    {
+      "bad_enabled": {
+        "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true"
+      },
+      "bad_limits": {},
+      "ok": false,
+      "prefix": "RAPIDAPI_SPORTSBOOK"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "RAPIDAPI_FREE_FOOTBALL"
+    },
+    {
+      "bad_enabled": {
+        "SHARPAPI_TEXT_ENRICHMENT_ENABLED": "true"
+      },
+      "bad_limits": {},
+      "ok": false,
+      "prefix": "SHARPAPI"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "WIKIDATA"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {
+        "OPENFOOTBALL_PUBLIC_MAX_HTTP_REQUESTS_PER_RUN": "2",
+        "OPENFOOTBALL_PUBLIC_REQUEST_BUDGET_GRANTED": "2"
+      },
+      "ok": false,
+      "prefix": "OPENFOOTBALL"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
+      "prefix": "BOOKIES_API"
+    }
+  ],
+  "summary": {
+    "checks_total": 8,
+    "enabled_checks": 8,
+    "failed_enabled_checks": 1,
+    "missing_key_checks": 0,
+    "non_core_bad_env_prefixes": 9,
+    "ok_enabled_checks": 7,
+    "status": "warning"
+  }
+}

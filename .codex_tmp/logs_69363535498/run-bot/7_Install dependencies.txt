@@ -1,0 +1,2280 @@
+﻿2026-05-17T07:01:07.8666989Z ##[group]Run python -m pip install --upgrade pip
+2026-05-17T07:01:07.8667453Z [36;1mpython -m pip install --upgrade pip[0m
+2026-05-17T07:01:07.8667826Z [36;1mpip install -r requirements.txt[0m
+2026-05-17T07:01:07.8713588Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-05-17T07:01:07.8714009Z env:
+2026-05-17T07:01:07.8714285Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-05-17T07:01:07.8714871Z   PYTHONUNBUFFERED: 1
+2026-05-17T07:01:07.8715227Z   PYTHONPATH: /home/runner/work/sports-bot/sports-bot
+2026-05-17T07:01:07.8715593Z   TZ: Europe/Moscow
+2026-05-17T07:01:07.8715866Z   APP_TIMEZONE: Europe/Moscow
+2026-05-17T07:01:07.8716164Z   APP_ENV: production
+2026-05-17T07:01:07.8716431Z   RUN_MODE: normal
+2026-05-17T07:01:07.8716700Z   PUBLISH_DRY_RUN: false
+2026-05-17T07:01:07.8717005Z   PREDICTION_PUBLICATION_ENABLED: true
+2026-05-17T07:01:07.8717331Z   RUN_REPORT_ENABLED: false
+2026-05-17T07:01:07.8717634Z   ENHANCED_RUN_REPORT_SEND_TELEGRAM: true
+2026-05-17T07:01:07.8717987Z   TELEGRAM_MESSAGE_SOFT_LIMIT: 3600
+2026-05-17T07:01:07.8718355Z   MANUAL_CONTROLLED_PUBLISH_ENABLED: true
+2026-05-17T07:01:07.8718717Z   DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE: true
+2026-05-17T07:01:07.8719091Z   CORE_PROVIDER_INVENTORY_BRIDGE_ENABLED: true
+2026-05-17T07:01:07.8719433Z   DAY_INVENTORY_TARGET_SIZE: 300
+2026-05-17T07:01:07.8719729Z   DAY_INVENTORY_MAX_MATCHES: 300
+2026-05-17T07:01:07.8720031Z   DAY_INVENTORY_FORCE_TOP_300: true
+2026-05-17T07:01:07.8720350Z   DAY_INVENTORY_FORCE_FULL_300: true
+2026-05-17T07:01:07.8720675Z   DAY_INVENTORY_FORCE_PROVIDER_MERGE: true
+2026-05-17T07:01:07.8721030Z   DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED: true
+2026-05-17T07:01:07.8721372Z   DAY_INVENTORY_ENABLE_BZZOIRO: true
+2026-05-17T07:01:07.8721684Z   DAY_INVENTORY_ENABLE_SSTATS: true
+2026-05-17T07:01:07.8722005Z   DAY_INVENTORY_ENABLE_SPORTLOGIC: true
+2026-05-17T07:01:07.8722355Z   DAY_INVENTORY_ENABLE_ALLSPORTSAPI: false
+2026-05-17T07:01:07.8722701Z   DAY_INVENTORY_TOP_MATCHES_ENABLED: true
+2026-05-17T07:01:07.8723241Z   DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: 220
+2026-05-17T07:01:07.8723612Z   DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES: 220
+2026-05-17T07:01:07.8723958Z   DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP: 300
+2026-05-17T07:01:07.8724344Z   DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP: true
+2026-05-17T07:01:07.8724961Z   DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: 200
+2026-05-17T07:01:07.8725299Z   DAY_INVENTORY_BZZOIRO_MAX_PAGES: 20
+2026-05-17T07:01:07.8725628Z   DAY_INVENTORY_SSTATS_MAX_REQUESTS: 150
+2026-05-17T07:01:07.8725963Z   DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: 100
+2026-05-17T07:01:07.8726317Z   DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: 40
+2026-05-17T07:01:07.8726690Z   MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: true
+2026-05-17T07:01:07.8727084Z   PUBLICATION_ALLOWED_MARKET_FAMILIES: totals,spreads
+2026-05-17T07:01:07.8727495Z   HARIZON_ALLOWED_PUBLICATION_FAMILIES: totals,spreads
+2026-05-17T07:01:07.8727898Z   CONTROLLED_FALLBACK_ALLOWED_FAMILIES: totals,spreads
+2026-05-17T07:01:07.8728303Z   CONTROLLED_RESCUE_ALLOWED_FAMILIES: totals,spreads
+2026-05-17T07:01:07.8728669Z   H2H_PUBLICATION_ENABLED: false
+2026-05-17T07:01:07.8728982Z   BTTS_PUBLICATION_ENABLED: false
+2026-05-17T07:01:07.8729296Z   DNB_PUBLICATION_ENABLED: false
+2026-05-17T07:01:07.8729606Z   DOUBLE_CHANCE_PUBLICATION_ENABLED: false
+2026-05-17T07:01:07.8729943Z   TEAM_TOTALS_PUBLICATION_ENABLED: false
+2026-05-17T07:01:07.8730267Z   TOTALS_PUBLICATION_ENABLED: true
+2026-05-17T07:01:07.8730578Z   SPREADS_PUBLICATION_ENABLED: true
+2026-05-17T07:01:07.8730887Z   PUBLISH_MIN_ODDS_SOURCES: 2
+2026-05-17T07:01:07.8731182Z   PUBLISH_MIN_CONTEXT_SOURCES: 2
+2026-05-17T07:01:07.8731476Z   MIN_CONTEXT_SOURCES_PUBLISH: 2
+2026-05-17T07:01:07.8731781Z   CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: 2
+2026-05-17T07:01:07.8732178Z   CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: true
+2026-05-17T07:01:07.8732600Z   CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: 70
+2026-05-17T07:01:07.8732977Z   CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: false
+2026-05-17T07:01:07.8733363Z   CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: false
+2026-05-17T07:01:07.8733905Z   ODDS_MOVEMENT_SNAPSHOTS_ENABLED: true
+2026-05-17T07:01:07.8734236Z   NEWS_INJURY_SHORTLIST_ENABLED: true
+2026-05-17T07:01:07.8734553Z   NEWS_INJURY_SHORTLIST_LIMIT: 8
+2026-05-17T07:01:07.8735150Z   BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: true
+2026-05-17T07:01:07.8735496Z   SSTATS_ROLLING_METRICS_ENABLED: true
+2026-05-17T07:01:07.8735824Z   SSTATS_HISTORICAL_ODDS_AS_LINES: false
+2026-05-17T07:01:07.8736164Z   PROVIDER_FREE_QUOTA_POLICY_ENABLED: true
+2026-05-17T07:01:07.8736503Z   PROVIDER_QUOTA_GOVERNOR_ENABLED: true
+2026-05-17T07:01:07.8736825Z   PROVIDER_QUOTA_RUNS_PER_DAY: 12
+2026-05-17T07:01:07.8737133Z   PROVIDER_QUOTA_SAFETY_FACTOR: 0.78
+2026-05-17T07:01:07.8737454Z   PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: 25
+2026-05-17T07:01:07.8737803Z   PROVIDER_REQUEST_BUDGET_MODE: per_run_only
+2026-05-17T07:01:07.8738179Z   PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: true
+2026-05-17T07:01:07.8738544Z   ALL_SOURCES_FREE_MAXIMIZE: true
+2026-05-17T07:01:07.8738864Z   PROVIDER_SMOKE_FAIL_ON_ERROR: false
+2026-05-17T07:01:07.8739186Z   PROVIDER_SMOKE_TIMEOUT_SECONDS: 10
+2026-05-17T07:01:07.8739500Z   API_HEALTH_DURING_RUN_ENABLED: true
+2026-05-17T07:01:07.8739811Z   ODDS_API_IO_HOURLY_LIMIT: 100
+2026-05-17T07:01:07.8740108Z   ODDS_API_IO_PER_RUN_MAX: 100
+2026-05-17T07:01:07.8740411Z   ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: 50
+2026-05-17T07:01:07.8740727Z   ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: 50
+2026-05-17T07:01:07.8741055Z   ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: 100
+2026-05-17T07:01:07.8741409Z   ODDS_API_IO_MAX_REQUESTS_PER_RUN: 100
+2026-05-17T07:01:07.8741741Z   ODDS_API_IO_REQUEST_BUDGET_GRANTED: 100
+2026-05-17T07:01:07.8742074Z   ODDS_API_IO_REQUESTS_MAX_PER_RUN: 100
+2026-05-17T07:01:07.8742410Z   ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: 10
+2026-05-17T07:01:07.8742744Z   ODDS_API_IO_MAX_PAGES_PER_SPORT: 10
+2026-05-17T07:01:07.8743099Z   PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT: 5
+2026-05-17T07:01:07.8743645Z   PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST: 10
+2026-05-17T07:01:07.8744047Z   PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT: 100
+2026-05-17T07:01:07.8744381Z   MAX_MATCHES_FOR_ODDS_FETCH: 300
+2026-05-17T07:01:07.8744936Z   BZZOIRO_RATE_LIMIT_PER_MINUTE: 200
+2026-05-17T07:01:07.8745251Z   BZZOIRO_PER_RUN_MAX: 200
+2026-05-17T07:01:07.8745536Z   BZZOIRO_MAX_REQUESTS_PER_RUN: 200
+2026-05-17T07:01:07.8745852Z   BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: 200
+2026-05-17T07:01:07.8746170Z   BZZOIRO_REQUESTS_MAX_PER_RUN: 200
+2026-05-17T07:01:07.8746477Z   BZZOIRO_REQUEST_BUDGET_GRANTED: 200
+2026-05-17T07:01:07.8746797Z   BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: 80
+2026-05-17T07:01:07.8747142Z   BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: 40
+2026-05-17T07:01:07.8747488Z   BZZOIRO_PREDICTIONS_MAX_PAGES: 10
+2026-05-17T07:01:07.8747789Z   BZZOIRO_MAX_PAGES: 20
+2026-05-17T07:01:07.8748066Z   BZZOIRO_CONTEXT_MATCH_LIMIT: 300
+2026-05-17T07:01:07.8748381Z   BZZOIRO_PRICE_BACKFILL_ENABLED: true
+2026-05-17T07:01:07.8748703Z   BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: 80
+2026-05-17T07:01:07.8749034Z   SSTATS_RATE_LIMIT_PER_MINUTE: 150
+2026-05-17T07:01:07.8749333Z   SSTATS_PER_RUN_MAX: 150
+2026-05-17T07:01:07.8749617Z   SSTATS_MAX_REQUESTS_PER_RUN: 150
+2026-05-17T07:01:07.8749920Z   SSTATS_REQUESTS_MAX_PER_RUN: 150
+2026-05-17T07:01:07.8750227Z   SSTATS_REQUEST_BUDGET_GRANTED: 150
+2026-05-17T07:01:07.8750546Z   SSTATS_MAX_HTTP_REQUESTS_PER_RUN: 150
+2026-05-17T07:01:07.8750864Z   SSTATS_CONTEXT_MATCH_LIMIT: 300
+2026-05-17T07:01:07.8751173Z   SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: 40
+2026-05-17T07:01:07.8751490Z   SSTATS_DEEP_CONTEXT_MATCH_LIMIT: 80
+2026-05-17T07:01:07.8751806Z   SSTATS_DEEP_ENRICHMENT_ENABLED: true
+2026-05-17T07:01:07.8752139Z   SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK: true
+2026-05-17T07:01:07.8752481Z   SSTATS_DEEP_SMOKE_DETAIL_GAMES: 30
+2026-05-17T07:01:07.8752792Z   SSTATS_GAME_DETAIL_ENABLED: true
+2026-05-17T07:01:07.8753106Z   SSTATS_LAST_GAMES_STATS_ENABLED: true
+2026-05-17T07:01:07.8753424Z   SSTATS_INJURIES_ENABLED: false
+2026-05-17T07:01:07.8753731Z   SSTATS_GLICKO_ENABLED: true
+2026-05-17T07:01:07.8754174Z   SSTATS_ODDS_RESCUE_ENABLED: true
+2026-05-17T07:01:07.8754476Z   SPORTLOGIC_DAILY_LIMIT: 500
+2026-05-17T07:01:07.8754896Z   SPORTLOGIC_ENABLED: true
+2026-05-17T07:01:07.8755173Z   ENABLE_SPORTLOGIC: true
+2026-05-17T07:01:07.8755465Z   SPORTLOGIC_CONTROLLED_ODDS_ENABLED: true
+2026-05-17T07:01:07.8755786Z   SPORTLOGIC_PER_RUN_MAX: 40
+2026-05-17T07:01:07.8756092Z   SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: 40
+2026-05-17T07:01:07.8756418Z   SPORTLOGIC_REQUESTS_MAX_PER_RUN: 40
+2026-05-17T07:01:07.8756734Z   SPORTLOGIC_REQUEST_BUDGET_GRANTED: 40
+2026-05-17T07:01:07.8757044Z   SPORTLOGIC_MATCH_LIMIT: 100
+2026-05-17T07:01:07.8757336Z   SPORTLOGIC_CONTEXT_MATCH_LIMIT: 100
+2026-05-17T07:01:07.8757645Z   SPORTLOGIC_ODDS_MATCH_LIMIT: 40
+2026-05-17T07:01:07.8757954Z   SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: 2
+2026-05-17T07:01:07.8758290Z   SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: 40
+2026-05-17T07:01:07.8758624Z   SPORTLOGIC_MATCH_MIN_SCORE: 48
+2026-05-17T07:01:07.8759081Z   TELEGRAM_BOT_TOKEN: ***
+2026-05-17T07:01:07.8759465Z   TELEGRAM_TOKEN: ***
+2026-05-17T07:01:07.8759751Z   TELEGRAM_CHAT_ID: ***
+2026-05-17T07:01:07.8760178Z   ODDS_API_IO_KEY: ***
+2026-05-17T07:01:07.8760591Z   ODDS_API_IO_KEY_2: ***
+2026-05-17T07:01:07.8760866Z   ODDS_API_IO_KEY2: 
+2026-05-17T07:01:07.8761195Z   BZZOIRO_API_KEY: ***
+2026-05-17T07:01:07.8761473Z   SSTATS_API_KEY: ***
+2026-05-17T07:01:07.8761798Z   FOOTBALL_DATA_API_KEY: ***
+2026-05-17T07:01:07.8762095Z   THESPORTSDB_API_KEY: ***
+2026-05-17T07:01:07.8762414Z   WEATHERAPI_KEY: ***
+2026-05-17T07:01:07.8762719Z   WEATHER_API_KEY: ***
+2026-05-17T07:01:07.8763036Z   WEATHERAPI_API_KEY: ***
+2026-05-17T07:01:07.8763466Z   ALLSPORTSAPI_API_KEY: ***
+2026-05-17T07:01:07.8763848Z   SPORTLOGIC_API_KEY: ***
+2026-05-17T07:01:07.8764204Z   SPORTLOGIC_KEY: ***
+2026-05-17T07:01:07.8764673Z   SPORTLOGIC_TOKEN: ***
+2026-05-17T07:01:07.8764941Z   API_FOOTBALL_KEY: 
+2026-05-17T07:01:07.8765202Z   ODDSPAPI_API_KEY: 
+2026-05-17T07:01:07.8765661Z   OPENWEATHERMAP_API_KEY: ***
+2026-05-17T07:01:07.8766010Z   OPENWEATHER_API_KEY: ***
+2026-05-17T07:01:07.8766339Z   OPENWEATHERMAP_KEY: ***
+2026-05-17T07:01:07.8766650Z   NEWSAPI_KEY: ***
+2026-05-17T07:01:07.8767033Z   CURRENTS_API_KEY: ***
+
+2026-05-17T07:01:07.8767338Z   GNEWS_KEY: ***
+2026-05-17T07:01:07.8767645Z   NEWSDATA_API_KEY: ***
+2026-05-17T07:01:07.8767963Z   GUARDIAN_API_KEY: ***
+2026-05-17T07:01:07.8768352Z   FUTRIXMETRICS_API_KEY: ***
+2026-05-17T07:01:07.8768718Z   HIGHLIGHTLY_API_KEY: ***
+2026-05-17T07:01:07.8769115Z   METEOSTAT_RAPIDAPI_KEY: ***
+2026-05-17T07:01:07.8769515Z   ODDS_FEED_RAPIDAPI_KEY: ***
+2026-05-17T07:01:07.8769934Z   FREE_FOOTBALL_RAPIDAPI_KEY: ***
+2026-05-17T07:01:07.8770326Z   RAPIDAPI_KEY: ***
+2026-05-17T07:01:07.8770601Z   DAY_INVENTORY_CACHE_DATE: 2026-05-17
+2026-05-17T07:01:07.8770923Z   DAY_INVENTORY_TARGET_DATE: 2026-05-17
+2026-05-17T07:01:07.8771254Z   PROVIDER_SMOKE_TARGET_DATE: 2026-05-17
+2026-05-17T07:01:07.8771589Z   PROVIDER_SMOKE_TARGET_DATE_FROZEN: true
+2026-05-17T07:01:07.8771982Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-05-17T07:01:07.8772478Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-05-17T07:01:07.8772961Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-05-17T07:01:07.8773400Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-05-17T07:01:07.8773833Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-05-17T07:01:07.8774273Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-05-17T07:01:07.8774826Z ##[endgroup]
+2026-05-17T07:01:13.7339701Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages (26.1.1)
+2026-05-17T07:01:14.2307194Z DEPRECATION: Unexpected import of 'scripts.day_inventory_aliases' after pip install started. pip 26.3 will enforce this behaviour change. Discussion can be found at https://github.com/pypa/pip/issues/13842 (/home/runner/work/sports-bot/sports-bot/app/providers/rapidapi_bridge_runtime_patch.py:92)
+2026-05-17T07:01:14.2311380Z DEPRECATION: Unexpected import of 'scripts' after pip install started. pip 26.3 will enforce this behaviour change. Discussion can be found at https://github.com/pypa/pip/issues/13842 (/home/runner/work/sports-bot/sports-bot/app/providers/rapidapi_bridge_runtime_patch.py:92)
+2026-05-17T07:01:14.3444310Z {
+2026-05-17T07:01:14.3445099Z   "alias_update": {
+2026-05-17T07:01:14.3445560Z     "paths": [
+2026-05-17T07:01:14.3446220Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+2026-05-17T07:01:14.3447194Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+2026-05-17T07:01:14.3448110Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+2026-05-17T07:01:14.3448863Z     ],
+2026-05-17T07:01:14.3449385Z     "status": "ok",
+2026-05-17T07:01:14.3449814Z     "target_date": "2026-05-17"
+2026-05-17T07:01:14.3450259Z   },
+2026-05-17T07:01:14.3450614Z   "counts": {
+2026-05-17T07:01:14.3451266Z     "core_provider_inventory_bridge_updated_utc": "2026-05-16T21:02:21.082408+00:00",
+2026-05-17T07:01:14.3452215Z     "coverage_progress_updated_utc": "2026-05-17T05:16:46.163681+00:00",
+2026-05-17T07:01:14.3452989Z     "coverage_rows_seen_last_run": 4,
+2026-05-17T07:01:14.3453554Z     "fixture_sources_seen": 3,
+2026-05-17T07:01:14.3454056Z     "leagues_seen": 26,
+2026-05-17T07:01:14.3454532Z     "matches_added": 300,
+2026-05-17T07:01:14.3455320Z     "matches_added_from_latest_run": 0,
+2026-05-17T07:01:14.3455901Z     "matches_after_core_merge": 1023,
+2026-05-17T07:01:14.3456448Z     "matches_after_top_cut": 300,
+2026-05-17T07:01:14.3457025Z     "matches_coverage_updated_last_run": 4,
+2026-05-17T07:01:14.3457628Z     "matches_missing_context_2plus": 203,
+2026-05-17T07:01:14.3458214Z     "matches_missing_price_2plus": 150,
+2026-05-17T07:01:14.3458777Z     "matches_next_12h": 188,
+2026-05-17T07:01:14.3459309Z     "matches_next_12h_ready": 83,
+2026-05-17T07:01:14.3459837Z     "matches_next_6h": 134,
+2026-05-17T07:01:14.3460807Z     "matches_next_6h_ready": 83,
+2026-05-17T07:01:14.3461366Z     "matches_raw_before_merge": 1294,
+2026-05-17T07:01:14.3461932Z     "matches_ready_for_model": 135,
+2026-05-17T07:01:14.3462504Z     "matches_ready_for_publish": 38,
+2026-05-17T07:01:14.3463060Z     "matches_seen_latest_run": 0,
+2026-05-17T07:01:14.3463595Z     "matches_total": 301,
+2026-05-17T07:01:14.3464134Z     "matches_total_before_top_selection": 336,
+2026-05-17T07:01:14.3465017Z     "matches_total_high_watermark": 401,
+2026-05-17T07:01:14.3465597Z     "matches_updated": 0,
+2026-05-17T07:01:14.3466119Z     "matches_updated_from_latest_run": 0,
+2026-05-17T07:01:14.3466735Z     "matches_with_2plus_context_sources": 38,
+2026-05-17T07:01:14.3467365Z     "matches_with_2plus_core_fixture_sources": 140,
+2026-05-17T07:01:14.3468002Z     "matches_with_2plus_odds_sources": 38,
+2026-05-17T07:01:14.3468635Z     "matches_with_2plus_price_confirmations": 38,
+2026-05-17T07:01:14.3469283Z     "matches_with_3_core_fixture_sources": 47,
+2026-05-17T07:01:14.3469898Z     "matches_with_context": 135,
+2026-05-17T07:01:14.3470441Z     "matches_with_form": 134,
+2026-05-17T07:01:14.3470966Z     "matches_with_news": 0,
+2026-05-17T07:01:14.3471457Z     "matches_with_odds": 135,
+2026-05-17T07:01:14.3471968Z     "matches_with_weather": 0,
+2026-05-17T07:01:14.3472475Z     "matches_with_xg": 42,
+2026-05-17T07:01:14.3472995Z     "multi_source_fixture_matches": 150,
+2026-05-17T07:01:14.3473572Z     "providers_seen": 3,
+2026-05-17T07:01:14.3474100Z     "publish_min_context_sources": 2,
+2026-05-17T07:01:14.3474920Z     "publish_min_odds_sources": 2,
+2026-05-17T07:01:14.3475533Z     "publish_min_price_confirmations": 2,
+2026-05-17T07:01:14.3476185Z     "runtime_matches_with_context_last_run": 167,
+2026-05-17T07:01:14.3476824Z     "runtime_matches_with_odds_last_run": 98
+2026-05-17T07:01:14.3477374Z   },
+2026-05-17T07:01:14.3478096Z   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-17.json",
+2026-05-17T07:01:14.3478967Z   "latest_rows_seen": 0,
+2026-05-17T07:01:14.3479702Z   "matches_added": 0,
+2026-05-17T07:01:14.3480182Z   "matches_after": 301,
+2026-05-17T07:01:14.3480672Z   "matches_before": 301,
+2026-05-17T07:01:14.3481239Z   "matches_rejected_not_target_date_or_malformed": 0,
+2026-05-17T07:01:14.3481865Z   "matches_updated": 0,
+2026-05-17T07:01:14.3482357Z   "notes": [
+2026-05-17T07:01:14.3483305Z     "This runs after run-once, so the day inventory grows from actual latest-matches exports, not only from the pre-run bootstrap.",
+2026-05-17T07:01:14.3485250Z     "Telegram detailed report reads latest-day-inventory-summary.json, so matches_total now represents the cumulative daily high watermark."
+2026-05-17T07:01:14.3486430Z   ],
+2026-05-17T07:01:14.3486823Z   "status": "ok",
+2026-05-17T07:01:14.3487699Z   "summary_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-summary.json",
+2026-05-17T07:01:14.3488655Z   "target_date": "2026-05-17",
+2026-05-17T07:01:14.3489242Z   "updated_at_utc": "2026-05-17T07:01:14.231838+00:00"
+2026-05-17T07:01:14.3489833Z }
+2026-05-17T07:01:14.4635667Z {
+2026-05-17T07:01:14.4636140Z   "alias_update": {
+2026-05-17T07:01:14.4636569Z     "paths": [
+2026-05-17T07:01:14.4637186Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+2026-05-17T07:01:14.4638082Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+2026-05-17T07:01:14.4638938Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+2026-05-17T07:01:14.4639576Z     ],
+2026-05-17T07:01:14.4639925Z     "status": "ok",
+2026-05-17T07:01:14.4640344Z     "target_date": "2026-05-17"
+2026-05-17T07:01:14.4640775Z   },
+2026-05-17T07:01:14.4641119Z   "counts": {
+2026-05-17T07:01:14.4641704Z     "core_provider_inventory_bridge_updated_utc": "2026-05-16T21:02:21.082408+00:00",
+2026-05-17T07:01:14.4642541Z     "coverage_progress_updated_utc": "2026-05-17T05:16:46.163681+00:00",
+2026-05-17T07:01:14.4643172Z     "coverage_rows_seen_last_run": 4,
+2026-05-17T07:01:14.4643963Z     "fixture_sources_seen": 3,
+2026-05-17T07:01:14.4644408Z     "leagues_seen": 26,
+2026-05-17T07:01:14.4645090Z     "matches_added": 300,
+2026-05-17T07:01:14.4645532Z     "matches_added_from_latest_run": 0,
+2026-05-17T07:01:14.4646042Z     "matches_after_core_merge": 1023,
+2026-05-17T07:01:14.4646586Z     "matches_after_top_cut": 300,
+2026-05-17T07:01:14.4647129Z     "matches_coverage_updated_last_run": 4,
+2026-05-17T07:01:14.4647716Z     "matches_missing_context_2plus": 203,
+2026-05-17T07:01:14.4648324Z     "matches_missing_price_2plus": 150,
+2026-05-17T07:01:14.4648872Z     "matches_next_12h": 188,
+2026-05-17T07:01:14.4649453Z     "matches_next_12h_ready": 83,
+2026-05-17T07:01:14.4649967Z     "matches_next_6h": 134,
+2026-05-17T07:01:14.4650462Z     "matches_next_6h_ready": 83,
+2026-05-17T07:01:14.4650998Z     "matches_raw_before_merge": 1294,
+2026-05-17T07:01:14.4651557Z     "matches_ready_for_model": 135,
+2026-05-17T07:01:14.4652106Z     "matches_ready_for_publish": 38,
+2026-05-17T07:01:14.4652675Z     "matches_seen_latest_run": 0,
+2026-05-17T07:01:14.4653210Z     "matches_total": 301,
+2026-05-17T07:01:14.4653764Z     "matches_total_before_top_selection": 336,
+2026-05-17T07:01:14.4654376Z     "matches_total_high_watermark": 401,
+2026-05-17T07:01:14.4655168Z     "matches_updated": 0,
+2026-05-17T07:01:14.4655696Z     "matches_updated_from_latest_run": 0,
+2026-05-17T07:01:14.4656333Z     "matches_with_2plus_context_sources": 38,
+2026-05-17T07:01:14.4656977Z     "matches_with_2plus_core_fixture_sources": 140,
+2026-05-17T07:01:14.4657619Z     "matches_with_2plus_odds_sources": 38,
+2026-05-17T07:01:14.4658251Z     "matches_with_2plus_price_confirmations": 38,
+2026-05-17T07:01:14.4658901Z     "matches_with_3_core_fixture_sources": 47,
+2026-05-17T07:01:14.4659495Z     "matches_with_context": 135,
+2026-05-17T07:01:14.4660015Z     "matches_with_form": 134,
+2026-05-17T07:01:14.4660486Z     "matches_with_news": 0,
+2026-05-17T07:01:14.4660989Z     "matches_with_odds": 135,
+2026-05-17T07:01:14.4661513Z     "matches_with_weather": 0,
+2026-05-17T07:01:14.4662343Z     "matches_with_xg": 42,
+2026-05-17T07:01:14.4662866Z     "multi_source_fixture_matches": 150,
+2026-05-17T07:01:14.4663436Z     "providers_seen": 3,
+2026-05-17T07:01:14.4663946Z     "publish_min_context_sources": 2,
+2026-05-17T07:01:14.4664505Z     "publish_min_odds_sources": 2,
+2026-05-17T07:01:14.4665326Z     "publish_min_price_confirmations": 2,
+2026-05-17T07:01:14.4665966Z     "runtime_matches_with_context_last_run": 167,
+2026-05-17T07:01:14.4666599Z     "runtime_matches_with_odds_last_run": 98
+2026-05-17T07:01:14.4667137Z   },
+2026-05-17T07:01:14.4667538Z   "date_local": "2026-05-17",
+2026-05-17T07:01:14.4668045Z   "evidence_matches": 0,
+2026-05-17T07:01:14.4668858Z   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-17.json",
+2026-05-17T07:01:14.4669715Z   "notes": [
+2026-05-17T07:01:14.4670614Z     "Coverage is repaired from latest-matches forecast fields, rescue/evaluated candidates, and line_history snapshots.",
+2026-05-17T07:01:14.4672072Z     "Priority planner now sees real last_odds_refresh_utc / last_context_refresh_utc instead of treating every row as stale."
+2026-05-17T07:01:14.4673056Z   ],
+2026-05-17T07:01:14.4673461Z   "rows_repaired": 0,
+2026-05-17T07:01:14.4673912Z   "status": "ok",
+2026-05-17T07:01:14.4674976Z   "summary_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-summary.json",
+2026-05-17T07:01:14.4676034Z   "updated_at_utc": "2026-05-17T07:01:14.350864+00:00"
+2026-05-17T07:01:14.4676610Z }
+2026-05-17T07:01:14.5987464Z {
+2026-05-17T07:01:14.5988127Z   "date_local": "2026-05-17",
+2026-05-17T07:01:14.5988673Z   "line_movement_guard": {
+2026-05-17T07:01:14.5989186Z     "candidate_files_seen": 0,
+2026-05-17T07:01:14.5989705Z     "candidates_dropped": 0,
+2026-05-17T07:01:14.5990223Z     "candidates_kept": 0,
+2026-05-17T07:01:14.5990739Z     "candidates_seen": 0,
+2026-05-17T07:01:14.5991216Z     "date_local": "2026-05-17",
+2026-05-17T07:01:14.5992045Z     "drop_bad_candidates": true,
+2026-05-17T07:01:14.5992581Z     "files": [],
+2026-05-17T07:01:14.5993018Z     "status": "ok",
+2026-05-17T07:01:14.5993551Z     "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-17T07:01:14.5994137Z   },
+2026-05-17T07:01:14.5994518Z   "notes": [
+2026-05-17T07:01:14.5995892Z     "Inventory rows are now sorted by kickoff urgency and missing coverage so the next run naturally spends quota on matches that need it most.",
+2026-05-17T07:01:14.5997772Z     "Candidate files are guarded before Telegram fallback publication. If the current line loses EV/edge or moves sharply against the bet, the candidate is dropped."
+2026-05-17T07:01:14.5999012Z   ],
+2026-05-17T07:01:14.5999405Z   "refresh_plan": {
+2026-05-17T07:01:14.5999867Z     "active_matches": 301,
+2026-05-17T07:01:14.6000317Z     "alias_update": {
+2026-05-17T07:01:14.6000766Z       "paths": [
+2026-05-17T07:01:14.6001445Z         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+2026-05-17T07:01:14.6002465Z         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+2026-05-17T07:01:14.6003465Z         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+2026-05-17T07:01:14.6004194Z       ],
+2026-05-17T07:01:14.6004778Z       "status": "ok",
+2026-05-17T07:01:14.6005256Z       "target_date": "2026-05-17"
+2026-05-17T07:01:14.6005747Z     },
+2026-05-17T07:01:14.6006143Z     "date_local": "2026-05-17",
+2026-05-17T07:01:14.6006643Z     "final_pre_kickoff_checks": 0,
+2026-05-17T07:01:14.6007198Z     "matches_needing_odds_refresh": 166,
+2026-05-17T07:01:14.6007805Z     "no_more_regular_run_before_kickoff": 0,
+2026-05-17T07:01:14.6008363Z     "status": "ok",
+2026-05-17T07:01:14.6008819Z     "top_priority_matches": [
+2026-05-17T07:01:14.6009306Z       {
+2026-05-17T07:01:14.6009710Z         "away_team": "Cruzeiro EC",
+2026-05-17T07:01:14.6010267Z         "home_team": "SE Palmeiras",
+2026-05-17T07:01:14.6010836Z         "kickoff_utc": "2026-05-17T00:00:00+00:00",
+2026-05-17T07:01:14.6011800Z         "league_name": "Campeonato Brasileiro Série A",
+2026-05-17T07:01:14.6012779Z         "match_key": "soccer|cruzeiro_ec|se_palmeiras|2026-05-17",
+2026-05-17T07:01:14.6013455Z         "minutes_to_kickoff": 28887.97,
+2026-05-17T07:01:14.6014058Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6014900Z         "priority": 36.0,
+2026-05-17T07:01:14.6015404Z         "refresh_plan": {
+2026-05-17T07:01:14.6015989Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6016699Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6017352Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6018012Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6018614Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6019154Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6019685Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6020249Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6020822Z         }
+2026-05-17T07:01:14.6021176Z       },
+2026-05-17T07:01:14.6021527Z       {
+2026-05-17T07:01:14.6021908Z         "away_team": "CD Junior FC",
+2026-05-17T07:01:14.6022448Z         "home_team": "Independiente Santa Fe",
+2026-05-17T07:01:14.6023028Z         "kickoff_utc": "2026-05-17T01:30:00+00:00",
+2026-05-17T07:01:14.6023660Z         "league_name": "Colombia - Primera A, Apertura",
+2026-05-17T07:01:14.6024386Z         "match_key": "soccer|independiente santa fe|junior|2026-05-17",
+2026-05-17T07:01:14.6025297Z         "minutes_to_kickoff": 28977.97,
+2026-05-17T07:01:14.6025847Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6026379Z         "priority": 36.0,
+2026-05-17T07:01:14.6026850Z         "refresh_plan": {
+2026-05-17T07:01:14.6027350Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6027957Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6028527Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6029281Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6029845Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6030377Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6030899Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6031577Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6032185Z         }
+2026-05-17T07:01:14.6032566Z       },
+2026-05-17T07:01:14.6032946Z       {
+2026-05-17T07:01:14.6033367Z         "away_team": "Alianza FC Panama",
+2026-05-17T07:01:14.6033946Z         "home_team": "Veraguas United FC",
+2026-05-17T07:01:14.6034546Z         "kickoff_utc": "2026-05-17T01:30:00+00:00",
+2026-05-17T07:01:14.6035514Z         "league_name": "Panama - Liga Panamena de Futbol, Clausura",
+2026-05-17T07:01:14.6036355Z         "match_key": "soccer|alianza panama|veraguas united|2026-05-17",
+2026-05-17T07:01:14.6037068Z         "minutes_to_kickoff": 28977.97,
+2026-05-17T07:01:14.6037661Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6038236Z         "priority": 36.0,
+2026-05-17T07:01:14.6038711Z         "refresh_plan": {
+2026-05-17T07:01:14.6039248Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6039902Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6040511Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6041113Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6041720Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6042290Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6042850Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6043447Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6044020Z         }
+2026-05-17T07:01:14.6044393Z       },
+2026-05-17T07:01:14.6044942Z       {
+2026-05-17T07:01:14.6045347Z         "away_team": "Capo FC 2",
+2026-05-17T07:01:14.6045889Z         "home_team": "City SC San Diego",
+2026-05-17T07:01:14.6046487Z         "kickoff_utc": "2026-05-17T01:30:00+00:00",
+2026-05-17T07:01:14.6047292Z         "league_name": "USA - USL League Two",
+2026-05-17T07:01:14.6047961Z         "match_key": "soccer|capo 2|city san diego|2026-05-17",
+2026-05-17T07:01:14.6048607Z         "minutes_to_kickoff": 28977.97,
+2026-05-17T07:01:14.6049176Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6049792Z         "priority": 36.0,
+2026-05-17T07:01:14.6050256Z         "refresh_plan": {
+2026-05-17T07:01:14.6050782Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6051876Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6052636Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6053515Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6054234Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6075369Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6075998Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6076667Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6077255Z         }
+2026-05-17T07:01:14.6077626Z       },
+2026-05-17T07:01:14.6077998Z       {
+2026-05-17T07:01:14.6078435Z         "away_team": "Preston Lions FC U20",
+2026-05-17T07:01:14.6079024Z         "home_team": "Melbourne Victory FC",
+2026-05-17T07:01:14.6079625Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:14.6080300Z         "league_name": "Australia - U20 Victoria NPL, Women",
+2026-05-17T07:01:14.6081077Z         "match_key": "soccer|melbourne victory|preston lions|2026-05-17",
+2026-05-17T07:01:14.6081776Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:14.6082349Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6082910Z         "priority": 36.0,
+2026-05-17T07:01:14.6083380Z         "refresh_plan": {
+2026-05-17T07:01:14.6083913Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6084767Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6085629Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6086241Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6086821Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6087384Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6087941Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6088536Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6089100Z         }
+2026-05-17T07:01:14.6089465Z       },
+2026-05-17T07:01:14.6089833Z       {
+2026-05-17T07:01:14.6090289Z         "away_team": "Deportivo Saprissa San Jose",
+2026-05-17T07:01:14.6090882Z         "home_team": "CS Herediano",
+2026-05-17T07:01:14.6091442Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:14.6092148Z         "league_name": "Costa Rica - Primera Division, Clausura",
+2026-05-17T07:01:14.6092960Z         "match_key": "soccer|cs herediano|saprissa san jose|2026-05-17",
+2026-05-17T07:01:14.6093662Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:14.6094254Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6095029Z         "priority": 36.0,
+2026-05-17T07:01:14.6095518Z         "refresh_plan": {
+2026-05-17T07:01:14.6096061Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6096709Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6097311Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6097882Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6098457Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6099020Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6099572Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6100156Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6100727Z         }
+2026-05-17T07:01:14.6101095Z       },
+2026-05-17T07:01:14.6101460Z       {
+2026-05-17T07:01:14.6101857Z         "away_team": "Nankatsu SC",
+2026-05-17T07:01:14.6102391Z         "home_team": "Veertien Mie FC",
+2026-05-17T07:01:14.6102964Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:14.6103839Z         "league_name": "Japan - Nadeshiko League, Div 2, Women",
+2026-05-17T07:01:14.6104773Z         "match_key": "soccer|nankatsu|veertien mie|2026-05-17",
+2026-05-17T07:01:14.6105453Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:14.6106034Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6106603Z         "priority": 36.0,
+2026-05-17T07:01:14.6107064Z         "refresh_plan": {
+2026-05-17T07:01:14.6107591Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6108239Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6108839Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6109416Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6109992Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6110556Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6111130Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6111724Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6112293Z         }
+2026-05-17T07:01:14.6112670Z       },
+2026-05-17T07:01:14.6113038Z       {
+2026-05-17T07:01:14.6113447Z         "away_team": "Snohomish United",
+2026-05-17T07:01:14.6114006Z         "home_team": "Portland Bangers FC",
+2026-05-17T07:01:14.6114810Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:14.6115382Z         "league_name": "USA - USL League Two",
+2026-05-17T07:01:14.6115834Z         "match_key": "soccer|portland bangers|snohomish united|2026-05-17",
+2026-05-17T07:01:14.6116271Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:14.6116614Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6116946Z         "priority": 36.0,
+2026-05-17T07:01:14.6117229Z         "refresh_plan": {
+2026-05-17T07:01:14.6117542Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6117917Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6118447Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6118780Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6119101Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6119419Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6119735Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6120080Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6120404Z         }
+2026-05-17T07:01:14.6120621Z       },
+2026-05-17T07:01:14.6120845Z       {
+2026-05-17T07:01:14.6121080Z         "away_team": "AMSG FC",
+2026-05-17T07:01:14.6121412Z         "home_team": "Southern California Eagles",
+2026-05-17T07:01:14.6121775Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:14.6122129Z         "league_name": "USA - USL League Two",
+2026-05-17T07:01:14.6122538Z         "match_key": "soccer|amsg|southern california eagles|2026-05-17",
+2026-05-17T07:01:14.6122950Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:14.6123300Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6123622Z         "priority": 36.0,
+2026-05-17T07:01:14.6123897Z         "refresh_plan": {
+2026-05-17T07:01:14.6124205Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6124907Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6125284Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6125620Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6125959Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6126278Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6126592Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6126938Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6127260Z         }
+2026-05-17T07:01:14.6127471Z       },
+2026-05-17T07:01:14.6127688Z       {
+2026-05-17T07:01:14.6127924Z         "away_team": "San Juan SC",
+2026-05-17T07:01:14.6128247Z         "home_team": "Stockton Cargo SC",
+2026-05-17T07:01:14.6128728Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:14.6129074Z         "league_name": "USA - USL W League",
+2026-05-17T07:01:14.6129460Z         "match_key": "soccer|san juan|stockton cargo|2026-05-17",
+2026-05-17T07:01:14.6129852Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:14.6130182Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6130499Z         "priority": 36.0,
+2026-05-17T07:01:14.6130767Z         "refresh_plan": {
+2026-05-17T07:01:14.6131080Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6131443Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6131787Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6132119Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6132448Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6132768Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6133087Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6133430Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6133749Z         }
+2026-05-17T07:01:14.6133958Z       },
+2026-05-17T07:01:14.6134176Z       {
+2026-05-17T07:01:14.6134409Z         "away_team": "Cruizers FC",
+2026-05-17T07:01:14.6135019Z         "home_team": "Real San Jose",
+2026-05-17T07:01:14.6135369Z         "kickoff_utc": "2026-05-17T02:30:00+00:00",
+2026-05-17T07:01:14.6135770Z         "league_name": "USA - National Premier Soccer League",
+2026-05-17T07:01:14.6136206Z         "match_key": "soccer|cruizers|real san jose|2026-05-17",
+2026-05-17T07:01:14.6136585Z         "minutes_to_kickoff": 29037.97,
+2026-05-17T07:01:14.6136921Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6137245Z         "priority": 36.0,
+2026-05-17T07:01:14.6137522Z         "refresh_plan": {
+2026-05-17T07:01:14.6137826Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6138198Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6138696Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6139030Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6139366Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6139693Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6140015Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6140361Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6140687Z         }
+2026-05-17T07:01:14.6140903Z       },
+2026-05-17T07:01:14.6141123Z       {
+2026-05-17T07:01:14.6141394Z         "away_team": "Lake Macquarie City FC Reserve",
+2026-05-17T07:01:14.6141753Z         "home_team": "Maitland FC Reserve",
+2026-05-17T07:01:14.6142103Z         "kickoff_utc": "2026-05-17T03:00:00+00:00",
+2026-05-17T07:01:14.6142539Z         "league_name": "Australia - Northern NSW League One, Reserves, Women",
+2026-05-17T07:01:14.6143103Z         "match_key": "soccer|lake macquarie city reserves|maitland reserves|2026-05-17",
+2026-05-17T07:01:14.6143565Z         "minutes_to_kickoff": 29067.97,
+2026-05-17T07:01:14.6143905Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6144224Z         "priority": 36.0,
+2026-05-17T07:01:14.6144500Z         "refresh_plan": {
+2026-05-17T07:01:14.6145037Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6145404Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6145751Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6146079Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6146405Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6146733Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6147050Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6147388Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6147708Z         }
+2026-05-17T07:01:14.6147922Z       },
+2026-05-17T07:01:14.6148138Z       {
+2026-05-17T07:01:14.6148373Z         "away_team": "Edgeworth FC",
+2026-05-17T07:01:14.6148842Z         "home_team": "Broadmeadow Magic FC",
+2026-05-17T07:01:14.6149182Z         "kickoff_utc": "2026-05-17T03:00:00+00:00",
+2026-05-17T07:01:14.6149582Z         "league_name": "Australia - Northern NSW NPL",
+2026-05-17T07:01:14.6150012Z         "match_key": "soccer|broadmeadow magic|edgeworth|2026-05-17",
+2026-05-17T07:01:14.6150414Z         "minutes_to_kickoff": 29067.97,
+2026-05-17T07:01:14.6150756Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6151084Z         "priority": 36.0,
+2026-05-17T07:01:14.6151355Z         "refresh_plan": {
+2026-05-17T07:01:14.6151665Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6152041Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6152387Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6152727Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6153063Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6153395Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6153724Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6154068Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6154400Z         }
+2026-05-17T07:01:14.6154823Z       },
+2026-05-17T07:01:14.6155055Z       {
+2026-05-17T07:01:14.6155406Z         "away_team": "Weston Bears FC",
+2026-05-17T07:01:14.6155754Z         "home_team": "Newcastle Olympic FC Reserve",
+2026-05-17T07:01:14.6156116Z         "kickoff_utc": "2026-05-17T03:00:00+00:00",
+2026-05-17T07:01:14.6156509Z         "league_name": "Australia - Northern NSW NPL, Reserves",
+2026-05-17T07:01:14.6156988Z         "match_key": "soccer|newcastle olympic reserves|weston bears|2026-05-17",
+2026-05-17T07:01:14.6157419Z         "minutes_to_kickoff": 29067.97,
+2026-05-17T07:01:14.6157747Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6158068Z         "priority": 36.0,
+2026-05-17T07:01:14.6158341Z         "refresh_plan": {
+2026-05-17T07:01:14.6158812Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6159183Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6159532Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6159859Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6160185Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6160507Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6160819Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6161160Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6161484Z         }
+2026-05-17T07:01:14.6161700Z       },
+2026-05-17T07:01:14.6161919Z       {
+2026-05-17T07:01:14.6162154Z         "away_team": "St George FC",
+2026-05-17T07:01:14.6162479Z         "home_team": "South Coast Flame FC",
+2026-05-17T07:01:14.6162820Z         "kickoff_utc": "2026-05-17T03:15:00+00:00",
+2026-05-17T07:01:14.6163182Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:14.6163607Z         "match_key": "soccer|saint george|south coast flame|2026-05-17",
+2026-05-17T07:01:14.6164013Z         "minutes_to_kickoff": 29082.97,
+2026-05-17T07:01:14.6164346Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6164876Z         "priority": 36.0,
+2026-05-17T07:01:14.6165160Z         "refresh_plan": {
+2026-05-17T07:01:14.6165462Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6165825Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6166173Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6166494Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6166824Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6167147Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6167465Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6167804Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6168128Z         }
+2026-05-17T07:01:14.6168347Z       },
+2026-05-17T07:01:14.6168569Z       {
+2026-05-17T07:01:14.6168939Z         "away_team": "Melbourne City",
+2026-05-17T07:01:14.6169270Z         "home_team": "Box Hill United FC U20",
+2026-05-17T07:01:14.6169617Z         "kickoff_utc": "2026-05-17T03:45:00+00:00",
+2026-05-17T07:01:14.6170000Z         "league_name": "Australia - U20 Victoria NPL, Women",
+2026-05-17T07:01:14.6170446Z         "match_key": "soccer|box hill united|melbourne city|2026-05-17",
+2026-05-17T07:01:14.6170854Z         "minutes_to_kickoff": 29112.97,
+2026-05-17T07:01:14.6171187Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6171508Z         "priority": 36.0,
+2026-05-17T07:01:14.6171785Z         "refresh_plan": {
+2026-05-17T07:01:14.6172096Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6172464Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6172816Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6173152Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6173496Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6173832Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6174150Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6174489Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6175075Z         }
+2026-05-17T07:01:14.6175306Z       },
+2026-05-17T07:01:14.6175524Z       {
+2026-05-17T07:01:14.6175765Z         "away_team": "Kowloon Cricket Club",
+2026-05-17T07:01:14.6176100Z         "home_team": "Wong Tai Sin",
+2026-05-17T07:01:14.6176433Z         "kickoff_utc": "2026-05-17T04:00:00+00:00",
+2026-05-17T07:01:14.6176809Z         "league_name": "Hong Kong, China - 2. Division",
+2026-05-17T07:01:14.6177239Z         "match_key": "soccer|kowloon cricket|wong tai sin|2026-05-17",
+2026-05-17T07:01:14.6177647Z         "minutes_to_kickoff": 29127.97,
+2026-05-17T07:01:14.6177982Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6178307Z         "priority": 36.0,
+2026-05-17T07:01:14.6178757Z         "refresh_plan": {
+2026-05-17T07:01:14.6179070Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6179439Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6179786Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6180116Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6180446Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6180766Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6181084Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6181424Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6181750Z         }
+2026-05-17T07:01:14.6181967Z       },
+2026-05-17T07:01:14.6182186Z       {
+2026-05-17T07:01:14.6182424Z         "away_team": "Vonds Ichihara FC",
+2026-05-17T07:01:14.6182741Z         "home_team": "Iga FC Kunoichi",
+2026-05-17T07:01:14.6183073Z         "kickoff_utc": "2026-05-17T04:00:00+00:00",
+2026-05-17T07:01:14.6183470Z         "league_name": "Japan - Nadeshiko League, Div. 1, Women",
+2026-05-17T07:01:14.6183932Z         "match_key": "soccer|iga kunoichi|vonds ichihara|2026-05-17",
+2026-05-17T07:01:14.6184323Z         "minutes_to_kickoff": 29127.97,
+2026-05-17T07:01:14.6184793Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6185114Z         "priority": 36.0,
+2026-05-17T07:01:14.6185384Z         "refresh_plan": {
+2026-05-17T07:01:14.6185685Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6186061Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6186404Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6186730Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6187059Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6187374Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6187686Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6188022Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6188340Z         }
+2026-05-17T07:01:14.6188560Z       },
+2026-05-17T07:01:14.6188893Z       {
+2026-05-17T07:01:14.6189131Z         "away_team": "Nittaidai FC",
+2026-05-17T07:01:14.6189451Z         "home_team": "Okayama Yunogo Belle",
+2026-05-17T07:01:14.6189788Z         "kickoff_utc": "2026-05-17T04:00:00+00:00",
+2026-05-17T07:01:14.6190186Z         "league_name": "Japan - Nadeshiko League, Div. 1, Women",
+2026-05-17T07:01:14.6190642Z         "match_key": "soccer|nittaidai|okayama yunogo belle|2026-05-17",
+2026-05-17T07:01:14.6191044Z         "minutes_to_kickoff": 29127.97,
+2026-05-17T07:01:14.6191372Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6191689Z         "priority": 36.0,
+2026-05-17T07:01:14.6191954Z         "refresh_plan": {
+2026-05-17T07:01:14.6192253Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6192618Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6192956Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6193285Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6193625Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6193946Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6194259Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6194731Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6195060Z         }
+2026-05-17T07:01:14.6195275Z       },
+2026-05-17T07:01:14.6195484Z       {
+2026-05-17T07:01:14.6195734Z         "away_team": "Yenisey-M Krasnoyarsk",
+2026-05-17T07:01:14.6196082Z         "home_team": "FC Radian Baikal Irkutsk",
+2026-05-17T07:01:14.6196427Z         "kickoff_utc": "2026-05-17T04:00:00+00:00",
+2026-05-17T07:01:14.6196778Z         "league_name": "Russia - Zone Siberia",
+2026-05-17T07:01:14.6197224Z         "match_key": "soccer|radian baikal irkutsk|yenisey m krasnoyarsk|2026-05-17",
+2026-05-17T07:01:14.6197668Z         "minutes_to_kickoff": 29127.97,
+2026-05-17T07:01:14.6197995Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6198439Z         "priority": 36.0,
+2026-05-17T07:01:14.6198713Z         "refresh_plan": {
+2026-05-17T07:01:14.6199012Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6199377Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6199719Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6200049Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6200374Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6200694Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6201024Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6201365Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6201685Z         }
+2026-05-17T07:01:14.6201901Z       },
+2026-05-17T07:01:14.6202117Z       {
+2026-05-17T07:01:14.6202363Z         "away_team": "Tuggeranong United FC",
+2026-05-17T07:01:14.6202693Z         "home_team": "Canberra Olympic",
+2026-05-17T07:01:14.6203029Z         "kickoff_utc": "2026-05-17T04:30:00+00:00",
+2026-05-17T07:01:14.6203412Z         "league_name": "Australia - Capital NPL, Women",
+2026-05-17T07:01:14.6203864Z         "match_key": "soccer|canberra olympic|tuggeranong united|2026-05-17",
+2026-05-17T07:01:14.6204285Z         "minutes_to_kickoff": 29157.97,
+2026-05-17T07:01:14.6204813Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6205148Z         "priority": 36.0,
+2026-05-17T07:01:14.6205419Z         "refresh_plan": {
+2026-05-17T07:01:14.6205729Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6206095Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6206512Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6206836Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6207163Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6207480Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6207795Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6208128Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6208592Z         }
+2026-05-17T07:01:14.6208806Z       },
+2026-05-17T07:01:14.6209020Z       {
+2026-05-17T07:01:14.6209254Z         "away_team": "Belconnen United",
+2026-05-17T07:01:14.6209561Z         "home_team": "Majura FC",
+2026-05-17T07:01:14.6209881Z         "kickoff_utc": "2026-05-17T04:30:00+00:00",
+2026-05-17T07:01:14.6210256Z         "league_name": "Australia - Capital NPL, Women",
+2026-05-17T07:01:14.6210682Z         "match_key": "soccer|belconnen united|majura|2026-05-17",
+2026-05-17T07:01:14.6211074Z         "minutes_to_kickoff": 29157.97,
+2026-05-17T07:01:14.6211404Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6211725Z         "priority": 36.0,
+2026-05-17T07:01:14.6211994Z         "refresh_plan": {
+2026-05-17T07:01:14.6212294Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6212658Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6212993Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6213322Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6213665Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6213987Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6214308Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6214858Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6215200Z         }
+2026-05-17T07:01:14.6215417Z       },
+2026-05-17T07:01:14.6215631Z       {
+2026-05-17T07:01:14.6215864Z         "away_team": "Kwong Wah",
+2026-05-17T07:01:14.6216162Z         "home_team": "Fukien",
+2026-05-17T07:01:14.6216469Z         "kickoff_utc": "2026-05-17T04:30:00+00:00",
+2026-05-17T07:01:14.6216834Z         "league_name": "Hong Kong, China - 2. Division",
+2026-05-17T07:01:14.6217220Z         "match_key": "soccer|fukien|kwong wah|2026-05-17",
+2026-05-17T07:01:14.6217575Z         "minutes_to_kickoff": 29157.97,
+2026-05-17T07:01:14.6217897Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6218347Z         "priority": 36.0,
+2026-05-17T07:01:14.6218622Z         "refresh_plan": {
+2026-05-17T07:01:14.6218920Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6219285Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6219628Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6219952Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6220279Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6220597Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6220911Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6221250Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6221571Z         }
+2026-05-17T07:01:14.6221789Z       },
+2026-05-17T07:01:14.6222006Z       {
+2026-05-17T07:01:14.6222249Z         "away_team": "Yamato Sylphid",
+2026-05-17T07:01:14.6222585Z         "home_team": "Diavorosso Hiroshima",
+2026-05-17T07:01:14.6222928Z         "kickoff_utc": "2026-05-17T04:30:00+00:00",
+2026-05-17T07:01:14.6223330Z         "league_name": "Japan - Nadeshiko League, Div 2, Women",
+2026-05-17T07:01:14.6223802Z         "match_key": "soccer|diavorosso hiroshima|yamato sylphid|2026-05-17",
+2026-05-17T07:01:14.6224222Z         "minutes_to_kickoff": 29157.97,
+2026-05-17T07:01:14.6224546Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6224996Z         "priority": 36.0,
+2026-05-17T07:01:14.6225268Z         "refresh_plan": {
+2026-05-17T07:01:14.6225568Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6225935Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6226278Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6226601Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6226930Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6227245Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6227558Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6227898Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6228345Z         }
+2026-05-17T07:01:14.6228558Z       },
+2026-05-17T07:01:14.6228770Z       {
+2026-05-17T07:01:14.6229004Z         "away_team": "Manly United FC",
+2026-05-17T07:01:14.6229318Z         "home_team": "Bulls FC Academy",
+2026-05-17T07:01:14.6229648Z         "kickoff_utc": "2026-05-17T04:40:00+00:00",
+2026-05-17T07:01:14.6230038Z         "league_name": "Australia - NSW Premier League, Women",
+2026-05-17T07:01:14.6230483Z         "match_key": "soccer|bulls academy|manly united|2026-05-17",
+2026-05-17T07:01:14.6230869Z         "minutes_to_kickoff": 29167.97,
+2026-05-17T07:01:14.6231193Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6231508Z         "priority": 36.0,
+2026-05-17T07:01:14.6231781Z         "refresh_plan": {
+2026-05-17T07:01:14.6232084Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6232452Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6232797Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6233139Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6233465Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6233782Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6234095Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6234428Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6234990Z         }
+2026-05-17T07:01:14.6235209Z       },
+2026-05-17T07:01:14.6235425Z       {
+2026-05-17T07:01:14.6235665Z         "away_team": "Bankstown City FC",
+2026-05-17T07:01:14.6235985Z         "home_team": "Blacktown City FC",
+2026-05-17T07:01:14.6236319Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6236678Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:14.6237088Z         "match_key": "soccer|bankstown city|blacktown city|2026-05-17",
+2026-05-17T07:01:14.6237487Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6237813Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6238269Z         "priority": 36.0,
+2026-05-17T07:01:14.6238540Z         "refresh_plan": {
+2026-05-17T07:01:14.6238835Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6239200Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6239543Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6239867Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6240190Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6240504Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6240817Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6241156Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6241480Z         }
+2026-05-17T07:01:14.6241698Z       },
+2026-05-17T07:01:14.6241913Z       {
+2026-05-17T07:01:14.6242170Z         "away_team": "Hills United FC Brumbies",
+2026-05-17T07:01:14.6242537Z         "home_team": "Central Coast Mariners Academy",
+2026-05-17T07:01:14.6242919Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6243284Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:14.6243768Z         "match_key": "soccer|central coast mariners academy|hills united brumbies|2026-05-17",
+2026-05-17T07:01:14.6244248Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6244793Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6245135Z         "priority": 36.0,
+2026-05-17T07:01:14.6245407Z         "refresh_plan": {
+2026-05-17T07:01:14.6245702Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6246060Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6246405Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6246740Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6247071Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6247393Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6247722Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6248198Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6248522Z         }
+2026-05-17T07:01:14.6248732Z       },
+2026-05-17T07:01:14.6248942Z       {
+2026-05-17T07:01:14.6249178Z         "away_team": "Camden Tigers FC",
+2026-05-17T07:01:14.6249533Z         "home_team": "Marconi Stallions",
+2026-05-17T07:01:14.6249865Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6250222Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:14.6250628Z         "match_key": "soccer|camden tigers|marconi stallions|2026-05-17",
+2026-05-17T07:01:14.6251027Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6251347Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6251667Z         "priority": 36.0,
+2026-05-17T07:01:14.6251932Z         "refresh_plan": {
+2026-05-17T07:01:14.6252231Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6252595Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6252948Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6253274Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6253605Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6253920Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6254234Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6254751Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6255107Z         }
+2026-05-17T07:01:14.6255323Z       },
+2026-05-17T07:01:14.6255539Z       {
+2026-05-17T07:01:14.6255786Z         "away_team": "Sutherland Strikers",
+2026-05-17T07:01:14.6256117Z         "home_team": "Nepean FC",
+2026-05-17T07:01:14.6256450Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6256820Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:14.6257236Z         "match_key": "soccer|nepean|sutherland strikers|2026-05-17",
+2026-05-17T07:01:14.6257632Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6258103Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6258431Z         "priority": 36.0,
+2026-05-17T07:01:14.6258705Z         "refresh_plan": {
+2026-05-17T07:01:14.6259009Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6259373Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6259715Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6260046Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6260369Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6260692Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6261009Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6261351Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6261673Z         }
+2026-05-17T07:01:14.6261892Z       },
+2026-05-17T07:01:14.6262112Z       {
+2026-05-17T07:01:14.6262360Z         "away_team": "Blacktown Spartans FC",
+2026-05-17T07:01:14.6262691Z         "home_team": "SD Raiders FC",
+2026-05-17T07:01:14.6263025Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6263596Z         "league_name": "Australia - NSW League One, Women",
+2026-05-17T07:01:14.6264375Z         "match_key": "soccer|blacktown spartans|raiders|2026-05-17",
+2026-05-17T07:01:14.6265132Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6265638Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6266114Z         "priority": 36.0,
+2026-05-17T07:01:14.6281352Z         "refresh_plan": {
+2026-05-17T07:01:14.6281877Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6282292Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6282669Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6283015Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6283354Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6283683Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6284023Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6284833Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6285239Z         }
+2026-05-17T07:01:14.6285468Z       },
+2026-05-17T07:01:14.6285692Z       {
+2026-05-17T07:01:14.6285933Z         "away_team": "Northern Tigers",
+2026-05-17T07:01:14.6286270Z         "home_team": "Macarthur Rams",
+2026-05-17T07:01:14.6286610Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6287028Z         "league_name": "Australia - NSW Premier League, Women",
+2026-05-17T07:01:14.6287502Z         "match_key": "soccer|macarthur rams|northern tigers|2026-05-17",
+2026-05-17T07:01:14.6287914Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6288247Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6288580Z         "priority": 36.0,
+2026-05-17T07:01:14.6288866Z         "refresh_plan": {
+2026-05-17T07:01:14.6289363Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6289762Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6290124Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6290462Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6290803Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6291126Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6291449Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6291793Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6292121Z         }
+2026-05-17T07:01:14.6292346Z       },
+2026-05-17T07:01:14.6292565Z       {
+2026-05-17T07:01:14.6292805Z         "away_team": "Wallsend FC",
+2026-05-17T07:01:14.6293139Z         "home_team": "West Wallsend SFC",
+2026-05-17T07:01:14.6293491Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6293891Z         "league_name": "Australia - Northern NSW League One",
+2026-05-17T07:01:14.6294341Z         "match_key": "soccer|wallsend|west wallsend sfc|2026-05-17",
+2026-05-17T07:01:14.6295162Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6295518Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6295857Z         "priority": 36.0,
+2026-05-17T07:01:14.6296138Z         "refresh_plan": {
+2026-05-17T07:01:14.6296454Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6296832Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6297178Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6297519Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6297853Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6298184Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6298508Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6298853Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6299275Z         }
+2026-05-17T07:01:14.6299502Z       },
+2026-05-17T07:01:14.6299722Z       {
+2026-05-17T07:01:14.6299959Z         "away_team": "Weston Bears FC",
+2026-05-17T07:01:14.6300301Z         "home_team": "Newcastle Olympic FC",
+2026-05-17T07:01:14.6300651Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6301027Z         "league_name": "Australia - Northern NSW NPL",
+2026-05-17T07:01:14.6301453Z         "match_key": "soccer|newcastle olympic|weston bears|2026-05-17",
+2026-05-17T07:01:14.6301859Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6302189Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6302511Z         "priority": 36.0,
+2026-05-17T07:01:14.6302783Z         "refresh_plan": {
+2026-05-17T07:01:14.6303096Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6303467Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6303814Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6304145Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6304476Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6304940Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6305445Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6305791Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6306116Z         }
+2026-05-17T07:01:14.6306333Z       },
+2026-05-17T07:01:14.6306547Z       {
+2026-05-17T07:01:14.6306791Z         "away_team": "Redcliffe Dolphins",
+2026-05-17T07:01:14.6307116Z         "home_team": "Logan Roos FC",
+2026-05-17T07:01:14.6307442Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6307855Z         "league_name": "Australia - Queensland Premier League 3 Metro",
+2026-05-17T07:01:14.6308338Z         "match_key": "soccer|logan roos|redcliffe dolphins|2026-05-17",
+2026-05-17T07:01:14.6308733Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6309058Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6309377Z         "priority": 36.0,
+2026-05-17T07:01:14.6309647Z         "refresh_plan": {
+2026-05-17T07:01:14.6309952Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6310333Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6310676Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6311005Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6311339Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6311660Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6311977Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6312315Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6312637Z         }
+2026-05-17T07:01:14.6312860Z       },
+2026-05-17T07:01:14.6313078Z       {
+2026-05-17T07:01:14.6313336Z         "away_team": "Western Sydney Wanderers",
+2026-05-17T07:01:14.6313686Z         "home_team": "Sydney University SFC",
+2026-05-17T07:01:14.6314036Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6314409Z         "league_name": "Australia - U23 NSW NPL, Women",
+2026-05-17T07:01:14.6315190Z         "match_key": "soccer|sydney university sfc|western sydney wanderers|2026-05-17",
+2026-05-17T07:01:14.6315818Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6316160Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6316494Z         "priority": 36.0,
+2026-05-17T07:01:14.6316774Z         "refresh_plan": {
+2026-05-17T07:01:14.6317086Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6317458Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6317809Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6318144Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6318470Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6318792Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6319107Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6319448Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6319775Z         }
+2026-05-17T07:01:14.6319992Z       },
+2026-05-17T07:01:14.6320215Z       {
+2026-05-17T07:01:14.6320462Z         "away_team": "Thespakusatsu",
+2026-05-17T07:01:14.6320782Z         "home_team": "Blaublitz Akita",
+2026-05-17T07:01:14.6321108Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6321462Z         "league_name": "Japan - J.League 2",
+2026-05-17T07:01:14.6321860Z         "match_key": "soccer|blaublitz akita|thespakusatsu|2026-05-17",
+2026-05-17T07:01:14.6322261Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6322581Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6322894Z         "priority": 36.0,
+2026-05-17T07:01:14.6323160Z         "refresh_plan": {
+2026-05-17T07:01:14.6323459Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6323820Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6324161Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6324489Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6325054Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6325524Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6325839Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6326171Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6326490Z         }
+2026-05-17T07:01:14.6326707Z       },
+2026-05-17T07:01:14.6326923Z       {
+2026-05-17T07:01:14.6327160Z         "away_team": "Zweigen Kanazawa",
+2026-05-17T07:01:14.6327473Z         "home_team": "FC Osaka",
+2026-05-17T07:01:14.6327793Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6328138Z         "league_name": "Japan - J.League 2",
+2026-05-17T07:01:14.6328521Z         "match_key": "soccer|osaka|zweigen kanazawa|2026-05-17",
+2026-05-17T07:01:14.6328891Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6329210Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6329529Z         "priority": 36.0,
+2026-05-17T07:01:14.6329812Z         "refresh_plan": {
+2026-05-17T07:01:14.6330124Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6330499Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6330841Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6331172Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6331499Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6331827Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6332140Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6332475Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6332795Z         }
+2026-05-17T07:01:14.6333010Z       },
+2026-05-17T07:01:14.6333223Z       {
+2026-05-17T07:01:14.6333466Z         "away_team": "AC Nagano Parceiro",
+2026-05-17T07:01:14.6333785Z         "home_team": "RB Omiya Ardija",
+2026-05-17T07:01:14.6334110Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6334453Z         "league_name": "Japan - J.League 2",
+2026-05-17T07:01:14.6335074Z         "match_key": "soccer|nagano parceiro|rb omiya ardija|2026-05-17",
+2026-05-17T07:01:14.6335621Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6335942Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6336257Z         "priority": 36.0,
+2026-05-17T07:01:14.6336542Z         "refresh_plan": {
+2026-05-17T07:01:14.6336843Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6337219Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6337558Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6337885Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6338212Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6338532Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6338850Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6339186Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6339507Z         }
+2026-05-17T07:01:14.6339723Z       },
+2026-05-17T07:01:14.6339947Z       {
+2026-05-17T07:01:14.6340188Z         "away_team": "Sfida Setagaya FC",
+2026-05-17T07:01:14.6340526Z         "home_team": "Viamaterasu Miyazaki",
+2026-05-17T07:01:14.6340869Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6341265Z         "league_name": "Japan - Nadeshiko League, Div. 1, Women",
+2026-05-17T07:01:14.6341735Z         "match_key": "soccer|sfida setagaya|viamaterasu miyazaki|2026-05-17",
+2026-05-17T07:01:14.6342156Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6342479Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6342797Z         "priority": 36.0,
+2026-05-17T07:01:14.6343066Z         "refresh_plan": {
+2026-05-17T07:01:14.6343368Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6343736Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6344073Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6344397Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6344876Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6345324Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6345637Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6345967Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6346298Z         }
+2026-05-17T07:01:14.6346513Z       },
+2026-05-17T07:01:14.6346732Z       {
+2026-05-17T07:01:14.6346964Z         "away_team": "Gyeongju FC",
+2026-05-17T07:01:14.6347269Z         "home_team": "FC Mokpo",
+2026-05-17T07:01:14.6347584Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:14.6347960Z         "league_name": "Republic of Korea - K3 League",
+2026-05-17T07:01:14.6348356Z         "match_key": "soccer|gyeongju|mokpo|2026-05-17",
+2026-05-17T07:01:14.6348710Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:14.6349036Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:14.6349355Z         "priority": 36.0,
+2026-05-17T07:01:14.6349660Z         "refresh_plan": {
+2026-05-17T07:01:14.6349973Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:14.6350345Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:14.6350686Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:14.6351015Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:14.6351353Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:14.6351678Z           "needs_context_refresh": false,
+2026-05-17T07:01:14.6351997Z           "needs_odds_refresh": true,
+2026-05-17T07:01:14.6352332Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:14.6352655Z         }
+2026-05-17T07:01:14.6352880Z       }
+2026-05-17T07:01:14.6353096Z     ],
+2026-05-17T07:01:14.6353364Z     "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-17T07:01:14.6353692Z   },
+2026-05-17T07:01:14.6353911Z   "status": "ok",
+2026-05-17T07:01:14.6354204Z   "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-17T07:01:14.6354531Z }
+2026-05-17T07:01:14.7312622Z {
+2026-05-17T07:01:14.7313605Z   "active_matches": 301,
+2026-05-17T07:01:14.7314365Z   "alias_update": {
+2026-05-17T07:01:14.7315277Z     "paths": [
+2026-05-17T07:01:14.7316443Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+2026-05-17T07:01:14.7317915Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+2026-05-17T07:01:14.7319297Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+2026-05-17T07:01:14.7320216Z     ],
+2026-05-17T07:01:14.7320700Z     "status": "ok",
+2026-05-17T07:01:14.7321334Z     "target_date": "2026-05-17"
+2026-05-17T07:01:14.7321831Z   },
+2026-05-17T07:01:14.7322260Z   "date_local": "2026-05-17",
+2026-05-17T07:01:14.7322820Z   "final_pre_kickoff_checks": 0,
+2026-05-17T07:01:14.7323464Z   "matches_missing_odds_coverage": 166,
+2026-05-17T07:01:14.7324093Z   "matches_needing_odds_refresh": 166,
+2026-05-17T07:01:14.7324515Z   "matches_stale_odds_refresh": 0,
+2026-05-17T07:01:14.7325223Z   "no_more_regular_run_before_kickoff": 0,
+2026-05-17T07:01:14.7325653Z   "notes": [
+2026-05-17T07:01:14.7326119Z     "Top-level refresh counters now match row-level refresh_plan flags.",
+2026-05-17T07:01:14.7326992Z     "Missing coverage and stale/final-refresh are separated so Telegram no longer exaggerates odds refresh load."
+2026-05-17T07:01:14.7327719Z   ],
+2026-05-17T07:01:14.7328008Z   "status": "ok",
+2026-05-17T07:01:14.7328390Z   "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-17T07:01:14.7328818Z }
+2026-05-17T07:01:17.4175993Z Collecting fastapi==0.116.1 (from -r requirements.txt (line 1))
+2026-05-17T07:01:17.4717526Z   Downloading fastapi-0.116.1-py3-none-any.whl.metadata (28 kB)
+2026-05-17T07:01:17.5100579Z Collecting uvicorn==0.35.0 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-17T07:01:17.5135362Z   Downloading uvicorn-0.35.0-py3-none-any.whl.metadata (6.5 kB)
+2026-05-17T07:01:17.5315216Z Collecting httpx==0.28.1 (from -r requirements.txt (line 3))
+2026-05-17T07:01:17.5353310Z   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+2026-05-17T07:01:17.6549277Z Collecting pydantic==2.13.2 (from -r requirements.txt (line 4))
+2026-05-17T07:01:17.6585154Z   Downloading pydantic-2.13.2-py3-none-any.whl.metadata (108 kB)
+2026-05-17T07:01:17.6833063Z Collecting pydantic-settings==2.13.1 (from -r requirements.txt (line 5))
+2026-05-17T07:01:17.6867136Z   Downloading pydantic_settings-2.13.1-py3-none-any.whl.metadata (3.4 kB)
+2026-05-17T07:01:17.7018807Z Collecting python-dotenv==1.1.1 (from -r requirements.txt (line 6))
+2026-05-17T07:01:17.7052655Z   Downloading python_dotenv-1.1.1-py3-none-any.whl.metadata (24 kB)
+2026-05-17T07:01:17.7228670Z Collecting tzdata (from -r requirements.txt (line 7))
+2026-05-17T07:01:17.7264557Z   Downloading tzdata-2026.2-py2.py3-none-any.whl.metadata (1.4 kB)
+2026-05-17T07:01:17.7521401Z Collecting pytest==8.4.2 (from -r requirements.txt (line 8))
+2026-05-17T07:01:17.7558711Z   Downloading pytest-8.4.2-py3-none-any.whl.metadata (7.7 kB)
+2026-05-17T07:01:17.7822034Z Collecting starlette<0.48.0,>=0.40.0 (from fastapi==0.116.1->-r requirements.txt (line 1))
+2026-05-17T07:01:17.7861423Z   Downloading starlette-0.47.3-py3-none-any.whl.metadata (6.2 kB)
+2026-05-17T07:01:17.8049198Z Collecting typing-extensions>=4.8.0 (from fastapi==0.116.1->-r requirements.txt (line 1))
+2026-05-17T07:01:17.8087006Z   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+2026-05-17T07:01:17.8211376Z Collecting annotated-types>=0.6.0 (from pydantic==2.13.2->-r requirements.txt (line 4))
+2026-05-17T07:01:17.8247282Z   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+2026-05-17T07:01:18.4611968Z Collecting pydantic-core==2.46.2 (from pydantic==2.13.2->-r requirements.txt (line 4))
+2026-05-17T07:01:18.4649757Z   Downloading pydantic_core-2.46.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+2026-05-17T07:01:18.4775626Z Collecting typing-inspection>=0.4.2 (from pydantic==2.13.2->-r requirements.txt (line 4))
+2026-05-17T07:01:18.4811259Z   Downloading typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+2026-05-17T07:01:18.5010254Z Collecting click>=7.0 (from uvicorn==0.35.0->uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-17T07:01:18.5047390Z   Downloading click-8.4.0-py3-none-any.whl.metadata (2.6 kB)
+2026-05-17T07:01:18.5164156Z Collecting h11>=0.8 (from uvicorn==0.35.0->uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-17T07:01:18.5197661Z   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2026-05-17T07:01:18.5390305Z Collecting anyio (from httpx==0.28.1->-r requirements.txt (line 3))
+2026-05-17T07:01:18.5425568Z   Downloading anyio-4.13.0-py3-none-any.whl.metadata (4.5 kB)
+2026-05-17T07:01:18.5615084Z Collecting certifi (from httpx==0.28.1->-r requirements.txt (line 3))
+2026-05-17T07:01:18.5651394Z   Downloading certifi-2026.4.22-py3-none-any.whl.metadata (2.5 kB)
+2026-05-17T07:01:18.5820968Z Collecting httpcore==1.* (from httpx==0.28.1->-r requirements.txt (line 3))
+2026-05-17T07:01:18.5857346Z   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+2026-05-17T07:01:18.6025668Z Collecting idna (from httpx==0.28.1->-r requirements.txt (line 3))
+2026-05-17T07:01:18.6067231Z   Downloading idna-3.15-py3-none-any.whl.metadata (7.7 kB)
+2026-05-17T07:01:18.6219686Z Collecting iniconfig>=1 (from pytest==8.4.2->-r requirements.txt (line 8))
+2026-05-17T07:01:18.6254590Z   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+2026-05-17T07:01:18.6410196Z Collecting packaging>=20 (from pytest==8.4.2->-r requirements.txt (line 8))
+2026-05-17T07:01:18.6445919Z   Downloading packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+2026-05-17T07:01:18.6570320Z Collecting pluggy<2,>=1.5 (from pytest==8.4.2->-r requirements.txt (line 8))
+2026-05-17T07:01:18.6605493Z   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2026-05-17T07:01:18.6790673Z Collecting pygments>=2.7.2 (from pytest==8.4.2->-r requirements.txt (line 8))
+2026-05-17T07:01:18.6828149Z   Downloading pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+2026-05-17T07:01:18.7150255Z Collecting httptools>=0.6.3 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-17T07:01:18.7192369Z   Downloading httptools-0.7.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+2026-05-17T07:01:18.7558656Z Collecting pyyaml>=5.1 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-17T07:01:18.7597234Z   Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+2026-05-17T07:01:18.7954965Z Collecting uvloop>=0.15.1 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-17T07:01:18.7993625Z   Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+2026-05-17T07:01:18.8669858Z Collecting watchfiles>=0.13 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-17T07:01:18.8705138Z   Downloading watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+2026-05-17T07:01:18.9499067Z Collecting websockets>=10.4 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-17T07:01:18.9534905Z   Downloading websockets-16.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.8 kB)
+2026-05-17T07:01:18.9773572Z Downloading fastapi-0.116.1-py3-none-any.whl (95 kB)
+2026-05-17T07:01:18.9836393Z Downloading pydantic-2.13.2-py3-none-any.whl (471 kB)
+2026-05-17T07:01:18.9924426Z Downloading uvicorn-0.35.0-py3-none-any.whl (66 kB)
+2026-05-17T07:01:18.9980370Z Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+2026-05-17T07:01:19.0034509Z Downloading pydantic_settings-2.13.1-py3-none-any.whl (58 kB)
+2026-05-17T07:01:19.0090344Z Downloading python_dotenv-1.1.1-py3-none-any.whl (20 kB)
+2026-05-17T07:01:19.0145377Z Downloading pytest-8.4.2-py3-none-any.whl (365 kB)
+2026-05-17T07:01:19.0215590Z Downloading pydantic_core-2.46.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+2026-05-17T07:01:19.0342153Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 187.7 MB/s  0:00:00
+2026-05-17T07:01:19.0376200Z Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+2026-05-17T07:01:19.0459876Z Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-05-17T07:01:19.0514648Z Downloading starlette-0.47.3-py3-none-any.whl (72 kB)
+2026-05-17T07:01:19.0573945Z Downloading anyio-4.13.0-py3-none-any.whl (114 kB)
+2026-05-17T07:01:19.0631674Z Downloading tzdata-2026.2-py2.py3-none-any.whl (349 kB)
+2026-05-17T07:01:19.0700218Z Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+2026-05-17T07:01:19.0760840Z Downloading click-8.4.0-py3-none-any.whl (116 kB)
+2026-05-17T07:01:19.0820185Z Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+2026-05-17T07:01:19.0878219Z Downloading httptools-0.7.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (517 kB)
+2026-05-17T07:01:19.0947419Z Downloading idna-3.15-py3-none-any.whl (72 kB)
+2026-05-17T07:01:19.1011106Z Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-05-17T07:01:19.1068625Z Downloading packaging-26.2-py3-none-any.whl (100 kB)
+2026-05-17T07:01:19.1132532Z Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+2026-05-17T07:01:19.1207033Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 197.4 MB/s  0:00:00
+2026-05-17T07:01:19.1244910Z Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
+2026-05-17T07:01:19.1306842Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 140.5 MB/s  0:00:00
+2026-05-17T07:01:19.1343845Z Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2026-05-17T07:01:19.1405695Z Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+2026-05-17T07:01:19.1464150Z Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.4 MB)
+2026-05-17T07:01:19.1630721Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 295.5 MB/s  0:00:00
+2026-05-17T07:01:19.1668770Z Downloading watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)
+2026-05-17T07:01:19.1738873Z Downloading websockets-16.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (184 kB)
+2026-05-17T07:01:19.1798403Z Downloading certifi-2026.4.22-py3-none-any.whl (135 kB)
+2026-05-17T07:01:19.2695642Z Installing collected packages: websockets, uvloop, tzdata, typing-extensions, pyyaml, python-dotenv, pygments, pluggy, packaging, iniconfig, idna, httptools, h11, click, certifi, annotated-types, uvicorn, typing-inspection, pytest, pydantic-core, httpcore, anyio, watchfiles, starlette, pydantic, httpx, pydantic-settings, fastapi
+2026-05-17T07:01:21.9149120Z 
+2026-05-17T07:01:21.9179246Z Successfully installed annotated-types-0.7.0 anyio-4.13.0 certifi-2026.4.22 click-8.4.0 fastapi-0.116.1 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.28.1 idna-3.15 iniconfig-2.3.0 packaging-26.2 pluggy-1.6.0 pydantic-2.13.2 pydantic-core-2.46.2 pydantic-settings-2.13.1 pygments-2.20.0 pytest-8.4.2 python-dotenv-1.1.1 pyyaml-6.0.3 starlette-0.47.3 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2026.2 uvicorn-0.35.0 uvloop-0.22.1 watchfiles-1.1.1 websockets-16.0
+2026-05-17T07:01:22.2427507Z DEPRECATION: Unexpected import of 'scripts.day_inventory_aliases' after pip install started. pip 26.3 will enforce this behaviour change. Discussion can be found at https://github.com/pypa/pip/issues/13842 (/home/runner/work/sports-bot/sports-bot/app/providers/rapidapi_bridge_runtime_patch.py:92)
+2026-05-17T07:01:22.2430980Z DEPRECATION: Unexpected import of 'scripts' after pip install started. pip 26.3 will enforce this behaviour change. Discussion can be found at https://github.com/pypa/pip/issues/13842 (/home/runner/work/sports-bot/sports-bot/app/providers/rapidapi_bridge_runtime_patch.py:92)
+2026-05-17T07:01:22.3655317Z {
+2026-05-17T07:01:22.3656107Z   "alias_update": {
+2026-05-17T07:01:22.3656579Z     "paths": [
+2026-05-17T07:01:22.3657564Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+2026-05-17T07:01:22.3658584Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+2026-05-17T07:01:22.3659401Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+2026-05-17T07:01:22.3659874Z     ],
+2026-05-17T07:01:22.3660122Z     "status": "ok",
+2026-05-17T07:01:22.3660410Z     "target_date": "2026-05-17"
+2026-05-17T07:01:22.3660714Z   },
+2026-05-17T07:01:22.3660954Z   "counts": {
+2026-05-17T07:01:22.3661375Z     "core_provider_inventory_bridge_updated_utc": "2026-05-16T21:02:21.082408+00:00",
+2026-05-17T07:01:22.3661997Z     "coverage_progress_updated_utc": "2026-05-17T05:16:46.163681+00:00",
+2026-05-17T07:01:22.3662616Z     "coverage_rows_seen_last_run": 4,
+2026-05-17T07:01:22.3663164Z     "fixture_sources_seen": 3,
+2026-05-17T07:01:22.3663644Z     "leagues_seen": 26,
+2026-05-17T07:01:22.3663943Z     "matches_added": 300,
+2026-05-17T07:01:22.3664260Z     "matches_added_from_latest_run": 0,
+2026-05-17T07:01:22.3664814Z     "matches_after_core_merge": 1023,
+2026-05-17T07:01:22.3665173Z     "matches_after_top_cut": 300,
+2026-05-17T07:01:22.3665525Z     "matches_coverage_updated_last_run": 4,
+2026-05-17T07:01:22.3665899Z     "matches_missing_context_2plus": 203,
+2026-05-17T07:01:22.3666264Z     "matches_missing_price_2plus": 150,
+2026-05-17T07:01:22.3666621Z     "matches_next_12h": 188,
+2026-05-17T07:01:22.3666950Z     "matches_next_12h_ready": 83,
+2026-05-17T07:01:22.3667283Z     "matches_next_6h": 134,
+2026-05-17T07:01:22.3667600Z     "matches_next_6h_ready": 83,
+2026-05-17T07:01:22.3667940Z     "matches_raw_before_merge": 1294,
+2026-05-17T07:01:22.3668296Z     "matches_ready_for_model": 135,
+2026-05-17T07:01:22.3668648Z     "matches_ready_for_publish": 38,
+2026-05-17T07:01:22.3668992Z     "matches_seen_latest_run": 0,
+2026-05-17T07:01:22.3669330Z     "matches_total": 301,
+2026-05-17T07:01:22.3669675Z     "matches_total_before_top_selection": 336,
+2026-05-17T07:01:22.3670074Z     "matches_total_high_watermark": 401,
+2026-05-17T07:01:22.3670627Z     "matches_updated": 0,
+2026-05-17T07:01:22.3670953Z     "matches_updated_from_latest_run": 0,
+2026-05-17T07:01:22.3671335Z     "matches_with_2plus_context_sources": 38,
+2026-05-17T07:01:22.3671741Z     "matches_with_2plus_core_fixture_sources": 140,
+2026-05-17T07:01:22.3672148Z     "matches_with_2plus_odds_sources": 38,
+2026-05-17T07:01:22.3672548Z     "matches_with_2plus_price_confirmations": 38,
+2026-05-17T07:01:22.3672933Z     "matches_with_3_core_fixture_sources": 47,
+2026-05-17T07:01:22.3673286Z     "matches_with_context": 135,
+2026-05-17T07:01:22.3673606Z     "matches_with_form": 134,
+2026-05-17T07:01:22.3673902Z     "matches_with_news": 0,
+2026-05-17T07:01:22.3674189Z     "matches_with_odds": 135,
+2026-05-17T07:01:22.3674475Z     "matches_with_weather": 0,
+2026-05-17T07:01:22.3674959Z     "matches_with_xg": 42,
+2026-05-17T07:01:22.3675262Z     "multi_source_fixture_matches": 150,
+2026-05-17T07:01:22.3675586Z     "providers_seen": 3,
+2026-05-17T07:01:22.3675887Z     "publish_min_context_sources": 2,
+2026-05-17T07:01:22.3676215Z     "publish_min_odds_sources": 2,
+2026-05-17T07:01:22.3676543Z     "publish_min_price_confirmations": 2,
+2026-05-17T07:01:22.3676903Z     "runtime_matches_with_context_last_run": 167,
+2026-05-17T07:01:22.3677277Z     "runtime_matches_with_odds_last_run": 98
+2026-05-17T07:01:22.3677587Z   },
+2026-05-17T07:01:22.3678024Z   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-17.json",
+2026-05-17T07:01:22.3678531Z   "latest_rows_seen": 0,
+2026-05-17T07:01:22.3678809Z   "matches_added": 0,
+2026-05-17T07:01:22.3679075Z   "matches_after": 301,
+2026-05-17T07:01:22.3679350Z   "matches_before": 301,
+2026-05-17T07:01:22.3679671Z   "matches_rejected_not_target_date_or_malformed": 0,
+2026-05-17T07:01:22.3680023Z   "matches_updated": 0,
+2026-05-17T07:01:22.3680280Z   "notes": [
+2026-05-17T07:01:22.3680833Z     "This runs after run-once, so the day inventory grows from actual latest-matches exports, not only from the pre-run bootstrap.",
+2026-05-17T07:01:22.3681940Z     "Telegram detailed report reads latest-day-inventory-summary.json, so matches_total now represents the cumulative daily high watermark."
+2026-05-17T07:01:22.3682595Z   ],
+2026-05-17T07:01:22.3682820Z   "status": "ok",
+2026-05-17T07:01:22.3683318Z   "summary_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-summary.json",
+2026-05-17T07:01:22.3683872Z   "target_date": "2026-05-17",
+2026-05-17T07:01:22.3684203Z   "updated_at_utc": "2026-05-17T07:01:22.243274+00:00"
+2026-05-17T07:01:22.3684536Z }
+2026-05-17T07:01:22.4875166Z {
+2026-05-17T07:01:22.4875728Z   "alias_update": {
+2026-05-17T07:01:22.4876196Z     "paths": [
+2026-05-17T07:01:22.4876693Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+2026-05-17T07:01:22.4877357Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+2026-05-17T07:01:22.4877984Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+2026-05-17T07:01:22.4878494Z     ],
+2026-05-17T07:01:22.4878743Z     "status": "ok",
+2026-05-17T07:01:22.4879032Z     "target_date": "2026-05-17"
+2026-05-17T07:01:22.4879339Z   },
+2026-05-17T07:01:22.4879578Z   "counts": {
+2026-05-17T07:01:22.4879998Z     "core_provider_inventory_bridge_updated_utc": "2026-05-16T21:02:21.082408+00:00",
+2026-05-17T07:01:22.4880605Z     "coverage_progress_updated_utc": "2026-05-17T05:16:46.163681+00:00",
+2026-05-17T07:01:22.4881068Z     "coverage_rows_seen_last_run": 4,
+2026-05-17T07:01:22.4881422Z     "fixture_sources_seen": 3,
+2026-05-17T07:01:22.4881743Z     "leagues_seen": 26,
+2026-05-17T07:01:22.4882046Z     "matches_added": 300,
+2026-05-17T07:01:22.4882364Z     "matches_added_from_latest_run": 0,
+2026-05-17T07:01:22.4882723Z     "matches_after_core_merge": 1023,
+2026-05-17T07:01:22.4883072Z     "matches_after_top_cut": 300,
+2026-05-17T07:01:22.4883418Z     "matches_coverage_updated_last_run": 4,
+2026-05-17T07:01:22.4883797Z     "matches_missing_context_2plus": 203,
+2026-05-17T07:01:22.4884421Z     "matches_missing_price_2plus": 150,
+2026-05-17T07:01:22.4885025Z     "matches_next_12h": 188,
+2026-05-17T07:01:22.4885351Z     "matches_next_12h_ready": 83,
+2026-05-17T07:01:22.4885679Z     "matches_next_6h": 134,
+2026-05-17T07:01:22.4886050Z     "matches_next_6h_ready": 83,
+2026-05-17T07:01:22.4886392Z     "matches_raw_before_merge": 1294,
+2026-05-17T07:01:22.4886740Z     "matches_ready_for_model": 135,
+2026-05-17T07:01:22.4887087Z     "matches_ready_for_publish": 38,
+2026-05-17T07:01:22.4887432Z     "matches_seen_latest_run": 0,
+2026-05-17T07:01:22.4887756Z     "matches_total": 301,
+2026-05-17T07:01:22.4888085Z     "matches_total_before_top_selection": 336,
+2026-05-17T07:01:22.4888468Z     "matches_total_high_watermark": 401,
+2026-05-17T07:01:22.4888824Z     "matches_updated": 0,
+2026-05-17T07:01:22.4889141Z     "matches_updated_from_latest_run": 0,
+2026-05-17T07:01:22.4889518Z     "matches_with_2plus_context_sources": 38,
+2026-05-17T07:01:22.4889929Z     "matches_with_2plus_core_fixture_sources": 140,
+2026-05-17T07:01:22.4890340Z     "matches_with_2plus_odds_sources": 38,
+2026-05-17T07:01:22.4890734Z     "matches_with_2plus_price_confirmations": 38,
+2026-05-17T07:01:22.4891141Z     "matches_with_3_core_fixture_sources": 47,
+2026-05-17T07:01:22.4891511Z     "matches_with_context": 135,
+2026-05-17T07:01:22.4891839Z     "matches_with_form": 134,
+2026-05-17T07:01:22.4892162Z     "matches_with_news": 0,
+2026-05-17T07:01:22.4892468Z     "matches_with_odds": 135,
+2026-05-17T07:01:22.4892797Z     "matches_with_weather": 0,
+2026-05-17T07:01:22.4893120Z     "matches_with_xg": 42,
+2026-05-17T07:01:22.4893442Z     "multi_source_fixture_matches": 150,
+2026-05-17T07:01:22.4893800Z     "providers_seen": 3,
+2026-05-17T07:01:22.4894119Z     "publish_min_context_sources": 2,
+2026-05-17T07:01:22.4894483Z     "publish_min_odds_sources": 2,
+2026-05-17T07:01:22.4894993Z     "publish_min_price_confirmations": 2,
+2026-05-17T07:01:22.4895380Z     "runtime_matches_with_context_last_run": 167,
+2026-05-17T07:01:22.4895925Z     "runtime_matches_with_odds_last_run": 98
+2026-05-17T07:01:22.4896259Z   },
+2026-05-17T07:01:22.4896492Z   "date_local": "2026-05-17",
+2026-05-17T07:01:22.4896782Z   "evidence_matches": 0,
+2026-05-17T07:01:22.4897255Z   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-17.json",
+2026-05-17T07:01:22.4897748Z   "notes": [
+2026-05-17T07:01:22.4898266Z     "Coverage is repaired from latest-matches forecast fields, rescue/evaluated candidates, and line_history snapshots.",
+2026-05-17T07:01:22.4899116Z     "Priority planner now sees real last_odds_refresh_utc / last_context_refresh_utc instead of treating every row as stale."
+2026-05-17T07:01:22.4899677Z   ],
+2026-05-17T07:01:22.4899906Z   "rows_repaired": 0,
+2026-05-17T07:01:22.4900175Z   "status": "ok",
+2026-05-17T07:01:22.4900681Z   "summary_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-summary.json",
+2026-05-17T07:01:22.4901278Z   "updated_at_utc": "2026-05-17T07:01:22.367188+00:00"
+2026-05-17T07:01:22.4901622Z }
+2026-05-17T07:01:22.6295279Z {
+2026-05-17T07:01:22.6296128Z   "date_local": "2026-05-17",
+2026-05-17T07:01:22.6296636Z   "line_movement_guard": {
+2026-05-17T07:01:22.6297107Z     "candidate_files_seen": 0,
+2026-05-17T07:01:22.6297604Z     "candidates_dropped": 0,
+2026-05-17T07:01:22.6298098Z     "candidates_kept": 0,
+2026-05-17T07:01:22.6298576Z     "candidates_seen": 0,
+2026-05-17T07:01:22.6299701Z     "date_local": "2026-05-17",
+2026-05-17T07:01:22.6317939Z     "drop_bad_candidates": true,
+2026-05-17T07:01:22.6318546Z     "files": [],
+2026-05-17T07:01:22.6318977Z     "status": "ok",
+2026-05-17T07:01:22.6319494Z     "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-17T07:01:22.6320072Z   },
+2026-05-17T07:01:22.6320446Z   "notes": [
+2026-05-17T07:01:22.6321440Z     "Inventory rows are now sorted by kickoff urgency and missing coverage so the next run naturally spends quota on matches that need it most.",
+2026-05-17T07:01:22.6323262Z     "Candidate files are guarded before Telegram fallback publication. If the current line loses EV/edge or moves sharply against the bet, the candidate is dropped."
+2026-05-17T07:01:22.6325114Z   ],
+2026-05-17T07:01:22.6325514Z   "refresh_plan": {
+2026-05-17T07:01:22.6325960Z     "active_matches": 301,
+2026-05-17T07:01:22.6326433Z     "alias_update": {
+2026-05-17T07:01:22.6326874Z       "paths": [
+2026-05-17T07:01:22.6327519Z         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+2026-05-17T07:01:22.6328488Z         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+2026-05-17T07:01:22.6329429Z         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+2026-05-17T07:01:22.6330141Z       ],
+2026-05-17T07:01:22.6330531Z       "status": "ok",
+2026-05-17T07:01:22.6330974Z       "target_date": "2026-05-17"
+2026-05-17T07:01:22.6331457Z     },
+2026-05-17T07:01:22.6331847Z     "date_local": "2026-05-17",
+2026-05-17T07:01:22.6332363Z     "final_pre_kickoff_checks": 0,
+2026-05-17T07:01:22.6332912Z     "matches_needing_odds_refresh": 166,
+2026-05-17T07:01:22.6333492Z     "no_more_regular_run_before_kickoff": 0,
+2026-05-17T07:01:22.6334029Z     "status": "ok",
+2026-05-17T07:01:22.6334471Z     "top_priority_matches": [
+2026-05-17T07:01:22.6335119Z       {
+2026-05-17T07:01:22.6335513Z         "away_team": "Cruzeiro EC",
+2026-05-17T07:01:22.6336028Z         "home_team": "SE Palmeiras",
+2026-05-17T07:01:22.6336449Z         "kickoff_utc": "2026-05-17T00:00:00+00:00",
+2026-05-17T07:01:22.6337089Z         "league_name": "Campeonato Brasileiro Série A",
+2026-05-17T07:01:22.6337533Z         "match_key": "soccer|cruzeiro_ec|se_palmeiras|2026-05-17",
+2026-05-17T07:01:22.6337926Z         "minutes_to_kickoff": 28887.97,
+2026-05-17T07:01:22.6338275Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6338609Z         "priority": 36.0,
+2026-05-17T07:01:22.6338893Z         "refresh_plan": {
+2026-05-17T07:01:22.6339206Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6339812Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6340174Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6340510Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6340841Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6341164Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6341477Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6341824Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6342150Z         }
+2026-05-17T07:01:22.6342369Z       },
+2026-05-17T07:01:22.6342587Z       {
+2026-05-17T07:01:22.6342821Z         "away_team": "CD Junior FC",
+2026-05-17T07:01:22.6343156Z         "home_team": "Independiente Santa Fe",
+2026-05-17T07:01:22.6343513Z         "kickoff_utc": "2026-05-17T01:30:00+00:00",
+2026-05-17T07:01:22.6343906Z         "league_name": "Colombia - Primera A, Apertura",
+2026-05-17T07:01:22.6344352Z         "match_key": "soccer|independiente santa fe|junior|2026-05-17",
+2026-05-17T07:01:22.6345052Z         "minutes_to_kickoff": 28977.97,
+2026-05-17T07:01:22.6345394Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6345717Z         "priority": 36.0,
+2026-05-17T07:01:22.6345994Z         "refresh_plan": {
+2026-05-17T07:01:22.6346304Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6346673Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6347022Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6347354Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6347691Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6348028Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6348349Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6348705Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6349041Z         }
+2026-05-17T07:01:22.6349267Z       },
+2026-05-17T07:01:22.6349485Z       {
+2026-05-17T07:01:22.6349732Z         "away_team": "Alianza FC Panama",
+2026-05-17T07:01:22.6350208Z         "home_team": "Veraguas United FC",
+2026-05-17T07:01:22.6350556Z         "kickoff_utc": "2026-05-17T01:30:00+00:00",
+2026-05-17T07:01:22.6350974Z         "league_name": "Panama - Liga Panamena de Futbol, Clausura",
+2026-05-17T07:01:22.6351450Z         "match_key": "soccer|alianza panama|veraguas united|2026-05-17",
+2026-05-17T07:01:22.6351852Z         "minutes_to_kickoff": 28977.97,
+2026-05-17T07:01:22.6352184Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6352507Z         "priority": 36.0,
+2026-05-17T07:01:22.6352782Z         "refresh_plan": {
+2026-05-17T07:01:22.6353088Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6353457Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6353814Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6354155Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6354489Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6355090Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6355415Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6355757Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6356080Z         }
+2026-05-17T07:01:22.6356295Z       },
+2026-05-17T07:01:22.6356509Z       {
+2026-05-17T07:01:22.6356745Z         "away_team": "Capo FC 2",
+2026-05-17T07:01:22.6357050Z         "home_team": "City SC San Diego",
+2026-05-17T07:01:22.6357385Z         "kickoff_utc": "2026-05-17T01:30:00+00:00",
+2026-05-17T07:01:22.6357736Z         "league_name": "USA - USL League Two",
+2026-05-17T07:01:22.6358132Z         "match_key": "soccer|capo 2|city san diego|2026-05-17",
+2026-05-17T07:01:22.6358504Z         "minutes_to_kickoff": 28977.97,
+2026-05-17T07:01:22.6358838Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6359162Z         "priority": 36.0,
+2026-05-17T07:01:22.6359442Z         "refresh_plan": {
+2026-05-17T07:01:22.6359884Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6360265Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6360615Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6361060Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6361397Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6361755Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6362080Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6362421Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6362741Z         }
+2026-05-17T07:01:22.6362960Z       },
+2026-05-17T07:01:22.6363174Z       {
+2026-05-17T07:01:22.6363428Z         "away_team": "Preston Lions FC U20",
+2026-05-17T07:01:22.6363769Z         "home_team": "Melbourne Victory FC",
+2026-05-17T07:01:22.6364110Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:22.6364497Z         "league_name": "Australia - U20 Victoria NPL, Women",
+2026-05-17T07:01:22.6365238Z         "match_key": "soccer|melbourne victory|preston lions|2026-05-17",
+2026-05-17T07:01:22.6365654Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:22.6365994Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6366313Z         "priority": 36.0,
+2026-05-17T07:01:22.6366583Z         "refresh_plan": {
+2026-05-17T07:01:22.6366884Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6367254Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6367597Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6367923Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6368250Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6368566Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6368888Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6369224Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6369549Z         }
+2026-05-17T07:01:22.6369765Z       },
+2026-05-17T07:01:22.6369989Z       {
+2026-05-17T07:01:22.6370379Z         "away_team": "Deportivo Saprissa San Jose",
+2026-05-17T07:01:22.6370728Z         "home_team": "CS Herediano",
+2026-05-17T07:01:22.6371053Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:22.6371450Z         "league_name": "Costa Rica - Primera Division, Clausura",
+2026-05-17T07:01:22.6371918Z         "match_key": "soccer|cs herediano|saprissa san jose|2026-05-17",
+2026-05-17T07:01:22.6372318Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:22.6372644Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6372963Z         "priority": 36.0,
+2026-05-17T07:01:22.6373235Z         "refresh_plan": {
+2026-05-17T07:01:22.6373535Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6373898Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6374236Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6374552Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6375143Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6375464Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6375780Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6376116Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6376438Z         }
+2026-05-17T07:01:22.6376657Z       },
+2026-05-17T07:01:22.6376873Z       {
+2026-05-17T07:01:22.6377106Z         "away_team": "Nankatsu SC",
+2026-05-17T07:01:22.6377420Z         "home_team": "Veertien Mie FC",
+2026-05-17T07:01:22.6377749Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:22.6378140Z         "league_name": "Japan - Nadeshiko League, Div 2, Women",
+2026-05-17T07:01:22.6378575Z         "match_key": "soccer|nankatsu|veertien mie|2026-05-17",
+2026-05-17T07:01:22.6378948Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:22.6379273Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6379595Z         "priority": 36.0,
+2026-05-17T07:01:22.6380002Z         "refresh_plan": {
+2026-05-17T07:01:22.6380313Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6380678Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6381021Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6381351Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6381683Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6382008Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6382329Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6382672Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6382997Z         }
+2026-05-17T07:01:22.6383220Z       },
+2026-05-17T07:01:22.6383438Z       {
+2026-05-17T07:01:22.6383679Z         "away_team": "Snohomish United",
+2026-05-17T07:01:22.6384011Z         "home_team": "Portland Bangers FC",
+2026-05-17T07:01:22.6384351Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:22.6384973Z         "league_name": "USA - USL League Two",
+2026-05-17T07:01:22.6385405Z         "match_key": "soccer|portland bangers|snohomish united|2026-05-17",
+2026-05-17T07:01:22.6385821Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:22.6386142Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6386458Z         "priority": 36.0,
+2026-05-17T07:01:22.6386736Z         "refresh_plan": {
+2026-05-17T07:01:22.6387039Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6387404Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6387747Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6388078Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6388405Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6388725Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6389042Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6389380Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6389714Z         }
+2026-05-17T07:01:22.6389930Z       },
+2026-05-17T07:01:22.6390280Z       {
+2026-05-17T07:01:22.6390510Z         "away_team": "AMSG FC",
+2026-05-17T07:01:22.6390829Z         "home_team": "Southern California Eagles",
+2026-05-17T07:01:22.6391184Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:22.6391529Z         "league_name": "USA - USL League Two",
+2026-05-17T07:01:22.6391927Z         "match_key": "soccer|amsg|southern california eagles|2026-05-17",
+2026-05-17T07:01:22.6392333Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:22.6392659Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6392981Z         "priority": 36.0,
+2026-05-17T07:01:22.6393252Z         "refresh_plan": {
+2026-05-17T07:01:22.6393557Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6393925Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6394270Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6394855Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6395212Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6395527Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6395839Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6396174Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6396493Z         }
+2026-05-17T07:01:22.6396708Z       },
+2026-05-17T07:01:22.6396922Z       {
+2026-05-17T07:01:22.6397155Z         "away_team": "San Juan SC",
+2026-05-17T07:01:22.6397463Z         "home_team": "Stockton Cargo SC",
+2026-05-17T07:01:22.6397792Z         "kickoff_utc": "2026-05-17T02:00:00+00:00",
+2026-05-17T07:01:22.6398136Z         "league_name": "USA - USL W League",
+2026-05-17T07:01:22.6398517Z         "match_key": "soccer|san juan|stockton cargo|2026-05-17",
+2026-05-17T07:01:22.6398895Z         "minutes_to_kickoff": 29007.97,
+2026-05-17T07:01:22.6399211Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6399524Z         "priority": 36.0,
+2026-05-17T07:01:22.6399921Z         "refresh_plan": {
+2026-05-17T07:01:22.6400227Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6400588Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6400933Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6401256Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6401580Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6401895Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6402212Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6402544Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6402865Z         }
+2026-05-17T07:01:22.6403077Z       },
+2026-05-17T07:01:22.6403295Z       {
+2026-05-17T07:01:22.6403529Z         "away_team": "Cruizers FC",
+2026-05-17T07:01:22.6403835Z         "home_team": "Real San Jose",
+2026-05-17T07:01:22.6404173Z         "kickoff_utc": "2026-05-17T02:30:00+00:00",
+2026-05-17T07:01:22.6404558Z         "league_name": "USA - National Premier Soccer League",
+2026-05-17T07:01:22.6405146Z         "match_key": "soccer|cruizers|real san jose|2026-05-17",
+2026-05-17T07:01:22.6405525Z         "minutes_to_kickoff": 29037.97,
+2026-05-17T07:01:22.6405852Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6406169Z         "priority": 36.0,
+2026-05-17T07:01:22.6406436Z         "refresh_plan": {
+2026-05-17T07:01:22.6406736Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6407100Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6407441Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6407765Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6408090Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6408408Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6408720Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6409053Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6409376Z         }
+2026-05-17T07:01:22.6409595Z       },
+2026-05-17T07:01:22.6409931Z       {
+2026-05-17T07:01:22.6410200Z         "away_team": "Lake Macquarie City FC Reserve",
+2026-05-17T07:01:22.6410557Z         "home_team": "Maitland FC Reserve",
+2026-05-17T07:01:22.6410894Z         "kickoff_utc": "2026-05-17T03:00:00+00:00",
+2026-05-17T07:01:22.6411325Z         "league_name": "Australia - Northern NSW League One, Reserves, Women",
+2026-05-17T07:01:22.6411875Z         "match_key": "soccer|lake macquarie city reserves|maitland reserves|2026-05-17",
+2026-05-17T07:01:22.6412328Z         "minutes_to_kickoff": 29067.97,
+2026-05-17T07:01:22.6412659Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6412969Z         "priority": 36.0,
+2026-05-17T07:01:22.6413249Z         "refresh_plan": {
+2026-05-17T07:01:22.6413549Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6413916Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6414260Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6414747Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6415087Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6415408Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6415725Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6416060Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6416384Z         }
+2026-05-17T07:01:22.6416601Z       },
+2026-05-17T07:01:22.6416818Z       {
+2026-05-17T07:01:22.6417057Z         "away_team": "Edgeworth FC",
+2026-05-17T07:01:22.6417392Z         "home_team": "Broadmeadow Magic FC",
+2026-05-17T07:01:22.6417733Z         "kickoff_utc": "2026-05-17T03:00:00+00:00",
+2026-05-17T07:01:22.6418099Z         "league_name": "Australia - Northern NSW NPL",
+2026-05-17T07:01:22.6418511Z         "match_key": "soccer|broadmeadow magic|edgeworth|2026-05-17",
+2026-05-17T07:01:22.6418902Z         "minutes_to_kickoff": 29067.97,
+2026-05-17T07:01:22.6419228Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6419680Z         "priority": 36.0,
+2026-05-17T07:01:22.6419950Z         "refresh_plan": {
+2026-05-17T07:01:22.6420245Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6420603Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6420941Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6421263Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6421588Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6421911Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6422228Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6422564Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6422890Z         }
+2026-05-17T07:01:22.6423109Z       },
+2026-05-17T07:01:22.6423324Z       {
+2026-05-17T07:01:22.6423559Z         "away_team": "Weston Bears FC",
+2026-05-17T07:01:22.6423898Z         "home_team": "Newcastle Olympic FC Reserve",
+2026-05-17T07:01:22.6424253Z         "kickoff_utc": "2026-05-17T03:00:00+00:00",
+2026-05-17T07:01:22.6424854Z         "league_name": "Australia - Northern NSW NPL, Reserves",
+2026-05-17T07:01:22.6425342Z         "match_key": "soccer|newcastle olympic reserves|weston bears|2026-05-17",
+2026-05-17T07:01:22.6425771Z         "minutes_to_kickoff": 29067.97,
+2026-05-17T07:01:22.6426094Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6426411Z         "priority": 36.0,
+2026-05-17T07:01:22.6426684Z         "refresh_plan": {
+2026-05-17T07:01:22.6426982Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6427348Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6427930Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6428405Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6428738Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6429068Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6429385Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6429724Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6430190Z         }
+2026-05-17T07:01:22.6430400Z       },
+2026-05-17T07:01:22.6430613Z       {
+2026-05-17T07:01:22.6430845Z         "away_team": "St George FC",
+2026-05-17T07:01:22.6431166Z         "home_team": "South Coast Flame FC",
+2026-05-17T07:01:22.6431503Z         "kickoff_utc": "2026-05-17T03:15:00+00:00",
+2026-05-17T07:01:22.6431856Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:22.6432264Z         "match_key": "soccer|saint george|south coast flame|2026-05-17",
+2026-05-17T07:01:22.6432664Z         "minutes_to_kickoff": 29082.97,
+2026-05-17T07:01:22.6432989Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6433307Z         "priority": 36.0,
+2026-05-17T07:01:22.6433576Z         "refresh_plan": {
+2026-05-17T07:01:22.6433876Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6434239Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6434750Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6435098Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6435434Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6435765Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6436084Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6436428Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6436758Z         }
+2026-05-17T07:01:22.6436988Z       },
+2026-05-17T07:01:22.6437214Z       {
+2026-05-17T07:01:22.6437465Z         "away_team": "Melbourne City",
+2026-05-17T07:01:22.6437798Z         "home_team": "Box Hill United FC U20",
+2026-05-17T07:01:22.6438157Z         "kickoff_utc": "2026-05-17T03:45:00+00:00",
+2026-05-17T07:01:22.6438557Z         "league_name": "Australia - U20 Victoria NPL, Women",
+2026-05-17T07:01:22.6439012Z         "match_key": "soccer|box hill united|melbourne city|2026-05-17",
+2026-05-17T07:01:22.6439425Z         "minutes_to_kickoff": 29112.97,
+2026-05-17T07:01:22.6439900Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6440227Z         "priority": 36.0,
+2026-05-17T07:01:22.6440503Z         "refresh_plan": {
+2026-05-17T07:01:22.6440809Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6441182Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6441536Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6441867Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6442198Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6442521Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6442839Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6443182Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6443509Z         }
+2026-05-17T07:01:22.6443728Z       },
+2026-05-17T07:01:22.6443945Z       {
+2026-05-17T07:01:22.6444193Z         "away_team": "Kowloon Cricket Club",
+2026-05-17T07:01:22.6444519Z         "home_team": "Wong Tai Sin",
+2026-05-17T07:01:22.6444999Z         "kickoff_utc": "2026-05-17T04:00:00+00:00",
+2026-05-17T07:01:22.6445377Z         "league_name": "Hong Kong, China - 2. Division",
+2026-05-17T07:01:22.6445800Z         "match_key": "soccer|kowloon cricket|wong tai sin|2026-05-17",
+2026-05-17T07:01:22.6446192Z         "minutes_to_kickoff": 29127.97,
+2026-05-17T07:01:22.6446522Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6446838Z         "priority": 36.0,
+2026-05-17T07:01:22.6447110Z         "refresh_plan": {
+2026-05-17T07:01:22.6447423Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6447793Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6448155Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6448490Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6448824Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6449148Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6449474Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6449936Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6450264Z         }
+2026-05-17T07:01:22.6450482Z       },
+2026-05-17T07:01:22.6450700Z       {
+2026-05-17T07:01:22.6450933Z         "away_team": "Vonds Ichihara FC",
+2026-05-17T07:01:22.6451247Z         "home_team": "Iga FC Kunoichi",
+2026-05-17T07:01:22.6451577Z         "kickoff_utc": "2026-05-17T04:00:00+00:00",
+2026-05-17T07:01:22.6451973Z         "league_name": "Japan - Nadeshiko League, Div. 1, Women",
+2026-05-17T07:01:22.6452426Z         "match_key": "soccer|iga kunoichi|vonds ichihara|2026-05-17",
+2026-05-17T07:01:22.6452814Z         "minutes_to_kickoff": 29127.97,
+2026-05-17T07:01:22.6453139Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6453461Z         "priority": 36.0,
+2026-05-17T07:01:22.6453731Z         "refresh_plan": {
+2026-05-17T07:01:22.6454035Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6454402Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6454944Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6455267Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6455600Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6455919Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6456238Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6456575Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6456898Z         }
+2026-05-17T07:01:22.6457115Z       },
+2026-05-17T07:01:22.6457334Z       {
+2026-05-17T07:01:22.6457574Z         "away_team": "Nittaidai FC",
+2026-05-17T07:01:22.6457897Z         "home_team": "Okayama Yunogo Belle",
+2026-05-17T07:01:22.6458242Z         "kickoff_utc": "2026-05-17T04:00:00+00:00",
+2026-05-17T07:01:22.6458640Z         "league_name": "Japan - Nadeshiko League, Div. 1, Women",
+2026-05-17T07:01:22.6459093Z         "match_key": "soccer|nittaidai|okayama yunogo belle|2026-05-17",
+2026-05-17T07:01:22.6459625Z         "minutes_to_kickoff": 29127.97,
+2026-05-17T07:01:22.6459959Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6460280Z         "priority": 36.0,
+2026-05-17T07:01:22.6460551Z         "refresh_plan": {
+2026-05-17T07:01:22.6460851Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6461220Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6461605Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6461935Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6462258Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6462572Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6462886Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6463222Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6463538Z         }
+2026-05-17T07:01:22.6463749Z       },
+2026-05-17T07:01:22.6463967Z       {
+2026-05-17T07:01:22.6464215Z         "away_team": "Yenisey-M Krasnoyarsk",
+2026-05-17T07:01:22.6464735Z         "home_team": "FC Radian Baikal Irkutsk",
+2026-05-17T07:01:22.6465109Z         "kickoff_utc": "2026-05-17T04:00:00+00:00",
+2026-05-17T07:01:22.6465456Z         "league_name": "Russia - Zone Siberia",
+2026-05-17T07:01:22.6465896Z         "match_key": "soccer|radian baikal irkutsk|yenisey m krasnoyarsk|2026-05-17",
+2026-05-17T07:01:22.6466342Z         "minutes_to_kickoff": 29127.97,
+2026-05-17T07:01:22.6466666Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6466985Z         "priority": 36.0,
+2026-05-17T07:01:22.6467253Z         "refresh_plan": {
+2026-05-17T07:01:22.6467552Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6467912Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6468253Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6468580Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6468910Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6469231Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6469688Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6470025Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6470350Z         }
+2026-05-17T07:01:22.6470569Z       },
+2026-05-17T07:01:22.6470787Z       {
+2026-05-17T07:01:22.6471038Z         "away_team": "Tuggeranong United FC",
+2026-05-17T07:01:22.6471364Z         "home_team": "Canberra Olympic",
+2026-05-17T07:01:22.6471693Z         "kickoff_utc": "2026-05-17T04:30:00+00:00",
+2026-05-17T07:01:22.6472073Z         "league_name": "Australia - Capital NPL, Women",
+2026-05-17T07:01:22.6472514Z         "match_key": "soccer|canberra olympic|tuggeranong united|2026-05-17",
+2026-05-17T07:01:22.6472928Z         "minutes_to_kickoff": 29157.97,
+2026-05-17T07:01:22.6473251Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6473565Z         "priority": 36.0,
+2026-05-17T07:01:22.6473832Z         "refresh_plan": {
+2026-05-17T07:01:22.6474131Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6474508Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6474991Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6475335Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6475674Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6476010Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6476330Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6476673Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6476999Z         }
+2026-05-17T07:01:22.6477216Z       },
+2026-05-17T07:01:22.6477437Z       {
+2026-05-17T07:01:22.6477678Z         "away_team": "Belconnen United",
+2026-05-17T07:01:22.6478002Z         "home_team": "Majura FC",
+2026-05-17T07:01:22.6478326Z         "kickoff_utc": "2026-05-17T04:30:00+00:00",
+2026-05-17T07:01:22.6478706Z         "league_name": "Australia - Capital NPL, Women",
+2026-05-17T07:01:22.6479126Z         "match_key": "soccer|belconnen united|majura|2026-05-17",
+2026-05-17T07:01:22.6479712Z         "minutes_to_kickoff": 29157.97,
+2026-05-17T07:01:22.6480049Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6480369Z         "priority": 36.0,
+2026-05-17T07:01:22.6480640Z         "refresh_plan": {
+2026-05-17T07:01:22.6480951Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6481328Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6481673Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6482012Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6482346Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6482676Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6482997Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6483338Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6483663Z         }
+2026-05-17T07:01:22.6483879Z       },
+2026-05-17T07:01:22.6484092Z       {
+2026-05-17T07:01:22.6484333Z         "away_team": "Kwong Wah",
+2026-05-17T07:01:22.6484776Z         "home_team": "Fukien",
+2026-05-17T07:01:22.6485091Z         "kickoff_utc": "2026-05-17T04:30:00+00:00",
+2026-05-17T07:01:22.6485462Z         "league_name": "Hong Kong, China - 2. Division",
+2026-05-17T07:01:22.6485854Z         "match_key": "soccer|fukien|kwong wah|2026-05-17",
+2026-05-17T07:01:22.6486210Z         "minutes_to_kickoff": 29157.97,
+2026-05-17T07:01:22.6486545Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6486868Z         "priority": 36.0,
+2026-05-17T07:01:22.6487139Z         "refresh_plan": {
+2026-05-17T07:01:22.6487436Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6487802Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6488148Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6488473Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6488803Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6489133Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6489583Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6489932Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6490258Z         }
+2026-05-17T07:01:22.6490472Z       },
+2026-05-17T07:01:22.6490689Z       {
+2026-05-17T07:01:22.6490945Z         "away_team": "Yamato Sylphid",
+2026-05-17T07:01:22.6491278Z         "home_team": "Diavorosso Hiroshima",
+2026-05-17T07:01:22.6491621Z         "kickoff_utc": "2026-05-17T04:30:00+00:00",
+2026-05-17T07:01:22.6492015Z         "league_name": "Japan - Nadeshiko League, Div 2, Women",
+2026-05-17T07:01:22.6492484Z         "match_key": "soccer|diavorosso hiroshima|yamato sylphid|2026-05-17",
+2026-05-17T07:01:22.6492908Z         "minutes_to_kickoff": 29157.97,
+2026-05-17T07:01:22.6493238Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6493558Z         "priority": 36.0,
+2026-05-17T07:01:22.6493831Z         "refresh_plan": {
+2026-05-17T07:01:22.6494132Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6494512Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6495035Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6495363Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6495689Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6496008Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6496328Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6496665Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6496985Z         }
+2026-05-17T07:01:22.6497194Z       },
+2026-05-17T07:01:22.6497411Z       {
+2026-05-17T07:01:22.6497648Z         "away_team": "Manly United FC",
+2026-05-17T07:01:22.6497970Z         "home_team": "Bulls FC Academy",
+2026-05-17T07:01:22.6498302Z         "kickoff_utc": "2026-05-17T04:40:00+00:00",
+2026-05-17T07:01:22.6498695Z         "league_name": "Australia - NSW Premier League, Women",
+2026-05-17T07:01:22.6499284Z         "match_key": "soccer|bulls academy|manly united|2026-05-17",
+2026-05-17T07:01:22.6499686Z         "minutes_to_kickoff": 29167.97,
+2026-05-17T07:01:22.6514891Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6515318Z         "priority": 36.0,
+2026-05-17T07:01:22.6515618Z         "refresh_plan": {
+2026-05-17T07:01:22.6515942Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6516346Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6516709Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6517044Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6517392Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6517717Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6518036Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6518386Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6518713Z         }
+2026-05-17T07:01:22.6518937Z       },
+2026-05-17T07:01:22.6519173Z       {
+2026-05-17T07:01:22.6519416Z         "away_team": "Bankstown City FC",
+2026-05-17T07:01:22.6519746Z         "home_team": "Blacktown City FC",
+2026-05-17T07:01:22.6520081Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6520454Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:22.6520879Z         "match_key": "soccer|bankstown city|blacktown city|2026-05-17",
+2026-05-17T07:01:22.6521284Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6521615Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6521943Z         "priority": 36.0,
+2026-05-17T07:01:22.6522223Z         "refresh_plan": {
+2026-05-17T07:01:22.6522523Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6522886Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6523231Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6523565Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6523894Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6524421Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6524904Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6525249Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6525573Z         }
+2026-05-17T07:01:22.6525784Z       },
+2026-05-17T07:01:22.6526002Z       {
+2026-05-17T07:01:22.6526263Z         "away_team": "Hills United FC Brumbies",
+2026-05-17T07:01:22.6526641Z         "home_team": "Central Coast Mariners Academy",
+2026-05-17T07:01:22.6527010Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6527376Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:22.6527867Z         "match_key": "soccer|central coast mariners academy|hills united brumbies|2026-05-17",
+2026-05-17T07:01:22.6528346Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6528678Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6529002Z         "priority": 36.0,
+2026-05-17T07:01:22.6529281Z         "refresh_plan": {
+2026-05-17T07:01:22.6529587Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6529952Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6530295Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6530631Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6530962Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6531284Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6531599Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6531939Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6532268Z         }
+2026-05-17T07:01:22.6532492Z       },
+2026-05-17T07:01:22.6532712Z       {
+2026-05-17T07:01:22.6532954Z         "away_team": "Camden Tigers FC",
+2026-05-17T07:01:22.6533275Z         "home_team": "Marconi Stallions",
+2026-05-17T07:01:22.6533608Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6533968Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:22.6534531Z         "match_key": "soccer|camden tigers|marconi stallions|2026-05-17",
+2026-05-17T07:01:22.6535108Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6535437Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6535760Z         "priority": 36.0,
+2026-05-17T07:01:22.6536033Z         "refresh_plan": {
+2026-05-17T07:01:22.6536335Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6536697Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6537045Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6537371Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6537699Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6538019Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6538338Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6538683Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6539019Z         }
+2026-05-17T07:01:22.6539235Z       },
+2026-05-17T07:01:22.6539457Z       {
+2026-05-17T07:01:22.6539703Z         "away_team": "Sutherland Strikers",
+2026-05-17T07:01:22.6540032Z         "home_team": "Nepean FC",
+2026-05-17T07:01:22.6540356Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6540713Z         "league_name": "Australia - NSW League One",
+2026-05-17T07:01:22.6541122Z         "match_key": "soccer|nepean|sutherland strikers|2026-05-17",
+2026-05-17T07:01:22.6541511Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6541834Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6542151Z         "priority": 36.0,
+2026-05-17T07:01:22.6542411Z         "refresh_plan": {
+2026-05-17T07:01:22.6542706Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6543065Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6543405Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6543729Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6544074Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6544719Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6545043Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6545378Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6545699Z         }
+2026-05-17T07:01:22.6545919Z       },
+2026-05-17T07:01:22.6546136Z       {
+2026-05-17T07:01:22.6546382Z         "away_team": "Blacktown Spartans FC",
+2026-05-17T07:01:22.6546711Z         "home_team": "SD Raiders FC",
+2026-05-17T07:01:22.6547037Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6547422Z         "league_name": "Australia - NSW League One, Women",
+2026-05-17T07:01:22.6547858Z         "match_key": "soccer|blacktown spartans|raiders|2026-05-17",
+2026-05-17T07:01:22.6548250Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6548578Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6548894Z         "priority": 36.0,
+2026-05-17T07:01:22.6549175Z         "refresh_plan": {
+2026-05-17T07:01:22.6549483Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6549852Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6550198Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6550524Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6550847Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6551165Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6551479Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6551813Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6552138Z         }
+2026-05-17T07:01:22.6552354Z       },
+2026-05-17T07:01:22.6552571Z       {
+2026-05-17T07:01:22.6552803Z         "away_team": "Northern Tigers",
+2026-05-17T07:01:22.6553129Z         "home_team": "Macarthur Rams",
+2026-05-17T07:01:22.6553460Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6553989Z         "league_name": "Australia - NSW Premier League, Women",
+2026-05-17T07:01:22.6554447Z         "match_key": "soccer|macarthur rams|northern tigers|2026-05-17",
+2026-05-17T07:01:22.6555002Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6555323Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6555642Z         "priority": 36.0,
+2026-05-17T07:01:22.6555912Z         "refresh_plan": {
+2026-05-17T07:01:22.6556213Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6556577Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6556919Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6557245Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6557567Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6557891Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6558208Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6558540Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6558866Z         }
+2026-05-17T07:01:22.6559083Z       },
+2026-05-17T07:01:22.6559296Z       {
+2026-05-17T07:01:22.6559533Z         "away_team": "Wallsend FC",
+2026-05-17T07:01:22.6559846Z         "home_team": "West Wallsend SFC",
+2026-05-17T07:01:22.6560186Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6560575Z         "league_name": "Australia - Northern NSW League One",
+2026-05-17T07:01:22.6561012Z         "match_key": "soccer|wallsend|west wallsend sfc|2026-05-17",
+2026-05-17T07:01:22.6561396Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6561766Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6562086Z         "priority": 36.0,
+2026-05-17T07:01:22.6562353Z         "refresh_plan": {
+2026-05-17T07:01:22.6562648Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6563008Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6563344Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6563677Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6564154Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6564470Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6564930Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6565262Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6565582Z         }
+2026-05-17T07:01:22.6565795Z       },
+2026-05-17T07:01:22.6566010Z       {
+2026-05-17T07:01:22.6566246Z         "away_team": "Weston Bears FC",
+2026-05-17T07:01:22.6566574Z         "home_team": "Newcastle Olympic FC",
+2026-05-17T07:01:22.6567066Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6567597Z         "league_name": "Australia - Northern NSW NPL",
+2026-05-17T07:01:22.6568021Z         "match_key": "soccer|newcastle olympic|weston bears|2026-05-17",
+2026-05-17T07:01:22.6568419Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6568740Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6569065Z         "priority": 36.0,
+2026-05-17T07:01:22.6569337Z         "refresh_plan": {
+2026-05-17T07:01:22.6569635Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6569997Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6570337Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6570660Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6570989Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6571310Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6571631Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6571968Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6572288Z         }
+2026-05-17T07:01:22.6572504Z       },
+2026-05-17T07:01:22.6572722Z       {
+2026-05-17T07:01:22.6572967Z         "away_team": "Redcliffe Dolphins",
+2026-05-17T07:01:22.6573285Z         "home_team": "Logan Roos FC",
+2026-05-17T07:01:22.6573603Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6574158Z         "league_name": "Australia - Queensland Premier League 3 Metro",
+2026-05-17T07:01:22.6574832Z         "match_key": "soccer|logan roos|redcliffe dolphins|2026-05-17",
+2026-05-17T07:01:22.6575226Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6575545Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6575862Z         "priority": 36.0,
+2026-05-17T07:01:22.6576132Z         "refresh_plan": {
+2026-05-17T07:01:22.6576430Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6576795Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6577136Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6577461Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6577788Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6578186Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6578661Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6579013Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6579339Z         }
+2026-05-17T07:01:22.6579556Z       },
+2026-05-17T07:01:22.6579775Z       {
+2026-05-17T07:01:22.6580032Z         "away_team": "Western Sydney Wanderers",
+2026-05-17T07:01:22.6580383Z         "home_team": "Sydney University SFC",
+2026-05-17T07:01:22.6580720Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6581095Z         "league_name": "Australia - U23 NSW NPL, Women",
+2026-05-17T07:01:22.6581572Z         "match_key": "soccer|sydney university sfc|western sydney wanderers|2026-05-17",
+2026-05-17T07:01:22.6582035Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6582362Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6582679Z         "priority": 36.0,
+2026-05-17T07:01:22.6582952Z         "refresh_plan": {
+2026-05-17T07:01:22.6583250Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6583615Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6583965Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6584442Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6584967Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6585285Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6585595Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6585925Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6586243Z         }
+2026-05-17T07:01:22.6586458Z       },
+2026-05-17T07:01:22.6586672Z       {
+2026-05-17T07:01:22.6586910Z         "away_team": "Thespakusatsu",
+2026-05-17T07:01:22.6587220Z         "home_team": "Blaublitz Akita",
+2026-05-17T07:01:22.6587545Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6587894Z         "league_name": "Japan - J.League 2",
+2026-05-17T07:01:22.6588295Z         "match_key": "soccer|blaublitz akita|thespakusatsu|2026-05-17",
+2026-05-17T07:01:22.6588692Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6589019Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6589341Z         "priority": 36.0,
+2026-05-17T07:01:22.6589605Z         "refresh_plan": {
+2026-05-17T07:01:22.6589904Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6590269Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6590613Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6590936Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6591264Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6591582Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6591902Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6592248Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6592579Z         }
+2026-05-17T07:01:22.6592799Z       },
+2026-05-17T07:01:22.6593017Z       {
+2026-05-17T07:01:22.6593254Z         "away_team": "Zweigen Kanazawa",
+2026-05-17T07:01:22.6593568Z         "home_team": "FC Osaka",
+2026-05-17T07:01:22.6594009Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6594359Z         "league_name": "Japan - J.League 2",
+2026-05-17T07:01:22.6594869Z         "match_key": "soccer|osaka|zweigen kanazawa|2026-05-17",
+2026-05-17T07:01:22.6595242Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6595563Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6595875Z         "priority": 36.0,
+2026-05-17T07:01:22.6596139Z         "refresh_plan": {
+2026-05-17T07:01:22.6596434Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6596794Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6597134Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6597462Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6597787Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6598111Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6598426Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6598768Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6599095Z         }
+2026-05-17T07:01:22.6599305Z       },
+2026-05-17T07:01:22.6599521Z       {
+2026-05-17T07:01:22.6599762Z         "away_team": "AC Nagano Parceiro",
+2026-05-17T07:01:22.6600084Z         "home_team": "RB Omiya Ardija",
+2026-05-17T07:01:22.6600411Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6600754Z         "league_name": "Japan - J.League 2",
+2026-05-17T07:01:22.6601152Z         "match_key": "soccer|nagano parceiro|rb omiya ardija|2026-05-17",
+2026-05-17T07:01:22.6601553Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6601871Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6602183Z         "priority": 36.0,
+2026-05-17T07:01:22.6602451Z         "refresh_plan": {
+2026-05-17T07:01:22.6602749Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6603112Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6603466Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6603913Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6604244Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6604690Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6605010Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6605343Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6605660Z         }
+2026-05-17T07:01:22.6605868Z       },
+2026-05-17T07:01:22.6606080Z       {
+2026-05-17T07:01:22.6606313Z         "away_team": "Sfida Setagaya FC",
+2026-05-17T07:01:22.6606633Z         "home_team": "Viamaterasu Miyazaki",
+2026-05-17T07:01:22.6606964Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6607362Z         "league_name": "Japan - Nadeshiko League, Div. 1, Women",
+2026-05-17T07:01:22.6607824Z         "match_key": "soccer|sfida setagaya|viamaterasu miyazaki|2026-05-17",
+2026-05-17T07:01:22.6608243Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6608574Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6608890Z         "priority": 36.0,
+2026-05-17T07:01:22.6609156Z         "refresh_plan": {
+2026-05-17T07:01:22.6609448Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6609807Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6610148Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6610471Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6610798Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6611118Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6611429Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6611762Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6612086Z         }
+2026-05-17T07:01:22.6612305Z       },
+2026-05-17T07:01:22.6612517Z       {
+2026-05-17T07:01:22.6612750Z         "away_team": "Gyeongju FC",
+2026-05-17T07:01:22.6613062Z         "home_team": "FC Mokpo",
+2026-05-17T07:01:22.6613521Z         "kickoff_utc": "2026-05-17T05:00:00+00:00",
+2026-05-17T07:01:22.6613905Z         "league_name": "Republic of Korea - K3 League",
+2026-05-17T07:01:22.6614301Z         "match_key": "soccer|gyeongju|mokpo|2026-05-17",
+2026-05-17T07:01:22.6614879Z         "minutes_to_kickoff": 29187.97,
+2026-05-17T07:01:22.6615215Z         "pre_kickoff_status": "future_today",
+2026-05-17T07:01:22.6615534Z         "priority": 36.0,
+2026-05-17T07:01:22.6615798Z         "refresh_plan": {
+2026-05-17T07:01:22.6616100Z           "expected_next_run_interval_minutes": 120,
+2026-05-17T07:01:22.6616469Z           "final_pre_kickoff_check_required": false,
+2026-05-17T07:01:22.6616809Z           "last_odds_refresh_utc": null,
+2026-05-17T07:01:22.6617140Z           "max_current_line_age_minutes": 35,
+2026-05-17T07:01:22.6617471Z           "min_kickoff_lead_minutes": 30,
+2026-05-17T07:01:22.6617798Z           "needs_context_refresh": false,
+2026-05-17T07:01:22.6618114Z           "needs_odds_refresh": true,
+2026-05-17T07:01:22.6618462Z           "no_more_regular_run_before_kickoff": false
+2026-05-17T07:01:22.6618785Z         }
+2026-05-17T07:01:22.6618999Z       }
+2026-05-17T07:01:22.6619211Z     ],
+2026-05-17T07:01:22.6619480Z     "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-17T07:01:22.6619805Z   },
+2026-05-17T07:01:22.6620026Z   "status": "ok",
+2026-05-17T07:01:22.6620316Z   "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-17T07:01:22.6620640Z }
+2026-05-17T07:01:22.7656748Z {
+2026-05-17T07:01:22.7657115Z   "active_matches": 301,
+2026-05-17T07:01:22.7657446Z   "alias_update": {
+2026-05-17T07:01:22.7657733Z     "paths": [
+2026-05-17T07:01:22.7658156Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+2026-05-17T07:01:22.7658801Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+2026-05-17T07:01:22.7659417Z       "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+2026-05-17T07:01:22.7659880Z     ],
+2026-05-17T07:01:22.7660148Z     "status": "ok",
+2026-05-17T07:01:22.7660655Z     "target_date": "2026-05-17"
+2026-05-17T07:01:22.7660957Z   },
+2026-05-17T07:01:22.7661208Z   "date_local": "2026-05-17",
+2026-05-17T07:01:22.7661530Z   "final_pre_kickoff_checks": 0,
+2026-05-17T07:01:22.7661879Z   "matches_missing_odds_coverage": 166,
+2026-05-17T07:01:22.7662246Z   "matches_needing_odds_refresh": 166,
+2026-05-17T07:01:22.7662599Z   "matches_stale_odds_refresh": 0,
+2026-05-17T07:01:22.7662950Z   "no_more_regular_run_before_kickoff": 0,
+2026-05-17T07:01:22.7663295Z   "notes": [
+2026-05-17T07:01:22.7663682Z     "Top-level refresh counters now match row-level refresh_plan flags.",
+2026-05-17T07:01:22.7664428Z     "Missing coverage and stale/final-refresh are separated so Telegram no longer exaggerates odds refresh load."
+2026-05-17T07:01:22.7665287Z   ],
+2026-05-17T07:01:22.7665530Z   "status": "ok",
+2026-05-17T07:01:22.7665855Z   "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-17T07:01:22.7666227Z }

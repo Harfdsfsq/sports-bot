@@ -1,0 +1,134 @@
+# Provider day discovery canonical pool
+UTC: 2026-05-18T07:03:20.553144+00:00
+target_date: 2026-05-18
+canonical_matches: 205
+2+ provider sources: 62
+2+ primary sources: 62
+all 3 primary sources: 13
+
+## Provider fixture discovery
+- allsportsapi: commands=1 ok=1 rows=4 event_like=4 statuses={"OK": 1}
+- bzzoiro: commands=3 ok=3 rows=96 event_like=96 statuses={"OK": 3}
+- football_data: commands=1 ok=1 rows=1 event_like=1 statuses={"OK": 1}
+- highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
+- odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
+- sstats: commands=1 ok=1 rows=179 event_like=144 statuses={"OK": 1}
+- thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
+
+## Source distributions
+- all providers: {"1": 143, "2": 47, "3": 13, "4": 2}
+- primary providers: {"1": 139, "2": 49, "3": 13, "0": 4}
+
+## Top canonical matches
+- 2026-05-17T21:00:00+00:00 | Albion FC — Wanderers | providers=sstats ids={"sstats": "1544926"}
+- 2026-05-17T21:00:00+00:00 | Anápolis — Barra | providers=sstats ids={"sstats": "1526815"}
+- 2026-05-17T21:00:00+00:00 | Brooke House W — Miami AC W | providers=sstats ids={"sstats": "1531995"}
+- 2026-05-17T21:00:00+00:00 | Estudiantes de Merida FC — Carabobo FC | providers=sstats ids={"sstats": "1543203"}
+- 2026-05-17T21:00:00+00:00 | Independência — Araguaína | providers=sstats ids={"sstats": "1537903"}
+- 2026-05-17T21:00:00+00:00 | Matiguás — UNAN Managua | providers=sstats ids={"sstats": "1544998"}
+- 2026-05-17T21:00:00+00:00 | Naples — Sporting JAX | providers=sstats ids={"sstats": "1531197"}
+- 2026-05-17T21:00:00+00:00 | Olympia W — Bigfoot W | providers=sstats ids={"sstats": "1531996"}
+- 2026-05-17T21:00:00+00:00 | Pacific FC — York United | providers=sstats ids={"sstats": "1517283"}
+- 2026-05-17T21:00:00+00:00 | Patuxent W — Eagle FC W | providers=sstats ids={"sstats": "1531994"}
+- 2026-05-17T21:00:00+00:00 | Santos W — RB Bragantino W | providers=sstats ids={"sstats": "1522401"}
+- 2026-05-17T21:00:00+00:00 | Sao Raimundo — Manaus FC | providers=sstats ids={"sstats": "1537926"}
+- 2026-05-17T21:00:00+00:00 | Union Omaha — Louisville City | providers=sstats ids={"sstats": "1531200"}
+- 2026-05-17T21:00:00+00:00 | Vila Nova — Avai | providers=sstats ids={"sstats": "1520689"}
+- 2026-05-17T21:00:00+00:00 | West Seattle Rhodies W — Snohomish United W | providers=sstats ids={"sstats": "1532329"}
+- 2026-05-17T21:10:00+00:00 | Santamarina — Olimpo Bahia Blanca | providers=sstats ids={"sstats": "1530328"}
+- 2026-05-17T21:30:00+00:00 | RB Bragantino — Vitoria | providers=sstats ids={"sstats": "1492264"}
+- 2026-05-17T21:30:00+00:00 | Guarani Campinas — Ituano | providers=sstats ids={"sstats": "1526821"}
+- 2026-05-17T21:30:00+00:00 | Chapecoense-sc — remo | providers=sstats ids={"sstats": "1492265"}
+- 2026-05-17T21:30:00+00:00 | Ceara — Fortaleza EC | providers=sstats ids={"sstats": "1520681"}
+- 2026-05-17T21:30:00+00:00 | San Marcos de Arica — Antofagasta | providers=sstats ids={"sstats": "1511583"}
+- 2026-05-17T21:30:00+00:00 | Colo Colo — Nublense | providers=sstats ids={"sstats": "1505436"}
+- 2026-05-17T21:30:00+00:00 | Criciuma — Atletico Goianiense | providers=sstats ids={"sstats": "1520682"}
+- 2026-05-17T21:30:00+00:00 | Portuguesa FC — Puerto Cabello | providers=sstats ids={"sstats": "1543204"}
+- 2026-05-17T22:00:00+00:00 | Barranquilla — Union Magdalena | providers=sstats ids={"sstats": "1544816"}
+- 2026-05-17T22:00:00+00:00 | Inter San Carlos — ADR Jicaral | providers=sstats ids={"sstats": "1545066"}
+- 2026-05-17T22:00:00+00:00 | Cavalier — Montego Bay United | providers=sstats ids={"sstats": "1545145"}
+- 2026-05-17T22:00:00+00:00 | Inter Miami — Portland Timbers | providers=sstats ids={"sstats": "1490308"}
+- 2026-05-17T22:00:00+00:00 | Lakeland United — Miami | providers=sstats ids={"sstats": "1524466"}
+- 2026-05-17T22:00:00+00:00 | Carolina Ascent II W — Tormenta W | providers=sstats ids={"sstats": "1531997"}
+
+## Targeted enrichment plan sample
+- Albion FC — Wanderers | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Anápolis — Barra | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Brooke House W — Miami AC W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Estudiantes de Merida FC — Carabobo FC | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Independência — Araguaína | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Matiguás — UNAN Managua | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Naples — Sporting JAX | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Olympia W — Bigfoot W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Pacific FC — York United | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Patuxent W — Eagle FC W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Santos W — RB Bragantino W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Sao Raimundo — Manaus FC | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Union Omaha — Louisville City | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Vila Nova — Avai | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- West Seattle Rhodies W — Snohomish United W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Santamarina — Olimpo Bahia Blanca | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- RB Bragantino — Vitoria | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Guarani Campinas — Ituano | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Chapecoense-sc — remo | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Ceara — Fortaleza EC | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping

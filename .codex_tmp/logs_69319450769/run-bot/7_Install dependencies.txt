@@ -1,0 +1,2200 @@
+﻿2026-05-16T17:01:08.3902277Z ##[group]Run python -m pip install --upgrade pip
+2026-05-16T17:01:08.3902763Z [36;1mpython -m pip install --upgrade pip[0m
+2026-05-16T17:01:08.3903135Z [36;1mpip install -r requirements.txt[0m
+2026-05-16T17:01:08.3952501Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-05-16T17:01:08.3952927Z env:
+2026-05-16T17:01:08.3953211Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-05-16T17:01:08.3953565Z   PYTHONUNBUFFERED: 1
+2026-05-16T17:01:08.3954167Z   PYTHONPATH: /home/runner/work/sports-bot/sports-bot
+2026-05-16T17:01:08.3954571Z   TZ: Europe/Moscow
+2026-05-16T17:01:08.3954855Z   APP_TIMEZONE: Europe/Moscow
+2026-05-16T17:01:08.3955172Z   APP_ENV: production
+2026-05-16T17:01:08.3955450Z   RUN_MODE: normal
+2026-05-16T17:01:08.3955727Z   PUBLISH_DRY_RUN: false
+2026-05-16T17:01:08.3956045Z   PREDICTION_PUBLICATION_ENABLED: true
+2026-05-16T17:01:08.3956385Z   RUN_REPORT_ENABLED: false
+2026-05-16T17:01:08.3956708Z   ENHANCED_RUN_REPORT_SEND_TELEGRAM: true
+2026-05-16T17:01:08.3957073Z   TELEGRAM_MESSAGE_SOFT_LIMIT: 3600
+2026-05-16T17:01:08.3957466Z   MANUAL_CONTROLLED_PUBLISH_ENABLED: true
+2026-05-16T17:01:08.3957826Z   DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE: true
+2026-05-16T17:01:08.3958195Z   CORE_PROVIDER_INVENTORY_BRIDGE_ENABLED: true
+2026-05-16T17:01:08.3958542Z   DAY_INVENTORY_TARGET_SIZE: 300
+2026-05-16T17:01:08.3958859Z   DAY_INVENTORY_MAX_MATCHES: 300
+2026-05-16T17:01:08.3959165Z   DAY_INVENTORY_FORCE_TOP_300: true
+2026-05-16T17:01:08.3959489Z   DAY_INVENTORY_FORCE_FULL_300: true
+2026-05-16T17:01:08.3959825Z   DAY_INVENTORY_FORCE_PROVIDER_MERGE: true
+2026-05-16T17:01:08.3960175Z   DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED: true
+2026-05-16T17:01:08.3960511Z   DAY_INVENTORY_ENABLE_BZZOIRO: true
+2026-05-16T17:01:08.3960826Z   DAY_INVENTORY_ENABLE_SSTATS: true
+2026-05-16T17:01:08.3961145Z   DAY_INVENTORY_ENABLE_SPORTLOGIC: true
+2026-05-16T17:01:08.3961489Z   DAY_INVENTORY_ENABLE_ALLSPORTSAPI: false
+2026-05-16T17:01:08.3961831Z   DAY_INVENTORY_TOP_MATCHES_ENABLED: true
+2026-05-16T17:01:08.3962402Z   DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: 220
+2026-05-16T17:01:08.3962782Z   DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES: 220
+2026-05-16T17:01:08.3963141Z   DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP: 300
+2026-05-16T17:01:08.3963549Z   DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP: true
+2026-05-16T17:01:08.3964220Z   DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: 200
+2026-05-16T17:01:08.3964573Z   DAY_INVENTORY_BZZOIRO_MAX_PAGES: 20
+2026-05-16T17:01:08.3964920Z   DAY_INVENTORY_SSTATS_MAX_REQUESTS: 150
+2026-05-16T17:01:08.3965269Z   DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: 100
+2026-05-16T17:01:08.3965628Z   DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: 40
+2026-05-16T17:01:08.3965986Z   MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: true
+2026-05-16T17:01:08.3966393Z   PUBLICATION_ALLOWED_MARKET_FAMILIES: totals,spreads
+2026-05-16T17:01:08.3966817Z   HARIZON_ALLOWED_PUBLICATION_FAMILIES: totals,spreads
+2026-05-16T17:01:08.3967224Z   CONTROLLED_FALLBACK_ALLOWED_FAMILIES: totals,spreads
+2026-05-16T17:01:08.3967640Z   CONTROLLED_RESCUE_ALLOWED_FAMILIES: totals,spreads
+2026-05-16T17:01:08.3968012Z   H2H_PUBLICATION_ENABLED: false
+2026-05-16T17:01:08.3968326Z   BTTS_PUBLICATION_ENABLED: false
+2026-05-16T17:01:08.3968654Z   DNB_PUBLICATION_ENABLED: false
+2026-05-16T17:01:08.3968987Z   DOUBLE_CHANCE_PUBLICATION_ENABLED: false
+2026-05-16T17:01:08.3969355Z   TEAM_TOTALS_PUBLICATION_ENABLED: false
+2026-05-16T17:01:08.3969697Z   TOTALS_PUBLICATION_ENABLED: true
+2026-05-16T17:01:08.3970036Z   SPREADS_PUBLICATION_ENABLED: true
+2026-05-16T17:01:08.3970368Z   PUBLISH_MIN_ODDS_SOURCES: 2
+2026-05-16T17:01:08.3970688Z   PUBLISH_MIN_CONTEXT_SOURCES: 2
+2026-05-16T17:01:08.3970999Z   MIN_CONTEXT_SOURCES_PUBLISH: 2
+2026-05-16T17:01:08.3971316Z   CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: 2
+2026-05-16T17:01:08.3971728Z   CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: true
+2026-05-16T17:01:08.3972171Z   CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: 70
+2026-05-16T17:01:08.3972564Z   CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: false
+2026-05-16T17:01:08.3972956Z   CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: false
+2026-05-16T17:01:08.3973551Z   ODDS_MOVEMENT_SNAPSHOTS_ENABLED: true
+2026-05-16T17:01:08.3974256Z   NEWS_INJURY_SHORTLIST_ENABLED: true
+2026-05-16T17:01:08.3974589Z   NEWS_INJURY_SHORTLIST_LIMIT: 8
+2026-05-16T17:01:08.3974934Z   BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: true
+2026-05-16T17:01:08.3975294Z   SSTATS_ROLLING_METRICS_ENABLED: true
+2026-05-16T17:01:08.3975632Z   SSTATS_HISTORICAL_ODDS_AS_LINES: false
+2026-05-16T17:01:08.3976007Z   PROVIDER_FREE_QUOTA_POLICY_ENABLED: true
+2026-05-16T17:01:08.3976361Z   PROVIDER_QUOTA_GOVERNOR_ENABLED: true
+2026-05-16T17:01:08.3976701Z   PROVIDER_QUOTA_RUNS_PER_DAY: 12
+2026-05-16T17:01:08.3977027Z   PROVIDER_QUOTA_SAFETY_FACTOR: 0.78
+2026-05-16T17:01:08.3977374Z   PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: 25
+2026-05-16T17:01:08.3977735Z   PROVIDER_REQUEST_BUDGET_MODE: per_run_only
+2026-05-16T17:01:08.3978121Z   PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: true
+2026-05-16T17:01:08.3978502Z   ALL_SOURCES_FREE_MAXIMIZE: true
+2026-05-16T17:01:08.3978835Z   PROVIDER_SMOKE_FAIL_ON_ERROR: false
+2026-05-16T17:01:08.3979168Z   PROVIDER_SMOKE_TIMEOUT_SECONDS: 10
+2026-05-16T17:01:08.3979503Z   API_HEALTH_DURING_RUN_ENABLED: true
+2026-05-16T17:01:08.3979827Z   ODDS_API_IO_HOURLY_LIMIT: 100
+2026-05-16T17:01:08.3980144Z   ODDS_API_IO_PER_RUN_MAX: 100
+2026-05-16T17:01:08.3980467Z   ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: 50
+2026-05-16T17:01:08.3980799Z   ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: 50
+2026-05-16T17:01:08.3981143Z   ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: 100
+2026-05-16T17:01:08.3981497Z   ODDS_API_IO_MAX_REQUESTS_PER_RUN: 100
+2026-05-16T17:01:08.3981847Z   ODDS_API_IO_REQUEST_BUDGET_GRANTED: 100
+2026-05-16T17:01:08.3982191Z   ODDS_API_IO_REQUESTS_MAX_PER_RUN: 100
+2026-05-16T17:01:08.3982531Z   ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: 10
+2026-05-16T17:01:08.3982877Z   ODDS_API_IO_MAX_PAGES_PER_SPORT: 10
+2026-05-16T17:01:08.3983239Z   PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT: 5
+2026-05-16T17:01:08.3984086Z   PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST: 10
+2026-05-16T17:01:08.3984509Z   PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT: 100
+2026-05-16T17:01:08.3984856Z   MAX_MATCHES_FOR_ODDS_FETCH: 300
+2026-05-16T17:01:08.3985182Z   BZZOIRO_RATE_LIMIT_PER_MINUTE: 200
+2026-05-16T17:01:08.3985502Z   BZZOIRO_PER_RUN_MAX: 200
+2026-05-16T17:01:08.3985808Z   BZZOIRO_MAX_REQUESTS_PER_RUN: 200
+2026-05-16T17:01:08.3986148Z   BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: 200
+2026-05-16T17:01:08.3986477Z   BZZOIRO_REQUESTS_MAX_PER_RUN: 200
+2026-05-16T17:01:08.3986796Z   BZZOIRO_REQUEST_BUDGET_GRANTED: 200
+2026-05-16T17:01:08.3987134Z   BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: 80
+2026-05-16T17:01:08.3987498Z   BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: 40
+2026-05-16T17:01:08.3987852Z   BZZOIRO_PREDICTIONS_MAX_PAGES: 10
+2026-05-16T17:01:08.3988173Z   BZZOIRO_MAX_PAGES: 20
+2026-05-16T17:01:08.3988510Z   BZZOIRO_CONTEXT_MATCH_LIMIT: 300
+2026-05-16T17:01:08.3988841Z   BZZOIRO_PRICE_BACKFILL_ENABLED: true
+2026-05-16T17:01:08.3989184Z   BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: 80
+2026-05-16T17:01:08.3989531Z   SSTATS_RATE_LIMIT_PER_MINUTE: 150
+2026-05-16T17:01:08.3989850Z   SSTATS_PER_RUN_MAX: 150
+2026-05-16T17:01:08.3990154Z   SSTATS_MAX_REQUESTS_PER_RUN: 150
+2026-05-16T17:01:08.3990472Z   SSTATS_REQUESTS_MAX_PER_RUN: 150
+2026-05-16T17:01:08.3990799Z   SSTATS_REQUEST_BUDGET_GRANTED: 150
+2026-05-16T17:01:08.3991131Z   SSTATS_MAX_HTTP_REQUESTS_PER_RUN: 150
+2026-05-16T17:01:08.3991461Z   SSTATS_CONTEXT_MATCH_LIMIT: 300
+2026-05-16T17:01:08.3991787Z   SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: 40
+2026-05-16T17:01:08.3992119Z   SSTATS_DEEP_CONTEXT_MATCH_LIMIT: 80
+2026-05-16T17:01:08.3992440Z   SSTATS_DEEP_ENRICHMENT_ENABLED: true
+2026-05-16T17:01:08.3992790Z   SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK: true
+2026-05-16T17:01:08.3993153Z   SSTATS_DEEP_SMOKE_DETAIL_GAMES: 30
+2026-05-16T17:01:08.3993491Z   SSTATS_GAME_DETAIL_ENABLED: true
+2026-05-16T17:01:08.3993989Z   SSTATS_LAST_GAMES_STATS_ENABLED: true
+2026-05-16T17:01:08.3994359Z   SSTATS_INJURIES_ENABLED: false
+2026-05-16T17:01:08.3994684Z   SSTATS_GLICKO_ENABLED: true
+2026-05-16T17:01:08.3995169Z   SSTATS_ODDS_RESCUE_ENABLED: true
+2026-05-16T17:01:08.3995483Z   SPORTLOGIC_DAILY_LIMIT: 500
+2026-05-16T17:01:08.3995782Z   SPORTLOGIC_ENABLED: true
+2026-05-16T17:01:08.3996081Z   ENABLE_SPORTLOGIC: true
+2026-05-16T17:01:08.3996398Z   SPORTLOGIC_CONTROLLED_ODDS_ENABLED: true
+2026-05-16T17:01:08.3996741Z   SPORTLOGIC_PER_RUN_MAX: 40
+2026-05-16T17:01:08.3997057Z   SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: 40
+2026-05-16T17:01:08.3997393Z   SPORTLOGIC_REQUESTS_MAX_PER_RUN: 40
+2026-05-16T17:01:08.3997726Z   SPORTLOGIC_REQUEST_BUDGET_GRANTED: 40
+2026-05-16T17:01:08.3998051Z   SPORTLOGIC_MATCH_LIMIT: 100
+2026-05-16T17:01:08.3998352Z   SPORTLOGIC_CONTEXT_MATCH_LIMIT: 100
+2026-05-16T17:01:08.3998669Z   SPORTLOGIC_ODDS_MATCH_LIMIT: 40
+2026-05-16T17:01:08.3998985Z   SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: 2
+2026-05-16T17:01:08.3999331Z   SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: 40
+2026-05-16T17:01:08.3999680Z   SPORTLOGIC_MATCH_MIN_SCORE: 48
+2026-05-16T17:01:08.4000178Z   TELEGRAM_BOT_TOKEN: ***
+2026-05-16T17:01:08.4000600Z   TELEGRAM_TOKEN: ***
+2026-05-16T17:01:08.4000904Z   TELEGRAM_CHAT_ID: ***
+2026-05-16T17:01:08.4001355Z   ODDS_API_IO_KEY: ***
+2026-05-16T17:01:08.4001814Z   ODDS_API_IO_KEY_2: ***
+2026-05-16T17:01:08.4002127Z   ODDS_API_IO_KEY2: 
+2026-05-16T17:01:08.4002489Z   BZZOIRO_API_KEY: ***
+2026-05-16T17:01:08.4002797Z   SSTATS_API_KEY: ***
+2026-05-16T17:01:08.4003153Z   FOOTBALL_DATA_API_KEY: ***
+2026-05-16T17:01:08.4003472Z   THESPORTSDB_API_KEY: ***
+2026-05-16T17:01:08.4004019Z   WEATHERAPI_KEY: ***
+2026-05-16T17:01:08.4004346Z   WEATHER_API_KEY: ***
+2026-05-16T17:01:08.4004679Z   WEATHERAPI_API_KEY: ***
+2026-05-16T17:01:08.4005140Z   ALLSPORTSAPI_API_KEY: ***
+2026-05-16T17:01:08.4005548Z   SPORTLOGIC_API_KEY: ***
+2026-05-16T17:01:08.4005917Z   SPORTLOGIC_KEY: ***
+2026-05-16T17:01:08.4006285Z   SPORTLOGIC_TOKEN: ***
+2026-05-16T17:01:08.4006576Z   API_FOOTBALL_KEY: 
+2026-05-16T17:01:08.4006853Z   ODDSPAPI_API_KEY: 
+2026-05-16T17:01:08.4007359Z   OPENWEATHERMAP_API_KEY: ***
+2026-05-16T17:01:08.4007719Z   OPENWEATHER_API_KEY: ***
+2026-05-16T17:01:08.4008061Z   OPENWEATHERMAP_KEY: ***
+2026-05-16T17:01:08.4008387Z   NEWSAPI_KEY: ***
+2026-05-16T17:01:08.4008796Z   CURRENTS_API_KEY: ***
+
+2026-05-16T17:01:08.4009127Z   GNEWS_KEY: ***
+2026-05-16T17:01:08.4009457Z   NEWSDATA_API_KEY: ***
+2026-05-16T17:01:08.4009796Z   GUARDIAN_API_KEY: ***
+2026-05-16T17:01:08.4010198Z   FUTRIXMETRICS_API_KEY: ***
+2026-05-16T17:01:08.4010574Z   HIGHLIGHTLY_API_KEY: ***
+2026-05-16T17:01:08.4011000Z   METEOSTAT_RAPIDAPI_KEY: ***
+2026-05-16T17:01:08.4011422Z   ODDS_FEED_RAPIDAPI_KEY: ***
+2026-05-16T17:01:08.4011842Z   FREE_FOOTBALL_RAPIDAPI_KEY: ***
+2026-05-16T17:01:08.4012262Z   RAPIDAPI_KEY: ***
+2026-05-16T17:01:08.4012565Z   DAY_INVENTORY_CACHE_DATE: 2026-05-16
+2026-05-16T17:01:08.4012906Z   DAY_INVENTORY_TARGET_DATE: 2026-05-16
+2026-05-16T17:01:08.4013257Z   PROVIDER_SMOKE_TARGET_DATE: 2026-05-16
+2026-05-16T17:01:08.4013610Z   PROVIDER_SMOKE_TARGET_DATE_FROZEN: true
+2026-05-16T17:01:08.4014226Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-05-16T17:01:08.4014737Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-05-16T17:01:08.4015233Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-05-16T17:01:08.4015679Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-05-16T17:01:08.4016117Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-05-16T17:01:08.4016548Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-05-16T17:01:08.4016938Z ##[endgroup]
+2026-05-16T17:01:11.5285523Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages (26.1.1)
+2026-05-16T17:01:12.0082831Z {
+2026-05-16T17:01:12.0083310Z   "counts": {
+2026-05-16T17:01:12.0084270Z     "core_provider_inventory_bridge_updated_utc": "2026-05-15T21:03:08.603567+00:00",
+2026-05-16T17:01:12.0085221Z     "coverage_progress_updated_utc": "2026-05-16T15:14:59.398099+00:00",
+2026-05-16T17:01:12.0085973Z     "coverage_rows_seen_last_run": 6,
+2026-05-16T17:01:12.0086776Z     "fixture_sources_seen": 3,
+2026-05-16T17:01:12.0087206Z     "leagues_seen": 25,
+2026-05-16T17:01:12.0087641Z     "matches_added": 300,
+2026-05-16T17:01:12.0088095Z     "matches_added_from_latest_run": 0,
+2026-05-16T17:01:12.0088627Z     "matches_after_core_merge": 1351,
+2026-05-16T17:01:12.0089256Z     "matches_after_top_cut": 300,
+2026-05-16T17:01:12.0089756Z     "matches_coverage_updated_last_run": 6,
+2026-05-16T17:01:12.0090226Z     "matches_missing_context_2plus": 234,
+2026-05-16T17:01:12.0090753Z     "matches_missing_price_2plus": 207,
+2026-05-16T17:01:12.0091276Z     "matches_next_12h": 12,
+2026-05-16T17:01:12.0091716Z     "matches_next_12h_ready": 2,
+2026-05-16T17:01:12.0092187Z     "matches_next_6h": 12,
+2026-05-16T17:01:12.0092617Z     "matches_next_6h_ready": 2,
+2026-05-16T17:01:12.0093078Z     "matches_raw_before_merge": 1526,
+2026-05-16T17:01:12.0093564Z     "matches_ready_for_model": 56,
+2026-05-16T17:01:12.0094251Z     "matches_ready_for_publish": 37,
+2026-05-16T17:01:12.0094760Z     "matches_seen_latest_run": 0,
+2026-05-16T17:01:12.0095220Z     "matches_total": 300,
+2026-05-16T17:01:12.0095685Z     "matches_total_before_top_selection": 361,
+2026-05-16T17:01:12.0096227Z     "matches_total_high_watermark": 394,
+2026-05-16T17:01:12.0096728Z     "matches_updated": 0,
+2026-05-16T17:01:12.0097189Z     "matches_updated_from_latest_run": 0,
+2026-05-16T17:01:12.0097868Z     "matches_with_2plus_context_sources": 37,
+2026-05-16T17:01:12.0098442Z     "matches_with_2plus_core_fixture_sources": 36,
+2026-05-16T17:01:12.0099010Z     "matches_with_2plus_odds_sources": 37,
+2026-05-16T17:01:12.0099581Z     "matches_with_2plus_price_confirmations": 37,
+2026-05-16T17:01:12.0100164Z     "matches_with_3_core_fixture_sources": 33,
+2026-05-16T17:01:12.0100682Z     "matches_with_context": 56,
+2026-05-16T17:01:12.0101154Z     "matches_with_form": 50,
+2026-05-16T17:01:12.0101608Z     "matches_with_news": 0,
+2026-05-16T17:01:12.0102351Z     "matches_with_odds": 56,
+2026-05-16T17:01:12.0102812Z     "matches_with_weather": 0,
+2026-05-16T17:01:12.0103268Z     "matches_with_xg": 46,
+2026-05-16T17:01:12.0103728Z     "multi_source_fixture_matches": 93,
+2026-05-16T17:01:12.0104432Z     "providers_seen": 3,
+2026-05-16T17:01:12.0104904Z     "publish_min_context_sources": 2,
+2026-05-16T17:01:12.0105425Z     "publish_min_odds_sources": 2,
+2026-05-16T17:01:12.0105942Z     "publish_min_price_confirmations": 2,
+2026-05-16T17:01:12.0106522Z     "runtime_matches_with_context_last_run": 88,
+2026-05-16T17:01:12.0107091Z     "runtime_matches_with_odds_last_run": 73
+2026-05-16T17:01:12.0107583Z   },
+2026-05-16T17:01:12.0108270Z   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-16.json",
+2026-05-16T17:01:12.0109096Z   "latest_rows_seen": 0,
+2026-05-16T17:01:12.0109540Z   "matches_added": 0,
+2026-05-16T17:01:12.0109964Z   "matches_after": 300,
+2026-05-16T17:01:12.0110393Z   "matches_before": 300,
+2026-05-16T17:01:12.0110921Z   "matches_rejected_not_target_date_or_malformed": 0,
+2026-05-16T17:01:12.0111504Z   "matches_updated": 0,
+2026-05-16T17:01:12.0111911Z   "notes": [
+2026-05-16T17:01:12.0112821Z     "This runs after run-once, so the day inventory grows from actual latest-matches exports, not only from the pre-run bootstrap.",
+2026-05-16T17:01:12.0114599Z     "Telegram detailed report reads latest-day-inventory-summary.json, so matches_total now represents the cumulative daily high watermark."
+2026-05-16T17:01:12.0115651Z   ],
+2026-05-16T17:01:12.0116001Z   "status": "ok",
+2026-05-16T17:01:12.0116407Z   "target_date": "2026-05-16",
+2026-05-16T17:01:12.0116941Z   "updated_at_utc": "2026-05-16T17:01:11.900656+00:00"
+2026-05-16T17:01:12.0117470Z }
+2026-05-16T17:01:12.1288388Z {
+2026-05-16T17:01:12.1288913Z   "counts": {
+2026-05-16T17:01:12.1289646Z     "core_provider_inventory_bridge_updated_utc": "2026-05-15T21:03:08.603567+00:00",
+2026-05-16T17:01:12.1290478Z     "coverage_progress_updated_utc": "2026-05-16T15:14:59.398099+00:00",
+2026-05-16T17:01:12.1291131Z     "coverage_rows_seen_last_run": 6,
+2026-05-16T17:01:12.1291894Z     "fixture_sources_seen": 3,
+2026-05-16T17:01:12.1292317Z     "leagues_seen": 25,
+2026-05-16T17:01:12.1292708Z     "matches_added": 300,
+2026-05-16T17:01:12.1293139Z     "matches_added_from_latest_run": 0,
+2026-05-16T17:01:12.1293611Z     "matches_after_core_merge": 1351,
+2026-05-16T17:01:12.1294515Z     "matches_after_top_cut": 300,
+2026-05-16T17:01:12.1294983Z     "matches_coverage_updated_last_run": 6,
+2026-05-16T17:01:12.1295478Z     "matches_missing_context_2plus": 234,
+2026-05-16T17:01:12.1295955Z     "matches_missing_price_2plus": 207,
+2026-05-16T17:01:12.1296409Z     "matches_next_12h": 12,
+2026-05-16T17:01:12.1296828Z     "matches_next_12h_ready": 2,
+2026-05-16T17:01:12.1297260Z     "matches_next_6h": 12,
+2026-05-16T17:01:12.1297660Z     "matches_next_6h_ready": 2,
+2026-05-16T17:01:12.1298088Z     "matches_raw_before_merge": 1526,
+2026-05-16T17:01:12.1298544Z     "matches_ready_for_model": 56,
+2026-05-16T17:01:12.1299009Z     "matches_ready_for_publish": 37,
+2026-05-16T17:01:12.1299492Z     "matches_seen_latest_run": 0,
+2026-05-16T17:01:12.1299947Z     "matches_total": 300,
+2026-05-16T17:01:12.1300413Z     "matches_total_before_top_selection": 361,
+2026-05-16T17:01:12.1300925Z     "matches_total_high_watermark": 394,
+2026-05-16T17:01:12.1301412Z     "matches_updated": 0,
+2026-05-16T17:01:12.1301867Z     "matches_updated_from_latest_run": 0,
+2026-05-16T17:01:12.1302415Z     "matches_with_2plus_context_sources": 37,
+2026-05-16T17:01:12.1302954Z     "matches_with_2plus_core_fixture_sources": 36,
+2026-05-16T17:01:12.1303500Z     "matches_with_2plus_odds_sources": 37,
+2026-05-16T17:01:12.1304281Z     "matches_with_2plus_price_confirmations": 37,
+2026-05-16T17:01:12.1304854Z     "matches_with_3_core_fixture_sources": 33,
+2026-05-16T17:01:12.1305374Z     "matches_with_context": 56,
+2026-05-16T17:01:12.1305844Z     "matches_with_form": 50,
+2026-05-16T17:01:12.1306290Z     "matches_with_news": 0,
+2026-05-16T17:01:12.1307140Z     "matches_with_odds": 56,
+2026-05-16T17:01:12.1307597Z     "matches_with_weather": 0,
+2026-05-16T17:01:12.1308053Z     "matches_with_xg": 46,
+2026-05-16T17:01:12.1308518Z     "multi_source_fixture_matches": 93,
+2026-05-16T17:01:12.1309019Z     "providers_seen": 3,
+2026-05-16T17:01:12.1309470Z     "publish_min_context_sources": 2,
+2026-05-16T17:01:12.1309979Z     "publish_min_odds_sources": 2,
+2026-05-16T17:01:12.1310500Z     "publish_min_price_confirmations": 2,
+2026-05-16T17:01:12.1311073Z     "runtime_matches_with_context_last_run": 88,
+2026-05-16T17:01:12.1311640Z     "runtime_matches_with_odds_last_run": 73
+2026-05-16T17:01:12.1312133Z   },
+2026-05-16T17:01:12.1312488Z   "date_local": "2026-05-16",
+2026-05-16T17:01:12.1312971Z   "evidence_matches": 0,
+2026-05-16T17:01:12.1313727Z   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-16.json",
+2026-05-16T17:01:12.1314672Z   "notes": [
+2026-05-16T17:01:12.1315546Z     "Coverage is repaired from latest-matches forecast fields, rescue/evaluated candidates, and line_history snapshots.",
+2026-05-16T17:01:12.1316951Z     "Priority planner now sees real last_odds_refresh_utc / last_context_refresh_utc instead of treating every row as stale."
+2026-05-16T17:01:12.1317859Z   ],
+2026-05-16T17:01:12.1318231Z   "rows_repaired": 0,
+2026-05-16T17:01:12.1318658Z   "status": "ok",
+2026-05-16T17:01:12.1319131Z   "updated_at_utc": "2026-05-16T17:01:12.014608+00:00"
+2026-05-16T17:01:12.1319661Z }
+2026-05-16T17:01:12.2566299Z {
+2026-05-16T17:01:12.2566894Z   "date_local": "2026-05-16",
+2026-05-16T17:01:12.2567400Z   "line_movement_guard": {
+2026-05-16T17:01:12.2567870Z     "candidate_files_seen": 0,
+2026-05-16T17:01:12.2568353Z     "candidates_dropped": 0,
+2026-05-16T17:01:12.2568808Z     "candidates_kept": 0,
+2026-05-16T17:01:12.2569236Z     "candidates_seen": 0,
+2026-05-16T17:01:12.2569652Z     "date_local": "2026-05-16",
+2026-05-16T17:01:12.2570212Z     "drop_bad_candidates": true,
+2026-05-16T17:01:12.2570689Z     "files": [],
+2026-05-16T17:01:12.2571116Z     "status": "ok",
+2026-05-16T17:01:12.2572007Z     "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-16T17:01:12.2572545Z   },
+2026-05-16T17:01:12.2572880Z   "notes": [
+2026-05-16T17:01:12.2574132Z     "Inventory rows are now sorted by kickoff urgency and missing coverage so the next run naturally spends quota on matches that need it most.",
+2026-05-16T17:01:12.2575825Z     "Candidate files are guarded before Telegram fallback publication. If the current line loses EV/edge or moves sharply against the bet, the candidate is dropped."
+2026-05-16T17:01:12.2576948Z   ],
+2026-05-16T17:01:12.2577301Z   "refresh_plan": {
+2026-05-16T17:01:12.2577723Z     "active_matches": 300,
+2026-05-16T17:01:12.2578178Z     "date_local": "2026-05-16",
+2026-05-16T17:01:12.2578661Z     "final_pre_kickoff_checks": 0,
+2026-05-16T17:01:12.2579162Z     "matches_needing_odds_refresh": 244,
+2026-05-16T17:01:12.2579712Z     "no_more_regular_run_before_kickoff": 0,
+2026-05-16T17:01:12.2580230Z     "status": "ok",
+2026-05-16T17:01:12.2580665Z     "top_priority_matches": [
+2026-05-16T17:01:12.2581108Z       {
+2026-05-16T17:01:12.2581524Z         "away_team": "Azzurri United FC Reserves",
+2026-05-16T17:01:12.2582104Z         "home_team": "Hellenic AC Reserves",
+2026-05-16T17:01:12.2582662Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:12.2583394Z         "league_name": "Australia - Northern Territory Premier League, Reserves",
+2026-05-16T17:01:12.2584451Z         "match_key": "soccer|azzurri united reserves|hellenic reserves|2026-05-16",
+2026-05-16T17:01:12.2585128Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:12.2585664Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2586197Z         "priority": 36.0,
+2026-05-16T17:01:12.2586643Z         "refresh_plan": {
+2026-05-16T17:01:12.2587135Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2587760Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2588666Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2589217Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2589758Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2590275Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2590790Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2591349Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2591879Z         }
+2026-05-16T17:01:12.2592242Z       },
+2026-05-16T17:01:12.2592589Z       {
+2026-05-16T17:01:12.2592990Z         "away_team": "Taichung Cherry Blossoms",
+2026-05-16T17:01:12.2593535Z         "home_team": "New Taipei Hang Yuen",
+2026-05-16T17:01:12.2594273Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:12.2594991Z         "league_name": "Chinese Taipei - Mulan Football League, Women",
+2026-05-16T17:01:12.2595841Z         "match_key": "soccer|new taipei hang yuen|taichung cherry blossoms|2026-05-16",
+2026-05-16T17:01:12.2596661Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:12.2597230Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2597764Z         "priority": 36.0,
+2026-05-16T17:01:12.2598210Z         "refresh_plan": {
+2026-05-16T17:01:12.2598708Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2599326Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2599896Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2600437Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2600982Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2601509Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2602029Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2602587Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2603126Z         }
+2026-05-16T17:01:12.2603477Z       },
+2026-05-16T17:01:12.2604076Z       {
+2026-05-16T17:01:12.2604465Z         "away_team": "Silkeborg IF",
+2026-05-16T17:01:12.2604964Z         "home_team": "AC Horsens",
+2026-05-16T17:01:12.2605716Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:12.2606289Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:12.2606904Z         "match_key": "soccer|horsens|silkeborg if|2026-05-16",
+2026-05-16T17:01:12.2607509Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:12.2608048Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2608575Z         "priority": 36.0,
+2026-05-16T17:01:12.2609021Z         "refresh_plan": {
+2026-05-16T17:01:12.2609523Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2610226Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2610820Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2611352Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2611889Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2612421Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2612929Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2613509Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2614260Z         }
+2026-05-16T17:01:12.2614606Z       },
+2026-05-16T17:01:12.2614951Z       {
+2026-05-16T17:01:12.2615341Z         "away_team": "Broendby IF",
+2026-05-16T17:01:12.2615849Z         "home_team": "Soenderjyske",
+2026-05-16T17:01:12.2616383Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:12.2616960Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:12.2617603Z         "match_key": "soccer|broendby if|soenderjyske|2026-05-16",
+2026-05-16T17:01:12.2618243Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:12.2618797Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2619316Z         "priority": 36.0,
+2026-05-16T17:01:12.2619754Z         "refresh_plan": {
+2026-05-16T17:01:12.2620248Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2620845Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2621635Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2622183Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2622721Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2623245Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2623754Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2624463Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2624990Z         }
+2026-05-16T17:01:12.2625339Z       },
+2026-05-16T17:01:12.2625683Z       {
+2026-05-16T17:01:12.2626056Z         "away_team": "Esbjerg",
+2026-05-16T17:01:12.2626523Z         "home_team": "Vejle",
+2026-05-16T17:01:12.2627015Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:12.2627568Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:12.2628150Z         "match_key": "soccer|esbjerg|vejle|2026-05-16",
+2026-05-16T17:01:12.2628713Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:12.2629243Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2629775Z         "priority": 36.0,
+2026-05-16T17:01:12.2630251Z         "refresh_plan": {
+2026-05-16T17:01:12.2630741Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2631349Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2631913Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2632432Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2632948Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2633464Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2634130Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2634675Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2635196Z         }
+2026-05-16T17:01:12.2635527Z       },
+2026-05-16T17:01:12.2635866Z       {
+2026-05-16T17:01:12.2636240Z         "away_team": "Fortuna Sittard",
+2026-05-16T17:01:12.2636747Z         "home_team": "FC Twente Heracles",
+2026-05-16T17:01:12.2637296Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:12.2638090Z         "league_name": "Netherlands - U21, Divisie 1",
+2026-05-16T17:01:12.2638769Z         "match_key": "soccer|fortuna sittard|twente heracles|2026-05-16",
+2026-05-16T17:01:12.2639425Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:12.2639949Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2640685Z         "priority": 36.0,
+2026-05-16T17:01:12.2662544Z         "refresh_plan": {
+2026-05-16T17:01:12.2663029Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2663556Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2664203Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2664686Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2665171Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2665674Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2666157Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2666702Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2667241Z         }
+2026-05-16T17:01:12.2667593Z       },
+2026-05-16T17:01:12.2667937Z       {
+2026-05-16T17:01:12.2668316Z         "away_team": "Karvina",
+2026-05-16T17:01:12.2668859Z         "home_team": "FC Pardubice",
+2026-05-16T17:01:12.2669422Z         "kickoff_utc": "2026-05-16T10:45:00+00:00",
+2026-05-16T17:01:12.2670092Z         "league_name": "Czechia - U19 1st Division",
+2026-05-16T17:01:12.2670577Z         "match_key": "soccer|karvina|pardubice|2026-05-16",
+2026-05-16T17:01:12.2670971Z         "minutes_to_kickoff": 28092.97,
+2026-05-16T17:01:12.2671335Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2671679Z         "priority": 36.0,
+2026-05-16T17:01:12.2671980Z         "refresh_plan": {
+2026-05-16T17:01:12.2672311Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2672697Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2673056Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2673674Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2674255Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2674609Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2674950Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2675318Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2675669Z         }
+2026-05-16T17:01:12.2675990Z       },
+2026-05-16T17:01:12.2676321Z       {
+2026-05-16T17:01:12.2676632Z         "away_team": "FC Viktoria Plzen",
+2026-05-16T17:01:12.2677144Z         "home_team": "FC Zbrojovka Brno",
+2026-05-16T17:01:12.2677583Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2677985Z         "league_name": "Czechia - U19 1st Division",
+2026-05-16T17:01:12.2678708Z         "match_key": "soccer|viktoria plzen|zbrojovka brno|2026-05-16",
+2026-05-16T17:01:12.2679157Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2679510Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2679867Z         "priority": 36.0,
+2026-05-16T17:01:12.2680164Z         "refresh_plan": {
+2026-05-16T17:01:12.2680482Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2680855Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2681209Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2681548Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2681891Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2682234Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2682565Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2682926Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2683289Z         }
+2026-05-16T17:01:12.2683522Z       },
+2026-05-16T17:01:12.2683771Z       {
+2026-05-16T17:01:12.2684325Z         "away_team": "FC Zlin",
+2026-05-16T17:01:12.2684651Z         "home_team": "Sparta Prague",
+2026-05-16T17:01:12.2685010Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2685574Z         "league_name": "Czechia - U19 1st Division",
+2026-05-16T17:01:12.2685983Z         "match_key": "soccer|sparta prague|zlin|2026-05-16",
+2026-05-16T17:01:12.2686363Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2686715Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2687057Z         "priority": 36.0,
+2026-05-16T17:01:12.2687352Z         "refresh_plan": {
+2026-05-16T17:01:12.2687666Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2688042Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2688391Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2688732Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2689075Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2689408Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2689741Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2690093Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2690436Z         }
+2026-05-16T17:01:12.2690669Z       },
+2026-05-16T17:01:12.2690896Z       {
+2026-05-16T17:01:12.2691143Z         "away_team": "Aalborg BK",
+2026-05-16T17:01:12.2691451Z         "home_team": "AGF Aarhus",
+2026-05-16T17:01:12.2691777Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2692158Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:12.2692559Z         "match_key": "soccer|aalborg|agf aarhus|2026-05-16",
+2026-05-16T17:01:12.2692933Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2693276Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2693601Z         "priority": 36.0,
+2026-05-16T17:01:12.2694073Z         "refresh_plan": {
+2026-05-16T17:01:12.2694397Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2694775Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2695124Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2695601Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2695947Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2696269Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2696590Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2696939Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2697280Z         }
+2026-05-16T17:01:12.2697510Z       },
+2026-05-16T17:01:12.2697742Z       {
+2026-05-16T17:01:12.2697990Z         "away_team": "Randers Freja",
+2026-05-16T17:01:12.2698310Z         "home_team": "FC Midtjylland",
+2026-05-16T17:01:12.2698648Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2699006Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:12.2699419Z         "match_key": "soccer|midtjylland|randers freja|2026-05-16",
+2026-05-16T17:01:12.2699843Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2700197Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2700531Z         "priority": 36.0,
+2026-05-16T17:01:12.2700816Z         "refresh_plan": {
+2026-05-16T17:01:12.2701121Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2701490Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2701828Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2702155Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2702483Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2702801Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2703119Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2703458Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2703780Z         }
+2026-05-16T17:01:12.2704137Z       },
+2026-05-16T17:01:12.2704365Z       {
+2026-05-16T17:01:12.2704606Z         "away_team": "FC Nordsjaelland",
+2026-05-16T17:01:12.2704919Z         "home_team": "Lyngby",
+2026-05-16T17:01:12.2705241Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2705601Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:12.2706179Z         "match_key": "soccer|lyngby|nordsjaelland|2026-05-16",
+2026-05-16T17:01:12.2706562Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2706894Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2707214Z         "priority": 36.0,
+2026-05-16T17:01:12.2707493Z         "refresh_plan": {
+2026-05-16T17:01:12.2707801Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2708177Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2708520Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2708843Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2709165Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2709483Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2709795Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2710130Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2710456Z         }
+2026-05-16T17:01:12.2710685Z       },
+2026-05-16T17:01:12.2710909Z       {
+2026-05-16T17:01:12.2711173Z         "away_team": "BSV Eintracht Mahlsdorf",
+2026-05-16T17:01:12.2711528Z         "home_team": "FC Anker Wismar 1997",
+2026-05-16T17:01:12.2711869Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2712265Z         "league_name": "Germany Amateur - Oberliga NOFV North",
+2026-05-16T17:01:12.2712748Z         "match_key": "soccer|anker wismar 1997|bsv eintracht mahlsdorf|2026-05-16",
+2026-05-16T17:01:12.2713186Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2713510Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2713975Z         "priority": 36.0,
+2026-05-16T17:01:12.2714284Z         "refresh_plan": {
+2026-05-16T17:01:12.2714586Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2714951Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2715287Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2715766Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2716116Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2716453Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2716776Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2717133Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2717468Z         }
+2026-05-16T17:01:12.2717697Z       },
+2026-05-16T17:01:12.2717929Z       {
+2026-05-16T17:01:12.2718179Z         "away_team": "1 FC Magdeburg",
+2026-05-16T17:01:12.2718501Z         "home_team": "Blumenthaler SV",
+2026-05-16T17:01:12.2718854Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2719279Z         "league_name": "Germany Amateur - U19 DFB Nachwuchsliga",
+2026-05-16T17:01:12.2719741Z         "match_key": "soccer|1 magdeburg|blumenthaler sv|2026-05-16",
+2026-05-16T17:01:12.2720138Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2720482Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2720825Z         "priority": 36.0,
+2026-05-16T17:01:12.2721113Z         "refresh_plan": {
+2026-05-16T17:01:12.2721429Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2721806Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2722153Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2722484Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2722817Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2723142Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2723463Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2723926Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2724262Z         }
+2026-05-16T17:01:12.2724491Z       },
+2026-05-16T17:01:12.2724721Z       {
+2026-05-16T17:01:12.2724977Z         "away_team": "Preussen Munster",
+2026-05-16T17:01:12.2725300Z         "home_team": "SG Unterrath",
+2026-05-16T17:01:12.2725636Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2726186Z         "league_name": "Germany Amateur - U19 DFB Nachwuchsliga",
+2026-05-16T17:01:12.2726642Z         "match_key": "soccer|preussen munster|sg unterrath|2026-05-16",
+2026-05-16T17:01:12.2727059Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2727412Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2727743Z         "priority": 36.0,
+2026-05-16T17:01:12.2728027Z         "refresh_plan": {
+2026-05-16T17:01:12.2728359Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2728761Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2729119Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2729475Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2729825Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2730158Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2730479Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2730845Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2731182Z         }
+2026-05-16T17:01:12.2731422Z       },
+2026-05-16T17:01:12.2731659Z       {
+2026-05-16T17:01:12.2731916Z         "away_team": "Posta Rangers FC",
+2026-05-16T17:01:12.2732249Z         "home_team": "Nairobi United FC",
+2026-05-16T17:01:12.2732592Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2732963Z         "league_name": "Kenya - Premier League",
+2026-05-16T17:01:12.2733380Z         "match_key": "soccer|nairobi united|posta rangers|2026-05-16",
+2026-05-16T17:01:12.2733982Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2734384Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2734715Z         "priority": 36.0,
+2026-05-16T17:01:12.2735002Z         "refresh_plan": {
+2026-05-16T17:01:12.2735318Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2735690Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2736186Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2736529Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2736859Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2737184Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2737505Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2737859Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2738187Z         }
+2026-05-16T17:01:12.2738414Z       },
+2026-05-16T17:01:12.2738640Z       {
+2026-05-16T17:01:12.2738892Z         "away_team": "Arna-Bjoernar",
+2026-05-16T17:01:12.2739200Z         "home_team": "Aasane",
+2026-05-16T17:01:12.2739538Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2739920Z         "league_name": "Norway - 1st Division, Women",
+2026-05-16T17:01:12.2740331Z         "match_key": "soccer|aasane|arna bjoernar|2026-05-16",
+2026-05-16T17:01:12.2740708Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2741046Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2741393Z         "priority": 36.0,
+2026-05-16T17:01:12.2741680Z         "refresh_plan": {
+2026-05-16T17:01:12.2741990Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2742362Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2742708Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2743036Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2743428Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2743754Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2744187Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2744530Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2744856Z         }
+2026-05-16T17:01:12.2745087Z       },
+2026-05-16T17:01:12.2745313Z       {
+2026-05-16T17:01:12.2745564Z         "away_team": "Grei Kvinner Elite FK",
+2026-05-16T17:01:12.2745909Z         "home_team": "Tromsoe IL",
+2026-05-16T17:01:12.2746257Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2746777Z         "league_name": "Norway - 1st Division, Women",
+2026-05-16T17:01:12.2747202Z         "match_key": "soccer|grei kvinner elite|tromsoe il|2026-05-16",
+2026-05-16T17:01:12.2747612Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2747937Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2748377Z         "priority": 36.0,
+2026-05-16T17:01:12.2748659Z         "refresh_plan": {
+2026-05-16T17:01:12.2748974Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2749336Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2749673Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2750002Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2750331Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2750644Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2750966Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2751330Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2751670Z         }
+2026-05-16T17:01:12.2751896Z       },
+2026-05-16T17:01:12.2752127Z       {
+2026-05-16T17:01:12.2752374Z         "away_team": "IL Sandviken",
+2026-05-16T17:01:12.2752694Z         "home_team": "Kvik Halden FK",
+2026-05-16T17:01:12.2753028Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2753410Z         "league_name": "Norway - 2nd Division Group 1",
+2026-05-16T17:01:12.2754007Z         "match_key": "soccer|il sandviken|kvik halden|2026-05-16",
+2026-05-16T17:01:12.2754411Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2754743Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2755064Z         "priority": 36.0,
+2026-05-16T17:01:12.2755339Z         "refresh_plan": {
+2026-05-16T17:01:12.2755645Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2756010Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2756498Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2756832Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2757160Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2757482Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2757804Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2758148Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2758472Z         }
+2026-05-16T17:01:12.2758698Z       },
+2026-05-16T17:01:12.2758920Z       {
+2026-05-16T17:01:12.2759168Z         "away_team": "Ready Fotball",
+2026-05-16T17:01:12.2759477Z         "home_team": "Heming",
+2026-05-16T17:01:12.2759800Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2760176Z         "league_name": "Norway - 3rd Division Group 1",
+2026-05-16T17:01:12.2760568Z         "match_key": "soccer|heming|ready fotball|2026-05-16",
+2026-05-16T17:01:12.2760949Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2761275Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2761610Z         "priority": 36.0,
+2026-05-16T17:01:12.2761895Z         "refresh_plan": {
+2026-05-16T17:01:12.2762198Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2762563Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2762904Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2763230Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2763558Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2763996Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2764324Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2764662Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2764988Z         }
+2026-05-16T17:01:12.2765213Z       },
+2026-05-16T17:01:12.2765433Z       {
+2026-05-16T17:01:12.2765675Z         "away_team": "Konnerud",
+2026-05-16T17:01:12.2765988Z         "home_team": "Nordstrand",
+2026-05-16T17:01:12.2766308Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2766878Z         "league_name": "Norway - 3rd Division Group 1",
+2026-05-16T17:01:12.2767282Z         "match_key": "soccer|konnerud|nordstrand|2026-05-16",
+2026-05-16T17:01:12.2767652Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2767983Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2768303Z         "priority": 36.0,
+2026-05-16T17:01:12.2768582Z         "refresh_plan": {
+2026-05-16T17:01:12.2768886Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2769247Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2769591Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2769988Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2770327Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2770647Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2770975Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2771315Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2771651Z         }
+2026-05-16T17:01:12.2771875Z       },
+2026-05-16T17:01:12.2772099Z       {
+2026-05-16T17:01:12.2772340Z         "away_team": "Frigg Oslo FK",
+2026-05-16T17:01:12.2772647Z         "home_team": "Ullern",
+2026-05-16T17:01:12.2772956Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2773326Z         "league_name": "Norway - 3rd Division Group 1",
+2026-05-16T17:01:12.2773715Z         "match_key": "soccer|frigg oslo|ullern|2026-05-16",
+2026-05-16T17:01:12.2774265Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2774593Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2774912Z         "priority": 36.0,
+2026-05-16T17:01:12.2775179Z         "refresh_plan": {
+2026-05-16T17:01:12.2775486Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2775847Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2776188Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2776662Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2777012Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2777331Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2777652Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2778015Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2778355Z         }
+2026-05-16T17:01:12.2778585Z       },
+2026-05-16T17:01:12.2778824Z       {
+2026-05-16T17:01:12.2779081Z         "away_team": "Aasane Fotball 2",
+2026-05-16T17:01:12.2779409Z         "home_team": "Varegg",
+2026-05-16T17:01:12.2779738Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2780123Z         "league_name": "Norway - 3rd Division Group 3",
+2026-05-16T17:01:12.2780547Z         "match_key": "soccer|aasane fotball 2|varegg|2026-05-16",
+2026-05-16T17:01:12.2780938Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2781283Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2781624Z         "priority": 36.0,
+2026-05-16T17:01:12.2781915Z         "refresh_plan": {
+2026-05-16T17:01:12.2782232Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2782608Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2782955Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2783293Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2783638Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2784088Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2784412Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2784766Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2785098Z         }
+2026-05-16T17:01:12.2785324Z       },
+2026-05-16T17:01:12.2785549Z       {
+2026-05-16T17:01:12.2785801Z         "away_team": "Flekkeroy IL",
+2026-05-16T17:01:12.2786119Z         "home_team": "Vaag IK",
+2026-05-16T17:01:12.2786457Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2786844Z         "league_name": "Norway - 3rd Division Group 4",
+2026-05-16T17:01:12.2787407Z         "match_key": "soccer|flekkeroy il|vaag ik|2026-05-16",
+2026-05-16T17:01:12.2787785Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2788131Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2788464Z         "priority": 36.0,
+2026-05-16T17:01:12.2788744Z         "refresh_plan": {
+2026-05-16T17:01:12.2789052Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2789418Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2789759Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2790095Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2790425Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2790752Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2791069Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2791413Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2791754Z         }
+2026-05-16T17:01:12.2791984Z       },
+2026-05-16T17:01:12.2792213Z       {
+2026-05-16T17:01:12.2792484Z         "away_team": "FK Napredak Krusevac",
+2026-05-16T17:01:12.2792826Z         "home_team": "FK Vojvodina Novi Sad",
+2026-05-16T17:01:12.2793164Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2793510Z         "league_name": "Serbia - U19 League",
+2026-05-16T17:01:12.2794136Z         "match_key": "soccer|napredak krusevac|vojvodina novi sad|2026-05-16",
+2026-05-16T17:01:12.2794574Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2794904Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2795224Z         "priority": 36.0,
+2026-05-16T17:01:12.2795503Z         "refresh_plan": {
+2026-05-16T17:01:12.2795806Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2796172Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2796514Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2797014Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2797348Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2797670Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2797992Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2798338Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2798664Z         }
+2026-05-16T17:01:12.2798889Z       },
+2026-05-16T17:01:12.2799365Z       {
+2026-05-16T17:01:12.2799615Z         "away_team": "CD Mensajero",
+2026-05-16T17:01:12.2799937Z         "home_team": "UD Tamaraceite",
+2026-05-16T17:01:12.2800278Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2800692Z         "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+2026-05-16T17:01:12.2801157Z         "match_key": "soccer|mensajero|tamaraceite|2026-05-16",
+2026-05-16T17:01:12.2801537Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2801874Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2802214Z         "priority": 36.0,
+2026-05-16T17:01:12.2802495Z         "refresh_plan": {
+2026-05-16T17:01:12.2802800Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2803164Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2803507Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2803943Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2804281Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2804607Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2804928Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2805270Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2805622Z         }
+2026-05-16T17:01:12.2805848Z       },
+2026-05-16T17:01:12.2806073Z       {
+2026-05-16T17:01:12.2806321Z         "away_team": "Pattani FC",
+2026-05-16T17:01:12.2806659Z         "home_team": "Nongbua Pitchaya FC",
+2026-05-16T17:01:12.2807008Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2807518Z         "league_name": "Thailand - Thai League 2",
+2026-05-16T17:01:12.2807928Z         "match_key": "soccer|nongbua pitchaya|pattani|2026-05-16",
+2026-05-16T17:01:12.2808315Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2808644Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2808961Z         "priority": 36.0,
+2026-05-16T17:01:12.2809240Z         "refresh_plan": {
+2026-05-16T17:01:12.2809549Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2809913Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2810372Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2810701Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2811027Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2811349Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2811669Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2812010Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2812351Z         }
+2026-05-16T17:01:12.2812583Z       },
+2026-05-16T17:01:12.2812808Z       {
+2026-05-16T17:01:12.2813052Z         "away_team": "Galatasaray SK",
+2026-05-16T17:01:12.2813376Z         "home_team": "Kasimpasa",
+2026-05-16T17:01:12.2813704Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2814282Z         "league_name": "Turkiye Amateur - U19 Elit A",
+2026-05-16T17:01:12.2814698Z         "match_key": "soccer|galatasaray sk|kasimpasa|2026-05-16",
+2026-05-16T17:01:12.2815079Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2815408Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2815726Z         "priority": 36.0,
+2026-05-16T17:01:12.2816002Z         "refresh_plan": {
+2026-05-16T17:01:12.2816303Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2816662Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2817009Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2817478Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2817817Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2818140Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2818454Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2818793Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2819117Z         }
+2026-05-16T17:01:12.2819345Z       },
+2026-05-16T17:01:12.2819567Z       {
+2026-05-16T17:01:12.2819859Z         "away_team": "FC Prykarpattya Ivano-Frankivsk",
+2026-05-16T17:01:12.2820235Z         "home_team": "FC Ingulets Petrove",
+2026-05-16T17:01:12.2820580Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:12.2820952Z         "league_name": "Ukraine - Persha Liga",
+2026-05-16T17:01:12.2821415Z         "match_key": "soccer|ingulets petrove|prykarpattya ivano frankivsk|2026-05-16",
+2026-05-16T17:01:12.2821881Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:12.2822219Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2822547Z         "priority": 36.0,
+2026-05-16T17:01:12.2822824Z         "refresh_plan": {
+2026-05-16T17:01:12.2823129Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2823503Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2823969Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2824308Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2824638Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2824959Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2825278Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2825613Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2825937Z         }
+2026-05-16T17:01:12.2826165Z       },
+2026-05-16T17:01:12.2826396Z       {
+2026-05-16T17:01:12.2826669Z         "away_team": "Chongqing Tonglianglong FC",
+2026-05-16T17:01:12.2827024Z         "home_team": "Shandong Taishan",
+2026-05-16T17:01:12.2827370Z         "kickoff_utc": "2026-05-16T11:35:00+00:00",
+2026-05-16T17:01:12.2827931Z         "league_name": "Chinese Super League",
+2026-05-16T17:01:12.2828367Z         "match_key": "soccer|chongqing tonglianglong|shandong taishan|2026-05-16",
+2026-05-16T17:01:12.2828812Z         "minutes_to_kickoff": 28142.97,
+2026-05-16T17:01:12.2829144Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2829464Z         "priority": 36.0,
+2026-05-16T17:01:12.2829740Z         "refresh_plan": {
+2026-05-16T17:01:12.2830046Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2830422Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2830767Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2831099Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2831429Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2831762Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2832084Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2832434Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2832763Z         }
+2026-05-16T17:01:12.2832992Z       },
+2026-05-16T17:01:12.2833219Z       {
+2026-05-16T17:01:12.2833468Z         "away_team": "NK Dugopolje",
+2026-05-16T17:01:12.2833788Z         "home_team": "NK Sesvete",
+2026-05-16T17:01:12.2834295Z         "kickoff_utc": "2026-05-16T11:45:00+00:00",
+2026-05-16T17:01:12.2834646Z         "league_name": "Croatia - Prva NL",
+2026-05-16T17:01:12.2835040Z         "match_key": "soccer|nk dugopolje|nk sesvete|2026-05-16",
+2026-05-16T17:01:12.2835427Z         "minutes_to_kickoff": 28152.97,
+2026-05-16T17:01:12.2835761Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2836081Z         "priority": 36.0,
+2026-05-16T17:01:12.2836368Z         "refresh_plan": {
+2026-05-16T17:01:12.2836673Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2837128Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2838038Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2838523Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2839097Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2839564Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2840149Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2840636Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2841189Z         }
+2026-05-16T17:01:12.2858425Z       },
+2026-05-16T17:01:12.2858774Z       {
+2026-05-16T17:01:12.2859113Z         "away_team": "IF Fuglafjordur",
+2026-05-16T17:01:12.2859564Z         "home_team": "FC Suduroy",
+2026-05-16T17:01:12.2859928Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2860316Z         "league_name": "Faroe Islands - 1st deild",
+2026-05-16T17:01:12.2860731Z         "match_key": "soccer|if fuglafjordur|suduroy|2026-05-16",
+2026-05-16T17:01:12.2861129Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2861495Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2861850Z         "priority": 36.0,
+2026-05-16T17:01:12.2862148Z         "refresh_plan": {
+2026-05-16T17:01:12.2862473Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2862865Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2863225Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2863580Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2864058Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2864401Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2864731Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2865095Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2865433Z         }
+2026-05-16T17:01:12.2865664Z       },
+2026-05-16T17:01:12.2865895Z       {
+2026-05-16T17:01:12.2866146Z         "away_team": "FC Telavi",
+2026-05-16T17:01:12.2866472Z         "home_team": "FC Merani Martvili",
+2026-05-16T17:01:12.2866833Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2867414Z         "league_name": "Georgia - Erovnuli Liga 2",
+2026-05-16T17:01:12.2867813Z         "match_key": "soccer|merani martvili|telavi|2026-05-16",
+2026-05-16T17:01:12.2868201Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2868547Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2868878Z         "priority": 36.0,
+2026-05-16T17:01:12.2869169Z         "refresh_plan": {
+2026-05-16T17:01:12.2869484Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2869848Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2870237Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2870584Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2870916Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2871242Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2871570Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2871925Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2872272Z         }
+2026-05-16T17:01:12.2872506Z       },
+2026-05-16T17:01:12.2872740Z       {
+2026-05-16T17:01:12.2873016Z         "away_team": "SFC Shturmi Sartichala",
+2026-05-16T17:01:12.2873367Z         "home_team": "FC Samtredia",
+2026-05-16T17:01:12.2873704Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2874258Z         "league_name": "Georgia - Erovnuli Liga 2",
+2026-05-16T17:01:12.2874687Z         "match_key": "soccer|samtredia|sfc shturmi sartichala|2026-05-16",
+2026-05-16T17:01:12.2875116Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2875466Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2875798Z         "priority": 36.0,
+2026-05-16T17:01:12.2876082Z         "refresh_plan": {
+2026-05-16T17:01:12.2876394Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2876766Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2877286Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2877729Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2878169Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2878505Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2878837Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2879210Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2879560Z         }
+2026-05-16T17:01:12.2879803Z       },
+2026-05-16T17:01:12.2880045Z       {
+2026-05-16T17:01:12.2880304Z         "away_team": "Bayern Hof",
+2026-05-16T17:01:12.2880643Z         "home_team": "ATSV Erlangen",
+2026-05-16T17:01:12.2880997Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2881411Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:12.2881851Z         "match_key": "soccer|atsv erlangen|bayern hof|2026-05-16",
+2026-05-16T17:01:12.2882250Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2882612Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2882956Z         "priority": 36.0,
+2026-05-16T17:01:12.2883250Z         "refresh_plan": {
+2026-05-16T17:01:12.2883578Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2884075Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2884447Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2884803Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2885154Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2885489Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2885817Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2886167Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2886506Z         }
+2026-05-16T17:01:12.2886740Z       },
+2026-05-16T17:01:12.2886976Z       {
+2026-05-16T17:01:12.2887228Z         "away_team": "FSV Stadeln",
+2026-05-16T17:01:12.2887569Z         "home_team": "DJK Gebenbach",
+2026-05-16T17:01:12.2887921Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2888460Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:12.2888898Z         "match_key": "soccer|djk gebenbach|fsv stadeln|2026-05-16",
+2026-05-16T17:01:12.2889294Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2889633Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2889963Z         "priority": 36.0,
+2026-05-16T17:01:12.2890249Z         "refresh_plan": {
+2026-05-16T17:01:12.2890574Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2890973Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2891344Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2891697Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2892044Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2892379Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2892712Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2893071Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2893416Z         }
+2026-05-16T17:01:12.2893650Z       },
+2026-05-16T17:01:12.2894064Z       {
+2026-05-16T17:01:12.2894325Z         "away_team": "ASV Neumarkt",
+2026-05-16T17:01:12.2894654Z         "home_team": "FC Coburg",
+2026-05-16T17:01:12.2894997Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2895396Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:12.2895822Z         "match_key": "soccer|asv neumarkt|coburg|2026-05-16",
+2026-05-16T17:01:12.2896206Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2896553Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2896882Z         "priority": 36.0,
+2026-05-16T17:01:12.2897169Z         "refresh_plan": {
+2026-05-16T17:01:12.2897486Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2897865Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2898402Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2898741Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2899080Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2899408Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2899731Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2900084Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2900414Z         }
+2026-05-16T17:01:12.2900644Z       },
+2026-05-16T17:01:12.2900873Z       {
+2026-05-16T17:01:12.2901136Z         "away_team": "SC Grosschwarzenlohe",
+2026-05-16T17:01:12.2901470Z         "home_team": "SC Eltersdorf",
+2026-05-16T17:01:12.2901802Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2902183Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:12.2902624Z         "match_key": "soccer|eltersdorf|grosschwarzenlohe|2026-05-16",
+2026-05-16T17:01:12.2903025Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2903370Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2903702Z         "priority": 36.0,
+2026-05-16T17:01:12.2904114Z         "refresh_plan": {
+2026-05-16T17:01:12.2904428Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2904797Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2905138Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2905471Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2905804Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2906127Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2906445Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2906781Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2907116Z         }
+2026-05-16T17:01:12.2907343Z       },
+2026-05-16T17:01:12.2907568Z       {
+2026-05-16T17:01:12.2907810Z         "away_team": "SpVgg SV Weiden",
+2026-05-16T17:01:12.2908137Z         "home_team": "SV Fortuna Regensburg",
+2026-05-16T17:01:12.2908491Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2909026Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:12.2909490Z         "match_key": "soccer|spvgg sv weiden|sv fortuna regensburg|2026-05-16",
+2026-05-16T17:01:12.2909924Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2910255Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2910573Z         "priority": 36.0,
+2026-05-16T17:01:12.2910852Z         "refresh_plan": {
+2026-05-16T17:01:12.2911148Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2911512Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2911852Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2912179Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2912508Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2912834Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2913163Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2913511Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2914009Z         }
+2026-05-16T17:01:12.2914259Z       },
+2026-05-16T17:01:12.2914489Z       {
+2026-05-16T17:01:12.2914739Z         "away_team": "Eintracht Bamberg",
+2026-05-16T17:01:12.2915066Z         "home_team": "TSV Kornburg",
+2026-05-16T17:01:12.2915399Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:12.2915780Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:12.2916213Z         "match_key": "soccer|eintracht bamberg|tsv kornburg|2026-05-16",
+2026-05-16T17:01:12.2916615Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:12.2916945Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:12.2917260Z         "priority": 36.0,
+2026-05-16T17:01:12.2917537Z         "refresh_plan": {
+2026-05-16T17:01:12.2917840Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:12.2918207Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:12.2918711Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:12.2919042Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:12.2919372Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:12.2919684Z           "needs_context_refresh": false,
+2026-05-16T17:01:12.2920001Z           "needs_odds_refresh": true,
+2026-05-16T17:01:12.2920340Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:12.2920669Z         }
+2026-05-16T17:01:12.2920899Z       }
+2026-05-16T17:01:12.2921129Z     ],
+2026-05-16T17:01:12.2921432Z     "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-16T17:01:12.2921780Z   },
+2026-05-16T17:01:12.2922025Z   "status": "ok",
+2026-05-16T17:01:12.2922344Z   "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-16T17:01:12.2922686Z }
+2026-05-16T17:01:12.3774932Z {
+2026-05-16T17:01:12.3775452Z   "active_matches": 300,
+2026-05-16T17:01:12.3775805Z   "date_local": "2026-05-16",
+2026-05-16T17:01:12.3776171Z   "final_pre_kickoff_checks": 0,
+2026-05-16T17:01:12.3776527Z   "matches_missing_odds_coverage": 244,
+2026-05-16T17:01:12.3776877Z   "matches_needing_odds_refresh": 244,
+2026-05-16T17:01:12.3777213Z   "matches_stale_odds_refresh": 0,
+2026-05-16T17:01:12.3777551Z   "no_more_regular_run_before_kickoff": 0,
+2026-05-16T17:01:12.3777880Z   "notes": [
+2026-05-16T17:01:12.3778254Z     "Top-level refresh counters now match row-level refresh_plan flags.",
+2026-05-16T17:01:12.3778927Z     "Missing coverage and stale/final-refresh are separated so Telegram no longer exaggerates odds refresh load."
+2026-05-16T17:01:12.3779470Z   ],
+2026-05-16T17:01:12.3779710Z   "status": "ok",
+2026-05-16T17:01:12.3780029Z   "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-16T17:01:12.3780371Z }
+2026-05-16T17:01:14.9982419Z Collecting fastapi==0.116.1 (from -r requirements.txt (line 1))
+2026-05-16T17:01:15.0566025Z   Downloading fastapi-0.116.1-py3-none-any.whl.metadata (28 kB)
+2026-05-16T17:01:15.0852996Z Collecting uvicorn==0.35.0 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-16T17:01:15.0904848Z   Downloading uvicorn-0.35.0-py3-none-any.whl.metadata (6.5 kB)
+2026-05-16T17:01:15.1069941Z Collecting httpx==0.28.1 (from -r requirements.txt (line 3))
+2026-05-16T17:01:15.1107361Z   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+2026-05-16T17:01:15.2182308Z Collecting pydantic==2.13.2 (from -r requirements.txt (line 4))
+2026-05-16T17:01:15.2236449Z   Downloading pydantic-2.13.2-py3-none-any.whl.metadata (108 kB)
+2026-05-16T17:01:15.2472799Z Collecting pydantic-settings==2.13.1 (from -r requirements.txt (line 5))
+2026-05-16T17:01:15.2509955Z   Downloading pydantic_settings-2.13.1-py3-none-any.whl.metadata (3.4 kB)
+2026-05-16T17:01:15.2652474Z Collecting python-dotenv==1.1.1 (from -r requirements.txt (line 6))
+2026-05-16T17:01:15.2692925Z   Downloading python_dotenv-1.1.1-py3-none-any.whl.metadata (24 kB)
+2026-05-16T17:01:15.2860615Z Collecting tzdata (from -r requirements.txt (line 7))
+2026-05-16T17:01:15.2896836Z   Downloading tzdata-2026.2-py2.py3-none-any.whl.metadata (1.4 kB)
+2026-05-16T17:01:15.3119960Z Collecting pytest==8.4.2 (from -r requirements.txt (line 8))
+2026-05-16T17:01:15.3159089Z   Downloading pytest-8.4.2-py3-none-any.whl.metadata (7.7 kB)
+2026-05-16T17:01:15.3740372Z Collecting starlette<0.48.0,>=0.40.0 (from fastapi==0.116.1->-r requirements.txt (line 1))
+2026-05-16T17:01:15.3794853Z   Downloading starlette-0.47.3-py3-none-any.whl.metadata (6.2 kB)
+2026-05-16T17:01:15.4062997Z Collecting typing-extensions>=4.8.0 (from fastapi==0.116.1->-r requirements.txt (line 1))
+2026-05-16T17:01:15.4099983Z   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+2026-05-16T17:01:15.4224972Z Collecting annotated-types>=0.6.0 (from pydantic==2.13.2->-r requirements.txt (line 4))
+2026-05-16T17:01:15.4264296Z   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+2026-05-16T17:01:16.0211550Z Collecting pydantic-core==2.46.2 (from pydantic==2.13.2->-r requirements.txt (line 4))
+2026-05-16T17:01:16.0260281Z   Downloading pydantic_core-2.46.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+2026-05-16T17:01:16.0371716Z Collecting typing-inspection>=0.4.2 (from pydantic==2.13.2->-r requirements.txt (line 4))
+2026-05-16T17:01:16.0407442Z   Downloading typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+2026-05-16T17:01:16.0556976Z Collecting click>=7.0 (from uvicorn==0.35.0->uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-16T17:01:16.0596443Z   Downloading click-8.3.3-py3-none-any.whl.metadata (2.6 kB)
+2026-05-16T17:01:16.0701032Z Collecting h11>=0.8 (from uvicorn==0.35.0->uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-16T17:01:16.0736038Z   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2026-05-16T17:01:16.0921568Z Collecting anyio (from httpx==0.28.1->-r requirements.txt (line 3))
+2026-05-16T17:01:16.0959630Z   Downloading anyio-4.13.0-py3-none-any.whl.metadata (4.5 kB)
+2026-05-16T17:01:16.1129233Z Collecting certifi (from httpx==0.28.1->-r requirements.txt (line 3))
+2026-05-16T17:01:16.1166406Z   Downloading certifi-2026.4.22-py3-none-any.whl.metadata (2.5 kB)
+2026-05-16T17:01:16.1319729Z Collecting httpcore==1.* (from httpx==0.28.1->-r requirements.txt (line 3))
+2026-05-16T17:01:16.1355757Z   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+2026-05-16T17:01:16.1497669Z Collecting idna (from httpx==0.28.1->-r requirements.txt (line 3))
+2026-05-16T17:01:16.1538475Z   Downloading idna-3.15-py3-none-any.whl.metadata (7.7 kB)
+2026-05-16T17:01:16.1682609Z Collecting iniconfig>=1 (from pytest==8.4.2->-r requirements.txt (line 8))
+2026-05-16T17:01:16.1723457Z   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+2026-05-16T17:01:16.1868479Z Collecting packaging>=20 (from pytest==8.4.2->-r requirements.txt (line 8))
+2026-05-16T17:01:16.1906756Z   Downloading packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+2026-05-16T17:01:16.2018569Z Collecting pluggy<2,>=1.5 (from pytest==8.4.2->-r requirements.txt (line 8))
+2026-05-16T17:01:16.2056901Z   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2026-05-16T17:01:16.2222918Z Collecting pygments>=2.7.2 (from pytest==8.4.2->-r requirements.txt (line 8))
+2026-05-16T17:01:16.2258191Z   Downloading pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+2026-05-16T17:01:16.2536488Z Collecting httptools>=0.6.3 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-16T17:01:16.2580180Z   Downloading httptools-0.7.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+2026-05-16T17:01:16.2914674Z Collecting pyyaml>=5.1 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-16T17:01:16.2951867Z   Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+2026-05-16T17:01:16.3277418Z Collecting uvloop>=0.15.1 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-16T17:01:16.3317385Z   Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+2026-05-16T17:01:16.3939437Z Collecting watchfiles>=0.13 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-16T17:01:16.3980586Z   Downloading watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+2026-05-16T17:01:16.4700512Z Collecting websockets>=10.4 (from uvicorn[standard]==0.35.0->-r requirements.txt (line 2))
+2026-05-16T17:01:16.4741846Z   Downloading websockets-16.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.8 kB)
+2026-05-16T17:01:16.4963463Z Downloading fastapi-0.116.1-py3-none-any.whl (95 kB)
+2026-05-16T17:01:16.5042893Z Downloading pydantic-2.13.2-py3-none-any.whl (471 kB)
+2026-05-16T17:01:16.5131015Z Downloading uvicorn-0.35.0-py3-none-any.whl (66 kB)
+2026-05-16T17:01:16.5188786Z Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+2026-05-16T17:01:16.5244515Z Downloading pydantic_settings-2.13.1-py3-none-any.whl (58 kB)
+2026-05-16T17:01:16.5300236Z Downloading python_dotenv-1.1.1-py3-none-any.whl (20 kB)
+2026-05-16T17:01:16.5356974Z Downloading pytest-8.4.2-py3-none-any.whl (365 kB)
+2026-05-16T17:01:16.5466856Z Downloading pydantic_core-2.46.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+2026-05-16T17:01:16.5586563Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 201.4 MB/s  0:00:00
+2026-05-16T17:01:16.5624199Z Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+2026-05-16T17:01:16.5681476Z Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-05-16T17:01:16.5752814Z Downloading starlette-0.47.3-py3-none-any.whl (72 kB)
+2026-05-16T17:01:16.5820332Z Downloading anyio-4.13.0-py3-none-any.whl (114 kB)
+2026-05-16T17:01:16.5878915Z Downloading tzdata-2026.2-py2.py3-none-any.whl (349 kB)
+2026-05-16T17:01:16.5943628Z Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+2026-05-16T17:01:16.6001573Z Downloading click-8.3.3-py3-none-any.whl (110 kB)
+2026-05-16T17:01:16.6056659Z Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+2026-05-16T17:01:16.6116302Z Downloading httptools-0.7.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (517 kB)
+2026-05-16T17:01:16.6180271Z Downloading idna-3.15-py3-none-any.whl (72 kB)
+2026-05-16T17:01:16.6236485Z Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-05-16T17:01:16.6289705Z Downloading packaging-26.2-py3-none-any.whl (100 kB)
+2026-05-16T17:01:16.6360111Z Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+2026-05-16T17:01:16.6438318Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 179.0 MB/s  0:00:00
+2026-05-16T17:01:16.6473984Z Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
+2026-05-16T17:01:16.6527047Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 170.3 MB/s  0:00:00
+2026-05-16T17:01:16.6563017Z Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2026-05-16T17:01:16.6618327Z Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+2026-05-16T17:01:16.6672075Z Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.4 MB)
+2026-05-16T17:01:16.6813576Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 351.5 MB/s  0:00:00
+2026-05-16T17:01:16.6848791Z Downloading watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)
+2026-05-16T17:01:16.6921038Z Downloading websockets-16.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (184 kB)
+2026-05-16T17:01:16.6978032Z Downloading certifi-2026.4.22-py3-none-any.whl (135 kB)
+2026-05-16T17:01:16.7828231Z Installing collected packages: websockets, uvloop, tzdata, typing-extensions, pyyaml, python-dotenv, pygments, pluggy, packaging, iniconfig, idna, httptools, h11, click, certifi, annotated-types, uvicorn, typing-inspection, pytest, pydantic-core, httpcore, anyio, watchfiles, starlette, pydantic, httpx, pydantic-settings, fastapi
+2026-05-16T17:01:19.4486459Z 
+2026-05-16T17:01:19.4514870Z Successfully installed annotated-types-0.7.0 anyio-4.13.0 certifi-2026.4.22 click-8.3.3 fastapi-0.116.1 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.28.1 idna-3.15 iniconfig-2.3.0 packaging-26.2 pluggy-1.6.0 pydantic-2.13.2 pydantic-core-2.46.2 pydantic-settings-2.13.1 pygments-2.20.0 pytest-8.4.2 python-dotenv-1.1.1 pyyaml-6.0.3 starlette-0.47.3 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2026.2 uvicorn-0.35.0 uvloop-0.22.1 watchfiles-1.1.1 websockets-16.0
+2026-05-16T17:01:19.8560854Z {
+2026-05-16T17:01:19.8561311Z   "counts": {
+2026-05-16T17:01:19.8561988Z     "core_provider_inventory_bridge_updated_utc": "2026-05-15T21:03:08.603567+00:00",
+2026-05-16T17:01:19.8562642Z     "coverage_progress_updated_utc": "2026-05-16T15:14:59.398099+00:00",
+2026-05-16T17:01:19.8563068Z     "coverage_rows_seen_last_run": 6,
+2026-05-16T17:01:19.8563405Z     "fixture_sources_seen": 3,
+2026-05-16T17:01:19.8563704Z     "leagues_seen": 25,
+2026-05-16T17:01:19.8564588Z     "matches_added": 300,
+2026-05-16T17:01:19.8564901Z     "matches_added_from_latest_run": 0,
+2026-05-16T17:01:19.8565237Z     "matches_after_core_merge": 1351,
+2026-05-16T17:01:19.8565571Z     "matches_after_top_cut": 300,
+2026-05-16T17:01:19.8565899Z     "matches_coverage_updated_last_run": 6,
+2026-05-16T17:01:19.8566242Z     "matches_missing_context_2plus": 234,
+2026-05-16T17:01:19.8566569Z     "matches_missing_price_2plus": 207,
+2026-05-16T17:01:19.8566879Z     "matches_next_12h": 12,
+2026-05-16T17:01:19.8567174Z     "matches_next_12h_ready": 2,
+2026-05-16T17:01:19.8567474Z     "matches_next_6h": 12,
+2026-05-16T17:01:19.8567758Z     "matches_next_6h_ready": 2,
+2026-05-16T17:01:19.8568055Z     "matches_raw_before_merge": 1526,
+2026-05-16T17:01:19.8568371Z     "matches_ready_for_model": 56,
+2026-05-16T17:01:19.8568690Z     "matches_ready_for_publish": 37,
+2026-05-16T17:01:19.8569004Z     "matches_seen_latest_run": 0,
+2026-05-16T17:01:19.8569301Z     "matches_total": 300,
+2026-05-16T17:01:19.8569616Z     "matches_total_before_top_selection": 361,
+2026-05-16T17:01:19.8569977Z     "matches_total_high_watermark": 394,
+2026-05-16T17:01:19.8570301Z     "matches_updated": 0,
+2026-05-16T17:01:19.8570604Z     "matches_updated_from_latest_run": 0,
+2026-05-16T17:01:19.8570951Z     "matches_with_2plus_context_sources": 37,
+2026-05-16T17:01:19.8571319Z     "matches_with_2plus_core_fixture_sources": 36,
+2026-05-16T17:01:19.8571693Z     "matches_with_2plus_odds_sources": 37,
+2026-05-16T17:01:19.8572072Z     "matches_with_2plus_price_confirmations": 37,
+2026-05-16T17:01:19.8572440Z     "matches_with_3_core_fixture_sources": 33,
+2026-05-16T17:01:19.8572773Z     "matches_with_context": 56,
+2026-05-16T17:01:19.8573086Z     "matches_with_form": 50,
+2026-05-16T17:01:19.8573392Z     "matches_with_news": 0,
+2026-05-16T17:01:19.8573681Z     "matches_with_odds": 56,
+2026-05-16T17:01:19.8574208Z     "matches_with_weather": 0,
+2026-05-16T17:01:19.8574506Z     "matches_with_xg": 46,
+2026-05-16T17:01:19.8574813Z     "multi_source_fixture_matches": 93,
+2026-05-16T17:01:19.8575314Z     "providers_seen": 3,
+2026-05-16T17:01:19.8575621Z     "publish_min_context_sources": 2,
+2026-05-16T17:01:19.8575994Z     "publish_min_odds_sources": 2,
+2026-05-16T17:01:19.8576333Z     "publish_min_price_confirmations": 2,
+2026-05-16T17:01:19.8576701Z     "runtime_matches_with_context_last_run": 88,
+2026-05-16T17:01:19.8577066Z     "runtime_matches_with_odds_last_run": 73
+2026-05-16T17:01:19.8577377Z   },
+2026-05-16T17:01:19.8577813Z   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-16.json",
+2026-05-16T17:01:19.8578313Z   "latest_rows_seen": 0,
+2026-05-16T17:01:19.8578592Z   "matches_added": 0,
+2026-05-16T17:01:19.8578866Z   "matches_after": 300,
+2026-05-16T17:01:19.8579142Z   "matches_before": 300,
+2026-05-16T17:01:19.8579462Z   "matches_rejected_not_target_date_or_malformed": 0,
+2026-05-16T17:01:19.8579811Z   "matches_updated": 0,
+2026-05-16T17:01:19.8580070Z   "notes": [
+2026-05-16T17:01:19.8580632Z     "This runs after run-once, so the day inventory grows from actual latest-matches exports, not only from the pre-run bootstrap.",
+2026-05-16T17:01:19.8581578Z     "Telegram detailed report reads latest-day-inventory-summary.json, so matches_total now represents the cumulative daily high watermark."
+2026-05-16T17:01:19.8582206Z   ],
+2026-05-16T17:01:19.8582439Z   "status": "ok",
+2026-05-16T17:01:19.8582711Z   "target_date": "2026-05-16",
+2026-05-16T17:01:19.8583051Z   "updated_at_utc": "2026-05-16T17:01:19.746709+00:00"
+2026-05-16T17:01:19.8583384Z }
+2026-05-16T17:01:19.9697141Z {
+2026-05-16T17:01:19.9697609Z   "counts": {
+2026-05-16T17:01:19.9698282Z     "core_provider_inventory_bridge_updated_utc": "2026-05-15T21:03:08.603567+00:00",
+2026-05-16T17:01:19.9698927Z     "coverage_progress_updated_utc": "2026-05-16T15:14:59.398099+00:00",
+2026-05-16T17:01:19.9699354Z     "coverage_rows_seen_last_run": 6,
+2026-05-16T17:01:19.9699685Z     "fixture_sources_seen": 3,
+2026-05-16T17:01:19.9699980Z     "leagues_seen": 25,
+2026-05-16T17:01:19.9700561Z     "matches_added": 300,
+2026-05-16T17:01:19.9700886Z     "matches_added_from_latest_run": 0,
+2026-05-16T17:01:19.9701217Z     "matches_after_core_merge": 1351,
+2026-05-16T17:01:19.9701532Z     "matches_after_top_cut": 300,
+2026-05-16T17:01:19.9701866Z     "matches_coverage_updated_last_run": 6,
+2026-05-16T17:01:19.9702221Z     "matches_missing_context_2plus": 234,
+2026-05-16T17:01:19.9702556Z     "matches_missing_price_2plus": 207,
+2026-05-16T17:01:19.9702881Z     "matches_next_12h": 12,
+2026-05-16T17:01:19.9703181Z     "matches_next_12h_ready": 2,
+2026-05-16T17:01:19.9703488Z     "matches_next_6h": 12,
+2026-05-16T17:01:19.9703775Z     "matches_next_6h_ready": 2,
+2026-05-16T17:01:19.9704348Z     "matches_raw_before_merge": 1526,
+2026-05-16T17:01:19.9704673Z     "matches_ready_for_model": 56,
+2026-05-16T17:01:19.9704991Z     "matches_ready_for_publish": 37,
+2026-05-16T17:01:19.9705300Z     "matches_seen_latest_run": 0,
+2026-05-16T17:01:19.9705598Z     "matches_total": 300,
+2026-05-16T17:01:19.9705921Z     "matches_total_before_top_selection": 361,
+2026-05-16T17:01:19.9706281Z     "matches_total_high_watermark": 394,
+2026-05-16T17:01:19.9706603Z     "matches_updated": 0,
+2026-05-16T17:01:19.9706920Z     "matches_updated_from_latest_run": 0,
+2026-05-16T17:01:19.9707264Z     "matches_with_2plus_context_sources": 37,
+2026-05-16T17:01:19.9707635Z     "matches_with_2plus_core_fixture_sources": 36,
+2026-05-16T17:01:19.9708010Z     "matches_with_2plus_odds_sources": 37,
+2026-05-16T17:01:19.9708390Z     "matches_with_2plus_price_confirmations": 37,
+2026-05-16T17:01:19.9708762Z     "matches_with_3_core_fixture_sources": 33,
+2026-05-16T17:01:19.9709094Z     "matches_with_context": 56,
+2026-05-16T17:01:19.9709396Z     "matches_with_form": 50,
+2026-05-16T17:01:19.9709694Z     "matches_with_news": 0,
+2026-05-16T17:01:19.9709984Z     "matches_with_odds": 56,
+2026-05-16T17:01:19.9710268Z     "matches_with_weather": 0,
+2026-05-16T17:01:19.9710571Z     "matches_with_xg": 46,
+2026-05-16T17:01:19.9710875Z     "multi_source_fixture_matches": 93,
+2026-05-16T17:01:19.9711381Z     "providers_seen": 3,
+2026-05-16T17:01:19.9711683Z     "publish_min_context_sources": 2,
+2026-05-16T17:01:19.9712008Z     "publish_min_odds_sources": 2,
+2026-05-16T17:01:19.9712338Z     "publish_min_price_confirmations": 2,
+2026-05-16T17:01:19.9712699Z     "runtime_matches_with_context_last_run": 88,
+2026-05-16T17:01:19.9713061Z     "runtime_matches_with_odds_last_run": 73
+2026-05-16T17:01:19.9713383Z   },
+2026-05-16T17:01:19.9713618Z   "date_local": "2026-05-16",
+2026-05-16T17:01:19.9714155Z   "evidence_matches": 0,
+2026-05-16T17:01:19.9714633Z   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-16.json",
+2026-05-16T17:01:19.9715130Z   "notes": [
+2026-05-16T17:01:19.9715662Z     "Coverage is repaired from latest-matches forecast fields, rescue/evaluated candidates, and line_history snapshots.",
+2026-05-16T17:01:19.9716497Z     "Priority planner now sees real last_odds_refresh_utc / last_context_refresh_utc instead of treating every row as stale."
+2026-05-16T17:01:19.9717070Z   ],
+2026-05-16T17:01:19.9717307Z   "rows_repaired": 0,
+2026-05-16T17:01:19.9717581Z   "status": "ok",
+2026-05-16T17:01:19.9717886Z   "updated_at_utc": "2026-05-16T17:01:19.857700+00:00"
+2026-05-16T17:01:19.9718219Z }
+2026-05-16T17:01:20.1036994Z {
+2026-05-16T17:01:20.1037496Z   "date_local": "2026-05-16",
+2026-05-16T17:01:20.1038021Z   "line_movement_guard": {
+2026-05-16T17:01:20.1038501Z     "candidate_files_seen": 0,
+2026-05-16T17:01:20.1038957Z     "candidates_dropped": 0,
+2026-05-16T17:01:20.1039374Z     "candidates_kept": 0,
+2026-05-16T17:01:20.1039756Z     "candidates_seen": 0,
+2026-05-16T17:01:20.1040180Z     "date_local": "2026-05-16",
+2026-05-16T17:01:20.1040606Z     "drop_bad_candidates": true,
+2026-05-16T17:01:20.1041049Z     "files": [],
+2026-05-16T17:01:20.1041407Z     "status": "ok",
+2026-05-16T17:01:20.1041907Z     "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-16T17:01:20.1042428Z   },
+2026-05-16T17:01:20.1043147Z   "notes": [
+2026-05-16T17:01:20.1044249Z     "Inventory rows are now sorted by kickoff urgency and missing coverage so the next run naturally spends quota on matches that need it most.",
+2026-05-16T17:01:20.1045922Z     "Candidate files are guarded before Telegram fallback publication. If the current line loses EV/edge or moves sharply against the bet, the candidate is dropped."
+2026-05-16T17:01:20.1047021Z   ],
+2026-05-16T17:01:20.1047369Z   "refresh_plan": {
+2026-05-16T17:01:20.1047777Z     "active_matches": 300,
+2026-05-16T17:01:20.1048215Z     "date_local": "2026-05-16",
+2026-05-16T17:01:20.1048670Z     "final_pre_kickoff_checks": 0,
+2026-05-16T17:01:20.1049159Z     "matches_needing_odds_refresh": 244,
+2026-05-16T17:01:20.1049680Z     "no_more_regular_run_before_kickoff": 0,
+2026-05-16T17:01:20.1050162Z     "status": "ok",
+2026-05-16T17:01:20.1050558Z     "top_priority_matches": [
+2026-05-16T17:01:20.1050976Z       {
+2026-05-16T17:01:20.1051374Z         "away_team": "Azzurri United FC Reserves",
+2026-05-16T17:01:20.1051930Z         "home_team": "Hellenic AC Reserves",
+2026-05-16T17:01:20.1052447Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:20.1053162Z         "league_name": "Australia - Northern Territory Premier League, Reserves",
+2026-05-16T17:01:20.1054201Z         "match_key": "soccer|azzurri united reserves|hellenic reserves|2026-05-16",
+2026-05-16T17:01:20.1054688Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:20.1055044Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1055392Z         "priority": 36.0,
+2026-05-16T17:01:20.1055682Z         "refresh_plan": {
+2026-05-16T17:01:20.1055997Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1056375Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1056836Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1057182Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1057521Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1057867Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1058385Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1058768Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1059106Z         }
+2026-05-16T17:01:20.1059337Z       },
+2026-05-16T17:01:20.1059563Z       {
+2026-05-16T17:01:20.1059847Z         "away_team": "Taichung Cherry Blossoms",
+2026-05-16T17:01:20.1060211Z         "home_team": "New Taipei Hang Yuen",
+2026-05-16T17:01:20.1060567Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:20.1060996Z         "league_name": "Chinese Taipei - Mulan Football League, Women",
+2026-05-16T17:01:20.1061531Z         "match_key": "soccer|new taipei hang yuen|taichung cherry blossoms|2026-05-16",
+2026-05-16T17:01:20.1061990Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:20.1062341Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1062677Z         "priority": 36.0,
+2026-05-16T17:01:20.1062970Z         "refresh_plan": {
+2026-05-16T17:01:20.1063300Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1063676Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1064269Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1064606Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1064942Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1065273Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1065598Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1065948Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1066276Z         }
+2026-05-16T17:01:20.1066509Z       },
+2026-05-16T17:01:20.1066738Z       {
+2026-05-16T17:01:20.1066993Z         "away_team": "Silkeborg IF",
+2026-05-16T17:01:20.1067321Z         "home_team": "AC Horsens",
+2026-05-16T17:01:20.1067659Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:20.1068088Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:20.1086428Z         "match_key": "soccer|horsens|silkeborg if|2026-05-16",
+2026-05-16T17:01:20.1087051Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:20.1087436Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1087780Z         "priority": 36.0,
+2026-05-16T17:01:20.1088072Z         "refresh_plan": {
+2026-05-16T17:01:20.1088390Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1088778Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1089139Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1089481Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1089815Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1090141Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1090461Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1090818Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1091148Z         }
+2026-05-16T17:01:20.1091373Z       },
+2026-05-16T17:01:20.1091614Z       {
+2026-05-16T17:01:20.1091875Z         "away_team": "Broendby IF",
+2026-05-16T17:01:20.1092205Z         "home_team": "Soenderjyske",
+2026-05-16T17:01:20.1092547Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:20.1092911Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:20.1093326Z         "match_key": "soccer|broendby if|soenderjyske|2026-05-16",
+2026-05-16T17:01:20.1093732Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:20.1094290Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1094627Z         "priority": 36.0,
+2026-05-16T17:01:20.1094917Z         "refresh_plan": {
+2026-05-16T17:01:20.1095238Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1095620Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1095968Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1096308Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1096645Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1097230Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1097554Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1097906Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1098238Z         }
+2026-05-16T17:01:20.1098466Z       },
+2026-05-16T17:01:20.1098693Z       {
+2026-05-16T17:01:20.1098936Z         "away_team": "Esbjerg",
+2026-05-16T17:01:20.1099235Z         "home_team": "Vejle",
+2026-05-16T17:01:20.1099562Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:20.1099927Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:20.1100302Z         "match_key": "soccer|esbjerg|vejle|2026-05-16",
+2026-05-16T17:01:20.1100667Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:20.1101012Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1101345Z         "priority": 36.0,
+2026-05-16T17:01:20.1101630Z         "refresh_plan": {
+2026-05-16T17:01:20.1101942Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1102329Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1102677Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1103014Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1103348Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1103676Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1104209Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1104560Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1104891Z         }
+2026-05-16T17:01:20.1105117Z       },
+2026-05-16T17:01:20.1105346Z       {
+2026-05-16T17:01:20.1105588Z         "away_team": "Fortuna Sittard",
+2026-05-16T17:01:20.1105913Z         "home_team": "FC Twente Heracles",
+2026-05-16T17:01:20.1106258Z         "kickoff_utc": "2026-05-16T10:30:00+00:00",
+2026-05-16T17:01:20.1106632Z         "league_name": "Netherlands - U21, Divisie 1",
+2026-05-16T17:01:20.1107055Z         "match_key": "soccer|fortuna sittard|twente heracles|2026-05-16",
+2026-05-16T17:01:20.1107669Z         "minutes_to_kickoff": 28077.97,
+2026-05-16T17:01:20.1108008Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1108335Z         "priority": 36.0,
+2026-05-16T17:01:20.1108622Z         "refresh_plan": {
+2026-05-16T17:01:20.1108944Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1109329Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1109681Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1110038Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1110379Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1110712Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1111037Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1111395Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1111735Z         }
+2026-05-16T17:01:20.1111967Z       },
+2026-05-16T17:01:20.1112200Z       {
+2026-05-16T17:01:20.1112465Z         "away_team": "Karvina",
+2026-05-16T17:01:20.1112794Z         "home_team": "FC Pardubice",
+2026-05-16T17:01:20.1113141Z         "kickoff_utc": "2026-05-16T10:45:00+00:00",
+2026-05-16T17:01:20.1113516Z         "league_name": "Czechia - U19 1st Division",
+2026-05-16T17:01:20.1114024Z         "match_key": "soccer|karvina|pardubice|2026-05-16",
+2026-05-16T17:01:20.1114402Z         "minutes_to_kickoff": 28092.97,
+2026-05-16T17:01:20.1114746Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1115078Z         "priority": 36.0,
+2026-05-16T17:01:20.1115361Z         "refresh_plan": {
+2026-05-16T17:01:20.1115669Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1116026Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1116374Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1116710Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1117045Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1117385Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1117845Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1118195Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1118527Z         }
+2026-05-16T17:01:20.1118752Z       },
+2026-05-16T17:01:20.1118979Z       {
+2026-05-16T17:01:20.1119230Z         "away_team": "FC Viktoria Plzen",
+2026-05-16T17:01:20.1119553Z         "home_team": "FC Zbrojovka Brno",
+2026-05-16T17:01:20.1119887Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1120245Z         "league_name": "Czechia - U19 1st Division",
+2026-05-16T17:01:20.1120663Z         "match_key": "soccer|viktoria plzen|zbrojovka brno|2026-05-16",
+2026-05-16T17:01:20.1121084Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1121423Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1121747Z         "priority": 36.0,
+2026-05-16T17:01:20.1122023Z         "refresh_plan": {
+2026-05-16T17:01:20.1122328Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1122712Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1123056Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1123391Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1123733Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1124184Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1124510Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1124856Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1125193Z         }
+2026-05-16T17:01:20.1125424Z       },
+2026-05-16T17:01:20.1125653Z       {
+2026-05-16T17:01:20.1125892Z         "away_team": "FC Zlin",
+2026-05-16T17:01:20.1126204Z         "home_team": "Sparta Prague",
+2026-05-16T17:01:20.1126540Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1126916Z         "league_name": "Czechia - U19 1st Division",
+2026-05-16T17:01:20.1127310Z         "match_key": "soccer|sparta prague|zlin|2026-05-16",
+2026-05-16T17:01:20.1127829Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1128169Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1128661Z         "priority": 36.0,
+2026-05-16T17:01:20.1129079Z         "refresh_plan": {
+2026-05-16T17:01:20.1129549Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1130119Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1130647Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1131154Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1131666Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1132150Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1132635Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1133029Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1133360Z         }
+2026-05-16T17:01:20.1133665Z       },
+2026-05-16T17:01:20.1134086Z       {
+2026-05-16T17:01:20.1134348Z         "away_team": "Aalborg BK",
+2026-05-16T17:01:20.1134669Z         "home_team": "AGF Aarhus",
+2026-05-16T17:01:20.1134990Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1135350Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:20.1135726Z         "match_key": "soccer|aalborg|agf aarhus|2026-05-16",
+2026-05-16T17:01:20.1136092Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1136430Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1136748Z         "priority": 36.0,
+2026-05-16T17:01:20.1137024Z         "refresh_plan": {
+2026-05-16T17:01:20.1137328Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1137691Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1138032Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1138362Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1138687Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1139007Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1139501Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1139842Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1140166Z         }
+2026-05-16T17:01:20.1140385Z       },
+2026-05-16T17:01:20.1140608Z       {
+2026-05-16T17:01:20.1140847Z         "away_team": "Randers Freja",
+2026-05-16T17:01:20.1141171Z         "home_team": "FC Midtjylland",
+2026-05-16T17:01:20.1141508Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1141860Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:20.1142263Z         "match_key": "soccer|midtjylland|randers freja|2026-05-16",
+2026-05-16T17:01:20.1142703Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1143039Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1143356Z         "priority": 36.0,
+2026-05-16T17:01:20.1143627Z         "refresh_plan": {
+2026-05-16T17:01:20.1144108Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1144488Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1144830Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1145157Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1145485Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1145804Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1146117Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1146451Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1146773Z         }
+2026-05-16T17:01:20.1146994Z       },
+2026-05-16T17:01:20.1147212Z       {
+2026-05-16T17:01:20.1147455Z         "away_team": "FC Nordsjaelland",
+2026-05-16T17:01:20.1147768Z         "home_team": "Lyngby",
+2026-05-16T17:01:20.1148079Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1148427Z         "league_name": "Denmark - U19 Ligaen",
+2026-05-16T17:01:20.1148796Z         "match_key": "soccer|lyngby|nordsjaelland|2026-05-16",
+2026-05-16T17:01:20.1149320Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1149656Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1149972Z         "priority": 36.0,
+2026-05-16T17:01:20.1150240Z         "refresh_plan": {
+2026-05-16T17:01:20.1150539Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1150897Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1151232Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1151551Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1151872Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1152184Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1152495Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1152825Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1153143Z         }
+2026-05-16T17:01:20.1153365Z       },
+2026-05-16T17:01:20.1153582Z       {
+2026-05-16T17:01:20.1153949Z         "away_team": "BSV Eintracht Mahlsdorf",
+2026-05-16T17:01:20.1154320Z         "home_team": "FC Anker Wismar 1997",
+2026-05-16T17:01:20.1154678Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1155080Z         "league_name": "Germany Amateur - Oberliga NOFV North",
+2026-05-16T17:01:20.1155564Z         "match_key": "soccer|anker wismar 1997|bsv eintracht mahlsdorf|2026-05-16",
+2026-05-16T17:01:20.1156007Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1156363Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1156692Z         "priority": 36.0,
+2026-05-16T17:01:20.1156969Z         "refresh_plan": {
+2026-05-16T17:01:20.1157286Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1157663Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1158013Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1158355Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1158691Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1159029Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1159495Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1159853Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1160182Z         }
+2026-05-16T17:01:20.1160405Z       },
+2026-05-16T17:01:20.1160631Z       {
+2026-05-16T17:01:20.1160882Z         "away_team": "1 FC Magdeburg",
+2026-05-16T17:01:20.1161206Z         "home_team": "Blumenthaler SV",
+2026-05-16T17:01:20.1161547Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1161967Z         "league_name": "Germany Amateur - U19 DFB Nachwuchsliga",
+2026-05-16T17:01:20.1162443Z         "match_key": "soccer|1 magdeburg|blumenthaler sv|2026-05-16",
+2026-05-16T17:01:20.1162842Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1163177Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1163505Z         "priority": 36.0,
+2026-05-16T17:01:20.1163892Z         "refresh_plan": {
+2026-05-16T17:01:20.1164209Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1164592Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1164940Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1165272Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1165617Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1165944Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1166265Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1166606Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1166928Z         }
+2026-05-16T17:01:20.1167146Z       },
+2026-05-16T17:01:20.1167362Z       {
+2026-05-16T17:01:20.1167604Z         "away_team": "Preussen Munster",
+2026-05-16T17:01:20.1167925Z         "home_team": "SG Unterrath",
+2026-05-16T17:01:20.1168263Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1168678Z         "league_name": "Germany Amateur - U19 DFB Nachwuchsliga",
+2026-05-16T17:01:20.1169135Z         "match_key": "soccer|preussen munster|sg unterrath|2026-05-16",
+2026-05-16T17:01:20.1169692Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1170017Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1170336Z         "priority": 36.0,
+2026-05-16T17:01:20.1170607Z         "refresh_plan": {
+2026-05-16T17:01:20.1170908Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1171273Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1171608Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1171933Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1172258Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1172573Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1172884Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1173220Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1173549Z         }
+2026-05-16T17:01:20.1173768Z       },
+2026-05-16T17:01:20.1174201Z       {
+2026-05-16T17:01:20.1174443Z         "away_team": "Posta Rangers FC",
+2026-05-16T17:01:20.1174762Z         "home_team": "Nairobi United FC",
+2026-05-16T17:01:20.1175089Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1175445Z         "league_name": "Kenya - Premier League",
+2026-05-16T17:01:20.1175859Z         "match_key": "soccer|nairobi united|posta rangers|2026-05-16",
+2026-05-16T17:01:20.1176254Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1176594Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1176918Z         "priority": 36.0,
+2026-05-16T17:01:20.1177200Z         "refresh_plan": {
+2026-05-16T17:01:20.1177510Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1177872Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1178215Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1178543Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1178874Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1179350Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1179672Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1180016Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1180338Z         }
+2026-05-16T17:01:20.1180560Z       },
+2026-05-16T17:01:20.1180781Z       {
+2026-05-16T17:01:20.1181023Z         "away_team": "Arna-Bjoernar",
+2026-05-16T17:01:20.1181325Z         "home_team": "Aasane",
+2026-05-16T17:01:20.1181650Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1182020Z         "league_name": "Norway - 1st Division, Women",
+2026-05-16T17:01:20.1182416Z         "match_key": "soccer|aasane|arna bjoernar|2026-05-16",
+2026-05-16T17:01:20.1182787Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1183114Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1183431Z         "priority": 36.0,
+2026-05-16T17:01:20.1183699Z         "refresh_plan": {
+2026-05-16T17:01:20.1184211Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1184586Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1184926Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1185252Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1185585Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1185903Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1186217Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1186554Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1186876Z         }
+2026-05-16T17:01:20.1187095Z       },
+2026-05-16T17:01:20.1187314Z       {
+2026-05-16T17:01:20.1187560Z         "away_team": "Grei Kvinner Elite FK",
+2026-05-16T17:01:20.1187885Z         "home_team": "Tromsoe IL",
+2026-05-16T17:01:20.1188216Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1188582Z         "league_name": "Norway - 1st Division, Women",
+2026-05-16T17:01:20.1188990Z         "match_key": "soccer|grei kvinner elite|tromsoe il|2026-05-16",
+2026-05-16T17:01:20.1189540Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1189859Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1190173Z         "priority": 36.0,
+2026-05-16T17:01:20.1190447Z         "refresh_plan": {
+2026-05-16T17:01:20.1190749Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1191111Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1191452Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1191781Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1192102Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1192410Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1192721Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1193053Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1193368Z         }
+2026-05-16T17:01:20.1193586Z       },
+2026-05-16T17:01:20.1193914Z       {
+2026-05-16T17:01:20.1194158Z         "away_team": "IL Sandviken",
+2026-05-16T17:01:20.1194484Z         "home_team": "Kvik Halden FK",
+2026-05-16T17:01:20.1194814Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1195192Z         "league_name": "Norway - 2nd Division Group 1",
+2026-05-16T17:01:20.1195611Z         "match_key": "soccer|il sandviken|kvik halden|2026-05-16",
+2026-05-16T17:01:20.1195992Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1196309Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1196625Z         "priority": 36.0,
+2026-05-16T17:01:20.1196893Z         "refresh_plan": {
+2026-05-16T17:01:20.1197189Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1197548Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1197886Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1198208Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1198534Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1198855Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1199309Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1199644Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1199963Z         }
+2026-05-16T17:01:20.1200181Z       },
+2026-05-16T17:01:20.1200407Z       {
+2026-05-16T17:01:20.1200657Z         "away_team": "Ready Fotball",
+2026-05-16T17:01:20.1200979Z         "home_team": "Heming",
+2026-05-16T17:01:20.1201304Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1201689Z         "league_name": "Norway - 3rd Division Group 1",
+2026-05-16T17:01:20.1202096Z         "match_key": "soccer|heming|ready fotball|2026-05-16",
+2026-05-16T17:01:20.1202495Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1202832Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1203161Z         "priority": 36.0,
+2026-05-16T17:01:20.1203438Z         "refresh_plan": {
+2026-05-16T17:01:20.1203748Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1204240Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1204584Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1204920Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1205251Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1205574Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1205891Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1206234Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1206559Z         }
+2026-05-16T17:01:20.1206784Z       },
+2026-05-16T17:01:20.1207007Z       {
+2026-05-16T17:01:20.1207247Z         "away_team": "Konnerud",
+2026-05-16T17:01:20.1207567Z         "home_team": "Nordstrand",
+2026-05-16T17:01:20.1207897Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1208269Z         "league_name": "Norway - 3rd Division Group 1",
+2026-05-16T17:01:20.1208675Z         "match_key": "soccer|konnerud|nordstrand|2026-05-16",
+2026-05-16T17:01:20.1209208Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1209542Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1209867Z         "priority": 36.0,
+2026-05-16T17:01:20.1210142Z         "refresh_plan": {
+2026-05-16T17:01:20.1210485Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1211024Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1211530Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1212029Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1212532Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1213028Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1214517Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1215047Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1215559Z         }
+2026-05-16T17:01:20.1215890Z       },
+2026-05-16T17:01:20.1216187Z       {
+2026-05-16T17:01:20.1216448Z         "away_team": "Frigg Oslo FK",
+2026-05-16T17:01:20.1216770Z         "home_team": "Ullern",
+2026-05-16T17:01:20.1217095Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1217486Z         "league_name": "Norway - 3rd Division Group 1",
+2026-05-16T17:01:20.1217886Z         "match_key": "soccer|frigg oslo|ullern|2026-05-16",
+2026-05-16T17:01:20.1218253Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1218592Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1218915Z         "priority": 36.0,
+2026-05-16T17:01:20.1219197Z         "refresh_plan": {
+2026-05-16T17:01:20.1219506Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1219880Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1220224Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1220557Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1220885Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1221212Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1221714Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1222061Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1222384Z         }
+2026-05-16T17:01:20.1222604Z       },
+2026-05-16T17:01:20.1222824Z       {
+2026-05-16T17:01:20.1223065Z         "away_team": "Aasane Fotball 2",
+2026-05-16T17:01:20.1223377Z         "home_team": "Varegg",
+2026-05-16T17:01:20.1223690Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1224278Z         "league_name": "Norway - 3rd Division Group 3",
+2026-05-16T17:01:20.1224701Z         "match_key": "soccer|aasane fotball 2|varegg|2026-05-16",
+2026-05-16T17:01:20.1225083Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1225413Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1225729Z         "priority": 36.0,
+2026-05-16T17:01:20.1226000Z         "refresh_plan": {
+2026-05-16T17:01:20.1226300Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1226671Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1227018Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1227338Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1227662Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1227995Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1228308Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1228648Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1228972Z         }
+2026-05-16T17:01:20.1229194Z       },
+2026-05-16T17:01:20.1229412Z       {
+2026-05-16T17:01:20.1229650Z         "away_team": "Flekkeroy IL",
+2026-05-16T17:01:20.1229960Z         "home_team": "Vaag IK",
+2026-05-16T17:01:20.1230275Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1230641Z         "league_name": "Norway - 3rd Division Group 4",
+2026-05-16T17:01:20.1231036Z         "match_key": "soccer|flekkeroy il|vaag ik|2026-05-16",
+2026-05-16T17:01:20.1231554Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1231888Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1232204Z         "priority": 36.0,
+2026-05-16T17:01:20.1232474Z         "refresh_plan": {
+2026-05-16T17:01:20.1232776Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1233134Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1233469Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1233896Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1234226Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1234543Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1234855Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1235191Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1235504Z         }
+2026-05-16T17:01:20.1235724Z       },
+2026-05-16T17:01:20.1235943Z       {
+2026-05-16T17:01:20.1236195Z         "away_team": "FK Napredak Krusevac",
+2026-05-16T17:01:20.1236539Z         "home_team": "FK Vojvodina Novi Sad",
+2026-05-16T17:01:20.1236872Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1237208Z         "league_name": "Serbia - U19 League",
+2026-05-16T17:01:20.1237620Z         "match_key": "soccer|napredak krusevac|vojvodina novi sad|2026-05-16",
+2026-05-16T17:01:20.1238041Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1238362Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1238678Z         "priority": 36.0,
+2026-05-16T17:01:20.1238949Z         "refresh_plan": {
+2026-05-16T17:01:20.1239248Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1239606Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1239944Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1240270Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1240591Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1240915Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1241419Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1241751Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1242072Z         }
+2026-05-16T17:01:20.1242303Z       },
+2026-05-16T17:01:20.1242569Z       {
+2026-05-16T17:01:20.1242814Z         "away_team": "CD Mensajero",
+2026-05-16T17:01:20.1243140Z         "home_team": "UD Tamaraceite",
+2026-05-16T17:01:20.1243492Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1244014Z         "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+2026-05-16T17:01:20.1244485Z         "match_key": "soccer|mensajero|tamaraceite|2026-05-16",
+2026-05-16T17:01:20.1244869Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1245219Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1245547Z         "priority": 36.0,
+2026-05-16T17:01:20.1245829Z         "refresh_plan": {
+2026-05-16T17:01:20.1246143Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1246533Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1246877Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1247213Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1247542Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1247866Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1248182Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1248528Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1248858Z         }
+2026-05-16T17:01:20.1249081Z       },
+2026-05-16T17:01:20.1249304Z       {
+2026-05-16T17:01:20.1249550Z         "away_team": "Pattani FC",
+2026-05-16T17:01:20.1249879Z         "home_team": "Nongbua Pitchaya FC",
+2026-05-16T17:01:20.1250230Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1250594Z         "league_name": "Thailand - Thai League 2",
+2026-05-16T17:01:20.1251003Z         "match_key": "soccer|nongbua pitchaya|pattani|2026-05-16",
+2026-05-16T17:01:20.1251547Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1251875Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1252197Z         "priority": 36.0,
+2026-05-16T17:01:20.1252476Z         "refresh_plan": {
+2026-05-16T17:01:20.1252783Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1253163Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1253522Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1254255Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1254715Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1255050Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1255377Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1255725Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1256054Z         }
+2026-05-16T17:01:20.1256281Z       },
+2026-05-16T17:01:20.1256509Z       {
+2026-05-16T17:01:20.1256770Z         "away_team": "Galatasaray SK",
+2026-05-16T17:01:20.1257103Z         "home_team": "Kasimpasa",
+2026-05-16T17:01:20.1257440Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1257815Z         "league_name": "Turkiye Amateur - U19 Elit A",
+2026-05-16T17:01:20.1258228Z         "match_key": "soccer|galatasaray sk|kasimpasa|2026-05-16",
+2026-05-16T17:01:20.1258615Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1258953Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1259277Z         "priority": 36.0,
+2026-05-16T17:01:20.1259555Z         "refresh_plan": {
+2026-05-16T17:01:20.1259862Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1260228Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1260568Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1260901Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1261238Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1261572Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1262037Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1262381Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1262709Z         }
+2026-05-16T17:01:20.1263015Z       },
+2026-05-16T17:01:20.1280812Z       {
+2026-05-16T17:01:20.1281301Z         "away_team": "FC Prykarpattya Ivano-Frankivsk",
+2026-05-16T17:01:20.1281792Z         "home_team": "FC Ingulets Petrove",
+2026-05-16T17:01:20.1282196Z         "kickoff_utc": "2026-05-16T11:00:00+00:00",
+2026-05-16T17:01:20.1282597Z         "league_name": "Ukraine - Persha Liga",
+2026-05-16T17:01:20.1283092Z         "match_key": "soccer|ingulets petrove|prykarpattya ivano frankivsk|2026-05-16",
+2026-05-16T17:01:20.1283568Z         "minutes_to_kickoff": 28107.97,
+2026-05-16T17:01:20.1284040Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1284384Z         "priority": 36.0,
+2026-05-16T17:01:20.1284673Z         "refresh_plan": {
+2026-05-16T17:01:20.1285005Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1285400Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1285759Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1286103Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1286437Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1286759Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1287078Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1287434Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1287762Z         }
+2026-05-16T17:01:20.1287994Z       },
+2026-05-16T17:01:20.1288224Z       {
+2026-05-16T17:01:20.1288505Z         "away_team": "Chongqing Tonglianglong FC",
+2026-05-16T17:01:20.1288872Z         "home_team": "Shandong Taishan",
+2026-05-16T17:01:20.1289218Z         "kickoff_utc": "2026-05-16T11:35:00+00:00",
+2026-05-16T17:01:20.1289578Z         "league_name": "Chinese Super League",
+2026-05-16T17:01:20.1290215Z         "match_key": "soccer|chongqing tonglianglong|shandong taishan|2026-05-16",
+2026-05-16T17:01:20.1290665Z         "minutes_to_kickoff": 28142.97,
+2026-05-16T17:01:20.1291009Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1291334Z         "priority": 36.0,
+2026-05-16T17:01:20.1291615Z         "refresh_plan": {
+2026-05-16T17:01:20.1291927Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1292299Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1292641Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1292972Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1293305Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1293632Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1294070Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1294421Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1294750Z         }
+2026-05-16T17:01:20.1294973Z       },
+2026-05-16T17:01:20.1295207Z       {
+2026-05-16T17:01:20.1295458Z         "away_team": "NK Dugopolje",
+2026-05-16T17:01:20.1295776Z         "home_team": "NK Sesvete",
+2026-05-16T17:01:20.1296109Z         "kickoff_utc": "2026-05-16T11:45:00+00:00",
+2026-05-16T17:01:20.1296465Z         "league_name": "Croatia - Prva NL",
+2026-05-16T17:01:20.1296864Z         "match_key": "soccer|nk dugopolje|nk sesvete|2026-05-16",
+2026-05-16T17:01:20.1297259Z         "minutes_to_kickoff": 28152.97,
+2026-05-16T17:01:20.1297598Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1297918Z         "priority": 36.0,
+2026-05-16T17:01:20.1298194Z         "refresh_plan": {
+2026-05-16T17:01:20.1298500Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1298862Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1299202Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1299529Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1299857Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1300333Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1300653Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1300995Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1301321Z         }
+2026-05-16T17:01:20.1301543Z       },
+2026-05-16T17:01:20.1301762Z       {
+2026-05-16T17:01:20.1302005Z         "away_team": "IF Fuglafjordur",
+2026-05-16T17:01:20.1302331Z         "home_team": "FC Suduroy",
+2026-05-16T17:01:20.1302668Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1303039Z         "league_name": "Faroe Islands - 1st deild",
+2026-05-16T17:01:20.1303445Z         "match_key": "soccer|if fuglafjordur|suduroy|2026-05-16",
+2026-05-16T17:01:20.1304012Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1304432Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1304772Z         "priority": 36.0,
+2026-05-16T17:01:20.1305061Z         "refresh_plan": {
+2026-05-16T17:01:20.1305387Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1305773Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1306120Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1306459Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1306799Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1307134Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1307461Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1307817Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1308148Z         }
+2026-05-16T17:01:20.1308379Z       },
+2026-05-16T17:01:20.1308613Z       {
+2026-05-16T17:01:20.1308860Z         "away_team": "FC Telavi",
+2026-05-16T17:01:20.1309192Z         "home_team": "FC Merani Martvili",
+2026-05-16T17:01:20.1309542Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1309915Z         "league_name": "Georgia - Erovnuli Liga 2",
+2026-05-16T17:01:20.1310344Z         "match_key": "soccer|merani martvili|telavi|2026-05-16",
+2026-05-16T17:01:20.1310894Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1311251Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1311593Z         "priority": 36.0,
+2026-05-16T17:01:20.1311889Z         "refresh_plan": {
+2026-05-16T17:01:20.1312208Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1312588Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1312943Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1313300Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1313640Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1314087Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1314410Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1314764Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1315102Z         }
+2026-05-16T17:01:20.1315334Z       },
+2026-05-16T17:01:20.1315570Z       {
+2026-05-16T17:01:20.1315859Z         "away_team": "SFC Shturmi Sartichala",
+2026-05-16T17:01:20.1316205Z         "home_team": "FC Samtredia",
+2026-05-16T17:01:20.1316542Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1316900Z         "league_name": "Georgia - Erovnuli Liga 2",
+2026-05-16T17:01:20.1317316Z         "match_key": "soccer|samtredia|sfc shturmi sartichala|2026-05-16",
+2026-05-16T17:01:20.1317725Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1318063Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1318388Z         "priority": 36.0,
+2026-05-16T17:01:20.1318665Z         "refresh_plan": {
+2026-05-16T17:01:20.1318961Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1319322Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1319661Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1319988Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1320315Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1320790Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1321108Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1321447Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1321770Z         }
+2026-05-16T17:01:20.1321989Z       },
+2026-05-16T17:01:20.1322207Z       {
+2026-05-16T17:01:20.1322448Z         "away_team": "Bayern Hof",
+2026-05-16T17:01:20.1322765Z         "home_team": "ATSV Erlangen",
+2026-05-16T17:01:20.1323089Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1323471Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:20.1324079Z         "match_key": "soccer|atsv erlangen|bayern hof|2026-05-16",
+2026-05-16T17:01:20.1324607Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1325092Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1325416Z         "priority": 36.0,
+2026-05-16T17:01:20.1325691Z         "refresh_plan": {
+2026-05-16T17:01:20.1326000Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1326371Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1326705Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1327031Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1327354Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1327673Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1327981Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1328321Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1328649Z         }
+2026-05-16T17:01:20.1328871Z       },
+2026-05-16T17:01:20.1329095Z       {
+2026-05-16T17:01:20.1329341Z         "away_team": "FSV Stadeln",
+2026-05-16T17:01:20.1329664Z         "home_team": "DJK Gebenbach",
+2026-05-16T17:01:20.1329990Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1330375Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:20.1330992Z         "match_key": "soccer|djk gebenbach|fsv stadeln|2026-05-16",
+2026-05-16T17:01:20.1331393Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1331743Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1332073Z         "priority": 36.0,
+2026-05-16T17:01:20.1332353Z         "refresh_plan": {
+2026-05-16T17:01:20.1332665Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1333037Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1333382Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1333724Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1334182Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1334511Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1334828Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1335178Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1335507Z         }
+2026-05-16T17:01:20.1335730Z       },
+2026-05-16T17:01:20.1335960Z       {
+2026-05-16T17:01:20.1336215Z         "away_team": "ASV Neumarkt",
+2026-05-16T17:01:20.1336527Z         "home_team": "FC Coburg",
+2026-05-16T17:01:20.1336854Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1337246Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:20.1337661Z         "match_key": "soccer|asv neumarkt|coburg|2026-05-16",
+2026-05-16T17:01:20.1338024Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1338356Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1338677Z         "priority": 36.0,
+2026-05-16T17:01:20.1338952Z         "refresh_plan": {
+2026-05-16T17:01:20.1339255Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1339616Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1339957Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1340281Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1340605Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1341076Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1341393Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1341732Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1342058Z         }
+2026-05-16T17:01:20.1342281Z       },
+2026-05-16T17:01:20.1342507Z       {
+2026-05-16T17:01:20.1342821Z         "away_team": "SC Grosschwarzenlohe",
+2026-05-16T17:01:20.1343170Z         "home_team": "SC Eltersdorf",
+2026-05-16T17:01:20.1343512Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1344129Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:20.1344594Z         "match_key": "soccer|eltersdorf|grosschwarzenlohe|2026-05-16",
+2026-05-16T17:01:20.1344999Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1345341Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1345669Z         "priority": 36.0,
+2026-05-16T17:01:20.1345957Z         "refresh_plan": {
+2026-05-16T17:01:20.1346280Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1346661Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1347006Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1347343Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1347677Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1348007Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1348322Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1348668Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1348998Z         }
+2026-05-16T17:01:20.1349221Z       },
+2026-05-16T17:01:20.1349446Z       {
+2026-05-16T17:01:20.1349697Z         "away_team": "SpVgg SV Weiden",
+2026-05-16T17:01:20.1350037Z         "home_team": "SV Fortuna Regensburg",
+2026-05-16T17:01:20.1350388Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1350788Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:20.1351430Z         "match_key": "soccer|spvgg sv weiden|sv fortuna regensburg|2026-05-16",
+2026-05-16T17:01:20.1351870Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1352215Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1352545Z         "priority": 36.0,
+2026-05-16T17:01:20.1352825Z         "refresh_plan": {
+2026-05-16T17:01:20.1353137Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1353507Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1353965Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1354309Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1354644Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1354971Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1355292Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1355644Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1355977Z         }
+2026-05-16T17:01:20.1356215Z       },
+2026-05-16T17:01:20.1356446Z       {
+2026-05-16T17:01:20.1356696Z         "away_team": "Eintracht Bamberg",
+2026-05-16T17:01:20.1357023Z         "home_team": "TSV Kornburg",
+2026-05-16T17:01:20.1357366Z         "kickoff_utc": "2026-05-16T12:00:00+00:00",
+2026-05-16T17:01:20.1357754Z         "league_name": "Germany Amateur - Bayernliga North",
+2026-05-16T17:01:20.1358197Z         "match_key": "soccer|eintracht bamberg|tsv kornburg|2026-05-16",
+2026-05-16T17:01:20.1358606Z         "minutes_to_kickoff": 28167.97,
+2026-05-16T17:01:20.1358946Z         "pre_kickoff_status": "future_today",
+2026-05-16T17:01:20.1359287Z         "priority": 36.0,
+2026-05-16T17:01:20.1359564Z         "refresh_plan": {
+2026-05-16T17:01:20.1359866Z           "expected_next_run_interval_minutes": 120,
+2026-05-16T17:01:20.1360224Z           "final_pre_kickoff_check_required": false,
+2026-05-16T17:01:20.1360560Z           "last_odds_refresh_utc": null,
+2026-05-16T17:01:20.1360882Z           "max_current_line_age_minutes": 35,
+2026-05-16T17:01:20.1361207Z           "min_kickoff_lead_minutes": 30,
+2026-05-16T17:01:20.1361685Z           "needs_context_refresh": false,
+2026-05-16T17:01:20.1362000Z           "needs_odds_refresh": true,
+2026-05-16T17:01:20.1362338Z           "no_more_regular_run_before_kickoff": false
+2026-05-16T17:01:20.1362661Z         }
+2026-05-16T17:01:20.1362880Z       }
+2026-05-16T17:01:20.1363099Z     ],
+2026-05-16T17:01:20.1363377Z     "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-16T17:01:20.1363705Z   },
+2026-05-16T17:01:20.1364050Z   "status": "ok",
+2026-05-16T17:01:20.1364357Z   "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-16T17:01:20.1364684Z }
+2026-05-16T17:01:20.2329042Z {
+2026-05-16T17:01:20.2329519Z   "active_matches": 300,
+2026-05-16T17:01:20.2329910Z   "date_local": "2026-05-16",
+2026-05-16T17:01:20.2330240Z   "final_pre_kickoff_checks": 0,
+2026-05-16T17:01:20.2330715Z   "matches_missing_odds_coverage": 244,
+2026-05-16T17:01:20.2331064Z   "matches_needing_odds_refresh": 244,
+2026-05-16T17:01:20.2331425Z   "matches_stale_odds_refresh": 0,
+2026-05-16T17:01:20.2331773Z   "no_more_regular_run_before_kickoff": 0,
+2026-05-16T17:01:20.2332104Z   "notes": [
+2026-05-16T17:01:20.2332604Z     "Top-level refresh counters now match row-level refresh_plan flags.",
+2026-05-16T17:01:20.2333284Z     "Missing coverage and stale/final-refresh are separated so Telegram no longer exaggerates odds refresh load."
+2026-05-16T17:01:20.2334051Z   ],
+2026-05-16T17:01:20.2334302Z   "status": "ok",
+2026-05-16T17:01:20.2334623Z   "updated_at_utc": "2026-04-26T22:32:01.692784+00:00"
+2026-05-16T17:01:20.2334963Z }

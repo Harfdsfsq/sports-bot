@@ -1,0 +1,59 @@
+{
+  "allowed_publication_families": [
+    "totals",
+    "spreads"
+  ],
+  "blocked_publication_families": [
+    "h2h",
+    "btts",
+    "dnb",
+    "doubleChance",
+    "teamTotals"
+  ],
+  "created_at_utc": "2026-05-18T07:10:50.750357+00:00",
+  "env_updates": {
+    "ANALYSIS_ALLOWED_MARKET_FAMILIES": "h2h,totals,spreads,btts,dnb,doubleChance,teamTotals",
+    "BTTS_PUBLICATION_ENABLED": "false",
+    "BZZOIRO_API_ROOT_URL": "https://sports.bzzoiro.com/api",
+    "BZZOIRO_BASE_URL": "https://sports.bzzoiro.com/api/v2",
+    "BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE": "true",
+    "BZZOIRO_FORCE_PREDICTIONS_V2": "true",
+    "BZZOIRO_PREDICTIONS_MAX_PAGES": "10",
+    "BZZOIRO_PROVIDER_SMOKE_ENABLED": "false",
+    "CANDIDATE_FACTORY_ALLOWED_PUBLICATION_FAMILIES": "totals,spreads",
+    "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
+    "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": "totals,spreads",
+    "CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES": "totals,spreads",
+    "CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES": "totals,spreads",
+    "CONTROLLED_RESCUE_ALLOWED_FAMILIES": "totals,spreads",
+    "DNB_PUBLICATION_ENABLED": "false",
+    "DOUBLE_CHANCE_PUBLICATION_ENABLED": "false",
+    "H2H_PUBLICATION_ENABLED": "false",
+    "HARIZON_ALLOWED_PUBLICATION_FAMILIES": "totals,spreads",
+    "HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION": "harizon-runtime-policy-v7-signals-totals-spreads",
+    "HARIZON_RUNTIME_POLICY_VERSION": "harizon-runtime-policy-v7-signals-totals-spreads",
+    "MAIN_PUBLISH_ALLOWED_FAMILIES": "totals,spreads",
+    "MARKET_FAMILY_PUBLICATION_GUARD_ENABLED": "true",
+    "NEWS_INJURY_SHORTLIST_ENABLED": "true",
+    "NEWS_INJURY_SHORTLIST_LIMIT": "8",
+    "ODDS_MOVEMENT_SNAPSHOTS_ENABLED": "true",
+    "POST_INTEGRITY_RESCUE_ALLOWED_FAMILIES": "totals,spreads",
+    "PUBLICATION_ALLOWED_MARKET_FAMILIES": "totals,spreads",
+    "QUALITY_FIRST_ALLOWED_PUBLICATION_FAMILIES": "totals,spreads",
+    "SPREADS_PUBLICATION_ENABLED": "true",
+    "SSTATS_HISTORICAL_ODDS_AS_LINES": "false",
+    "SSTATS_ROLLING_METRICS_ENABLED": "true",
+    "TEAM_TOTALS_PUBLICATION_ENABLED": "false",
+    "TELEGRAM_ALLOWED_MARKET_FAMILIES": "totals,spreads",
+    "TOTALS_PUBLICATION_ENABLED": "true"
+  },
+  "notes": [
+    "Only totals and spreads/handicaps may be published.",
+    "H2H/P1/P2/X, BTTS, DNB, double chance and team totals are analysis-only.",
+    "market_family_publication_guard also blocks Telegram text as last-mile safety.",
+    "Runtime signal-stack switches are pinned here because the workflow calls this script before run and fallback.",
+    "Bzzoiro is forced through the predictions endpoint and smoke calls are skipped to preserve request budget."
+  ],
+  "policy": "publication_totals_spreads_only_with_signal_runtime_contract",
+  "runtime_policy_version": "harizon-runtime-policy-v7-signals-totals-spreads"
+}

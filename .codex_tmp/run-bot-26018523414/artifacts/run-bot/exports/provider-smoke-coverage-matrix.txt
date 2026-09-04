@@ -1,0 +1,78 @@
+# Provider smoke 300-match coverage matrix v3
+
+- status: **ok**
+- target_date: 2026-05-18
+- inventory_path: `/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-18.json`
+- inventory_matches_total: 255
+- matrix_matches: 255/300
+- full target reached: False
+- min odds/context sources: 2/2
+
+## Coverage by kickoff window
+
+| window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0_2h | 5 | 5 | 5 | 3 | 3 | 3 | 2 | 0 | 3 | 3 |
+| 2_6h | 36 | 21 | 36 | 11 | 12 | 11 | 4 | 0 | 12 | 11 |
+| 6_12h | 105 | 100 | 102 | 66 | 69 | 66 | 41 | 0 | 69 | 66 |
+| 12_24h | 6 | 6 | 5 | 5 | 6 | 5 | 1 | 0 | 5 | 5 |
+| 24h_plus | 18 | 18 | 0 | 0 | 14 | 0 | 14 | 0 | 0 | 0 |
+| started | 85 | 47 | 85 | 64 | 64 | 63 | 27 | 0 | 64 | 63 |
+
+## Totals
+
+- fixture_2plus_sources: 197/255
+- odds_2plus_sources: 149/255
+- context_2plus_sources: 148/255
+- ready_for_model: 153/255
+- ready_for_publish: 148/255
+
+## Provider endpoint status
+- by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
+- not_ok:
+  - clubelo: ConnectTimeout:  http=None rows=None reason=None
+
+## Matching diagnostics
+- odds_inventory: `{"parsed_events": null, "raw_rows": null, "status": null}`
+- by_stage: `{}`
+
+## Next enrichment queue
+- 0_2h | 2026-05-18T09:00:00+00:00 | FC Cukaricki — FK Crvena Zvezda | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-18T09:00:00+00:00 | FC Krylia Sovetov Samara-2 — FC Orenburg-2 | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T09:30:00+00:00 | South Melbourne FC — Caroline Springs George Cross FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T10:00:00+00:00 | Naftan Novopolotsk 2 — FC Maxline-2 Vitebsk | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T10:00:00+00:00 | FC Zorya Luhansk — FC Polissya Zhytomyr | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T10:30:00+00:00 | Ringwood City FC — Brunswick Juventus FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T11:00:00+00:00 | FK Arsenal Dzerzhinsk 2 — Slavia Mozyr 2 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T11:00:00+00:00 | FK Termez Surkhon — Pakhtakor | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T11:00:00+00:00 | Xorazm Fk Urganch — Navbahor | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T11:00:00+00:00 | FC Kairat — FC Kaspiy Aktau | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T11:30:00+00:00 | Sportivo San Lorenzo — Sportivo Luqueno | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T12:00:00+00:00 | FC Vitebsk 2 — FC Baranovichi  2 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T12:00:00+00:00 | FC Atyrau — FC Kaysar Kyzylorda | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T12:00:00+00:00 | FC Ordabasy — FC Tomiris Turan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T12:00:00+00:00 | Zhetysu Taldykorgan — BIIK Kazygurt Shymkent | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T12:30:00+00:00 | Defensor Sporting — Albion FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T12:45:00+00:00 | Wan Tendong Stable — Johor Darul Takzim FC II | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | FC Yaypan Fergana — FC Kattaqorgon | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | FC Dinamo Brest II — FC Belshina 2 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | African Sports Club — Songea United | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | B19 FC — Mbeya Kwanza FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | Bigman FC — Hausang FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | Geita Gold FC — Tma FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | Kagera Sugar — Mbuni FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | Polisi Tanzania FC — Kengold FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | Transit Camp FC — Gunners FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T13:00:00+00:00 | Stade de Reims — LOSC Lille | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-18T14:00:00+00:00 | Talaea El Gaish — Pharco FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-18T15:00:00+00:00 | FC Lahti — Vaasan Palloseura | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-18T15:00:00+00:00 | Club Deportivo Magallanes — Deportes Recoleta | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+
+Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
+
+
+## SStats deep projection
+- crosswalk: matched=190 / checked=255 | rate=74.51% | SStats events=1063
+- potential_add: context_deep=190 xg_or_rating=190 form=190 odds_rescue=14
+- projected_upper_bound: context_2plus=255 xg=243 form=193 odds_2plus=163
+- next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.

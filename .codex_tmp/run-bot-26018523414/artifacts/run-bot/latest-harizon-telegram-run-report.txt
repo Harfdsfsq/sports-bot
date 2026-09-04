@@ -1,0 +1,40 @@
+🧾 HARIZON run report v8 — единая фактическая сводка
+• Итог: ✅ прогноз опубликован
+• Главная причина: skipped existing pick
+
+📦 Покрытие
+• Матчи в run: 151 | day inventory: 243
+• С линиями: 67 | с контекстом: 132 | ready model: 156
+• odds-api.io offers: 11243 | Bzzoiro secondary offers: 187
+• 2+ букмекера odds-api.io: 59 | 2-source overlap Bzzoiro+odds-api.io: 14
+• Source combinations: odds_api_io: 52, bzzoiro+odds_api_io: 14, bzzoiro: 3
+
+🧪 Воронка кандидатов
+• Raw/candidates before quality: 1 / 2
+• Passed quality: 1 | publishable: 1 | опубликовано: 1
+• Controlled fallback: seen 0 | evaluated 0 | published False
+• Windowed coverage: audit 2 | allowed 1 | blocked 1 | publish-filter input 1
+
+🛡️ Pre-publish / line movement
+• Final pre-kickoff checks: 7 | no next regular run: 7
+• Line guard: seen 1 | kept 1 | dropped 0
+
+📡 Core API
+• odds_api_io: events req 0, odds req 20, matched 100, offers 11243, 2+ books 59, err 0
+• sstats: req 30, ctx 130, rows 26485, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 5, v2 ctx 1, v2 odds 1, secondary offers 187, overlap odds-api.io 14, err 0
+• sportlogic: enabled True, req 13, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
+
+🧭 Progressive core coverage
+• Core odds/line: bzzoiro,odds_api_io,sstats
+• Core context: bzzoiro,sstats
+• Tracked: 1022 | core odds 2+: 436 | core context 2+: 119 | core-ready both: 119
+• 0–4ч: 0/0 core-ready
+• 0–12ч: 0/0 core-ready
+
+🚫 Почему не опубликовано
+• Нет reject reasons в свежих артефактах.
+
+📌 Вывод
+• Прогноз реально опубликован; все цифры выше взяты из одного нормализованного payload.
+• Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
