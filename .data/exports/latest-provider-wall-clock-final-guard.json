@@ -1,30 +1,364 @@
 {
-  "created_at_utc": "2026-09-05T16:01:24.511635+00:00",
-  "deadline_seconds": 55.0,
-  "elapsed_seconds": 35.478,
-  "hard_budget": {
-    "bulk_prediction_provider_preserved": true,
-    "comparison_match_limit": 32,
-    "created_at_utc": "2026-09-05T16:01:24.511596+00:00",
-    "detail_match_limit": 72,
-    "elapsed_seconds": 35.462,
-    "endpoint_counts": {
-      "events_list": 3,
-      "other": 1
+  "boundary": "PredictionRunner._fetch_provider:bzzoiro.fetch_context",
+  "created_at_utc": "2026-09-05T19:03:01.616185+00:00",
+  "daily_coverage": {
+    "plan": {
+      "phase_cumulative_target": 2,
+      "run_index": 6,
+      "status": "ok",
+      "top_inventory_matches": 10
     },
-    "http_timeout_seconds": 8.0,
-    "last_stop_reason": "",
-    "per_event_metadata_enabled": false,
-    "per_event_prediction_enabled": false,
-    "publication_contract_relaxed": false,
-    "request_cap": 96,
-    "requests_claimed": 4,
-    "requests_denied": 0,
-    "status": "installed",
-    "wall_seconds": 130.0
+    "runtime_patch": {
+      "bootstrap_restore": {
+        "date_local": "2026-09-05",
+        "dated_evidence_accepted": true,
+        "dated_ledger_accepted": true,
+        "evidence_matches": 120,
+        "latest_evidence_accepted": false,
+        "latest_ledger_accepted": true,
+        "ledger_matches": 120,
+        "matches_with_context_evidence": 48,
+        "matches_with_odds_evidence": 115,
+        "publication_contract_relaxed": false,
+        "status": "restored"
+      },
+      "boundary": {
+        "actual_context_source_identity": true,
+        "cached_evidence_reused": true,
+        "cached_line_observation_time_preserved": true,
+        "final_provider_deadlines": true,
+        "ledger_after_each_provider": true,
+        "near_kickoff_refresh_hours": 4
+      },
+      "clubelo_strict_match": {
+        "ambiguity_margin": 0.025,
+        "publication_contract_relaxed": false,
+        "requires_distinctive_token_or_near_exact": true,
+        "status": "installed",
+        "threshold": 0.86
+      },
+      "core_targets": {
+        "core_context_providers": [
+          "bzzoiro",
+          "clubelo",
+          "espn",
+          "football_data",
+          "openfootball",
+          "openligadb",
+          "sportlogic",
+          "sstats",
+          "thesportsdb"
+        ],
+        "publication_contract_relaxed": false,
+        "selection_policy": "daily_plan_before_offer_shortlist",
+        "status": "installed"
+      },
+      "created_at_utc": "2026-09-05T19:03:01.615264+00:00",
+      "evidence_stamp": {
+        "fresh_context_effective_at_stamped": true,
+        "fresh_line_timestamp_stamped": true,
+        "publication_contract_relaxed": false,
+        "status": "installed"
+      },
+      "fixed_cohort": {
+        "past_matches_excluded_from_provider_assignments": true,
+        "past_matches_remain_in_daily_coverage_ledger": true,
+        "policy": "retain_daily_300_but_assign_only_active_verified_gaps",
+        "publication_contract_relaxed": false,
+        "semantic_ledger_identity_lookup": true,
+        "status": "installed",
+        "strict_verified_evidence_restored": true,
+        "target_matches": 300
+      },
+      "focused_alpha_filter_contract": {
+        "model_scope": "focused_alpha_target_match_keys",
+        "preserves_list_contract": true,
+        "preserves_tuple_contract": true,
+        "publication_contract_relaxed": false,
+        "status": "installed"
+      },
+      "freshness": {
+        "cache_reuse_marked": true,
+        "publication_contract_relaxed": false,
+        "status": "installed"
+      },
+      "full_inventory_provider_scope": {
+        "candidate_publication_window_relaxed": false,
+        "context_providers": [
+          "api_football",
+          "bzzoiro",
+          "clubelo",
+          "espn",
+          "football_data",
+          "openfootball",
+          "openligadb",
+          "sportlogic",
+          "sstats",
+          "thesportsdb"
+        ],
+        "coverage_horizon_days": 1,
+        "coverage_scope": "adaptive_planned_local_time_horizon",
+        "explicit_empty_assignments_are_authoritative": true,
+        "explicit_empty_focus_cohort_is_authoritative": true,
+        "model_scope": "focused_alpha_target_match_keys",
+        "odds_providers": [
+          "allsportsapi",
+          "bookies_api",
+          "bzzoiro",
+          "odds_api_io",
+          "rapidapi_odds",
+          "sharpapi",
+          "sportlogic",
+          "sstats_pari"
+        ],
+        "publication_contract_relaxed": false,
+        "status": "installed"
+      },
+      "providers": {
+        "dynamic_context_provider": "clubelo",
+        "dynamic_odds_provider": "sstats_pari"
+      },
+      "publication_contract_relaxed": false,
+      "replanned_after_source_repair": {
+        "coverage_before": {
+          "horizon_day_0": 0,
+          "horizon_day_1plus": 0,
+          "matches": 300,
+          "with_1plus_context_sources": 49,
+          "with_1plus_odds_sources": 116,
+          "with_2plus_both": 0,
+          "with_2plus_context_sources": 12,
+          "with_2plus_odds_sources": 6,
+          "with_semantic_ledger_match": 121
+        },
+        "phase_cumulative_target": 0,
+        "provider_assignments": {
+          "bzzoiro": {
+            "context": 0,
+            "offers": 0
+          },
+          "clubelo": {
+            "context": 0
+          },
+          "espn": {
+            "context": 0
+          },
+          "football_data": {
+            "context": 0
+          },
+          "odds_api_io": {
+            "offers": 0
+          },
+          "openligadb": {
+            "context": 0
+          },
+          "sportlogic": {
+            "context": 0,
+            "offers": 0
+          },
+          "sstats": {
+            "context": 0
+          },
+          "sstats_pari": {
+            "offers": 0
+          },
+          "thesportsdb": {
+            "context": 0
+          }
+        },
+        "run_index": 6,
+        "status": "ok"
+      },
+      "source_integrity": {
+        "actual_context_source_persisted": true,
+        "actual_offer_source_persisted": true,
+        "duplicate_provider_run_rows_collapsed": true,
+        "publication_contract_relaxed": false,
+        "state_repair": {
+          "date_local": "2026-09-05",
+          "entries_moved_to_actual_source": 0,
+          "entries_removed_non_independent": 0,
+          "ledger_rows_rebuilt": 163,
+          "matches": 120,
+          "publication_contract_relaxed": false,
+          "status": "repaired"
+        },
+        "status": "installed"
+      },
+      "sstats_context_cache": {
+        "internal_bzzoiro_disabled": true,
+        "parallel_history_windows": true,
+        "persistent_cache": "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/sstats_games",
+        "publication_contract_relaxed": false,
+        "separate_bzzoiro_provider_remains_enabled": true,
+        "status": "installed",
+        "window_deadline_seconds": 22.0
+      },
+      "sstats_pari_current_odds": {
+        "current_odds_supported": true,
+        "nested_market_rows_supported": true,
+        "patches_runtime_repair_reference": true,
+        "publication_contract_relaxed": false,
+        "rate_limit": {
+          "detail_requests_only": true,
+          "publication_contract_relaxed": false,
+          "rate_limit_per_minute": 140,
+          "status": "installed"
+        },
+        "runtime_extractor": "self_contained_current_odds",
+        "status": "installed"
+      },
+      "sstats_pari_repair": {
+        "nested_match_info_supported": true,
+        "publication_contract_relaxed": false,
+        "status": "installed",
+        "strict_event_match_min_score": 72.0,
+        "timezone_aware_dates": true,
+        "upcoming_filter": true
+      },
+      "sstats_team_form_alias": {
+        "ambiguity_margin": 0.04,
+        "candidate_lookup": "distinctive_token_and_prefix_index",
+        "minimum_recent_matches_per_team": 3,
+        "phonetic_collision_matches_rejected": true,
+        "provider": "app.providers.sstats.SStatsContextProvider",
+        "publication_contract_relaxed": false,
+        "short_substring_matches_rejected": true,
+        "status": "installed",
+        "threshold": 0.92
+      },
+      "state_persistence": {
+        "cohort_mirror": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-cohort.json",
+        "publication_contract_relaxed": false,
+        "restores_after_cache_miss": true,
+        "state_mirror": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-daily-coverage-state.json",
+        "status": "installed"
+      },
+      "status": "installed",
+      "strict_coverage_preparation": {
+        "allsportsapi_full_cohort": {
+          "partial_cache_never_short_circuits_full_cohort": true,
+          "publication_contract_relaxed": false,
+          "request_block_rotation": true,
+          "status": "installed"
+        },
+        "discovery_wall_seconds": 240,
+        "initial_real_fixture_inventory": {
+          "changed_paths": [
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-09-05.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-09-05.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/current.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/latest.json",
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/2026-09-05.json",
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/current.json",
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/latest.json",
+            "/home/runner/work/sports-bot/sports-bot/artifacts/run-bot/day_inventory/today.json"
+          ],
+          "created_at_utc": "2026-09-05T19:02:53.850794+00:00",
+          "date_local": "2026-09-05",
+          "highwater_paths": [
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/best-day-inventory-highwater.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/highwater.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/largest.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/best-day-inventory-highwater.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/highwater.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/largest.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-09-05-highwater.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-09-05-highwater.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/inventory_guard/best-day-inventory.json"
+          ],
+          "horizon_days": 1,
+          "identity_only_rows_rejected": 22,
+          "parse_errors": [
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T010551Z.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T050126Z.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T010551Z.json",
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/progressive_coverage_archive/2026-06-01-to-2026-06-02-20260602T050126Z.json"
+          ],
+          "publication_contract_relaxed": false,
+          "real_fixture_candidates": 760,
+          "selected_real_fixtures": 300,
+          "source_counts": {
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-09-05-highwater.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-09-05.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/best-day-inventory-highwater.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/current.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/highwater.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/largest.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/latest.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/today.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-09-05-highwater.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-09-05.json": 747,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/best-day-inventory-highwater.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/coverage_candidate_pool/2026-09-05.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json": 747,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/daily-coverage-cohort-2026-09-05.json": 300,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/highwater.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/largest.json": 381,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json": 747,
+            "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json": 747,
+            "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-inventory-provider-gap-audit.json": 747,
+            "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-provider-day-discovery-canonical-pool.json": 484,
+            "/home/runner/work/sports-bot/sports-bot/.data/exports/provider-day-discovery-canonical-pool.json": 484,
+            "/home/runner/work/sports-bot/sports-bot/.data/inventory_guard/best-day-inventory.json": 381
+          },
+          "status": "ok_target_met",
+          "target": 300,
+          "target_shortfall": 0
+        },
+        "inventory_sync": {
+          "atexit_sync": true,
+          "initial_sync": {
+            "candidate_pool_matches": 396,
+            "counts": {
+              "matches_a_tier_coverage_ready": 0,
+              "matches_ready_for_model": 44,
+              "matches_total": 300,
+              "matches_with_1plus_context_sources": 49,
+              "matches_with_1plus_odds_sources": 116,
+              "matches_with_2plus_bookmakers": 72,
+              "matches_with_2plus_context_sources": 12,
+              "matches_with_2plus_odds_sources": 6
+            },
+            "created_at_utc": "2026-09-05T19:03:00.752552+00:00",
+            "date_local": "2026-09-05",
+            "evidence_matches": 120,
+            "publication_contract_relaxed": false,
+            "rotation_offset": 29,
+            "selected_matches": 300,
+            "status": "ok",
+            "strict_shortfall": 300
+          },
+          "publication_contract_relaxed": false,
+          "runtime_preflight_policy_reapply_updated": false,
+          "status": "installed"
+        },
+        "keyed_independent_providers": {
+          "api_football": false
+        },
+        "phase_targets": [
+          300,
+          300,
+          300
+        ],
+        "publication_contract_relaxed": false,
+        "replan_after_discovery": true,
+        "sstats_pari_rate_limit_per_minute": 140,
+        "sstats_pari_wall_seconds": 180,
+        "status": "installed"
+      },
+      "strict_metrics": {
+        "publication_contract_relaxed": false,
+        "ready_for_publish": "2 independent odds sources + 2 contexts + 2 bookmakers",
+        "status": "installed"
+      }
+    }
   },
-  "method": "fetch_context",
-  "provider": "bzzoiro",
+  "deadline_seconds": 55.0,
   "publication_contract_relaxed": false,
-  "status": "completed"
+  "status": "installed"
 }
