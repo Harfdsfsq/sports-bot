@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-09-05T05:33:42.567032+00:00",
+  "created_at": "2026-09-05T11:15:55.255623+00:00",
   "enabled": true,
   "exports": {
     "ALLSPORTSAPI_ENABLED": "true",
@@ -20,11 +20,11 @@
     "BZZOIRO_CONTEXT_MATCH_LIMIT": "240",
     "BZZOIRO_ENABLED": "true",
     "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN": "20",
-    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "141",
-    "BZZOIRO_MAX_REQUESTS_PER_RUN": "141",
+    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "171",
+    "BZZOIRO_MAX_REQUESTS_PER_RUN": "171",
     "BZZOIRO_ODDS_BEST_MAX_PAGES_PER_MARKET": "2",
     "BZZOIRO_PAGE_SIZE": "100",
-    "BZZOIRO_PER_RUN_MAX": "141",
+    "BZZOIRO_PER_RUN_MAX": "171",
     "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN": "20",
     "BZZOIRO_TIMEOUT_SECONDS": "12",
     "CLUBELO_BASE_URL": "http://api.clubelo.com",
@@ -62,8 +62,8 @@
     "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "12",
     "FOOTBALL_DATA_STANDINGS_LIMIT": "12",
     "FREE_CONTEXT_RUNTIME_ENABLED": "true",
-    "FREE_FOOTBALL_RAPIDAPI_ENABLED": "false",
-    "FREE_FOOTBALL_RAPIDAPI_MAX_REQUESTS_PER_RUN": "0",
+    "FREE_FOOTBALL_RAPIDAPI_ENABLED": "true",
+    "FREE_FOOTBALL_RAPIDAPI_MAX_REQUESTS_PER_RUN": "1",
     "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "72",
     "FUTRIXMETRICS_ENABLED": "true",
     "FUTRIXMETRICS_MAX_HTTP_REQUESTS_PER_RUN": "24",
@@ -147,8 +147,8 @@
     "PROVIDER_FREE_QUOTA_POLICY_ENABLED": "true",
     "PROVIDER_QUOTA_GOVERNOR_ACTIVE": "true",
     "RAPIDAPI_DEFAULT_DAILY_LIMIT": "1",
-    "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "0",
-    "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "false",
+    "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "1",
+    "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "true",
     "RAPIDAPI_ODDS_FEED_DAILY_LIMIT": "1",
     "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true",
     "RAPIDAPI_SPORTSBOOK_DAILY_LIMIT": "2",
@@ -169,10 +169,10 @@
     "SPORTSBOOK_RAPIDAPI_MAX_REQUESTS_PER_RUN": "2",
     "SSTATS_ENABLED": "true",
     "SSTATS_LOOKBACK_DAYS": "45",
-    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "117",
-    "SSTATS_MAX_REQUESTS_PER_RUN": "117",
+    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "143",
+    "SSTATS_MAX_REQUESTS_PER_RUN": "143",
     "SSTATS_RECENT_MATCHES": "12",
-    "SSTATS_REQUESTS_MAX_PER_RUN": "117",
+    "SSTATS_REQUESTS_MAX_PER_RUN": "143",
     "THESPORTSDB_CONTEXT_ENABLED": "true",
     "THESPORTSDB_CONTEXT_MATCH_LIMIT": "216",
     "THESPORTSDB_MAX_HTTP_REQUESTS_PER_RUN": "18",
@@ -218,7 +218,7 @@
       "bucket_max": 720.0,
       "daily_budget": 720.0,
       "enabled_for_run": true,
-      "granted": 141,
+      "granted": 171,
       "minute_spacing": 0,
       "per_run_max": 200,
       "provider": "bzzoiro",
@@ -227,14 +227,14 @@
       "reserve_tokens": 200,
       "role": "prediction_context",
       "skip_reason": null,
-      "tokens_after": 200.179,
-      "tokens_before": 341.179
+      "tokens_after": 200.285,
+      "tokens_before": 371.285
     },
     {
       "bucket_max": 600.0,
       "daily_budget": 600.0,
       "enabled_for_run": true,
-      "granted": 117,
+      "granted": 143,
       "minute_spacing": 0,
       "per_run_max": 150,
       "provider": "sstats",
@@ -243,8 +243,8 @@
       "reserve_tokens": 150,
       "role": "form_xg_context",
       "skip_reason": null,
-      "tokens_after": 150.632,
-      "tokens_before": 267.632
+      "tokens_after": 150.22,
+      "tokens_before": 293.22
     },
     {
       "bucket_max": 78.0,
@@ -409,8 +409,8 @@
     {
       "bucket_max": 3.0,
       "daily_budget": 2.0,
-      "enabled_for_run": false,
-      "granted": 0,
+      "enabled_for_run": true,
+      "granted": 1,
       "minute_spacing": 360,
       "per_run_max": 1,
       "provider": "free_live_football_data",
@@ -419,8 +419,8 @@
       "reserve_tokens": 1,
       "role": "rapidapi_probe_fallback",
       "skip_reason": null,
-      "tokens_after": 1.992,
-      "tokens_before": 1.992
+      "tokens_after": 1.467,
+      "tokens_before": 2.467
     },
     {
       "bucket_max": 1680.0,
@@ -578,9 +578,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "rating_cache",
-      "skip_reason": "spacing_active:557.6m",
-      "tokens_after": 2.461,
-      "tokens_before": 2.461
+      "skip_reason": "spacing_active:215.4m",
+      "tokens_after": 2.698,
+      "tokens_before": 2.698
     },
     {
       "bucket_max": 3.0,
@@ -594,9 +594,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "historical_csv_cache",
-      "skip_reason": "spacing_active:557.6m",
-      "tokens_after": 2.461,
-      "tokens_before": 2.461
+      "skip_reason": "spacing_active:215.4m",
+      "tokens_after": 2.698,
+      "tokens_before": 2.698
     },
     {
       "bucket_max": 120.0,
@@ -615,7 +615,7 @@
       "tokens_before": 120.0
     }
   ],
-  "providers_enabled_for_run": 22,
+  "providers_enabled_for_run": 23,
   "recovery_version": "pdf-free-limits-2026-05-05-v3",
   "source_document": "api_free_limits_ru.pdf / api_free_limits_ru.docx, checked 2026-05-05",
   "state_path": ".data/provider_quota_governor_state.json"
