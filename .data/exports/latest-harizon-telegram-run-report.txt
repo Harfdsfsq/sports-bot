@@ -1,44 +1,47 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: n/a
+• Главная причина: odds-api.io: выбранные букмекеры недоступны на текущем тарифе
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 317/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 0 (это не размер inventory).
-• 1+ линия: 300/317 (95%) | 1+ контекст: 79/317 (25%)
-• 2+ букмекера: 83/317 (26%)
-• 2+ independent odds-source: 3/317 (1%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 10/317 (3%)
-• Готово для модели: 73/317 (23%)
+• Инвентарь дня: собрано 323/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 24 (это не размер inventory).
+• Очередь provider-enrichment: 233 активных матчей; model scope 24; назначений по ролям 109. Очередь сбора не расширяет публикационный scope.
+• 1+ линия: 290/323 (90%) | 1+ контекст: 273/323 (85%)
+• 2+ букмекера: 274/323 (85%)
+• Raw 2+ букмекера odds-api.io current snapshot: 18 | normalized cumulative inventory: 274.
+• Odds-api offer snapshot: rows 1119, matches 29, same-side 2+ books 17
+• 2+ independent odds-source: 4/323 (1%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ контекста: 2/323 (1%)
+• Готово для модели: 273/323 (85%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 3 | main опубликовано: 0
+• A-tier strict-ready: 2 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/2+ bookmaker/1+ context coverage: 79 | fallback опубликовано: 0
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 273 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 3 матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до 79 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 2 матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до 273 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 107; pending 15; duplicates removed 325; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
+• Pre-kickoff проверок: 9 | матчей без следующего регулярного run: 0
 • Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/0
+• Raw/candidates before quality: 0/1
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
-• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 16; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 9; смэтчил матчей 36; offers 1119; 2+ букмекера 18; ошибок 5.
+• Bzzoiro: direct req 4, v2 req 4; v2 ctx 3; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 21; сырых строк 17588; контекстов 9; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (100%)
 
 🔎 Проверенные reserve-кандидаты
 • Нет проверенных reserve-кандидатов в свежем fallback report.
@@ -48,7 +51,7 @@
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 33910806649
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/33910806649
-• Artifact: run-bot-33910806649
+• Run ID: 33934232911
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/33934232911
+• Artifact: run-bot-33934232911
 • workflow run-bot, attempt 1
