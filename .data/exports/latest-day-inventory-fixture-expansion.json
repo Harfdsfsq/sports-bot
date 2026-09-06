@@ -1,82 +1,95 @@
 {
   "alias_update": {
-    "paths": [
-      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
-      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
-      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+    "paths": [],
+    "skipped": [
+      {
+        "existing_rows": 205,
+        "incoming_rows": 198,
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+        "reason": "prevented_alias_shrink"
+      },
+      {
+        "existing_rows": 205,
+        "incoming_rows": 198,
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+        "reason": "prevented_alias_shrink"
+      },
+      {
+        "existing_rows": 205,
+        "incoming_rows": 198,
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json",
+        "reason": "prevented_alias_shrink"
+      }
     ],
-    "skipped": [],
-    "status": "ok",
-    "target_date": "2026-09-06"
+    "status": "skipped_no_shrink",
+    "target_date": "2026-09-07"
   },
   "counts": {
-    "bookmaker_backfill_mapping_gap_after": 106,
-    "bookmaker_backfill_normalized_2plus_after": 54,
-    "bookmaker_backfill_normalized_2plus_before": 54,
-    "bookmaker_backfill_raw_2plus_matches": 160,
-    "coverage_progress_updated_utc": "2026-09-06T16:16:14.077165+00:00",
-    "coverage_rows_seen_last_run": 12,
-    "matches_after_target_expand": 354,
-    "matches_coverage_updated_last_run": 4,
-    "matches_next_12h": 1,
-    "matches_next_12h_ready": 1,
-    "matches_next_6h": 1,
-    "matches_next_6h_ready": 1,
-    "matches_ready_for_model": 55,
+    "fixture_sources_seen": 1,
+    "leagues_seen": 107,
+    "matches_added": 197,
+    "matches_after_core_merge": 197,
+    "matches_after_target_expand": 205,
+    "matches_after_top_cut": 197,
+    "matches_next_12h": 56,
+    "matches_next_12h_ready": 0,
+    "matches_next_6h": 54,
+    "matches_next_6h_ready": 0,
+    "matches_raw_before_merge": 197,
+    "matches_ready_for_model": 0,
     "matches_ready_for_publish": 0,
-    "matches_total": 358,
-    "matches_total_high_watermark": 358,
-    "matches_with_2plus_context_sources": 352,
-    "matches_with_2plus_price_confirmations": 54,
-    "matches_with_context": 144,
-    "matches_with_form": 59,
+    "matches_total": 205,
+    "matches_total_high_watermark": 205,
+    "matches_updated": 0,
+    "matches_with_2plus_core_fixture_sources": 0,
+    "matches_with_3_core_fixture_sources": 0,
+    "matches_with_context": 0,
+    "matches_with_form": 0,
     "matches_with_news": 0,
-    "matches_with_odds": 112,
+    "matches_with_odds": 197,
     "matches_with_weather": 0,
-    "matches_with_xg": 162,
-    "publish_min_context_sources": 2,
-    "publish_min_odds_sources": 2,
-    "real_xg_rows": 56,
-    "runtime_matches_with_context_last_run": 7,
-    "runtime_matches_with_odds_last_run": 7,
+    "matches_with_xg": 0,
+    "multi_source_fixture_matches": 0,
+    "providers_seen": 1,
     "target_expand_artifact_aliases_written": true,
-    "target_expand_existing_before": 354,
+    "target_expand_existing_before": 197,
     "target_expand_horizon_days": 2,
-    "target_expand_no_shrink_applied": true,
-    "target_expand_rows_collected": 470,
+    "target_expand_no_shrink_applied": false,
+    "target_expand_rows_collected": 205,
     "target_expand_semantic_keys": true,
+    "target_full": false,
     "target_matches": 300,
-    "target_shortfall": 0
+    "target_shortfall": 95
   },
-  "matches_added": 10,
-  "matches_after": 358,
-  "matches_before": 354,
-  "matches_updated": 1,
+  "matches_added": 1,
+  "matches_after": 198,
+  "matches_before": 205,
+  "matches_updated": 0,
   "notes": [
     "Runs before prediction so run-once can see a broader daily fixture inventory.",
     "Fixture-only expansion does not create publishable predictions by itself; odds/context guards still apply."
   ],
-  "provider_rows_fetched": 11,
+  "provider_rows_fetched": 1,
   "providers": {
     "allsportsapi": {
-      "body_preview": "{\"success\":1,\"result\":[{\"event_key\":1836046,\"event_date\":\"2026-09-06\",\"event_time\":\"15:00\",\"event_home_team\":\"Bechem United\",\"home_team_key\":4288,\"event_away_team\":\"Bibiani Gold Stars\",\"away_team_key\":23055,\"event_halftime_result\":\"1-0\",\"event_final_result\":\"1 - 0\",\"event_ft_result\":\"1-0\",\"event_penalty_result\":\"\",\"event_status\":\"Finished\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 1\",\"league_season\":\"2026\\/2027\",\"event_live\":\"0\",\"event_stadium\":",
+      "body_preview": "{\"success\":1}",
       "http_status": 200,
       "payload_type": "dict",
-      "rows_parsed": 7
+      "rows_parsed": 0
     },
     "football_data": {
-      "body_preview": "{\"filters\":{\"dateFrom\":\"2026-09-06\",\"dateTo\":\"2026-09-06\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":1,\"competitions\":\"BSA\",\"first\":\"2026-09-06\",\"last\":\"2026-09-06\",\"played\":1},\"matches\":[{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-",
+      "body_preview": "{\"filters\":{\"dateFrom\":\"2026-09-07\",\"dateTo\":\"2026-09-07\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
+      "http_status": 200,
+      "payload_type": "dict",
+      "rows_parsed": 0
+    },
+    "thesportsdb": {
+      "body_preview": "{\"events\":[{\"idEvent\":\"2398057\",\"idAPIfootball\":\"1493108\",\"strTimestamp\":\"2026-09-07T22:00:00\",\"strEvent\":\"Barracas Central vs Argentinos Juniors\",\"strEventAlternate\":\"Argentinos Juniors @ Barracas Central\",\"strFilename\":\"Argentinian Primera Division 2026-09-07 Barracas Central vs Argentinos Juniors\",\"strSport\":\"Soccer\",\"idLeague\":\"4406\",\"strLeague\":\"Argentinian Primera Division\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/rk9xhx1768238251.png\",\"strSeason\":\"2026",
       "http_status": 200,
       "payload_type": "dict",
       "rows_parsed": 1
-    },
-    "thesportsdb": {
-      "body_preview": "{\"events\":[{\"idEvent\":\"2397306\",\"idAPIfootball\":\"1493670\",\"strTimestamp\":\"2026-09-06T02:30:00\",\"strEvent\":\"Las Vegas Lights vs New Mexico United\",\"strEventAlternate\":\"New Mexico United @ Las Vegas Lights\",\"strFilename\":\"American USL Championship 2026-09-06 Las Vegas Lights vs New Mexico United\",\"strSport\":\"Soccer\",\"idLeague\":\"4684\",\"strLeague\":\"American USL Championship\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/uh4zas1688513782.png\",\"strSeason\":\"2026\",\"strDes",
-      "http_status": 200,
-      "payload_type": "dict",
-      "rows_parsed": 3
     }
   },
   "status": "ok",
-  "target_date": "2026-09-06"
+  "target_date": "2026-09-07"
 }
