@@ -1,7 +1,7 @@
 # Provider day discovery canonical pool
-UTC: 2026-09-06T21:19:59.705460+00:00
+UTC: 2026-09-07T00:53:25.318476+00:00
 target_date: 2026-09-07
-canonical_matches: 272
+canonical_matches: 273
 2+ provider sources: 29
 2+ primary sources: 29
 all 3 primary sources: 0
@@ -11,14 +11,14 @@ all 3 primary sources: 0
 - bzzoiro: commands=10 ok=3 rows=200 event_like=195 unique=66 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
 - football_data: commands=1 ok=1 rows=7 event_like=6 unique=6 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=474 event_like=474 unique=237 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=476 event_like=476 unique=238 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
 - sstats: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 243, "3": 7, "2": 21, "4": 1}
-- primary providers: {"1": 243, "2": 29}
+- all providers: {"1": 244, "3": 7, "2": 21, "4": 1}
+- primary providers: {"1": 244, "2": 29}
 
 ## Top canonical matches
 - 2026-09-07T00:00:00+00:00 | Texas Tech Red Raiders — San Diego State Aztecs | providers=odds_api_io ids={"odds_api_io": "73409906"}
@@ -30,6 +30,7 @@ all 3 primary sources: 0
 - 2026-09-07T00:00:00+00:00 | TCU Horned Frogs — Texas Longhorns | providers=odds_api_io ids={"odds_api_io": "73250588"}
 - 2026-09-07T00:06:00+00:00 | CF Tigres UANL — Club Santos Laguna | providers=odds_api_io ids={"odds_api_io": "73204562"}
 - 2026-09-07T00:30:00+00:00 | Racing Club Avellaneda — Atletico Tucuman | providers=bzzoiro,odds_api_io,thesportsdb ids={"odds_api_io": "73265280", "bzzoiro": "223667", "thesportsdb": "2398065"}
+- 2026-09-07T00:30:00+00:00 | Orlando Pride — Houston Dash | providers=odds_api_io ids={"odds_api_io": "67912288"}
 - 2026-09-07T01:00:00+00:00 | Seattle Reign FC — San Diego Wave FC | providers=bzzoiro,odds_api_io ids={"odds_api_io": "67912290", "bzzoiro": "216440"}
 - 2026-09-07T01:00:00+00:00 | Huehuetecos FC — Deportivo Coatepeque | providers=odds_api_io ids={"odds_api_io": "73061954"}
 - 2026-09-07T01:00:00+00:00 | AD San Carlos — Sporting FC | providers=odds_api_io ids={"odds_api_io": "72053610"}
@@ -50,7 +51,6 @@ all 3 primary sources: 0
 - 2026-09-07T09:00:00+00:00 | Ispe FC — Mahar Sagaing United FC | providers=odds_api_io ids={"odds_api_io": "73884802"}
 - 2026-09-07T10:00:00+00:00 | Epicentr Kamianets-Podilskyi U21 — Bukovyna Chernivtsi U21 | providers=odds_api_io ids={"odds_api_io": "73301334"}
 - 2026-09-07T10:00:00+00:00 | FC Dynamo Kyiv U21 — Lnz Cherkasy U21 | providers=odds_api_io ids={"odds_api_io": "73301338"}
-- 2026-09-07T11:00:00+00:00 | Fardu Ferghana — FK Aral Samali | providers=odds_api_io ids={"odds_api_io": "72217558"}
 
 ## Targeted enrichment plan sample
 - Texas Tech Red Raiders — San Diego State Aztecs | primary=1 providers=odds_api_io
@@ -89,6 +89,10 @@ all 3 primary sources: 0
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Orlando Pride — Houston Dash | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Seattle Reign FC — San Diego Wave FC | primary=2 providers=bzzoiro,odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
@@ -126,10 +130,6 @@ all 3 primary sources: 0
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Hawaii Rainbow Wahine — Washington State Cougars | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Cal State Northridge Matadors — UNLV Rebels | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
