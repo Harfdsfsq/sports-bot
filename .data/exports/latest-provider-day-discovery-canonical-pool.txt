@@ -1,15 +1,15 @@
 # Provider day discovery canonical pool
-UTC: 2026-09-13T16:59:48.763511+00:00
+UTC: 2026-09-13T19:22:23.260095+00:00
 target_date: 2026-09-13
-canonical_matches: 470
-2+ provider sources: 50
-2+ primary sources: 35
+canonical_matches: 488
+2+ provider sources: 29
+2+ primary sources: 25
 all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=8 event_like=8 unique=8 statuses={"OK": 1}
 - bzzoiro: commands=10 ok=4 rows=602 event_like=597 unique=204 statuses={"OK": 4, "EMPTY": 1, "AUTH": 5}
-- football_data: commands=1 ok=1 rows=14 event_like=14 unique=14 statuses={"OK": 1}
+- football_data: commands=1 ok=1 rows=7 event_like=7 unique=7 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
@@ -17,8 +17,8 @@ all 3 primary sources: 0
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 420, "2": 43, "3": 7}
-- primary providers: {"1": 432, "2": 35, "0": 3}
+- all providers: {"1": 459, "2": 23, "3": 6}
+- primary providers: {"1": 455, "2": 25, "0": 8}
 
 ## Top canonical matches
 - 2026-09-13T00:00:00+00:00 | Seattle Reign FC — Bay FC | providers=bzzoiro ids={"bzzoiro": "216445"}
@@ -39,9 +39,7 @@ all 3 primary sources: 0
 - 2026-09-13T02:30:00+00:00 | San Jose Earthquakes — Houston Dynamo | providers=bzzoiro ids={"bzzoiro": "5285"}
 - 2026-09-13T02:30:00+00:00 | LA Galaxy — Seattle Sounders FC | providers=bzzoiro ids={"bzzoiro": "5284"}
 - 2026-09-13T03:15:00+00:00 | Cruz Azul — Club América | providers=bzzoiro ids={"bzzoiro": "211565"}
-- 2026-09-13T07:00:00+00:00 | J-Lease FC — Yokogawa Musashino FC | providers=odds_api_io ids={"odds_api_io": "72664936"}
 - 2026-09-13T07:30:00+00:00 | Gimcheon Sangmu FC — Gangwon FC | providers=bzzoiro ids={"bzzoiro": "205164"}
-- 2026-09-13T09:00:00+00:00 | FK Radnicki Beograd — Pkb Padinska Skela | providers=odds_api_io ids={"odds_api_io": "73678496"}
 - 2026-09-13T09:00:00+00:00 | Tokyo Verdy — JEF United Chiba | providers=bzzoiro ids={"bzzoiro": "212250"}
 - 2026-09-13T09:30:00+00:00 | Urawa Red Diamonds — Fagiano Okayama | providers=bzzoiro ids={"bzzoiro": "212251"}
 - 2026-09-13T10:00:00+00:00 | Lechia II Zielona Góra — LKS Odra Nietków | providers=odds_api_io ids={"odds_api_io": "30596720210"}
@@ -51,6 +49,8 @@ all 3 primary sources: 0
 - 2026-09-13T10:00:00+00:00 | AVS - Futebol SAD — SC Farense | providers=bzzoiro ids={"bzzoiro": "375038"}
 - 2026-09-13T10:00:00+00:00 | Real Sociedad — Costa Adeje Tenerife | providers=bzzoiro ids={"bzzoiro": "215250"}
 - 2026-09-13T10:00:00+00:00 | C.F. Os Belenenses — Atletico CP | providers=bzzoiro ids={"bzzoiro": "220862"}
+- 2026-09-13T10:15:00+00:00 | Excelsior — FC Utrecht | providers=bzzoiro ids={"bzzoiro": "210849"}
+- 2026-09-13T10:15:00+00:00 | Wisła Płock — KS Cracovia | providers=bzzoiro ids={"bzzoiro": "211902"}
 
 ## Targeted enrichment plan sample
 - Seattle Reign FC — Bay FC | primary=1 providers=bzzoiro
@@ -125,11 +125,11 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- J-Lease FC — Yokogawa Musashino FC | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Gimcheon Sangmu FC — Gangwon FC | primary=1 providers=bzzoiro
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Gimcheon Sangmu FC — Gangwon FC | primary=1 providers=bzzoiro
+- Tokyo Verdy — JEF United Chiba | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
