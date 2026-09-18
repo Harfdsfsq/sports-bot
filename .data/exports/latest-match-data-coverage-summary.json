@@ -8,8 +8,8 @@
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 25,
+      "rows_kept": 35,
+      "rows_seen": 60,
       "rows_stale": 25
     },
     "lifecycle": {
@@ -26,33 +26,36 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 4,
-      "rows_seen": 4,
+      "rows_kept": 5,
+      "rows_seen": 5,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 0,
+    "candidates_before_quality": 2,
     "candidates_publishable": 0,
-    "candidates_raw": 0,
-    "contexts_built": 5,
+    "candidates_raw": 1,
+    "contexts_built": 4,
     "controlled_candidates_seen": 336,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 4,
-    "matches_seen": 0,
-    "matches_with_offers": 0
+    "coverage_candidates_current_date": 18,
+    "matches_seen": 5,
+    "matches_with_offers": 4
   },
-  "created_at": "2026-09-18T13:42:25.369669+00:00",
+  "created_at": "2026-09-18T18:26:24.810891+00:00",
   "family_counts": {
-    "totals": 4
+    "spreads": 10,
+    "totals": 8
   },
-  "matches_with_candidates": 4,
+  "matches_with_candidates": 7,
   "missing_data_flags": {
-    "confidence_below_micro_c": 3,
-    "edge_below_micro_c": 3,
-    "ev_below_micro_c": 3,
-    "single_book": 1
+    "confidence_below_micro_c": 15,
+    "edge_below_micro_c": 16,
+    "ev_below_micro_c": 14,
+    "single_book": 13,
+    "single_context_source": 13,
+    "single_odds_source": 15
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -66,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 4,
+  "positive_near_miss_count": 5,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -75,12 +78,31 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 24,
+      "events_matched": 5,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 857,
+      "offers_parsed": 649,
       "provider": "account1",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "football_data",
       "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
@@ -99,11 +121,11 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 1007,
+      "matches_built": 1506,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 5,
+      "response_errors": 2,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -114,11 +136,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 1231,
+      "events_fetched": 1796,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 1007,
+      "matches_built": 1506,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -130,14 +152,14 @@
     {
       "api_key_present": null,
       "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 9,
+      "matches_built": 28,
       "offers_parsed": null,
       "provider": "openfootball",
       "rate_limited": null,
@@ -156,7 +178,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 16,
+      "matches_built": 15,
       "offers_parsed": null,
       "provider": "openligadb",
       "rate_limited": null,
@@ -168,8 +190,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 5,
-      "direct_event_contexts_built": 5,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -182,6 +204,48 @@
       "provider": "sstats",
       "rate_limited": null,
       "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 1,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 2,
+      "direct_event_contexts_built": 2,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
+      "rate_limited": null,
+      "response_errors": 1,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -203,7 +267,7 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
-      "response_errors": 5,
+      "response_errors": 2,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -277,6 +341,27 @@
       "team_form_contexts_built": null
     },
     {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": 0,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "allsportsapi",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
       "api_key_present": null,
       "budget_exhausted": null,
       "contexts_built": null,
@@ -298,9 +383,9 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
+      "api_key_present": true,
       "budget_exhausted": null,
-      "contexts_built": null,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
@@ -313,7 +398,7 @@
       "offers_parsed": null,
       "provider": "bzzoiro",
       "rate_limited": null,
-      "response_errors": null,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -359,257 +444,255 @@
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "sstats_pari_odds",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 4,
-    "no_data": 7,
-    "working": 6
+    "no_data": 5,
+    "working": 9
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "quality_high_odds_edge_guard": 1
+  },
   "target_date": "2026-09-18",
   "top_near_miss": [
     {
-      "away_team": "AFC Nera Bogodinti",
+      "away_team": "Chelsea",
       "best_candidate": {
-        "adjusted_probability": 0.459968,
-        "books_count": 1,
-        "canonical_edge_pp": 5.997,
-        "canonical_ev_pct": 14.992,
-        "confidence": 73.8,
+        "adjusted_probability": 0.461072,
+        "books_count": 2,
+        "canonical_edge_pp": -1.999,
+        "canonical_ev_pct": 107.483,
+        "confidence": 70.269,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "spreads",
+        "odds": 4.5,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": -1.25,
+        "reject_reasons": [
+          "quality_high_odds_edge_guard"
+        ],
+        "selection": "Brentford",
+        "sources_count": 1
+      },
+      "best_confidence": 76.1,
+      "best_edge_pp": -1.999,
+      "best_ev_pct": 107.483,
+      "books_max": 2,
+      "candidate_count": 4,
+      "commence_time": "2026-09-18T19:00:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 1
+      },
+      "home_team": "Brentford",
+      "league_name": "Premier League",
+      "match_key": "soccer|brentford|chelsea|2026-09-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 3,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 4
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 4
+      },
+      "reject_reasons": {
+        "quality_high_odds_edge_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Elche",
+      "best_candidate": {
+        "adjusted_probability": 0.378984,
+        "books_count": 2,
+        "canonical_edge_pp": 10.481,
+        "canonical_ev_pct": 42.119,
+        "confidence": 71.453,
         "confirmation_sources_count": 2,
         "context_sources_count": 2,
+        "family": "spreads",
+        "odds": 3.75,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": -1.75,
+        "reject_reasons": [],
+        "selection": "Espanyol",
+        "sources_count": 1
+      },
+      "best_confidence": 76.1,
+      "best_edge_pp": 10.481,
+      "best_ev_pct": 42.119,
+      "books_max": 2,
+      "candidate_count": 4,
+      "commence_time": "2026-09-18T19:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 1
+      },
+      "home_team": "Espanyol",
+      "league_name": "La Liga",
+      "match_key": "soccer|elche|espanyol|2026-09-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 3,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 3,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 4
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 4
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Galway United",
+      "best_candidate": {
+        "adjusted_probability": 0.50694,
+        "books_count": 2,
+        "canonical_edge_pp": 4.182,
+        "canonical_ev_pct": 8.992,
+        "confidence": 70.146,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.5,
-        "odds_sources_count": 2,
+        "odds": 2.15,
+        "odds_sources_count": 1,
         "origin": "rescue",
         "point": 2.5,
         "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 2
+        "sources_count": 1
       },
-      "best_confidence": 73.8,
-      "best_edge_pp": 5.997,
-      "best_ev_pct": 14.992,
+      "best_confidence": 70.146,
+      "best_edge_pp": 4.182,
+      "best_ev_pct": 8.992,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-09-18T18:45:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Derry City",
+      "league_name": "Irish Premier Division",
+      "match_key": "soccer|derry_city|galway_united|2026-09-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "CD El Nacional",
+      "best_candidate": {
+        "adjusted_probability": 0.375803,
+        "books_count": 1,
+        "canonical_edge_pp": 2.858,
+        "canonical_ev_pct": 8.231,
+        "confidence": 74.504,
+        "confirmation_sources_count": 5,
+        "context_sources_count": 5,
+        "family": "totals",
+        "odds": 2.88,
+        "odds_sources_count": 5,
+        "origin": "rescue",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 5
+      },
+      "best_confidence": 74.504,
+      "best_edge_pp": 2.858,
+      "best_ev_pct": 8.231,
       "books_max": 1,
       "candidate_count": 1,
-      "commence_time": "2026-09-18T14:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
+      "commence_time": "2026-09-18T00:00:00+00:00",
+      "confirmation_sources_max": 5,
+      "context_sources_max": 5,
       "controlled_count": 0,
       "families": {
         "totals": 1
       },
-      "home_team": "CSC Ghiroda SI Giarmata Vii",
-      "league_name": "Romania - Liga III, Seria 8",
-      "match_key": "2026-09-18|csc ghiroda si giarmata vii|nera bogodinti",
+      "home_team": "DSD Santo Domingo",
+      "league_name": "Ecuador - Serie B, Promotion Round",
+      "match_key": "soccer|dsd santo domingo|el nacional|2026-09-18",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
         "single_book": 1
       },
-      "odds_sources_max": 2,
+      "odds_sources_max": 5,
       "origins": {
         "rescue": 1
       },
       "reject_reasons": {},
-      "sources_max": 2
+      "sources_max": 5
     },
     {
-      "away_team": "ACS Viitorul Arad",
+      "away_team": "Chelsea",
       "best_candidate": {
-        "adjusted_probability": 0.504037,
+        "adjusted_probability": 0.560881,
         "books_count": 2,
-        "canonical_edge_pp": 3.234,
-        "canonical_ev_pct": 6.856,
-        "confidence": 72.685,
+        "canonical_edge_pp": 2.612,
+        "canonical_ev_pct": 4.885,
+        "confidence": 69.798,
         "confirmation_sources_count": 2,
         "context_sources_count": 2,
         "family": "totals",
-        "odds": 2.12,
+        "odds": 1.87,
         "odds_sources_count": 2,
         "origin": "rescue",
-        "point": 2.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 2
-      },
-      "best_confidence": 72.685,
-      "best_edge_pp": 3.234,
-      "best_ev_pct": 6.856,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-09-18T14:00:00+00:00",
-      "confirmation_sources_max": 2,
-      "context_sources_max": 2,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "ACS Cil Blaj",
-      "league_name": "Romania - Liga III, Seria 8",
-      "match_key": "2026-09-18|acs cil blaj|acs viitorul arad",
-      "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 2
-    },
-    {
-      "away_team": "ACS Kids Tampa Brasov",
-      "best_candidate": {
-        "adjusted_probability": 0.573474,
-        "books_count": 2,
-        "canonical_edge_pp": 2.553,
-        "canonical_ev_pct": 4.659,
-        "confidence": 74.697,
-        "confirmation_sources_count": 4,
-        "context_sources_count": 4,
-        "family": "totals",
-        "odds": 1.825,
-        "odds_sources_count": 4,
-        "origin": "rescue",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 4
-      },
-      "best_confidence": 74.697,
-      "best_edge_pp": 2.553,
-      "best_ev_pct": 4.659,
-      "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-09-18T14:00:00+00:00",
-      "confirmation_sources_max": 4,
-      "context_sources_max": 4,
-      "controlled_count": 0,
-      "families": {
-        "totals": 1
-      },
-      "home_team": "ACS Sepsi Osk Sfantu Gheorghe 2",
-      "league_name": "Romania - Liga III, Seria 2",
-      "match_key": "2026-09-18|acs sepsi osk sfantu gheorghe 2|acs kids tampa brasov",
-      "missing_flags": {
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
-      },
-      "odds_sources_max": 4,
-      "origins": {
-        "rescue": 1
-      },
-      "reject_reasons": {},
-      "sources_max": 4
-    },
-    {
-      "away_team": "Scm Dunarea Giurgiu",
-      "best_candidate": {
-        "adjusted_probability": 0.57103,
-        "books_count": 2,
-        "canonical_edge_pp": 2.309,
-        "canonical_ev_pct": 4.213,
-        "confidence": 71.496,
-        "confirmation_sources_count": 2,
-        "context_sources_count": 2,
-        "family": "totals",
-        "odds": 1.825,
-        "odds_sources_count": 2,
-        "origin": "rescue",
-        "point": 2.5,
+        "point": 1.5,
         "reject_reasons": [],
         "selection": "Больше",
         "sources_count": 2
       },
-      "best_confidence": 71.496,
-      "best_edge_pp": 2.309,
-      "best_ev_pct": 4.213,
+      "best_confidence": 69.798,
+      "best_edge_pp": 2.612,
+      "best_ev_pct": 4.885,
       "books_max": 2,
-      "candidate_count": 1,
-      "commence_time": "2026-09-18T14:00:00+00:00",
+      "candidate_count": 2,
+      "commence_time": "2026-09-18T19:00:00+00:00",
       "confirmation_sources_max": 2,
       "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
-        "totals": 1
+        "totals": 2
       },
-      "home_team": "CSM Alexandria",
-      "league_name": "Romania - Liga III, Seria 8",
-      "match_key": "2026-09-18|csm alexandria|scm dunarea giurgiu",
+      "home_team": "Brentford",
+      "league_name": "Premier League",
+      "match_key": "2026-09-18|brentford|chelsea",
       "missing_flags": {
-        "confidence_below_micro_c": 1,
-        "edge_below_micro_c": 1,
-        "ev_below_micro_c": 1
+        "confidence_below_micro_c": 2,
+        "edge_below_micro_c": 2,
+        "ev_below_micro_c": 2
       },
       "odds_sources_max": 2,
       "origins": {
-        "rescue": 1
+        "rescue": 2
       },
       "reject_reasons": {},
       "sources_max": 2
