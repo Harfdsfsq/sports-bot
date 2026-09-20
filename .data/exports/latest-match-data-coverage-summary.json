@@ -8,9 +8,9 @@
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 91,
-      "rows_stale": 91
+      "rows_kept": 97,
+      "rows_seen": 122,
+      "rows_stale": 25
     },
     "lifecycle": {
       "files_present": 0,
@@ -25,28 +25,40 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 18,
+      "rows_seen": 18,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 0,
+    "candidates_before_quality": 2,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 5,
+    "contexts_built": 9,
     "controlled_candidates_seen": 336,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 0,
-    "matches_seen": 24,
-    "matches_with_offers": 11
+    "coverage_candidates_current_date": 60,
+    "matches_seen": 18,
+    "matches_with_offers": 14
   },
-  "created_at": "2026-09-19T21:31:51.994392+00:00",
-  "family_counts": {},
-  "matches_with_candidates": 0,
-  "missing_data_flags": {},
+  "created_at": "2026-09-20T01:04:57.405116+00:00",
+  "family_counts": {
+    "dnb": 1,
+    "h2h": 2,
+    "spreads": 27,
+    "totals": 30
+  },
+  "matches_with_candidates": 26,
+  "missing_data_flags": {
+    "confidence_below_micro_c": 51,
+    "edge_below_micro_c": 51,
+    "ev_below_micro_c": 50,
+    "single_book": 41,
+    "single_context_source": 54,
+    "single_odds_source": 51
+  },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -59,7 +71,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 0,
+  "positive_near_miss_count": 14,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -68,11 +80,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 16,
+      "events_matched": 32,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 1139,
+      "offers_parsed": 1984,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -92,7 +104,7 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 1175,
+      "matches_built": 1111,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -107,11 +119,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 1465,
+      "events_fetched": 1392,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 1175,
+      "matches_built": 1111,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -161,8 +173,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 5,
-      "direct_event_contexts_built": 5,
+      "contexts_built": 9,
+      "direct_event_contexts_built": 9,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -225,7 +237,7 @@
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
-      "fixtures_fetched": 2,
+      "fixtures_fetched": 7,
       "gap_flags": [
         "low_overlap_or_matching_failed"
       ],
@@ -350,9 +362,9 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
+      "api_key_present": true,
       "budget_exhausted": null,
-      "contexts_built": null,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
@@ -365,7 +377,7 @@
       "offers_parsed": null,
       "provider": "bzzoiro",
       "rate_limited": null,
-      "response_errors": null,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -411,36 +423,473 @@
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "sstats_pari_odds",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 4,
     "low_overlap_or_matching_issue": 1,
-    "no_data": 5,
+    "no_data": 4,
     "working": 8
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "market_sanity_totals_xg_contradiction": 1
+  },
   "target_date": "2026-09-20",
-  "top_near_miss": []
+  "top_near_miss": [
+    {
+      "away_team": "Atlanta United FC",
+      "best_candidate": {
+        "adjusted_probability": 0.546703,
+        "books_count": 2,
+        "canonical_edge_pp": 3.057,
+        "canonical_ev_pct": 46.243,
+        "confidence": 75.901,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.675,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
+        "selection": "Меньше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.901,
+      "best_edge_pp": 3.057,
+      "best_ev_pct": 46.243,
+      "books_max": 2,
+      "candidate_count": 6,
+      "commence_time": "2026-09-20T02:30:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 3
+      },
+      "home_team": "Portland Timbers",
+      "league_name": "USA - MLS",
+      "match_key": "soccer|atlanta united|portland timbers|2026-09-20",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 6,
+        "ev_below_micro_c": 5,
+        "single_book": 3,
+        "single_context_source": 6,
+        "single_odds_source": 6
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 5,
+        "rescue": 1
+      },
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Seattle Sounders",
+      "best_candidate": {
+        "adjusted_probability": 0.500702,
+        "books_count": 8,
+        "canonical_edge_pp": 7.965,
+        "canonical_ev_pct": 18.917,
+        "confidence": 80.0,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.375,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 80.0,
+      "best_edge_pp": 7.965,
+      "best_ev_pct": 18.917,
+      "books_max": 8,
+      "candidate_count": 2,
+      "commence_time": "2026-09-20T01:30:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Colorado Rapids",
+      "league_name": "USA - MLS",
+      "match_key": "soccer|colorado rapids|seattle sounders|2026-09-20",
+      "missing_flags": {
+        "single_context_source": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Chicago Fire",
+      "best_candidate": {
+        "adjusted_probability": 0.417711,
+        "books_count": 7,
+        "canonical_edge_pp": 4.388,
+        "canonical_ev_pct": 11.738,
+        "confidence": 79.282,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.675,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 79.282,
+      "best_edge_pp": 4.388,
+      "best_ev_pct": 11.738,
+      "books_max": 8,
+      "candidate_count": 2,
+      "commence_time": "2026-09-20T01:30:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "Nashville SC",
+      "league_name": "USA - MLS",
+      "match_key": "soccer|chicago fire|nashville|2026-09-20",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "CF Cruz Azul",
+      "best_candidate": {
+        "adjusted_probability": 0.466951,
+        "books_count": 7,
+        "canonical_edge_pp": 4.678,
+        "canonical_ev_pct": 11.134,
+        "confidence": 79.01,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.38,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 79.01,
+      "best_edge_pp": 4.678,
+      "best_ev_pct": 11.134,
+      "books_max": 7,
+      "candidate_count": 1,
+      "commence_time": "2026-09-20T01:10:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "CF Monterrey",
+      "league_name": "Mexico - Liga MX, Apertura",
+      "match_key": "soccer|cruz azul|monterrey|2026-09-20",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "New Mexico United",
+      "best_candidate": {
+        "adjusted_probability": 0.456508,
+        "books_count": 6,
+        "canonical_edge_pp": 4.499,
+        "canonical_ev_pct": 10.931,
+        "confidence": 78.919,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.43,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 78.919,
+      "best_edge_pp": 4.499,
+      "best_ev_pct": 10.931,
+      "books_max": 6,
+      "candidate_count": 1,
+      "commence_time": "2026-09-20T01:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Colorado Springs Switchbacks FC",
+      "league_name": "USA - USL, Championship",
+      "match_key": "soccer|colorado springs switchbacks|new mexico united|2026-09-20",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Kashiwa Reysol",
+      "best_candidate": {
+        "adjusted_probability": 0.43873,
+        "books_count": 2,
+        "canonical_edge_pp": 3.873,
+        "canonical_ev_pct": 9.683,
+        "confidence": 70.457,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.5,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 70.457,
+      "best_edge_pp": 3.873,
+      "best_ev_pct": 9.683,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-09-20T08:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Machida Zelvia",
+      "league_name": "Japan - J.League",
+      "match_key": "soccer|kashiwa reysol|machida zelvia|2026-09-20",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Alebrijes de Oaxaca FC",
+      "best_candidate": {
+        "adjusted_probability": 0.538739,
+        "books_count": 8,
+        "canonical_edge_pp": 4.123,
+        "canonical_ev_pct": 8.286,
+        "confidence": 77.729,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.01,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 77.729,
+      "best_edge_pp": 4.123,
+      "best_ev_pct": 8.286,
+      "books_max": 8,
+      "candidate_count": 1,
+      "commence_time": "2026-09-20T01:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Cancun FC",
+      "league_name": "Mexico - Liga de Expansion MX, Apertura",
+      "match_key": "soccer|alebrijes oaxaca|cancun|2026-09-20",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "China",
+      "best_candidate": {
+        "adjusted_probability": 0.636827,
+        "books_count": 2,
+        "canonical_edge_pp": 4.859,
+        "canonical_ev_pct": 8.261,
+        "confidence": 69.817,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.7,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.817,
+      "best_edge_pp": 4.859,
+      "best_ev_pct": 8.261,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-09-20T05:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Iran",
+      "league_name": "International Youth - Asian Games, Group B",
+      "match_key": "2026-09-20|iran|china",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Veraguas United FC",
+      "best_candidate": {
+        "adjusted_probability": 0.590898,
+        "books_count": 6,
+        "canonical_edge_pp": 4.295,
+        "canonical_ev_pct": 7.839,
+        "confidence": 74.027,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.825,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 74.027,
+      "best_edge_pp": 4.295,
+      "best_ev_pct": 7.839,
+      "books_max": 6,
+      "candidate_count": 2,
+      "commence_time": "2026-09-20T01:30:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 2
+      },
+      "home_team": "CD Plaza Amador Panama City",
+      "league_name": "Panama - Liga Panamena de Futbol, Apertura",
+      "match_key": "soccer|plaza amador panama city|veraguas united|2026-09-20",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 2,
+        "single_context_source": 2
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Thailand",
+      "best_candidate": {
+        "adjusted_probability": 0.467955,
+        "books_count": 2,
+        "canonical_edge_pp": 3.317,
+        "canonical_ev_pct": 7.63,
+        "confidence": 69.533,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.3,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 69.533,
+      "best_edge_pp": 3.317,
+      "best_ev_pct": 7.63,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-09-20T07:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Hong Kong, China",
+      "league_name": "International Youth - Asian Games, Group A",
+      "match_key": "2026-09-20|hong kong china|thailand",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    }
+  ]
 }
