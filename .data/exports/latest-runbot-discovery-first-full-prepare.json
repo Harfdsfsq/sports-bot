@@ -1,18 +1,18 @@
 {
-  "budget_limited": false,
+  "budget_limited": true,
   "budget_seconds": 240.0,
-  "created_at_utc": "2026-09-23T19:02:43.419889+00:00",
-  "duration_seconds": 115.79,
+  "created_at_utc": "2026-09-23T22:19:38.247406+00:00",
+  "duration_seconds": 274.69,
   "final": {
-    "context_2plus_sources": 6,
-    "fixture_2plus_sources": 246,
-    "inventory_matches": 371,
-    "matrix_matches": 300,
-    "odds_2plus_sources": 0,
-    "ready_for_model": 230,
-    "ready_for_publish": 121,
+    "context_2plus_sources": 2,
+    "fixture_2plus_sources": 106,
+    "inventory_matches": 182,
+    "matrix_matches": 182,
+    "odds_2plus_sources": 3,
+    "ready_for_model": 82,
+    "ready_for_publish": 1,
     "semantic_duplicate_rows": 0,
-    "semantic_unique_matches": 371
+    "semantic_unique_matches": 162
   },
   "mode": "runbot_discovery_first_prepare_v5_full_bounded",
   "previous_full_prepare": {
@@ -25,18 +25,18 @@
     "status": "",
     "target_date": ""
   },
-  "status": "ok",
+  "status": "ok_budget_limited",
   "steps": [
     {
-      "duration_seconds": 0.1,
+      "duration_seconds": 63.71,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
-        "status": "skipped_sufficient_inventory"
+        "status": "rebuilt_below_target"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.92,
+      "duration_seconds": 0.06,
       "name": "semantic_inventory_dedupe_pre",
       "result_summary": {
         "type": "int"
@@ -44,7 +44,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 32.28,
+      "duration_seconds": 29.66,
       "name": "target_expand_pre_discovery",
       "result_summary": {
         "type": "int"
@@ -52,11 +52,11 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 9.48,
+      "duration_seconds": 18.46,
       "name": "provider_day_discovery_canonical_pool_v2",
       "result_summary": {
-        "canonical_matches": 167,
-        "canonical_with_2plus_primary_sources": 5,
+        "canonical_matches": 241,
+        "canonical_with_2plus_primary_sources": 21,
         "canonical_with_all_3_primary_sources": 0,
         "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon",
         "status": "ok"
@@ -64,20 +64,20 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 8.58,
+      "duration_seconds": 8.06,
       "name": "merge_discovery_pool_into_inventory",
       "result_summary": {
-        "appended": 72,
-        "canonical_rows_seen": 167,
-        "inventory_matches_after": 372,
-        "matched_existing": 95,
+        "appended": 141,
+        "canonical_rows_seen": 241,
+        "inventory_matches_after": 290,
+        "matched_existing": 100,
         "mode": "provider_day_discovery_inventory_merge_v2_full_pool",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 1.11,
+      "duration_seconds": 0.26,
       "name": "semantic_inventory_dedupe_post_merge",
       "result_summary": {
         "type": "int"
@@ -85,35 +85,35 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 37.57,
+      "duration_seconds": 33.07,
       "name": "post_merge_sstats_crosswalk_v2",
       "result_summary": {
-        "match_rate_pct": 50.0,
-        "matched": 150,
+        "match_rate_pct": 39.63,
+        "matched": 107,
         "mode": "sstats_crosswalk_probe_v2_full_matched"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.37,
+      "duration_seconds": 0.1,
       "name": "apply_sstats_crosswalk_ids_to_inventory",
       "result_summary": {
-        "applied": 150,
-        "inventory_matches": 371,
-        "matched_rows_seen": 150,
+        "applied": 107,
+        "inventory_matches": 270,
+        "matched_rows_seen": 107,
         "mode": "sstats_crosswalk_inventory_apply_v1",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 24.4,
+      "duration_seconds": 90.16,
       "name": "apply_sstats_deep_inventory_enrichment_v4",
       "result_summary": {
-        "crosswalk_matched": 150,
-        "enriched_matches": 16,
+        "crosswalk_matched": 107,
+        "enriched_matches": 70,
         "mode": "sstats_deep_inventory_enrichment_v6_fixture_grouped",
-        "request_count": 40,
+        "request_count": 160,
         "status": "ok"
       },
       "status": "ok"
@@ -121,13 +121,12 @@
     {
       "duration_seconds": 0.0,
       "name": "target_bzzoiro_v2_inventory_gaps",
-      "result_summary": {
-        "type": "int"
-      },
-      "status": "ok"
+      "reason": "discovery_budget_reserve",
+      "result_summary": {},
+      "status": "skipped"
     },
     {
-      "duration_seconds": 0.31,
+      "duration_seconds": 0.1,
       "name": "semantic_inventory_dedupe_final",
       "result_summary": {
         "type": "int"
@@ -135,29 +134,30 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 30.82,
       "name": "target_expand_final",
-      "reason": "inventory_already_at_or_above_target:371/300",
-      "result_summary": {},
-      "status": "skipped"
+      "result_summary": {
+        "type": "int"
+      },
+      "status": "ok"
     },
     {
-      "duration_seconds": 0.08,
+      "duration_seconds": 0.05,
       "name": "build_source_aware_coverage_matrix",
       "result_summary": {
-        "context_2plus_sources": 6,
-        "fixture_2plus_sources": 246,
-        "matches": 300,
-        "matrix_matches": 300,
-        "odds_2plus_sources": 0,
-        "ready_for_model": 230,
-        "ready_for_publish": 121,
+        "context_2plus_sources": 2,
+        "fixture_2plus_sources": 106,
+        "matches": 182,
+        "matrix_matches": 182,
+        "odds_2plus_sources": 3,
+        "ready_for_model": 82,
+        "ready_for_publish": 1,
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.08,
+      "duration_seconds": 0.03,
       "name": "inventory_provider_gap_audit",
       "result_summary": {
         "type": "int"
@@ -165,5 +165,5 @@
       "status": "ok"
     }
   ],
-  "target_date": "2026-09-23"
+  "target_date": "2026-09-24"
 }
