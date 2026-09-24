@@ -8,9 +8,9 @@
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 32,
-      "rows_seen": 57,
-      "rows_stale": 25
+      "rows_kept": 66,
+      "rows_seen": 97,
+      "rows_stale": 31
     },
     "lifecycle": {
       "files_present": 0,
@@ -26,8 +26,8 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 4,
-      "rows_seen": 4,
+      "rows_kept": 16,
+      "rows_seen": 16,
       "rows_stale": 0
     }
   },
@@ -39,23 +39,23 @@
     "controlled_candidates_seen": 336,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 14,
-    "matches_seen": 7,
-    "matches_with_offers": 3
+    "coverage_candidates_current_date": 47,
+    "matches_seen": 24,
+    "matches_with_offers": 12
   },
-  "created_at": "2026-09-24T19:09:54.799996+00:00",
+  "created_at": "2026-09-24T22:23:46.439493+00:00",
   "family_counts": {
-    "spreads": 8,
-    "totals": 6
+    "spreads": 21,
+    "totals": 26
   },
-  "matches_with_candidates": 3,
+  "matches_with_candidates": 11,
   "missing_data_flags": {
-    "confidence_below_micro_c": 14,
-    "edge_below_micro_c": 14,
-    "ev_below_micro_c": 13,
-    "single_book": 11,
-    "single_context_source": 11,
-    "single_odds_source": 11
+    "confidence_below_micro_c": 46,
+    "edge_below_micro_c": 43,
+    "ev_below_micro_c": 40,
+    "single_book": 31,
+    "single_context_source": 37,
+    "single_odds_source": 33
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +69,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 2,
+  "positive_near_miss_count": 8,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +78,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 3,
+      "events_matched": 13,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 158,
+      "offers_parsed": 736,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -102,11 +102,11 @@
       "gap_flags": [
         "response_errors"
       ],
-      "matches_built": 257,
+      "matches_built": 263,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
-      "response_errors": 2,
+      "response_errors": 5,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -117,11 +117,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 395,
+      "events_fetched": 385,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 257,
+      "matches_built": 263,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -158,19 +158,21 @@
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "raw_stats",
+      "provider": "sstats",
       "rate_limited": null,
       "response_errors": 0,
-      "rows_fetched": 23,
+      "rows_fetched": null,
       "status_category": "working",
-      "team_form_contexts_built": 0
+      "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": null,
+      "api_key_present": true,
+      "budget_exhausted": false,
       "contexts_built": 1,
       "direct_event_contexts_built": 1,
       "enabled": true,
@@ -180,74 +182,30 @@
       "gap_flags": [],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "v1_empty_prediction_fallback",
+      "provider": "stats",
       "rate_limited": null,
-      "response_errors": null,
+      "response_errors": 0,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 1,
+      "direct_event_contexts_built": 1,
       "enabled": true,
-      "events_fetched": 32,
+      "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [
-        "low_overlap_or_matching_failed"
-      ],
+      "gap_flags": [],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "bzzoiro_v2",
-      "rate_limited": null,
-      "response_errors": null,
-      "rows_fetched": null,
-      "status_category": "low_overlap_or_matching_issue",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": null,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": 100,
-      "events_matched": 0,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "low_overlap_or_matching_failed"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "odds_feed",
-      "rate_limited": null,
-      "response_errors": null,
-      "rows_fetched": null,
-      "status_category": "low_overlap_or_matching_issue",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": null,
-      "budget_exhausted": false,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": 100,
-      "events_matched": 0,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "low_overlap_or_matching_failed"
-      ],
-      "matches_built": null,
-      "offers_parsed": 0,
-      "provider": "secondary_odds_rescue",
+      "provider": "weather",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
-      "status_category": "low_overlap_or_matching_issue",
+      "status_category": "working",
       "team_form_contexts_built": null
     },
     {
@@ -267,7 +225,7 @@
       "offers_parsed": 0,
       "provider": "account2",
       "rate_limited": false,
-      "response_errors": 2,
+      "response_errors": 5,
       "rows_fetched": null,
       "status_category": "broken_or_unavailable",
       "team_form_contexts_built": null
@@ -425,28 +383,6 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": true,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "budget_exhausted",
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "futrixmetrics",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
       "api_key_present": null,
       "budget_exhausted": null,
       "contexts_built": 0,
@@ -487,202 +423,422 @@
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "sstats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": 0,
-      "offers_parsed": null,
-      "provider": "sstats_fixture_source",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": 0,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
     }
   ],
   "provider_status_counts": {
     "broken_or_unavailable": 4,
-    "low_overlap_or_matching_issue": 3,
-    "no_data": 11,
-    "working": 6
+    "no_data": 6,
+    "working": 7
   },
   "reject_reason_counts_from_rows": {},
-  "target_date": "2026-09-24",
+  "target_date": "2026-09-25",
   "top_near_miss": [
     {
-      "away_team": "Vinotinto FC Ecuador",
+      "away_team": "Millonarios FC",
       "best_candidate": {
-        "adjusted_probability": 0.406444,
-        "books_count": 2,
-        "canonical_edge_pp": 3.607,
-        "canonical_ev_pct": 9.74,
-        "confidence": 71.983,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
+        "adjusted_probability": 0.39434,
+        "books_count": 8,
+        "canonical_edge_pp": 3.973,
+        "canonical_ev_pct": 11.204,
+        "confidence": 74.042,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
         "family": "totals",
-        "odds": 2.7,
-        "odds_sources_count": 5,
+        "odds": 2.82,
+        "odds_sources_count": 2,
         "origin": "rescue",
-        "point": 1.5,
+        "point": 3.5,
         "reject_reasons": [],
-        "selection": "Меньше",
-        "sources_count": 5
+        "selection": "Больше",
+        "sources_count": 2
       },
-      "best_confidence": 71.983,
-      "best_edge_pp": 3.607,
-      "best_ev_pct": 9.74,
-      "books_max": 2,
-      "candidate_count": 7,
-      "commence_time": "2026-09-24T20:30:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
+      "best_confidence": 74.042,
+      "best_edge_pp": 3.973,
+      "best_ev_pct": 11.204,
+      "books_max": 8,
+      "candidate_count": 5,
+      "commence_time": "2026-09-25T00:30:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
         "spreads": 3,
-        "totals": 4
+        "totals": 2
       },
-      "home_team": "CD Independiente Juniors",
-      "league_name": "Ecuador - Serie B, Promotion Round",
-      "match_key": "soccer|independiente juniors|vinotinto ecuador|2026-09-24",
+      "home_team": "Atletico Nacional",
+      "league_name": "Colombia - Liga DIMAYOR, Finalizacion",
+      "match_key": "soccer|atletico nacional|millonarios|2026-09-25",
       "missing_flags": {
-        "confidence_below_micro_c": 7,
-        "edge_below_micro_c": 7,
-        "ev_below_micro_c": 6,
-        "single_book": 5,
-        "single_context_source": 5,
-        "single_odds_source": 5
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 3
       },
-      "odds_sources_max": 5,
+      "odds_sources_max": 2,
       "origins": {
-        ".logs/debug-last-run.json": 5,
+        ".logs/debug-last-run.json": 3,
         "rescue": 2
       },
       "reject_reasons": {},
-      "sources_max": 5
+      "sources_max": 2
     },
     {
-      "away_team": "Ittihad Tanger",
+      "away_team": "Curacao",
       "best_candidate": {
-        "adjusted_probability": 0.496446,
-        "books_count": 2,
-        "canonical_edge_pp": 2.026,
-        "canonical_ev_pct": 4.254,
-        "confidence": 69.514,
-        "confirmation_sources_count": 5,
-        "context_sources_count": 5,
+        "adjusted_probability": 0.456332,
+        "books_count": 7,
+        "canonical_edge_pp": 4.481,
+        "canonical_ev_pct": 10.889,
+        "confidence": 73.9,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
         "family": "totals",
-        "odds": 2.1,
-        "odds_sources_count": 5,
+        "odds": 2.43,
+        "odds_sources_count": 2,
         "origin": "rescue",
-        "point": 1.5,
+        "point": 2.0,
         "reject_reasons": [],
         "selection": "Меньше",
-        "sources_count": 5
+        "sources_count": 2
       },
-      "best_confidence": 69.514,
-      "best_edge_pp": 2.026,
-      "best_ev_pct": 4.254,
-      "books_max": 2,
-      "candidate_count": 4,
-      "commence_time": "2026-09-24T20:00:00+00:00",
-      "confirmation_sources_max": 5,
-      "context_sources_max": 5,
+      "best_confidence": 73.9,
+      "best_edge_pp": 4.481,
+      "best_ev_pct": 10.889,
+      "books_max": 7,
+      "candidate_count": 5,
+      "commence_time": "2026-09-25T02:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
         "spreads": 3,
-        "totals": 1
+        "totals": 2
       },
-      "home_team": "Union Sportif Amal Tiznit",
-      "league_name": "Morocco - Botola Pro D1",
-      "match_key": "soccer|ittihad tanger|union sportif amal tiznit|2026-09-24",
+      "home_team": "Costa Rica",
+      "league_name": "International - CONCACAF Nations League, League A, Group A",
+      "match_key": "soccer|costa rica|curacao|2026-09-25",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "CSD Independiente del Valle",
+      "best_candidate": {
+        "adjusted_probability": 0.584188,
+        "books_count": 6,
+        "canonical_edge_pp": 5.085,
+        "canonical_ev_pct": 9.535,
+        "confidence": 71.791,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.875,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 71.791,
+      "best_edge_pp": 5.085,
+      "best_ev_pct": 9.535,
+      "books_max": 6,
+      "candidate_count": 5,
+      "commence_time": "2026-09-25T00:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 2
+      },
+      "home_team": "Gualaceo SC",
+      "league_name": "Ecuador - Copa Ecuador",
+      "match_key": "soccer|csd independiente valle|gualaceo|2026-09-25",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 5,
+        "single_odds_source": 4
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Club Atletico La Paz",
+      "best_candidate": {
+        "adjusted_probability": 0.52298,
+        "books_count": 7,
+        "canonical_edge_pp": 3.989,
+        "canonical_ev_pct": 8.257,
+        "confidence": 71.216,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.07,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 2
+      },
+      "best_confidence": 71.216,
+      "best_edge_pp": 3.989,
+      "best_ev_pct": 8.257,
+      "books_max": 7,
+      "candidate_count": 4,
+      "commence_time": "2026-09-25T01:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 2,
+        "totals": 2
+      },
+      "home_team": "Alebrijes de Oaxaca FC",
+      "league_name": "Mexico - Liga de Expansion MX, Apertura",
+      "match_key": "soccer|alebrijes oaxaca|atletico la paz|2026-09-25",
       "missing_flags": {
         "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 2,
+        "single_context_source": 4,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 2,
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Dominica",
+      "best_candidate": {
+        "adjusted_probability": 0.560424,
+        "books_count": 9,
+        "canonical_edge_pp": 4.229,
+        "canonical_ev_pct": 8.162,
+        "confidence": 72.673,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.93,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 72.673,
+      "best_edge_pp": 4.229,
+      "best_ev_pct": 8.162,
+      "books_max": 9,
+      "candidate_count": 5,
+      "commence_time": "2026-09-25T00:10:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 1,
+        "totals": 4
+      },
+      "home_team": "Cayman Islands",
+      "league_name": "International - CONCACAF Nations League, League B, Group A",
+      "match_key": "soccer|cayman islands|dominica|2026-09-25",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
         "edge_below_micro_c": 4,
         "ev_below_micro_c": 4,
         "single_book": 3,
         "single_context_source": 3,
         "single_odds_source": 3
       },
-      "odds_sources_max": 5,
+      "odds_sources_max": 2,
       "origins": {
         ".logs/debug-last-run.json": 3,
-        "rescue": 1
+        "rescue": 2
       },
       "reject_reasons": {},
-      "sources_max": 5
+      "sources_max": 2
+    },
+    {
+      "away_team": "Trinidad and Tobago",
+      "best_candidate": {
+        "adjusted_probability": 0.555023,
+        "books_count": 9,
+        "canonical_edge_pp": 3.956,
+        "canonical_ev_pct": 7.674,
+        "confidence": 72.454,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.94,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 72.454,
+      "best_edge_pp": 3.956,
+      "best_ev_pct": 7.674,
+      "books_max": 9,
+      "candidate_count": 4,
+      "commence_time": "2026-09-25T00:20:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 4
+      },
+      "home_team": "Haiti",
+      "league_name": "International - CONCACAF Nations League, League A, Group A",
+      "match_key": "soccer|haiti|trinidad tobago|2026-09-25",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 4,
+        "single_book": 2,
+        "single_context_source": 2,
+        "single_odds_source": 2
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 2,
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Nicaragua",
+      "best_candidate": {
+        "adjusted_probability": 0.435789,
+        "books_count": 6,
+        "canonical_edge_pp": 3.093,
+        "canonical_ev_pct": 7.64,
+        "confidence": 72.438,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.47,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.0,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 72.438,
+      "best_edge_pp": 3.093,
+      "best_ev_pct": 7.64,
+      "books_max": 6,
+      "candidate_count": 5,
+      "commence_time": "2026-09-25T00:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 1,
+        "totals": 4
+      },
+      "home_team": "Dominican Republic",
+      "league_name": "International - CONCACAF Nations League, League A, Group A",
+      "match_key": "soccer|dominican republic|nicaragua|2026-09-25",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 5,
+        "single_book": 3,
+        "single_context_source": 3,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Piratas Veracruz",
+      "best_candidate": {
+        "adjusted_probability": 0.51625,
+        "books_count": 8,
+        "canonical_edge_pp": 3.548,
+        "canonical_ev_pct": 7.38,
+        "confidence": 70.821,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.08,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 2
+      },
+      "best_confidence": 70.821,
+      "best_edge_pp": 3.548,
+      "best_ev_pct": 7.38,
+      "books_max": 8,
+      "candidate_count": 5,
+      "commence_time": "2026-09-25T01:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 2,
+        "totals": 3
+      },
+      "home_team": "CD Mineros de Zacatecas",
+      "league_name": "Mexico - Liga de Expansion MX, Apertura",
+      "match_key": "soccer|mineros zacatecas|piratas veracruz|2026-09-25",
+      "missing_flags": {
+        "confidence_below_micro_c": 5,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 5,
+        "single_book": 3,
+        "single_context_source": 5,
+        "single_odds_source": 3
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        ".logs/debug-last-run.json": 3,
+        "rescue": 2
+      },
+      "reject_reasons": {},
+      "sources_max": 2
     }
   ]
 }
