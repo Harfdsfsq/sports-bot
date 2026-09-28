@@ -1,33 +1,77 @@
 # SStats deep inventory enrichment v4
 status: ok
-inventory_path: .data/day_inventory/2026-09-27.json
-aliases_written: .data/day_inventory/2026-09-27.json, .data/day_inventory/latest.json, .data/day_inventory/current.json, .data/day_inventory/today.json
-crosswalk_matched: 174
-queue_seen: 153
-fixtures_seen: 152
-request_count: 40
-enriched_matches: 16
-sstats_offers: 0
-priority_group_counts: {"context1_odds1_xg1": 13, "context0_odds1_xg1": 3}
-command_status_counts: {"OK": 40, "SKIPPED": 24}
-xg_extraction: {"attempted": 16, "resolved_real": 16, "kept_existing": 0, "missing": 0, "placeholder_rejected": 0, "source_counts": {"last_games_form_goals": 15, "glicko_xg": 1}}
-odds_extraction: {"fixtures_attempted": 0, "payload_ok": 0, "offers_parsed": 0, "fixtures_with_offers": 0, "no_totals_market": 0, "book_counts": {}}
-identity: {"verified": 16, "unverified": 0, "mismatch": 0, "skipped_empty_key": 0, "skipped_no_row": 0, "fixtures_processed": 16, "duplicate_rows_seen": 1, "sibling_rows_marked": 0}
+inventory_path: .data/day_inventory/2026-09-28.json
+aliases_written: .data/day_inventory/2026-09-28.json, .data/day_inventory/latest.json, .data/day_inventory/current.json, .data/day_inventory/today.json
+crosswalk_matched: 94
+queue_seen: 78
+fixtures_seen: 64
+request_count: 160
+enriched_matches: 65
+sstats_offers: 1604
+priority_group_counts: {"context1_odds1_xg0": 20, "context2_odds0_xg1": 1, "context1_odds1_xg1": 28, "context2_odds1_xg1": 10, "context1_odds2_xg1": 2, "context2_odds2_xg1": 3}
+command_status_counts: {"OK": 160, "SKIPPED": 96}
+xg_extraction: {"attempted": 65, "resolved_real": 64, "kept_existing": 0, "missing": 1, "placeholder_rejected": 0, "source_counts": {"glicko_xg": 32, "last_games_form_goals": 32, "missing": 1}}
+odds_extraction: {"fixtures_attempted": 24, "payload_ok": 24, "offers_parsed": 1604, "fixtures_with_offers": 17, "no_totals_market": 0, "book_counts": {"1xbet": 428, "bet365": 92, "betfair": 126, "betvictor": 158, "marathonbet": 412, "pinnacle": 196, "sbo": 12, "betano": 180}}
+identity: {"verified": 59, "unverified": 5, "mismatch": 0, "skipped_empty_key": 12, "skipped_no_row": 0, "fixtures_processed": 64, "duplicate_rows_seen": 1, "sibling_rows_marked": 1}
 
 ## Enriched sample
-- Boavista SC RJ — Nova Iguacu RJ | gameId=1638132 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=0.983 ea=1.097 context:1→1
-- Deportivo Madryn — CA Central Norte Salta | gameId=1498838 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.28 ea=0.837 context:1→1
-- Club Oriental de Football — CA Fenix Montevideo | gameId=1640281 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.242 ea=1.236 context:1→1
-- Tlaxcala FC — Cancun FC | gameId=1581429 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.341 ea=1.77 context:1→1
-- Sportivo Trinidense — Cerro Porteno | gameId=1632019 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.257 ea=1.1 context:1→1
-- Forward Madison FC — Spokane Velocity FC | gameId=1494012 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.603 ea=1.299 context:1→1
-- Saltillo Soccer FC — Heroes de Zaci FC | gameId=1631738 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.61 ea=1.435 context:1→1
-- Antigua and Barbuda — Anguilla | gameId=1639948 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.528 ea=1.44 context:1→1
-- Asociacion Deportivo Cali — Independiente Santa Fe | gameId=1641154 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.571 ea=0.979 context:1→1
-- CA Colegiales — Chacarita Juniors | gameId=1498836 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.0 ea=0.781 context:1→1
-- Canada — Chile | gameId=1610877 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.569 ea=0.932 context:1→1
-- CD Universidad Catolica — Deportes Union La Calera | gameId=1638389 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.616 ea=1.222 context:1→1
-- Vancouver FC — Forge FC Hamilton | gameId=1517355 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.142 ea=1.482 context:1→1
-- CD Guadalajara — Queretaro FC | gameId=1550977 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.422 ea=1.086 context:0→1
-- Cucuta Deportivo FC — Llaneros FC | gameId=1549796 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=0.942 ea=1.363 context:0→1
-- CD Universitario Penonome — Umecit | gameId=1583772 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.176 ea=1.35 context:0→1
+- Club Bolivar — Blooming Santa Cruz | gameId=1619690 copy=0 id=verified deep=True detail=True offers=0 xg=glicko_xg eh=2.702 ea=0.695 context:1→1
+- Fortaleza EC CE — Athletic Club Sjdr MG | gameId=1520894 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.121 ea=1.022 context:1→1
+- Brusque FC SC — Ferroviaria Araraquara SP | gameId=1637847 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.067 ea=1.268 context:1→1
+- City London PR — CA Cambe PR | gameId=1639720 copy=0 id=unverified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.539 ea=0.891 context:1→1
+- Acambaro FC — Artesanos Metepec FC | gameId=1631743 copy=0 id=unverified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.283 ea=1.729 context:1→1
+- Barranquilla FC — Real Cundinamarca | gameId=1549643 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.258 ea=1.41 context:1→1
+- CA Sol de America de Formosa — Club Cipolletti | gameId=1641282 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.008 ea=1.045 context:1→1
+- Guerreros de Autlan — CF Correcaminos Uat II | gameId=1631744 copy=0 id=verified deep=True detail=True offers=0 xg=last_games_form_goals eh=1.265 ea=1.351 context:1→1
+- Deportivo Delfines Coatzacoalcos — Dragones de Oaxaca | gameId=1631741 copy=0 id=unverified deep=True detail=False offers=0 xg=None eh=None ea=None context:1→1
+- Racing United FC — Montego Bay United | gameId=1641896 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.103 ea=1.409 context:1→1
+- CSB Atenas — Sportivo General San Martin Formosa | gameId=1641279 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.018 ea=1.32 context:1→1
+- Columbus Crew — Inter Miami CF | gameId=1490510 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.717 ea=1.997 context:1→1
+- Haiti — Costa Rica | gameId=1639951 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.816 ea=1.711 context:1→1
+- Municipal Limeno — CD FAS Santa Ana | gameId=1600610 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.116 ea=1.416 context:1→1
+- Huracan FC — Miramar Misiones | gameId=1640284 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.18 ea=1.181 context:1→1
+- CD Santa Cruz — CD O´Higgins | gameId=1638394 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.071 ea=1.591 context:1→1
+- One Knoxville SC — Westchester SC | gameId=1494016 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.621 ea=1.444 context:1→1
+- Fortaleza FC — CD Tolima | gameId=1549797 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.142 ea=1.281 context:1→1
+- Veraguas United FC — AF Sporting San Miguelito | gameId=1583775 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.419 ea=1.161 context:1→1
+- CD Real Tomayapo — Cdt Real Oruro | gameId=1619691 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.786 ea=1.311 context:1→1
+- Kyrgyzstan — Lebanon | gameId=1640507 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.047 ea=1.432 context:2→2
+- Ario Eslamshahr — Havadar SC | gameId=1632808 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=0.729 ea=0.777 context:1→1
+- Saipa FC Tehran — Niroye Zamini Tehran | gameId=1632810 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=0.998 ea=0.641 context:1→1
+- Leixoes SC U23 — FC Vizela U23 | gameId=1598637 copy=0 id=verified deep=True detail=False offers=92 xg=glicko_xg eh=1.422 ea=1.209 context:1→1
+- Denmark U21 — Belarus U21 | gameId=1350168 copy=0 id=verified deep=True detail=False offers=76 xg=glicko_xg eh=2.383 ea=0.687 context:1→1
+- Palayesh Naft Bandar Abbas FC — Naft Gachsaran | gameId=1632811 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.016 ea=0.605 context:1→1
+- FC Pars Jonoubi Jam — Naft Masjed Soleyman FC | gameId=1632812 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.125 ea=0.826 context:1→1
+- Armenia — Montenegro | gameId=1528903 copy=0 id=verified deep=True detail=False offers=118 xg=glicko_xg eh=1.133 ea=1.234 context:2→2
+- Hapoel Kfar Saba FC — Bnei Yehuda Tel Aviv FC | gameId=1555156 copy=0 id=verified deep=True detail=False offers=92 xg=glicko_xg eh=0.827 ea=1.811 context:1→1
+- Central African Republic — Burkina Faso | gameId=1545843 copy=0 id=verified deep=True detail=False offers=118 xg=glicko_xg eh=0.694 ea=1.891 context:1→1
+- Zimbabwe — Congo DR | gameId=1545861 copy=0 id=verified deep=True detail=False offers=99 xg=last_games_form_goals eh=0.949 ea=1.326 context:1→1
+- Latvia — Cyprus | gameId=1545605 copy=0 id=verified deep=True detail=False offers=118 xg=glicko_xg eh=1.11 ea=1.203 context:2→2
+- Equatorial Guinea — Sierra Leone | gameId=1545846 copy=0 id=verified deep=True detail=False offers=108 xg=glicko_xg eh=1.298 ea=1.137 context:1→1
+- Georgia — Ukraine | gameId=1528902 copy=0 id=verified deep=True detail=False offers=124 xg=glicko_xg eh=1.206 ea=1.368 context:2→2
+- Gfk Dubocica — FK Javor Ivanjica | gameId=1554170 copy=0 id=verified deep=True detail=False offers=28 xg=glicko_xg eh=0.93 ea=1.665 context:1→1
+- Hapoel Kfar Shalem FC — Maccabi Kabilio Jaffa | gameId=1555157 copy=0 id=verified deep=True detail=False offers=96 xg=glicko_xg eh=1.648 ea=1.225 context:1→1
+- Maccabi Ironi Kiryat Gat — FC Kafr Qasim | gameId=1555160 copy=0 id=verified deep=True detail=False offers=92 xg=last_games_form_goals eh=1.732 ea=0.987 context:1→1
+- Raelingen — Lyn 1896 FK II | gameId=1497433 copy=0 id=verified deep=True detail=False offers=75 xg=glicko_xg eh=1.608 ea=1.94 context:1→1
+- Maccabi Bney Reine — Hapoel Ra`anana FC | gameId=1555161 copy=0 id=verified deep=True detail=False offers=94 xg=last_games_form_goals eh=1.087 ea=1.657 context:1→1
+- FK Haugesund 2 — Hinna | gameId=1497067 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=2.427 ea=2.246 context:1→1
+- NK Rudar Velenje — Nd Dravinja | gameId=1558948 copy=0 id=verified deep=True detail=False offers=70 xg=glicko_xg eh=1.903 ea=0.894 context:1→1
+- Al Shahaniya — Al Duhail SC | gameId=1639141 copy=0 id=verified deep=True detail=False offers=102 xg=glicko_xg eh=1.1 ea=1.365 context:1→1
+- Al-Sailiya SC — Al Rayyan SC | gameId=1639140 copy=0 id=verified deep=True detail=False offers=102 xg=glicko_xg eh=0.955 ea=1.938 context:1→1
+- Exeter City U21 — Norwich City FC U21 | gameId=1628851 copy=0 id=unverified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.485 ea=1.188 context:1→1
+- Swansea City U21 — Queens Park Rangers U21 | gameId=1619150 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.989 ea=1.283 context:1→1
+- Centro Espanol — Defensores de Cambaceres | gameId=1500127 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.474 ea=0.833 context:1→1
+- CSD Flandria — CS Dock Sud | gameId=1499656 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.137 ea=1.025 context:1→1
+- Flandria — Dock Sud | gameId=1499656 copy=1 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.137 ea=1.025 context:1→2
+- Leones de Rosario FC — Club Lujan | gameId=1500191 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=0.858 ea=1.202 context:1→1
+- FK Loznica — FK Spartak Subotica | gameId=1554172 copy=0 id=verified deep=True detail=False offers=0 xg=last_games_form_goals eh=1.49 ea=1.117 context:1→1
+- CD Leganes — CD Castellon | gameId=1569943 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.043 ea=1.355 context:2→2
+- Belgium — France | gameId=1528904 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.217 ea=1.758 context:2→2
+- Romania — Bosnia and Herzegovina | gameId=1528908 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.585 ea=1.193 context:2→2
+- Northern Ireland — Hungary | gameId=1528906 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.381 ea=1.094 context:2→2
+- Turkiye — Italy | gameId=1528905 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.374 ea=1.426 context:2→2
+- Sweden — Poland | gameId=1528907 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.749 ea=1.274 context:2→2
+- Guadeloupe — Barbados | gameId=1639955 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.668 ea=1.317 context:2→2
+- Botswana — Tunisia | gameId=1545840 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.868 ea=0.725 context:1→1
+- CA Tembetary Ypane — Paraguari AC | gameId=1640776 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.171 ea=1.496 context:1→1
+- Sportivo San Lorenzo — Recoleta FC | gameId=1632017 copy=0 id=verified deep=True detail=False offers=0 xg=glicko_xg eh=1.059 ea=1.343 context:1→1
