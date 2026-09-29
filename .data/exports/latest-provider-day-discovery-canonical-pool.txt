@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-09-28T22:33:50.214386+00:00
+UTC: 2026-09-29T02:37:26.534355+00:00
 target_date: 2026-09-29
-canonical_matches: 215
-2+ provider sources: 38
-2+ primary sources: 35
+canonical_matches: 217
+2+ provider sources: 35
+2+ primary sources: 32
 all 3 primary sources: 0
 
 ## Provider fixture discovery
@@ -11,19 +11,19 @@ all 3 primary sources: 0
 - bzzoiro: commands=10 ok=3 rows=162 event_like=157 unique=54 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=4 rows=392 event_like=392 unique=196 statuses={"OK": 4, "EMPTY": 2}
+- odds_api_io: commands=6 ok=4 rows=390 event_like=390 unique=195 statuses={"OK": 4, "EMPTY": 2}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
 - sstats: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"2": 38, "1": 177}
-- primary providers: {"2": 35, "1": 179, "0": 1}
+- all providers: {"1": 182, "2": 35}
+- primary providers: {"1": 184, "2": 32, "0": 1}
 
 ## Top canonical matches
-- 2026-09-29T00:00:00+00:00 | Saint Kitts and Nevis — Grenada | providers=bzzoiro,odds_api_io ids={"odds_api_io": "73220888", "bzzoiro": "223099"}
-- 2026-09-29T00:00:00+00:00 | Jamaica — Honduras | providers=bzzoiro,odds_api_io ids={"odds_api_io": "73220772", "bzzoiro": "223094"}
-- 2026-09-29T00:00:00+00:00 | Saint Lucia — Bermuda | providers=bzzoiro,odds_api_io ids={"odds_api_io": "73220872", "bzzoiro": "223097"}
+- 2026-09-29T00:00:00+00:00 | Jamaica — Honduras | providers=bzzoiro ids={"bzzoiro": "223094"}
+- 2026-09-29T00:00:00+00:00 | Saint Lucia — Bermuda | providers=bzzoiro ids={"bzzoiro": "223097"}
+- 2026-09-29T00:00:00+00:00 | Saint Kitts and Nevis — Grenada | providers=bzzoiro ids={"bzzoiro": "223099"}
 - 2026-09-29T01:00:00+00:00 | AD Cariari Pococi — CS Uruguay de Coronado | providers=odds_api_io ids={"odds_api_io": "73185416"}
 - 2026-09-29T01:00:00+00:00 | Alianza FC Panama — CA Independiente de La Chorrera | providers=odds_api_io ids={"odds_api_io": "72661248"}
 - 2026-09-29T01:00:00+00:00 | BYU Cougars — TCU Horned Frogs | providers=odds_api_io ids={"odds_api_io": "73276644"}
@@ -53,17 +53,17 @@ all 3 primary sources: 0
 - 2026-09-29T10:00:00+00:00 | Sagan Tosu — Tokyo Verdy | providers=odds_api_io ids={"odds_api_io": "74612948"}
 
 ## Targeted enrichment plan sample
-- Saint Kitts and Nevis — Grenada | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Jamaica — Honduras | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Jamaica — Honduras | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Saint Lucia — Bermuda | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Saint Lucia — Bermuda | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Saint Kitts and Nevis — Grenada | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - AD Cariari Pococi — CS Uruguay de Coronado | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
