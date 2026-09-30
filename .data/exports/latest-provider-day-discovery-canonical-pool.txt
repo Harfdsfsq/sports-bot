@@ -1,33 +1,32 @@
 # Provider day discovery canonical pool
-UTC: 2026-09-29T21:25:05.728897+00:00
+UTC: 2026-09-30T02:00:59.011854+00:00
 target_date: 2026-09-30
-canonical_matches: 273
-2+ provider sources: 23
-2+ primary sources: 19
+canonical_matches: 274
+2+ provider sources: 24
+2+ primary sources: 20
 all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=2 event_like=2 unique=2 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=3 rows=149 event_like=144 unique=52 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
+- bzzoiro: commands=10 ok=3 rows=153 event_like=148 unique=54 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=480 event_like=480 unique=240 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=482 event_like=482 unique=241 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
 - sstats: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"2": 23, "1": 250}
-- primary providers: {"2": 19, "1": 253, "0": 1}
+- all providers: {"2": 24, "1": 250}
+- primary providers: {"2": 20, "1": 253, "0": 1}
 
 ## Top canonical matches
 - 2026-09-30T00:00:00+00:00 | USA — Chile | providers=bzzoiro,odds_api_io ids={"odds_api_io": "73600390", "bzzoiro": "587775"}
-- 2026-09-30T00:00:00+00:00 | Club Aurora — San Antonio Bulo Bulo | providers=odds_api_io ids={"odds_api_io": "73550402"}
 - 2026-09-30T00:00:00+00:00 | Memphis Tigers — Jacksonville Dolphins | providers=odds_api_io ids={"odds_api_io": "73354108"}
 - 2026-09-30T00:00:00+00:00 | Missouri State Bears — Central Arkansas Bears | providers=odds_api_io ids={"odds_api_io": "73354110"}
-- 2026-09-30T00:00:00+00:00 | Saint Louis Billikens — Drake Bulldogs | providers=odds_api_io ids={"odds_api_io": "73354112"}
 - 2026-09-30T00:00:00+00:00 | UIC Flames — Notre Dame Fighting Irish | providers=odds_api_io ids={"odds_api_io": "73354114"}
 - 2026-09-30T00:00:00+00:00 | Omaha Mavericks — Creighton Bluejays | providers=odds_api_io ids={"odds_api_io": "73354116"}
+- 2026-09-30T00:00:00+00:00 | Saint Louis Billikens — Drake Bulldogs | providers=odds_api_io ids={"odds_api_io": "73354112"}
 - 2026-09-30T00:30:00+00:00 | San Antonio FC — SV Darmstadt 98 | providers=bzzoiro,odds_api_io ids={"odds_api_io": "74319186", "bzzoiro": "603676"}
 - 2026-09-30T01:00:00+00:00 | Mexico — Peru | providers=bzzoiro,odds_api_io ids={"odds_api_io": "73685558", "bzzoiro": "604875"}
 - 2026-09-30T01:05:00+00:00 | Independiente Medellin — Millonarios FC | providers=bzzoiro,odds_api_io ids={"odds_api_io": "74458710", "bzzoiro": "602463"}
@@ -51,15 +50,12 @@ all 3 primary sources: 0
 - 2026-09-30T12:00:00+00:00 | Varbergs BoIS U21 — IFK Goteborg U21 | providers=odds_api_io ids={"odds_api_io": "68824154"}
 - 2026-09-30T12:00:00+00:00 | Maccabi Neve Shaanan Eldad — MS Tira | providers=odds_api_io ids={"odds_api_io": "74401588"}
 - 2026-09-30T12:00:00+00:00 | EC Bahia BA — Porto SC BA | providers=odds_api_io ids={"odds_api_io": "75122068"}
+- 2026-09-30T12:00:00+00:00 | Mauritius — Djibouti | providers=bzzoiro ids={"bzzoiro": "605049"}
 
 ## Targeted enrichment plan sample
 - USA — Chile | primary=2 providers=bzzoiro,odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Club Aurora — San Antonio Bulo Bulo | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Memphis Tigers — Jacksonville Dolphins | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
@@ -69,15 +65,15 @@ all 3 primary sources: 0
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Saint Louis Billikens — Drake Bulldogs | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - UIC Flames — Notre Dame Fighting Irish | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Omaha Mavericks — Creighton Bluejays | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Saint Louis Billikens — Drake Bulldogs | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -130,6 +126,10 @@ all 3 primary sources: 0
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Timor-Leste — Cambodia | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Finland U19 — Germany U19 | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
