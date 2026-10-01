@@ -1,7 +1,7 @@
 # Provider day discovery canonical pool
-UTC: 2026-09-30T21:27:05.450505+00:00
+UTC: 2026-10-01T02:02:56.979070+00:00
 target_date: 2026-10-01
-canonical_matches: 288
+canonical_matches: 291
 2+ provider sources: 34
 2+ primary sources: 30
 all 3 primary sources: 0
@@ -11,21 +11,21 @@ all 3 primary sources: 0
 - bzzoiro: commands=10 ok=3 rows=289 event_like=284 unique=116 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=404 event_like=404 unique=202 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=410 event_like=410 unique=205 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
 - sstats: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"2": 34, "1": 254}
-- primary providers: {"2": 30, "1": 258}
+- all providers: {"1": 257, "2": 34}
+- primary providers: {"1": 261, "2": 30}
 
 ## Top canonical matches
-- 2026-10-01T00:00:00+00:00 | FC Tulsa — New Mexico United | providers=bzzoiro,odds_api_io ids={"odds_api_io": "67172996", "bzzoiro": "207840"}
-- 2026-10-01T00:00:00+00:00 | Argentina — Bolivia | providers=bzzoiro,odds_api_io ids={"odds_api_io": "74996504", "bzzoiro": "604930"}
 - 2026-10-01T00:00:00+00:00 | Portland Pilots — Saint Marys Gaels | providers=odds_api_io ids={"odds_api_io": "73354138"}
 - 2026-10-01T00:00:00+00:00 | Alianza FC San Salvador — CD Platense Municipal Zacatecoluca | providers=odds_api_io ids={"odds_api_io": "73075306"}
-- 2026-10-01T00:30:00+00:00 | Oriente Petrolero — The Strongest | providers=odds_api_io ids={"odds_api_io": "73550408"}
+- 2026-10-01T00:00:00+00:00 | Argentina — Bolivia | providers=bzzoiro ids={"bzzoiro": "604930"}
+- 2026-10-01T00:00:00+00:00 | FC Tulsa — New Mexico United | providers=bzzoiro ids={"bzzoiro": "207840"}
+- 2026-10-01T00:45:00+00:00 | Oriente Petrolero — The Strongest | providers=odds_api_io ids={"odds_api_io": "73550408"}
 - 2026-10-01T01:00:00+00:00 | Atletico Nacional — CD Junior FC | providers=bzzoiro,odds_api_io ids={"odds_api_io": "72334978", "bzzoiro": "220002"}
 - 2026-10-01T01:00:00+00:00 | Alianza Lima — CD Palestino | providers=bzzoiro,odds_api_io ids={"odds_api_io": "74982268", "bzzoiro": "605102"}
 - 2026-10-01T01:00:00+00:00 | SD Atletico Nacional — La Familia FC | providers=odds_api_io ids={"odds_api_io": "75146254"}
@@ -53,20 +53,20 @@ all 3 primary sources: 0
 - 2026-10-01T02:00:00+00:00 | Huehuetecos FC — Aguacatan FC | providers=odds_api_io ids={"odds_api_io": "74508418"}
 
 ## Targeted enrichment plan sample
-- FC Tulsa — New Mexico United | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Argentina — Bolivia | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Portland Pilots — Saint Marys Gaels | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Alianza FC San Salvador — CD Platense Municipal Zacatecoluca | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Argentina — Bolivia | primary=1 providers=bzzoiro
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- FC Tulsa — New Mexico United | primary=1 providers=bzzoiro
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Oriente Petrolero — The Strongest | primary=1 providers=odds_api_io
