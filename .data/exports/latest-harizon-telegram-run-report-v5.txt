@@ -3,29 +3,29 @@
 • Главная причина: odds-api.io: выбранные букмекеры недоступны на текущем тарифе
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 301/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 1 (это не размер inventory).
-• Очередь provider-enrichment: 257 активных матчей; model scope 1; назначений по ролям 109. Очередь сбора не расширяет публикационный scope.
-• 1+ линия: 300/301 (100%) | 1+ контекст: 114/301 (38%)
-• 2+ букмекера: 281/301 (93%)
-• Raw 2+ букмекера odds-api.io current snapshot: 13 | normalized cumulative inventory: 281.
-• Odds-api offer snapshot: rows 712, matches 25, same-side 2+ books 13
-• 2+ independent odds-source: 5/301 (2%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 8/301 (3%)
-• Готово для модели: 113/301 (38%)
+• Инвентарь дня: собрано 332/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 24 (это не размер inventory).
+• Очередь provider-enrichment: 122 активных матчей; model scope 24; назначений по ролям 125. Очередь сбора не расширяет публикационный scope.
+• 1+ линия: 332/332 (100%) | 1+ контекст: 155/332 (47%)
+• 2+ букмекера: 297/332 (89%)
+• Raw 2+ букмекера odds-api.io current snapshot: 11 | normalized cumulative inventory: 297.
+• Odds-api offer snapshot: rows 1283, matches 22, same-side 2+ books 11
+• 2+ independent odds-source: 5/332 (2%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ контекста: 8/332 (2%)
+• Готово для модели: 155/332 (47%)
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 5 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/2+ bookmaker/1+ context coverage: 114 | fallback опубликовано: 0
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 155 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 5 матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до 114 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 5 матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до 155 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 107; pending 15; duplicates removed 325; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 20 | матчей без следующего регулярного run: 17
+• Pre-kickoff проверок: 42 | матчей без следующего регулярного run: 13
 • Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -34,9 +34,9 @@
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 7; смэтчил матчей 27; offers 712; 2+ букмекера 13; ошибок 4.
+• odds-api.io: events req 0, odds req 7; смэтчил матчей 28; offers 1283; 2+ букмекера 11; ошибок 4.
 • Bzzoiro: direct req 3, v2 req 3; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 24; сырых строк 21452; контекстов 11; deep-enriched 11; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 24; сырых строк 21451; контекстов 7; deep-enriched 11; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
 • Комбинации источников линий: н/д
 
@@ -51,7 +51,7 @@
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 36975704531
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/36975704531
-• Artifact: run-bot-36975704531
+• Run ID: 37015039806
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/37015039806
+• Artifact: run-bot-37015039806
 • workflow run-bot, attempt 1
