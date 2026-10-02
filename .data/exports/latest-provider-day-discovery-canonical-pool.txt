@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-10-02T13:49:39.823794+00:00
+UTC: 2026-10-02T19:55:20.465225+00:00
 target_date: 2026-10-02
-canonical_matches: 574
-2+ provider sources: 34
-2+ primary sources: 32
+canonical_matches: 442
+2+ provider sources: 25
+2+ primary sources: 25
 all 3 primary sources: 0
 
 ## Provider fixture discovery
@@ -11,14 +11,14 @@ all 3 primary sources: 0
 - bzzoiro: commands=10 ok=4 rows=669 event_like=664 unique=309 statuses={"OK": 4, "EMPTY": 1, "AUTH": 5}
 - football_data: commands=1 ok=1 rows=1 event_like=1 unique=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=4 rows=318 event_like=318 unique=159 statuses={"OK": 4, "EMPTY": 2}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
 - sstats: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 540, "2": 33, "3": 1}
-- primary providers: {"1": 539, "2": 32, "0": 3}
+- all providers: {"1": 417, "2": 23, "3": 2}
+- primary providers: {"1": 413, "2": 25, "0": 4}
 
 ## Top canonical matches
 - 2026-10-02T00:00:00+00:00 | Grêmio Novorizontino — Goiás | providers=bzzoiro ids={"bzzoiro": "10160"}
@@ -35,21 +35,21 @@ all 3 primary sources: 0
 - 2026-10-02T09:00:00+00:00 | FC Zlín — 1. SK Prostějov | providers=bzzoiro ids={"bzzoiro": "605439"}
 - 2026-10-02T09:00:00+00:00 | Saint-Étienne — FC Sion | providers=bzzoiro ids={"bzzoiro": "605065"}
 - 2026-10-02T09:00:00+00:00 | Mladá Boleslav — 1.FK Příbram | providers=bzzoiro ids={"bzzoiro": "605446"}
-- 2026-10-02T09:00:00+00:00 | Südtirol — FC Wacker Innsbruck | providers=bzzoiro ids={"bzzoiro": "605067"}
+- 2026-10-02T09:00:00+00:00 | FC Zbrojovka Brno — MFK Skalica | providers=bzzoiro ids={"bzzoiro": "605513"}
 - 2026-10-02T09:00:00+00:00 | Górnik Zabrze — OKS Odra Opole | providers=bzzoiro ids={"bzzoiro": "604979"}
 - 2026-10-02T09:00:00+00:00 | FK Pardubice — FK Viktoria Žižkov | providers=bzzoiro ids={"bzzoiro": "605447"}
-- 2026-10-02T09:00:00+00:00 | FC Zbrojovka Brno — MFK Skalica | providers=bzzoiro ids={"bzzoiro": "605513"}
+- 2026-10-02T09:00:00+00:00 | Südtirol — FC Wacker Innsbruck | providers=bzzoiro ids={"bzzoiro": "605067"}
 - 2026-10-02T09:30:00+00:00 | Raków Częstochowa — Polonia Bytom | providers=bzzoiro ids={"bzzoiro": "605069"}
 - 2026-10-02T09:30:00+00:00 | FC Lugano — Hellas Verona | providers=bzzoiro ids={"bzzoiro": "605068"}
 - 2026-10-02T10:00:00+00:00 | AC Horsens — Vejle | providers=bzzoiro ids={"bzzoiro": "605073"}
 - 2026-10-02T10:00:00+00:00 | Wieczysta Kraków — Puszcza Niepołomice | providers=bzzoiro ids={"bzzoiro": "605448"}
-- 2026-10-02T10:00:00+00:00 | AC Sparta Praha — Vysočina Jihlava | providers=bzzoiro ids={"bzzoiro": "604980"}
+- 2026-10-02T10:00:00+00:00 | IF Elfsborg — BK Häcken | providers=bzzoiro ids={"bzzoiro": "605070"}
+- 2026-10-02T10:00:00+00:00 | Radomiak Radom — Pogoń Grodzisk Mazowiecki | providers=bzzoiro ids={"bzzoiro": "605075"}
 - 2026-10-02T10:00:00+00:00 | USL Dunkerque — RAAL La Louvière | providers=bzzoiro ids={"bzzoiro": "605515"}
+- 2026-10-02T10:00:00+00:00 | AC Sparta Praha — Vysočina Jihlava | providers=bzzoiro ids={"bzzoiro": "604980"}
 - 2026-10-02T10:00:00+00:00 | Wisła Płock — Unia Skierniewice | providers=bzzoiro ids={"bzzoiro": "605074"}
 - 2026-10-02T10:00:00+00:00 | AGF — Vendsyssel FF | providers=bzzoiro ids={"bzzoiro": "605071"}
 - 2026-10-02T10:00:00+00:00 | Le Havre — US Boulogne Côte-d'Opale | providers=bzzoiro ids={"bzzoiro": "605514"}
-- 2026-10-02T10:00:00+00:00 | IF Elfsborg — BK Häcken | providers=bzzoiro ids={"bzzoiro": "605070"}
-- 2026-10-02T10:00:00+00:00 | Radomiak Radom — Pogoń Grodzisk Mazowiecki | providers=bzzoiro ids={"bzzoiro": "605075"}
 - 2026-10-02T10:00:00+00:00 | Piast Gliwice — Wisła Kraków | providers=bzzoiro ids={"bzzoiro": "605081"}
 
 ## Targeted enrichment plan sample
@@ -109,7 +109,7 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Südtirol — FC Wacker Innsbruck | primary=1 providers=bzzoiro
+- FC Zbrojovka Brno — MFK Skalica | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -121,7 +121,7 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- FC Zbrojovka Brno — MFK Skalica | primary=1 providers=bzzoiro
+- Südtirol — FC Wacker Innsbruck | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
