@@ -23,4 +23,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh workflow run run-bot-rules.yml --repo "$GH_REPO"
+        run: gh workflow run run-bot-rules.yml --repo "$GH_REPO" --ref "$GITHUB_REF_NAME" -f dry_run=false -f max_picks=2 -f use_secondary_odds_account=false

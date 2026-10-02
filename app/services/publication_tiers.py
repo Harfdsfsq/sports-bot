@@ -7,6 +7,7 @@ from typing import Any
 
 from app.services.coverage_contract import sync_candidate_publish_coverage
 from app.services.publication_thresholds import (
+    b_tier_enabled,
     publish_min_books,
     publish_min_context_sources,
     publish_min_odds_sources,
@@ -44,10 +45,9 @@ def _env_int(name: str, default: int, minimum: int = 0) -> int:
 def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | None = None) -> PublicationTierDecision:
     """Classify a candidate by the HARIZON publication contract.
 
-    A/B tiers remain useful for labels and ranking, but both tiers must satisfy
-    the same hard evidence floor before Telegram: 2 independent odds sources,
-    2 bookmaker/price confirmations, 2 context sources, and a line-movement
-    decision that is either confirmed or final because no regular cron remains.
+    A-tier requires two odds and context sources. Explicit rules_ab B-tier
+    permits one of each, retaining two bookmakers and the final line check.
+    Other profiles retain the default strict evidence floor.
     """
 
     now = (now or datetime.now(UTC)).astimezone(UTC)
@@ -70,8 +70,8 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     hard_books = publish_min_books(settings)
     hard_context = publish_min_context_sources(settings)
     tier_a_books = max(hard_books, _env_int("PUBLISH_TIER_A_MIN_BOOKS", hard_books, hard_books))
-    tier_a_context = max(hard_context, _env_int("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", hard_context, hard_context))
-    tier_a_odds = max(hard_odds, _env_int("PUBLISH_TIER_A_MIN_ODDS_SOURCES", hard_odds, hard_odds))
+    tier_a_context = max(2, hard_context, _env_int("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES", hard_context, hard_context))
+    tier_a_odds = max(2, hard_odds, _env_int("PUBLISH_TIER_A_MIN_ODDS_SOURCES", hard_odds, hard_odds))
     tier_b_books = max(hard_books, _env_int("PUBLISH_TIER_B_MIN_BOOKS", hard_books, hard_books))
     tier_b_context = max(hard_context, _env_int("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", hard_context, hard_context))
     tier_b_odds = max(hard_odds, _env_int("PUBLISH_TIER_B_MIN_ODDS_SOURCES", hard_odds, hard_odds))
@@ -96,7 +96,7 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     report["found_value"] = True
 
     is_a = odds_count >= tier_a_odds and price_or_bookmaker_count >= tier_a_books and context_count >= tier_a_context
-    is_b = odds_count >= tier_b_odds and price_or_bookmaker_count >= tier_b_books and context_count >= tier_b_context
+    is_b = b_tier_enabled(settings) and odds_count >= tier_b_odds and price_or_bookmaker_count >= tier_b_books and context_count >= tier_b_context
     movement_status = str(movement.get("status") or "")
     movement_ready = movement_status in {"movement_confirmed", "publish_now_no_next_cron"} and bool(movement.get("passed"))
     reasons: list[str] = []

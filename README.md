@@ -74,3 +74,7 @@ python -m app.cli reporting-sqlite
 ## Что не хранить в репозитории
 
 Не коммитьте `.env`, `.logs`, `artifacts`, `__pycache__`, локальные базы и временные выгрузки. Они уже закрыты `.gitignore`.
+
+## Проверка исправлений pipeline
+
+[Ручной запуск тестовой ветки и диагностика Telegram](docs/MANUAL_PIPELINE_TEST.md).

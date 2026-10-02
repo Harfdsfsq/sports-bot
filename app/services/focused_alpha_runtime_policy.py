@@ -9,6 +9,7 @@ SETTLEMENT_PAGINATION_PATCH: dict[str, Any] = {"status": "disabled", "publicatio
 _PATCHES_INSTALLED = False
 
 RULES_AB_INVARIANTS = {
+    "FOCUSED_ALPHA_ENABLED": "false",
     "PUBLICATION_PROFILE": "rules_ab",
     "PUBLISH_ALLOW_B_TIER": "true",
     "PUBLISH_COVERAGE_TIER_MODE": "a_or_b",

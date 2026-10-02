@@ -217,11 +217,13 @@ def health_rows() -> dict[str, dict[str, Any]]:
 
 def compact_runtime(name: str, row: dict[str, Any]) -> str:
     stats = row.get("stats") if isinstance(row.get("stats"), dict) else {}; status = row.get("status") if isinstance(row.get("status"), dict) else {}; src = stats or status or row
-    matches = row.get("matches_with_data", src.get("contexts_built", src.get("matches_built", src.get("offers_parsed"))))); items = row.get("items_total"); parts: list[str] = []
+    matches = row.get("matches_with_data", src.get("contexts_built", src.get("matches_built", src.get("offers_parsed")))); items = row.get("items_total"); parts: list[str] = []
     if matches is not None: parts.append(f"data {matches}/{items if items is not None else matches}")
     for key in ("requests", "response_errors", "contexts_built", "matches_considered", "weatherapi_requests", "openweathermap_requests", "weatherapi_enriched", "openweathermap_enriched", "cache_hits", "no_weather_payload", "budget_exhausted", "events_matched", "offers_parsed", "fixtures_fetched", "matches_built"):
         value = src.get(key)
-        if value not in (None, "", [], {}): parts.append(f"{{'requests':'req','response_errors':'err'}.get(key,key)} {value}")
+        if value not in (None, "", [], {}):
+            label = {"requests": "req", "response_errors": "err"}.get(key, key)
+            parts.append(f"{label} {value}")
     if src.get("enabled") is False and not parts: parts.append("disabled")
     return ", ".join(parts) if parts else "нет runtime-строки"
 

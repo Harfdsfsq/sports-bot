@@ -8,6 +8,8 @@ from app.services.publication_tiers import classify_publication_tier
 
 
 def test_rules_b_tier_can_publish_after_final_line_check(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("PUBLICATION_PROFILE", "rules_ab")
+    monkeypatch.setenv("PUBLISH_ALLOW_B_TIER", "true")
     monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", str(tmp_path / "line-movement.json"))
     monkeypatch.setenv("PUBLISH_MIN_ODDS_SOURCES", "1")
     monkeypatch.setenv("PUBLISH_MIN_CONTEXT_SOURCES", "1")
@@ -19,6 +21,8 @@ def test_rules_b_tier_can_publish_after_final_line_check(tmp_path, monkeypatch) 
     monkeypatch.setenv("PUBLISH_TIER_B_MIN_CONTEXT_SOURCES", "1")
     monkeypatch.setenv("PUBLISH_TIER_B_MIN_BOOKS", "2")
 
+    # Test the explicit interval mode, independently of wall-clock cron anchors.
+    monkeypatch.setenv("LINE_MOVEMENT_USE_SCHEDULED_CRON", "false")
     now = datetime(2026, 7, 30, 15, tzinfo=UTC)
     candidate = CandidateBet(
         match_key="soccer|home|away|2026-07-30", sport_key="soccer",
@@ -53,3 +57,8 @@ def test_rules_b_tier_can_publish_after_final_line_check(tmp_path, monkeypatch) 
     assert decision.report["bookmakers_or_price_confirmations_count"] == 2
     assert decision.report["context_sources_count"] == 1
     assert decision.report["line_movement"]["status"] == "publish_now_no_next_cron"
+
+    assert decision.report["tier_thresholds"]["A"]["min_independent_odds_sources"] == 2
+    assert decision.report["tier_thresholds"]["A"]["min_context_sources"] == 2
+    monkeypatch.setenv("PUBLISH_ALLOW_B_TIER", "false")
+    assert classify_publication_tier(candidate, settings, now=now).passed is False

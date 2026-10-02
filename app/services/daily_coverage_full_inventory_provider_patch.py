@@ -149,6 +149,9 @@ def _match_identities(match: Any, tz: Any) -> set[tuple[str, tuple[str, str]]]:
 
 
 def _focused_model_scope(runner: Any, matches: list[Any]) -> tuple[list[Any], bool]:
+    from app.services.focused_alpha import enabled
+    if not enabled():
+        return matches, False
     plan = load_plan()
     focus = plan.get("focused_alpha") if isinstance(plan.get("focused_alpha"), dict) else {}
     declared = bool(focus) and plan.get("fixed_300_provider_target") is False

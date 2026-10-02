@@ -11,7 +11,7 @@ import os
 import re
 from typing import Any
 
-from app.services.publication_thresholds import publish_floor
+from app.services.publication_thresholds import publish_floor, source_floor
 
 ODDS_SOURCE_FIELDS = (
     "odds_sources",
@@ -356,7 +356,7 @@ def rejection_reasons(candidate: Any) -> list[str]:
     price_sources_count = int(report["price_sources_count"])
     bookmakers_count = int(report["exact_line_bookmakers_count"])
     reasons: list[str] = []
-    min_price_sources = max(publish_floor(), _as_int(os.getenv("STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES"), publish_floor()))
+    min_price_sources = max(source_floor(), _as_int(os.getenv("STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES"), source_floor()))
     if price_sources_count < min_price_sources:
         reasons.append(f"price_sources_below_min:{price_sources_count}/{min_price_sources}")
     min_books = max(publish_floor(), _as_int(os.getenv("STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS"), publish_floor()))

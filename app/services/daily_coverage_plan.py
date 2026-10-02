@@ -367,7 +367,13 @@ def prepare_daily_coverage(now: datetime | None = None) -> dict[str, Any]:
 
 def load_plan() -> dict[str, Any]:
     value = load(PLAN_PATH, {})
-    return value if isinstance(value, dict) else {}
+    if not isinstance(value, dict):
+        return {}
+    # Restored exports are not authoritative for a different Actions run.
+    current_run = os.getenv("GITHUB_RUN_ID", "").strip()
+    if current_run and str(value.get("run_id") or "") != current_run:
+        return {}
+    return value
 
 
 def provider_timeout(name: str) -> float | None:

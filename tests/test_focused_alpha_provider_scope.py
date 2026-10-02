@@ -5,6 +5,12 @@ from types import SimpleNamespace
 
 from app.services import daily_coverage_full_inventory_provider_patch as scope
 from app.services import daily_coverage_plan as coverage_plan
+import pytest
+
+@pytest.fixture(autouse=True)
+def explicit_focus(monkeypatch):
+    monkeypatch.setenv("FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED", "true")
+    monkeypatch.setenv("FOCUSED_ALPHA_ENABLED", "true")
 
 
 def test_explicit_empty_assignment_is_declared(monkeypatch) -> None:

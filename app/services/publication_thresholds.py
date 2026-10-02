@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-"""Shared publication threshold helpers for HARIZON.
+"""Shared publication floors.
 
-The production publication contract is strict:
-
-* at least 2 independent odds sources;
-* at least 2 bookmaker/price confirmations;
-* at least 2 independent context sources.
-
-Tiers still exist for ranking and threshold labels, but B-tier is not allowed to
-downgrade source coverage below the documented minimums.
+The default contract requires two odds and context sources. Only the explicit
+rules_ab profile with B-tier enabled can use one of each, while always requiring
+two bookmakers. A-tier retains the stricter source requirements.
 """
 
 import os
@@ -56,20 +51,25 @@ def publish_floor(settings: Any | None = None) -> int:
     return 2
 
 
+def source_floor(settings: Any | None = None) -> int:
+    profile = os.getenv("PUBLICATION_PROFILE", "").strip().lower()
+    return 1 if profile == "rules_ab" and b_tier_enabled(settings) else 2
+
+
 def publish_min_odds_sources(settings: Any | None = None, default: int | None = None) -> int:
-    fallback = publish_floor(settings) if default is None else int(default)
+    fallback = source_floor(settings) if default is None else int(default)
     setting_value = getattr(settings, "min_sources_publish", None) if settings is not None else None
     raw = os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("TELEGRAM_MIN_ODDS_SOURCES") or os.getenv("MIN_SOURCES_PUBLISH")
     value = as_int(raw if raw not in (None, "") else setting_value, fallback)
-    return max(publish_floor(settings), value)
+    return max(source_floor(settings), value)
 
 
 def publish_min_context_sources(settings: Any | None = None, default: int | None = None) -> int:
-    fallback = publish_floor(settings) if default is None else int(default)
+    fallback = source_floor(settings) if default is None else int(default)
     setting_value = getattr(settings, "min_context_sources_publish", None) if settings is not None else None
     raw = os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH")
     value = as_int(raw if raw not in (None, "") else setting_value, fallback)
-    return max(publish_floor(settings), value)
+    return max(source_floor(settings), value)
 
 
 def publish_min_books(settings: Any | None = None, default: int | None = None) -> int:
@@ -82,9 +82,9 @@ def publish_min_books(settings: Any | None = None, default: int | None = None) -
 
 def controlled_fallback_min_odds_sources(settings: Any | None = None) -> int:
     raw = os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES")
-    return max(publish_floor(settings), as_int(raw, publish_min_odds_sources(settings)))
+    return max(source_floor(settings), as_int(raw, publish_min_odds_sources(settings)))
 
 
 def controlled_fallback_min_context_sources(settings: Any | None = None) -> int:
     raw = os.getenv("CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES")
-    return max(publish_floor(settings), as_int(raw, publish_min_context_sources(settings)))
+    return max(source_floor(settings), as_int(raw, publish_min_context_sources(settings)))

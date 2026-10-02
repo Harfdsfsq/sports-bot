@@ -2,6 +2,20 @@ name: run-bot-rules
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Проверка без отправки в Telegram"
+        type: boolean
+        default: true
+      max_picks:
+        description: "Максимум прогнозов за запуск"
+        type: choice
+        options: ["1", "2"]
+        default: "2"
+      use_secondary_odds_account:
+        description: "Включить второй аккаунт odds-api.io (проверьте тариф)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,17 +37,23 @@ jobs:
       PUBLICATION_PROFILE: rules_ab
       RULES_COMPLIANT_PIPELINE_ENABLED: "true"
       PREDICTION_PUBLICATION_ENABLED: "true"
-      PUBLISH_DRY_RUN: "false"
+      PUBLISH_DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+      RUN_REPORT_ENABLED: "false"
+      DAILY_REPORT_ENABLED: "false"
+      ENHANCED_RUN_REPORT_SEND_TELEGRAM: "false"
+      NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: "false"
       PUBLISH_ALLOW_B_TIER: "true"
       PUBLISH_COVERAGE_TIER_MODE: a_or_b
       HARIZON_PUBLICATION_TIER_MODE: a_or_b
       FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED: "false"
+      FOCUSED_ALPHA_ENABLED: "false"
       HARIZON_AUTONOMOUS_ACCUMULATION_MODE: "false"
       LEGACY_RUNTIME_EXTENSIONS_ENABLED: "false"
       PUBLISH_WINDOW_HOURS: "24"
       RUN_DAYS_AHEAD: "2"
       MIN_KICKOFF_LEAD_MINUTES: "20"
-      MAX_PICKS_PER_RUN: "5"
+      MAX_PICKS_PER_RUN: ${{ inputs.max_picks || '2' }}
+      CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN: ${{ inputs.max_picks || '2' }}
       DAY_INVENTORY_TARGET_SIZE: "300"
       DAY_INVENTORY_MAX_MATCHES: "300"
       DAY_INVENTORY_MIN_UPCOMING_MATCHES: "0"
@@ -61,6 +81,7 @@ jobs:
       PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION: "true"
       PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE: "true"
       STRICT_PRICE_COUNT_API_ACCOUNTS_AS_SOURCES: "false"
+      CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT: "false"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
       CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "true"
       CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"
@@ -68,8 +89,8 @@ jobs:
       CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "1"
       CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES: "1"
       CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES: "1"
-      PUBLICATION_ALLOWED_MARKET_FAMILIES: totals,spreads,h2h,btts,dnb,doubleChance,teamTotals
-      HARIZON_ALLOWED_PUBLICATION_FAMILIES: totals,spreads,h2h,btts,dnb,doubleChance,teamTotals
+      PUBLICATION_ALLOWED_MARKET_FAMILIES: totals
+      HARIZON_ALLOWED_PUBLICATION_FAMILIES: totals
       PUBLISH_REQUIRE_LINE_MOVEMENT: "true"
       LINE_MOVEMENT_GUARD_ENABLED: "true"
       LINE_MOVEMENT_MIN_SNAPSHOTS: "2"
@@ -100,16 +121,16 @@ jobs:
       SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "150"
       SSTATS_CONTEXT_MATCH_LIMIT: "300"
       SSTATS_LOOKBACK_DAYS: "45"
-      SPORTLOGIC_ENABLED: "true"
-      ENABLE_SPORTLOGIC: "true"
+      SPORTLOGIC_ENABLED: "false"
+      ENABLE_SPORTLOGIC: "false"
       SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "30"
       SPORTLOGIC_MATCH_LIMIT: "100"
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-      ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
-      ODDS_API_IO_KEY2: ${{ secrets.ODDS_API_IO_KEY2 || secrets.ODDS_API_IO_KEY_2 }}
+      ODDS_API_IO_KEY_2: ${{ inputs.use_secondary_odds_account && secrets.ODDS_API_IO_KEY_2 || '' }}
+      ODDS_API_IO_KEY2: ${{ inputs.use_secondary_odds_account && (secrets.ODDS_API_IO_KEY2 || secrets.ODDS_API_IO_KEY_2) || '' }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
@@ -123,6 +144,10 @@ jobs:
           cache-dependency-path: requirements.txt
       - name: Prepare state paths
         run: |
+          # Ignore generated state and reports committed to the repository.
+          rm -rf .data/day_inventory .data/cache/day_inventory .data/cache/line_history .data/line_history .data/exports
+          rm -f .data/state.json .data/candidate-lifecycle-state.json .data/published-candidate-index.json .data/fallback-sent-index.json .logs/debug-last-run.json
+          echo "RUN_STARTED_AT_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
           mkdir -p .data/exports .data/day_inventory .data/cache/day_inventory .data/line_history artifacts/run-bot-rules
           echo "CACHE_DATE=$(TZ=Europe/Moscow date +%F)" >> "$GITHUB_ENV"
       - name: Restore cumulative inventory and publication state
@@ -132,32 +157,45 @@ jobs:
             .data/day_inventory
             .data/cache/day_inventory
             .data/line_history
+            .data/cache/line_history
             .data/state.json
             .data/candidate-lifecycle-state.json
             .data/published-candidate-index.json
             .data/fallback-sent-index.json
-          key: rules-state-${{ env.CACHE_DATE }}-${{ github.run_id }}
+          key: rules-test-${{ github.ref_name }}-${{ inputs.dry_run }}-${{ env.CACHE_DATE }}-${{ github.run_id }}
           restore-keys: |
-            rules-state-${{ env.CACHE_DATE }}-
-            run-bot-day-inventory-${{ env.CACHE_DATE }}-
-            provider-smoke-day-inventory-${{ env.CACHE_DATE }}-
+            rules-test-${{ github.ref_name }}-${{ inputs.dry_run }}-${{ env.CACHE_DATE }}-
+            rules-test-${{ github.ref_name }}-${{ inputs.dry_run }}-
       - name: Install dependencies
         run: pip install --disable-pip-version-check -r requirements.txt
       - name: Build inventory only when missing
         shell: bash
         run: |
-          if [[ ! -s .data/day_inventory/today.json && ! -s .data/day_inventory/current.json && ! -s .data/day_inventory/latest.json ]]; then
+          if [[ ! -s ".data/day_inventory/${CACHE_DATE}.json" ]]; then
             python -u scripts/build_day_inventory_core_v3.py
           fi
           python -u scripts/expand_day_inventory_to_target.py || true
           python -u scripts/guard_day_inventory_no_shrink.py snapshot || true
       - name: Run prediction pipeline
         shell: bash
-        run: timeout 1500s python -u -m app.cli run-once 2>&1 | tee .data/exports/latest-run-bot-rules.log
-      - name: Evaluate guarded B-tier fallback
-        if: always()
+        id: pipeline
+        continue-on-error: true
         run: |
-          python -u scripts/publish_controlled_fallback_guarded.py || true
+          if [[ "$PUBLISH_DRY_RUN" == "true" ]]; then
+            unset TELEGRAM_BOT_TOKEN TELEGRAM_TOKEN TELEGRAM_CHAT_ID
+          fi
+          set -o pipefail
+          timeout 1500s python -u -m app.cli run-once 2>&1 | tee .data/exports/latest-run-bot-rules.log
+      - name: Evaluate guarded B-tier fallback
+        if: steps.pipeline.outcome == 'success'
+        id: fallback
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [[ "$PUBLISH_DRY_RUN" == "true" ]]; then
+            unset TELEGRAM_BOT_TOKEN TELEGRAM_TOKEN TELEGRAM_CHAT_ID
+          fi
+          python -u scripts/run_manual_fallback.py
           python -u scripts/persist_awaiting_movement_candidates.py || true
       - name: Accumulate coverage without rebuilding identities
         if: always()
@@ -165,6 +203,14 @@ jobs:
           python -u scripts/accumulate_latest_matches_into_day_inventory.py || true
           python -u scripts/merge_run_coverage_into_day_inventory.py || true
           python -u scripts/guard_day_inventory_no_shrink.py repair || true
+      - name: Report this run
+        if: always()
+        id: report
+        continue-on-error: true
+        env:
+          PIPELINE_OUTCOME: ${{ steps.pipeline.outcome }}
+          FALLBACK_OUTCOME: ${{ steps.fallback.outcome }}
+        run: python -u scripts/send_pipeline_run_report.py
       - name: Save cumulative state
         if: always()
         uses: actions/cache/save@v4
@@ -173,11 +219,12 @@ jobs:
             .data/day_inventory
             .data/cache/day_inventory
             .data/line_history
+            .data/cache/line_history
             .data/state.json
             .data/candidate-lifecycle-state.json
             .data/published-candidate-index.json
             .data/fallback-sent-index.json
-          key: rules-state-${{ env.CACHE_DATE }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: rules-test-${{ github.ref_name }}-${{ inputs.dry_run }}-${{ env.CACHE_DATE }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v5
@@ -192,3 +239,13 @@ jobs:
           if-no-files-found: ignore
           include-hidden-files: true
           retention-days: 14
+      - name: Check pipeline and delivery status
+        if: always()
+        env:
+          PIPELINE_OUTCOME: ${{ steps.pipeline.outcome }}
+          FALLBACK_OUTCOME: ${{ steps.fallback.outcome }}
+          REPORT_OUTCOME: ${{ steps.report.outcome }}
+        run: |
+          test "$PIPELINE_OUTCOME" = "success"
+          test "$FALLBACK_OUTCOME" = "success"
+          test "$REPORT_OUTCOME" = "success"

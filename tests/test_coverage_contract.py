@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
+import pytest
+
 from app.config import Settings
 from app.schemas import CandidateBet
 from app.services.coverage_contract import evaluate_publish_candidate, odds_sources_for_candidate
@@ -10,6 +12,13 @@ from app.services.core_provider_inventory_bridge import _counts, _normalize_row
 from app.services.runner import PredictionRunner
 
 UTC = timezone.utc
+
+
+@pytest.fixture(autouse=True)
+def strict_contract(monkeypatch):
+    # This module verifies the strict default, independently of runtime bootstrap.
+    monkeypatch.setenv("PUBLICATION_PROFILE", "strict")
+
 
 
 def candidate(**overrides) -> CandidateBet:

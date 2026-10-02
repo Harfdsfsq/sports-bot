@@ -35,6 +35,9 @@ def _truthy(name: str, default: bool = True) -> bool:
 
 
 def enabled() -> bool:
+    # An explicitly disabled runtime policy must also disable cohort selection.
+    if os.getenv("FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED") is not None and not _truthy("FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED", False):
+        return False
     return _truthy("FOCUSED_ALPHA_ENABLED", True)
 
 
