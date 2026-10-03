@@ -726,6 +726,9 @@ class BzzoiroContextProvider:
     def _event_to_context(self, event: dict[str, Any] | None, match_quality: str | None) -> MatchContext | None:
         if not isinstance(event, dict) or not event:
             return None
+        if os.getenv("PUBLICATION_PROFILE", "").lower() == "daily_quality":
+            # Event odds cannot serve as an independent sporting model/context.
+            return None
 
         home_price = self._to_float(event.get("odds_home"))
         draw_price = self._to_float(event.get("odds_draw"))

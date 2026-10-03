@@ -1190,7 +1190,7 @@ class PredictionQualityService:
 
         if float(candidate.confidence) + confidence_relief < min_confidence:
             return 'quality_high_odds_confidence_guard'
-        if int(candidate.books_count) < int(self._setting('quality_high_odds_min_books', 2) or 2):
+        if int(candidate.books_count) < (1 if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' else int(self._setting('quality_high_odds_min_books', 2) or 2)):
             return 'quality_high_odds_books_guard'
         if float(candidate.edge_pct) < float(self._setting('quality_high_odds_min_edge_pct', 6.0) or 6.0):
             return 'quality_high_odds_edge_guard'

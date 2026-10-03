@@ -285,3 +285,57 @@ def test_delivery_error_keeps_first_acknowledgement(profile, monkeypatch):
     assert count == len(bets) == 1
     assert acknowledged == ['ok']
     assert publisher.delivery_errors == ['RuntimeError']
+
+
+def test_native_imports_do_not_install_legacy_patches(tmp_path):
+    import subprocess
+    import sys
+    root = str(Path(__file__).parents[1])
+    env = dict(os.environ, PUBLICATION_PROFILE='daily_quality', PYTHONPATH=root)
+    code = "import sys; import app.providers; from app.services.daily_quality_runner import DailyQualityRunner; from scripts.sanitize_daily_artifacts import sanitize; assert 'app.services.strict_coverage_native_activation' not in sys.modules; assert 'app.services.autonomous_accumulation_persistence' not in sys.modules; assert 'app.cli' not in sys.modules"
+    subprocess.run([sys.executable, '-c', code], cwd=tmp_path, env=env, check=True, capture_output=True)
+    assert not (tmp_path / '.data/exports').exists()
+
+
+def test_night_coverage_counts_real_context_form_and_weather(tmp_path):
+    now = datetime(2026, 10, 3, 20, 13, tzinfo=UTC)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now, 90)
+    r.sync([m])
+    r.record('odds_api_io', 'offers', [m], {m.match_key: [Offer('odds_api_io', 'Bet365', 'totals', 'Under', 1.9, 2.5)]}, {}, observed_at=now)
+    weather = MatchContext('weather', {}, details={'weather_context_applied': True})
+    r.record('weather', 'context', [m], {m.match_key: weather}, {}, observed_at=now)
+    assert not r.has_role(m, 'context')
+    assert r.observation(m, 'context') is None
+    ctx = MatchContext('sstats_form', {}, expected_home=1, expected_away=1, details={'home_recent_count': 7, 'away_recent_count': 8})
+    r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
+    c = r.coverage()
+    assert c['inventory'] == 0 and c['lookahead'] == 1
+    assert c['near_ready'] == c['near_line'] == c['near_context'] == 1
+    assert c['form'] == c['weather'] == 1
+
+
+def test_daily_model_book_floor_and_family_policy(profile):
+    from app.services.coverage_planner import CoveragePlanner
+    from app.services.model import CandidateFactory
+    settings = Settings(_env_file=None)
+    assert CandidateFactory(settings)._required_publish_books(SimpleNamespace()) == 1
+    assert CandidateFactory(settings)._required_books_for_bucket("teamTotals", 1.5, [], None) == 1
+    assert CoveragePlanner(settings).min_books == 1
+    now = datetime.now(UTC)
+    c = candidate(now)
+    c.family = 'h2h'
+    assert 'market_outside_daily_policy' in quality_decision(c, {'odds_sources_count': 1, 'context_sources_count': 1, 'books_count': 1}, now=now)[1]
+
+
+def test_report_groups_reasons_and_explains_midnight(profile):
+    text = render({'current_time_local': '2026-10-03T23:15:00+03:00', 'dry_run': True, 'rejections': {'edge_below_threshold': 32, 'ev_below_threshold': 10, 'unsupported_total_line': 56}, 'daily_quality': {'coverage': {'inventory': 28, 'lookahead': 60, 'near': 60, 'near_ready': 27, 'near_line': 31, 'near_context': 34, 'near_missing_line': 29, 'near_missing_context': 26, 'form': 34, 'weather': 30}}})
+    assert 'ценность ниже порога: 42' in text
+    assert 'после полуночи' in text and '60' in text
+    assert 'форма 34' in text and 'нет контекста у 26' in text
+
+
+def test_bzzoiro_price_only_event_is_not_sporting_context(profile):
+    from app.providers.bzzoiro import BzzoiroContextProvider
+    provider = BzzoiroContextProvider(Settings(_env_file=None))
+    assert provider._event_to_context({'id': 123, 'odds_home': 1.8, 'odds_away': 4, 'odds_draw': 3.2, 'odds_over_25': 1.9, 'odds_under_25': 1.9}, 'exact') is None

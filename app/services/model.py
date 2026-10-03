@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import os
 from collections import Counter, defaultdict
 from statistics import mean
 from typing import Any
@@ -87,6 +88,11 @@ class CandidateFactory:
                 if not match_candidates and families.get('spreads'):
                     match_candidates.extend(self._build_simple_market_spread_candidates(match, families['spreads'], rejections))
 
+            if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+                allowed = {v.strip().lower() for v in os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES', 'totals,spreads,teamTotals').split(',')}
+                excluded = [c for c in match_candidates if c.family.lower() not in allowed]
+                rejections['market_outside_daily_policy'] += len(excluded)
+                match_candidates = [c for c in match_candidates if c.family.lower() in allowed]
             match_candidates.sort(key=lambda item: self._candidate_rank_key(item), reverse=True)
             if match_candidates:
                 keep_count = max(1, int(getattr(self.settings, 'max_candidates_per_match_pre_filter', 3) or 3))
@@ -2596,6 +2602,8 @@ class CandidateFactory:
 
 
     def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
+        if os.getenv("PUBLICATION_PROFILE", "").lower() == "daily_quality":
+            return 1
         base = self.settings.min_books_for_family(family)
         if base <= 1:
             return 1
@@ -2729,6 +2737,8 @@ class CandidateFactory:
         return False
 
     def _required_publish_books(self, item: CandidateBet) -> int:
+        if os.getenv("PUBLICATION_PROFILE", "").lower() == "daily_quality":
+            return 1
         bucket = self._league_bucket(item)
         base = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
         non_core_base = max(base, int(getattr(self.settings, 'non_core_league_min_books', 2) or 2))
@@ -2885,7 +2895,7 @@ class CandidateFactory:
                 rejections['publication_score_guard'] += 1
                 continue
             if league_bucket in {'other', 'low'}:
-                if int(getattr(item, 'books_count', 0) or 0) < int(getattr(self.settings, 'non_core_league_min_books', 2) or 2):
+                if int(getattr(item, 'books_count', 0) or 0) < (1 if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' else int(getattr(self.settings, 'non_core_league_min_books', 2) or 2)):
                     rejections['non_core_books_guard'] += 1
                     continue
                 if float(item.confidence) < float(getattr(self.settings, 'non_core_league_min_confidence', 65.0) or 68.0):
@@ -2985,7 +2995,7 @@ class CandidateFactory:
                         if total_xg < risky_min_sum_xg:
                             rejections['risky_totals_xg_guard'] += 1
                             continue
-                if item.books_count == 1:
+                if item.books_count == 1 and os.getenv("PUBLICATION_PROFILE", "").lower() != "daily_quality":
                     if item.confidence < 58.0 or item.edge_pct < 7.0:
                         rejections['single_book_total_guard'] += 1
                         continue

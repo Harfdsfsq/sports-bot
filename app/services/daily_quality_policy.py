@@ -34,8 +34,11 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
                 reasons.append(key + '_stale')
         except (ValueError, KeyError, TypeError):
             reasons.append(key + '_missing')
-    if str(summary.get('context_source') or '').lower() in {'market', 'market_signal', 'market_implied_xg', 'model', 'unknown'}:
+    if str(summary.get('context_source') or '').lower() in {'market', 'market_signal', 'market_implied_xg', 'model', 'unknown', 'weather'}:
         reasons.append('synthetic_context')
+    allowed = {v.strip().lower() for v in os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES', 'totals,spreads,teamTotals').split(',')}
+    if candidate.family.lower() not in allowed:
+        reasons.append('market_outside_daily_policy')
     point = getattr(candidate, 'point', None)
     if point is not None and (not math.isfinite(float(point)) or not float(point * 2).is_integer()):
         reasons.append('unsupported_quarter_line')

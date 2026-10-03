@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from app.cli import _redact_log_text
+from app.services.log_redaction import _redact_log_text
 
 
 def sanitize(text, secrets):

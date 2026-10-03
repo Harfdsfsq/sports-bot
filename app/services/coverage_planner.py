@@ -98,7 +98,7 @@ class CoveragePlanner:
         self.settings = settings
         self.min_odds_sources = max(1, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or getattr(settings, "min_sources_publish", 1), 1))
         self.min_context_sources = max(1, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or getattr(settings, "min_context_sources_publish", 1), 1))
-        self.min_books = max(2, _as_int(os.getenv("PUBLISH_MIN_BOOKS") or getattr(settings, "min_books_publish", 2), 2))
+        self.min_books = max(1 if os.getenv("PUBLICATION_PROFILE", "").lower() == "daily_quality" else 2, _as_int(os.getenv("PUBLISH_MIN_BOOKS") or getattr(settings, "min_books_publish", 2), 2))
         self.context_limit = max(0, _as_int(getattr(settings, "context_enrichment_match_limit", 420), 420))
         self.export_path = Path(os.getenv("COVERAGE_PLANNER_EXPORT_PATH", ".data/exports/latest-coverage-planner.json"))
 

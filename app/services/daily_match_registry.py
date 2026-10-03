@@ -104,12 +104,15 @@ class DailyMatchRegistry:
         try:
             if role == 'offers':
                 return [Offer(**row) for row in evidence['payload']]
-            return MatchContext(**evidence['payload'])
+            context = MatchContext(**evidence['payload'])
+            if provider != 'weather' and (context.source in {'bzzoiro_event_odds', 'market_implied_xg', 'market_signal'} or context.details.get('bzzoiro_event_only_context')):
+                return None
+            return context
         except (TypeError, ValueError):
             return None
 
     def has_role(self, match: Match, role: str):
-        providers = {name.split(':')[0] for name in self.data['matches'][match_identity(match)]['evidence'] if name.endswith(':' + role)}
+        providers = {name.split(':')[0] for name in self.data['matches'][match_identity(match)]['evidence'] if name.endswith(':' + role) and (role != 'context' or not name.startswith('weather:'))}
         return any(self.cached(p, role, match) for p in providers)
 
     def targets(self, provider: str, role: str, *, limit: int = 60):
@@ -161,30 +164,38 @@ class DailyMatchRegistry:
         entry = self.data['matches'][match_identity(match)]
         for name, row in entry['evidence'].items():
             provider, kind = name.split(':', 1)
-            if kind == role and self.cached(provider, role, match):
+            if kind == role and (role != 'context' or provider != 'weather') and self.cached(provider, role, match):
                 times.append(row['observed_at'])
         return max(times, default=None)
 
     def coverage(self):
-        result = {'inventory': sum(m.commence_time.astimezone(TZ).date().isoformat() == self.date for m in self.matches()), 'line': 0, 'context': 0, 'ready': 0, 'near': 0, 'near_ready': 0, 'form': 0, 'standings': 0, 'weather': 0, 'collected_line': 0, 'collected_context': 0}
+        result = {'inventory': sum(m.commence_time.astimezone(TZ).date().isoformat() == self.date for m in self.matches()), 'line': 0, 'context': 0, 'ready': 0, 'near': 0, 'near_ready': 0, 'form': 0, 'standings': 0, 'weather': 0, 'collected_line': 0, 'collected_context': 0, 'lookahead': 0, 'near_line': 0, 'near_context': 0, 'near_missing_line': 0, 'near_missing_context': 0}
         for match in self.matches():
             line, context = self.has_role(match, 'offers'), self.has_role(match, 'context')
             near = 30 <= (match.commence_time - self.now).total_seconds() / 60 <= 240
             result['near'] += near
             result['near_ready'] += bool(near and line and context)
+            result['near_line'] += bool(near and line)
+            result['near_context'] += bool(near and context)
+            result['near_missing_line'] += bool(near and not line)
+            result['near_missing_context'] += bool(near and not context)
+            evidence = self.data['matches'][match_identity(match)]['evidence']
+            details = [row['payload'].get('details', {}) for name, row in evidence.items() if name.endswith(':context') and self.cached(name.split(':')[0], 'context', match)]
+            if near:
+                form = any((d.get('home_recent_count') or 0) > 0 and (d.get('away_recent_count') or 0) > 0 for d in details)
+                result['form'] += form or any('form' in str(field).lower() and value not in (None, '', [], {}) for d in details for field, value in d.items())
+                result['standings'] += any(any(token in str(field).lower() for token in ('standing', 'table')) and value not in (None, '', [], {}) for d in details for field, value in d.items())
+                result['weather'] += bool(self.cached('weather', 'context', match))
             if match.commence_time.astimezone(TZ).date().isoformat() != self.date:
+                result['lookahead'] += 1
                 continue
             entry = self.data['matches'][match_identity(match)]
             result['collected_line'] += any(name.endswith(':offers') and row['payload'] for name, row in entry['evidence'].items())
-            result['collected_context'] += any(name.endswith(':context') and row['payload'] for name, row in entry['evidence'].items())
+            result['collected_context'] += any(name.endswith(':context') and not name.startswith('weather:') and row['payload'] for name, row in entry['evidence'].items())
             line, context = self.has_role(match, 'offers'), self.has_role(match, 'context')
             result['line'] += bool(line)
             result['context'] += bool(context)
             result['ready'] += bool(line and context)
-            evidence = self.data['matches'][match_identity(match)]['evidence']
-            details = [row['payload'].get('details', {}) for name, row in evidence.items() if name.endswith(':context') and self.cached(name.split(':')[0], 'context', match)]
-            for key, tokens in [('form', ('form', 'last_games')), ('standings', ('standing', 'table')), ('weather', ('weather',))]:
-                result[key] += any(any(token in str(field).lower() for token in tokens) for d in details for field, value in d.items() if value not in (None, '', [], {}))
         return result
 
     def save(self):

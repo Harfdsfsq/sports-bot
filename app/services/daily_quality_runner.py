@@ -46,6 +46,8 @@ class DailyTelegramPublisher(TelegramPublisher):
 class DailyQualityRunner(PredictionRunner):
     def __init__(self, settings):
         super().__init__(settings)
+        # The legacy v2 adapter depends on monkey patches and constructs invalid contexts.
+        self.bzzoiro = self._safe_provider("app.providers.bzzoiro", "BzzoiroContextProvider")
         self.telegram = DailyTelegramPublisher(settings)
         self.telegram.on_confirm = self._record_confirmed
         self.registry = DailyMatchRegistry(Path('.data/daily_quality/registry.json'), datetime.now(UTC))
@@ -64,6 +66,7 @@ class DailyQualityRunner(PredictionRunner):
         self.registry.sync(matches)
         # At the end of the day, cover fixtures beyond Moscow midnight as well.
         next_matches, _ = self._load_day_inventory_matches(datetime.now(UTC) + timedelta(days=1))
+        self.next_day_inventory_count = len(next_matches)
         self.registry.sync([m for m in next_matches if m.commence_time <= datetime.now(UTC) + timedelta(hours=4)])
         self.inventory_matches = self.registry.matches()
         if not self.inventory_matches:
@@ -190,7 +193,7 @@ class DailyQualityRunner(PredictionRunner):
             summary = await super().run_once()
             summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
             self.registry.now = datetime.now(UTC)
-            summary['daily_quality'] = {'coverage': self.registry.coverage(), 'published_today': self.registry.data['published'], 'rejections': dict(self.daily_rejections), 'selected': [{'match': f'{c.home_team} — {c.away_team}', 'tier': c.source_summary['publication_tier'], 'quality': c.source_summary.get('quality_score'), 'odds': c.odds} for c in self.selected_daily]}
+            summary['daily_quality'] = {'coverage': self.registry.coverage(), 'next_day_inventory': getattr(self, 'next_day_inventory_count', 0), 'published_today': self.registry.data['published'], 'rejections': dict(self.daily_rejections), 'selected': [{'match': f'{c.home_team} — {c.away_team}', 'tier': c.source_summary['publication_tier'], 'quality': c.source_summary.get('quality_score'), 'odds': c.odds, 'selection': c.selection, 'kickoff_utc': c.commence_time.isoformat(), 'probability_pct': round(c.adjusted_probability * 100, 1), 'ev_pct': round(c.ev_pct, 1), 'stake_amount': c.stake_amount} for c in self.selected_daily]}
             write_json('.data/exports/latest-run-summary.json', summary)
             return summary
         finally:
