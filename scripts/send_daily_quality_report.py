@@ -32,6 +32,7 @@ REASONS = {
     'quality_bad_historical_segment_guard': 'неблагоприятные результаты похожих прогнозов',
     'daily_price_observed_at_stale': 'коэффициент устарел',
     'daily_context_observed_at_stale': 'контекст устарел',
+    'already_published_match': 'на этот матч рекомендация уже отправлена',
     'final_kickoff_window': 'до начала осталось меньше 30 минут',
     'kickoff_outside_30m_4h': 'матч вне окна от 30 минут до 4 часов',
 }
@@ -49,7 +50,7 @@ def render(summary):
              '', '📦 Дневной инвентарь — ' + str(summary.get('current_time_local', '')[:10]), f"Собрано {c.get('inventory', 0)}/300 матчей. Каждый матч имеет постоянную привязку к командам и времени начала.",
              f"Данные получены за день: линия {c.get('collected_line', 0)}, контекст {c.get('collected_context', 0)}.",
              f"Актуально сейчас: линия {c.get('line', 0)}, контекст {c.get('context', 0)}, оба вида данных {c.get('ready', 0)}.",
-             f"Инвентарь следующего дня: {daily.get('next_day_inventory', 0)}/300 матчей подготовлено.",
+             f"Инвентарь следующего дня: {str(daily.get('next_day_inventory', 0)) + '/300 матчей подготовлено' if daily.get('next_day_inventory') else 'будет подготовлен вечером; сейчас приоритет у текущего дня'}.",
              f"Матчей после полуночи в очереди ближайшего окна: {c.get('lookahead', 0)}. Они считаются отдельно от сегодняшних 300.",
              '', '⏱️ Ближайшее окно — 4 часа', f"Матчей с запасом 30+ минут: {c.get('near', 0)}. С актуальной линией и контекстом: {c.get('near_ready', 0)}.",
              f"В этом окне: линия {c.get('near_line', 0)}, спортивный контекст {c.get('near_context', 0)}; нет линии у {c.get('near_missing_line', 0)}, нет контекста у {c.get('near_missing_context', 0)}.",

@@ -48,6 +48,11 @@ class DailyMatchRegistry:
         self.path, self.now = Path(path), now.astimezone(UTC)
         self.date = now.astimezone(TZ).date().isoformat()
         payload = read_json(path, {})
+        # Retain acknowledged-match markers even when the sending day rolls over.
+        for publication in payload.get('published', []):
+            entry = payload.get('matches', {}).get(publication.get('match_id'))
+            if entry is not None:
+                entry['publication'] = publication
         if payload.get('date_local') == self.date:
             self.data = payload
         else:
@@ -127,7 +132,10 @@ class DailyMatchRegistry:
             attempt = entry['attempts'].get(provider + ':' + role, {})
             retry = parse_time(attempt.get('retry_after'))
             if retry and self.now < retry:
-                continue
+                attempted = parse_time(attempt.get('at'))
+                urgent_odds_retry = role == 'offers' and minutes <= 120 and attempt.get('result') == 'empty' and attempted is not None and self.now - attempted >= timedelta(minutes=30) and retry - attempted <= timedelta(minutes=120)
+                if not urgent_odds_retry:
+                    continue
             lane = 0 if minutes <= 240 else 1 if minutes <= 480 else 2
             ranked.append(((lane, self.has_role(match, role), minutes), match))
         ranked.sort(key=lambda item: item[0])
@@ -153,10 +161,12 @@ class DailyMatchRegistry:
                     observed = payload.get('details', {}).get('daily_source_observed_at') or observed
                 entry['evidence'][provider + ':' + role] = {'observed_at': observed, 'payload': payload}
             # Empty or unavailable endpoints are retried in a later run, not in a tight loop.
-            delay = 0 if value else 120
-            if stats.get('auth_error') or stats.get('plan_restriction'):
+            near = 30 <= (match.commence_time - fetched).total_seconds() / 60 <= 120
+            delay = 0 if value else 30 if role == 'offers' and near else 120
+            unavailable = bool(stats.get('auth_error') or stats.get('plan_restriction'))
+            if unavailable:
                 delay = 1440
-            entry['attempts'][provider + ':' + role] = {'at': fetched.isoformat(), 'retry_after': (fetched + timedelta(minutes=delay)).isoformat(), 'result': 'data' if value else 'empty'}
+            entry['attempts'][provider + ':' + role] = {'at': fetched.isoformat(), 'retry_after': (fetched + timedelta(minutes=delay)).isoformat(), 'result': 'data' if value else 'unavailable' if unavailable else 'empty'}
         self.save()
 
     def observation(self, match, role):

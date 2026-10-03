@@ -443,3 +443,107 @@ def test_sstats_alias_and_weather_are_not_extra_sporting_apis(profile):
     c = factory._candidate_from_bucket(match=m, family='totals', selection='Under', point=2.5, offers=[offer], market_prob=.5, model_prob=.65, reasons=[], expected_home=1., expected_away=1., model_mode='xg_total', context=ctx)
     assert c.source_summary['context_sources'] == ['sstats']
     assert c.source_summary['context_sources_count'] == 1
+
+
+def test_publication_contract_does_not_restore_sstats_alias_as_confirmation(profile):
+    from app.services.coverage_contract import evaluate_publish_candidate, sync_candidate_publish_coverage
+    c = SimpleNamespace(source_summary={'context_source': 'sstats_form', 'context_sources': ['sstats', 'sstats_form', 'weather'], 'context_sources_count': 3, 'sources': ['odds_api_io'], 'books': ['Bet365']}, books_count=1, sources_count=1)
+    sync_candidate_publish_coverage(c, Settings(_env_file=None))
+    assert c.source_summary['context_sources'] == ['sstats']
+    assert c.source_summary['context_sources_count'] == 1
+    c.source_summary = {'context_source': 'weather', 'context_sources': ['weather'], 'context_sources_count': 99, 'sources': ['odds_api_io'], 'books': ['Bet365']}
+    decision = evaluate_publish_candidate(c, Settings(_env_file=None))
+    assert not decision.passed
+    assert decision.report['context_sources_count'] == 0
+
+
+def miami_candidate(now):
+    from app.schemas import CandidateBet
+    return CandidateBet(match_key='miami', sport_key='soccer', league_name='USL Championship', home_team='Tampa Bay Rowdies', away_team='Miami FC', commence_time=now + timedelta(hours=2), family='spreads', selection='Miami FC', selection_key='away', odds=2.75, fair_odds=1/.43, implied_probability=1/2.75, market_probability=1/2.75, consensus_probability=1/2.75, model_probability=.682, final_probability=.43, adjusted_probability=.43, edge_pct=6.6, ev_pct=18.2, confidence=62.1, books_count=1, sources_count=1, model_mode='xg_spread', point=.5, team_side='away', expected_home=1.29, expected_away=1.54, source_summary={'publication_tier': 'B', 'quality_score': 75.8, 'context_sources_count': 1, 'odds_sources_count': 1, 'model_push_probability': 0.})
+
+
+def test_half_goal_forecast_shows_one_tier_and_no_refund(profile):
+    from app.services.telegram import TelegramPublisher
+    c = miami_candidate(datetime.now(UTC))
+    text = TelegramPublisher(Settings(_env_file=None)).render_message([c])
+    assert 'B-tier' in text and 'Ф2(+0.5)' in text
+    assert 'Профиль сигнала: C' not in text
+    assert 'с учётом возврата' not in text
+    assert 'приоритет — варианты с 2+' not in text
+    assert 'спортивного контекста 1' in text
+    assert '4 часа' in text
+
+
+def test_restored_empty_odds_are_retried_once_near_kickoff(tmp_path):
+    now = datetime(2026, 10, 4, 0, tzinfo=UTC)
+    r = DailyMatchRegistry(tmp_path/'registry.json', now)
+    m = match(now, 100)
+    r.sync([m])
+    r.record('odds_api_io', 'offers', [m], {}, {}, observed_at=now)
+    entry = r.data['matches'][match_identity(m)]
+    # Cached attempts from the previous version used a two-hour backoff.
+    entry['attempts']['odds_api_io:offers']['retry_after'] = (now + timedelta(hours=2)).isoformat()
+    r.now = now + timedelta(minutes=29)
+    assert r.targets('odds_api_io', 'offers') == []
+    r.now = now + timedelta(minutes=30)
+    assert r.targets('odds_api_io', 'offers')[0].match_key == m.match_key
+    r.record('odds_api_io', 'offers', [m], {}, {}, observed_at=r.now)
+    assert r.targets('odds_api_io', 'offers') == []
+
+
+def test_auth_failure_is_not_retried_by_urgent_odds_rule(tmp_path):
+    now = datetime(2026, 10, 4, 0, tzinfo=UTC)
+    r = DailyMatchRegistry(tmp_path/'registry.json', now)
+    m = match(now, 100)
+    r.sync([m])
+    r.record('odds_api_io', 'offers', [m], {}, {'auth_error': True}, observed_at=now)
+    r.now = now + timedelta(minutes=30)
+    assert r.targets('odds_api_io', 'offers') == []
+
+
+def test_report_next_day_not_yet_due_is_not_a_failure(profile):
+    text = render({'daily_quality': {'next_day_inventory': 0}})
+    assert 'будет подготовлен вечером' in text
+    assert 'следующего дня: 0/300' not in text
+
+
+def test_same_match_cannot_be_published_in_another_market_next_run(profile, tmp_path):
+    from collections import Counter
+    now = datetime.now(UTC)
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    runner.registry.data['published'] = [{'match_id': 'miami-id', 'tier': 'B'}]
+    runner.daily_rejections = Counter()
+    c = miami_candidate(now)
+    c.source_summary['registry_match_id'] = 'miami-id'
+    c.stake_amount = 2.5
+    c.bankroll_snapshot = 1000
+    assert runner._select_publishable_candidates([c]) == []
+    assert runner.daily_rejections['already_published_match'] == 1
+
+
+def test_acknowledged_next_day_match_retains_marker_after_midnight(tmp_path):
+    now = datetime(2026, 10, 3, 20, 30, tzinfo=UTC)
+    r = DailyMatchRegistry(tmp_path/'registry.json', now)
+    m = match(now, 120)
+    r.sync([m])
+    identity = match_identity(m)
+    r.data['published'] = [{'match_id': identity, 'tier': 'B', 'at': now.isoformat()}]
+    r.save()
+    next_day = DailyMatchRegistry(r.path, datetime(2026, 10, 3, 21, 1, tzinfo=UTC))
+    assert next_day.data['published'] == []  # Counters reflect actual sending day.
+    assert next_day.data['matches'][identity]['publication']['match_id'] == identity
+
+
+def test_handicap_market_pairs_opposite_signed_lines(profile):
+    from app.services.model import CandidateFactory
+    factory = CandidateFactory(Settings(_env_file=None))
+    away = Offer('odds_api_io', 'Bet365', 'spreads', 'Miami FC', 2.75, .5, team_side='away')
+    home = Offer('odds_api_io', 'Bet365', 'spreads', 'Tampa', 1.425, -.5, team_side='home')
+    wrong_home = Offer('odds_api_io', 'Bet365', 'spreads', 'Tampa', 1.05, .5, team_side='home')
+    p = factory._fair_market_probability_spreads([away], [home, away, wrong_home], away.selection, .5, 'away')
+    expected = (1/2.75) / (1/2.75 + 1/1.425)
+    assert p == pytest.approx(expected)
+    opposite = factory._fair_market_probability_spreads([home], [home, away, wrong_home], home.selection, -.5, 'home')
+    assert p + opposite == pytest.approx(1)

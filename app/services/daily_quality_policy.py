@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -57,3 +58,18 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
         'extra_confirmation_bonus': int(coverage.get('odds_sources_count') or 0) > 1 or int(coverage.get('context_sources_count') or 0) > 1,
         'tier_limits': {'A': {'quality': 78, 'confidence': 70, 'ev': 5, 'edge': 3}, 'B': {'quality': 65, 'confidence': 60, 'ev': 3, 'edge': 2}},
     }
+
+
+def sporting_context_sources(values):
+    """Normalize actual sporting API names; aliases and weather are not extra APIs."""
+    providers = ('sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb')
+    result = set()
+    for value in values:
+        for name in re.split(r'[,;+|:/]', str(value).lower()):
+            name = name.strip()
+            if name in {'bzzoiro_event_odds', 'market_implied_xg', 'market_signal'}:
+                continue
+            for provider in providers:
+                if name == provider or name.startswith(provider + '_'):
+                    result.add(provider)
+    return result

@@ -398,6 +398,10 @@ class TelegramPublisher:
     def _trust_profile_text(self, bet: CandidateBet) -> str:
         if not bool(getattr(self.settings, "telegram_writeup_show_trust_profile", True)):
             return ""
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            sources = bet.source_summary.get('odds_sources_count') or bet.sources_count
+            contexts = bet.source_summary.get('context_sources_count') or 0
+            return f'📚 Данные: источников линии {sources}, спортивного контекста {contexts}. A/B выше — уровень качества отбора.'
         trust = self._trust_profile(bet)
         parts = [
             f"🛡 Профиль сигнала: {trust['grade']} {trust['score']:.1f}/100",
@@ -446,6 +450,9 @@ class TelegramPublisher:
             else "есть подтверждение как минимум у двух букмекеров."
         )
 
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            books_note = 'есть текущая линия и реальный спортивный контекст. Дополнительные букмекеры и API усиливают проверку; A/B определяется качеством и ценностью.'
+
         bank_line = ""
         if bankroll_summary:
             current_bank = float(bankroll_summary.get("current_balance") or 0.0)
@@ -458,9 +465,9 @@ class TelegramPublisher:
             )
 
         header = (
-            f"🔥 {count} лучшая ставка на ближайшие {publish_window_hours} часов\n\n"
+            f"🔥 {count} лучшая ставка на ближайшие {publish_window_hours} {'час' if publish_window_hours == 1 else 'часа' if publish_window_hours in {2, 3, 4} else 'часов'}\n\n"
             if count == 1
-            else f"🔥 {count} лучшие ставки на ближайшие {publish_window_hours} часов\n\n"
+            else f"🔥 {count} лучшие ставки на ближайшие {publish_window_hours} {'час' if publish_window_hours == 1 else 'часа' if publish_window_hours in {2, 3, 4} else 'часов'}\n\n"
         )
         header += bank_line
         notes = (
@@ -504,7 +511,7 @@ class TelegramPublisher:
             raw_model_probability = self._raw_model_probability(bet)
             explanation = self._build_explanation(bet, selection_text)
             consensus_label = "по линии (консенсус)"
-            if bet.family in {"spreads", "dnb"}:
+            if bet.family in {"spreads", "dnb"} and (bet.point is None or float(bet.point).is_integer()):
                 consensus_label = "по линии (с учётом возврата)"
             probability_lines: list[str] = []
             if self._show_probability_breakdown(bet):
@@ -620,7 +627,7 @@ class TelegramPublisher:
             normalized = " ".join(item.split())
             lower = normalized.lower()
             if (
-                ("линия" in lower or "рын" in lower)
+                ("лини" in lower or "рын" in lower or "модель даёт" in lower)
                 and "модел" in lower
                 and "%" in lower
             ):
@@ -665,8 +672,9 @@ class TelegramPublisher:
                 f"Перевес {edge_pp:+.1f} п.п. даёт преимущество в пользу {target_team}."
             )
         elif bet.family in {"spreads", "dnb"}:
+            price_basis = "В пересчёте на цену с учётом возврата линия" if bet.point is None or float(bet.point).is_integer() else "Текущая линия"
             parts.append(
-                f"В пересчёте на цену с учётом возврата линия даёт около {consensus_pct:.1f}%, а скорректированная оценка модели — {adjusted_model_pct:.1f}%. "
+                f"{price_basis} даёт около {consensus_pct:.1f}%, а скорректированная оценка модели — {adjusted_model_pct:.1f}%. "
                 f"Разница {edge_pp:+.1f} п.п. объясняет интерес к этой форе."
             )
         else:

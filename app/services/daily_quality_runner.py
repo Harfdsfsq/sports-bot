@@ -57,6 +57,9 @@ class DailyQualityRunner(PredictionRunner):
 
     def _record_confirmed(self, candidate):
         identity = candidate.source_summary['registry_match_id']
+        entry = self.registry.data['matches'].get(identity)
+        if entry is not None:
+            entry['publication'] = {'match_id': identity, 'tier': candidate.source_summary['publication_tier'], 'at': datetime.now(UTC).isoformat()}
         if not any(row['match_id'] == identity for row in self.registry.data['published']):
             self.registry.data['published'].append({'match_id': identity, 'tier': candidate.source_summary['publication_tier'], 'at': datetime.now(UTC).isoformat()})
             self.registry.save()
@@ -156,6 +159,8 @@ class DailyQualityRunner(PredictionRunner):
 
     def _select_publishable_candidates(self, candidates):
         published = self.registry.data['published']
+        sent_match_ids = {row.get('match_id') for row in published if row.get('match_id')}
+        sent_match_ids.update(key for key, entry in self.registry.data['matches'].items() if entry.get('publication'))
         remaining = max(0, 5 - len(published))
         a_today = sum(row['tier'] == 'A' for row in published)
         b_today = sum(row['tier'] == 'B' for row in published)
@@ -168,6 +173,9 @@ class DailyQualityRunner(PredictionRunner):
         for candidate in sorted(candidates, key=priority, reverse=True):
             if len(selected) >= cap:
                 break
+            if candidate.source_summary.get('registry_match_id') in sent_match_ids:
+                self.daily_rejections['already_published_match'] += 1
+                continue
             if candidate.match_key in matches:
                 continue
             # Recheck at the final selection time; API work may have consumed lead time.
@@ -196,7 +204,7 @@ class DailyQualityRunner(PredictionRunner):
             debug = read_json(summary.get('debug_path') or '.logs/debug-last-run.json', {})
             rows = debug.get('candidates_before_quality', []) if debug.get('summary', {}).get('started_time_utc') == summary.get('started_time_utc') else []
             quality_review = [{'match': f"{row.get('home_team')} — {row.get('away_team')}", 'selection': row.get('selection'), 'point': row.get('point'), 'odds': row.get('odds'), 'quality': (row.get('source_summary') or {}).get('quality_score'), 'confidence': row.get('confidence'), 'reasons': (row.get('source_summary') or {}).get('quality_reasons') or []} for row in rows[:5]]
-            summary['daily_quality'] = {'quality_review': quality_review, 'coverage': self.registry.coverage(), 'next_day_inventory': getattr(self, 'next_day_inventory_count', 0), 'published_today': self.registry.data['published'], 'rejections': dict(self.daily_rejections), 'selected': [{'match': f'{c.home_team} — {c.away_team}', 'tier': c.source_summary['publication_tier'], 'quality': c.source_summary.get('quality_score'), 'odds': c.odds, 'selection': c.selection, 'kickoff_utc': c.commence_time.isoformat(), 'probability_pct': round(c.adjusted_probability * 100, 1), 'ev_pct': round(c.ev_pct, 1), 'stake_amount': c.stake_amount} for c in self.selected_daily]}
+            summary['daily_quality'] = {'quality_review': quality_review, 'coverage': self.registry.coverage(), 'next_day_inventory': getattr(self, 'next_day_inventory_count', 0), 'published_today': self.registry.data['published'], 'rejections': dict(self.daily_rejections), 'selected': [{'match': f'{c.home_team} — {c.away_team}', 'tier': c.source_summary['publication_tier'], 'quality': c.source_summary.get('quality_score'), 'odds': c.odds, 'selection': self.telegram._compact_selection_display(c.family, c.selection, c.point, c.team_side, c.home_team, c.away_team, c.selection_key), 'kickoff_utc': c.commence_time.isoformat(), 'probability_pct': round(c.adjusted_probability * 100, 1), 'ev_pct': round(c.ev_pct, 1), 'stake_amount': c.stake_amount} for c in self.selected_daily]}
             write_json('.data/exports/latest-run-summary.json', summary)
             return summary
         finally:

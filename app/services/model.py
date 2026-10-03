@@ -9,6 +9,7 @@ from typing import Any
 from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, MatchContextBundle, Offer
 from app.services.daily_goal_probability import expected_value, push_probability, spread_probability, total_probability
+from app.services.daily_quality_policy import sporting_context_sources
 from app.utils import (
     candidate_selection_key,
     clamp,
@@ -1190,8 +1191,7 @@ class CandidateFactory:
         context_sources = self._context_source_names(context)
         if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
             # Model aliases and weather must not masquerade as extra sporting APIs.
-            real_providers = ('sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb')
-            context_sources = sorted({provider for source in context_sources for provider in real_providers if str(source).lower() == provider or str(source).lower().startswith(provider + '_')})
+            context_sources = sorted(sporting_context_sources(context_sources))
 
         selection_key = candidate_selection_key(
             family,
@@ -1911,12 +1911,21 @@ class CandidateFactory:
             return clamp(mean(fallback), 0.02, 0.98) if fallback else 0.50
         current_side = str(team_side or '').lower()
         other_side = 'away' if current_side == 'home' else 'home'
+        def paired_side(offer):
+            side = str(offer.team_side or '').lower()
+            if offer.point is None or side not in {current_side, other_side}:
+                return None
+            target = float(point)
+            if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and side == other_side:
+                target = -target
+            return side if round(float(offer.point), 2) == round(target, 2) else None
+
         return self._fair_market_probability_two_way(
             offers=offers,
             bucket=bucket,
             current_key=current_side,
             other_key=other_side,
-            key_resolver=lambda offer: str(offer.team_side or '').lower() if offer.point is not None and round(float(offer.point), 2) == round(float(point), 2) else None,
+            key_resolver=paired_side,
         )
 
     def _fair_market_probability_team_totals(self, bucket: list[Offer], offers: list[Offer], selection: str, point: float, team_side: str) -> float:

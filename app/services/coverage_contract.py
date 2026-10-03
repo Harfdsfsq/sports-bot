@@ -374,6 +374,16 @@ def odds_sources_for_candidate(candidate: Any, contract: CoverageContract | None
 
 def context_sources_for_candidate(candidate: Any) -> set[str]:
     sources: set[str] = set()
+    if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+        from app.services.daily_quality_policy import sporting_context_sources
+        # Current model evidence is authoritative; old diagnostics/index rows may be stale.
+        view = _get(candidate, 'source_summary', {}) or (candidate if isinstance(candidate, dict) else {})
+        for key in CONTEXT_SOURCE_LIST_KEYS:
+            sources.update(_split_sources(view.get(key)))
+        if view.get('context_source'):
+            sources.add(str(view['context_source']))
+        return sporting_context_sources(sources)
+
     for view in _candidate_dict_views(candidate):
         for key in CONTEXT_SOURCE_LIST_KEYS:
             if key in view:
@@ -476,7 +486,7 @@ def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> C
     odds_sources = set(odds_report["odds_sources"])
     odds_source_count = int(odds_report["odds_sources_count"])
     context_declared_count, context_basis = _declared_count(candidate, CONTEXT_SOURCE_COUNT_KEYS)
-    context_source_count = len(context_sources) if context_sources else context_declared_count
+    context_source_count = len(context_sources) if context_sources or os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' else context_declared_count
 
     reasons: list[str] = []
     if odds_source_count < contract.min_odds_sources:
