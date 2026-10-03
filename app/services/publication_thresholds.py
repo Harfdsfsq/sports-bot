@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Shared publication floors.
 
-The default contract requires two odds and context sources. Only the explicit
-rules_ab profile with B-tier enabled can use one of each, while always requiring
-two bookmakers. A-tier retains the stricter source requirements.
+The default contract requires two odds and context sources. Explicit rules_ab
+permits one source for B-tier with two bookmakers. The daily_quality profile
+requires one real odds source, bookmaker and sports context for both quality tiers.
 """
 
 import os
@@ -48,12 +48,12 @@ def b_tier_enabled(settings: Any | None = None) -> bool:
 
 
 def publish_floor(settings: Any | None = None) -> int:
-    return 2
+    return 1 if os.getenv("PUBLICATION_PROFILE", "").lower() == "daily_quality" else 2
 
 
 def source_floor(settings: Any | None = None) -> int:
     profile = os.getenv("PUBLICATION_PROFILE", "").strip().lower()
-    return 1 if profile == "rules_ab" and b_tier_enabled(settings) else 2
+    return 1 if profile == "daily_quality" or (profile == "rules_ab" and b_tier_enabled(settings)) else 2
 
 
 def publish_min_odds_sources(settings: Any | None = None, default: int | None = None) -> int:

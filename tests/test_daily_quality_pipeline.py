@@ -1,0 +1,287 @@
+from __future__ import annotations
+
+import asyncio
+import os
+from dataclasses import asdict
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+from app.config import Settings
+from app.schemas import Match, MatchContext, Offer
+from app.services.daily_match_registry import DailyMatchRegistry, match_identity, write_json
+from app.services.daily_quality_policy import quality_decision
+from app.services.daily_quality_runner import DailyQualityRunner, DailyTelegramPublisher
+from app.services.publication_thresholds import publish_floor, publish_min_context_sources, publish_min_odds_sources
+from scripts.send_daily_quality_report import render
+
+
+@pytest.fixture
+def profile(monkeypatch):
+    # CI has repository secrets; no regression test may use real credentials.
+    for key in list(os.environ):
+        if any(token in key for token in ('API_KEY', 'ODDS_API_IO_KEY', 'WEATHERAPI_KEY', 'TELEGRAM_TOKEN', 'TELEGRAM_BOT_TOKEN')):
+            monkeypatch.delenv(key, raising=False)
+    for line in Path(__file__).parents[1].joinpath('config/daily_quality.env').read_text().splitlines():
+        if line and not line.startswith('#'):
+            key, value = line.split('=', 1)
+            monkeypatch.setenv(key, value)
+    monkeypatch.setenv('PUBLISH_DRY_RUN', 'true')
+    monkeypatch.setenv('MAX_PICKS_PER_RUN', '2')
+
+
+def match(now, minutes=90, name='Home'):
+    return Match('day_inventory', 'event1', 'soccer', 'Premier League', name, 'Away', now + timedelta(minutes=minutes), name.lower(), 'away', 'premier', metadata={'day_inventory_source_ids': {'odds_api_io': '123', 'sstats': '456'}})
+
+
+def candidate(now, quality=80, confidence=75, probability=.60):
+    return SimpleNamespace(source_summary={'quality_score': quality, 'context_source': 'sstats', 'daily_price_observed_at': now.isoformat(), 'daily_context_observed_at': now.isoformat()}, commence_time=now + timedelta(minutes=90), adjusted_probability=probability, odds=1.9, confidence=confidence, family='totals', expected_home=1., expected_away=1.)
+
+
+def test_one_source_is_valid_for_both_quality_tiers(profile):
+    now = datetime.now(UTC)
+    coverage = {'odds_sources_count': 1, 'context_sources_count': 1, 'books_count': 1}
+    assert quality_decision(candidate(now), coverage, now=now)[:2] == ('A', [])
+    assert quality_decision(candidate(now, quality=70, confidence=65), coverage, now=now)[:2] == ('B', [])
+    assert publish_floor() == publish_min_context_sources() == publish_min_odds_sources() == 1
+
+
+@pytest.mark.parametrize('field,value,reason', [
+    ('quality_score', 50, 'below_b_quality'), ('daily_price_observed_at', '2000-01-01T00:00:00+00:00', 'daily_price_observed_at_stale'),
+    ('daily_context_observed_at', '', 'daily_context_observed_at_missing'), ('context_source', 'market_implied_xg', 'synthetic_context'),
+])
+def test_no_quality_or_stale_data_cannot_force_publication(profile, field, value, reason):
+    now = datetime.now(UTC)
+    c = candidate(now)
+    c.source_summary[field] = value
+    assert reason in quality_decision(c, {'odds_sources_count': 1, 'context_sources_count': 1, 'books_count': 1}, now=now)[1]
+
+
+@pytest.mark.parametrize('minutes,passed', [(29, False), (30, True), (240, True), (241, False)])
+def test_publication_window(minutes, passed):
+    now = datetime.now(UTC)
+    c = candidate(now)
+    c.commence_time = now + timedelta(minutes=minutes)
+    reasons = quality_decision(c, {'odds_sources_count': 1, 'context_sources_count': 1, 'books_count': 1}, now=now)[1]
+    assert ('kickoff_outside_30m_4h' not in reasons) == passed
+
+
+def test_exact_identity_preserves_kickoff_and_day(tmp_path):
+    now = datetime.now(UTC).replace(hour=0)
+    a = match(now)
+    b = match(now, minutes=180)
+    assert match_identity(a) != match_identity(b)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    r.sync([a, b])
+    assert len(r.matches()) == 2
+    assert r.matches()[0].metadata['provider_source_ids']['sstats'] == '456'
+    assert DailyMatchRegistry(r.path, now + timedelta(days=1)).matches() == []
+
+
+def test_queue_near_next_background_and_empty_backoff(tmp_path):
+    now = datetime.now(UTC).replace(hour=0)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    items = [match(now, 800, 'Late'), match(now, 400, 'Next'), match(now, 45, 'Near'), match(now, 20, 'Soon')]
+    r.sync(items)
+    targets = r.targets('sstats', 'context')
+    assert [m.home_team for m in targets] == ['Near', 'Next', 'Late']
+    r.record('sstats', 'context', [targets[0]], {}, {}, observed_at=now)
+    r.now = now + timedelta(minutes=10)
+    assert all(m.home_team != 'Near' for m in r.targets('sstats', 'context'))
+
+
+def test_cache_never_relabels_old_quote_as_fresh(tmp_path):
+    now = datetime(2026, 10, 3, 0, tzinfo=UTC)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now)
+    r.sync([m])
+    r.record('odds_api_io', 'offers', [m], {m.match_key: [Offer('odds_api_io', 'Bet365', 'totals', 'Under', 1.9, 2.5)]}, {}, observed_at=now)
+    stamp = r.observation(m, 'offers')
+    assert stamp
+    r.now += timedelta(minutes=16)
+    assert r.cached('odds_api_io', 'offers', m) is None
+    assert r.coverage()['collected_line'] == 1
+    assert r.coverage()['line'] == 0
+
+
+def test_registry_caps_inventory_at_300(tmp_path):
+    now = datetime.now(UTC).replace(hour=0)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    r.sync([match(now, 600, f'Home{i}') for i in range(330)])
+    assert len(r.matches()) == 300
+
+
+def test_provider_id_conflicts_do_not_overwrite_verified_mapping(tmp_path):
+    now = datetime.now(UTC)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now)
+    r.sync([m])
+    m.metadata['day_inventory_source_ids']['sstats'] = 'different'
+    r.sync([m])
+    assert r.matches()[0].metadata['provider_source_ids']['sstats'] == '456'
+    assert r.data['issues'][0]['kind'] == 'provider_id_conflict'
+
+
+def test_daily_cap_and_smaller_b_limit(profile, tmp_path):
+    now = datetime.now(UTC)
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    runner.registry.data['published'] = [{'tier': 'B'}] * 4
+    runner.daily_rejections = {}
+    a = SimpleNamespace(match_key='a', source_summary={'publication_tier': 'A', 'quality_score': 80}, ev_pct=6, commence_time=now + timedelta(hours=1), stake_amount=50, bankroll_snapshot=1000, stake_pct=0)
+    b = SimpleNamespace(match_key='b', source_summary={'publication_tier': 'B', 'quality_score': 70}, ev_pct=4, commence_time=now + timedelta(hours=1), stake_amount=50, bankroll_snapshot=1000, stake_pct=0)
+    assert runner._select_publishable_candidates([b, a]) == [a]
+    assert a.stake_amount == 5
+    runner.registry.data['published'] = []
+    assert len(runner._select_publishable_candidates([b, a])) == 2
+    assert b.stake_amount == 2.5
+
+
+def test_report_counts_real_publications_not_service_messages(profile):
+    text = render({'published_to_telegram': 0, 'telegram_messages_sent': 2, 'daily_quality': {'coverage': {'inventory': 300, 'near': 4, 'near_ready': 1}, 'published_today': [], 'selected': []}})
+    assert 'не отправлено' in text
+    assert 'A 0, B 0' in text
+    assert 'покрыто частично' in text
+
+
+def test_native_provider_fetch_assigns_real_context_targets(profile, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    now = datetime.now(UTC)
+    runner = DailyQualityRunner(Settings(_env_file=None))
+    m = match(now)
+    runner.registry.sync([m])
+    runner.inventory_matches = runner.registry.matches()
+    runner._provider_name = lambda p: 'sstats'
+    class Provider:
+        async def fetch_context(self, targets):
+            assert len(targets) == 1
+            assert targets[0].metadata['provider_source_ids']['sstats'] == '456'
+            return {targets[0].match_key: MatchContext('sstats', {}, expected_home=1, expected_away=.8, confidence=80)}, {'requests': 1}, {}
+    data, stats, _ = asyncio.run(runner._fetch_provider(Provider(), 'fetch_context', [], empty_data={}))
+    assert m.match_key in data
+    assert stats['assigned_matches'] == 1
+    assert runner.registry.cached('sstats', 'context', m) is not None
+    assert runner.registry.coverage()['near_ready'] == 0  # Context alone is insufficient.
+
+
+def test_complete_native_run_with_fake_apis(profile, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    now = datetime.now(UTC)
+    m = match(now)
+    # Use actual inventory loading, providers, model, quality, selection and dry publisher.
+    row = asdict(m)
+    row['source_ids'] = row['metadata']['day_inventory_source_ids']
+    write_json(f'.data/day_inventory/{m.commence_time.astimezone(Settings().tzinfo).date()}.json', {'matches': [row]})
+    runner = DailyQualityRunner(Settings(_env_file=None))
+    class Odds:
+        __module__ = 'app.providers.odds_api_io'
+        async def fetch_offers(self, targets):
+            return {t.match_key: [Offer('odds_api_io', 'Bet365', 'totals', 'Under', 2.05, 2.5), Offer('odds_api_io', 'Bet365', 'totals', 'Over', 1.85, 2.5)] for t in targets}, {'requests': 1}, {}
+    class Context:
+        __module__ = 'app.providers.sstats'
+        async def fetch_context(self, targets):
+            return {t.match_key: MatchContext('sstats', {}, expected_home=.95, expected_away=.75, confidence=85, details={'team_form_index': 4}) for t in targets}, {'requests': 1}, {}
+    for name in ('bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb', 'sportlogic', 'allsportsapi', 'bookies_api', 'oddspapi'):
+        setattr(runner, name, None)
+    runner.odds_api_io = Odds()
+    runner.sstats = Context()
+    summary = asyncio.run(runner.run_once())
+    assert summary['matches_seen'] == 1
+    assert summary['contexts_built'] == 1
+    assert summary['daily_quality']['coverage']['near_ready'] == 1
+    assert summary['published_to_telegram'] == 0
+    assert summary['candidates_before_quality'] > 0
+    assert summary['candidates_publishable'] > 0, (summary['rejections'], summary['daily_quality'])
+    assert Path('.data/exports/latest-daily-provider-plan.json').exists()
+
+
+def test_partial_delivery_only_marks_confirmed_forecasts(profile, monkeypatch):
+    settings = Settings(_env_file=None, PUBLISH_DRY_RUN=False)
+    publisher = DailyTelegramPublisher(settings)
+    now = datetime.now(UTC)
+    bets = [SimpleNamespace(commence_time=now + timedelta(hours=1), match_key='ok'), SimpleNamespace(commence_time=now + timedelta(hours=1), match_key='fail')]
+    async def send(self, rows, **kwargs):
+        return (1 if rows[0].match_key == 'ok' else 0), ['text']
+    monkeypatch.setattr('app.services.telegram.TelegramPublisher.publish', send)
+    count, _ = asyncio.run(publisher.publish(bets))
+    assert count == len(bets) == 1
+    assert bets[0].match_key == 'ok'
+
+
+def test_pinned_odds_ids_skip_repeated_fixture_discovery(profile):
+    from app.providers.odds_api_io import OddsApiIoProvider
+    now = datetime.now(UTC)
+    a, b = match(now), match(now, name='Another')
+    mapping, missing = OddsApiIoProvider._registry_mapping([a])
+    assert mapping[a.match_key]['event']['id'] == 123
+    assert missing == []
+    # The same provider ID cannot safely identify two different fixtures.
+    assert OddsApiIoProvider._registry_mapping([a, b])[0] == {}
+
+
+def test_sstats_history_cache_preserves_original_fetch_time(profile, tmp_path, monkeypatch):
+    from app.providers.sstats import SStatsContextProvider
+    monkeypatch.chdir(tmp_path)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    calls = []
+    async def rows(client, start, end, stats):
+        calls.append((start, end))
+        return [{'id': 12, 'date': start, 'home': 'Home', 'away': 'Away'}]
+    monkeypatch.setattr(provider, '_fetch_rows_window', rows)
+    first = asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-02', {}))
+    observed = provider._daily_source_observed_at
+    second = asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-02', {}))
+    assert first == second
+    assert len(calls) == 1
+    assert provider._daily_source_observed_at == observed
+
+
+def test_diagnostics_hide_tokens_and_api_urls():
+    from scripts.sanitize_daily_artifacts import sanitize
+    text = 'https://api.telegram.org/bot123456:dummy-token/sendMessage ?apiKey=dummy-key&x=1'
+    cleaned = sanitize(text, ['dummy-key'])
+    assert 'dummy-token' not in cleaned
+    assert 'dummy-key' not in cleaned
+
+
+def test_midnight_keeps_prefetched_match_evidence(tmp_path):
+    # 23:00 MSK: the four-hour window includes a match at 01:00 next day.
+    now = datetime(2026, 10, 3, 20, tzinfo=UTC)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now, minutes=120)
+    r.sync([m])
+    ctx = MatchContext('sstats', {}, expected_home=1, expected_away=1)
+    r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
+    next_run = DailyMatchRegistry(r.path, now + timedelta(hours=1))
+    assert len(next_run.matches()) == 1
+    assert next_run.cached('sstats', 'context', m) is not None
+
+
+def test_missing_summary_report_fails_without_reusing_old_run(profile, tmp_path, monkeypatch):
+    from scripts import send_daily_quality_report
+    monkeypatch.chdir(tmp_path)
+    now = datetime.now(UTC)
+    monkeypatch.setenv('RUN_STARTED_AT_UTC', now.isoformat())
+    write_json('.data/exports/latest-run-summary.json', {'started_time_utc': (now - timedelta(days=1)).isoformat(), 'daily_quality': {}})
+    monkeypatch.setattr(send_daily_quality_report, 'send_telegram', lambda *a: pytest.fail('Dry report attempted send'))
+    assert send_daily_quality_report.main() == 1
+
+
+def test_delivery_error_keeps_first_acknowledgement(profile, monkeypatch):
+    publisher = DailyTelegramPublisher(Settings(_env_file=None, PUBLISH_DRY_RUN=False))
+    now = datetime.now(UTC)
+    bets = [SimpleNamespace(commence_time=now + timedelta(hours=1), match_key='ok'), SimpleNamespace(commence_time=now + timedelta(hours=1), match_key='fail')]
+    acknowledged = []
+    publisher.on_confirm = lambda bet: acknowledged.append(bet.match_key)
+    async def send(self, rows, **kwargs):
+        if rows[0].match_key == 'fail':
+            raise RuntimeError('delivery failed')
+        return 1, ['text']
+    monkeypatch.setattr('app.services.telegram.TelegramPublisher.publish', send)
+    count, _ = asyncio.run(publisher.publish(bets))
+    assert count == len(bets) == 1
+    assert acknowledged == ['ok']
+    assert publisher.delivery_errors == ['RuntimeError']

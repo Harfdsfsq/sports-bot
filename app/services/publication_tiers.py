@@ -53,6 +53,13 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     now = (now or datetime.now(UTC)).astimezone(UTC)
     coverage = sync_candidate_publish_coverage(candidate, settings)
     report = dict(coverage.report)
+    from app.services.daily_quality_policy import enabled, quality_decision
+    if enabled():
+        tier, reasons, quality_report = quality_decision(candidate, report, now=now)
+        report.update(quality_report)
+        report["can_publish"] = not reasons
+        return PublicationTierDecision(not reasons, tier if not reasons else "blocked", reasons, report)
+
 
     odds_count = _get_count(report, "odds_sources_count", _as_int(getattr(candidate, "sources_count", 0), 0))
     context_count = _get_count(report, "context_sources_count", 0)

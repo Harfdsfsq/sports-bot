@@ -478,6 +478,10 @@ class BzzoiroContextProvider:
                 exact_tol = 1.0
                 fuzzy_tol = 36.0
 
+            if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+                if event_date_raw in (None, "") or abs((event_start - match.commence_time).total_seconds()) > 1800:
+                    continue
+                exact_tol = fuzzy_tol = 0.5
             score, quality, _, _ = score_event_match_variants(
                 sport="soccer",
                 match_home=match.home_team,
@@ -841,6 +845,8 @@ class BzzoiroContextProvider:
         return round((lo + hi) / 2.0, 3)
 
     def _matching_tolerances(self) -> tuple[float, float]:
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+            return 0.5, 0.5
         exact_tol = float(getattr(self.settings, "match_start_tolerance_hours", 12) or 12)
         fuzzy_tol = float(getattr(self.settings, "fallback_match_start_tolerance_hours", 8) or 8)
         return exact_tol, max(fuzzy_tol, 24.0)

@@ -78,3 +78,7 @@ python -m app.cli reporting-sqlite
 ## Проверка исправлений pipeline
 
 [Ручной запуск тестовой ветки и диагностика Telegram](docs/MANUAL_PIPELINE_TEST.md).
+
+## Дневной pipeline с тирами по качеству
+
+[Правила, архитектура и первый запуск новой ветки](docs/DAILY_QUALITY_PIPELINE.md).

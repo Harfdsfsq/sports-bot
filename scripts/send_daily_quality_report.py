@@ -1,0 +1,95 @@
+"""Human-readable Telegram report from current-run artifacts only."""
+from __future__ import annotations
+
+import os
+from collections import Counter
+from datetime import UTC, datetime
+from pathlib import Path
+
+from app.services.daily_match_registry import parse_time, read_json, write_json
+from scripts.send_pipeline_run_report import send_telegram
+
+REASONS = {
+    'missing_real_line_or_context': 'нет реальной линии или спортивного контекста',
+    'below_b_quality': 'качество или ценность ниже порога B',
+    'missing_goal_model': 'нет данных для голевой модели',
+    'line_or_value_changed': 'линия изменилась или потеряла ценность',
+    'bad_historical_segment_guard': 'неблагоприятные результаты похожих прогнозов',
+    'quality_bad_historical_segment_guard': 'неблагоприятные результаты похожих прогнозов',
+    'daily_price_observed_at_stale': 'коэффициент устарел',
+    'daily_context_observed_at_stale': 'контекст устарел',
+    'final_kickoff_window': 'до начала осталось меньше 30 минут',
+    'kickoff_outside_30m_4h': 'матч вне окна от 30 минут до 4 часов',
+}
+
+
+def render(summary):
+    daily = summary.get('daily_quality') or {}
+    c = daily.get('coverage') or {}
+    published = daily.get('published_today') or []
+    a, b = sum(row['tier'] == 'A' for row in published), sum(row['tier'] == 'B' for row in published)
+    picks = int(summary.get('published_to_telegram') or 0)
+    dry = bool(summary.get('dry_run'))
+    lines = ['🧾 HARIZON — отчёт по запуску',
+             ('🧪 Проверка без отправки прогнозов' if dry else f'✅ Отправлено прогнозов: {picks}' if picks else '🟡 Подходящих прогнозов не отправлено'),
+             '', '📦 Дневной инвентарь', f"Собрано {c.get('inventory', 0)}/300 матчей. Каждый матч имеет постоянную привязку к командам и времени начала.",
+             f"Данные получены за день: линия {c.get('collected_line', 0)}, контекст {c.get('collected_context', 0)}.",
+             f"Актуально сейчас: линия {c.get('line', 0)}, контекст {c.get('context', 0)}, оба вида данных {c.get('ready', 0)}.",
+             '', '⏱️ Ближайшее окно — 4 часа', f"Матчей с запасом 30+ минут: {c.get('near', 0)}. С актуальной линией и контекстом: {c.get('near_ready', 0)}.",
+             f"Дополнительные данные: форма {c.get('form', 0)}, таблица {c.get('standings', 0)}, погода {c.get('weather', 0)}.",
+             '', '🏷️ Качество прогнозов',
+             'A: качество 78+, уверенность модели 70+, EV 5%+, запас 3 п.п.+.',
+             'B: качество 65+, уверенность модели 60+, EV 3%+, запас 2 п.п.+.',
+             'Для обоих: реальный контекст, текущая линия и положительная ценность. Два API — преимущество.',
+             f'За день отправлено: A {a}, B {b}; всего {len(published)}/5.',
+             'Цель отбора: 1+ A и 2+ B за день; при недостаточном качестве ставок будет меньше.',
+             '', '🧪 Воронка',
+             f"Кандидатов до качества: {summary.get('candidates_before_quality', 0)}; после качества: {summary.get('candidates_raw', 0)}; выбрано: {len(daily.get('selected') or [])}."]
+    if daily.get('selected'):
+        lines.append('Подборка текущего запуска:')
+        for row in daily['selected']:
+            lines.append(f"• {row['match']} | {row['tier']}-tier | @{row['odds']:.2f} | качество {row.get('quality') or 0:.1f}")
+    reasons = Counter(daily.get('rejections') or {})
+    for key, value in (summary.get('rejections') or {}).items():
+        if isinstance(value, int):
+            reasons[key] += value
+    if reasons:
+        lines.extend(['', '🚫 Основные причины отказов'])
+        for reason, value in reasons.most_common(5):
+            label = REASONS.get(reason)
+            if label is None:
+                label = 'нет контекста для рынка' if 'missing_context' in reason else 'ценность ниже порога' if 'edge' in reason or 'ev_' in reason else 'проверка модели или цены'
+            lines.append(f'• {label}: {value}')
+    if summary.get('telegram_delivery_errors'):
+        lines.append('⚠️ Часть прогнозов не доставлена в Telegram; учитываются только подтверждённые отправки.')
+    if any(isinstance(stats, dict) and stats.get('response_errors') for stats in (summary.get('source_stats') or {}).values()):
+        lines.append('⚠️ Часть данных недоступна у источников; подробности сохранены в артефакте.')
+    if c.get('inventory', 0) < 300:
+        lines.append('⚠️ Инвентарь неполный: не все реальные матчи доступны у подключённых провайдеров.')
+    if c.get('near_ready', 0) < c.get('near', 0):
+        lines.append('⚠️ Ближайшее окно покрыто частично; отсутствующие данные остаются в очереди.')
+    lines.extend(['', 'Проценты модели — оценки, а не подтверждённая проходимость. A/B обозначает качество отбора, а не гарантированный исход.',
+                  f"Run {os.getenv('GITHUB_RUN_ID', 'local')} · {os.getenv('GITHUB_REF_NAME', 'local')}"])
+    return '\n'.join(lines)
+
+
+def main():
+    started = parse_time(os.getenv('RUN_STARTED_AT_UTC'))
+    summary = read_json('.data/exports/latest-run-summary.json', {})
+    observed = parse_time(summary.get('started_time_utc'))
+    if started is None or observed is None or observed < started or not summary.get('daily_quality'):
+        text = '🧾 HARIZON: запуск не завершил текущую сводку. Проверьте артефакт и шаг pipeline. Старые результаты не использованы.'
+        valid = False
+    else:
+        text, valid = render(summary), True
+    dry = os.getenv('PUBLISH_DRY_RUN', 'true').lower() == 'true'
+    chunks = [text[i:i + 3500] for i in range(0, len(text), 3500)]
+    sent = False if dry else all(send_telegram(chunk) for chunk in chunks)
+    write_json('.data/exports/latest-daily-quality-report.json', {'created_at_utc': datetime.now(UTC).isoformat(), 'summary_valid': valid, 'telegram_sent': sent, 'dry_run': dry, 'text': text})
+    Path('.data/exports/latest-daily-quality-report.txt').write_text(text + '\n')
+    print(text)
+    return 0 if valid and (dry or sent) else 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

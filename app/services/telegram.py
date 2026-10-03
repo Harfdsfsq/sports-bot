@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import os
 from pathlib import Path
 from typing import Any
 
@@ -519,12 +520,19 @@ class TelegramPublisher:
                     f"📊 {probability_label}: {bet.adjusted_probability * 100:.1f}% | {consensus_label}: {consensus_probability * 100:.1f}%"
                 )
             probability_block = "\n".join(probability_lines)
+            tier_text = ""
+            if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+                tier = bet.source_summary.get("publication_tier", "B")
+                score = float(bet.source_summary.get("quality_score") or 0)
+                tier_text = f"🏷️ {tier}-tier | Качество: {score:.1f}/100 | EV: {bet.ev_pct:+.1f}%\n"
+
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
                 f"🎯 Ставка: {self._market_name_display(bet.family)} — {selection_text}\n"
                 f"💸 Коэффициент: {bet.odds:.2f}\n"
                 f"{probability_block}\n"
-                f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
+                f"{tier_text}"
+                f"✅ Оценка уверенности модели: {bet.confidence:.1f}/100 | Букмекеров: {bet.books_count}\n"
                 f"{trust_text + chr(10) if trust_text else ''}"
                 f"{quality_text + chr(10) if quality_text else ''}"
                 f"🏆 Турнир: {bet.league_name}\n"

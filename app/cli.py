@@ -33,6 +33,7 @@ _SECRET_HEADER_RE = re.compile(
 
 def _redact_log_text(value: Any) -> str:
     text = str(value)
+    text = re.sub(r'(https://api\.telegram\.org/bot)[^/\s]+', r'\1***', text)
     text = _SECRET_QUERY_RE.sub(r'\1***', text)
     text = _SECRET_HEADER_RE.sub(r'\1***', text)
     return text

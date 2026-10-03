@@ -431,8 +431,15 @@ class OddsApiIoProvider:
         max_pages = max(1, int(getattr(self.settings, "odds_api_io_max_pages_per_sport", 4) or 4))
         page_limit = max(1, int(getattr(self.settings, "odds_api_io_page_limit", 100) or 100))
 
+        registry_mapping = {}
+        registry_missing = soccer_matches
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+            registry_mapping, registry_missing = self._registry_mapping(soccer_matches)
+
         async with httpx.AsyncClient(timeout=timeout) as client:
-            if self._bootstrap_events_cache:
+            if registry_mapping and not registry_missing:
+                stats["registry_event_ids_reused"] = len(registry_mapping)
+            elif self._bootstrap_events_cache:
                 events = [row for row in self._bootstrap_events_cache if isinstance(row, dict)]
                 seen_event_ids = {int(row.get("id") or 0) for row in events if int(row.get("id") or 0)}
                 stats["bootstrap_events_reused"] = len(seen_event_ids)
@@ -502,7 +509,7 @@ class OddsApiIoProvider:
                         break
                     if len(items) < page_limit:
                         break
-            mapping: dict[str, dict[str, Any]] = {}
+            mapping: dict[str, dict[str, Any]] = dict(registry_mapping)
             for raw_event in events:
                 event = self._parse_event(raw_event)
                 if event is None:
@@ -513,7 +520,7 @@ class OddsApiIoProvider:
                     ):
                         stats["simulated_skipped"] += 1
                     continue
-                matched = self._match_event(event, soccer_matches)
+                matched = self._match_event(event, registry_missing)
                 if matched is None:
                     stats["unmatched_offer_events"] += 1
                     continue
@@ -1095,6 +1102,26 @@ class OddsApiIoProvider:
             "commence_time": commence_time,
             "raw": raw,
         }
+
+    @staticmethod
+    def _registry_mapping(matches: list[Match]):
+        """Route already verified registry IDs straight to the odds batch endpoint."""
+        ids = {}
+        for match in matches:
+            source_ids = match.metadata.get("provider_source_ids") or match.metadata.get("day_inventory_source_ids") or {}
+            value = source_ids.get("odds_api_io")
+            try:
+                event_id = int(value)
+            except (TypeError, ValueError):
+                continue
+            if event_id > 0:
+                ids.setdefault(event_id, []).append(match)
+        mapping = {}
+        for event_id, rows in ids.items():
+            if len(rows) == 1:
+                match = rows[0]
+                mapping[match.match_key] = {"match": match, "event": {"id": event_id, "match_quality": "exact", "match_score": 100}}
+        return mapping, [m for m in matches if m.match_key not in mapping]
 
     def _match_event(self, event: dict[str, Any], matches: list[Match]) -> Match | None:
         best_match: Match | None = None

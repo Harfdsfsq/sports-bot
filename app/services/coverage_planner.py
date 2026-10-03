@@ -75,7 +75,7 @@ class MatchCoverageRow:
             "has_news": self.has_news,
             "has_line_movement": self.has_line_movement,
             "ready_for_model": odds_count >= 1 and context_count >= 1,
-            "ready_for_publish": odds_count >= 1 and context_count >= 1 and len(self.books) >= 2,
+            "ready_for_publish": odds_count >= 1 and context_count >= 1 and len(self.books) >= (1 if os.getenv("PUBLICATION_PROFILE") == "daily_quality" else 2),
             "hours_to_kickoff": round(self.hours_to_kickoff, 3),
             "priority": round(self.priority, 3),
         }

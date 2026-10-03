@@ -255,7 +255,7 @@ class SStatsContextProvider:
         stats["team_form_contexts_built"] = added_fallback
 
         bzz_preview: list[dict[str, Any]] = []
-        if getattr(self.settings, "bzzoiro_api_key", None) and bool(getattr(self.settings, "enable_bzzoiro_context", True)):
+        if os.getenv("PUBLICATION_PROFILE") != "daily_quality" and getattr(self.settings, "bzzoiro_api_key", None) and bool(getattr(self.settings, "enable_bzzoiro_context", True)):
             timeout = float(getattr(self.settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
             async with httpx.AsyncClient(timeout=timeout) as client:
                 bzz_contexts, bzz_stats, bzz_preview = await self._fetch_bzzoiro_contexts(client, soccer_matches)
@@ -275,6 +275,9 @@ class SStatsContextProvider:
                     contexts[match_key] = context
 
         stats["contexts_built"] = len(contexts)
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+            for context in contexts.values():
+                context.details["daily_source_observed_at"] = getattr(self, "_daily_source_observed_at", None)
         return contexts, stats, preview
 
     async def _fetch_rows(
@@ -284,6 +287,17 @@ class SStatsContextProvider:
         to_date: str,
         stats: dict[str, Any],
     ) -> list[dict[str, Any]]:
+        daily_cache = os.getenv("PUBLICATION_PROFILE") == "daily_quality"
+        if daily_cache:
+            from pathlib import Path
+            from app.services.daily_match_registry import parse_time, read_json, write_json
+            cache_path = Path(f".data/provider_cache/sstats-history-{from_date}-{to_date}.json")
+            saved = read_json(cache_path, {})
+            observed = parse_time(saved.get("observed_at"))
+            if observed and timedelta(0) <= datetime.now(UTC) - observed < timedelta(hours=6) and saved.get("rows"):
+                self._daily_source_observed_at = observed.isoformat()
+                stats["history_cache_reused"] = len(saved["rows"])
+                return saved["rows"]
         chunk_days = max(1, int(getattr(self.settings, "sstats_request_chunk_days", 7) or 7))
         rows: list[dict[str, Any]] = []
         seen_signatures: set[tuple[Any, ...]] = set()
@@ -306,6 +320,9 @@ class SStatsContextProvider:
                 seen_signatures.add(signature)
                 rows.append(row)
 
+        if daily_cache and rows and not stats.get("response_errors"):
+            self._daily_source_observed_at = datetime.now(UTC).isoformat()
+            write_json(cache_path, {"observed_at": self._daily_source_observed_at, "rows": rows})
         return rows
 
     async def _fetch_rows_window(
@@ -644,6 +661,9 @@ class SStatsContextProvider:
                     "leagues_related": related_leagues,
                 })
         stats["contexts_built"] = len(contexts)
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+            for context in contexts.values():
+                context.details["daily_source_observed_at"] = getattr(self, "_daily_source_observed_at", None)
         return contexts, stats, preview
 
     def _row_to_bzzoiro_context(self, row: dict[str, Any], match_quality: str | None) -> MatchContext:
