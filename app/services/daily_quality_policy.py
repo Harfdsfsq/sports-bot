@@ -6,6 +6,8 @@ import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from app.services.daily_goal_probability import expected_value
+
 
 def enabled() -> bool:
     return os.getenv('PUBLICATION_PROFILE', '').strip().lower() == 'daily_quality'
@@ -17,13 +19,14 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
     p = float(candidate.adjusted_probability)
     odds = float(candidate.odds)
     edge = (p - 1 / odds) * 100 if odds > 1 else -100
-    ev = (p * odds - 1) * 100
+    push = float(summary.get('model_push_probability') or 0)
+    ev = expected_value(p, odds, push)
     reasons = []
     # Quality scores describe ranking, never an independently verified win rate.
     lead = (candidate.commence_time.astimezone(UTC) - now).total_seconds() / 60
     if not 30 <= lead <= 240:
         reasons.append('kickoff_outside_30m_4h')
-    if not all(math.isfinite(v) for v in (q, p, odds, edge, ev, float(candidate.confidence))) or not 0 < p < 1 or not 1.5 <= odds <= 3.2:
+    if not all(math.isfinite(v) for v in (q, p, odds, edge, ev, push, float(candidate.confidence))) or not 0 <= push < 1 or not 0 < p < 1 or not 1.5 <= odds <= 3.2:
         reasons.append('invalid_probability_or_odds')
     if min(int(coverage.get('odds_sources_count') or 0), int(coverage.get('context_sources_count') or 0), int(coverage.get('books_count') or 0)) < 1:
         reasons.append('missing_real_line_or_context')

@@ -8,6 +8,7 @@ from typing import Any
 
 from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, MatchContextBundle, Offer
+from app.services.daily_goal_probability import expected_value, push_probability, spread_probability, total_probability
 from app.utils import (
     candidate_selection_key,
     clamp,
@@ -799,7 +800,14 @@ class CandidateFactory:
             team_side = (offer.team_side or '').lower()
             if team_side not in {'home', 'away'}:
                 continue
-            model_prob = clamp(0.50 + diff * 0.10, 0.05, 0.95) if team_side == 'home' else clamp(0.50 - diff * 0.10, 0.05, 0.95)
+            if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+                try:
+                    model_prob = spread_probability(expected_home, expected_away, offer.point, team_side).decisive_win
+                except ValueError:
+                    rejections['unsupported_spread_line'] += 1
+                    continue
+            else:
+                model_prob = clamp(0.50 + diff * 0.10, 0.05, 0.95) if team_side == 'home' else clamp(0.50 - diff * 0.10, 0.05, 0.95)
             market_prob = self._fair_market_probability_spreads(books, offers, offer.selection, offer.point, team_side)
             candidate = self._candidate_from_bucket(
                 match=match,
@@ -1075,6 +1083,8 @@ class CandidateFactory:
         best_price = best_offer.price
         if not (self.settings.odds_min <= best_price <= self.settings.odds_max):
             return None
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and not 1.5 <= best_price <= 3.2:
+            return None
 
         market_prob = clamp(float(market_prob), 0.02, 0.98)
         model_prob = clamp(float(model_prob), 0.02, 0.98)
@@ -1158,7 +1168,10 @@ class CandidateFactory:
 
         adjusted = shrink_probability(model_prob, market_prob, confidence, shrink_min, shrink_max)
         fair_odds = 1.0 / max(adjusted, 0.01)
-        ev_pct = (adjusted * best_price - 1.0) * 100.0
+        model_push = 0.
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and expected_home is not None and expected_away is not None:
+            model_push = push_probability(family, expected_home, expected_away, point, str(best_offer.team_side or '').lower())
+        ev_pct = expected_value(adjusted, best_price, model_push)
         edge_pct = (adjusted - market_prob) * 100.0
         # Single-book matches can be underconfident even with a large model/market gap.
         # Add a small, bounded uplift for clearly positive EV situations to reduce "no pick" runs.
@@ -1175,6 +1188,11 @@ class CandidateFactory:
 
         context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         context_sources = self._context_source_names(context)
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            # Model aliases and weather must not masquerade as extra sporting APIs.
+            real_providers = ('sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb')
+            context_sources = sorted({provider for source in context_sources for provider in real_providers if str(source).lower() == provider or str(source).lower().startswith(provider + '_')})
+
         selection_key = candidate_selection_key(
             family,
             selection,
@@ -1290,6 +1308,8 @@ class CandidateFactory:
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode') or ('market_signal' if market_signal_derived else None),
                 'home_recent_count': context_details.get('home_recent_count'),
                 'away_recent_count': context_details.get('away_recent_count'),
+                'model_push_probability': model_push,
+                'probability_basis': 'conditional_without_refund' if model_push else 'binary',
                 'raw_model_probability': round(float(model_prob), 4),
                 'adjusted_probability': round(float(adjusted), 4),
                 'market_probability': round(float(market_prob), 4),
@@ -2497,6 +2517,8 @@ class CandidateFactory:
     def _context_total_probability(self, context: MatchContext | None, point: float | None) -> float | None:
         if context is None or point is None:
             return None
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and float(point).is_integer():
+            return None
         details = dict(getattr(context, 'details', {}) or {})
         direct = self._context_total_probability_for_key(details, float(point))
         if direct is not None:
@@ -2530,6 +2552,8 @@ class CandidateFactory:
             raw_point = round(float(point), 2)
         except Exception:
             return None
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and not (raw_point * 2).is_integer():
+            return None
         allowed = sorted(self.settings.supported_lines_for_family(family))
         if not allowed:
             return raw_point
@@ -2551,6 +2575,11 @@ class CandidateFactory:
     def _poisson_line_probability(self, lam: float | None, point: float | None) -> float | None:
         if lam is None or point is None:
             return None
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            try:
+                return total_probability(lam, point).decisive_win
+            except ValueError:
+                return None
         frac = round(float(point) - math.floor(float(point)), 2)
         if frac in {0.25, 0.75}:
             lower = round(float(point) - 0.25, 2)

@@ -846,6 +846,8 @@ class PredictionQualityService:
         candidate.fair_odds = 1.0 / max(adjusted, 0.01)
         candidate.edge_pct = (adjusted - float(candidate.market_probability)) * 100.0
         candidate.ev_pct = (adjusted * float(candidate.odds) - 1.0) * 100.0
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            candidate.ev_pct *= 1 - float(candidate.source_summary.get('model_push_probability') or 0)
         candidate.confidence = clamp(float(candidate.confidence) + min(1.0, max(-5.0, delta * 45.0)), 0.0, 100.0)
         candidate.publication_score = round(float(candidate.publication_score) + delta * 135.0, 3)
         candidate.reasons.append(f'historical_calibration={delta * 100.0:+.2f}pp')

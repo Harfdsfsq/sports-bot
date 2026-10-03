@@ -10,6 +10,12 @@ from app.services.daily_match_registry import parse_time, read_json, write_json
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'unsupported_spread_line': 'четвертная или некорректная фора не поддерживается',
+    'post_calibration_probability_guard': 'вероятность ниже финального порога модели',
+    'quality_post_calibration_probability_guard': 'вероятность ниже финального порога модели',
+    'quality_high_odds_confidence_guard': 'недостаточная уверенность при повышенном коэффициенте',
+    'no_bet_quality_score_guard': 'качество ниже минимальных 65 баллов',
+    'quality_no_bet_quality_score_guard': 'качество ниже минимальных 65 баллов',
     'unsupported_total_line': 'тотал вне поддерживаемых целых и половинных линий',
     'unsupported_team_total_line': 'индивидуальный тотал вне поддерживаемых линий',
     'non_core_confidence_guard': 'недостаточная уверенность для менее изученного турнира',
@@ -65,6 +71,13 @@ def render(summary):
                 from app.services.daily_match_registry import TZ
                 when = kickoff.astimezone(TZ).strftime('%d.%m %H:%M MSK') if kickoff else 'время не указано'
                 lines.append(f"  {row['selection']} · {when} · модель {row.get('probability_pct', 0):.1f}% · EV {row.get('ev_pct', 0):+.1f}% · сумма {row.get('stake_amount', 0):.2f}")
+    reviewed = [row for row in daily.get('quality_review', []) if row.get('reasons')]
+    if reviewed:
+        lines.extend(['', '🔎 Почему финальные кандидаты не прошли'])
+        for row in reviewed:
+            labels = [REASONS.get(reason, 'дополнительная проверка модели') for reason in row['reasons']]
+            point = '' if row.get('point') is None else f" ({row['point']:+g})"
+            lines.append(f"• {row['match']} | {row.get('selection')}{point} @{row.get('odds') or 0:.2f}: {'; '.join(labels)}; качество {row.get('quality') or 0:.1f}.")
     reasons = Counter(daily.get('rejections') or {})
     for key, value in (summary.get('rejections') or {}).items():
         if isinstance(value, int):
@@ -85,7 +98,7 @@ def render(summary):
     if any(isinstance(stats, dict) and stats.get('response_errors') for stats in (summary.get('source_stats') or {}).values()):
         lines.append('⚠️ Часть данных недоступна у источников; подробности сохранены в артефакте.')
     if c.get('inventory', 0) < 300:
-        lines.append('⚠️ Инвентарь неполный: не все реальные матчи доступны у подключённых провайдеров.')
+        lines.append('ℹ️ Сегодняшний инвентарь ниже 300. При первом запуске поздно вечером он содержит оставшиеся доступные матчи; полный следующий день показан отдельно.')
     if c.get('near_ready', 0) < c.get('near', 0):
         lines.append('⚠️ Ближайшее окно покрыто частично; отсутствующие данные остаются в очереди.')
     lines.extend(['', 'Проценты модели — оценки, а не подтверждённая проходимость. A/B обозначает качество отбора, а не гарантированный исход.',

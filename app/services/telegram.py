@@ -519,6 +519,9 @@ class TelegramPublisher:
                 probability_lines.append(
                     f"📊 {probability_label}: {bet.adjusted_probability * 100:.1f}% | {consensus_label}: {consensus_probability * 100:.1f}%"
                 )
+            if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and (bet.source_summary or {}).get('model_push_probability'):
+                refund = float(bet.source_summary['model_push_probability']) * 100
+                probability_lines.append(f"↩️ Оценки вероятности выше — среди исходов без возврата. Модель возврата: {refund:.1f}%; EV учитывает возврат.")
             probability_block = "\n".join(probability_lines)
             tier_text = ""
             if os.getenv("PUBLICATION_PROFILE") == "daily_quality":

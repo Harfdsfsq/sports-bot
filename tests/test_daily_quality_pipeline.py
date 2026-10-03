@@ -339,3 +339,107 @@ def test_bzzoiro_price_only_event_is_not_sporting_context(profile):
     from app.providers.bzzoiro import BzzoiroContextProvider
     provider = BzzoiroContextProvider(Settings(_env_file=None))
     assert provider._event_to_context({'id': 123, 'odds_home': 1.8, 'odds_away': 4, 'odds_draw': 3.2, 'odds_over_25': 1.9, 'odds_under_25': 1.9}, 'exact') is None
+
+
+def test_handicap_probability_depends_on_line_and_selected_team():
+    from app.services.daily_goal_probability import spread_probability
+    easy = spread_probability(2.874, .482, -.5, 'home')
+    hard = spread_probability(2.874, .482, -4.5, 'home')
+    opposite = spread_probability(2.874, .482, 4.5, 'away')
+    assert hard.decisive_win < .15 < easy.decisive_win
+    assert hard.win + opposite.win == pytest.approx(1, abs=1e-10)
+    assert hard.push == 0
+    # Equal teams with no handicap: draw is refunded, decisive sides have equal probability.
+    zero = spread_probability(1.2, 1.2, 0, 'home')
+    assert zero.decisive_win == pytest.approx(.5) and zero.push > 0
+
+
+def test_integer_total_does_not_count_refund_as_a_win():
+    import math
+
+    from app.services.daily_goal_probability import expected_value, total_probability
+    row = total_probability(2, 2)
+    # Independent closed-form reference: under 2 wins only at zero or one goal.
+    assert row.loss == pytest.approx(3 * math.exp(-2))
+    assert row.push == pytest.approx(2 * math.exp(-2))
+    assert row.win + row.push + row.loss == pytest.approx(1)
+    assert 1 - row.decisive_win == pytest.approx(row.loss / (1 - row.push))
+    assert expected_value(.6, 1.9, .2) == pytest.approx(11.2)
+
+
+@pytest.mark.parametrize('point', [-1.75, 2.25, float('nan')])
+def test_unsupported_goal_lines_rejected_before_scoring(point):
+    from app.services.daily_goal_probability import spread_probability, total_probability
+    with pytest.raises(ValueError):
+        spread_probability(1, 1, point, 'home')
+    with pytest.raises(ValueError):
+        total_probability(2, point)
+
+
+def test_handicap_candidates_use_actual_line_in_native_factory(profile):
+    from collections import defaultdict
+
+    from app.services.daily_goal_probability import spread_probability
+    from app.services.model import CandidateFactory
+    now = datetime.now(UTC)
+    m = match(now)
+    factory = CandidateFactory(Settings(_env_file=None))
+    captured = []
+    factory._enriched_expected_goals = lambda *args: (2.874, .482)
+    factory._candidate_from_bucket = lambda **kwargs: captured.append(kwargs)
+    offers = [Offer('odds_api_io', 'Bet365', 'spreads', 'Home', 2.0, point, team_side='home') for point in [-.5, -4.5, -1.75]]
+    reasons = defaultdict(int)
+    factory._build_spread_candidates(m, offers, MatchContext('sstats', {}), reasons)
+    assert len(captured) == 2 and reasons['unsupported_spread_line'] == 1
+    assert captured[1]['model_prob'] == pytest.approx(spread_probability(2.874, .482, -4.5, 'home').decisive_win)
+    assert captured[1]['model_prob'] < captured[0]['model_prob']
+
+
+def test_final_candidate_rejections_are_visible_even_with_large_raw_counts(profile):
+    text = render({'rejections': {'market_outside_daily_policy': 112}, 'daily_quality': {'quality_review': [{'match': 'Ciervos — Halcones', 'selection': 'Меньше', 'point': 4., 'odds': 2., 'quality': 57.178, 'reasons': ['no_bet_quality_score_guard']}]}})
+    assert 'Почему финальные кандидаты' in text
+    assert 'качество ниже минимальных 65' in text and '57.2' in text
+
+
+def test_final_policy_ev_accounts_for_refund_probability(profile):
+    now = datetime.now(UTC)
+    c = candidate(now, probability=.54)
+    c.odds = 2.
+    c.source_summary['model_push_probability'] = .8
+    tier, reasons, diagnostic = quality_decision(c, {'odds_sources_count': 1, 'context_sources_count': 1, 'books_count': 1}, now=now)
+    assert diagnostic['canonical_ev_pct'] == pytest.approx(1.6)
+    assert 'below_b_quality' in reasons
+
+
+def test_large_negative_handicap_has_negative_value_at_short_price(profile):
+    from collections import defaultdict
+
+    from app.services.model import CandidateFactory
+    factory = CandidateFactory(Settings(_env_file=None))
+    factory._enriched_expected_goals = lambda *args: (2.874, .482)
+    m = match(datetime.now(UTC))
+    offer = Offer('odds_api_io', 'Bet365', 'spreads', 'Home', 2.5, -4.5, team_side='home')
+    bets = factory._build_spread_candidates(m, [offer], MatchContext('sstats', {}, confidence=80), defaultdict(int))
+    assert len(bets) == 1
+    assert bets[0].model_probability < .15
+    assert bets[0].ev_pct < 0
+    assert bets[0].source_summary['context_sources_count'] == 1
+
+
+def test_calibration_preserves_refund_aware_expected_value(profile):
+    from app.services.quality import PredictionQualityService
+    c = SimpleNamespace(adjusted_probability=.6, odds=1.9, market_probability=.5, source_summary={'model_push_probability': .2}, confidence=75, publication_score=20, reasons=[])
+    PredictionQualityService(Settings(_env_file=None))._apply_probability_adjustment(c, -.05)
+    assert c.adjusted_probability == pytest.approx(.55)
+    assert c.ev_pct == pytest.approx(3.6)
+
+
+def test_sstats_alias_and_weather_are_not_extra_sporting_apis(profile):
+    from app.services.model import CandidateFactory
+    factory = CandidateFactory(Settings(_env_file=None))
+    m = match(datetime.now(UTC))
+    ctx = MatchContext('sstats_form', {}, expected_home=1, expected_away=1, confidence=80, details={'merged_sources': ['sstats', 'sstats_form', 'weather']})
+    offer = Offer('odds_api_io', 'Bet365', 'totals', 'Under', 2., 2.5)
+    c = factory._candidate_from_bucket(match=m, family='totals', selection='Under', point=2.5, offers=[offer], market_prob=.5, model_prob=.65, reasons=[], expected_home=1., expected_away=1., model_mode='xg_total', context=ctx)
+    assert c.source_summary['context_sources'] == ['sstats']
+    assert c.source_summary['context_sources_count'] == 1
