@@ -1,18 +1,18 @@
 {
   "budget_limited": true,
   "budget_seconds": 240.0,
-  "created_at_utc": "2026-10-05T23:13:19.452200+00:00",
-  "duration_seconds": 254.51,
+  "created_at_utc": "2026-10-06T07:34:22.079896+00:00",
+  "duration_seconds": 275.35,
   "final": {
-    "context_2plus_sources": 13,
-    "fixture_2plus_sources": 132,
-    "inventory_matches": 205,
-    "matrix_matches": 205,
-    "odds_2plus_sources": 13,
-    "ready_for_model": 97,
-    "ready_for_publish": 11,
+    "context_2plus_sources": 12,
+    "fixture_2plus_sources": 190,
+    "inventory_matches": 260,
+    "matrix_matches": 260,
+    "odds_2plus_sources": 35,
+    "ready_for_model": 201,
+    "ready_for_publish": 16,
     "semantic_duplicate_rows": 0,
-    "semantic_unique_matches": 157
+    "semantic_unique_matches": 210
   },
   "mode": "runbot_discovery_first_prepare_v5_full_bounded",
   "previous_full_prepare": {
@@ -28,7 +28,7 @@
   "status": "ok_budget_limited",
   "steps": [
     {
-      "duration_seconds": 71.67,
+      "duration_seconds": 55.78,
       "name": "build_base_inventory_if_needed",
       "result_summary": {
         "status": "rebuilt_below_target"
@@ -36,7 +36,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.07,
+      "duration_seconds": 0.14,
       "name": "semantic_inventory_dedupe_pre",
       "result_summary": {
         "type": "int"
@@ -44,7 +44,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 30.88,
+      "duration_seconds": 32.12,
       "name": "target_expand_pre_discovery",
       "result_summary": {
         "type": "int"
@@ -52,47 +52,66 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 21.33,
       "name": "provider_day_discovery_canonical_pool_v2",
-      "reason": "discovery_budget_reserve",
-      "result_summary": {},
-      "status": "skipped"
+      "result_summary": {
+        "canonical_matches": 264,
+        "canonical_with_2plus_primary_sources": 32,
+        "canonical_with_all_3_primary_sources": 0,
+        "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool_horizon",
+        "status": "ok"
+      },
+      "status": "ok"
     },
     {
-      "duration_seconds": 0.0,
+      "duration_seconds": 9.83,
       "name": "merge_discovery_pool_into_inventory",
-      "reason": "discovery_missing_or_budget_reserve",
-      "result_summary": {},
-      "status": "skipped"
+      "result_summary": {
+        "appended": 126,
+        "canonical_rows_seen": 264,
+        "inventory_matches_after": 335,
+        "matched_existing": 138,
+        "mode": "provider_day_discovery_inventory_merge_v2_full_pool",
+        "status": "ok"
+      },
+      "status": "ok"
     },
     {
-      "duration_seconds": 23.33,
+      "duration_seconds": 0.48,
+      "name": "semantic_inventory_dedupe_post_merge",
+      "result_summary": {
+        "type": "int"
+      },
+      "status": "ok"
+    },
+    {
+      "duration_seconds": 29.27,
       "name": "post_merge_sstats_crosswalk_v2",
       "result_summary": {
-        "match_rate_pct": 63.9,
-        "matched": 131,
+        "match_rate_pct": 70.38,
+        "matched": 202,
         "mode": "sstats_crosswalk_probe_v2_full_matched"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.1,
+      "duration_seconds": 0.19,
       "name": "apply_sstats_crosswalk_ids_to_inventory",
       "result_summary": {
-        "applied": 131,
-        "inventory_matches": 205,
-        "matched_rows_seen": 131,
+        "applied": 202,
+        "inventory_matches": 287,
+        "matched_rows_seen": 202,
         "mode": "sstats_crosswalk_inventory_apply_v1",
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 97.29,
+      "duration_seconds": 94.77,
       "name": "apply_sstats_deep_inventory_enrichment_v4",
       "result_summary": {
-        "crosswalk_matched": 131,
-        "enriched_matches": 67,
+        "crosswalk_matched": 202,
+        "enriched_matches": 64,
         "mode": "sstats_deep_inventory_enrichment_v6_fixture_grouped",
         "request_count": 160,
         "status": "ok"
@@ -107,7 +126,7 @@
       "status": "skipped"
     },
     {
-      "duration_seconds": 0.28,
+      "duration_seconds": 0.15,
       "name": "semantic_inventory_dedupe_final",
       "result_summary": {
         "type": "int"
@@ -115,7 +134,7 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 30.69,
+      "duration_seconds": 30.94,
       "name": "target_expand_final",
       "result_summary": {
         "type": "int"
@@ -123,22 +142,22 @@
       "status": "ok"
     },
     {
-      "duration_seconds": 0.05,
+      "duration_seconds": 0.06,
       "name": "build_source_aware_coverage_matrix",
       "result_summary": {
-        "context_2plus_sources": 13,
-        "fixture_2plus_sources": 132,
-        "matches": 205,
-        "matrix_matches": 205,
-        "odds_2plus_sources": 13,
-        "ready_for_model": 97,
-        "ready_for_publish": 11,
+        "context_2plus_sources": 12,
+        "fixture_2plus_sources": 190,
+        "matches": 260,
+        "matrix_matches": 260,
+        "odds_2plus_sources": 35,
+        "ready_for_model": 201,
+        "ready_for_publish": 16,
         "status": "ok"
       },
       "status": "ok"
     },
     {
-      "duration_seconds": 0.03,
+      "duration_seconds": 0.05,
       "name": "inventory_provider_gap_audit",
       "result_summary": {
         "type": "int"
