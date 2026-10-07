@@ -218,6 +218,7 @@ class DailyQualityRunner(PredictionRunner):
     async def run_once(self):
         try:
             summary = await super().run_once()
+            summary['candidates_model_evaluated'] = getattr(self.factory, 'prefilter_candidates_count', 0)
             summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
             pending = self.state.pending_bets(include_shadow=False)
             summary['overdue_published_bets'] = [

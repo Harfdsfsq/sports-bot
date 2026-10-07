@@ -111,6 +111,11 @@ class DailyMatchRegistry:
             if role == 'offers':
                 return [Offer(**row) for row in evidence['payload']]
             context = MatchContext(**evidence['payload'])
+            if provider == 'sstats' and context.source == 'sstats' and os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+                from app.providers.sstats import market_only_context
+                # Also invalidate persisted entries produced before the provenance marker.
+                if market_only_context(context):
+                    return None
             if provider == 'weather' and os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and not context.details.get('weather_location_verified'):
                 return None
             if provider != 'weather' and (context.source in {'bzzoiro_event_odds', 'market_implied_xg', 'market_signal'} or context.details.get('bzzoiro_event_only_context')):
@@ -182,6 +187,7 @@ class DailyMatchRegistry:
         return max(times, default=None)
 
     def coverage(self):
+        from app.providers.sstats import market_only_context
         result = {'inventory': sum(m.commence_time.astimezone(TZ).date().isoformat() == self.date for m in self.matches()), 'line': 0, 'context': 0, 'ready': 0, 'near': 0, 'near_ready': 0, 'form': 0, 'standings': 0, 'weather': 0, 'collected_line': 0, 'collected_context': 0, 'lookahead': 0, 'near_line': 0, 'near_context': 0, 'near_missing_line': 0, 'near_missing_context': 0}
         for match in self.matches():
             line, context = self.has_role(match, 'offers'), self.has_role(match, 'context')
@@ -204,7 +210,7 @@ class DailyMatchRegistry:
                 continue
             entry = self.data['matches'][match_identity(match)]
             result['collected_line'] += any(name.endswith(':offers') and row['payload'] for name, row in entry['evidence'].items())
-            result['collected_context'] += any(name.endswith(':context') and not name.startswith('weather:') and row['payload'] for name, row in entry['evidence'].items())
+            result['collected_context'] += any(name.endswith(':context') and not name.startswith('weather:') and row['payload'] and not (name == 'sstats:context' and market_only_context(MatchContext(**row['payload']))) for name, row in entry['evidence'].items())
             line, context = self.has_role(match, 'offers'), self.has_role(match, 'context')
             result['line'] += bool(line)
             result['context'] += bool(context)

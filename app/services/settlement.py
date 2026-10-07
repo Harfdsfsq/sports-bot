@@ -169,7 +169,7 @@ class SettlementService:
                         self.url,
                         params={
                             'from': start_date,
-                            'to': end_date,
+                            'to': (parse_datetime(end_date).date() + timedelta(days=1)).isoformat(),
                             'limit': limit,
                             'offset': offset,
                             'apikey': str(self.settings.sstats_api_key),

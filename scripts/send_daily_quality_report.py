@@ -20,6 +20,7 @@ REASONS = {
     'unsupported_team_total_line': 'индивидуальный тотал вне поддерживаемых линий',
     'non_core_confidence_guard': 'недостаточная уверенность для менее изученного турнира',
     'confidence_below_threshold': 'недостаточная уверенность модели',
+    'probability_below_threshold': 'вероятность исхода ниже порога модели',
     'publish_books_guard': 'недостаточное подтверждение цены',
     'quality_quality_high_odds_books_guard': 'недостаточное подтверждение цены',
     'quality_quality_high_odds_confidence_guard': 'недостаточная уверенность при повышенном коэффициенте',
@@ -62,6 +63,7 @@ def render(summary):
              f'За день отправлено: A {a}, B {b}; всего {len(published)}/5.',
              'Цель отбора: 1+ A и 2+ B за день; при недостаточном качестве ставок будет меньше.',
              '', '🧪 Воронка',
+             f"Рассчитано вариантов ставок: {summary.get('candidates_model_evaluated', 'нет счётчика')}. После первичной проверки вероятности и ценности: {summary.get('candidates_before_quality', 0)}.",
              f"Кандидатов до качества: {summary.get('candidates_before_quality', 0)}; после качества: {summary.get('candidates_raw', 0)}; выбрано: {len(daily.get('selected') or [])}."]
     if daily.get('selected'):
         lines.append('Подборка текущего запуска:')
@@ -86,9 +88,13 @@ def render(summary):
     if reasons:
         lines.extend(['', '🚫 Основные причины отказов'])
         groups = Counter()
+        policy_skips = 0
         for reason, value in reasons.items():
             # Prefetched next-window matches are deliberately outside this model run.
             if reason in {'match_not_found', 'simple_market_h2h_high_odds_skip'}:
+                continue
+            if reason in {'market_outside_daily_policy', 'unsupported_total_line', 'unsupported_spread_line', 'unsupported_team_total_line'}:
+                policy_skips += value
                 continue
             label = REASONS.get(reason)
             if label is None:
@@ -96,6 +102,8 @@ def render(summary):
             groups[label] += value
         for label, value in groups.most_common(5):
             lines.append(f'• {label}: {value}')
+        if policy_skips:
+            lines.append(f'Отдельно пропущены неподдерживаемые рынки и линии: {policy_skips}.')
         lines.append('Счётчики относятся к вариантам ставок; один матч может иметь несколько вариантов.')
     overdue = summary.get('overdue_published_bets') or []
     if overdue:

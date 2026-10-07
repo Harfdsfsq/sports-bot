@@ -713,3 +713,106 @@ def test_report_does_not_treat_prefetch_as_model_failure():
     assert 'ценность ниже порога: 33' in text
     assert 'недостаточная уверенность модели: 24' in text
     assert 'дополнительная проверка модели или цены: 32' not in text
+
+
+def _sstats_market_row(m):
+    return {'id': 456, 'date': m.commence_time.isoformat(), 'homeTeam': {'name': m.home_team}, 'awayTeam': {'name': m.away_team}, 'season': {'league': {'name': m.league_name}}, 'odds': [{'marketId': 1, 'odds': [{'name': 'Home', 'value': 1.6}, {'name': 'Away', 'value': 4.5}]}]}
+
+
+@pytest.fixture
+def offline_http(monkeypatch):
+    # Calls are mocked; constructing httpx must not depend on the host proxy extras.
+    for key in ('HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'):
+        monkeypatch.delenv(key, raising=False)
+
+
+def test_sstats_current_odds_do_not_replace_real_team_form(profile, offline_http, monkeypatch):
+    from app.providers.sstats import SStatsContextProvider
+    now = datetime.now(UTC)
+    m = match(now)
+    rows = [_sstats_market_row(m)]
+    for day in range(1, 7):
+        for team in [m.home_team, m.away_team]:
+            rows.append({'date': (now - timedelta(days=day)).isoformat(), 'homeTeam': {'name': team}, 'awayTeam': {'name': f'Opponent {day}'}, 'season': {'league': {'name': m.league_name}}, 'homeResult': 2, 'awayResult': 1, 'statusName': 'Finished'})
+    provider = SStatsContextProvider(Settings(_env_file=None, sstats_api_key='test'))
+    async def fetch(*args):
+        provider._daily_source_observed_at = now.isoformat()
+        return rows
+    monkeypatch.setattr(provider, '_fetch_rows', fetch)
+    contexts, stats, _ = asyncio.run(provider.fetch_context([m]))
+    ctx = contexts[m.match_key]
+    assert ctx.source == 'sstats_form'
+    assert ctx.details['home_recent_count'] == ctx.details['away_recent_count'] == 6
+    assert stats['market_only_rows_skipped'] == 1
+    assert stats['team_form_contexts_built'] == 1
+
+
+def test_sstats_market_only_row_is_not_sporting_context(profile, offline_http, monkeypatch):
+    from app.providers.sstats import SStatsContextProvider
+    m = match(datetime.now(UTC))
+    provider = SStatsContextProvider(Settings(_env_file=None, sstats_api_key='test'))
+    async def fetch(*args):
+        return [_sstats_market_row(m)]
+    monkeypatch.setattr(provider, '_fetch_rows', fetch)
+    contexts, stats, _ = asyncio.run(provider.fetch_context([m]))
+    assert contexts == {} and stats['market_only_rows_skipped'] == 1
+
+
+def test_sstats_legacy_market_cache_invalidated_and_requeued(profile, tmp_path):
+    from app.providers.sstats import SStatsContextProvider
+    now = datetime.now(UTC)
+    m = match(now)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    ctx = provider._row_to_context(_sstats_market_row(m))
+    ctx.details.pop('expected_goals_basis')  # Persisted before this fix.
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    r.sync([m])
+    r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
+    assert r.cached('sstats', 'context', m) is None
+    assert r.targets('sstats', 'context') == [r.matches()[0]]
+    assert r.coverage()['context'] == r.coverage()['collected_context'] == 0
+
+
+def test_sstats_provider_goals_remain_independent_of_odds(profile):
+    from app.providers.sstats import SStatsContextProvider, market_only_context
+    row = _sstats_market_row(match(datetime.now(UTC)))
+    row.update({'ExpectedGoalsHome': 1.3, 'ExpectedGoalsAway': 1.6})
+    ctx = SStatsContextProvider(Settings(_env_file=None))._row_to_context(row)
+    assert (ctx.expected_home, ctx.expected_away) == (1.3, 1.6)
+    assert ctx.home_win_probability is ctx.away_win_probability is None
+    assert not market_only_context(ctx)
+
+
+def test_report_prioritizes_actual_candidate_blockers():
+    text = render({'candidates_model_evaluated': 104, 'daily_quality': {}, 'rejections': {'unsupported_total_line': 140, 'market_outside_daily_policy': 88, 'unsupported_spread_line': 80, 'unsupported_team_total_line': 2, 'missing_context_totals': 90, 'ev_below_threshold': 48, 'non_core_confidence_guard': 21, 'probability_below_threshold': 31}})
+    assert 'Рассчитано вариантов ставок: 104' in text
+    assert 'вероятность исхода ниже порога модели: 31' in text
+    assert 'ценность ниже порога: 48' in text
+    assert 'Отдельно пропущены неподдерживаемые рынки и линии: 310' in text
+
+
+def test_settlement_sstats_includes_end_date(profile, offline_http, monkeypatch):
+    import httpx
+
+    from app.services.settlement import SettlementService
+    requested = []
+    async def get(self, url, **kwargs):
+        requested.append(kwargs['params'])
+        return httpx.Response(200, request=httpx.Request('GET', url), json={'data': []})
+    monkeypatch.setattr(httpx.AsyncClient, 'get', get)
+    service = SettlementService(Settings(_env_file=None, sstats_api_key='test'))
+    asyncio.run(service._fetch_sstats_rows('2026-10-02', '2026-10-07'))
+    assert requested[0]['from'] == '2026-10-02'
+    assert requested[0]['to'] == '2026-10-08'
+
+
+def test_daily_prefilter_counts_calculated_bets_and_names_probability_guard(profile):
+    from collections import defaultdict
+
+    from app.services.model import CandidateFactory
+    factory = CandidateFactory(Settings(_env_file=None))
+    c = SimpleNamespace(family='totals', adjusted_probability=.2, model_probability=.2, confidence=90., edge_pct=1., ev_pct=1., source_summary={})
+    reasons = defaultdict(int)
+    assert factory._filter_and_rank([c], reasons) == []
+    assert factory.prefilter_candidates_count == 1
+    assert reasons == {'probability_below_threshold': 1}

@@ -2904,12 +2904,14 @@ class CandidateFactory:
         return False
 
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
+        self.prefilter_candidates_count = len(candidates)
         filtered: list[CandidateBet] = []
         for item in candidates:
             min_ev = float(self.settings.min_ev_pct_for_family(item.family))
             min_edge = float(self.settings.min_edge_pct_for_family(item.family))
             if not self._passes_probability_gate(item):
-                rejections['confidence_below_threshold'] += 1
+                reason = 'probability_below_threshold' if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' else 'confidence_below_threshold'
+                rejections[reason] += 1
                 continue
             min_publish_books = self._required_publish_books(item)
             if int(getattr(item, 'books_count', 0) or 0) < min_publish_books:

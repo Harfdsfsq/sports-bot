@@ -23,6 +23,19 @@ from app.utils import (
 )
 
 
+def market_only_context(context: MatchContext) -> bool:
+    basis = context.details.get("expected_goals_basis")
+    if basis:
+        return basis == "market_odds"
+    if context.source != "sstats" or not context.payload.get("odds"):
+        return False
+    fields = (
+        ("ExpectedGoalsHome", "xGHome", "CalculatedXgHome", "homeXg", "home_xg"),
+        ("ExpectedGoalsAway", "xGAway", "CalculatedXgAway", "awayXg", "away_xg"),
+    )
+    return not all(any(context.payload.get(key) is not None for key in side) for side in fields)
+
+
 class SStatsContextProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -191,6 +204,9 @@ class SStatsContextProvider:
                 continue
 
             context = self._row_to_context(row)
+            if os.getenv("PUBLICATION_PROFILE") == "daily_quality" and context.details.get("expected_goals_basis") == "market_odds":
+                stats["market_only_rows_skipped"] = stats.get("market_only_rows_skipped", 0) + 1
+                continue
             if context.expected_home is None and context.expected_away is None:
                 # Keep room for team-form fallback instead of storing an empty context.
                 continue
@@ -1037,7 +1053,11 @@ class SStatsContextProvider:
             ["ExpectedGoalsAway", "xGAway", "CalculatedXgAway", "awayXg", "away_xg"],
         )
 
+        real_goals = expected_home is not None and expected_away is not None
         home_prob, away_prob = self._extract_win_probabilities(row)
+        # Current prices are a separate input, never independent sporting evidence.
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality" and real_goals:
+            home_prob, away_prob = None, None
         if expected_home is None and home_prob is not None:
             expected_home = home_prob * 2.4
         if expected_away is None and away_prob is not None:
@@ -1059,6 +1079,7 @@ class SStatsContextProvider:
             away_win_probability=away_prob,
             confidence=confidence,
             details={
+                "expected_goals_basis": "provider_goals" if real_goals else "market_odds",
                 "sstats_home_win_probability": home_prob,
                 "sstats_away_win_probability": away_prob,
                 "has_expected_goals": expected_home is not None and expected_away is not None,
