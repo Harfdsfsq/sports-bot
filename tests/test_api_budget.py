@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -15,6 +16,10 @@ from app.services.api_budget import ApiBudget, BudgetedAsyncClient, request_iden
 
 @pytest.fixture
 def budget_env(monkeypatch, tmp_path):
+    # CI secrets must never influence account identity or reach mock clients.
+    for name in list(os.environ):
+        if any(token in name for token in ('_KEY', 'TOKEN', 'SECRET', 'PASSWORD', 'CHAT_ID')):
+            monkeypatch.delenv(name, raising=False)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv('PUBLICATION_PROFILE', 'daily_quality')
     monkeypatch.setenv('API_BUDGET_STATE_PATH', str(tmp_path / 'budget.json'))

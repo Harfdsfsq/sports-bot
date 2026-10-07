@@ -109,7 +109,19 @@ jobs:
       - name: Install dependencies
         run: pip install --disable-pip-version-check -r requirements.txt
       - name: Verify critical pipeline tests
-        run: python -m pytest -q tests/test_daily_quality_pipeline.py tests/test_api_budget.py
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee .data/exports/latest-daily-quality-tests.log
+          import os
+          import subprocess
+          import sys
+          # Only this child process loses credentials; later provider steps retain them.
+          test_env = {k: v for k, v in os.environ.items()
+                      if not any(t in k for t in ('_KEY', 'TOKEN', 'SECRET', 'PASSWORD', 'CHAT_ID'))}
+          sys.exit(subprocess.call([sys.executable, '-m', 'pytest', '-q',
+                                    'tests/test_daily_quality_pipeline.py', 'tests/test_api_budget.py'],
+                                   env=test_env))
+          PY
       - name: Build or complete today's inventory
         shell: bash
         run: |
