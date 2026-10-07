@@ -99,6 +99,40 @@ jobs:
           key: daily-quality-v1-${{ github.ref_name }}-${{ inputs.dry_run }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             daily-quality-v1-${{ github.ref_name }}-${{ inputs.dry_run }}-
+      - name: Install dependencies
+        run: pip install --disable-pip-version-check -r requirements.txt
+      - name: Prepare one-time ledger recovery
+        if: inputs.dry_run == false && github.ref_name == 'feature/daily-quality-pipeline'
+        run: python scripts/recover_daily_cache.py prepare
+      - name: Restore last intact pre-incident cache
+        id: recovery_cache
+        if: env.RECOVER_DAILY_CACHE == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .data/daily_quality
+            .data/day_inventory
+            .data/provider_cache
+            .data/cache
+            .data/line_history
+            .data/state.json
+            .data/candidate-lifecycle-state.json
+            .data/published-candidate-index.json
+            .data/fallback-sent-index.json
+            .data/provider_quota*
+            .data/odds_api_io_account_quota_state.json
+            .data/provider_cooldowns
+          key: daily-quality-v1-feature/daily-quality-pipeline-false-37669273643-1
+      - name: Merge recovered ledger with current publications
+        if: env.RECOVER_DAILY_CACHE == 'true'
+        env:
+          RECOVERY_CACHE_HIT: ${{ steps.recovery_cache.outputs.cache-hit }}
+        run: |
+          if [[ "$RECOVERY_CACHE_HIT" != "true" ]]; then
+            echo "Intact recovery cache not found; stopping to protect publication history"
+            exit 1
+          fi
+          python scripts/recover_daily_cache.py finish
       - name: Restore shared API budgets for dry and live runs
         uses: actions/cache/restore@v4
         with:
@@ -106,8 +140,6 @@ jobs:
           key: daily-quality-api-budget-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             daily-quality-api-budget-${{ github.repository }}-
-      - name: Install dependencies
-        run: pip install --disable-pip-version-check -r requirements.txt
       - name: Verify critical pipeline tests
         run: |
           set -o pipefail
@@ -115,12 +147,19 @@ jobs:
           import os
           import subprocess
           import sys
+          import shutil
+          import tempfile
           # Only this child process loses credentials; later provider steps retain them.
           test_env = {k: v for k, v in os.environ.items()
                       if not any(t in k for t in ('_KEY', 'TOKEN', 'SECRET', 'PASSWORD', 'CHAT_ID'))}
-          sys.exit(subprocess.call([sys.executable, '-m', 'pytest', '-q',
-                                    'tests/test_daily_quality_pipeline.py', 'tests/test_api_budget.py'],
-                                   env=test_env))
+          with tempfile.TemporaryDirectory() as test_dir:
+              for folder in ('app', 'scripts', 'config', 'tests', 'docs', '.github'):
+                  shutil.copytree(folder, os.path.join(test_dir, folder))
+              test_env['PYTHONPATH'] = test_dir
+              result = subprocess.call([sys.executable, '-m', 'pytest', '-q',
+                                        'tests/test_daily_quality_pipeline.py', 'tests/test_api_budget.py'],
+                                       env=test_env, cwd=test_dir)
+          sys.exit(result)
           PY
       - name: Build or complete today's inventory
         shell: bash
@@ -159,7 +198,7 @@ jobs:
           path: .data/daily_quality/api-budget.json
           key: daily-quality-api-budget-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Save persistent state
-        if: always()
+        if: always() && steps.pipeline.outcome != 'skipped' && steps.pipeline.outcome != ''
         uses: actions/cache/save@v4
         with:
           path: |
@@ -185,6 +224,7 @@ jobs:
             .data/exports
             .data/daily_quality
             .data/day_inventory
+            .data/state.json
             .logs/debug-last-run.json
           include-hidden-files: true
           retention-days: 14

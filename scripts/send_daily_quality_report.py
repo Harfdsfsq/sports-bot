@@ -121,7 +121,8 @@ def render(summary):
             row = (odds_stats.get('accounts') or {}).get(name) or {}
             status = ('ключ не подключён' if name not in configured else
                       'ограничение квоты; повтор после сброса' if row.get('rate_limited') or row.get('quota_exhausted') else
-                      'ошибка доступа — проверьте ключ и тариф' if row.get('auth_error') or row.get('plan_restriction') else
+                      f"выбранные букмекеры недоступны по тарифу ({row.get('effective_bookmakers') or row.get('bookmakers')}); проверьте выбор букмекеров в аккаунте" if row.get('plan_restriction') else
+                      'ошибка авторизации — проверьте ключ' if row.get('auth_error') else
                       f"дал линии для {row['events_matched']} матчей" if row.get('events_matched') else
                       'использован свежий кеш' if not odds_stats.get('assigned_matches') else
                       'проверен; подходящих линий не получено')

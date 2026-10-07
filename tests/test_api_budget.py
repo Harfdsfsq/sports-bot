@@ -283,3 +283,39 @@ def test_workflow_prepare_exports_only_assignments(tmp_path):
     assert values['API_BUDGET_ENABLED'] == 'true'
     assert values['ODDS_API_IO_BOOKMAKERS_ACCOUNT2'] == 'Bet365,Unibet'
     assert 'ODDS_API_IO_KEY_2' not in values
+
+
+def test_recovery_preserves_old_bank_and_deduplicates_republication():
+    from scripts.recover_daily_cache import merge_state
+    old = {'bankroll': {'current_balance': 999.38, 'open_exposure': 10, 'bets_published': 5, 'total_staked': 15}, 'bets': [{'fingerprint': 'corinthians', 'status': 'pending', 'telegram_sent': True, 'stake_amount': 2.5}]}
+    current = {'bets': [dict(old['bets'][0]), {'fingerprint': 'vitoria', 'status': 'pending', 'telegram_sent': True, 'stake_amount': 2.5}]}
+    merged = merge_state(old, current)
+    assert len(merged['bets']) == 2
+    assert merged['bankroll']['current_balance'] == 999.38
+    assert merged['bankroll']['open_exposure'] == 12.5
+    assert merged['bankroll']['bets_published'] == 6
+
+
+def test_recovery_rejects_missing_or_conflicting_settlement():
+    from scripts.recover_daily_cache import merge_state
+    old = {'bankroll': {}, 'bets': [{'fingerprint': 'same', 'status': 'pending'}]}
+    with pytest.raises(ValueError):
+        merge_state(old, {'bets': [{'fingerprint': 'same', 'status': 'won'}]})
+
+
+def test_cache_recovery_keeps_new_data_and_old_publication_markers(tmp_path, monkeypatch):
+    from app.services.daily_match_registry import read_json, write_json
+    from scripts.recover_daily_cache import BACKUP, MARKER, finish
+    monkeypatch.chdir(tmp_path)
+    write_json('.data/state.json', {'bankroll': {'current_balance': 999.38}, 'bets': [{'fingerprint': 'old', 'status': 'pending', 'telegram_sent': True}]})
+    write_json('.data/daily_quality/registry.json', {'date_local': '2026-10-07', 'matches': {'old': {'publication': {'match_id': 'old'}}}, 'published': [{'match_id': 'old', 'tier': 'A'}]})
+    write_json(BACKUP / 'state.json', {'bets': []})
+    write_json(BACKUP / 'daily_quality/registry.json', {'date_local': '2026-10-07', 'matches': {'new': {}}, 'published': [{'match_id': 'new', 'tier': 'B'}]})
+    write_json(BACKUP / 'daily_quality/api-budget.json', {'account': 'current'})
+    finish()
+    registry = read_json('.data/daily_quality/registry.json', {})
+    assert {r['match_id'] for r in registry['published']} == {'old', 'new'}
+    assert registry['matches']['old']['publication']['match_id'] == 'old'
+    assert read_json('.data/state.json', {})['bankroll']['current_balance'] == 999.38
+    assert read_json('.data/daily_quality/api-budget.json', {})['account'] == 'current'
+    assert MARKER.exists() and not BACKUP.exists()
