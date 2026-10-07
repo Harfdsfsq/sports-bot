@@ -1,32 +1,30 @@
 # Provider day discovery canonical pool
-UTC: 2026-10-06T21:37:17.666913+00:00
+UTC: 2026-10-07T02:16:47.948729+00:00
 target_date: 2026-10-07
-canonical_matches: 313
-2+ provider sources: 29
-2+ primary sources: 27
+canonical_matches: 309
+2+ provider sources: 28
+2+ primary sources: 26
 all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=3 rows=131 event_like=126 unique=43 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
+- bzzoiro: commands=10 ok=3 rows=132 event_like=127 unique=43 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
 - football_data: commands=1 ok=1 rows=5 event_like=5 unique=5 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=596 event_like=596 unique=298 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=586 event_like=586 unique=293 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
 - sstats: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"2": 24, "1": 284, "3": 4, "4": 1}
-- primary providers: {"2": 27, "1": 286}
+- all providers: {"1": 281, "2": 23, "3": 4, "4": 1}
+- primary providers: {"1": 283, "2": 26}
 
 ## Top canonical matches
-- 2026-10-07T00:00:00+00:00 | USA — Canada | providers=bzzoiro,odds_api_io ids={"odds_api_io": "73600474", "bzzoiro": "587777"}
-- 2026-10-07T00:00:00+00:00 | Club Aurora — Academia del Balompie Boliviano | providers=odds_api_io ids={"odds_api_io": "73550434"}
-- 2026-10-07T00:00:00+00:00 | Indiana Hoosiers — Kentucky Wildcats | providers=odds_api_io ids={"odds_api_io": "73354404"}
 - 2026-10-07T00:00:00+00:00 | Memphis Tigers — Lipscomb Bisons | providers=odds_api_io ids={"odds_api_io": "73354406"}
+- 2026-10-07T00:00:00+00:00 | Indiana Hoosiers — Kentucky Wildcats | providers=odds_api_io ids={"odds_api_io": "73354404"}
 - 2026-10-07T00:00:00+00:00 | UAB Blazers — Belmont Bruins | providers=odds_api_io ids={"odds_api_io": "73354408"}
-- 2026-10-07T00:00:00+00:00 | San Marcos FC — Diriangen FC Diriamba | providers=odds_api_io ids={"odds_api_io": "74321132"}
+- 2026-10-07T00:00:00+00:00 | USA — Canada | providers=bzzoiro ids={"bzzoiro": "587777"}
 - 2026-10-07T00:30:00+00:00 | Chicago Fire — Vancouver Whitecaps FC | providers=bzzoiro,odds_api_io ids={"odds_api_io": "72916688", "bzzoiro": "219713"}
 - 2026-10-07T00:35:00+00:00 | AA Ponte Preta SP — EC Juventude RS | providers=bzzoiro,odds_api_io ids={"odds_api_io": "68823346", "bzzoiro": "10171"}
 - 2026-10-07T02:00:00+00:00 | French Guiana — Belize | providers=bzzoiro,odds_api_io ids={"odds_api_io": "73220914", "bzzoiro": "223140"}
@@ -51,13 +49,11 @@ all 3 primary sources: 0
 - 2026-10-07T10:00:00+00:00 | Shimizu S-Pulse — V-Varen Nagasaki | providers=bzzoiro,odds_api_io ids={"odds_api_io": "74313588", "bzzoiro": "602313"}
 - 2026-10-07T10:00:00+00:00 | FC Tokyo — Shonan Bellmare | providers=bzzoiro,odds_api_io ids={"odds_api_io": "74313592", "bzzoiro": "602312"}
 - 2026-10-07T10:00:00+00:00 | Gangjin Swans WFC — Suwon WFC | providers=odds_api_io ids={"odds_api_io": "69976408"}
+- 2026-10-07T10:00:00+00:00 | Gyeongju FC — Hwacheon KSPO FC | providers=odds_api_io ids={"odds_api_io": "69976410"}
+- 2026-10-07T10:00:00+00:00 | Sejong Sportstoto WFC — Incheon Hyundai Steel Red Angels | providers=odds_api_io ids={"odds_api_io": "69976412"}
 
 ## Targeted enrichment plan sample
-- USA — Canada | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Club Aurora — Academia del Balompie Boliviano | primary=1 providers=odds_api_io
+- Memphis Tigers — Lipscomb Bisons | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -65,16 +61,12 @@ all 3 primary sources: 0
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Memphis Tigers — Lipscomb Bisons | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - UAB Blazers — Belmont Bruins | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- San Marcos FC — Diriangen FC Diriamba | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- USA — Canada | primary=1 providers=bzzoiro
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Chicago Fire — Vancouver Whitecaps FC | primary=2 providers=bzzoiro,odds_api_io
@@ -130,6 +122,14 @@ all 3 primary sources: 0
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Sanfrecce Hiroshima — Iwaki FC | primary=2 providers=bzzoiro,odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Avispa Fukuoka — Yokohama FC | primary=2 providers=bzzoiro,odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Cerezo Osaka — Kagoshima United | primary=2 providers=bzzoiro,odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
