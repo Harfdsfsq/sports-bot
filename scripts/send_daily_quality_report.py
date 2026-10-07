@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from app.services.daily_match_registry import parse_time, read_json, write_json
+from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
@@ -19,6 +20,13 @@ REASONS = {
     'unsupported_total_line': 'тотал вне поддерживаемых целых и половинных линий',
     'unsupported_team_total_line': 'индивидуальный тотал вне поддерживаемых линий',
     'non_core_confidence_guard': 'недостаточная уверенность для менее изученного турнира',
+    'non_core_context_guard': 'спортивные данные недостаточно подтверждают модель',
+    'totals_over25_confidence_guard': 'для ТБ(2.5) недостаточна уверенность модели',
+    'totals_over25_edge_guard': 'для ТБ(2.5) недостаточен запас над линией',
+    'totals_over25_probability_guard': 'для ТБ(2.5) недостаточна скорректированная вероятность',
+    'totals_over25_xg_guard': 'ТБ(2.5) не подтверждён голевой моделью',
+    'totals_over25_dual_threat_guard': 'ТБ(2.5) слишком зависит от голов одной команды',
+    'quality_quality_high_odds_score_guard': 'качество недостаточно при повышенном коэффициенте',
     'confidence_below_threshold': 'недостаточная уверенность модели',
     'probability_below_threshold': 'вероятность исхода ниже порога модели',
     'publish_books_guard': 'недостаточное подтверждение цены',
@@ -57,9 +65,9 @@ def render(summary):
              f"В этом окне: линия {c.get('near_line', 0)}, спортивный контекст {c.get('near_context', 0)}; нет линии у {c.get('near_missing_line', 0)}, нет контекста у {c.get('near_missing_context', 0)}.",
              f"Дополнительные данные окна: форма {c.get('form', 0)}, таблица {c.get('standings', 0)}, погода {c.get('weather', 0)}.",
              '', '🏷️ Качество прогнозов',
-             'A: качество 78+, уверенность модели 70+, EV 5%+, запас 3 п.п.+.',
-             'B: качество 65+, уверенность модели 60+, EV 3%+, запас 2 п.п.+.',
+             *[f"{tier}: качество {limits['quality']}+, уверенность модели {limits['confidence']}+, EV {limits['ev']}%+, запас {limits['edge']} п.п.+." for tier, limits in TIER_LIMITS.items()],
              'Для обоих: реальный контекст, текущая линия и положительная ценность. Два API — преимущество.',
+             'Дополнительно проверяются вероятность исхода, голевая модель и корректность цены.',
              f'За день отправлено: A {a}, B {b}; всего {len(published)}/5.',
              'Цель отбора: 1+ A и 2+ B за день; при недостаточном качестве ставок будет меньше.',
              '', '🧪 Воронка',

@@ -9,7 +9,7 @@ from typing import Any
 from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, MatchContextBundle, Offer
 from app.services.daily_goal_probability import expected_value, push_probability, spread_probability, total_probability
-from app.services.daily_quality_policy import sporting_context_sources
+from app.services.daily_quality_policy import TIER_LIMITS, sporting_context_sources
 from app.utils import (
     candidate_selection_key,
     clamp,
@@ -2905,6 +2905,7 @@ class CandidateFactory:
 
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         self.prefilter_candidates_count = len(candidates)
+        daily = os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality'
         filtered: list[CandidateBet] = []
         for item in candidates:
             min_ev = float(self.settings.min_ev_pct_for_family(item.family))
@@ -2938,13 +2939,16 @@ class CandidateFactory:
                 if int(getattr(item, 'books_count', 0) or 0) < (1 if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' else int(getattr(self.settings, 'non_core_league_min_books', 2) or 2)):
                     rejections['non_core_books_guard'] += 1
                     continue
-                if float(item.confidence) < float(getattr(self.settings, 'non_core_league_min_confidence', 65.0) or 68.0):
+                min_confidence = TIER_LIMITS['B']['confidence'] if daily else float(getattr(self.settings, 'non_core_league_min_confidence', 65.0) or 68.0)
+                if float(item.confidence) < min_confidence:
                     rejections['non_core_confidence_guard'] += 1
                     continue
-                if float(item.edge_pct) < float(getattr(self.settings, 'non_core_league_min_edge_pct', 6.0) or 7.5):
+                non_core_edge = TIER_LIMITS['B']['edge'] if daily else float(getattr(self.settings, 'non_core_league_min_edge_pct', 6.0) or 7.5)
+                if float(item.edge_pct) < non_core_edge:
                     rejections['non_core_edge_guard'] += 1
                     continue
-                if float(item.ev_pct) < float(getattr(self.settings, 'non_core_league_min_ev_pct', 3.6) or 4.5):
+                non_core_ev = TIER_LIMITS['B']['ev'] if daily else float(getattr(self.settings, 'non_core_league_min_ev_pct', 3.6) or 4.5)
+                if float(item.ev_pct) < non_core_ev:
                     rejections['non_core_ev_guard'] += 1
                     continue
                 if bool(getattr(self.settings, 'non_core_league_require_core_context', True)) and not self._has_core_context(item):
@@ -3132,6 +3136,10 @@ class CandidateFactory:
             filtered.append(item)
 
         filtered.sort(key=self._candidate_rank_key, reverse=True)
+        if daily:
+            # Evaluate every surviving market before choosing one forecast per match.
+            # A legacy shortlist cap must not hide alternatives from quality/A-B checks.
+            return filtered
         if bool(getattr(self.settings, 'prefer_core_leagues_in_shortlist', True)):
             core_filtered = [item for item in filtered if self._league_bucket(item) in {'preferred', 'secondary'}]
             non_core_filtered = [item for item in filtered if self._league_bucket(item) not in {'preferred', 'secondary'}]

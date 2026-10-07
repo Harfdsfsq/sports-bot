@@ -9,6 +9,11 @@ from typing import Any
 
 from app.services.daily_goal_probability import expected_value
 
+TIER_LIMITS = {
+    'A': {'quality': 78, 'confidence': 70, 'ev': 5, 'edge': 3},
+    'B': {'quality': 65, 'confidence': 60, 'ev': 3, 'edge': 2},
+}
+
 
 def enabled() -> bool:
     return os.getenv('PUBLICATION_PROFILE', '').strip().lower() == 'daily_quality'
@@ -48,15 +53,17 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
         reasons.append('unsupported_quarter_line')
     if candidate.family == 'totals' and (candidate.expected_home is None or candidate.expected_away is None):
         reasons.append('missing_goal_model')
-    if ev < 3 or edge < 2 or q < 65 or float(candidate.confidence) < 60:
+    floor = TIER_LIMITS['B']
+    if ev < floor['ev'] or edge < floor['edge'] or q < floor['quality'] or float(candidate.confidence) < floor['confidence']:
         reasons.append('below_b_quality')
-    tier = 'A' if q >= 78 and float(candidate.confidence) >= 70 and ev >= 5 and edge >= 3 else 'B'
+    top = TIER_LIMITS['A']
+    tier = 'A' if q >= top['quality'] and float(candidate.confidence) >= top['confidence'] and ev >= top['ev'] and edge >= top['edge'] else 'B'
     return tier, reasons, {
         'publication_tier': tier if not reasons else 'blocked',
         'quality_score': q, 'canonical_ev_pct': round(ev, 3), 'canonical_edge_pp': round(edge, 3),
         'tier_definition': 'quality_and_value',
         'extra_confirmation_bonus': int(coverage.get('odds_sources_count') or 0) > 1 or int(coverage.get('context_sources_count') or 0) > 1,
-        'tier_limits': {'A': {'quality': 78, 'confidence': 70, 'ev': 5, 'edge': 3}, 'B': {'quality': 65, 'confidence': 60, 'ev': 3, 'edge': 2}},
+        'tier_limits': TIER_LIMITS,
     }
 
 

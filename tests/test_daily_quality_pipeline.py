@@ -816,3 +816,77 @@ def test_daily_prefilter_counts_calculated_bets_and_names_probability_guard(prof
     assert factory._filter_and_rank([c], reasons) == []
     assert factory.prefilter_candidates_count == 1
     assert reasons == {'probability_below_threshold': 1}
+
+
+def non_core_candidate(now, confidence=65):
+    c = miami_candidate(now)
+    c.league_name = 'Independent Test Cup'
+    c.confidence = confidence
+    c.ev_pct = 4.
+    c.edge_pct = 3.
+    c.publication_score = 30.
+    c.source_summary['context_source'] = 'sstats_form'
+    c.analysis = {'flags': ['form']}
+    return c
+
+
+@pytest.mark.parametrize('confidence,passed', [(59.9, False), (60, True), (65, True), (69, True)])
+def test_daily_non_core_prefilter_obeys_b_confidence_floor(profile, confidence, passed):
+    from collections import defaultdict
+
+    from app.services.model import CandidateFactory
+    c = non_core_candidate(datetime.now(UTC), confidence)
+    reasons = defaultdict(int)
+    result = CandidateFactory(Settings(_env_file=None))._filter_and_rank([c], reasons)
+    assert bool(result) == passed
+    assert reasons.get('non_core_confidence_guard', 0) == (0 if passed else 1)
+
+
+def test_legacy_non_core_thresholds_preserved(profile, monkeypatch):
+    from collections import defaultdict
+
+    from app.services.model import CandidateFactory
+    monkeypatch.delenv('PUBLICATION_PROFILE')
+    c = non_core_candidate(datetime.now(UTC), 65)
+    c.books_count = 2
+    c.edge_pct = 10.
+    c.ev_pct = 15.
+    reasons = defaultdict(int)
+    assert CandidateFactory(Settings(_env_file=None))._filter_and_rank([c], reasons) == []
+    assert reasons['non_core_confidence_guard'] == 1
+
+
+def test_daily_shortlist_defers_match_and_league_caps_until_quality(profile):
+    from collections import defaultdict
+    from dataclasses import replace
+
+    from app.services.model import CandidateFactory
+    now = datetime.now(UTC)
+    first = non_core_candidate(now)
+    alternative = replace(first, point=1.5, publication_score=29.)
+    other = replace(first, match_key='other', home_team='Other', publication_score=28.)
+    settings = Settings(_env_file=None, max_non_core_picks_per_run=1, max_picks_per_league=1, max_picks_per_family=1, max_internal_candidates_per_run=1)
+    reasons = defaultdict(int)
+    result = CandidateFactory(settings)._filter_and_rank([first, alternative, other], reasons)
+    assert result == [first, alternative, other]
+    assert not reasons
+
+
+def test_daily_final_selection_still_limits_two_and_one_per_match(profile, tmp_path):
+    now = datetime.now(UTC)
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.settings = Settings(_env_file=None, max_picks_per_run=2)
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    first = non_core_candidate(now)
+    first.stake_amount = 20.
+    first.bankroll_snapshot = 1000.
+    first.source_summary['publication_tier'] = 'B'
+    first.source_summary['registry_match_id'] = 'first'
+    from dataclasses import replace
+    alternative = replace(first, source_summary={**first.source_summary, 'quality_score': 70.})
+    second = replace(first, match_key='second', source_summary={**first.source_summary, 'registry_match_id': 'second'})
+    third = replace(first, match_key='third', source_summary={**first.source_summary, 'registry_match_id': 'third'})
+    picked = runner._select_publishable_candidates([first, alternative, second, third])
+    assert len(picked) == 2
+    assert len({c.match_key for c in picked}) == 2
+    assert all(c.stake_amount == 2.5 for c in picked)
