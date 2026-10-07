@@ -1103,7 +1103,7 @@ class OddsApiIoProvider:
             payload = None
             try:
                 cached = json.loads(path.read_text())
-                if datetime.now(UTC).timestamp() - float(cached['at']) < 21600:
+                if cached.get('configured_bookmakers') == account['bookmakers'] and datetime.now(UTC).timestamp() - float(cached['at']) < 21600:
                     payload = cached['payload']
                     account_stats['selected_books_cached'] = True
             except (OSError, ValueError, KeyError, TypeError):
@@ -1126,7 +1126,7 @@ class OddsApiIoProvider:
                     # Store only normalized names; account responses can contain metadata.
                     names = self._selected_bookmakers(payload)
                     if names:
-                        path.write_text(json.dumps({'at': datetime.now(UTC).timestamp(), 'payload': {'bookmakers': names}}))
+                        path.write_text(json.dumps({'at': datetime.now(UTC).timestamp(), 'configured_bookmakers': account['bookmakers'], 'payload': {'bookmakers': names}}))
                 except (httpx.HTTPError, ValueError, OSError):
                     account_stats['discovery_error'] = True
                     available.append(account)

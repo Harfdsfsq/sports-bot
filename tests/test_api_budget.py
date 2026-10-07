@@ -281,7 +281,7 @@ def test_workflow_prepare_exports_only_assignments(tmp_path):
     assert all('=' in row and not row.lstrip().startswith('#') for row in rows)
     values = dict(row.split('=', 1) for row in rows)
     assert values['API_BUDGET_ENABLED'] == 'true'
-    assert values['ODDS_API_IO_BOOKMAKERS_ACCOUNT2'] == 'Bet365,Unibet'
+    assert values['ODDS_API_IO_BOOKMAKERS_ACCOUNT2'] == '1xbet,Betano'
     assert 'ODDS_API_IO_KEY_2' not in values
 
 
@@ -319,3 +319,38 @@ def test_cache_recovery_keeps_new_data_and_old_publication_markers(tmp_path, mon
     assert read_json('.data/state.json', {})['bankroll']['current_balance'] == 999.38
     assert read_json('.data/daily_quality/api-budget.json', {})['account'] == 'current'
     assert MARKER.exists() and not BACKUP.exists()
+
+
+def test_changed_bookmakers_refresh_old_metadata_cache(budget_env, monkeypatch):
+    import hashlib
+
+    from app.providers.odds_api_io import OddsApiIoProvider
+    provider = OddsApiIoProvider(SimpleNamespace(odds_api_io_key='first', odds_api_io_key_2='second', odds_api_io_per_run_max=20))
+    path = Path('.data/daily_quality') / ('odds-books-' + hashlib.sha256(b'second').hexdigest()[:16] + '.json')
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps({'at': datetime.now(UTC).timestamp(), 'configured_bookmakers': 'Bet365,Unibet', 'payload': {'bookmakers': ['Betfair Exchange', 'Sbobet']}}))
+    calls = []
+    async def get(self, url, **kwargs):
+        calls.append(kwargs['params']['apiKey'])
+        return httpx.Response(200, request=httpx.Request('GET', url), json={'bookmakers': ['1xbet', 'Betano']})
+    monkeypatch.setattr(httpx.AsyncClient, 'get', get)
+    async def run():
+        async with httpx.AsyncClient() as client:
+            accounts = await provider._prepare_accounts(client, [{'name': 'account2', 'api_key': 'second', 'bookmakers': '1xbet,Betano'}], {'accounts': {'account2': {}}})
+            assert accounts[0]['bookmakers'] == '1xbet,Betano'
+    asyncio.run(run())
+    assert calls == ['second']
+    assert json.loads(path.read_text())['configured_bookmakers'] == '1xbet,Betano'
+
+
+def test_old_bookmaker_denial_does_not_block_new_selection(budget_env):
+    from app.services.api_budget import endpoint_identity
+    identity = ('odds_api_io', 'account2', 'test')
+    now = datetime.now(UTC)
+    old = httpx.Request('GET', 'https://api.odds-api.io/v3/odds/multi?apiKey=private&bookmakers=Betfair%20Exchange,Sbobet')
+    new = httpx.Request('GET', 'https://api.odds-api.io/v3/odds/multi?apiKey=private&bookmakers=1xbet,Betano')
+    budget_env.reserve(*identity, now=now, endpoint=endpoint_identity(old))
+    budget_env.observe(identity, httpx.Response(403, request=old), now=now)
+    assert budget_env.reserve(*identity, now=now, endpoint=endpoint_identity(old))[0] == 'endpoint_cooldown'
+    assert budget_env.reserve(*identity, now=now, endpoint=endpoint_identity(new))[0] == 'allowed'
+    assert 'private' not in budget_env.path.read_text()

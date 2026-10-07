@@ -90,6 +90,15 @@ def request_identity(request: httpx.Request):
     return provider, account, fingerprint
 
 
+def endpoint_identity(request: httpx.Request):
+    # A bookmaker entitlement denial must not block a newly selected set.
+    # Include only the public bookmaker names, never API-key query parameters.
+    books = request.url.params.get('bookmakers')
+    if request.url.host == 'api.odds-api.io' and books:
+        return request.url.path + '|books=' + ','.join(sorted(b.strip().lower() for b in books.split(',')))
+    return request.url.path
+
+
 class ApiBudget:
     def __init__(self, path: Path | None = None):
         self.path = path or Path(os.getenv('API_BUDGET_STATE_PATH', '.data/daily_quality/api-budget.json'))
@@ -190,7 +199,7 @@ class ApiBudget:
                         delay = 3600 if response.status_code != 429 else 60
                 until = now.timestamp() + max(1, delay)
                 if response.status_code in {402, 403}:
-                    endpoint_id = hashlib.sha256(response.request.url.path.encode()).hexdigest()[:16]
+                    endpoint_id = hashlib.sha256(endpoint_identity(response.request).encode()).hexdigest()[:16]
                     row.setdefault('blocked_endpoints', {})[endpoint_id] = until
                 else:
                     row['blocked_until'] = until
@@ -219,7 +228,7 @@ class BudgetedAsyncClient(httpx.AsyncClient):
             return await super().send(request, **kwargs)
         budget = ApiBudget()
         while True:
-            reason, delay = budget.reserve(*identity, endpoint=request.url.path)
+            reason, delay = budget.reserve(*identity, endpoint=endpoint_identity(request))
             if reason == 'allowed':
                 break
             if reason == 'pace' and delay <= 60:
