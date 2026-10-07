@@ -961,3 +961,57 @@ def test_sstats_conflicting_same_day_history_is_excluded(profile, tmp_path):
     r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
     assert r.cached('sstats', 'context', m) is None
     assert r.targets('sstats', 'context')
+
+
+@pytest.mark.parametrize('status', ['2', '6', '7', '12', '13', '14', '15', '17', '19', 'In Progress', ''])
+def test_settlement_does_not_grade_unfinished_scores(profile, monkeypatch, status):
+    from app.services.settlement import SettlementService
+    now = datetime(2026, 10, 7, 18, tzinfo=UTC)
+    service = SettlementService(Settings(_env_file=None, sstats_api_key='test'))
+    row = {'_settlement_source': 'sstats', 'status': status, 'date': (now - timedelta(hours=4)).isoformat(), 'homeTeam': {'name': 'Home'}, 'awayTeam': {'name': 'Away'}, 'homeResult': 0, 'awayResult': 0}
+    async def fetch(*args):
+        return [row]
+    monkeypatch.setattr(service, '_fetch_sstats_rows', fetch)
+    bet = {'status': 'pending', 'commence_time': row['date'], 'home_team': 'Home', 'away_team': 'Away', 'family': 'totals', 'selection': 'Over', 'point': 2.5, 'odds': 2, 'stake_amount': 5}
+    result = asyncio.run(service.settle_pending_bets([bet], now))
+    assert result['items'] == []
+    assert result['reasons'] == {'result_not_final': 1}
+
+
+@pytest.mark.parametrize('status', ['8', '9', '10'])
+def test_settlement_accepts_only_terminal_sstats_codes(status):
+    from app.services.settlement import SettlementService
+    assert SettlementService._row_is_finished({'_settlement_source': 'sstats', 'status': status})
+
+
+@pytest.mark.parametrize('row', [
+    {'_settlement_source': 'sstats', 'status': 10, 'homeResult': 2, 'awayResult': 2, 'homeFTResult': 1, 'awayFTResult': 1},
+    {'_settlement_source': 'api_football', 'fixture': {'status': {'short': 'PEN'}}, 'goals': {'home': 2, 'away': 2}, 'score': {'fulltime': {'home': 1, 'away': 1}, 'penalty': {'home': 5, 'away': 4}}},
+    {'_settlement_source': 'football_data', 'status': 'FINISHED', 'score': {'duration': 'PENALTY_SHOOTOUT', 'regularTime': {'home': 1, 'away': 1}, 'fullTime': {'home': 7, 'away': 6}}},
+])
+def test_settlement_uses_regulation_score_after_extra_time(row):
+    from app.services.settlement import SettlementService
+    assert SettlementService._row_is_finished(row)
+    assert SettlementService._extract_result(row, 'home') == 1
+    assert SettlementService._extract_result(row, 'away') == 1
+
+
+@pytest.mark.parametrize('row', [
+    {'_settlement_source': 'sstats', 'status': 9, 'homeResult': 3, 'awayResult': 2},
+    {'_settlement_source': 'api_football', 'fixture': {'status': {'short': 'AET'}}, 'goals': {'home': 3, 'away': 2}},
+    {'_settlement_source': 'football_data', 'status': 'FINISHED', 'score': {'duration': 'EXTRA_TIME', 'fullTime': {'home': 3, 'away': 2}}},
+])
+def test_settlement_waits_for_regulation_score_after_extra_time(row):
+    from app.services.settlement import SettlementService
+    assert SettlementService._extract_result(row, 'home') is None
+    assert SettlementService._extract_result(row, 'away') is None
+
+
+def test_settlement_final_row_wins_over_live_copy(profile):
+    from app.services.settlement import SettlementService
+    service = SettlementService(Settings(_env_file=None))
+    bet = {'commence_time': '2026-10-07T10:00:00Z', 'home_team': 'Home', 'away_team': 'Away'}
+    row = {'_settlement_source': 'sstats', 'date': bet['commence_time'], 'homeTeam': {'name': 'Home'}, 'awayTeam': {'name': 'Away'}, 'homeResult': 0, 'awayResult': 0}
+    finished = {**row, 'status': 8, 'homeFTResult': 2, 'awayFTResult': 1}
+    best, debug = service._match_row_with_debug(bet, [{**row, 'status': 19}, finished])
+    assert best == finished and debug['best_has_score']

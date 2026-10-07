@@ -75,6 +75,11 @@ class SettlementService:
                 reasons['no_match'] += 1
                 debug_bets.append(debug_entry)
                 continue
+            if not self._row_is_finished(row):
+                debug_entry['reason'] = 'result_not_final'
+                reasons['result_not_final'] += 1
+                debug_bets.append(debug_entry)
+                continue
             home_goals, away_goals, result_orientation = self._extract_result_pair_for_bet(bet, row)
             if home_goals is None or away_goals is None:
                 debug_entry['reason'] = 'missing_score'
@@ -317,7 +322,7 @@ class SettlementService:
             )
             if score <= 0:
                 continue
-            has_score = int(self._extract_result(row, 'home') is not None and self._extract_result(row, 'away') is not None)
+            has_score = int(self._row_is_finished(row) and self._extract_result(row, 'home') is not None and self._extract_result(row, 'away') is not None)
             source_name = str(row.get('_settlement_source') or '')
             source_priority = 4 if source_name == 'manual_override' else 3 if source_name == 'api_football' else 2 if source_name == 'sstats' else 1
             key = (has_score, score, source_priority)
@@ -787,19 +792,24 @@ class SettlementService:
         return row_home_goals, row_away_goals, 'direct'
 
     @staticmethod
+    def _row_is_finished(row: dict[str, Any]) -> bool:
+        source = str(row.get('_settlement_source') or '')
+        if source == 'manual_override':
+            return True
+        if source == 'sstats' and row.get('status') not in (None, ''):
+            # SStats codes 8/9/10 are finished, after extra time, after penalties.
+            return str(row['status']).strip() in {'8', '9', '10'}
+        status = ''.join(char for char in str(SettlementService._row_status(row) or '').lower() if char.isalnum())
+        return status in {'finished', 'finishedafterextratime', 'finishedafterpenalty', 'finishedafterpenalties', 'matchfinished', 'ft', 'aet', 'pen'}
+
+    @staticmethod
     def _extract_result(row: dict[str, Any], side: str) -> float | None:
         key = 'home' if side == 'home' else 'away'
-        goals = row.get('goals')
-        if isinstance(goals, dict):
-            value = goals.get(key)
-            if value not in (None, ''):
-                try:
-                    return float(value)
-                except Exception:
-                    pass
         score = row.get('score')
         if isinstance(score, dict):
-            full_time = score.get('fullTime') or score.get('fulltime')
+            full_time = score.get('regularTime') or score.get('fulltime') or score.get('fullTime')
+            if str(score.get('duration') or '').upper() in {'EXTRA_TIME', 'PENALTY_SHOOTOUT'}:
+                full_time = score.get('regularTime')
             if isinstance(full_time, dict):
                 value = full_time.get(key)
                 if value not in (None, ''):
@@ -807,7 +817,17 @@ class SettlementService:
                         return float(value)
                     except Exception:
                         pass
-        keys = ['homeResult', 'homeFTResult', 'HomeScore'] if side == 'home' else ['awayResult', 'awayFTResult', 'AwayScore']
+            if str(score.get('duration') or '').upper() in {'EXTRA_TIME', 'PENALTY_SHOOTOUT'}:
+                return None
+        fixture = row.get('fixture')
+        fixture_status = fixture.get('status', {}) if isinstance(fixture, dict) else {}
+        extra_time = (str(row.get('status') or '') in {'9', '10'}
+                      or str(fixture_status.get('short') or '').upper() in {'AET', 'PEN'}
+                      or 'after' in str(row.get('statusName') or '').lower())
+        if extra_time and row.get('_settlement_source') != 'manual_override':
+            keys = ['homeFTResult'] if side == 'home' else ['awayFTResult']
+        else:
+            keys = ['homeFTResult', 'homeResult', 'HomeScore'] if side == 'home' else ['awayFTResult', 'awayResult', 'AwayScore']
         for key in keys:
             value = row.get(key)
             if value in (None, ''):
@@ -816,6 +836,13 @@ class SettlementService:
                 return float(value)
             except Exception:
                 continue
+        if not extra_time:
+            goals = row.get('goals')
+            if isinstance(goals, dict):
+                try:
+                    return float(goals[key])
+                except (KeyError, TypeError, ValueError):
+                    pass
         return None
 
     @staticmethod
