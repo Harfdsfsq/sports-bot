@@ -18,6 +18,8 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import canonicalize_team_name, parse_datetime, score_event_match
@@ -172,7 +174,7 @@ class ApiFootballContextProvider:
         )[:4]
         headers = {"x-apisports-key": self.api_key}
         fixture_rows: list[dict[str, Any]] = []
-        async with httpx.AsyncClient(
+        async with BudgetedAsyncClient(
             timeout=self.timeout,
             follow_redirects=True,
             headers=headers,

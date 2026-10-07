@@ -104,7 +104,8 @@ class DailyMatchRegistry:
         if not evidence:
             return None
         observed = parse_time(evidence['observed_at'])
-        ttl = 15 if role == 'offers' else 120 if provider == 'weather' else 360
+        minutes_to_start = (match.commence_time - self.now).total_seconds() / 60
+        ttl = (15 if minutes_to_start <= 240 else 120 if minutes_to_start <= 480 else 240) if role == 'offers' else 120 if provider == 'weather' else 360
         if observed is None or not -timedelta(seconds=5) <= self.now - observed <= timedelta(minutes=ttl):
             return None
         try:
@@ -153,8 +154,8 @@ class DailyMatchRegistry:
         ranked.sort(key=lambda item: item[0])
         # Close near window first, then prefetch next and rotate through the daily backlog.
         near = [m for key, m in ranked if key[0] == 0]
-        nxt = [m for key, m in ranked if key[0] == 1][:20]
-        later = [m for key, m in ranked if key[0] == 2][:20]
+        nxt = [m for key, m in ranked if key[0] == 1][:max(0, int(os.getenv('DAILY_PREFETCH_NEXT_MATCH_LIMIT', '60')))]
+        later = [m for key, m in ranked if key[0] == 2][:max(0, int(os.getenv('DAILY_PREFETCH_BACKLOG_MATCH_LIMIT', '60')))]
         return (near + nxt + later)[:max(0, limit)]
 
     def record(self, provider, role, targets, data, stats, *, observed_at=None):

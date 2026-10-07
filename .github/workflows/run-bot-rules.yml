@@ -29,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: daily-quality-${{ github.ref_name }}
+  group: daily-quality-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -48,6 +48,8 @@ jobs:
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+      ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 || secrets.ODDS_API_IO_KEY2 }}
+      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
@@ -97,10 +99,17 @@ jobs:
           key: daily-quality-v1-${{ github.ref_name }}-${{ inputs.dry_run }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             daily-quality-v1-${{ github.ref_name }}-${{ inputs.dry_run }}-
+      - name: Restore shared API budgets for dry and live runs
+        uses: actions/cache/restore@v4
+        with:
+          path: .data/daily_quality/api-budget.json
+          key: daily-quality-api-budget-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            daily-quality-api-budget-${{ github.repository }}-
       - name: Install dependencies
         run: pip install --disable-pip-version-check -r requirements.txt
       - name: Verify critical pipeline tests
-        run: python -m pytest -q tests/test_daily_quality_pipeline.py
+        run: python -m pytest -q tests/test_daily_quality_pipeline.py tests/test_api_budget.py
       - name: Build or complete today's inventory
         shell: bash
         run: |
@@ -131,6 +140,12 @@ jobs:
         if: always()
         continue-on-error: true
         run: python -u scripts/send_daily_quality_report.py
+      - name: Save shared API budgets
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .data/daily_quality/api-budget.json
+          key: daily-quality-api-budget-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Save persistent state
         if: always()
         uses: actions/cache/save@v4

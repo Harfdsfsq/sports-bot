@@ -9,6 +9,9 @@ UTC = timezone.utc
 from typing import Any
 
 import httpx
+import hashlib
+
+from app.services.api_budget import BudgetedAsyncClient
 
 from app.config import Settings
 from app.schemas import Match, Offer
@@ -193,6 +196,9 @@ class OddsApiIoProvider:
             pass
 
     def _cooldown_stats(self) -> dict[str, Any]:
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            # The shared governor isolates cooldowns by credential in this profile.
+            return {}
         cooldown_until = self._cooldown_until()
         if cooldown_until is None:
             return {}
@@ -224,7 +230,9 @@ class OddsApiIoProvider:
             "budget_exhausted": False,
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_matches": []}
-        api_key = getattr(self.settings, "odds_api_io_key", None)
+        event_accounts = self._odds_accounts()
+        api_key = event_accounts[0]['api_key'] if event_accounts else None
+        event_account_name = event_accounts[0]['name'] if event_accounts else 'account1'
         if not api_key:
             return [], stats, preview
         cooldown = self._cooldown_stats()
@@ -241,9 +249,9 @@ class OddsApiIoProvider:
         matches: list[Match] = []
         seen_ids: set[int] = set()
         cached_events: list[dict[str, Any]] = []
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with BudgetedAsyncClient(timeout=timeout) as client:
             for page in range(1, max_pages + 1):
-                if not self._request_budget_allows(stats, account_name="account1"):
+                if not self._request_budget_allows(stats, account_name=event_account_name):
                     break
                 params = {
                     "apiKey": api_key,
@@ -255,7 +263,7 @@ class OddsApiIoProvider:
                     "skip": (page - 1) * page_limit,
                 }
                 stats["event_requests"] += 1
-                self._record_request(account_name="account1")
+                self._record_request(account_name=event_account_name)
                 try:
                     response = await client.get(f"{self.base_url}/events", params=params)
                 except Exception as exc:
@@ -436,7 +444,14 @@ class OddsApiIoProvider:
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             registry_mapping, registry_missing = self._registry_mapping(soccer_matches)
 
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with BudgetedAsyncClient(timeout=timeout) as client:
+            if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' and os.getenv('ODDS_API_IO_DISCOVER_SELECTED_BOOKMAKERS', 'true').lower() == 'true':
+                accounts = await self._prepare_accounts(client, accounts, stats)
+                if not accounts:
+                    stats['stop_reason'] = 'no_available_account'
+                    return {}, stats, preview
+                event_account = accounts[0]
+                api_key = str(event_account['api_key'])
             if registry_mapping and not registry_missing:
                 stats["registry_event_ids_reused"] = len(registry_mapping)
             elif self._bootstrap_events_cache:
@@ -562,7 +577,7 @@ class OddsApiIoProvider:
                         account_name=str(account["name"]),
                         fallback_books=str(account.get("fallback_bookmakers") or ""),
                     )
-                    if stats.get("rate_limited"):
+                    if stats.get("rate_limited") and os.getenv('PUBLICATION_PROFILE') != 'daily_quality':
                         break
                     if len(preview["sample_odds"]) < 2 and event_list:
                         preview["sample_odds"].append(event_list[:2])
@@ -593,7 +608,7 @@ class OddsApiIoProvider:
                         account_stats = stats["accounts"].setdefault(str(account["name"]), {})
                         account_stats["offers_parsed"] = int(account_stats.get("offers_parsed") or 0) + len(parsed)
                         account_stats["events_matched"] = int(account_stats.get("events_matched") or 0) + 1
-                if stats.get("rate_limited"):
+                if stats.get("rate_limited") and os.getenv('PUBLICATION_PROFILE') != 'daily_quality':
                     break
 
             stats["bookmakers_seen"] = len(bookmakers_seen)
@@ -614,6 +629,11 @@ class OddsApiIoProvider:
                     offers_by_family[str(offer.family or "unknown")] += 1
             stats["offers_by_family"] = dict(sorted(offers_by_family.items()))
             result_offers = dict(offers_by_match)
+            if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+                account_rows = list(stats['accounts'].values())
+                for flag in ('auth_error', 'plan_restriction', 'rate_limited'):
+                    stats['any_account_' + flag] = any(row.get(flag) for row in account_rows)
+                    stats[flag] = bool(account_rows) and all(row.get(flag) for row in account_rows)
             self._write_offer_snapshot(soccer_matches, result_offers, stats)
             return result_offers, stats, preview
 
@@ -810,6 +830,8 @@ class OddsApiIoProvider:
         if bool(account_stats.get("auth_error")):
             return []
         if bool(account_stats.get("plan_restriction")):
+            return []
+        if bool(account_stats.get('rate_limited')):
             return []
         request_books = str(account_stats.get("effective_bookmakers") or target_books)
         attempts = 0
@@ -1030,6 +1052,10 @@ class OddsApiIoProvider:
         preferred: str | list[str] | tuple[str, ...],
         fallback: list[str] | None = None,
     ) -> str:
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            # Account entitlements, rather than a hard-coded paid-book allowlist,
+            # determine which bookmakers this key may query.
+            return ','.join(dict.fromkeys(self._split_bookmakers(preferred) or list(fallback or [])))
         allowed = self.ACCOUNT_BOOKMAKER_ALLOWLIST.get(
             str(account_name or ""),
             self.ACCOUNT_BOOKMAKER_ALLOWLIST["account1"],
@@ -1056,7 +1082,7 @@ class OddsApiIoProvider:
         accounts: list[dict[str, str]] = []
         if account1_key:
             accounts.append({"name": "account1", "api_key": account1_key, "bookmakers": account1_books})
-        if account2_key:
+        if account2_key and account2_key != account1_key:
             accounts.append(
                 {
                     "name": "account2",
@@ -1066,6 +1092,69 @@ class OddsApiIoProvider:
                 }
             )
         return accounts
+
+    async def _prepare_accounts(self, client, accounts, stats):
+        available = []
+        for account in accounts:
+            name = account['name']
+            account_stats = stats['accounts'][name]
+            fingerprint = hashlib.sha256(account['api_key'].encode()).hexdigest()[:16]
+            path = Path('.data/daily_quality') / ('odds-books-' + fingerprint + '.json')
+            payload = None
+            try:
+                cached = json.loads(path.read_text())
+                if datetime.now(UTC).timestamp() - float(cached['at']) < 21600:
+                    payload = cached['payload']
+                    account_stats['selected_books_cached'] = True
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
+            if payload is None:
+                if not self._request_budget_allows(stats, account_name=name):
+                    continue
+                self._record_request(account_name=name)
+                account_stats['bookmaker_requests'] = 1
+                try:
+                    response = await client.get(f'{self.base_url}/bookmakers/selected', params={'apiKey': account['api_key']})
+                    account_stats['selected_books_status'] = response.status_code
+                    if response.status_code != 200:
+                        account_stats['rate_limited' if response.status_code == 429 else 'auth_error' if response.status_code in {401, 403} else 'discovery_error'] = True
+                        if response.status_code not in {401, 403, 429}:
+                            available.append(account)
+                        continue
+                    payload = response.json()
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    # Store only normalized names; account responses can contain metadata.
+                    names = self._selected_bookmakers(payload)
+                    if names:
+                        path.write_text(json.dumps({'at': datetime.now(UTC).timestamp(), 'payload': {'bookmakers': names}}))
+                except (httpx.HTTPError, ValueError, OSError):
+                    account_stats['discovery_error'] = True
+                    available.append(account)
+                    continue
+            names = self._selected_bookmakers(payload)
+            if not names:
+                account_stats['discovery_error'] = True
+                # The official endpoint leaves its object schema unspecified.
+                # Keep the configured request contract if its shape is unknown.
+                available.append(account)
+                continue
+            configured = self._split_bookmakers(account['bookmakers'])
+            selected = [n for n in names if normalize_bookmaker_name(n) in {normalize_bookmaker_name(b) for b in configured}]
+            books = ','.join(selected or names)
+            account_stats.update(effective_bookmakers=books, selected_bookmakers=names, entitlement_resolved=True)
+            available.append({**account, 'bookmakers': books})
+        return available
+
+    @staticmethod
+    def _selected_bookmakers(payload):
+        if isinstance(payload, dict):
+            payload = payload.get('bookmakers') or payload.get('selectedBookmakers') or payload.get('selected_bookmakers') or payload.get('selected') or payload.get('data') or []
+            if isinstance(payload, dict):
+                payload = payload.get('bookmakers') or payload.get('selectedBookmakers') or []
+        if not isinstance(payload, list):
+            return []
+        names = [row if isinstance(row, str) else row.get('name') if isinstance(row, dict) else None for row in payload]
+        return list(dict.fromkeys(n.strip() for n in names if isinstance(n, str) and n.strip()))
 
     @staticmethod
     def _safe_json(response: httpx.Response) -> Any | None:

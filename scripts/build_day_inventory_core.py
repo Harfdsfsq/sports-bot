@@ -28,6 +28,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.config import Settings
+from app.services.api_budget import BudgetedAsyncClient
 from app.schemas import Match
 from app.services.day_inventory import DayInventoryStore
 from app.services.runner import PredictionRunner
@@ -278,24 +279,33 @@ async def fetch_bzzoiro(settings: Settings, local_date: str) -> tuple[list[Match
     headers = {"Authorization": f"Token {token}"}
     target = date.fromisoformat(local_date)
     date_from = (target - timedelta(days=env_int("DAY_INVENTORY_BZZOIRO_WINDOW_DAYS", 1))).isoformat()
-    date_to = (target + timedelta(days=env_int("DAY_INVENTORY_BZZOIRO_WINDOW_DAYS", 1))).isoformat()
+    date_to = target.isoformat()
     max_requests = env_int("DAY_INVENTORY_BZZOIRO_MAX_REQUESTS", 8)
     rows: list[dict[str, Any]] = []
-    async with httpx.AsyncClient(timeout=float(os.getenv("BZZOIRO_TIMEOUT_SECONDS") or 20.0), headers=headers) as client:
-        # v2 events: cheap fixture discovery.
-        if stats["requests"] < max_requests:
+    async with BudgetedAsyncClient(timeout=float(os.getenv("BZZOIRO_TIMEOUT_SECONDS") or 20.0), headers=headers) as client:
+        # Cover the full Moscow day, including its previous-UTC-date evening.
+        offset = 0
+        for _ in range(max(1, max_requests - 4)):
+            if stats["requests"] >= max_requests:
+                break
             try:
                 stats["requests"] += 1
-                resp = await client.get("https://sports.bzzoiro.com/api/v2/events/", params={"date_from": date_from, "date_to": date_to, "limit": 300, "offset": 0})
+                resp = await client.get("https://sports.bzzoiro.com/api/v2/events/", params={"date_from": date_from, "date_to": date_to, "limit": 200, "offset": offset})
                 stats["endpoints"]["events_v2_status"] = resp.status_code
-                if resp.status_code == 200:
-                    batch = iter_dicts(resp.json())
-                    rows.extend(batch)
-                    stats["endpoints"]["events_v2_rows"] = len(batch)
-                else:
+                if resp.status_code != 200:
                     stats["response_errors"] += 1
+                    break
+                payload = resp.json()
+                batch = iter_dicts(payload)
+                rows.extend(batch)
+                stats["endpoints"]["events_v2_rows"] = stats["endpoints"].get("events_v2_rows", 0) + len(batch)
+                if not batch or not isinstance(payload, dict) or not payload.get("next"):
+                    break
+                offset += len(batch)
             except Exception as exc:
-                stats["response_errors"] += 1; stats["events_v2_error"] = f"{type(exc).__name__}: {exc}"
+                stats["response_errors"] += 1
+                stats["events_v2_error"] = type(exc).__name__
+                break
         # v1 predictions: adds context-rich rows and often current odds hints.
         page = 1
         max_pages = env_int("DAY_INVENTORY_BZZOIRO_MAX_PAGES", 4)
@@ -419,7 +429,7 @@ async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match]
     rows: list[dict[str, Any]] = []
     timeout = float(os.getenv("SSTATS_TIMEOUT_SECONDS") or 25.0)
     headers = {"User-Agent": "HARIZON-day-inventory-sstats/1.0", "Accept": "application/json,text/plain,*/*"}
-    async with httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=min(6.0, timeout)), follow_redirects=True, headers=headers) as client:
+    async with BudgetedAsyncClient(timeout=httpx.Timeout(timeout, connect=min(6.0, timeout)), follow_redirects=True, headers=headers) as client:
         offset = 0
         while stats["requests"] < max_requests:
             # Query the UTC dates intersecting the Moscow day, then filter locally.

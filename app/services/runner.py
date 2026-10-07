@@ -15,6 +15,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.providers.weather_common import WeatherContextEnricher
 from app.schemas import CandidateBet, Match, MatchContext, Offer
@@ -1263,7 +1265,7 @@ class PredictionRunner:
         selected = selected[:limit]
         stats['matches_considered'] = len(selected)
 
-        async with httpx.AsyncClient(timeout=float(getattr(self.settings, 'weather_timeout_seconds', 8.0) or 8.0)) as client:
+        async with BudgetedAsyncClient(timeout=float(getattr(self.settings, 'weather_timeout_seconds', 8.0) or 8.0)) as client:
             for match in selected:
                 base_context = base_contexts.get(match.match_key)
                 if base_context is None:

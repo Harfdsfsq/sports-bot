@@ -8,6 +8,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import (
@@ -97,7 +99,7 @@ class BzzoiroContextProvider:
         date_from = min_dt.date().isoformat()
         date_to = max_dt.date().isoformat()
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with BudgetedAsyncClient(timeout=self.timeout) as client:
             events = await self._fetch_paginated_rows(
                 client,
                 "/events/",

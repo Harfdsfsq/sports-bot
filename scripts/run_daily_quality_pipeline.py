@@ -12,6 +12,8 @@ def main():
     for line in Path('config/daily_quality.env').read_text().splitlines():
         if line and not line.startswith('#'):
             key, value = line.split('=', 1)
+            if any(token in key for token in ('API_KEY', '_KEY', 'TOKEN', 'SECRET', 'PASSWORD')):
+                raise ValueError('Credentials must be supplied through environment secrets')
             os.environ[key] = value
     # Dry/live and keys are supplied by the workflow, never by this config file.
     from app.config import Settings

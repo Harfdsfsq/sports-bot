@@ -10,6 +10,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import canonicalize_team_name, clamp, team_similarity
@@ -120,7 +122,7 @@ class ClubEloContextProvider:
             return {}, stats, preview
 
         contexts: dict[str, MatchContext] = {}
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+        async with BudgetedAsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             for match in soccer_matches:
                 home_rating = await self._rating_for_match_team(client, match.home_team, match.commence_time, stats)
                 away_rating = await self._rating_for_match_team(client, match.away_team, match.commence_time, stats)

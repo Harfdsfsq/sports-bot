@@ -8,6 +8,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import clamp, canonicalize_league_name, canonicalize_team_name, parse_datetime, score_event_match
@@ -138,7 +140,7 @@ class EspnContextProvider:
         now = datetime.now(UTC)
         days = max(1, int(self.settings.run_days_ahead or 4))
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with BudgetedAsyncClient(timeout=self.timeout) as client:
             for slug in slugs:
                 for offset in range(days + 1):
                     target_day = (now + timedelta(days=offset)).strftime('%Y%m%d')

@@ -5,6 +5,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import canonicalize_league_name, canonicalize_team_name, clamp, team_similarity
@@ -108,7 +110,7 @@ class TheSportsDbContextProvider:
             league_names = league_names[:max_leagues]
             stats['league_limit_applied'] = max_leagues
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with BudgetedAsyncClient(timeout=self.timeout) as client:
             all_leagues = await self._fetch_json(client, '/all_leagues.php', stats)
             league_rows = self._extract_rows(all_leagues, 'leagues')
             if league_rows and not preview['sample_leagues']:

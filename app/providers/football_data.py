@@ -7,6 +7,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import canonicalize_team_name, clamp, parse_datetime, score_event_match_variants, soft_contains_team, team_similarity
@@ -125,7 +127,7 @@ class FootballDataContextProvider:
         end_date = max(end_date, start_date + timedelta(days=days_ahead))
 
         headers = {'X-Auth-Token': str(self.settings.football_data_api_key)}
-        async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
+        async with BudgetedAsyncClient(timeout=self.timeout, headers=headers) as client:
             payload = await self._fetch_json(
                 client,
                 '/matches',
@@ -460,6 +462,7 @@ class FootballDataContextProvider:
             'football_data_away_ga_pg': round(away_stats['ga_pg'], 3),
             'football_data_mode': 'standings',
             'football_data_competition': str(((row.get('competition') or {}).get('name')) or match.league_name),
+            'football_data_standings_available': True,
         }
         return MatchContext(
             source='football_data',

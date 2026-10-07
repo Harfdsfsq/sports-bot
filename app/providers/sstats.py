@@ -9,6 +9,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import (
@@ -133,7 +135,7 @@ class SStatsContextProvider:
         to_date = max(now_utc, max_dt).date().isoformat()
         stats["days_requested"] = (parse_datetime(to_date).date() - parse_datetime(from_date).date()).days + 1
 
-        async with httpx.AsyncClient(timeout=self.settings.sstats_timeout_seconds) as client:
+        async with BudgetedAsyncClient(timeout=self.settings.sstats_timeout_seconds) as client:
             rows = await self._fetch_rows(client, from_date, to_date, stats)
 
         stats["rows_fetched"] = len(rows)
@@ -290,7 +292,7 @@ class SStatsContextProvider:
         bzz_preview: list[dict[str, Any]] = []
         if os.getenv("PUBLICATION_PROFILE") != "daily_quality" and getattr(self.settings, "bzzoiro_api_key", None) and bool(getattr(self.settings, "enable_bzzoiro_context", True)):
             timeout = float(getattr(self.settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
-            async with httpx.AsyncClient(timeout=timeout) as client:
+            async with BudgetedAsyncClient(timeout=timeout) as client:
                 bzz_contexts, bzz_stats, bzz_preview = await self._fetch_bzzoiro_contexts(client, soccer_matches)
             stats["bzzoiro_requests"] = int(bzz_stats.get("requests", 0) or 0)
             stats["bzzoiro_response_errors"] = int(bzz_stats.get("response_errors", 0) or 0)

@@ -113,6 +113,21 @@ def render(summary):
         if policy_skips:
             lines.append(f'Отдельно пропущены неподдерживаемые рынки и линии: {policy_skips}.')
         lines.append('Счётчики относятся к вариантам ставок; один матч может иметь несколько вариантов.')
+    odds_stats = (summary.get('source_stats') or {}).get('odds_api_io') or {}
+    configured = odds_stats.get('configured_accounts')
+    if configured is not None:
+        lines.extend(['', '📡 Источники линии'])
+        for name, label in [('account1', 'Аккаунт 1'), ('account2', 'Аккаунт 2')]:
+            row = (odds_stats.get('accounts') or {}).get(name) or {}
+            status = ('ключ не подключён' if name not in configured else
+                      'ограничение квоты; повтор после сброса' if row.get('rate_limited') or row.get('quota_exhausted') else
+                      'ошибка доступа — проверьте ключ и тариф' if row.get('auth_error') or row.get('plan_restriction') else
+                      f"дал линии для {row['events_matched']} матчей" if row.get('events_matched') else
+                      'использован свежий кеш' if not odds_stats.get('assigned_matches') else
+                      'проверен; подходящих линий не получено')
+            lines.append(f'Odds-api.io · {label}: {status}.')
+    if any(row.get('blocked') or row.get('last_block') for row in summary.get('api_budget') or []):
+        lines.append('ℹ️ Часть запросов отложена по лимитам API; полученные данные сохранены, пропуски остаются в очереди.')
     overdue = summary.get('overdue_published_bets') or []
     result_fetch = (summary.get('settlement') or {}).get('sstats_fetch') or {}
     if result_fetch and not result_fetch.get('complete'):

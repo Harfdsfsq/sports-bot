@@ -6,6 +6,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.providers.clubelo import ClubEloContextProvider
 from app.schemas import Match, MatchContext
@@ -147,7 +149,7 @@ class OpenLigaDbContextProvider:
                 grouped[comp_key].append(match)
 
         datasets: dict[tuple[str, int], dict[str, Any]] = {}
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+        async with BudgetedAsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             for comp_key, match_group in list(grouped.items())[: self.dataset_limit]:
                 data_rows: list[dict[str, Any]] | None = None
                 table_rows: list[dict[str, Any]] = []
@@ -232,7 +234,7 @@ class OpenLigaDbContextProvider:
 
         matches: list[Match] = []
         seen: set[str] = set()
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+        async with BudgetedAsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             for comp_key in competition_keys:
                 loaded_rows: list[dict[str, Any]] | None = None
                 used_season: int | None = None

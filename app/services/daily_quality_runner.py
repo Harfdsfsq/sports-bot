@@ -15,7 +15,7 @@ from app.services.strict_price_integrity import rejection_reasons
 from app.services.telegram import TelegramPublisher
 
 ODDS = {'odds_api_io'}
-CONTEXT = {'sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb'}
+CONTEXT = {'sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb', 'api_football'}
 
 
 class DailyTelegramPublisher(TelegramPublisher):
@@ -121,6 +121,8 @@ class DailyQualityRunner(PredictionRunner):
                 if context.details.get('probability_units') != 'fraction' and isinstance(context.payload.get('prediction'), dict):
                     cached[key] = provider._prediction_to_context(context.payload['prediction'], context.payload.get('event'), context.details.get('bzzoiro_match_quality'))
         stats.update({'assigned_matches': len(targets), 'cached_matches': len(cached), 'daily_pipeline': True})
+        if name == 'odds_api_io' and hasattr(provider, '_odds_accounts'):
+            stats['configured_accounts'] = [account['name'] for account in provider._odds_accounts()]
         return cached, stats, preview
 
     async def _fetch_weather_contexts(self, matches, base_contexts):
@@ -220,6 +222,8 @@ class DailyQualityRunner(PredictionRunner):
             summary = await super().run_once()
             summary['candidates_model_evaluated'] = getattr(self.factory, 'prefilter_candidates_count', 0)
             summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
+            from app.services.api_budget import ApiBudget
+            summary['api_budget'] = ApiBudget().snapshot()
             pending = self.state.pending_bets(include_shadow=False)
             summary['overdue_published_bets'] = [
                 {'match': f"{row.get('home_team')} — {row.get('away_team')}", 'stake_amount': float(row.get('stake_amount') or 0)}

@@ -10,6 +10,8 @@ from typing import Any
 
 import httpx
 
+from app.services.api_budget import BudgetedAsyncClient
+
 from app.config import Settings
 from app.utils import candidate_selection_key, parse_datetime, score_event_match, team_similarity
 
@@ -171,7 +173,7 @@ class SettlementService:
         stats = self.sstats_fetch_stats = {'requests': 0, 'rows': 0, 'complete': False, 'stop_reason': 'request_budget'}
         seen_signatures: set[tuple[Any, ...]] = set()
         try:
-            async with httpx.AsyncClient(timeout=float(getattr(self.settings, 'sstats_timeout_seconds', 25.0) or 25.0)) as client:
+            async with BudgetedAsyncClient(timeout=float(getattr(self.settings, 'sstats_timeout_seconds', 25.0) or 25.0)) as client:
                 while stats['requests'] < max_requests:
                     stats['requests'] += 1
                     response = await client.get(
@@ -227,7 +229,7 @@ class SettlementService:
 
     async def _fetch_football_data_rows(self, start_date: str, end_date: str) -> list[dict[str, Any]]:
         try:
-            async with httpx.AsyncClient(
+            async with BudgetedAsyncClient(
                 timeout=float(getattr(self.settings, 'football_data_timeout_seconds', 20.0) or 20.0),
                 headers={'X-Auth-Token': str(self.settings.football_data_api_key)},
             ) as client:
@@ -277,7 +279,7 @@ class SettlementService:
             headers['x-rapidapi-host'] = rapidapi_host
         rows: list[dict[str, Any]] = []
         try:
-            async with httpx.AsyncClient(timeout=float(getattr(self.settings, 'football_data_timeout_seconds', 20.0) or 20.0)) as client:
+            async with BudgetedAsyncClient(timeout=float(getattr(self.settings, 'football_data_timeout_seconds', 20.0) or 20.0)) as client:
                 for offset in range(days):
                     day = (start_day + timedelta(days=offset)).isoformat()
                     response = await client.get(
