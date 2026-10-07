@@ -13,7 +13,7 @@ on:
         options: ["1", "2"]
         default: "2"
       use_secondary_odds_account:
-        description: "В этой версии второй аккаунт отключён до проверки тарифа"
+        description: "Совместимость: второй аккаунт подключается автоматически при наличии ключа"
         type: boolean
         default: false
   workflow_call:
@@ -79,7 +79,7 @@ jobs:
           mkdir -p .data/exports .data/day_inventory .data/daily_quality .logs
           echo "RUN_STARTED_AT_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
           echo "CACHE_DATE=$(TZ=Europe/Moscow date +%F)" >> "$GITHUB_ENV"
-          cat config/daily_quality.env >> "$GITHUB_ENV"
+          sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' config/daily_quality.env >> "$GITHUB_ENV"
       - name: Restore registry, provider cache and publication ledger
         uses: actions/cache/restore@v4
         with:

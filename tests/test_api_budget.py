@@ -257,3 +257,24 @@ def test_odds_server_iso_reset_is_account_specific(budget_env):
     assert budget_env.reserve(*identity, now=now + timedelta(minutes=2))[0] == 'server_quota'
     assert budget_env.reserve('odds_api_io', 'account2', 'second', now=now)[0] == 'allowed'
     assert budget_env.reserve(*identity, now=now + timedelta(hours=1, seconds=1))[0] == 'allowed'
+
+
+def test_workflow_prepare_exports_only_assignments(tmp_path):
+    import os
+    import subprocess
+
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / '.github/workflows/run-bot-rules.yml').read_text()
+    block = workflow.split('      - name: Prepare isolated run\n', 1)[1].split('      - name:', 1)[0].split('        run: |\n', 1)[1]
+    command = '\n'.join(line[10:] for line in block.splitlines())
+    (tmp_path / 'config').mkdir()
+    profile = (root / 'config/daily_quality.env').read_text()
+    (tmp_path / 'config/daily_quality.env').write_text(profile + '\n  # indented comment\n\n')
+    output = tmp_path / 'github-env'
+    subprocess.run(['bash', '-e', '-c', command], cwd=tmp_path, env={**os.environ, 'GITHUB_ENV': str(output)}, check=True, capture_output=True)
+    rows = output.read_text().splitlines()
+    assert all('=' in row and not row.lstrip().startswith('#') for row in rows)
+    values = dict(row.split('=', 1) for row in rows)
+    assert values['API_BUDGET_ENABLED'] == 'true'
+    assert values['ODDS_API_IO_BOOKMAKERS_ACCOUNT2'] == 'Bet365,Unibet'
+    assert 'ODDS_API_IO_KEY_2' not in values
