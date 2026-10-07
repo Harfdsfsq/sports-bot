@@ -890,3 +890,74 @@ def test_daily_final_selection_still_limits_two_and_one_per_match(profile, tmp_p
     assert len(picked) == 2
     assert len({c.match_key for c in picked}) == 2
     assert all(c.stake_amount == 2.5 for c in picked)
+
+
+@pytest.mark.parametrize('mode', ['page_count', 'total_count', 'no_count'])
+def test_settlement_reads_second_page_after_full_batch(profile, offline_http, monkeypatch, mode):
+    import httpx
+
+    from app.services.settlement import SettlementService
+    calls = []
+    async def get(self, url, **kwargs):
+        offset = kwargs['params']['offset']
+        calls.append(offset)
+        rows = [{'id': n, 'date': '2026-10-07T10:00:00Z'} for n in range(offset, 1000 if offset == 0 else 1001)]
+        payload = {'data': rows}
+        if mode == 'page_count':
+            payload.update(count=len(rows), TotalCount=1001)
+        if mode == 'total_count':
+            payload['count'] = 1001
+        return httpx.Response(200, request=httpx.Request('GET', url), json=payload)
+    monkeypatch.setattr(httpx.AsyncClient, 'get', get)
+    service = SettlementService(Settings(_env_file=None, sstats_api_key='test'))
+    rows = asyncio.run(service._fetch_sstats_rows('2026-10-02', '2026-10-07'))
+    assert len(rows) == 1001 and calls == [0, 1000]
+    assert service.sstats_fetch_stats['complete']
+
+
+def test_settlement_preserves_received_rows_on_later_failure(profile, offline_http, monkeypatch):
+    import httpx
+
+    from app.services.settlement import SettlementService
+    async def get(self, url, **kwargs):
+        request = httpx.Request('GET', url)
+        if kwargs['params']['offset']:
+            raise httpx.ConnectError('offline test', request=request)
+        return httpx.Response(200, request=request, json={'count': 1000, 'data': [{'id': n} for n in range(1000)]})
+    monkeypatch.setattr(httpx.AsyncClient, 'get', get)
+    service = SettlementService(Settings(_env_file=None, sstats_api_key='test'))
+    assert len(asyncio.run(service._fetch_sstats_rows('2026-10-02', '2026-10-07'))) == 1000
+    assert not service.sstats_fetch_stats['complete']
+    assert service.sstats_fetch_stats['stop_reason'] == 'request_failed'
+
+
+def test_settlement_request_budget_is_visible(profile, offline_http, monkeypatch):
+    import httpx
+
+    from app.services.settlement import SettlementService
+    monkeypatch.setenv('SETTLEMENT_SSTATS_MAX_REQUESTS_PER_RUN', '1')
+    async def get(self, url, **kwargs):
+        return httpx.Response(200, request=httpx.Request('GET', url), json={'count': 1000, 'data': [{'id': n} for n in range(1000)]})
+    monkeypatch.setattr(httpx.AsyncClient, 'get', get)
+    service = SettlementService(Settings(_env_file=None, sstats_api_key='test'))
+    asyncio.run(service._fetch_sstats_rows('2026-10-02', '2026-10-07'))
+    assert service.sstats_fetch_stats['requests'] == 1
+    assert service.sstats_fetch_stats['stop_reason'] == 'request_budget'
+    text = render({'settlement': {'sstats_fetch': service.sstats_fetch_stats}, 'daily_quality': {}})
+    assert 'Результаты проверены частично' in text
+
+
+def test_sstats_conflicting_same_day_history_is_excluded(profile, tmp_path):
+    from app.providers.sstats import SStatsContextProvider, conflicting_history_indices
+    now = datetime.now(UTC)
+    rows = [{'opponent': 'Everton', 'league': 'Copa Chile', 'start': now - timedelta(days=3), 'goals_for': 1, 'goals_against': 1}, {'opponent': 'Everton', 'league': 'Copa Chile', 'start': now - timedelta(days=3, hours=3), 'goals_for': 1, 'goals_against': 0}, {'opponent': 'Everton', 'league': 'Copa Chile', 'start': now - timedelta(days=10), 'goals_for': 2, 'goals_against': 0}]
+    assert conflicting_history_indices(rows) == {0, 1}
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    assert provider._select_recent_rows(rows, league_name='Copa Chile', before=now, limit=8) == [rows[2]]
+    m = match(now)
+    ctx = MatchContext('sstats_form', {'home_recent': rows, 'away_recent': []}, expected_home=1, expected_away=1)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    r.sync([m])
+    r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
+    assert r.cached('sstats', 'context', m) is None
+    assert r.targets('sstats', 'context')

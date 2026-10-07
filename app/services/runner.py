@@ -797,6 +797,7 @@ class PredictionRunner:
                     'shadow_settled_count': settlement_summary.get('shadow_settled_count', 0),
                     'rows_fetched': settlement_probe.get('rows_fetched', 0),
                     'rows_by_source': settlement_probe.get('rows_by_source', {}),
+                    'sstats_fetch': settlement_probe.get('sstats_fetch', {}),
                     'manual_overrides_loaded': settlement_probe.get('manual_overrides_loaded', 0),
                     'manual_overrides_valid': settlement_probe.get('manual_overrides_valid', 0),
                     'manual_overrides_disabled': settlement_probe.get('manual_overrides_disabled', 0),

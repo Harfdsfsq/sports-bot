@@ -36,6 +36,23 @@ def market_only_context(context: MatchContext) -> bool:
     return not all(any(context.payload.get(key) is not None for key in side) for side in fields)
 
 
+def conflicting_history_indices(rows: list[dict]) -> set[int]:
+    """Do not use two incompatible results for the same pair within six hours."""
+    conflicting = set()
+    for i, first in enumerate(rows):
+        for j in range(i):
+            second = rows[j]
+            if canonicalize_team_name(str(first.get('opponent') or '')) != canonicalize_team_name(str(second.get('opponent') or '')) or first.get('league') != second.get('league'):
+                continue
+            try:
+                a, b = parse_datetime(str(first['start'])), parse_datetime(str(second['start']))
+            except (ValueError, TypeError, KeyError):
+                continue
+            if abs((a - b).total_seconds()) <= 6 * 3600 and (first.get('goals_for'), first.get('goals_against')) != (second.get('goals_for'), second.get('goals_against')):
+                conflicting.update((i, j))
+    return conflicting
+
+
 class SStatsContextProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -936,6 +953,9 @@ class SStatsContextProvider:
     ) -> list[dict[str, Any]]:
         if not rows:
             return []
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            conflicts = conflicting_history_indices(rows)
+            rows = [row for i, row in enumerate(rows) if i not in conflicts]
 
         same_league: list[dict[str, Any]] = []
         fallback: list[dict[str, Any]] = []

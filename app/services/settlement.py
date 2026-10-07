@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -116,6 +117,7 @@ class SettlementService:
             'items': items,
             'rows_fetched': len(rows),
             'rows_by_source': rows_by_source,
+            'sstats_fetch': getattr(self, 'sstats_fetch_stats', {}),
             'manual_overrides_loaded': manual_meta['loaded_count'],
             'manual_overrides_valid': manual_meta['valid_count'],
             'manual_overrides_disabled': manual_meta['disabled_count'],
@@ -160,11 +162,13 @@ class SettlementService:
         rows: list[dict[str, Any]] = []
         offset = 0
         limit = 1000
-        total_count: int | None = None
+        max_requests = max(1, min(50, int(os.getenv('SETTLEMENT_SSTATS_MAX_REQUESTS_PER_RUN', '12'))))
+        stats = self.sstats_fetch_stats = {'requests': 0, 'rows': 0, 'complete': False, 'stop_reason': 'request_budget'}
         seen_signatures: set[tuple[Any, ...]] = set()
         try:
             async with httpx.AsyncClient(timeout=float(getattr(self.settings, 'sstats_timeout_seconds', 25.0) or 25.0)) as client:
-                while True:
+                while stats['requests'] < max_requests:
+                    stats['requests'] += 1
                     response = await client.get(
                         self.url,
                         params={
@@ -180,17 +184,15 @@ class SettlementService:
                     payload = response.json()
                     if isinstance(payload, dict):
                         batch = payload.get('data') or payload.get('results') or []
-                        raw_total = payload.get('count')
-                        if raw_total not in (None, ''):
-                            try:
-                                total_count = int(raw_total)
-                            except Exception:
-                                total_count = total_count
                     elif isinstance(payload, list):
                         batch = payload
                     else:
                         batch = []
-                    if not isinstance(batch, list) or not batch:
+                    if not isinstance(batch, list):
+                        stats.update(stop_reason='invalid_response')
+                        break
+                    if not batch:
+                        stats.update(complete=True, stop_reason='end_of_rows')
                         break
                     added = 0
                     for item in batch:
@@ -209,12 +211,13 @@ class SettlementService:
                         rows.append({**item, '_settlement_source': 'sstats'})
                         added += 1
                     if len(batch) < limit or added == 0:
+                        stats.update(complete=added > 0, stop_reason='end_of_rows' if added > 0 else 'repeated_page')
                         break
                     offset += len(batch)
-                    if total_count is not None and offset >= total_count:
-                        break
-        except Exception:
-            return []
+                    # `count` is page size; a full page always needs the next offset.
+        except Exception as exc:
+            stats.update(stop_reason='request_failed', error=type(exc).__name__)
+        stats['rows'] = len(rows)
         return rows
 
     async def _fetch_football_data_rows(self, start_date: str, end_date: str) -> list[dict[str, Any]]:

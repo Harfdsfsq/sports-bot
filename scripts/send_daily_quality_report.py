@@ -114,6 +114,9 @@ def render(summary):
             lines.append(f'Отдельно пропущены неподдерживаемые рынки и линии: {policy_skips}.')
         lines.append('Счётчики относятся к вариантам ставок; один матч может иметь несколько вариантов.')
     overdue = summary.get('overdue_published_bets') or []
+    result_fetch = (summary.get('settlement') or {}).get('sstats_fetch') or {}
+    if result_fetch and not result_fetch.get('complete'):
+        lines.append('⚠️ Результаты проверены частично; неподтверждённые ставки остаются открытыми до следующей проверки.')
     if overdue:
         amount = sum(float(row.get('stake_amount') or 0) for row in overdue)
         lines.append(f'⚠️ Ожидают результата старые опубликованные ставки: {len(overdue)}, сумма {amount:.2f}. Этот риск остаётся в банке до подтверждённого расчёта.')

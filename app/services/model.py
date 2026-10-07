@@ -1781,7 +1781,7 @@ class CandidateFactory:
                 return ' '.join(extras)
             return ' '.join(extras) if extras else None
         if home_recent is not None and away_recent is not None and min(home_recent, away_recent) >= min_sample:
-            return f'Контекст собран по недавней выборке минимум {int(min(home_recent, away_recent))} матчей на сторону, так что сигнал не выглядит случайным.'
+            return f'Для оценки формы использовано минимум {int(min(home_recent, away_recent))} матчей на сторону. Размер выборки сам по себе не подтверждает точность прогноза.'
         return None
 
 
