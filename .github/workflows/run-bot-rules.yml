@@ -101,15 +101,15 @@ jobs:
         run: pip install --disable-pip-version-check -r requirements.txt
       - name: Verify critical pipeline tests
         run: python -m pytest -q tests/test_daily_quality_pipeline.py
-      - name: Build today's inventory once
+      - name: Build or complete today's inventory
         shell: bash
         run: |
-          if [[ ! -s ".data/day_inventory/${CACHE_DATE}.json" ]]; then
+          if python scripts/daily_inventory_refresh_due.py ".data/day_inventory/${CACHE_DATE}.json"; then
             timeout 900s python -u scripts/build_day_inventory_core_v3.py
           fi
           if [[ "$(TZ=Europe/Moscow date +%H)" -ge 20 ]]; then
             NEXT_DATE=$(TZ=Europe/Moscow date -d tomorrow +%F)
-            if [[ ! -s ".data/day_inventory/${NEXT_DATE}.json" ]]; then
+            if python scripts/daily_inventory_refresh_due.py ".data/day_inventory/${NEXT_DATE}.json"; then
               DAY_INVENTORY_TARGET_DATE="$NEXT_DATE" timeout 900s python -u scripts/build_day_inventory_core_v3.py
             fi
           fi

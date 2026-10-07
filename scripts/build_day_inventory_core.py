@@ -392,8 +392,8 @@ def sstats_team(row: dict[str, Any], side: str) -> str:
 def sstats_row_to_match(row: dict[str, Any], settings: Settings) -> Match | None:
     home = sstats_team(row, "home") or clean_text(row.get("homeTeamName"))
     away = sstats_team(row, "away") or clean_text(row.get("awayTeamName"))
-    league = nested(row, "league.name", "league.Name", "competition.name", "tournament.name", "leagueName", "LeagueName", "competitionName", "league", "League", "country") or "Unknown"
-    start = to_utc(nested(row, "dateTime", "DateTime", "startTime", "StartTime", "start_time", "utcDate", "kickoff", "Kickoff", "date", "Date", "gameTime", "GameTime", "gameDate"))
+    league = nested(row, "season.league.name", "league.name", "league.Name", "competition.name", "tournament.name", "leagueName", "LeagueName", "competitionName", "league", "League", "country") or "Unknown"
+    start = to_utc(nested(row, "dateTime", "DateTime", "startTime", "StartTime", "GameStart", "MatchDate", "start_time", "utcDate", "kickoff", "Kickoff", "date", "Date", "gameTime", "GameTime", "gameDate"))
     if start is None:
         return None
     sid = event_id(row, "id", "gameId", "game_id", "flashId")
@@ -422,7 +422,10 @@ async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match]
     async with httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=min(6.0, timeout)), follow_redirects=True, headers=headers) as client:
         offset = 0
         while stats["requests"] < max_requests:
-            params = {"Date": local_date, "TimeZone": 3, "Limit": limit, "Offset": offset, "Order": 1, "apikey": key}
+            # Query the UTC dates intersecting the Moscow day, then filter locally.
+            day_start = datetime.fromisoformat(local_date).replace(tzinfo=app_tz(settings))
+            day_end = day_start + timedelta(days=1) - timedelta(microseconds=1)
+            params = {"from": day_start.astimezone(UTC).date().isoformat(), "to": day_end.astimezone(UTC).date().isoformat(), "limit": limit, "offset": offset, "apikey": key}
             try:
                 stats["requests"] += 1
                 resp = await client.get("https://api.sstats.net/Games/list", params=params)
@@ -638,6 +641,7 @@ async def main_async() -> int:
     existing = {} if env_bool("DAY_INVENTORY_REBUILD_FROM_SCRATCH", False) else store.load_inventory(local_date)
     payload = store.build_payload(local_date=local_date, matches=selected, source_meta=source_meta, existing=existing)
     payload = enrich_payload_coverage(payload)
+    payload['daily_inventory_revision'] = 2
     payload.setdefault("counts", {})["matches_after_top_cut"] = len(selected)
     payload["counts"]["target_matches"] = max_matches
     payload["counts"]["target_shortfall"] = max(0, max_matches - len(selected))

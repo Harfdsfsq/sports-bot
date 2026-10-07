@@ -14,7 +14,7 @@ from app.utils import (
     clamp,
     implied_probability,
     leagues_related,
-    normalize_probability_percent,
+    to_decimal_probability,
     over_probability_from_lambda,
     parse_datetime,
     score_event_match_variants,
@@ -622,14 +622,14 @@ class BzzoiroContextProvider:
         event: dict[str, Any] | None,
         match_quality: str | None,
     ) -> MatchContext:
-        home_prob = normalize_probability_percent(prediction.get("prob_home_win"))
-        away_prob = normalize_probability_percent(prediction.get("prob_away_win"))
-        draw_prob = normalize_probability_percent(prediction.get("prob_draw"))
-        over15 = normalize_probability_percent(prediction.get("prob_over_15"))
-        over25 = normalize_probability_percent(prediction.get("prob_over_25"))
-        over35 = normalize_probability_percent(prediction.get("prob_over_35"))
-        btts_yes = normalize_probability_percent(prediction.get("prob_btts_yes"))
-        favorite_prob = normalize_probability_percent(prediction.get("favorite_prob"))
+        home_prob = to_decimal_probability(prediction.get("prob_home_win"))
+        away_prob = to_decimal_probability(prediction.get("prob_away_win"))
+        draw_prob = to_decimal_probability(prediction.get("prob_draw"))
+        over15 = to_decimal_probability(prediction.get("prob_over_15"))
+        over25 = to_decimal_probability(prediction.get("prob_over_25"))
+        over35 = to_decimal_probability(prediction.get("prob_over_35"))
+        btts_yes = to_decimal_probability(prediction.get("prob_btts_yes"))
+        favorite_prob = to_decimal_probability(prediction.get("favorite_prob"))
 
         expected_home = self._to_float(prediction.get("expected_home_goals"))
         expected_away = self._to_float(prediction.get("expected_away_goals"))
@@ -707,6 +707,7 @@ class BzzoiroContextProvider:
             away_win_probability=away_prob,
             confidence=confidence,
             details={
+                "probability_units": "fraction",
                 "bzzoiro_draw_probability": draw_prob,
                 "bzzoiro_over15_probability": over15,
                 "bzzoiro_over25_probability": over25,

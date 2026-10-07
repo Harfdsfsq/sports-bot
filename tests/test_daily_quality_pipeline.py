@@ -547,3 +547,106 @@ def test_handicap_market_pairs_opposite_signed_lines(profile):
     assert p == pytest.approx(expected)
     opposite = factory._fair_market_probability_spreads([home], [home, away, wrong_home], home.selection, -.5, 'home')
     assert p + opposite == pytest.approx(1)
+
+
+@pytest.mark.parametrize('scale', [1, .01])
+def test_bzzoiro_probability_units_do_not_inflate_expected_goals(profile, scale):
+    from app.providers.bzzoiro import BzzoiroContextProvider
+    from app.utils import over_probability_from_lambda
+    row = {'prob_home_win': 15.9 * scale, 'prob_away_win': 62.5 * scale, 'prob_draw': 21.6 * scale,
+           'prob_over_25': 55.4 * scale, 'prob_over_35': 33.7 * scale, 'confidence': .6252}
+    context = BzzoiroContextProvider(Settings())._prediction_to_context(row, {}, 'exact')
+    assert context.home_win_probability == pytest.approx(.159)
+    assert context.away_win_probability == pytest.approx(.625)
+    assert 2.7 < context.expected_home + context.expected_away < 3.1
+    assert over_probability_from_lambda(context.expected_home + context.expected_away, 2.5) == pytest.approx(.554, abs=.001)
+    assert context.details['probability_units'] == 'fraction'
+
+
+def test_context_blend_normalizes_percent_and_fraction(profile):
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.settings = Settings()
+    a = MatchContext('sstats_form', {}, expected_home=1, expected_away=1, home_win_probability=.4, away_win_probability=.3, confidence=65)
+    b = MatchContext('bzzoiro', {}, expected_home=1, expected_away=1, home_win_probability=40, away_win_probability=30, confidence=65)
+    merged = runner._blend_contexts(a, b)
+    assert merged.home_win_probability == pytest.approx(.4)
+    assert merged.away_win_probability == pytest.approx(.3)
+
+
+def test_cached_weather_does_not_restore_old_sporting_estimates():
+    base = MatchContext('sstats_form', {}, expected_home=1., expected_away=1.5, home_win_probability=.4, confidence=65, details={'merged_sources': ['sstats_form']})
+    cached = MatchContext('ensemble', {}, expected_home=2., expected_away=3.75, home_win_probability=8., confidence=67, details={'weather_total_factor': .9, 'weather_source': 'weatherapi', 'weather_adjustment_reasons': ['wind'], 'merged_sources': ['sstats_form', 'bzzoiro']})
+    updated = DailyQualityRunner._reapply_cached_weather(base, cached)
+    assert updated.expected_home == pytest.approx(.9)
+    assert updated.expected_away == pytest.approx(1.35)
+    assert updated.home_win_probability == .4
+    assert updated.details['merged_sources'] == ['sstats_form']
+    assert updated.confidence == pytest.approx(65.8)
+    assert base.expected_home == 1.
+
+
+def test_inventory_report_does_not_invent_late_evening():
+    text = render({'current_time_local': '2026-10-07T10:04:00+03:00', 'daily_quality': {'coverage': {'inventory': 183}}})
+    assert 'поздно вечером' not in text
+    assert 'пока дали меньше матчей' in text
+
+
+def test_sstats_inventory_uses_date_range_and_nested_league(profile, monkeypatch):
+    import httpx
+
+    import scripts.build_day_inventory_core as core
+    for key in ['ALL_PROXY', 'HTTP_PROXY', 'HTTPS_PROXY', 'all_proxy', 'http_proxy', 'https_proxy']:
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv('SSTATS_API_KEY', 'test-placeholder')
+    requests = []
+    rows = [
+        {'id': 11, 'date': '2026-10-06T22:30:00Z', 'homeTeam': {'name': 'Home'}, 'awayTeam': {'name': 'Away'}, 'season': {'league': {'name': 'Emperor Cup'}}},
+        {'id': 12, 'date': '2026-10-07T21:30:00Z', 'homeTeam': {'name': 'Next Home'}, 'awayTeam': {'name': 'Next Away'}},
+    ]
+    async def fake_get(self, url, **kwargs):
+        requests.append(kwargs['params'])
+        return httpx.Response(200, json={'data': rows}, request=httpx.Request('GET', url))
+    monkeypatch.setattr(httpx.AsyncClient, 'get', fake_get)
+    matches, stats = asyncio.run(core.fetch_sstats(Settings(), '2026-10-07'))
+    assert requests[0]['from'] == '2026-10-06'
+    assert requests[0]['to'] == '2026-10-07'
+    assert 'Date' not in requests[0]
+    assert [m.source_event_id for m in matches] == ['11']
+    assert matches[0].league_name == 'Emperor Cup'
+    assert stats['rows_fetched'] == 2
+
+
+@pytest.mark.parametrize('count,revision,minutes,due', [(183, 2, 119, False), (183, 2, 120, True), (300, 2, 180, False), (183, 1, 1, True)])
+def test_incomplete_inventory_refresh_is_bounded(count, revision, minutes, due):
+    from scripts.daily_inventory_refresh_due import refresh_due
+    now = datetime.now(UTC)
+    payload = {'matches': [{}] * count, 'daily_inventory_revision': revision, 'updated_at_utc': (now - timedelta(minutes=minutes)).isoformat()}
+    assert refresh_due(payload, now) == due
+
+
+def test_report_explains_unresolved_published_risk():
+    text = render({'overdue_published_bets': [{'match': 'Tampa — Miami', 'stake_amount': 2.5}], 'daily_quality': {'coverage': {'inventory': 300}}})
+    assert 'старые опубликованные ставки: 1, сумма 2.50' in text
+
+
+def test_restored_bzzoiro_context_is_rebuilt_without_network(profile, tmp_path, monkeypatch):
+    from app.providers.bzzoiro import BzzoiroContextProvider
+    now = datetime.now(UTC)
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.settings = Settings()
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    runner.work_plan = {}
+    m = match(now)
+    runner.registry.sync([m])
+    runner.inventory_matches = runner.registry.matches()
+    row = {'prob_home_win': 15.9, 'prob_away_win': 62.5, 'prob_over_25': 55.4}
+    old = MatchContext('bzzoiro', {'prediction': row, 'event': {}}, expected_home=1.54, expected_away=3.75, home_win_probability=15.9, away_win_probability=62.5, details={'bzzoiro_match_quality': 'exact'})
+    runner.registry.record('bzzoiro', 'context', [m], {m.match_key: old}, {}, observed_at=now)
+    async def fail_if_fetch(*args):
+        raise AssertionError('Cached migration must not call the network')
+    provider = BzzoiroContextProvider(Settings())
+    monkeypatch.setattr(provider, 'fetch_context', fail_if_fetch)
+    data, _, _ = asyncio.run(runner._fetch_provider(provider, 'fetch_context', [], empty_data={}))
+    assert data[m.match_key].expected_home + data[m.match_key].expected_away == pytest.approx(2.9, abs=.002)
+    assert data[m.match_key].home_win_probability == pytest.approx(.159)
+    assert runner.registry.observation(m, 'context') == now.isoformat()

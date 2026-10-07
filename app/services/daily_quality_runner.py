@@ -4,10 +4,11 @@ from __future__ import annotations
 import asyncio
 import os
 from collections import Counter
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from app.services.daily_match_registry import DailyMatchRegistry, match_identity, read_json, write_json
+from app.services.daily_match_registry import DailyMatchRegistry, match_identity, parse_time, read_json, write_json
 from app.services.line_movement_state import evaluate_and_record_line_movement
 from app.services.runner import PredictionRunner
 from app.services.strict_price_integrity import rejection_reasons
@@ -114,6 +115,11 @@ class DailyQualityRunner(PredictionRunner):
             value = self.registry.cached(name, role, m)
             if value:
                 cached[m.match_key] = value
+        # Older cache entries were constructed with percent values as fractions.
+        if name == 'bzzoiro' and role == 'context':
+            for key, context in list(cached.items()):
+                if context.details.get('probability_units') != 'fraction' and isinstance(context.payload.get('prediction'), dict):
+                    cached[key] = provider._prediction_to_context(context.payload['prediction'], context.payload.get('event'), context.details.get('bzzoiro_match_quality'))
         stats.update({'assigned_matches': len(targets), 'cached_matches': len(cached), 'daily_pipeline': True})
         return cached, stats, preview
 
@@ -124,8 +130,21 @@ class DailyQualityRunner(PredictionRunner):
         targets = [m for key, m in available.items() if not cached[key]]
         data, stats, preview = await super()._fetch_weather_contexts(targets, base_contexts)
         self.registry.record('weather', 'context', targets, data, stats)
-        data.update({key: value for key, value in cached.items() if value})
+        # Weather cache carries old sporting fields; reuse only the weather effect.
+        data.update({key: self._reapply_cached_weather(base_contexts[key], value) for key, value in cached.items() if value})
         return data, stats, preview
+
+    @staticmethod
+    def _reapply_cached_weather(base, cached):
+        from app.utils import clamp
+        weather = {key: value for key, value in cached.details.items() if key.startswith('weather_')}
+        factor = clamp(float(weather.get('weather_total_factor', 1.0)), 0.78, 1.03)
+        def adjusted(value):
+            return clamp(float(value) * factor, 0.15, 4.80) if value is not None else None
+        confidence = float(base.confidence)
+        if weather.get('weather_adjustment_reasons'):
+            confidence = clamp(confidence + 0.8, 50.0, 78.0)
+        return replace(base, expected_home=adjusted(base.expected_home), expected_away=adjusted(base.expected_away), confidence=confidence, details={**base.details, **weather})
 
     def _filter_publishable_candidates(self, candidates):
         now = datetime.now(UTC)
@@ -200,6 +219,11 @@ class DailyQualityRunner(PredictionRunner):
         try:
             summary = await super().run_once()
             summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
+            pending = self.state.pending_bets(include_shadow=False)
+            summary['overdue_published_bets'] = [
+                {'match': f"{row.get('home_team')} — {row.get('away_team')}", 'stake_amount': float(row.get('stake_amount') or 0)}
+                for row in pending if parse_time(row.get('commence_time')) and datetime.now(UTC) - parse_time(row['commence_time']) >= timedelta(hours=6)
+            ]
             self.registry.now = datetime.now(UTC)
             debug = read_json(summary.get('debug_path') or '.logs/debug-last-run.json', {})
             rows = debug.get('candidates_before_quality', []) if debug.get('summary', {}).get('started_time_utc') == summary.get('started_time_utc') else []

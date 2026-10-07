@@ -43,7 +43,7 @@ from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
 from app.services.settlement import SettlementService
 from app.state import JsonStateStore, collect_run_archive_paths, resolve_run_history_roots, resolve_run_logs_dir
-from app.utils import candidate_selection_key, canonicalize_league_name, canonicalize_team_name, clamp, ensure_utc, parse_datetime
+from app.utils import candidate_selection_key, canonicalize_league_name, canonicalize_team_name, clamp, ensure_utc, parse_datetime, to_decimal_probability
 
 logger = logging.getLogger(__name__)
 
@@ -2794,8 +2794,8 @@ class PredictionRunner:
             payload=merged_payload,
             expected_home=blend(base_expected_home, new_expected_home),
             expected_away=blend(base_expected_away, new_expected_away),
-            home_win_probability=blend(base.home_win_probability, new.home_win_probability),
-            away_win_probability=blend(base.away_win_probability, new.away_win_probability),
+            home_win_probability=blend(to_decimal_probability(base.home_win_probability), to_decimal_probability(new.home_win_probability)),
+            away_win_probability=blend(to_decimal_probability(base.away_win_probability), to_decimal_probability(new.away_win_probability)),
             home_starting=int(round(blended_home_starting)) if blended_home_starting is not None else (new.home_starting or base.home_starting),
             away_starting=int(round(blended_away_starting)) if blended_away_starting is not None else (new.away_starting or base.away_starting),
             confidence=clamp(merged_confidence, 50.0, confidence_cap),

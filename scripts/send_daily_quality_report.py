@@ -94,12 +94,16 @@ def render(summary):
         for label, value in groups.most_common(5):
             lines.append(f'• {label}: {value}')
         lines.append('Счётчики относятся к вариантам ставок; один матч может иметь несколько вариантов.')
+    overdue = summary.get('overdue_published_bets') or []
+    if overdue:
+        amount = sum(float(row.get('stake_amount') or 0) for row in overdue)
+        lines.append(f'⚠️ Ожидают результата старые опубликованные ставки: {len(overdue)}, сумма {amount:.2f}. Этот риск остаётся в банке до подтверждённого расчёта.')
     if summary.get('telegram_delivery_errors'):
         lines.append('⚠️ Часть прогнозов не доставлена в Telegram; учитываются только подтверждённые отправки.')
     if any(isinstance(stats, dict) and stats.get('response_errors') for stats in (summary.get('source_stats') or {}).values()):
         lines.append('⚠️ Часть данных недоступна у источников; подробности сохранены в артефакте.')
     if c.get('inventory', 0) < 300:
-        lines.append('ℹ️ Сегодняшний инвентарь ниже 300. При первом запуске поздно вечером он содержит оставшиеся доступные матчи; полный следующий день показан отдельно.')
+        lines.append('ℹ️ Сегодняшний инвентарь ниже 300: подключённые источники пока дали меньше матчей. Это фактическое покрытие; недостающие матчи не создаются искусственно.')
     if c.get('near_ready', 0) < c.get('near', 0):
         lines.append('⚠️ Ближайшее окно покрыто частично; отсутствующие данные остаются в очереди.')
     lines.extend(['', 'Проценты модели — оценки, а не подтверждённая проходимость. A/B обозначает качество отбора, а не гарантированный исход.',
