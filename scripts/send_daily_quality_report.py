@@ -11,6 +11,7 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'daily_publication_limit': 'достигнут дневной лимит публикаций',
     'unsupported_spread_line': 'четвертная или некорректная фора не поддерживается',
     'post_calibration_probability_guard': 'вероятность ниже финального порога модели',
     'quality_post_calibration_probability_guard': 'вероятность ниже финального порога модели',
@@ -55,8 +56,8 @@ def render(summary):
     picks = int(summary.get('published_to_telegram') or 0)
     dry = bool(summary.get('dry_run'))
     lines = ['🧾 HARIZON — отчёт по запуску',
-             ('🧪 Проверка без отправки прогнозов' if dry else f'✅ Отправлено прогнозов: {picks}' if picks else '🟡 Подходящих прогнозов не отправлено'),
-             '', '📦 Дневной инвентарь — ' + str(summary.get('current_time_local', '')[:10]), f"Собрано {c.get('inventory', 0)}/300 матчей. Каждый матч имеет постоянную привязку к командам и времени начала.",
+             ('🧪 Проверка без отправки прогнозов' if dry else f'✅ Отправлено прогнозов: {picks}' if picks else '⏸ Новые прогнозы не отправлены: дневной лимит достигнут' if len(published) >= 5 else '🟡 Подходящих прогнозов не отправлено'),
+             '', '📦 Дневной инвентарь — ' + str(summary.get('current_time_local', '')[:10]), f"Собрано {c.get('inventory', 0)} матчей при цели 300. Каждый матч имеет постоянную привязку к командам и времени начала.",
              f"Данные получены за день: линия {c.get('collected_line', 0)}, контекст {c.get('collected_context', 0)}.",
              f"Актуально сейчас: линия {c.get('line', 0)}, контекст {c.get('context', 0)}, оба вида данных {c.get('ready', 0)}.",
              f"Инвентарь следующего дня: {str(daily.get('next_day_inventory', 0)) + '/300 матчей подготовлено' if daily.get('next_day_inventory') else 'будет подготовлен вечером; сейчас приоритет у текущего дня'}.",
@@ -68,11 +69,18 @@ def render(summary):
              *[f"{tier}: качество {limits['quality']}+, уверенность модели {limits['confidence']}+, EV {limits['ev']}%+, запас {limits['edge']} п.п.+." for tier, limits in TIER_LIMITS.items()],
              'Для обоих: реальный контекст, текущая линия и положительная ценность. Два API — преимущество.',
              'Дополнительно проверяются вероятность исхода, голевая модель и корректность цены.',
-             f'За день отправлено: A {a}, B {b}; всего {len(published)}/5.',
+             f'За день отправлено: A {a}, B {b}; всего {len(published)}. Дневной лимит: 5.',
              'Цель отбора: 1+ A и 2+ B за день; при недостаточном качестве ставок будет меньше.',
              '', '🧪 Воронка',
              f"Рассчитано вариантов ставок: {summary.get('candidates_model_evaluated', 'нет счётчика')}. После первичной проверки вероятности и ценности: {summary.get('candidates_before_quality', 0)}.",
              f"Кандидатов до качества: {summary.get('candidates_before_quality', 0)}; после качества: {summary.get('candidates_raw', 0)}; выбрано: {len(daily.get('selected') or [])}."]
+    bank = summary.get('bankroll') or {}
+    if bank:
+        lines.insert(2, f"💼 Банк: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")
+    if len(published) > 5:
+        lines.extend(['', 'ℹ️ После восстановления истории выявлено прежнее превышение дневного лимита. Новые публикации остановлены до следующего дня MSK.'])
+    if c.get('inventory', 0) > 300:
+        lines.append(f"ℹ️ В реестре сохранены {c['inventory'] - 300} дополнительных матчей после объединения истории; цель 300 достигнута.")
     if daily.get('selected'):
         lines.append('Подборка текущего запуска:')
         for row in daily['selected']:

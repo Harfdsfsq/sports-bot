@@ -354,3 +354,14 @@ def test_old_bookmaker_denial_does_not_block_new_selection(budget_env):
     assert budget_env.reserve(*identity, now=now, endpoint=endpoint_identity(old))[0] == 'endpoint_cooldown'
     assert budget_env.reserve(*identity, now=now, endpoint=endpoint_identity(new))[0] == 'allowed'
     assert 'private' not in budget_env.path.read_text()
+
+
+def test_report_explains_daily_cap_and_recovered_inventory():
+    from scripts.send_daily_quality_report import render
+    summary = {'daily_quality': {'published_today': [{'tier': 'B'}] * 6, 'coverage': {'inventory': 316}}, 'bankroll': {'current_balance': 999.38, 'open_exposure': 12.5, 'available_balance': 986.88}}
+    report = render(summary)
+    assert 'дневной лимит достигнут' in report
+    assert 'Подходящих прогнозов не отправлено' not in report
+    assert 'Банк: 999.38' in report and 'открытый риск: 12.50' in report
+    assert '316/300' not in report and '6/5' not in report
+    assert '16 дополнительных матчей' in report

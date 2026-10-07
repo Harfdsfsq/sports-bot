@@ -183,6 +183,10 @@ class DailyQualityRunner(PredictionRunner):
         sent_match_ids = {row.get('match_id') for row in published if row.get('match_id')}
         sent_match_ids.update(key for key, entry in self.registry.data['matches'].items() if entry.get('publication'))
         remaining = max(0, 5 - len(published))
+        if remaining == 0:
+            self.daily_rejections['daily_publication_limit'] += len(candidates)
+            self.selected_daily = []
+            return []
         a_today = sum(row['tier'] == 'A' for row in published)
         b_today = sum(row['tier'] == 'B' for row in published)
         def priority(c):
