@@ -98,9 +98,24 @@ class WeatherContextEnricher:
             stats['reason'] = 'no_weather_payload'
             return context, stats
 
+        if self._daily_profile() and location.get('country') and self._country_key(payload.get('country')) != self._country_key(location['country']):
+            stats['reason'] = 'location_country_mismatch'
+            return context, stats
         updated = self._apply_weather(match, context, location, payload)
+        if self._daily_profile():
+            updated.details['weather_location_verified'] = True
         stats['enriched'] = True
         return updated, stats
+
+    @staticmethod
+    def _daily_profile():
+        return os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality'
+
+    @staticmethod
+    def _country_key(value):
+        name = str(value or '').strip().lower()
+        aliases = {'usa': 'united states of america', 'united states': 'united states of america', 'us': 'united states of america', 'england': 'united kingdom', 'scotland': 'united kingdom', 'wales': 'united kingdom', 'uk': 'united kingdom', 'republic of korea': 'south korea', 'korea republic': 'south korea'}
+        return aliases.get(name, name)
 
     def _location_from_fixture(self, match: Match, fixture_row: dict[str, Any]) -> dict[str, str] | None:
         fixture = fixture_row.get('fixture') or {}
@@ -109,6 +124,18 @@ class WeatherContextEnricher:
         city = str(venue.get('city') or '').strip()
         venue_name = str(venue.get('name') or '').strip()
         country = str(league.get('country') or '').strip()
+        if self._daily_profile():
+            metadata = dict(match.metadata or {})
+            known_venue = metadata.get('venue') or {}
+            if not isinstance(known_venue, dict):
+                known_venue = {}
+            city = city or str(known_venue.get('city') or '').strip()
+            country = country or str(metadata.get('country') or '').strip()
+            if not country and ' - ' in match.league_name:
+                country = match.league_name.split(' - ', 1)[0].strip()
+            # A team name is not a stadium location; ambiguous cities are unsafe.
+            if not city or not country:
+                return None
         query = ''
         if city and country:
             query = f'{city}, {country}'

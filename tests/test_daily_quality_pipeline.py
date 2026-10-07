@@ -303,7 +303,7 @@ def test_night_coverage_counts_real_context_form_and_weather(tmp_path):
     m = match(now, 90)
     r.sync([m])
     r.record('odds_api_io', 'offers', [m], {m.match_key: [Offer('odds_api_io', 'Bet365', 'totals', 'Under', 1.9, 2.5)]}, {}, observed_at=now)
-    weather = MatchContext('weather', {}, details={'weather_context_applied': True})
+    weather = MatchContext('weather', {}, details={'weather_context_applied': True, 'weather_location_verified': True})
     r.record('weather', 'context', [m], {m.match_key: weather}, {}, observed_at=now)
     assert not r.has_role(m, 'context')
     assert r.observation(m, 'context') is None
@@ -608,15 +608,15 @@ def test_sstats_inventory_uses_date_range_and_nested_league(profile, monkeypatch
         return httpx.Response(200, json={'data': rows}, request=httpx.Request('GET', url))
     monkeypatch.setattr(httpx.AsyncClient, 'get', fake_get)
     matches, stats = asyncio.run(core.fetch_sstats(Settings(), '2026-10-07'))
-    assert requests[0]['from'] == '2026-10-06'
-    assert requests[0]['to'] == '2026-10-07'
+    assert requests[0]['from'] == '2026-10-07T00:00:00+03:00'
+    assert requests[0]['to'] == '2026-10-08T00:00:00+03:00'
     assert 'Date' not in requests[0]
     assert [m.source_event_id for m in matches] == ['11']
     assert matches[0].league_name == 'Emperor Cup'
     assert stats['rows_fetched'] == 2
 
 
-@pytest.mark.parametrize('count,revision,minutes,due', [(183, 2, 119, False), (183, 2, 120, True), (300, 2, 180, False), (183, 1, 1, True)])
+@pytest.mark.parametrize('count,revision,minutes,due', [(183, 3, 119, False), (183, 3, 120, True), (300, 3, 180, False), (183, 2, 1, True)])
 def test_incomplete_inventory_refresh_is_bounded(count, revision, minutes, due):
     from scripts.daily_inventory_refresh_due import refresh_due
     now = datetime.now(UTC)
@@ -650,3 +650,66 @@ def test_restored_bzzoiro_context_is_rebuilt_without_network(profile, tmp_path, 
     assert data[m.match_key].expected_home + data[m.match_key].expected_away == pytest.approx(2.9, abs=.002)
     assert data[m.match_key].home_win_probability == pytest.approx(.159)
     assert runner.registry.observation(m, 'context') == now.isoformat()
+
+
+def test_sstats_history_upper_bound_includes_last_requested_day(profile, monkeypatch):
+    import httpx
+
+    from app.providers.sstats import SStatsContextProvider
+    provider = SStatsContextProvider(Settings())
+    requests = []
+    async def response(client, url, *, params, stats):
+        requests.append(params)
+        return httpx.Response(200, json={'data': [{'id': 1}]})
+    monkeypatch.setattr(provider, '_request_with_retries', response)
+    asyncio.run(provider._fetch_rows_window(None, '2026-10-01', '2026-10-07', {'payload_shapes': []}))
+    assert requests[0]['from'] == '2026-10-01'
+    assert requests[0]['to'] == '2026-10-08'
+
+
+def test_daily_weather_requires_a_real_city(profile):
+    from app.providers.weather_common import WeatherContextEnricher
+    weather = WeatherContextEnricher(Settings())
+    m = match(datetime.now(UTC))
+    m.home_team = 'Urawa Red Diamonds'
+    m.league_name = 'Japan - Emperor Cup'
+    assert weather._location_from_fixture(m, {}) is None
+    fixture = {'fixture': {'venue': {'city': 'Saitama'}}, 'league': {'country': 'Japan'}}
+    assert weather._location_from_fixture(m, fixture)['query'] == 'Saitama, Japan'
+
+
+def test_daily_weather_rejects_wrong_country(profile, monkeypatch):
+    from app.providers.weather_common import WeatherContextEnricher
+    weather = WeatherContextEnricher(Settings())
+    weather.weatherapi_key = 'test-placeholder'
+    weather.openweather_enabled = False
+    monkeypatch.setattr(weather, '_load_cache', lambda: {})
+    monkeypatch.setattr(weather, '_write_cache', lambda cache: None)
+    async def payload(*args):
+        return {'source': 'weatherapi', 'city': 'Urawa', 'country': 'Sri Lanka', 'temp_c': 30}
+    monkeypatch.setattr(weather, '_fetch_weatherapi', payload)
+    ctx = MatchContext('sstats', {}, expected_home=1., expected_away=1.)
+    m = match(datetime.now(UTC))
+    fixture = {'fixture': {'venue': {'city': 'Saitama'}}, 'league': {'country': 'Japan'}}
+    updated, stats = asyncio.run(weather.enrich_context(None, m, fixture, ctx))
+    assert updated is ctx
+    assert stats['reason'] == 'location_country_mismatch'
+    assert not stats.get('enriched')
+
+
+def test_registry_ignores_unverified_restored_weather(profile, tmp_path):
+    now = datetime.now(UTC)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now)
+    r.sync([m])
+    weather = MatchContext('sstats', {}, expected_home=1., expected_away=1., details={'weather_country': 'Sri Lanka'})
+    r.record('weather', 'context', [m], {m.match_key: weather}, {}, observed_at=now)
+    assert r.cached('weather', 'context', m) is None
+    assert r.coverage()['weather'] == 0
+
+
+def test_report_does_not_treat_prefetch_as_model_failure():
+    text = render({'daily_quality': {'coverage': {'inventory': 300}}, 'rejections': {'match_not_found': 32, 'ev_below_threshold': 33, 'confidence_below_threshold': 24}})
+    assert 'ценность ниже порога: 33' in text
+    assert 'недостаточная уверенность модели: 24' in text
+    assert 'дополнительная проверка модели или цены: 32' not in text

@@ -19,7 +19,7 @@ REASONS = {
     'unsupported_total_line': 'тотал вне поддерживаемых целых и половинных линий',
     'unsupported_team_total_line': 'индивидуальный тотал вне поддерживаемых линий',
     'non_core_confidence_guard': 'недостаточная уверенность для менее изученного турнира',
-    'confidence_below_threshold': 'вероятность ниже порога модели',
+    'confidence_below_threshold': 'недостаточная уверенность модели',
     'publish_books_guard': 'недостаточное подтверждение цены',
     'quality_quality_high_odds_books_guard': 'недостаточное подтверждение цены',
     'quality_quality_high_odds_confidence_guard': 'недостаточная уверенность при повышенном коэффициенте',
@@ -87,6 +87,9 @@ def render(summary):
         lines.extend(['', '🚫 Основные причины отказов'])
         groups = Counter()
         for reason, value in reasons.items():
+            # Prefetched next-window matches are deliberately outside this model run.
+            if reason in {'match_not_found', 'simple_market_h2h_high_odds_skip'}:
+                continue
             label = REASONS.get(reason)
             if label is None:
                 label = 'нет контекста для рынка' if 'missing_context' in reason else 'ценность ниже порога' if 'edge' in reason or 'ev_' in reason else 'дополнительная проверка модели или цены'

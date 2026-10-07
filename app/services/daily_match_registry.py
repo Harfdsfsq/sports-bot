@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -110,6 +111,8 @@ class DailyMatchRegistry:
             if role == 'offers':
                 return [Offer(**row) for row in evidence['payload']]
             context = MatchContext(**evidence['payload'])
+            if provider == 'weather' and os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and not context.details.get('weather_location_verified'):
+                return None
             if provider != 'weather' and (context.source in {'bzzoiro_event_odds', 'market_implied_xg', 'market_signal'} or context.details.get('bzzoiro_event_only_context')):
                 return None
             return context

@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 from app.services.daily_match_registry import parse_time, read_json
 
-REVISION = 2
+REVISION = 3
 
 
 def refresh_due(payload, now):

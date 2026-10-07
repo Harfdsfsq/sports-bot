@@ -291,7 +291,7 @@ class SStatsContextProvider:
         if daily_cache:
             from pathlib import Path
             from app.services.daily_match_registry import parse_time, read_json, write_json
-            cache_path = Path(f".data/provider_cache/sstats-history-{from_date}-{to_date}.json")
+            cache_path = Path(f".data/provider_cache/sstats-history-v3-{from_date}-{to_date}.json")
             saved = read_json(cache_path, {})
             observed = parse_time(saved.get("observed_at"))
             if observed and timedelta(0) <= datetime.now(UTC) - observed < timedelta(hours=6) and saved.get("rows"):
@@ -342,7 +342,7 @@ class SStatsContextProvider:
                 break
             params = {
                 "from": from_date,
-                "to": to_date,
+                "to": (parse_datetime(to_date).date() + timedelta(days=1)).isoformat(),
                 "limit": limit,
                 "offset": offset,
                 "apikey": self.settings.sstats_api_key,

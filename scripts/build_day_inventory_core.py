@@ -424,8 +424,8 @@ async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match]
         while stats["requests"] < max_requests:
             # Query the UTC dates intersecting the Moscow day, then filter locally.
             day_start = datetime.fromisoformat(local_date).replace(tzinfo=app_tz(settings))
-            day_end = day_start + timedelta(days=1) - timedelta(microseconds=1)
-            params = {"from": day_start.astimezone(UTC).date().isoformat(), "to": day_end.astimezone(UTC).date().isoformat(), "limit": limit, "offset": offset, "apikey": key}
+            day_end = day_start + timedelta(days=1)
+            params = {"from": day_start.isoformat(), "to": day_end.isoformat(), "limit": limit, "offset": offset, "apikey": key}
             try:
                 stats["requests"] += 1
                 resp = await client.get("https://api.sstats.net/Games/list", params=params)
@@ -641,7 +641,7 @@ async def main_async() -> int:
     existing = {} if env_bool("DAY_INVENTORY_REBUILD_FROM_SCRATCH", False) else store.load_inventory(local_date)
     payload = store.build_payload(local_date=local_date, matches=selected, source_meta=source_meta, existing=existing)
     payload = enrich_payload_coverage(payload)
-    payload['daily_inventory_revision'] = 2
+    payload['daily_inventory_revision'] = 3
     payload.setdefault("counts", {})["matches_after_top_cut"] = len(selected)
     payload["counts"]["target_matches"] = max_matches
     payload["counts"]["target_shortfall"] = max(0, max_matches - len(selected))
