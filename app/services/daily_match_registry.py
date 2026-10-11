@@ -10,6 +10,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from app.schemas import Match, MatchContext, Offer
+from app.services.fixture_identity import football_data_context_matches
 from app.services.market_period import is_full_match_market
 from app.utils import canonicalize_team_name
 
@@ -113,6 +114,8 @@ class DailyMatchRegistry:
             if role == 'offers':
                 return [Offer(**row) for row in evidence['payload'] if is_full_match_market(row)]
             context = MatchContext(**evidence['payload'])
+            if provider == 'football_data' and not football_data_context_matches(match, context):
+                return None
             if provider == 'sstats' and context.source == 'sstats_form' and os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
                 from app.providers.sstats import conflicting_history_indices
                 if any(conflicting_history_indices(context.payload.get(side) or []) for side in ('home_recent', 'away_recent')):
@@ -165,6 +168,9 @@ class DailyMatchRegistry:
         for match in targets:
             entry = self.data['matches'][match_identity(match)]
             value = data.get(match.match_key)
+            if role == 'context' and provider == 'football_data' and value and not football_data_context_matches(match, value):
+                value = None
+                self.data['issues'].append({'provider': provider, 'reason': 'context_fixture_identity_mismatch', 'match_id': match_identity(match)})
             if role == 'offers' and value:
                 value = [offer for offer in value if is_full_match_market(offer)]
             if value:
@@ -222,7 +228,7 @@ class DailyMatchRegistry:
                 continue
             entry = self.data['matches'][match_identity(match)]
             result['collected_line'] += any(name.endswith(':offers') and any(is_full_match_market(offer) for offer in row['payload']) for name, row in entry['evidence'].items())
-            result['collected_context'] += any(name.endswith(':context') and not name.startswith('weather:') and row['payload'] and not (name == 'sstats:context' and market_only_context(MatchContext(**row['payload']))) for name, row in entry['evidence'].items())
+            result['collected_context'] += any(name.endswith(':context') and not name.startswith('weather:') and row['payload'] and not (name == 'football_data:context' and not football_data_context_matches(match, MatchContext(**row['payload']))) and not (name == 'sstats:context' and market_only_context(MatchContext(**row['payload']))) for name, row in entry['evidence'].items())
             line, context = self.has_role(match, 'offers'), self.has_role(match, 'context')
             result['line'] += bool(line)
             result['context'] += bool(context)

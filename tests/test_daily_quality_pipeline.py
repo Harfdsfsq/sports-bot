@@ -1166,3 +1166,80 @@ def test_price_outlier_is_not_confirmed_by_lower_full_match_quotes(profile):
     assert 'selected_price_outlier' not in rejection_reasons(c)
     c.raw_bucket_offers = c.raw_bucket_offers[:1]
     assert 'selected_price_outlier' not in rejection_reasons(c)  # One book remains allowed.
+
+
+@pytest.mark.parametrize('home,away,foreign_home,foreign_away', [
+    ('Attard FC', 'Melita FC', 'Telstar 1963', 'ADO Den Haag'),
+    ('US Follonica Gavorrano', 'ASD Terranuova Traiana', 'OGC Nice', 'RC Strasbourg Alsace'),
+    ('Lanciano FC', 'K-Sport Montecchio Gallo', 'SS Lazio', 'AC Monza'),
+    ('Gaziantep FK', 'Corum FK', 'Crystal Palace FC', 'Nottingham Forest FC'),
+    ('Emirates Club', 'Dubai City FC', 'Hull City AFC', 'Everton FC'),
+])
+def test_football_data_rejects_oct11_foreign_fixture_mapping(profile, home, away, foreign_home, foreign_away):
+    from app.providers.football_data import FootballDataContextProvider
+    from app.services.fixture_identity import direct_fixture_identity
+    m = match(datetime.now(UTC), name=home)
+    m.away_team = away
+    event = {'home': foreign_home, 'away': foreign_away, 'home_aliases': [foreign_home, 'ATT'], 'away_aliases': [foreign_away, 'MEL'], 'league': 'Other League', 'commence_time': m.commence_time}
+    assert not direct_fixture_identity(m, event)
+    assert FootballDataContextProvider(Settings(_env_file=None))._match_event(event, [m])[0] is None
+
+
+@pytest.mark.parametrize('home,away,provider_home,provider_away', [
+    ('Excelsior Rotterdam', 'FC Groningen', 'SBV Excelsior', 'FC Groningen'),
+    ('Liverpool FC', 'Manchester City', 'Liverpool FC', 'Manchester City FC'),
+    ('SC Freiburg', 'Schalke 04', 'SC Freiburg', 'FC Schalke 04'),
+    ('Sassuolo Calcio', 'AC Milan', 'US Sassuolo Calcio', 'AC Milan'),
+])
+def test_strict_fixture_identity_preserves_real_name_variants(home, away, provider_home, provider_away):
+    from app.services.fixture_identity import direct_fixture_identity
+    m = match(datetime.now(UTC), name=home)
+    m.away_team = away
+    event = {'home': provider_home, 'away': provider_away, 'commence_time': m.commence_time}
+    if provider_home == 'SBV Excelsior':
+        event['home_aliases'] = [provider_home, 'Excelsior']
+    assert direct_fixture_identity(m, event)
+    assert not direct_fixture_identity(m, {'home': provider_away, 'away': provider_home, 'commence_time': m.commence_time})
+    assert not direct_fixture_identity(m, {**event, 'commence_time': m.commence_time + timedelta(hours=1)})
+
+
+def test_foreign_football_data_cache_is_not_counted_or_reused(profile, tmp_path):
+    now = datetime.now(UTC)
+    m = match(now, name='Attard FC')
+    m.away_team = 'Melita FC'
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    registry.sync([m])
+    row = {'homeTeam': {'name': 'Telstar 1963'}, 'awayTeam': {'name': 'ADO Den Haag'}, 'utcDate': m.commence_time.isoformat()}
+    foreign = MatchContext('football_data', row, expected_home=1.77, expected_away=1.36)
+    entry = registry.data['matches'][match_identity(m)]
+    entry['evidence']['football_data:context'] = {'payload': asdict(foreign), 'observed_at': now.isoformat()}
+    assert not registry.cached('football_data', 'context', m)
+    assert registry.coverage()['context'] == registry.coverage()['collected_context'] == 0
+    assert registry.targets('football_data', 'context', limit=1)
+    registry.record('football_data', 'context', [m], {m.match_key: foreign}, {}, observed_at=now)
+    assert registry.data['issues'][-1]['reason'] == 'context_fixture_identity_mismatch'
+    assert not registry.cached('football_data', 'context', m)
+
+
+def test_real_football_data_context_keeps_standings_and_history_cache(profile, tmp_path):
+    now = datetime.now(UTC)
+    m = match(now, name='Liverpool FC')
+    m.away_team = 'Manchester City'
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    registry.sync([m])
+    row = {'homeTeam': {'name': 'Liverpool FC'}, 'awayTeam': {'name': 'Manchester City FC'}, 'utcDate': m.commence_time.isoformat()}
+    for payload in (row, {'scheduled': row}):
+        context = MatchContext('football_data', payload, expected_home=1.5, expected_away=1.8)
+        registry.record('football_data', 'context', [m], {m.match_key: context}, {}, observed_at=now)
+        assert registry.cached('football_data', 'context', m).expected_away == 1.8
+
+
+def test_standings_cannot_use_foreign_fixture_team_ids(profile):
+    from app.providers.football_data import FootballDataContextProvider
+    m = match(datetime.now(UTC), name='Attard FC')
+    m.away_team = 'Melita FC'
+    row = {'homeTeam': {'name': 'Telstar 1963', 'id': 1}, 'awayTeam': {'name': 'ADO Den Haag', 'id': 2}, 'utcDate': m.commence_time.isoformat()}
+    table = [{'team': {'id': 1, 'name': 'Telstar 1963'}, 'playedGames': 7, 'points': 5}, {'team': {'id': 2, 'name': 'ADO Den Haag'}, 'playedGames': 7, 'points': 2}]
+    provider = FootballDataContextProvider(Settings(_env_file=None))
+    assert provider._build_context_from_standings(m, row, table) is None
+    assert provider._build_context_from_history(m, row, []) is None

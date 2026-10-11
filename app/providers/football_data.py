@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from app.services.api_budget import BudgetedAsyncClient
+from app.services.fixture_identity import direct_fixture_identity
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
@@ -400,6 +401,8 @@ class FootballDataContextProvider:
             # Reject impossible kickoffs before expensive alias/fuzzy scoring.
             if abs((match.commence_time - event['commence_time']).total_seconds()) > max(exact_tol, fuzzy_tol) * 3600:
                 continue
+            if not direct_fixture_identity(match, event, tolerance_hours=max(exact_tol, fuzzy_tol)):
+                continue
             for event_league in event.get('league_aliases') or [event['league']]:
                 score, quality, _, _ = score_event_match_variants(
                     sport=match.sport_key,
@@ -438,6 +441,9 @@ class FootballDataContextProvider:
         return best_match, best_score, best_quality, None
 
     def _build_context_from_standings(self, match: Match, row: dict[str, Any], table: list[dict[str, Any]]) -> MatchContext | None:
+        event = self._row_to_event(row)
+        if event is None or not direct_fixture_identity(match, event):
+            return None
         home_row = self._find_team_row(match.home_team, table, ((row.get('homeTeam') or {}).get('id')))
         away_row = self._find_team_row(match.away_team, table, ((row.get('awayTeam') or {}).get('id')))
         if home_row is None or away_row is None:
@@ -486,6 +492,9 @@ class FootballDataContextProvider:
         )
 
     def _build_context_from_history(self, match: Match, row: dict[str, Any], rows: list[dict[str, Any]]) -> MatchContext | None:
+        event = self._row_to_event(row)
+        if event is None or not direct_fixture_identity(match, event):
+            return None
         match_dt = match.commence_time.astimezone(UTC)
         home_games: list[tuple[datetime, float, float]] = []
         away_games: list[tuple[datetime, float, float]] = []
@@ -688,7 +697,6 @@ class FootballDataContextProvider:
         values = [
             str(payload.get('name') or '').strip(),
             str(payload.get('shortName') or '').strip(),
-            str(payload.get('tla') or '').strip(),
         ]
         aliases: list[str] = []
         for value in values:
