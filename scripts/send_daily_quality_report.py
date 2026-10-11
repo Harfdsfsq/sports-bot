@@ -133,10 +133,12 @@ def render(summary):
                       'ограничение квоты; повтор после сброса' if row.get('rate_limited') or row.get('quota_exhausted') else
                       f"выбранные букмекеры недоступны по тарифу ({row.get('effective_bookmakers') or row.get('bookmakers')}); проверьте выбор букмекеров в аккаунте" if row.get('plan_restriction') else
                       'ошибка авторизации — проверьте ключ' if row.get('auth_error') else
-                      f"дал линии для {row['events_matched']} матчей" if row.get('events_matched') else
+                      f"обновил линии для {row['events_matched']} матчей в этом запуске" if row.get('events_matched') else
                       'использован свежий кеш' if not odds_stats.get('assigned_matches') else
                       'проверен; подходящих линий не получено')
             lines.append(f'Odds-api.io · {label}: {status}.')
+        if 'cached_matches' in odds_stats:
+            lines.append(f"С учётом свежего кеша Odds-api.io: линии для {odds_stats['cached_matches']} матчей. Это общее покрытие двух аккаунтов без повторного подсчёта матчей.")
     if any(row.get('blocked') or row.get('last_block') for row in summary.get('api_budget') or []):
         lines.append('ℹ️ Часть запросов отложена по лимитам API; полученные данные сохранены, пропуски остаются в очереди.')
     overdue = summary.get('overdue_published_bets') or []

@@ -230,9 +230,10 @@ def test_inventory_bzzoiro_reads_second_page_and_moscow_midnight(budget_env, mon
 
 def test_report_shows_second_account_state_without_credentials():
     from scripts.send_daily_quality_report import render
-    summary = {'daily_quality': {}, 'source_stats': {'odds_api_io': {'configured_accounts': ['account1', 'account2'], 'accounts': {'account1': {'events_matched': 10}, 'account2': {'rate_limited': True}}}}}
+    summary = {'daily_quality': {}, 'source_stats': {'odds_api_io': {'configured_accounts': ['account1', 'account2'], 'cached_matches': 247, 'accounts': {'account1': {'events_matched': 10}, 'account2': {'rate_limited': True}}}}}
     text = render(summary)
-    assert 'Аккаунт 1: дал линии для 10 матчей' in text
+    assert 'Аккаунт 1: обновил линии для 10 матчей в этом запуске' in text
+    assert 'С учётом свежего кеша Odds-api.io: линии для 247 матчей' in text
     assert 'Аккаунт 2: ограничение квоты' in text
 
 
