@@ -1015,3 +1015,72 @@ def test_settlement_final_row_wins_over_live_copy(profile):
     finished = {**row, 'status': 8, 'homeFTResult': 2, 'awayFTResult': 1}
     best, debug = service._match_row_with_debug(bet, [{**row, 'status': 19}, finished])
     assert best == finished and debug['best_has_score']
+
+
+def test_matched_event_venue_reaches_weather_without_team_stadium_fallback(profile, tmp_path):
+    from app.providers.weather_common import WeatherContextEnricher
+    now = datetime.now(UTC)
+    m = match(now)
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    runner.inventory_matches = [m]
+    runner.registry.sync([m])
+    context = MatchContext('bzzoiro', {'event': {'home_team_obj': {'venue': {'city': 'Wrong city', 'country': 'Portugal'}}, 'venue': None}})
+    runner._retain_fixture_venues('bzzoiro', {m.match_key: context})
+    assert 'venue' not in m.metadata
+    context.payload['event']['venue'] = {'name': 'Match stadium', 'city': 'Lourosa', 'country': 'Portugal'}
+    runner._retain_fixture_venues('bzzoiro', {m.match_key: context})
+    location = WeatherContextEnricher(Settings(_env_file=None))._location_from_fixture(m, {})
+    assert location['query'] == 'Lourosa, Portugal'
+    assert runner.registry.data['matches'][match_identity(m)]['match']['metadata']['venue_source'] == 'bzzoiro'
+
+
+def test_football_data_skips_fuzzy_work_for_outside_kickoffs(profile, monkeypatch):
+    from app.providers.football_data import FootballDataContextProvider
+    now = datetime.now(UTC)
+    provider = FootballDataContextProvider(Settings(_env_file=None))
+    calls = []
+    def score(**kwargs):
+        calls.append(kwargs)
+        return 100, 'exact', None, None
+    monkeypatch.setattr('app.providers.football_data.score_event_match_variants', score)
+    near = match(now)
+    far = match(now + timedelta(days=3))
+    event = {'commence_time': near.commence_time, 'home': near.home_team, 'away': near.away_team, 'league': near.league_name}
+    assert provider._match_event(event, [far, near])[0] is near
+    assert len(calls) == 1
+
+
+def test_football_data_uses_existing_standings_before_history(profile, monkeypatch):
+    for name in ('HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'):
+        monkeypatch.delenv(name, raising=False)
+    from app.providers.football_data import FootballDataContextProvider
+    now = datetime.now(UTC)
+    m = match(now)
+    provider = FootballDataContextProvider(Settings(_env_file=None, football_data_api_key='fake'))
+    calls = []
+    row = {'competition': {'code': 'PL'}}
+    async def fetch(client, path, stats, **kwargs):
+        calls.append(path)
+        return {'matches': [row]} if path == '/matches' else {'standings': [{'table': [{'team': {'id': 1}}]}]}
+    monkeypatch.setattr(provider, '_fetch_json', fetch)
+    monkeypatch.setattr(provider, '_row_to_event', lambda r: {'competition_ref': 'PL', 'competition_type': 'LEAGUE'})
+    monkeypatch.setattr(provider, '_match_event', lambda event, matches: (m, 100, 'exact', None))
+    monkeypatch.setattr(provider, '_build_context_from_standings', lambda *args: MatchContext('football_data', {}, expected_home=1, expected_away=1))
+    contexts, stats, _ = asyncio.run(provider.fetch_context([m]))
+    assert m.match_key in contexts
+    assert calls == ['/matches', '/competitions/PL/standings']
+    assert stats['history_requests'] == 0
+
+
+def test_standings_coverage_counts_both_real_teams_in_restored_table(tmp_path):
+    now = datetime.now(UTC)
+    m = match(now)
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    registry.sync([m])
+    context = MatchContext('thesportsdb', {}, expected_home=1, expected_away=1, details={'thesportsdb_home_rank': 1, 'thesportsdb_away_rank': 4, 'thesportsdb_partial_context': False})
+    registry.record('thesportsdb', 'context', [m], {m.match_key: context}, {}, observed_at=now)
+    assert registry.coverage()['standings'] == 1
+    context.details['thesportsdb_partial_context'] = True
+    registry.record('thesportsdb', 'context', [m], {m.match_key: context}, {}, observed_at=now)
+    assert registry.coverage()['standings'] == 0

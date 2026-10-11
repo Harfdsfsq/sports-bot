@@ -208,7 +208,11 @@ class DailyMatchRegistry:
             if near:
                 form = any((d.get('home_recent_count') or 0) > 0 and (d.get('away_recent_count') or 0) > 0 for d in details)
                 result['form'] += form or any('form' in str(field).lower() and value not in (None, '', [], {}) for d in details for field, value in d.items())
-                result['standings'] += any(any(token in str(field).lower() for token in ('standing', 'table')) and value not in (None, '', [], {}) for d in details for field, value in d.items())
+                result['standings'] += any(
+                    bool(d.get('thesportsdb_home_rank') and d.get('thesportsdb_away_rank') and not d.get('thesportsdb_partial_context'))
+                    or any(any(token in str(field).lower() for token in ('standing', 'table')) and value not in (None, '', [], {}, False) for field, value in d.items())
+                    for d in details
+                )
                 result['weather'] += bool(self.cached('weather', 'context', match))
             if match.commence_time.astimezone(TZ).date().isoformat() != self.date:
                 result['lookahead'] += 1

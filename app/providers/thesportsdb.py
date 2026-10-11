@@ -375,6 +375,7 @@ class TheSportsDbContextProvider:
                 'away_form': round(away_form_score, 3),
                 'home_ppg': round(home_ppg, 3),
                 'thesportsdb_partial_context': partial,
+                **({'thesportsdb_standings_available': True} if not partial else {}),
                 'away_ppg': round(away_ppg, 3),
                 'home_gf_pg': round(home_gf_pg, 3),
                 'home_ga_pg': round(home_ga_pg, 3),

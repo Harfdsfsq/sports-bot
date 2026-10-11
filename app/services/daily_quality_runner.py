@@ -121,12 +121,39 @@ class DailyQualityRunner(PredictionRunner):
                 if context.details.get('probability_units') != 'fraction' and isinstance(context.payload.get('prediction'), dict):
                     cached[key] = provider._prediction_to_context(context.payload['prediction'], context.payload.get('event'), context.details.get('bzzoiro_match_quality'))
         stats.update({'assigned_matches': len(targets), 'cached_matches': len(cached), 'daily_pipeline': True})
+        if role == 'context':
+            self._retain_fixture_venues(name, cached)
         if name == 'odds_api_io' and hasattr(provider, '_odds_accounts'):
             stats['configured_accounts'] = [account['name'] for account in provider._odds_accounts()]
         return cached, stats, preview
 
+    def _retain_fixture_venues(self, provider, contexts):
+        # Use only the venue of the matched event, never a team's usual stadium.
+        if provider != 'bzzoiro':
+            return
+        changed = False
+        for match in self.inventory_matches:
+            context = contexts.get(match.match_key)
+            event = context.payload.get('event') if context else None
+            venue = event.get('venue') if isinstance(event, dict) else None
+            if not isinstance(venue, dict) or not venue.get('city') or not venue.get('country'):
+                continue
+            match.metadata.update(venue=dict(venue), country=venue['country'], venue_source=provider)
+            entry = self.registry.data['matches'].get(match_identity(match))
+            if entry is not None:
+                entry['match']['metadata'].update(venue=dict(venue), country=venue['country'], venue_source=provider)
+                changed = True
+        if changed:
+            self.registry.save()
+
     async def _fetch_weather_contexts(self, matches, base_contexts):
         self.registry.now = datetime.now(UTC)
+        for match in matches:
+            metadata = self.registry.data['matches'].get(match_identity(match), {}).get('match', {}).get('metadata', {})
+            if metadata.get('venue_source') == 'bzzoiro':
+                match.metadata.update({key: metadata[key] for key in ('venue', 'country', 'venue_source') if key in metadata})
+        # Give verified locations priority within the weather request budget.
+        matches = sorted(matches, key=lambda m: not (isinstance(m.metadata.get('venue'), dict) and m.metadata['venue'].get('city') and m.metadata.get('country')))
         available = {m.match_key: m for m in matches if m.match_key in base_contexts}
         cached = {key: self.registry.cached('weather', 'context', m) for key, m in available.items()}
         targets = [m for key, m in available.items() if not cached[key]]

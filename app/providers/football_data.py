@@ -226,7 +226,14 @@ class FootballDataContextProvider:
                         preview['sample_tables'].append({'competition_ref': ref, 'rows': table[:3]})
 
             history_by_ref: dict[str, list[dict[str, Any]]] = defaultdict(list)
-            history_refs = [ref for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0]))]
+            needs_history = set()
+            for item in mapping.values():
+                row = item['row']
+                ref = str(((row.get('competition') or {}).get('code') or (row.get('competition') or {}).get('id') or '')).strip().upper()
+                table = standings_by_ref.get(ref) or []
+                if not table or self._build_context_from_standings(item['match'], row, table) is None:
+                    needs_history.add(ref)
+            history_refs = [ref for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0])) if ref in needs_history]
             for ref in history_refs[:history_limit]:
                 params: dict[str, Any] = {'limit': competition_match_limit}
                 season_year = competition_seasons.get(ref)
@@ -390,6 +397,9 @@ class FootballDataContextProvider:
         exact_tol = float(getattr(self.settings, 'match_start_tolerance_hours', 12) or 12)
         fuzzy_tol = float(getattr(self.settings, 'fallback_match_start_tolerance_hours', 8) or 8)
         for match in matches:
+            # Reject impossible kickoffs before expensive alias/fuzzy scoring.
+            if abs((match.commence_time - event['commence_time']).total_seconds()) > max(exact_tol, fuzzy_tol) * 3600:
+                continue
             for event_league in event.get('league_aliases') or [event['league']]:
                 score, quality, _, _ = score_event_match_variants(
                     sport=match.sport_key,
