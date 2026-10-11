@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":75394866,\"home\":\"La Familia FC\",\"away\":\"CD Bocas FC\",\"homeId\":1222727,\"awayId\":1035239,\"date\":\"2026-10-11T14:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Panama - Liga Prom, Apertura\",\"slug\":\"panama-liga-prom-apertura\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0",
+      "body_preview": "[{\"id\":75418352,\"home\":\"Atletico El Vigia\",\"away\":\"Urena SC\",\"homeId\":7741,\"awayId\":209846,\"date\":\"2026-10-11T19:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Venezuela - Segunda Division, Central-West\",\"slug\":\"venezuela-segunda-division-central-west\"},\"status\":\"pending\",\"s",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -66,7 +66,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1791727121,\"localtime\":\"2026-10-11 14:58\"},\"current\":{\"last_updated_epoch\":1791726300,\"last_updated\":\"2026-10-11 14:45\",\"temp_c\":14.",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1791746970,\"localtime\":\"2026-10-11 20:29\"},\"current\":{\"last_updated_epoch\":1791746100,\"last_updated\":\"2026-10-11 20:15\",\"temp_c\":14.",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -77,16 +77,16 @@
       "status": "ok"
     },
     {
-      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":0.06759166717529297,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curr",
+      "body_preview": "{\"error\":true,\"reason\":\"The service is overloaded\"}",
       "enabled": true,
-      "http_status": 200,
-      "item_count": 9,
+      "http_status": 503,
+      "item_count": 2,
       "key_present": true,
       "key_required": false,
-      "ok": true,
-      "payload_shape": "current,current_units,elevation,generationtime_ms,latitude,longitude,timezone,timezone_abbreviation,utc_offset_seconds",
+      "ok": false,
+      "payload_shape": "error,reason",
       "provider": "open_meteo",
-      "status": "ok"
+      "status": "http_503"
     },
     {
       "enabled": true,
@@ -96,7 +96,7 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-10-11T13:59:00.999210+00:00",
+  "created_at_utc": "2026-10-11T19:29:50.290644+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
@@ -224,9 +224,11 @@
       "prefix": "RAPIDAPI_SPORTSBOOK"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_FREE_FOOTBALL"
     },
     {
@@ -260,10 +262,10 @@
   "summary": {
     "checks_total": 8,
     "enabled_checks": 8,
-    "failed_enabled_checks": 1,
+    "failed_enabled_checks": 2,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 8,
-    "ok_enabled_checks": 7,
+    "non_core_bad_env_prefixes": 9,
+    "ok_enabled_checks": 6,
     "status": "warning"
   }
 }
