@@ -10,6 +10,7 @@ from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, MatchContextBundle, Offer
 from app.services.daily_goal_probability import expected_value, push_probability, spread_probability, total_probability
 from app.services.daily_quality_policy import TIER_LIMITS, sporting_context_sources
+from app.services.market_period import is_full_match_market
 from app.utils import (
     candidate_selection_key,
     clamp,
@@ -57,6 +58,9 @@ class CandidateFactory:
             context = self._coerce_context(contexts_by_match.get(match_key))
             families: dict[str, list[Offer]] = defaultdict(list)
             for offer in offers:
+                if not is_full_match_market(offer):
+                    rejections['unsupported_market_period'] += 1
+                    continue
                 if not self._is_target_or_consensus_book(offer.bookmaker):
                     rejections['non_target_bookmaker'] += 1
                     continue
@@ -1338,6 +1342,7 @@ class CandidateFactory:
                     'market_name': offer.market_name,
                     'market_key': offer.market_key,
                     'source_event_id': offer.source_event_id,
+                    'metadata': dict(offer.metadata),
                 }
                 for offer in offers
             ],

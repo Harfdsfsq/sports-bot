@@ -9,8 +9,10 @@ selected bookmaker price is real for the exact market/selection/point.
 
 import os
 import re
+from statistics import median
 from typing import Any
 
+from app.services.market_period import is_full_match_market
 from app.services.publication_thresholds import publish_floor, source_floor
 
 ODDS_SOURCE_FIELDS = (
@@ -197,6 +199,8 @@ def _line_side(candidate: Any) -> str:
 
 
 def _same_line(candidate: Any, offer: dict[str, Any]) -> bool:
+    if not is_full_match_market(offer):
+        return False
     family = _norm(getattr(candidate, "family", ""))
     offer_family = _norm(offer.get("family") or offer.get("market_key") or offer.get("market_name"))
     if family and offer_family and family != offer_family:
@@ -356,6 +360,20 @@ def rejection_reasons(candidate: Any) -> list[str]:
     price_sources_count = int(report["price_sources_count"])
     bookmakers_count = int(report["exact_line_bookmakers_count"])
     reasons: list[str] = []
+    raw_offers = _offer_dicts(candidate)
+    if any(not is_full_match_market(offer) for offer in raw_offers):
+        reasons.append("unsupported_market_period")
+    # A lone high quote is not confirmed by lower quotes from unrelated books.
+    peers = {}
+    selected_book = _norm(getattr(candidate, 'bookmaker', ''))
+    for offer in raw_offers:
+        book = _norm(offer.get('bookmaker'))
+        if book and book != selected_book and _same_line(candidate, offer):
+            price = _as_float(offer.get('price') or offer.get('odds'))
+            if price > 1:
+                peers[book] = max(peers.get(book, 0), price)
+    if len(peers) >= 2 and _as_float(getattr(candidate, 'odds', 0)) > median(peers.values()) * 1.25:
+        reasons.append('selected_price_outlier')
     min_price_sources = max(source_floor(), _as_int(os.getenv("STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES"), source_floor()))
     if price_sources_count < min_price_sources:
         reasons.append(f"price_sources_below_min:{price_sources_count}/{min_price_sources}")

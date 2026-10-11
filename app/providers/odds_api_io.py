@@ -12,6 +12,7 @@ import httpx
 import hashlib
 
 from app.services.api_budget import BudgetedAsyncClient
+from app.services.market_period import is_full_match_market
 
 from app.config import Settings
 from app.schemas import Match, Offer
@@ -1293,7 +1294,7 @@ class OddsApiIoProvider:
                     team_side=normalized_team_side,
                     market_name=market_name,
                     market_key=family,
-                    metadata={"odds_api_io": True},
+                    metadata={"odds_api_io": True, "market_period": "full_time"},
                 )
             )
 
@@ -1305,7 +1306,7 @@ class OddsApiIoProvider:
                 return
             default_team_side = self._infer_team_total_side(market_key, None, match)
             for row in outcomes:
-                if not isinstance(row, dict):
+                if not isinstance(row, dict) or not is_full_match_market(row):
                     continue
                 name = str(row.get("name") or row.get("label") or row.get("selection") or "").strip()
                 point = self._line_from_value(
@@ -1360,7 +1361,7 @@ class OddsApiIoProvider:
             if family is None:
                 return
             for row in rows:
-                if not isinstance(row, dict):
+                if not isinstance(row, dict) or not is_full_match_market(row):
                     continue
 
                 point = self._line_from_value(
@@ -1497,7 +1498,7 @@ class OddsApiIoProvider:
 
             if isinstance(markets, list):
                 for market in markets:
-                    if not isinstance(market, dict):
+                    if not isinstance(market, dict) or not is_full_match_market(market):
                         continue
                     market_key = str(market.get("key") or market.get("name") or market.get("market") or "").lower()
                     outcomes = market.get("outcomes")
@@ -1511,6 +1512,8 @@ class OddsApiIoProvider:
                 for market_key, market_value in markets.items():
                     key = str(market_key or "").lower()
                     if isinstance(market_value, dict):
+                        if not is_full_match_market(market_value):
+                            continue
                         outcomes = market_value.get("outcomes")
                         if isinstance(outcomes, list):
                             parse_outcomes(bookmaker_name, key, [row for row in outcomes if isinstance(row, dict)])
@@ -1529,7 +1532,7 @@ class OddsApiIoProvider:
     @staticmethod
     def _is_supported_market(market_key: str) -> bool:
         key = str(market_key or '').lower().strip()
-        if not key:
+        if not key or not is_full_match_market({'market_name': key}):
             return False
         banned_terms = (
             '1st half', 'first half', '2nd half', 'second half', 'half time', 'halftime', 'ht',

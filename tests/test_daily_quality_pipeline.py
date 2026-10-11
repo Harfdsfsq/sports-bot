@@ -1084,3 +1084,85 @@ def test_standings_coverage_counts_both_real_teams_in_restored_table(tmp_path):
     context.details['thesportsdb_partial_context'] = True
     registry.record('thesportsdb', 'context', [m], {m.match_key: context}, {}, observed_at=now)
     assert registry.coverage()['standings'] == 0
+
+
+@pytest.mark.parametrize('label', ['Totals 2H', 'Totals 1H', 'totals_2h', 'Spreads HT', 'Team Total 1st Half', 'BTTS Second Half', 'Totals Extra Time', 'Totals Q1'])
+def test_sub_period_markets_never_enter_full_match_parser(profile, label):
+    from app.providers.odds_api_io import OddsApiIoProvider
+    provider = OddsApiIoProvider(Settings(_env_file=None))
+    m = match(datetime.now(UTC))
+    payload = {'bookmakers': {'Unibet': [{'name': label, 'odds': [{'hdp': 1.5, 'over': 2.20, 'under': 1.55}]}]}}
+    assert provider._parse_event_odds(payload, m) == []
+
+
+@pytest.mark.parametrize('full_prices,half_price', [([1.363, 1.35, 1.37], 2.20), ([1.30, 1.28, 1.33], 2.14)])
+def test_oct11_half_quotes_cannot_replace_full_match_prices(profile, full_prices, half_price):
+    from app.providers.odds_api_io import OddsApiIoProvider
+    provider = OddsApiIoProvider(Settings(_env_file=None))
+    m = match(datetime.now(UTC))
+    books = {book: [{'name': 'Totals', 'odds': [{'hdp': 1.5, 'over': price, 'under': 3.0}]}]
+             for book, price in zip(['Bet365', '1xbet', 'Betano'], full_prices, strict=True)}
+    books['Unibet'] = [{'name': 'Totals 2H', 'odds': [{'hdp': 1.5, 'over': half_price, 'under': 1.55}]}]
+    offers = provider._parse_event_odds({'bookmakers': books}, m)
+    over = [o for o in offers if o.selection == 'Over']
+    assert len(over) == 3
+    assert max(o.price for o in over) == max(full_prices)
+    assert all(o.metadata['market_period'] == 'full_time' for o in offers)
+
+
+def test_period_metadata_overrides_generic_market_name(profile):
+    from app.providers.odds_api_io import OddsApiIoProvider
+    from app.services.market_period import is_full_match_market
+    provider = OddsApiIoProvider(Settings(_env_file=None))
+    row = {'key': 'totals', 'name': 'Totals 2H', 'odds': [{'hdp': 1.5, 'over': 2.2}]}
+    assert not provider._parse_event_odds({'bookmakers': {'Unibet': [row]}}, match(datetime.now(UTC)))
+    for period in ['2H', '1H', 'unknown', 2]:
+        row = {'name': 'Totals', 'period': period, 'odds': [{'hdp': 1.5, 'over': 2.2}]}
+        assert not provider._parse_event_odds({'bookmakers': {'Unibet': [row]}}, match(datetime.now(UTC)))
+        assert not is_full_match_market({'market_name': 'totals', 'metadata': {'market_period': period}})
+    for period in ['FT', 'full_time', '90 minutes']:
+        assert is_full_match_market({'market_name': 'totals', 'metadata': {'market_period': period}})
+
+
+def test_old_half_market_cache_is_not_served_or_counted(profile, tmp_path):
+    now = datetime.now(UTC)
+    m = match(now)
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now=now)
+    registry.sync([m])
+    entry = registry.data['matches'][match_identity(m)]
+    bad = Offer('odds_api_io', 'Unibet', 'totals', 'Over', 2.2, 1.5, market_name='totals 2h')
+    entry['evidence']['odds_api_io:offers'] = {'observed_at': now.isoformat(), 'payload': [asdict(bad)]}
+    assert not registry.cached('odds_api_io', 'offers', m)
+    assert not registry.has_role(m, 'offers')
+    assert registry.coverage()['collected_line'] == 0
+    assert match_identity(m) in {match_identity(target) for target in registry.targets('odds_api_io', 'offers', limit=10)}
+
+
+def test_model_rejects_half_market_before_building_any_bucket(profile):
+    from app.services.model import CandidateFactory
+    m = match(datetime.now(UTC))
+    bad = Offer('odds_api_io', 'Unibet', 'totals', 'Over', 2.2, 1.5, market_name='totals 2h')
+    candidates, rejections, _ = CandidateFactory(Settings(_env_file=None)).build_candidates([m], {m.match_key: [bad]}, {})
+    assert candidates == []
+    assert rejections['unsupported_market_period'] == 1
+
+
+def test_final_price_check_rejects_mixed_period_candidate(profile):
+    from app.services.strict_price_integrity import rejection_reasons
+    c = candidate(datetime.now(UTC))
+    c.point, c.selection, c.bookmaker = 1.5, 'Over', 'Unibet'
+    c.raw_bucket_offers = [asdict(Offer('odds_api_io', 'Unibet', 'totals', 'Over', 2.2, 1.5, market_name='totals 2h'))]
+    assert 'unsupported_market_period' in rejection_reasons(c)
+
+
+def test_price_outlier_is_not_confirmed_by_lower_full_match_quotes(profile):
+    from app.services.strict_price_integrity import rejection_reasons
+    c = candidate(datetime.now(UTC))
+    c.point, c.selection, c.bookmaker, c.odds = 2.5, 'Over', 'Unibet', 2.20
+    c.raw_bucket_offers = [asdict(Offer('odds_api_io', book, 'totals', 'Over', price, 2.5))
+                         for book, price in [('Unibet', 2.20), ('Bet365', 1.36), ('1xbet', 1.35)]]
+    assert 'selected_price_outlier' in rejection_reasons(c)
+    c.odds = 1.40
+    assert 'selected_price_outlier' not in rejection_reasons(c)
+    c.raw_bucket_offers = c.raw_bucket_offers[:1]
+    assert 'selected_price_outlier' not in rejection_reasons(c)  # One book remains allowed.

@@ -11,6 +11,8 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'unsupported_market_period': 'линия относится к тайму или другому периоду, а не ко всему матчу',
+    'selected_price_outlier': 'выбранный коэффициент резко отличается от цен других букмекеров',
     'daily_publication_limit': 'достигнут дневной лимит публикаций',
     'unsupported_spread_line': 'четвертная или некорректная фора не поддерживается',
     'post_calibration_probability_guard': 'вероятность ниже финального порога модели',
