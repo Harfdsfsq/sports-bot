@@ -1351,3 +1351,10 @@ def test_verified_espn_name_variants_remain_usable():
     assert same_team_identity('AGF Aarhus', ['AGF'])
     assert same_team_identity('Soenderjyske', ['Sønderjyske Fodbold'])
     assert not same_team_identity('AGF Aarhus', ['Aris'])
+
+
+def test_pre_upgrade_novorizontino_forecast_is_excluded_from_learning():
+    from app.services.prediction_audit import invalid_prediction_reasons
+    row = {'prediction_id': 'soccer|aa ponte preta sp|gremio novorizontino sp|2026-10-12|totals|under||3|2026-10-12T22:00:00+00:00', 'status': 'pending', 'stake_amount': 2.52}
+    assert invalid_prediction_reasons(row) == ['week_old_bzzoiro_prediction_used_before_freshness_guard']
+    assert row['status'] == 'pending' and row['stake_amount'] == 2.52
