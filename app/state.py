@@ -10,6 +10,7 @@ UTC = timezone.utc
 from pathlib import Path
 from typing import Any
 
+from app.services.prediction_audit import AUDIT_VERSION, invalid_prediction_reasons
 from app.schemas import CandidateBet, Match
 from app.services.publication_lifecycle import is_sent_pick_row
 from app.utils import candidate_selection_key, parse_datetime
@@ -260,6 +261,9 @@ class JsonStateStore:
         quality_report = dict(archived_payload.get('quality_report') or {})
         daily_report = dict(archived_payload.get('daily_report') or {})
         existing_learning_state = dict(self._state.get('learning_state') or {})
+        next_adjustments = dict(daily_report.get('next_day_adjustments') or existing_learning_state.get('next_day_adjustments') or {})
+        if daily_report.get('next_day_adjustments') and quality_report.get('summary', {}).get('context_audit_version') == AUDIT_VERSION:
+            next_adjustments['context_audit_version'] = AUDIT_VERSION
         self._state['learning_state'] = {
             'updated_at': created_at,
             'summary': dict(quality_report.get('summary') or {}),
@@ -270,11 +274,7 @@ class JsonStateStore:
                 or existing_learning_state.get('daily_quality_analysis')
                 or {}
             ),
-            'next_day_adjustments': dict(
-                daily_report.get('next_day_adjustments')
-                or existing_learning_state.get('next_day_adjustments')
-                or {}
-            ),
+            'next_day_adjustments': next_adjustments,
             'report_date': str(daily_report.get('report_date') or existing_learning_state.get('report_date') or ''),
             'archive_path': str(archive_path),
         }
@@ -909,6 +909,7 @@ class JsonStateStore:
         return {
             'report_date': report_date,
             'prediction_id': bet.get('prediction_id') or bet.get('fingerprint') or '',
+            'learning_exclusion_reasons': invalid_prediction_reasons(bet),
             'fingerprint': bet.get('fingerprint') or '',
             'published_at': bet.get('published_at') or '',
             'published_at_local': published_at_local,

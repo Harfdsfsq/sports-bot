@@ -10,6 +10,7 @@ from typing import Any
 import httpx
 
 from app.services.api_budget import BudgetedAsyncClient
+from app.services.fixture_identity import same_team_identity
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
@@ -329,7 +330,7 @@ class SStatsContextProvider:
             cache_path = Path(f".data/provider_cache/sstats-history-v3-{from_date}-{to_date}.json")
             saved = read_json(cache_path, {})
             observed = parse_time(saved.get("observed_at"))
-            if observed and timedelta(0) <= datetime.now(UTC) - observed < timedelta(hours=6) and saved.get("rows"):
+            if observed and timedelta(0) <= datetime.now(UTC) - observed < timedelta(minutes=330) and saved.get("rows"):
                 self._daily_source_observed_at = observed.isoformat()
                 stats["history_cache_reused"] = len(saved["rows"])
                 return saved["rows"]
@@ -1041,13 +1042,15 @@ class SStatsContextProvider:
             return cache[raw]
 
         canonical = canonicalize_team_name(raw)
-        if canonical in canonical_keys:
+        if canonical in canonical_keys and same_team_identity(raw, [canonical]):
             cache[raw] = canonical
             return canonical
 
         best_key: str | None = None
         best_score = 0.0
-        for key in canonical_keys:
+        for key in sorted(canonical_keys):
+            if not same_team_identity(raw, [key]):
+                continue
             score = team_similarity(raw, key)
             if score > best_score:
                 best_score = score

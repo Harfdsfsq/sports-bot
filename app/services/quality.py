@@ -11,6 +11,7 @@ from pathlib import Path
 from statistics import mean
 from typing import Any
 
+from app.services.prediction_audit import AUDIT_VERSION, invalid_prediction_reasons
 from app.schemas import CandidateBet
 from app.utils import candidate_selection_key, clamp
 
@@ -48,7 +49,9 @@ class PredictionQualityService:
         ledger_rows: list[dict[str, Any]],
         clv_rows: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        rows = [dict(item) for item in ledger_rows if isinstance(item, dict)]
+        excluded = [dict(item) for item in ledger_rows if isinstance(item, dict) and invalid_prediction_reasons(item)]
+        rows = [dict(item) for item in ledger_rows if isinstance(item, dict) and not invalid_prediction_reasons(item)]
+        clv_rows = [row for row in (clv_rows or []) if not invalid_prediction_reasons(row)]
         settled = [row for row in rows if self._binary_result(row) is not None]
         segments = self._segment_stats(settled)
         clv = self._clv_segment_stats(clv_rows or [])
@@ -57,9 +60,12 @@ class PredictionQualityService:
             'enabled': bool(self._setting('quality_layer_enabled', True)),
             'summary': {
                 'total_tracked_bets': len(rows),
+                'context_audit_version': AUDIT_VERSION,
+                'excluded_data_incidents': len(excluded),
                 'settled_binary_bets': len(settled),
                 **self._portfolio_summary(settled),
             },
+            'data_incidents': [{'prediction_id': row.get('prediction_id') or row.get('fingerprint'), 'reasons': invalid_prediction_reasons(row)} for row in excluded],
             'segments': segments,
             'calibration': {
                 'probability_buckets': self._calibration_bucket_stats(settled),
@@ -807,6 +813,8 @@ class PredictionQualityService:
         if not bool(self._setting('nightly_review_store_adjustments_enabled', True)):
             return {'applied': False, 'score_delta': 0.0, 'sources': []}
         payload = dict((recent_learning_state or {}).get('next_day_adjustments') or {})
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' and payload.get('context_audit_version') != AUDIT_VERSION:
+            return {'applied': False, 'score_delta': 0.0, 'sources': [], 'reason': 'unverified_legacy_adjustments'}
         if not payload or not bool(payload.get('enabled', True)):
             return {'applied': False, 'score_delta': 0.0, 'sources': []}
 
@@ -1604,6 +1612,8 @@ class PredictionQualityService:
 
     @staticmethod
     def _binary_result(row: dict[str, Any]) -> float | None:
+        if invalid_prediction_reasons(row):
+            return None
         status = str(row.get('status') or row.get('result') or '').lower()
         result = str(row.get('result') or '').lower()
         value = result or status

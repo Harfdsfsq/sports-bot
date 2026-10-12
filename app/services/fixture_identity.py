@@ -1,6 +1,7 @@
 """Conservative team identity checks without acronym/substring fuzzy matches."""
 from __future__ import annotations
 
+import re
 from datetime import timedelta
 from difflib import SequenceMatcher
 
@@ -9,15 +10,29 @@ from app.utils import canonicalize_team_name, parse_datetime
 _GENERIC = {'united', 'city', 'town', 'real', 'racing', 'sporting', 'athletic', 'club', 'sbv', 'us', 'calcio'}
 
 
+def squad_identity(name):
+    text = str(name or '').lower()
+    youth = re.findall(r'\b(?:u|under)[ -]?(\d{2})\b', text)
+    reserve = bool(re.search(r'\b(?:ii|iii|reserves?|резерв|дубль)\b|(?:\s|^)(?:b|2|3)$', text))
+    women = bool(re.search(r'\b(?:women|woman|ladies|femenino|femenina|wfc|женщины|w)\b', text))
+    return tuple(sorted(youth)), reserve, women
+
+
 def same_team_identity(target, aliases):
-    left = canonicalize_team_name(target)
+    def normalized(name):
+        text = str(name or '').translate(str.maketrans({'ø': 'o', 'Ø': 'O', 'ł': 'l', 'Ł': 'L', 'đ': 'd'}))
+        return ' '.join(token for token in canonicalize_team_name(text).split() if token not in {'fodbold', 'football', 'futbol'})
+
+    left = normalized(target)
     if not left:
         return False
     for alias in aliases:
-        right = canonicalize_team_name(alias)
+        if squad_identity(target) != squad_identity(alias):
+            continue
+        right = normalized(alias)
         if not right:
             continue
-        if left == right:
+        if left == right or {left, right} == {'agf aarhus', 'agf'}:
             return True
         a, b = set(left.split()), set(right.split())
         anchors = {t for t in a & b if len(t) >= 5 and t not in _GENERIC}

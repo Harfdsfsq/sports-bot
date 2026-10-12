@@ -11,6 +11,11 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'context_team_identity_mismatch': 'спортивные данные относятся к другой команде или составу',
+    'context_fixture_identity_mismatch': 'спортивные данные относятся к другому матчу',
+    'context_source_stale': 'спортивный источник устарел',
+    'context_source_expired_before_publication': 'спортивные данные устарели до публикации',
+    'partial_sporting_context': 'нет подтверждённых данных обеих команд',
     'unsupported_market_period': 'линия относится к тайму или другому периоду, а не ко всему матчу',
     'selected_price_outlier': 'выбранный коэффициент резко отличается от цен других букмекеров',
     'daily_publication_limit': 'достигнут дневной лимит публикаций',
@@ -123,6 +128,9 @@ def render(summary):
         if policy_skips:
             lines.append(f'Отдельно пропущены неподдерживаемые рынки и линии: {policy_skips}.')
         lines.append('Счётчики относятся к вариантам ставок; один матч может иметь несколько вариантов.')
+    excluded = (summary.get('quality') or {}).get('summary', {}).get('excluded_data_incidents', 0)
+    if excluded:
+        lines.append(f'⚠️ Из оценки модели и обучения исключены прогнозы с подтверждёнными ошибками данных: {excluded}. Их финансовая история сохранена.')
     odds_stats = (summary.get('source_stats') or {}).get('odds_api_io') or {}
     configured = odds_stats.get('configured_accounts')
     if configured is not None:

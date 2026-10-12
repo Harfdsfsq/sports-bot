@@ -8,6 +8,7 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from app.services.context_admission import admit_context
 from app.services.daily_match_registry import DailyMatchRegistry, match_identity, parse_time, read_json, write_json
 from app.services.line_movement_state import evaluate_and_record_line_movement
 from app.services.runner import PredictionRunner
@@ -111,6 +112,8 @@ class DailyQualityRunner(PredictionRunner):
             data = {key: value for key, value in data.items() if key in requested_keys}
             self.registry.record(name, role, targets, data, stats)
             self.registry.now = datetime.now(UTC)
+        # Rebuild at completion: early cache entries may expire during API calls.
+        cached = {}
         for m in self.inventory_matches:
             value = self.registry.cached(name, role, m)
             if value:
@@ -126,6 +129,39 @@ class DailyQualityRunner(PredictionRunner):
         if name == 'odds_api_io' and hasattr(provider, '_odds_accounts'):
             stats['configured_accounts'] = [account['name'] for account in provider._odds_accounts()]
         return cached, stats, preview
+
+    def _merge_context_maps(self, *maps):
+        now = datetime.now(UTC)
+        by_key = {m.match_key: m for m in self.inventory_matches}
+        for mapping in maps:
+            for key, context in list((mapping or {}).items()):
+                match = by_key.get(key)
+                provider = context.details.get('daily_evidence_provider') or ('sstats' if context.source == 'sstats_form' else context.source)
+                observed = context.details.get('daily_evidence_observed_at') or context.details.get('daily_source_observed_at')
+                reasons = admit_context(provider, match, context, observed, now) if match else ['unknown_match']
+                if reasons:
+                    mapping.pop(key)
+                    self.daily_rejections.update(reasons)
+        return super()._merge_context_maps(*maps)
+
+    def _prepare_model_context_maps(self, context_maps, contexts):
+        # Revalidate after the slowest provider and weather requests, before bundles.
+        sporting = [mapping for provider, mapping in context_maps.items() if provider != 'weather']
+        fresh = self._merge_context_maps(*sporting)
+        weather = context_maps.get('weather', {})
+        for key, cached_weather in list(weather.items()):
+            if key not in fresh:
+                weather.pop(key)
+                continue
+            weather[key] = self._reapply_cached_weather(fresh[key], cached_weather)
+        fresh.update(weather)
+        self.admitted_sources = {}
+        for provider, mapping in context_maps.items():
+            if provider == 'weather':
+                continue
+            for key, context in mapping.items():
+                self.admitted_sources.setdefault(key, {})[provider] = context.details.get('daily_evidence_observed_at') or context.details.get('daily_source_observed_at')
+        return fresh
 
     def _retain_fixture_venues(self, provider, contexts):
         # Use only the venue of the matched event, never a team's usual stadium.
@@ -190,7 +226,15 @@ class DailyQualityRunner(PredictionRunner):
                 'daily_context_observed_at': self.registry.observation(match, 'context'),
                 'registry_match_id': match_identity(match),
             })
+            admission = getattr(self, 'admitted_sources', {}).get(candidate.match_key, {})
+            candidate.source_summary['context_admission'] = dict(admission)
             reasons = rejection_reasons(candidate)
+            if hasattr(self, 'admitted_sources') and not admission:
+                reasons.append('context_identity_missing')
+            for provider, observed in admission.items():
+                current = self.registry.cached(provider, 'context', match)
+                if current is None or current.details.get('daily_evidence_observed_at') != observed:
+                    reasons.append('context_source_expired_before_publication')
             movement = evaluate_and_record_line_movement(candidate, self.settings, now=now)
             # A first current quote is valid; an observed adverse move remains a blocker.
             if movement.get('status') in {'movement_failed', 'value_failed'}:

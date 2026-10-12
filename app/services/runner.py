@@ -483,6 +483,7 @@ class PredictionRunner:
             if weather_contexts:
                 contexts.update(weather_contexts)
 
+            contexts = self._prepare_model_context_maps(context_maps, contexts)
             context_bundles = build_context_bundles(context_maps, contexts, now_utc)
             context_input = context_bundles if bool(getattr(self.settings, 'context_bundle_model_input_enabled', True)) else contexts
             match_serving = build_match_serving(filtered_matches, merged_offers, context_bundles, market_signals, now_utc)
@@ -2675,6 +2676,9 @@ class PredictionRunner:
             return float(value)
         except Exception:
             return None
+
+    def _prepare_model_context_maps(self, context_maps, contexts):
+        return contexts
 
     def _merge_context_maps(self, *maps: dict[str, Any]) -> dict[str, MatchContext]:
         merged: dict[str, MatchContext] = {}

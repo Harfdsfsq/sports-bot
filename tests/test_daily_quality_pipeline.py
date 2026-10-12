@@ -159,7 +159,7 @@ def test_native_provider_fetch_assigns_real_context_targets(profile, tmp_path, m
         async def fetch_context(self, targets):
             assert len(targets) == 1
             assert targets[0].metadata['provider_source_ids']['sstats'] == '456'
-            return {targets[0].match_key: MatchContext('sstats', {}, expected_home=1, expected_away=.8, confidence=80)}, {'requests': 1}, {}
+            return {targets[0].match_key: MatchContext('sstats', {'HomeTeam': targets[0].home_team, 'AwayTeam': targets[0].away_team}, expected_home=1, expected_away=.8, confidence=80)}, {'requests': 1}, {}
     data, stats, _ = asyncio.run(runner._fetch_provider(Provider(), 'fetch_context', [], empty_data={}))
     assert m.match_key in data
     assert stats['assigned_matches'] == 1
@@ -183,7 +183,7 @@ def test_complete_native_run_with_fake_apis(profile, tmp_path, monkeypatch):
     class Context:
         __module__ = 'app.providers.sstats'
         async def fetch_context(self, targets):
-            return {t.match_key: MatchContext('sstats', {}, expected_home=.95, expected_away=.75, confidence=85, details={'team_form_index': 4}) for t in targets}, {'requests': 1}, {}
+            return {t.match_key: MatchContext('sstats', {'HomeTeam': t.home_team, 'AwayTeam': t.away_team}, expected_home=.95, expected_away=.75, confidence=85, details={'team_form_index': 4}) for t in targets}, {'requests': 1}, {}
     for name in ('bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb', 'sportlogic', 'allsportsapi', 'bookies_api', 'oddspapi'):
         setattr(runner, name, None)
     runner.odds_api_io = Odds()
@@ -253,7 +253,7 @@ def test_midnight_keeps_prefetched_match_evidence(tmp_path):
     r = DailyMatchRegistry(tmp_path / 'registry.json', now)
     m = match(now, minutes=120)
     r.sync([m])
-    ctx = MatchContext('sstats', {}, expected_home=1, expected_away=1)
+    ctx = MatchContext('sstats', {'HomeTeam': m.home_team, 'AwayTeam': m.away_team}, expected_home=1, expected_away=1)
     r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
     next_run = DailyMatchRegistry(r.path, now + timedelta(hours=1))
     assert len(next_run.matches()) == 1
@@ -307,7 +307,7 @@ def test_night_coverage_counts_real_context_form_and_weather(tmp_path):
     r.record('weather', 'context', [m], {m.match_key: weather}, {}, observed_at=now)
     assert not r.has_role(m, 'context')
     assert r.observation(m, 'context') is None
-    ctx = MatchContext('sstats_form', {}, expected_home=1, expected_away=1, details={'home_recent_count': 7, 'away_recent_count': 8})
+    ctx = MatchContext('sstats_form', {'home_recent': [{'team': m.home_team, 'start': now - timedelta(days=1)}], 'away_recent': [{'team': m.away_team, 'start': now - timedelta(days=1)}]}, expected_home=1, expected_away=1, details={'home_recent_count': 7, 'away_recent_count': 8})
     r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
     c = r.coverage()
     assert c['inventory'] == 0 and c['lookahead'] == 1
@@ -955,7 +955,7 @@ def test_sstats_conflicting_same_day_history_is_excluded(profile, tmp_path):
     provider = SStatsContextProvider(Settings(_env_file=None))
     assert provider._select_recent_rows(rows, league_name='Copa Chile', before=now, limit=8) == [rows[2]]
     m = match(now)
-    ctx = MatchContext('sstats_form', {'home_recent': rows, 'away_recent': []}, expected_home=1, expected_away=1)
+    ctx = MatchContext('sstats_form', {'home_recent': [{**row, 'team': m.home_team} for row in rows], 'away_recent': [{'team': m.away_team, 'start': now - timedelta(days=1)}]}, expected_home=1, expected_away=1)
     r = DailyMatchRegistry(tmp_path / 'registry.json', now)
     r.sync([m])
     r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
@@ -1078,7 +1078,7 @@ def test_standings_coverage_counts_both_real_teams_in_restored_table(tmp_path):
     m = match(now)
     registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
     registry.sync([m])
-    context = MatchContext('thesportsdb', {}, expected_home=1, expected_away=1, details={'thesportsdb_home_rank': 1, 'thesportsdb_away_rank': 4, 'thesportsdb_partial_context': False})
+    context = MatchContext('thesportsdb', {'home_row': {'strTeam': m.home_team}, 'away_row': {'strTeam': m.away_team}}, expected_home=1, expected_away=1, details={'thesportsdb_home_rank': 1, 'thesportsdb_away_rank': 4, 'thesportsdb_partial_context': False})
     registry.record('thesportsdb', 'context', [m], {m.match_key: context}, {}, observed_at=now)
     assert registry.coverage()['standings'] == 1
     context.details['thesportsdb_partial_context'] = True
@@ -1243,3 +1243,111 @@ def test_standings_cannot_use_foreign_fixture_team_ids(profile):
     provider = FootballDataContextProvider(Settings(_env_file=None))
     assert provider._build_context_from_standings(m, row, table) is None
     assert provider._build_context_from_history(m, row, []) is None
+
+
+@pytest.mark.parametrize('left,right', [
+    ('Real Oviedo', 'Real Oviedo II'), ('Real Oviedo', 'Real Oviedo 2'),
+    ('Tenerife', 'Tenerife B'), ('Arsenal', 'Arsenal Women'),
+    ('Arsenal', 'Arsenal W'), ('Chelsea', 'Chelsea U19'),
+    ('Chelsea U21', 'Chelsea U19'), ('Liverpool', 'Liverpool Reserves'),
+])
+def test_team_identity_separates_squads(left, right):
+    from app.services.fixture_identity import same_team_identity
+    assert not same_team_identity(left, [right])
+    assert not same_team_identity(right, [left])
+
+
+@pytest.mark.parametrize('target,foreign', [('AGF Aarhus', 'Aris'), ('Real Oviedo', 'Real Madrid'), ('Girona FC', 'Barcelona')])
+def test_thesportsdb_cannot_match_oct12_foreign_table_rows(target, foreign):
+    from app.providers.thesportsdb import TheSportsDbContextProvider
+    provider = TheSportsDbContextProvider(Settings(_env_file=None))
+    assert provider._match_table_row(target, [{'strTeam': foreign}]) is None
+    assert provider._match_table_row(target, [{'strTeam': target}])['strTeam'] == target
+
+
+def test_sstats_cannot_use_reserves_when_first_team_history_missing():
+    from app.providers.sstats import SStatsContextProvider
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    assert provider._resolve_team_key('Real Oviedo', {'real oviedo 2'}, {}) is None
+    assert provider._resolve_team_key('Real Oviedo', {'real oviedo', 'real oviedo 2'}, {}) == 'real oviedo'
+
+
+def test_old_reserve_form_cache_is_rejected(profile, tmp_path):
+    now = datetime.now(UTC)
+    m = match(now, name='Real Oviedo')
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    registry.sync([m])
+    context = MatchContext('sstats_form', {'home_recent': [{'team': 'Real Oviedo II', 'start': now-timedelta(days=1)}], 'away_recent': [{'team': m.away_team, 'start': now-timedelta(days=1)}]}, expected_home=3, expected_away=3)
+    entry = registry.data['matches'][match_identity(m)]
+    entry['evidence']['sstats:context'] = {'observed_at': now.isoformat(), 'payload': asdict(context)}
+    assert not registry.cached('sstats', 'context', m)
+    assert not registry.coverage()['context']
+    assert registry.targets('sstats', 'context')
+
+
+def test_merge_drops_source_expiring_during_other_api_requests(profile):
+    now = datetime.now(UTC)
+    m = match(now)
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.inventory_matches = [m]
+    runner.daily_rejections = __import__('collections').Counter()
+    runner.settings = Settings(_env_file=None)
+    stale = MatchContext('sstats_form', {'home_recent': [{'team': m.home_team, 'start': now-timedelta(days=1)}], 'away_recent': [{'team': m.away_team, 'start': now-timedelta(days=1)}]}, expected_home=9, expected_away=9, confidence=80, details={'daily_evidence_observed_at': (now-timedelta(hours=6, seconds=2)).isoformat()})
+    fresh = MatchContext('football_data', {'homeTeam': {'name': m.home_team}, 'awayTeam': {'name': m.away_team}, 'utcDate': m.commence_time.isoformat()}, expected_home=1, expected_away=1, confidence=60, details={'daily_evidence_observed_at': now.isoformat()})
+    a, b = {m.match_key: stale}, {m.match_key: fresh}
+    merged = runner._merge_context_maps(a,b)
+    assert not a
+    assert merged[m.match_key].expected_home == 1
+    assert runner.daily_rejections['context_source_stale'] == 1
+
+
+def test_fresh_retrieval_does_not_refresh_week_old_prediction(profile):
+    from app.services.context_admission import source_is_fresh
+    now = datetime.now(UTC)
+    ctx = MatchContext('bzzoiro', {}, details={'bzzoiro_prediction_created_at': (now-timedelta(days=6)).isoformat()})
+    assert not source_is_fresh('bzzoiro', ctx, now.isoformat(), now)
+    ctx.details['bzzoiro_prediction_created_at'] = (now-timedelta(hours=2)).isoformat()
+    assert source_is_fresh('bzzoiro', ctx, now.isoformat(), now)
+
+
+def test_weather_does_not_restore_rejected_sporting_context(profile):
+    now = datetime.now(UTC)
+    m = match(now)
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.inventory_matches = [m]
+    runner.daily_rejections = __import__('collections').Counter()
+    runner.settings = Settings(_env_file=None)
+    bad = MatchContext('thesportsdb', {'home_row': {'strTeam': 'Real Madrid'}, 'away_row': {'strTeam': m.away_team}}, expected_home=9, expected_away=9, details={'daily_evidence_observed_at': now.isoformat()})
+    maps = {'thesportsdb': {m.match_key: bad}, 'weather': {m.match_key: bad}}
+    assert not runner._prepare_model_context_maps(maps, {m.match_key: bad})
+    assert not maps['weather'] and not maps['thesportsdb']
+
+
+def test_audited_predictions_cannot_train_or_calibrate(profile):
+    from app.services.prediction_audit import exclusions
+    from app.services.quality import PredictionQualityService
+    service = PredictionQualityService(Settings(_env_file=None))
+    bad = {'prediction_id': next(iter(exclusions())), 'status': 'won', 'odds': 100, 'stake_amount': 100, 'pnl': 9900}
+    good = {'prediction_id': 'valid', 'status': 'lost', 'family': 'totals', 'odds': 2, 'stake_amount': 1, 'pnl': -1}
+    report = service.build_quality_report([bad, good])
+    assert report['summary']['excluded_data_incidents'] == 1
+    assert report['summary']['settled_binary_bets'] == 1
+    assert service._binary_result(bad) is None
+    assert service._binary_result(good) == 0
+    assert bad['status'] == 'won' and bad['pnl'] == 9900  # Accounting data untouched.
+
+
+def test_unverified_legacy_adjustments_cannot_change_score(profile):
+    from app.services.quality import PredictionQualityService
+    service = PredictionQualityService(Settings(_env_file=None))
+    c = candidate(datetime.now(UTC))
+    result = service._candidate_recent_adjustment(c, {'next_day_adjustments': {'enabled': True, 'family_adjustments': {'totals': 10}}})
+    assert not result['applied']
+    assert result['score_delta'] == 0
+
+
+def test_verified_espn_name_variants_remain_usable():
+    from app.services.fixture_identity import same_team_identity
+    assert same_team_identity('AGF Aarhus', ['AGF'])
+    assert same_team_identity('Soenderjyske', ['Sønderjyske Fodbold'])
+    assert not same_team_identity('AGF Aarhus', ['Aris'])

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import os
+
 from collections import Counter
 from typing import Any
 
 import httpx
 
 from app.services.api_budget import BudgetedAsyncClient
+from app.services.fixture_identity import same_team_identity
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
@@ -140,7 +143,7 @@ class TheSportsDbContextProvider:
             partial = False
             if home_row is None or away_row is None:
                 stats['missing_table_rows'] += 1
-                if not getattr(self.settings, 'thesportsdb_allow_partial_context', True):
+                if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' or not getattr(self.settings, 'thesportsdb_allow_partial_context', True):
                     continue
                 avg_row = self._league_average_row(table_rows)
                 if home_row is None and away_row is None:
@@ -252,6 +255,8 @@ class TheSportsDbContextProvider:
         for row in rows:
             row_name = str(row.get('strTeam') or row.get('name') or row.get('team') or '')
             row_key = self._normalize_team_key(row_name)
+            if not same_team_identity(team_name, [row_name]):
+                continue
             score = team_similarity(target, row_key)
             if row_key == target:
                 score = 1.0
