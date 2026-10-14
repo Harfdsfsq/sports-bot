@@ -1,69 +1,72 @@
 # SStats inventory crosswalk probe v2
-UTC: 2026-10-14T18:01:10.062712+00:00
-Inventory checked: 300/383 | SStats events: 1199
-Matched: 192 | unmatched: 108 | rate=64.0%
-Potential uplift: context_deep=192 xg_or_rating=192 form=192 odds_rescue=2
+UTC: 2026-10-14T22:16:28.871096+00:00
+Inventory checked: 300/339 | SStats events: 1010
+Matched: 162 | unmatched: 138 | rate=54.0%
+Potential uplift: context_deep=162 xg_or_rating=162 form=162 odds_rescue=2
 
 ## SStats calls
-- games_today_date: OK http=200 rows=229 event_like=229
+- games_today_date: OK http=200 rows=162 event_like=162
 - games_upcoming: OK http=200 rows=1000 event_like=1000
-- games_tomorrow_date: OK http=200 rows=162 event_like=162
+- games_tomorrow_date: OK http=200 rows=378 event_like=378
 
 ## By kickoff bucket
-- 0_2h: matched=21 missing_context=0 missing_xg=12 missing_form=21 odds_rescue=0
-- 2_6h: matched=5 missing_context=3 missing_xg=3 missing_form=5 odds_rescue=0
-- started: matched=166 missing_context=1 missing_xg=117 missing_form=113 odds_rescue=2
+- 0_2h: matched=20 missing_context=10 missing_xg=11 missing_form=20 odds_rescue=0
+- 12_24h: matched=103 missing_context=61 missing_xg=64 missing_form=103 odds_rescue=1
+- 24h_plus: matched=6 missing_context=5 missing_xg=5 missing_form=6 odds_rescue=0
+- 2_6h: matched=20 missing_context=4 missing_xg=6 missing_form=20 odds_rescue=1
+- 6_12h: matched=7 missing_context=7 missing_xg=7 missing_form=7 odds_rescue=0
+- started: matched=6 missing_context=3 missing_xg=3 missing_form=6 odds_rescue=0
 
 ## Next SStats deep enrichment queue
-- 0_2h | 2026-10-14T18:15:00+00:00 | Al Faisaly (JOR) — Al Nahda => gameId=1630367 score=0.8532 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T18:30:00+00:00 | CA Boston River — CA River Plate (URU) => gameId=1643387 score=0.8099 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T18:30:00+00:00 | RC Recreativo de Huelva — CDA Navalcarnero => gameId=1643461 score=0.7947 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T18:30:00+00:00 | CP San Cristobal — FE Grama => gameId=1613969 score=0.8129 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T18:30:00+00:00 | Cerdanyola del Valles — FC Martinenc => gameId=1613964 score=0.9 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T18:45:00+00:00 | Norwich City — Southampton FC => gameId=1563200 score=0.8532 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T18:45:00+00:00 | Portsmouth FC — Sheffield United => gameId=1563201 score=0.8597 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T18:45:00+00:00 | AFC Whyteleafe — Whitehawk FC => gameId=1596011 score=0.9 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T19:00:00+00:00 | AS Roma — Real Madrid => gameId=1635614 score=0.9 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T19:00:00+00:00 | Lincoln City — West Ham United => gameId=1563199 score=0.8064 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T19:00:00+00:00 | Bodø/Glimt — Borussia Dortmund => gameId=1635639 score=0.8795 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T19:00:00+00:00 | Real Betis Seville — FC Porto => gameId=1635635 score=0.8532 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T19:00:00+00:00 | Bolivar SC — Mineros de Guayana => gameId=1560848 score=0.8889 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T19:00:00+00:00 | Shakhtar Donetsk — AEK Athens => gameId=1635725 score=0.9 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T19:00:00+00:00 | SK Slovan Bratislava — VfB Stuttgart => gameId=1635733 score=0.9 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T19:30:00+00:00 | Atletico Avila FC — Academia Anzoategui FC => gameId=1560847 score=0.8532 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T19:30:00+00:00 | Club Atletico Barinas — Real Frontera FC => gameId=1560846 score=0.9 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T19:30:00+00:00 | Atletico El Vigia — Zamora FC => gameId=1560849 score=0.9 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T20:00:00+00:00 | Aragua FC — Caracas FC => gameId=1560845 score=0.86 missing=context:False xg:True form:True
-- 0_2h | 2026-10-14T20:00:00+00:00 | Ittihad Tanger — Maghreb AS de Fes => gameId=1644213 score=0.8532 missing=context:False xg:False form:True
-- 0_2h | 2026-10-14T20:00:00+00:00 | Trujillanos FC — Deportivo Rayo Zuliano => gameId=1560853 score=0.8532 missing=context:False xg:True form:True
-- 2_6h | 2026-10-14T21:30:00+00:00 | CD Junior FC — Deportivo Pereira FC SA => gameId=1549721 score=0.8684 missing=context:False xg:False form:True
-- 2_6h | 2026-10-14T22:00:00+00:00 | CA Sarmiento Junin — CA River Plate (ARG) => gameId=1493164 score=0.8177 missing=context:False xg:False form:True
-- 2_6h | 2026-10-14T22:00:00+00:00 | Monagas SC — Dynamo Puerto FC => gameId=1560852 score=0.763 missing=context:True xg:True form:True
-- 2_6h | 2026-10-14T22:00:00+00:00 | Real Cundinamarca — Bogota FC => gameId=1549665 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-10-14T22:30:00+00:00 | Cerro Porteno — Sportivo San Lorenzo => gameId=1644260 score=0.8312 missing=context:True xg:True form:True
+- 0_2h | 2026-10-14T23:00:00+00:00 | Hartford Athletic — Charleston Battery => gameId=1493725 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:00:00+00:00 | Sporting Jax — Birmingham Legion FC => gameId=1493744 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-10-14T23:00:00+00:00 | Comunicaciones FC — Aurora FC => gameId=1559668 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-10-14T23:00:00+00:00 | Deportivo Lara — Urena SC => gameId=1560850 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-10-14T23:00:00+00:00 | Greenville Triumph SC — Spokane Velocity FC => gameId=1493805 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-10-14T23:00:00+00:00 | Perez Zeledon — CD Escorpiones Belen => gameId=1598816 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-10-14T23:00:00+00:00 | Unan Managua — Diriangen FC Diriamba => gameId=1645634 score=0.8532 missing=context:True xg:True form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | FC Cincinnati — New England Revolution => gameId=1490528 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | Columbus Crew — Charlotte FC => gameId=1490527 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | DC United — New York Red Bulls => gameId=1490531 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | Inter Miami CF — New York City FC => gameId=1490526 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | CF Montreal — Atlanta United FC => gameId=1490530 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | Rhode Island FC — Loudoun United FC => gameId=1491553 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | Toronto FC — Orlando City SC => gameId=1490529 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | CF Montréal — Atlanta United => gameId=1490530 score=0.9 missing=context:False xg:False form:True
+- 0_2h | 2026-10-14T23:30:00+00:00 | Rhode Island Union — Loudoun United FC => gameId=1491553 score=0.8532 missing=context:False xg:True form:True
+- 0_2h | 2026-10-15T00:00:00+00:00 | Deportivo Maldonado — Albion FC => gameId=1643391 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-10-15T00:00:00+00:00 | Managua FC — San Marcos FC => gameId=1645635 score=0.9 missing=context:True xg:True form:True
+- 0_2h | 2026-10-15T00:00:00+00:00 | Club Sando — Mount Pleasant FC => gameId=1640552 score=0.8532 missing=context:True xg:True form:True
+- 2_6h | 2026-10-15T00:30:00+00:00 | Chicago Fire — Philadelphia Union => gameId=1490533 score=0.9 missing=context:False xg:False form:True
+- 2_6h | 2026-10-15T00:30:00+00:00 | FC Dallas — Seattle Sounders FC => gameId=1490532 score=0.9 missing=context:False xg:False form:True
+- 2_6h | 2026-10-15T00:30:00+00:00 | Nashville SC — Sporting Kansas City => gameId=1490535 score=0.9 missing=context:False xg:False form:True
+- 2_6h | 2026-10-15T00:30:00+00:00 | Saint Louis City SC — Vancouver Whitecaps FC => gameId=1490534 score=0.8597 missing=context:False xg:False form:True
+- 2_6h | 2026-10-15T00:30:00+00:00 | St.Louis City — Vancouver Whitecaps => gameId=1490534 score=0.9 missing=context:False xg:False form:True
 
 ## Unmatched sample
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- unknown |  —  | best_score=0.0
-- started | Queens (NC) Royals — Presbyterian Blue Hose | best_score=0.2898
-- started | Colgate Raiders — Cornell Big Red | best_score=0.3503
-- started | Drexel Dragons — Penn Quakers | best_score=0.3617
-- started | High Point Panthers — George Washington Revolutionaries | best_score=0.3106
-- started | CD Imperial Unido — CDSC Deportes Rancagua | best_score=0.4368
-- started | Lehigh Mountain Hawks — Brown Bears | best_score=0.3262
-- started | North Florida Ospreys — Charleston Cougars | best_score=0.3365
-- started | Stetson Hatters — Florida Atlantic Owls | best_score=0.3798
-- started | UNC Greensboro Spartans — Marshall Herd | best_score=0.3167
-- started | Virginia Cavaliers — Gardner Webb Runnin' Bulldogs | best_score=0.3367
+- started | Atlético Mineiro — Montevideo City Torque | best_score=0.5775
+- started | Atletico Mineiro MG — Montevideo City Torque | best_score=0.5746
+- started | Campbell Fighting Camels — Radford Highlanders | best_score=0.396
+- started | Fairfield Stags — Marist Red Foxes | best_score=0.3656
+- started | NC State Wolfpack — Mercer Bears | best_score=0.3383
+- started | Quintero Unido FC — Constitución Unido | best_score=0.3804
+- started | Stony Brook Seawolves — Farmingdale State Rams | best_score=0.3582
+- 0_2h | California Golden Bears — Saint Marys Gaels | best_score=0.4011
+- 0_2h | SC Jacksonville — Birmingham Legion FC | best_score=0.575
+- 0_2h | Merrimack Warriors — Iona Gaels | best_score=0.394
+- 0_2h | Rider Broncs — Mount St. Mary's Mountaineers | best_score=0.3911
+- 0_2h | Sacramento State Hornets — UC San Diego Tritons | best_score=0.4129
+- 0_2h | Sacred Heart Pioneers — Quinnipiac Bobcats | best_score=0.3515
+- 0_2h | South Florida Bulls — Jacksonville Dolphins | best_score=0.3283
+- 0_2h | Independiente Santa Fe — Atlético Bucaramanga | best_score=0.3651
+- 0_2h | SC Internacional RS — Atletico Mineiro MG | best_score=0.5991
+- 2_6h | CD Marte Soyapango — AD Forfut | best_score=0.4775
+- 2_6h | UC Irvine Anteaters — San Diego State Aztecs | best_score=0.421
+- 2_6h | Utah Tech Trailblazers — San Jose State Spartans | best_score=0.4604
+- 2_6h | UC Santa Barbara Gauchos — UC Irvine Anteaters | best_score=0.356
 
 ## Full matched persistence
-- matched_full: 192
+- matched_full: 162
 - matched_sample: 40
-- enrichment_queue: 152
+- enrichment_queue: 160
