@@ -1158,10 +1158,13 @@ class CandidateFactory:
         consensus_fair_odds = 1.0 / max(market_prob, 0.01)
         price_premium_pct = max(0.0, ((best_price / max(consensus_fair_odds, 1.01)) - 1.0) * 100.0)
 
-        confidence += min(4.0, raw_gap_pct * float(getattr(self.settings, 'confidence_gap_bonus_weight', 0.10) or 0.10))
+        daily_profile = os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality'
+        if not daily_profile:
+            confidence += min(4.0, raw_gap_pct * float(getattr(self.settings, 'confidence_gap_bonus_weight', 0.10) or 0.10))
         confidence += max(0.0, len(normalized_books) - 1) * float(getattr(self.settings, 'confidence_books_bonus', 0.90) or 0.90)
         confidence += max(0.0, len(sources) - 1) * float(getattr(self.settings, 'confidence_sources_bonus', 1.10) or 1.10)
-        confidence += min(2.0, price_premium_pct * float(getattr(self.settings, 'confidence_price_premium_bonus', 0.08) or 0.08))
+        if not daily_profile:
+            confidence += min(2.0, price_premium_pct * float(getattr(self.settings, 'confidence_price_premium_bonus', 0.08) or 0.08))
         if dispersion_pct is not None and dispersion_pct > consensus_dispersion_cap:
             confidence -= min(
                 2.5,
@@ -1169,6 +1172,9 @@ class CandidateFactory:
                 * float(getattr(self.settings, 'confidence_dispersion_penalty_weight', 0.18) or 0.18),
             )
 
+        context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        if daily_profile:
+            confidence = min(confidence, float((context_details.get('daily_context_reliability') or {}).get('confidence_cap', 69.)))
         confidence = clamp(confidence, 0, 100)
 
         adjusted = shrink_probability(model_prob, market_prob, confidence, shrink_min, shrink_max)
@@ -1180,7 +1186,7 @@ class CandidateFactory:
         edge_pct = (adjusted - market_prob) * 100.0
         # Single-book matches can be underconfident even with a large model/market gap.
         # Add a small, bounded uplift for clearly positive EV situations to reduce "no pick" runs.
-        if len(normalized_books) == 1:
+        if len(normalized_books) == 1 and not daily_profile:
             single_book_gap_floor = float(getattr(self.settings, 'single_book_confidence_relief_min_gap_pct', 6.0) or 6.0)
             single_book_ev_floor = float(getattr(self.settings, 'single_book_confidence_relief_min_ev_pct', 5.0) or 5.0)
             single_book_edge_floor = float(getattr(self.settings, 'single_book_confidence_relief_min_edge_pct', 4.0) or 4.0)
@@ -1310,6 +1316,7 @@ class CandidateFactory:
                 'context_observation_count': len(context_details.get('context_observations') or []),
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode') or ('market_signal' if market_signal_derived else None),
+                'daily_context_reliability': context_details.get('daily_context_reliability'),
                 'home_recent_count': context_details.get('home_recent_count'),
                 'away_recent_count': context_details.get('away_recent_count'),
                 'model_push_probability': model_push,

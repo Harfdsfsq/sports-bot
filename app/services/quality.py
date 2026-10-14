@@ -49,6 +49,13 @@ class PredictionQualityService:
         ledger_rows: list[dict[str, Any]],
         clv_rows: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
+        daily = os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality'
+        shadow = [row for row in ledger_rows if isinstance(row, dict) and
+                  (row.get('tracking_mode') == 'shadow' or row.get('shadow_tracked') is True)] if daily else []
+        ledger_rows = [row for row in ledger_rows if row not in shadow]
+        if daily:
+            live_ids = {str(row.get('fingerprint') or row.get('prediction_id') or '') for row in ledger_rows if isinstance(row, dict)} - {''}
+            clv_rows = [row for row in (clv_rows or []) if str(row.get('fingerprint') or row.get('prediction_id') or '') in live_ids]
         excluded = [dict(item) for item in ledger_rows if isinstance(item, dict) and invalid_prediction_reasons(item)]
         rows = [dict(item) for item in ledger_rows if isinstance(item, dict) and not invalid_prediction_reasons(item)]
         clv_rows = [row for row in (clv_rows or []) if not invalid_prediction_reasons(row)]
@@ -62,6 +69,8 @@ class PredictionQualityService:
                 'total_tracked_bets': len(rows),
                 'context_audit_version': AUDIT_VERSION,
                 'excluded_data_incidents': len(excluded),
+                'excluded_shadow_rows': len(shadow),
+                'learning_population': 'published_only' if daily else 'legacy_ledger',
                 'settled_binary_bets': len(settled),
                 **self._portfolio_summary(settled),
             },
@@ -70,6 +79,9 @@ class PredictionQualityService:
             'calibration': {
                 'probability_buckets': self._calibration_bucket_stats(settled),
                 'brier_score': self._brier_score(settled),
+                'paired_probability_scores': self._paired_probability_scores(settled),
+                'win_push_loss_scores': self._win_push_loss_scores(rows),
+                'evaluation_basis': 'observed_published_forecasts_not_out_of_time_backtest' if daily else 'legacy_ledger',
             },
             'clv': clv,
             'backtest': self._backtest_policy(settled),
@@ -133,6 +145,7 @@ class PredictionQualityService:
             reasons: list[str] = []
 
             for guard in (
+                self._context_sample_guard,
                 self._market_sanity_guard,
                 lambda item: self._clv_guard(segments, profile, enough_history),
                 lambda item: self._historical_segment_guard(item, segments, profile, enough_history),
@@ -861,6 +874,10 @@ class PredictionQualityService:
         candidate.reasons.append(f'historical_calibration={delta * 100.0:+.2f}pp')
 
     def _candidate_quality_score(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> float:
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            from app.services.daily_context_reliability import evidence_quality
+            candidate.source_summary['quality_score_basis'] = 'evidence-v1'
+            return evidence_quality(candidate)
         score = 43.0
         score += float(candidate.confidence) * 0.22
         score += max(0.0, float(candidate.edge_pct)) * 1.35
@@ -916,6 +933,12 @@ class PredictionQualityService:
             if clv_values:
                 score += clamp(mean(clv_values) * 0.9, -6.0, 4.0)
         return clamp(score, 0.0, 100.0)
+
+    @staticmethod
+    def _context_sample_guard(candidate: CandidateBet) -> str | None:
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and (candidate.source_summary.get('daily_context_reliability') or {}).get('all_thin'):
+            return 'insufficient_team_sample'
+        return None
 
     def _market_sanity_guard(self, candidate: CandidateBet) -> str | None:
         if not bool(self._setting('market_sanity_guard_enabled', True)):
@@ -1617,6 +1640,8 @@ class PredictionQualityService:
         status = str(row.get('status') or row.get('result') or '').lower()
         result = str(row.get('result') or '').lower()
         value = result or status
+        if value in {'push', 'void'}:
+            return None
         if value in {'won', 'half_won'}:
             return 1.0
         if value in {'lost', 'half_lost'}:
@@ -1632,7 +1657,7 @@ class PredictionQualityService:
         for key in ('adjusted_probability_pct', 'model_probability_pct', 'market_probability_pct'):
             value = self._to_float(row.get(key))
             if value is not None:
-                return clamp(value / 100.0 if value > 1.0 else value, 0.01, 0.99)
+                return clamp(value / 100.0 if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' or value > 1.0 else value, 0.000001, 0.999999)
         return None
 
     def _brier_score(self, rows: list[dict[str, Any]]) -> float | None:
@@ -1644,6 +1669,40 @@ class PredictionQualityService:
         if not pairs:
             return None
         return round(mean((float(p) - float(y)) ** 2 for p, y in pairs), 5)
+
+    def _paired_probability_scores(self, rows):
+        pairs = []
+        for row in rows:
+            p = self._to_float(row.get('adjusted_probability_pct'))
+            market = self._to_float(row.get('market_probability_pct'))
+            y = self._binary_result(row)
+            if p is not None and market is not None and y is not None and 0 <= p <= 100 and 0 <= market <= 100:
+                pairs.append((p / 100., market / 100., y))
+        def scores(index):
+            if not pairs:
+                return {'brier': None, 'log_loss': None}
+            return {'brier': round(mean((row[index] - row[2]) ** 2 for row in pairs), 5),
+                    'log_loss': round(mean(-math.log(max(1e-12, row[index] if row[2] else 1 - row[index])) for row in pairs), 5)}
+        return {'count': len(pairs), 'model': scores(0), 'market': scores(1),
+                'basis': 'conditional_without_refund; matched_rows; lower_is_better'}
+
+    def _win_push_loss_scores(self, rows):
+        pairs = []
+        for row in rows:
+            result = str(row.get('result') or row.get('status') or '').lower()
+            if result not in {'won', 'lost', 'push'}:
+                continue
+            p = self._to_float(row.get('adjusted_probability_pct'))
+            push = self._to_float(row.get('model_push_probability'))
+            if p is None or push is None or not 0 <= p <= 100 or not 0 <= push < 1:
+                continue
+            probabilities = [p / 100. * (1 - push), push, (1 - p / 100.) * (1 - push)]
+            outcome = {'won': 0, 'push': 1, 'lost': 2}[result]
+            pairs.append((probabilities, outcome))
+        return {'count': len(pairs),
+                'brier': round(mean(sum((p - (i == outcome)) ** 2 for i, p in enumerate(probs)) for probs, outcome in pairs), 5) if pairs else None,
+                'log_loss': round(mean(-math.log(max(1e-12, probs[outcome])) for probs, outcome in pairs), 5) if pairs else None,
+                'basis': 'unconditional_win_push_loss; void_excluded; lower_is_better'}
 
     @staticmethod
     def _odds_bucket(value: float | None) -> str:

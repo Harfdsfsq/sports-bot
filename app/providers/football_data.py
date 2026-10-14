@@ -476,6 +476,8 @@ class FootballDataContextProvider:
             'football_data_away_gf_pg': round(away_stats['gf_pg'], 3),
             'football_data_home_ga_pg': round(home_stats['ga_pg'], 3),
             'football_data_away_ga_pg': round(away_stats['ga_pg'], 3),
+            'football_data_home_played': int(home_stats['played']),
+            'football_data_away_played': int(away_stats['played']),
             'football_data_mode': 'standings',
             'football_data_competition': str(((row.get('competition') or {}).get('name')) or match.league_name),
             'football_data_standings_available': True,

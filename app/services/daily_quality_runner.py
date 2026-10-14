@@ -142,7 +142,12 @@ class DailyQualityRunner(PredictionRunner):
                 if reasons:
                     mapping.pop(key)
                     self.daily_rejections.update(reasons)
-        return super()._merge_context_maps(*maps)
+        from app.services.daily_context_reliability import blend_contexts
+        groups = {}
+        for mapping in maps:
+            for key, context in (mapping or {}).items():
+                groups.setdefault(key, []).append(context)
+        return {key: blend_contexts(values, self._context_blend_weight) for key, values in groups.items()}
 
     def _prepare_model_context_maps(self, context_maps, contexts):
         # Revalidate after the slowest provider and weather requests, before bundles.

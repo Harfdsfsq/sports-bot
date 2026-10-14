@@ -37,7 +37,7 @@ def match(now, minutes=90, name='Home'):
 
 
 def candidate(now, quality=80, confidence=75, probability=.60):
-    return SimpleNamespace(source_summary={'quality_score': quality, 'context_source': 'sstats', 'daily_price_observed_at': now.isoformat(), 'daily_context_observed_at': now.isoformat()}, commence_time=now + timedelta(minutes=90), adjusted_probability=probability, odds=1.9, confidence=confidence, family='totals', expected_home=1., expected_away=1.)
+    return SimpleNamespace(source_summary={'quality_score': quality, 'daily_context_reliability': {'a_supported': True}, 'context_source': 'sstats', 'daily_price_observed_at': now.isoformat(), 'daily_context_observed_at': now.isoformat()}, commence_time=now + timedelta(minutes=90), adjusted_probability=probability, odds=1.9, confidence=confidence, family='totals', expected_home=1., expected_away=1.)
 
 
 def test_one_source_is_valid_for_both_quality_tiers(profile):
@@ -183,7 +183,7 @@ def test_complete_native_run_with_fake_apis(profile, tmp_path, monkeypatch):
     class Context:
         __module__ = 'app.providers.sstats'
         async def fetch_context(self, targets):
-            return {t.match_key: MatchContext('sstats', {'HomeTeam': t.home_team, 'AwayTeam': t.away_team}, expected_home=.95, expected_away=.75, confidence=85, details={'team_form_index': 4}) for t in targets}, {'requests': 1}, {}
+            return {t.match_key: MatchContext('sstats', {'HomeTeam': t.home_team, 'AwayTeam': t.away_team}, expected_home=.95, expected_away=.75, confidence=85, details={'team_form_index': 4, 'home_recent_count': 12, 'away_recent_count': 12}) for t in targets}, {'requests': 1}, {}
     for name in ('bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb', 'sportlogic', 'allsportsapi', 'bookies_api', 'oddspapi'):
         setattr(runner, name, None)
     runner.odds_api_io = Odds()

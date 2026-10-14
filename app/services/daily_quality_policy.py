@@ -27,7 +27,8 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
     edge = (p - 1 / odds) * 100 if odds > 1 else -100
     push = float(summary.get('model_push_probability') or 0)
     ev = expected_value(p, odds, push)
-    reasons = []
+    evidence = dict(summary.get('daily_context_reliability') or {})
+    reasons = ['insufficient_team_sample'] if evidence.get('all_thin') else []
     # Quality scores describe ranking, never an independently verified win rate.
     lead = (candidate.commence_time.astimezone(UTC) - now).total_seconds() / 60
     if not 30 <= lead <= 240:
@@ -57,11 +58,13 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
     if ev < floor['ev'] or edge < floor['edge'] or q < floor['quality'] or float(candidate.confidence) < floor['confidence']:
         reasons.append('below_b_quality')
     top = TIER_LIMITS['A']
-    tier = 'A' if q >= top['quality'] and float(candidate.confidence) >= top['confidence'] and ev >= top['ev'] and edge >= top['edge'] else 'B'
+    tier = 'A' if evidence.get('a_supported') and q >= top['quality'] and float(candidate.confidence) >= top['confidence'] and ev >= top['ev'] and edge >= top['edge'] else 'B'
     return tier, reasons, {
         'publication_tier': tier if not reasons else 'blocked',
         'quality_score': q, 'canonical_ev_pct': round(ev, 3), 'canonical_edge_pp': round(edge, 3),
-        'tier_definition': 'quality_and_value',
+        'tier_definition': 'evidence_and_value_v1',
+        'a_sample_supported': bool(evidence.get('a_supported')),
+        'a_downgrade_reason': None if evidence.get('a_supported') else 'sample_unknown_thin_or_sources_disagree',
         'extra_confirmation_bonus': int(coverage.get('odds_sources_count') or 0) > 1 or int(coverage.get('context_sources_count') or 0) > 1,
         'tier_limits': TIER_LIMITS,
     }

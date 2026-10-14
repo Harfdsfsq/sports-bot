@@ -535,6 +535,11 @@ class TelegramPublisher:
                 tier = bet.source_summary.get("publication_tier", "B")
                 score = float(bet.source_summary.get("quality_score") or 0)
                 tier_text = f"🏷️ {tier}-tier | Качество: {score:.1f}/100 | EV: {bet.ev_pct:+.1f}%\n"
+                evidence = bet.source_summary.get('daily_context_reliability') or {}
+                support = evidence.get('best_team_sample')
+                if evidence:
+                    sample_text = f"выборка наиболее полного источника: от {support} матчей на команду" if support is not None else "объём выборки источника не указан; максимум B-tier"
+                    tier_text += f"📚 Основа оценки: {sample_text}. Качество данных отдельно от EV.\n"
 
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"

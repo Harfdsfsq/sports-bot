@@ -312,7 +312,7 @@ class PredictionRunner:
             bankroll_summary = self.state.bankroll_summary(self.settings)
             quality_clv_rows = self.market_monitor.resolved_clv_rows() if self.market_monitor is not None else []
             quality_report = self.quality.build_quality_report(
-                self.state.prediction_ledger(self.settings, include_shadow=True),
+                self.state.prediction_ledger(self.settings, include_shadow=os.getenv('PUBLICATION_PROFILE', '').lower() != 'daily_quality'),
                 quality_clv_rows,
             )
             quality_report['recent_learning_state'] = recent_learning_state

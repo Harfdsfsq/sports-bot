@@ -367,6 +367,8 @@ class TheSportsDbContextProvider:
             away_win_probability=probs['away'],
             confidence=confidence,
             details={
+                'thesportsdb_home_played': int(self._to_float(home_row, 'intPlayed', 'played', 'gamesPlayed', 'games') or 0),
+                'thesportsdb_away_played': int(self._to_float(away_row, 'intPlayed', 'played', 'gamesPlayed', 'games') or 0),
                 'thesportsdb_draw_probability': probs['draw'],
                 'thesportsdb_home_ppg': round(home_ppg, 3),
                 'thesportsdb_away_ppg': round(away_ppg, 3),
