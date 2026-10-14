@@ -1,32 +1,28 @@
 # Provider day discovery canonical pool
-UTC: 2026-10-13T23:18:12.863505+00:00
+UTC: 2026-10-14T06:03:27.359635+00:00
 target_date: 2026-10-14
-canonical_matches: 340
-2+ provider sources: 31
-2+ primary sources: 29
+canonical_matches: 335
+2+ provider sources: 28
+2+ primary sources: 26
 all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=3 rows=267 event_like=262 unique=91 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
+- bzzoiro: commands=10 ok=3 rows=266 event_like=261 unique=89 statuses={"OK": 3, "EMPTY": 2, "AUTH": 5}
 - football_data: commands=1 ok=1 rows=13 event_like=13 unique=13 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=574 event_like=574 unique=287 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=562 event_like=562 unique=281 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"HTTP_ERROR": 1}
 - sstats: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 309, "2": 18, "3": 13}
-- primary providers: {"1": 310, "2": 29, "0": 1}
+- all providers: {"1": 307, "3": 13, "2": 15}
+- primary providers: {"1": 308, "2": 26, "0": 1}
 
 ## Top canonical matches
-- 2026-10-14T00:00:00+00:00 | CS Cartagines — Puntarenas FC | providers=odds_api_io ids={"odds_api_io": "72053644"}
-- 2026-10-14T00:00:00+00:00 | Portmore United — Violette AC | providers=odds_api_io ids={"odds_api_io": "74879334"}
-- 2026-10-14T00:30:00+00:00 | Boca Juniors — CR Vasco da Gama RJ | providers=bzzoiro,odds_api_io ids={"odds_api_io": "74752722", "bzzoiro": "604419"}
-- 2026-10-14T01:00:00+00:00 | Mexico — Jamaica | providers=odds_api_io ids={"odds_api_io": "75467310"}
-- 2026-10-14T01:30:00+00:00 | Millonarios FC — CD Once Caldas | providers=bzzoiro,odds_api_io ids={"odds_api_io": "72335176", "bzzoiro": "220210"}
-- 2026-10-14T02:00:00+00:00 | AD San Carlos — Inter San Carlos | providers=odds_api_io ids={"odds_api_io": "72053646"}
+- 2026-10-14T00:30:00+00:00 | Boca Juniors — Vasco da Gama | providers=bzzoiro ids={"bzzoiro": "604419"}
+- 2026-10-14T01:30:00+00:00 | Millonarios — Once Caldas | providers=bzzoiro ids={"bzzoiro": "220210"}
 - 2026-10-14T05:00:00+00:00 | Deren FC — Khaan Khuns-Erchim FC | providers=odds_api_io ids={"odds_api_io": "30350818152"}
 - 2026-10-14T07:45:00+00:00 | Melbourne Victory FC — FC Seoul | providers=odds_api_io ids={"odds_api_io": "73835276"}
 - 2026-10-14T08:00:00+00:00 | FC Ulaanbaatar — Khovd Western FC | providers=odds_api_io ids={"odds_api_io": "28590889355"}
@@ -51,30 +47,18 @@ all 3 primary sources: 0
 - 2026-10-14T10:00:00+00:00 | Vissel Kobe — Jeonbuk FC | providers=odds_api_io ids={"odds_api_io": "73835498"}
 - 2026-10-14T10:00:00+00:00 | Kashiwa Reysol — Port FC | providers=odds_api_io ids={"odds_api_io": "73835502"}
 - 2026-10-14T10:00:00+00:00 | Mito Hollyhock — FC Tokyo | providers=odds_api_io ids={"odds_api_io": "75172400"}
+- 2026-10-14T10:00:00+00:00 | Yokohama F Marinos — Shimizu S-Pulse | providers=odds_api_io ids={"odds_api_io": "75172402"}
+- 2026-10-14T10:00:00+00:00 | Nagoya Grampus — Fagiano Okayama | providers=odds_api_io ids={"odds_api_io": "75172404"}
+- 2026-10-14T10:00:00+00:00 | Jubilo Iwata — Kawasaki Frontale | providers=odds_api_io ids={"odds_api_io": "75172406"}
+- 2026-10-14T10:00:00+00:00 | Sagan Tosu — Avispa Fukuoka | providers=odds_api_io ids={"odds_api_io": "75172408"}
 
 ## Targeted enrichment plan sample
-- CS Cartagines — Puntarenas FC | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Portmore United — Violette AC | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Boca Juniors — CR Vasco da Gama RJ | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Boca Juniors — Vasco da Gama | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Mexico — Jamaica | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Millonarios FC — CD Once Caldas | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Millonarios — Once Caldas | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- AD San Carlos — Inter San Carlos | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Deren FC — Khaan Khuns-Erchim FC | primary=1 providers=odds_api_io
@@ -130,6 +114,22 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Slask II Wroclaw — Legia Warszawa II | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Kairat Almaty — OFK Mladost | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Bialystok U19 — Lech Poznan U19 | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Lech II Poznan — WDA Swiecie | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- FC Irtysh Pavlodar — FC Astana | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
