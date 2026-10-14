@@ -140,7 +140,7 @@ class DailyMatchRegistry:
         providers = {name.split(':')[0] for name in self.data['matches'][match_identity(match)]['evidence'] if name.endswith(':' + role) and (role != 'context' or not name.startswith('weather:'))}
         return any(self.cached(p, role, match) for p in providers)
 
-    def targets(self, provider: str, role: str, *, limit: int = 60, eligible=None):
+    def targets(self, provider: str, role: str, *, limit: int = 60, eligible=None, bulk=False):
         ranked = []
         for match in self.matches():
             if eligible is not None and not eligible(match):
@@ -176,8 +176,8 @@ class DailyMatchRegistry:
         ranked.sort(key=lambda item: item[0])
         # Close near window first, then prefetch next and rotate through the daily backlog.
         near = [m for key, m in ranked if key[0] == 0]
-        nxt = [m for key, m in ranked if key[0] == 1][:max(0, int(os.getenv('DAILY_PREFETCH_NEXT_MATCH_LIMIT', '60')))]
-        later = [m for key, m in ranked if key[0] == 2][:max(0, int(os.getenv('DAILY_PREFETCH_BACKLOG_MATCH_LIMIT', '60')))]
+        nxt = [m for key, m in ranked if key[0] == 1][:limit if bulk else max(0, int(os.getenv('DAILY_PREFETCH_NEXT_MATCH_LIMIT', '60')))]
+        later = [m for key, m in ranked if key[0] == 2][:limit if bulk else max(0, int(os.getenv('DAILY_PREFETCH_BACKLOG_MATCH_LIMIT', '60')))]
         return (near + nxt + later)[:max(0, limit)]
 
     def record(self, provider, role, targets, data, stats, *, observed_at=None):

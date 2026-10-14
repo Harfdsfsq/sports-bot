@@ -124,7 +124,7 @@ class DailyQualityRunner(PredictionRunner):
         self.registry.now = datetime.now(UTC)
         limit = self._provider_target_limit(provider, name, role)
         missing_key = role == 'context' and self._provider_missing_key(provider, name)
-        targets = [] if missing_key else self.registry.targets(name, role, limit=limit, eligible=lambda m: self._provider_supports_match(provider, name, role, m))
+        targets = [] if missing_key else self.registry.targets(name, role, limit=limit, eligible=lambda m: self._provider_supports_match(provider, name, role, m), bulk=name == 'sstats' and role == 'context')
         self.work_plan[name + ':' + role] = [match_identity(m) for m in targets]
         cached = {m.match_key: self.registry.cached(name, role, m) for m in self.inventory_matches}
         cached = {key: value for key, value in cached.items() if value}

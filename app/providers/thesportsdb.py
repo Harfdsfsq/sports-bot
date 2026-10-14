@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import os
+import hashlib
+import json
 from collections import Counter
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -10,6 +14,7 @@ from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.services.api_budget import BudgetedAsyncClient
 from app.services.fixture_identity import same_team_identity
+from app.services.daily_match_registry import parse_time, read_json, write_json
 from app.utils import canonicalize_league_name, canonicalize_team_name, clamp, team_similarity
 
 LEAGUE_ALIASES = {
@@ -72,6 +77,7 @@ class TheSportsDbContextProvider:
         self.base_url = f"{(settings.thesportsdb_base_url or 'https://www.thesportsdb.com/api/v1/json').rstrip('/')}/{api_key}"
         self.timeout = float(settings.thesportsdb_timeout_seconds or 20.0)
         self.max_http_requests = max(0, int(getattr(settings, 'thesportsdb_requests_max_per_run', 6) or 0))
+        self.response_observations = {}
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -123,8 +129,13 @@ class TheSportsDbContextProvider:
             stats['leagues_resolved'] = len(league_map)
 
             tables_by_league: dict[str, list[dict[str, Any]]] = {}
+            tables_by_id = {}
             for league_name, league_id in league_map.items():
-                payload = await self._fetch_json(client, '/lookuptable.php', stats, params={'l': league_id})
+                if league_id not in tables_by_id:
+                    tables_by_id[league_id] = await self._fetch_json(client, '/lookuptable.php', stats, params={'l': league_id})
+                else:
+                    stats['table_requests_deduplicated'] = stats.get('table_requests_deduplicated', 0) + 1
+                payload = tables_by_id[league_id]
                 rows = self._extract_rows(payload, 'table')
                 if not rows:
                     continue
@@ -155,6 +166,9 @@ class TheSportsDbContextProvider:
                     away_row = avg_row
                     partial = True
             context = self._rows_to_context(match, home_row, away_row, partial=partial)
+            observed = self.response_observations.get(self._response_key('/lookuptable.php', {'l': league_map[match.league_name]}))
+            if observed:
+                context.details['daily_source_observed_at'] = observed
             contexts[match.match_key] = context
             stats['contexts_built'] += 1
             if partial:
@@ -181,6 +195,17 @@ class TheSportsDbContextProvider:
         return not any(token in key for token in ('women', 'youth', 'reserve', 'reserves', 'friendly'))
 
     async def _fetch_json(self, client: httpx.AsyncClient, path: str, stats: dict[str, Any], params: dict[str, Any] | None = None) -> Any | None:
+        daily = os.getenv('PUBLICATION_PROFILE') == 'daily_quality'
+        key = self._response_key(path, params)
+        cache_path = Path('.data/provider_cache') / ('thesportsdb-' + key + '.json')
+        if daily:
+            saved = read_json(cache_path, {})
+            observed = parse_time(saved.get('observed_at'))
+            ttl = 1440 if path == '/all_leagues.php' else 90
+            if observed and timedelta(0) <= datetime.now(UTC) - observed < timedelta(minutes=ttl) and isinstance(saved.get('payload'), dict):
+                self.response_observations[key] = observed.isoformat()
+                stats['response_cache_hits'] = stats.get('response_cache_hits', 0) + 1
+                return saved['payload']
         if self.max_http_requests <= 0 or int(stats.get('requests') or 0) >= self.max_http_requests:
             stats['budget_exhausted'] = True
             return None
@@ -201,10 +226,19 @@ class TheSportsDbContextProvider:
             stats['response_errors'] += 1
             return None
         try:
-            return response.json()
+            payload = response.json()
+            if daily and isinstance(payload, dict):
+                observed = datetime.now(UTC).isoformat()
+                self.response_observations[key] = observed
+                write_json(cache_path, {'observed_at': observed, 'payload': payload})
+            return payload
         except Exception:
             stats['response_errors'] += 1
             return None
+
+    def _response_key(self, path, params):
+        # Separate credentials/hosts without persisting an API key in a filename.
+        return hashlib.sha256(json.dumps([self.base_url, path, params or {}], sort_keys=True).encode()).hexdigest()[:24]
 
     @staticmethod
     def _extract_rows(payload: Any, key: str) -> list[dict[str, Any]]:
@@ -231,6 +265,11 @@ class TheSportsDbContextProvider:
                     normalized_rows.append((str(row.get('idLeague') or ''), row_key))
         for league_name in league_names:
             target = self._normalize_league_key(league_name)
+            if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+                ids = {league_id for league_id, row_key in normalized_rows if league_id and row_key == target}
+                if len(ids) == 1:
+                    resolved[league_name] = ids.pop()
+                continue
             best_id: str | None = None
             best_score = 0.0
             for league_id, row_key in normalized_rows:

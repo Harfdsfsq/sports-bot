@@ -342,7 +342,7 @@ class SStatsContextProvider:
         if daily_cache:
             from pathlib import Path
             from app.services.daily_match_registry import parse_time, read_json, write_json
-            cache_path = Path(f".data/provider_cache/sstats-history-v3-{from_date}-{to_date}.json")
+            cache_path = Path(f".data/provider_cache/sstats-history-v4-{from_date}-{to_date}.json")
             saved = read_json(cache_path, {})
             observed = parse_time(saved.get("observed_at"))
             if observed and timedelta(0) <= datetime.now(UTC) - observed < timedelta(minutes=330) and saved.get("rows"):
@@ -352,12 +352,29 @@ class SStatsContextProvider:
         chunk_days = max(1, int(getattr(self.settings, "sstats_request_chunk_days", 7) or 7))
         rows: list[dict[str, Any]] = []
         seen_signatures: set[tuple[Any, ...]] = set()
+        observations = []
 
         for window_from, window_to in self._date_windows(from_date, to_date, chunk_days):
-            if self._http_budget_exhausted(stats):
-                break
-            stats["chunk_windows_requested"] = int(stats.get("chunk_windows_requested", 0) or 0) + 1
-            batch_rows = await self._fetch_rows_window(client, window_from, window_to, stats)
+            batch_rows = None
+            if daily_cache:
+                window_path = Path(f".data/provider_cache/sstats-window-v4-{window_from}-{window_to}.json")
+                saved_window = read_json(window_path, {})
+                window_observed = parse_time(saved_window.get('observed_at'))
+                if window_observed and timedelta(0) <= datetime.now(UTC) - window_observed < timedelta(minutes=330) and isinstance(saved_window.get('rows'), list):
+                    batch_rows = saved_window['rows']
+                    observations.append(window_observed)
+                    stats['history_windows_cache_hits'] = stats.get('history_windows_cache_hits', 0) + 1
+            if batch_rows is None:
+                if self._http_budget_exhausted(stats):
+                    continue
+                stats["chunk_windows_requested"] = int(stats.get("chunk_windows_requested", 0) or 0) + 1
+                errors_before = stats.get('response_errors', 0)
+                batch_rows = await self._fetch_rows_window(client, window_from, window_to, stats)
+                if daily_cache:
+                    window_observed = datetime.now(UTC)
+                    observations.append(window_observed)
+                    if stats.get('response_errors', 0) == errors_before and not stats.get('budget_exhausted'):
+                        write_json(window_path, {'observed_at': window_observed.isoformat(), 'rows': batch_rows})
             for row in batch_rows:
                 signature = (
                     row.get("id"),
@@ -371,9 +388,10 @@ class SStatsContextProvider:
                 seen_signatures.add(signature)
                 rows.append(row)
 
-        if daily_cache and rows and not stats.get("response_errors"):
-            self._daily_source_observed_at = datetime.now(UTC).isoformat()
-            write_json(cache_path, {"observed_at": self._daily_source_observed_at, "rows": rows})
+        if daily_cache and rows:
+            self._daily_source_observed_at = min(observations).isoformat() if observations else datetime.now(UTC).isoformat()
+            if not stats.get("response_errors") and not stats.get('budget_exhausted'):
+                write_json(cache_path, {"observed_at": self._daily_source_observed_at, "rows": rows})
         return rows
 
     async def _fetch_rows_window(
@@ -396,6 +414,7 @@ class SStatsContextProvider:
                 "to": (parse_datetime(to_date).date() + timedelta(days=1)).isoformat(),
                 "limit": limit,
                 "offset": offset,
+                "TimeZone": 0,
                 "apikey": self.settings.sstats_api_key,
             }
 

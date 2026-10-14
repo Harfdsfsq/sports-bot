@@ -525,3 +525,130 @@ def test_confirmed_u21_incident_is_excluded_without_rewriting_financial_row():
     original = dict(row)
     assert invalid_prediction_reasons(row) == ['first_team_history_used_for_confirmed_esiliiga_u21_fixture']
     assert row == original
+
+
+def test_bulk_history_provider_closes_entire_backlog_without_changing_other_queues(tmp_path, monkeypatch):
+    from app.services.daily_match_registry import DailyMatchRegistry
+    now = datetime(2026, 10, 14, 0, tzinfo=UTC)
+    monkeypatch.setenv('DAILY_PREFETCH_BACKLOG_MATCH_LIMIT', '2')
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    registry.sync([queue_match(now, minutes=600+i, name='Home '+str(i)) for i in range(10)])
+    assert len(registry.targets('sstats', 'context', limit=300)) == 2
+    assert len(registry.targets('sstats', 'context', limit=300, bulk=True)) == 10
+    assert len(registry.targets('odds_api_io', 'offers', limit=300)) == 2
+
+
+def test_sstats_reuses_overlapping_history_windows_and_keeps_oldest_timestamp(tmp_path, monkeypatch):
+    import asyncio
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    monkeypatch.chdir(tmp_path)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    calls = []
+    async def rows(client, start, end, stats):
+        calls.append((start, end))
+        return [{'id': start, 'date': start, 'home': 'Home', 'away': 'Away'}]
+    monkeypatch.setattr(provider, '_fetch_rows_window', rows)
+    asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-10', {}))
+    original = provider._daily_source_observed_at
+    stats = {}
+    asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-11', stats))
+    assert calls == [('2026-10-01', '2026-10-07'), ('2026-10-08', '2026-10-10'), ('2026-10-08', '2026-10-11')]
+    assert stats['history_windows_cache_hits'] == 1
+    assert provider._daily_source_observed_at == original
+
+
+def test_sstats_incomplete_history_is_not_saved_as_complete(tmp_path, monkeypatch):
+    import asyncio
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    monkeypatch.chdir(tmp_path)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    async def rows(client, start, end, stats):
+        stats['budget_exhausted'] = True
+        return [{'id': 1, 'date': start, 'home': 'Home', 'away': 'Away'}]
+    monkeypatch.setattr(provider, '_fetch_rows_window', rows)
+    asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-02', {}))
+    assert not list(tmp_path.rglob('sstats-*.json'))
+
+
+def test_sstats_date_queries_explicitly_use_utc(monkeypatch):
+    import asyncio
+    import httpx
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    async def request(client, url, *, params, stats):
+        assert params['TimeZone'] == 0
+        assert params['to'] == '2026-10-15'
+        return httpx.Response(200, json={'data': []})
+    monkeypatch.setattr(provider, '_request_with_retries', request)
+    asyncio.run(provider._fetch_rows_window(None, '2026-10-14', '2026-10-14', {'requests': 0, 'payload_shapes': []}))
+
+
+def test_thesportsdb_cached_response_does_not_spend_budget_or_refresh_timestamp(tmp_path, monkeypatch):
+    import asyncio
+    import httpx
+    from app.config import Settings
+    from app.providers.thesportsdb import TheSportsDbContextProvider
+    monkeypatch.chdir(tmp_path)
+    provider = TheSportsDbContextProvider(Settings(_env_file=None))
+    class Client:
+        async def get(self, url, params):
+            return httpx.Response(200, json={'table': [{'strTeam': 'Home'}]})
+    stats = {'requests': 0, 'http_statuses': []}
+    first = asyncio.run(provider._fetch_json(Client(), '/lookuptable.php', stats, params={'l': '4328'}))
+    key = provider._response_key('/lookuptable.php', {'l': '4328'})
+    observed = provider.response_observations[key]
+    provider.max_http_requests = 0
+    second = asyncio.run(provider._fetch_json(None, '/lookuptable.php', stats, params={'l': '4328'}))
+    assert first == second and stats['requests'] == 1
+    assert stats['response_cache_hits'] == 1
+    assert provider.response_observations[key] == observed
+
+
+def test_thesportsdb_aliases_share_one_table_request(monkeypatch):
+    import asyncio
+    from app.config import Settings
+    from app.providers.thesportsdb import TheSportsDbContextProvider
+    for key in ('ALL_PROXY', 'all_proxy', 'HTTP_PROXY', 'http_proxy', 'HTTPS_PROXY', 'https_proxy'):
+        monkeypatch.delenv(key, raising=False)
+    provider = TheSportsDbContextProvider(Settings(_env_file=None, enable_thesportsdb_context=True))
+    now = datetime.now(UTC)
+    first = queue_match(now, league='Italy - Serie A')
+    second = queue_match(now, name='Another', league='Italian Serie A')
+    calls = []
+    async def fetch(client, path, stats, params=None):
+        calls.append((path, params))
+        if path == '/all_leagues.php':
+            return {'leagues': [{'strSport': 'Soccer', 'strLeague': 'Italian Serie A', 'idLeague': '4332'}]}
+        return {'table': []}
+    monkeypatch.setattr(provider, '_fetch_json', fetch)
+    _, stats, _ = asyncio.run(provider.fetch_context([first, second]))
+    assert len(calls) == 2
+    assert stats['table_requests_deduplicated'] == 1
+
+
+def test_thesportsdb_unknown_league_never_falls_back_to_similar_foreign_table():
+    from app.config import Settings
+    from app.providers.thesportsdb import TheSportsDbContextProvider
+    provider = TheSportsDbContextProvider(Settings(_env_file=None))
+    rows = [{'strSport': 'Soccer', 'strLeague': 'English League One', 'idLeague': '4396'}]
+    assert provider._resolve_league_ids(['Algeria - Ligue 1'], rows) == {}
+
+
+def test_sstats_uses_cached_windows_even_when_no_http_budget_remains(tmp_path, monkeypatch):
+    import asyncio
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    from app.services.daily_match_registry import write_json
+    monkeypatch.chdir(tmp_path)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    provider.max_http_requests = 1
+    row = {'id': 1, 'date': '2026-10-08', 'home': 'Home', 'away': 'Away'}
+    write_json(tmp_path/'.data/provider_cache/sstats-window-v4-2026-10-08-2026-10-10.json',
+               {'observed_at': datetime.now(UTC).isoformat(), 'rows': [row]})
+    stats = {'requests': 1}
+    result = asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-10', stats))
+    assert result == [row] and stats['history_windows_cache_hits'] == 1
+    assert not list(tmp_path.rglob('sstats-history-*.json'))
