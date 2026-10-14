@@ -67,11 +67,27 @@ def identity_reasons(provider, match, context):
                 checked = True
                 if not same_team_identity(team, [row.get('teamName') or row.get('TeamName')]):
                     return ['context_team_identity_mismatch']
-            for row in history.get('recent_' + side) or []:
+            recent = history.get('recent_' + side) or []
+            evidence = history.get('recent_' + side + '_evidence')
+            if evidence is None:
+                evidence = recent if all(isinstance(row, dict) for row in recent) else None
+            if recent and (not isinstance(evidence, list) or len(evidence) != len(recent)):
+                return ['context_history_identity_missing']
+            for row in evidence or []:
                 checked = True
-                names = [(row.get('team1') or {}).get('teamName'), (row.get('team2') or {}).get('teamName')]
+                if not isinstance(row, dict):
+                    return ['context_history_identity_missing']
+                first = row.get('team1') or row.get('Team1') or {}
+                second = row.get('team2') or row.get('Team2') or {}
+                names = [first.get('teamName') or first.get('TeamName'), second.get('teamName') or second.get('TeamName')]
                 if not same_team_identity(team, names):
                     return ['context_team_identity_mismatch']
+                try:
+                    start = row.get('matchDateTimeUTC') or row.get('MatchDateTimeUTC') or row.get('matchDateTime') or row.get('MatchDateTime')
+                    if parse_datetime(start) >= match.commence_time:
+                        return ['context_future_history']
+                except (TypeError, ValueError, AttributeError):
+                    return ['context_history_time_missing']
         if not checked:
             return ['context_identity_missing']
     return []
@@ -93,7 +109,10 @@ def source_is_fresh(provider, context, observed_at, now):
 
 def admit_context(provider, match, context, observed_at, now=None):
     now = now or datetime.now(UTC)
-    reasons = identity_reasons(provider, match, context)
+    try:
+        reasons = identity_reasons(provider, match, context)
+    except (AttributeError, TypeError, ValueError, KeyError):
+        reasons = ['context_payload_invalid']
     if not source_is_fresh(provider, context, observed_at, now):
         reasons.append('context_source_stale')
     return reasons

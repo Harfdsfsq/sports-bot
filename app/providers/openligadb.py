@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -7,6 +8,7 @@ from typing import Any
 import httpx
 
 from app.services.api_budget import BudgetedAsyncClient
+from app.services.fixture_identity import same_team_identity, squad_identity
 
 from app.config import Settings
 from app.providers.clubelo import ClubEloContextProvider
@@ -421,7 +423,7 @@ class OpenLigaDbContextProvider:
         expanded = list(aliases)
         for value in aliases:
             for alias in OPENLIGADB_TEAM_ALIASES.get(canonicalize_team_name(value), ()):
-                if alias not in expanded:
+                if alias not in expanded and squad_identity(value) == squad_identity(alias):
                     expanded.append(alias)
         return expanded
 
@@ -507,9 +509,13 @@ class OpenLigaDbContextProvider:
         match_dt = match.commence_time.astimezone(UTC)
         home_games: list[tuple[datetime, float, float]] = []
         away_games: list[tuple[datetime, float, float]] = []
+        home_evidence = {}
+        away_evidence = {}
         h2h_goals: list[float] = []
         best_quality: str | None = None
         for row in rows:
+            if row.get('matchIsFinished', row.get('MatchIsFinished')) is False:
+                continue
             try:
                 row_dt = parse_datetime(str(row.get('matchDateTimeUTC') or row.get('MatchDateTimeUTC') or row.get('matchDateTime') or row.get('MatchDateTime') or ''))
             except Exception:
@@ -528,6 +534,19 @@ class OpenLigaDbContextProvider:
             away_sim = max(self._team_match_score(match.away_team, alias) for alias in team2_aliases)
             rev_home = max(self._team_match_score(match.home_team, alias) for alias in team2_aliases)
             rev_away = max(self._team_match_score(match.away_team, alias) for alias in team1_aliases)
+            if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+                home_sim = home_sim if same_team_identity(match.home_team, team1_aliases) else 0
+                away_sim = away_sim if same_team_identity(match.away_team, team2_aliases) else 0
+                rev_home = rev_home if same_team_identity(match.home_team, team2_aliases) else 0
+                rev_away = rev_away if same_team_identity(match.away_team, team1_aliases) else 0
+            if home_sim >= .72:
+                home_evidence[(row_dt, goals1, goals2)] = row
+            elif rev_home >= .72:
+                home_evidence[(row_dt, goals2, goals1)] = row
+            if away_sim >= .72:
+                away_evidence[(row_dt, goals2, goals1)] = row
+            elif rev_away >= .72:
+                away_evidence[(row_dt, goals1, goals2)] = row
             if home_sim >= 0.78 and away_sim >= 0.78:
                 best_quality = best_quality or 'exact'
                 home_games.append((row_dt, goals1, goals2))
@@ -582,7 +601,9 @@ class OpenLigaDbContextProvider:
             'home_prob': home_prob,
             'away_prob': away_prob,
             'confidence': confidence,
-            'payload': {'recent_home': home_recent, 'recent_away': away_recent},
+            'payload': {'recent_home': home_recent, 'recent_away': away_recent,
+                        'recent_home_evidence': [home_evidence[item] for item in home_recent],
+                        'recent_away_evidence': [away_evidence[item] for item in away_recent]},
             'details': {
                 'openligadb_home_ppg': round(home_ppg, 3),
                 'openligadb_away_ppg': round(away_ppg, 3),
@@ -674,7 +695,7 @@ class OpenLigaDbContextProvider:
         if best is None:
             return None
         try:
-            return float(best.get('pointsTeam1') or best.get('PointsTeam1')), float(best.get('pointsTeam2') or best.get('PointsTeam2'))
+            return float(best.get('pointsTeam1', best.get('PointsTeam1'))), float(best.get('pointsTeam2', best.get('PointsTeam2')))
         except Exception:
             return None
 

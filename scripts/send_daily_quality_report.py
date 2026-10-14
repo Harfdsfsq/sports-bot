@@ -11,6 +11,8 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'context_history_identity_missing': 'история команды не содержит проверяемых названий участников',
+    'context_payload_invalid': 'источник вернул спортивные данные в неподдерживаемом формате',
     'fixture_squad_ambiguous': 'источник не уточнил состав клуба в турнире с резервными командами',
     'fixture_squad_conflict': 'указанный состав команды противоречит участникам турнира',
     'insufficient_team_sample': 'слишком мало подтверждённых матчей обеих команд для прогноза',

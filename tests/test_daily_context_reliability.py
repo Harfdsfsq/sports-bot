@@ -652,3 +652,67 @@ def test_sstats_uses_cached_windows_even_when_no_http_budget_remains(tmp_path, m
     result = asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-10', stats))
     assert result == [row] and stats['history_windows_cache_hits'] == 1
     assert not list(tmp_path.rglob('sstats-history-*.json'))
+
+
+def openliga_rows(now):
+    return [{'matchID': i, 'matchDateTimeUTC': (now-timedelta(days=i)).isoformat(),
+             'team1': {'teamName': 'Home'}, 'team2': {'teamName': 'Away'},
+             'matchIsFinished': True,
+             'matchResults': [{'resultTypeID': 2, 'pointsTeam1': i % 2, 'pointsTeam2': 0}]}
+            for i in range(1, 4)]
+
+
+def test_openliga_real_adapter_context_survives_registry_and_json_cache(tmp_path):
+    from app.config import Settings
+    from app.providers.openligadb import OpenLigaDbContextProvider
+    from app.services.daily_match_registry import DailyMatchRegistry
+    now = datetime(2026, 10, 14, 10, tzinfo=UTC)
+    m = queue_match(now, league='Bundesliga')
+    ctx, _, _ = OpenLigaDbContextProvider(Settings(_env_file=None))._build_context(
+        m, openliga_rows(now), [], comp_key='bl1', season=2026)
+    assert ctx is not None
+    assert len(ctx.payload['history']['recent_home_evidence']) == 3
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    registry.sync([m])
+    assert registry.record('openligadb', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)['accepted'] == 1
+    registry.save()
+    restored = DailyMatchRegistry(tmp_path/'registry.json', now)
+    assert restored.cached('openligadb', 'context', m) is not None
+
+
+@pytest.mark.parametrize('recent', [[('2026-10-13', 2, 1)], [['2026-10-13', 2, 1]]])
+def test_legacy_openliga_history_is_rejected_without_crashing(tmp_path, recent):
+    from app.services.daily_match_registry import DailyMatchRegistry
+    now = datetime(2026, 10, 14, 10, tzinfo=UTC)
+    m = queue_match(now)
+    ctx = MatchContext('openligadb', {'history': {'recent_home': recent, 'recent_away': recent}}, expected_home=1, expected_away=1)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    registry.sync([m])
+    counts = registry.record('openligadb', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
+    assert counts['rejected'] == 1
+    assert registry.data['issues'][-1]['reason'] == 'context_history_identity_missing'
+    assert registry.cached('openligadb', 'context', m) is None
+
+
+def test_bad_provider_payload_is_a_rejection_not_a_pipeline_exception():
+    from app.services.context_admission import admit_context
+    now = datetime.now(UTC)
+    ctx = MatchContext('openligadb', {'history': 'unexpected'}, expected_home=1, expected_away=1)
+    assert 'context_payload_invalid' in admit_context('openligadb', queue_match(now), ctx, now.isoformat(), now)
+
+
+def test_openliga_history_excludes_other_squads_and_unfinished_games():
+    from app.config import Settings
+    from app.providers.openligadb import OpenLigaDbContextProvider
+    now = datetime(2026, 10, 14, 10, tzinfo=UTC)
+    m = queue_match(now)
+    rows = openliga_rows(now)
+    rows[0]['team1']['teamName'] = 'Home U21'
+    rows[1]['matchIsFinished'] = False
+    result, _ = OpenLigaDbContextProvider(Settings(_env_file=None))._history_metrics(m, rows)
+    assert result is None  # Only one verified finished home game remains.
+
+
+def test_openliga_preserves_zero_goal_final_scores():
+    from app.providers.openligadb import OpenLigaDbContextProvider
+    assert OpenLigaDbContextProvider._extract_final_score({'matchResults': [{'resultTypeID': 2, 'pointsTeam1': 0, 'pointsTeam2': 0}]}) == (0, 0)
