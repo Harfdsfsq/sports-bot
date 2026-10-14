@@ -3,46 +3,45 @@
 • Главная причина: odds-api.io: выбранные букмекеры недоступны на текущем тарифе
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 17 (это не размер inventory).
-• Очередь provider-enrichment: 236 активных матчей; model scope 17; назначений по ролям 109. Очередь сбора не расширяет публикационный scope.
-• 1+ линия: 296/300 (99%) | 1+ контекст: 300/300 (100%)
-• 2+ букмекера: 120/300 (40%)
-• Raw 2+ букмекера odds-api.io current snapshot: 16 | normalized cumulative inventory: 120.
-• Odds-api offer snapshot: rows 1626, matches 24, same-side 2+ books 16
-• 2+ independent odds-source: 21/300 (7%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 289/300 (96%)
-• Готово для модели: 296/300 (99%)
+• Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; status ok_target_met). Runtime rows processed: 18 (это не размер inventory).
+• Очередь provider-enrichment: 38 активных матчей; model scope 24; назначений по ролям 107. Очередь сбора не расширяет публикационный scope.
+• 1+ линия: 299/300 (100%) | 1+ контекст: 299/300 (100%)
+• 2+ букмекера: 297/300 (99%)
+• Raw 2+ букмекера odds-api.io current snapshot: 18 | normalized cumulative inventory: 297.
+• Odds-api offer snapshot: rows 2097, matches 32, same-side 2+ books 18
+• 2+ independent odds-source: 42/300 (14%) — A-tier strict metric; для B-tier не обязательный блок.
+• 2+ контекста: 295/300 (98%)
+• Готово для модели: 299/300 (100%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 21 | main опубликовано: 0
+• A-tier strict-ready: 42 | main опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier 1+ line/2+ bookmaker/1+ context coverage: 120 | fallback опубликовано: 0
+• B-tier 1+ line/2+ bookmaker/1+ context coverage: 297 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 21 матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до 120 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 42 матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до 297 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 107; pending 15; duplicates removed 325; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 3 | матчей без следующего регулярного run: 0
-• Line guard: увидел 1, оставил 0, отложил 1 до следующего cron
+• Pre-kickoff проверок: 23 | матчей без следующего регулярного run: 14
+• Line guard: увидел 1, оставил 1, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/1
-• Quality прошло: 1 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 0/2
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 9; смэтчил матчей 40; offers 1626; 2+ букмекера 16; ошибок 5.
-• Bzzoiro: direct req 2, v2 req 2; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 19; сырых строк 15217; контекстов 14; deep-enriched 11; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 9; смэтчил матчей 37; offers 2097; 2+ букмекера 18; ошибок 5.
+• Bzzoiro: direct req 2, v2 req 2; v2 ctx 4; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 19; сырых строк 15220; контекстов 8; deep-enriched 11; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 1 (50%)
-• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (50%)
+• odds-api.io: выбранные букмекеры недоступны на текущем тарифе: 1 (100%)
 
 🔎 Проверенные reserve-кандидаты
 • Нет проверенных reserve-кандидатов в свежем fallback report.
@@ -52,7 +51,7 @@
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 38519554212
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/38519554212
-• Artifact: run-bot-38519554212
+• Run ID: 38610656527
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/38610656527
+• Artifact: run-bot-38610656527
 • workflow run-bot, attempt 1
