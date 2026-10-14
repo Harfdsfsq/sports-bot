@@ -102,7 +102,7 @@ class DailyQualityRunner(PredictionRunner):
             try:
                 data, stats, preview = await asyncio.wait_for(
                     super()._fetch_provider(provider, method_name, targets, *args[1:], empty_data=empty_data),
-                    timeout=float(os.getenv('DAILY_PROVIDER_TIMEOUT_SECONDS', '300')),
+                    timeout=float(os.getenv('DAILY_PROVIDER_TIMEOUT_SECONDS_' + name.upper(), os.getenv('DAILY_PROVIDER_TIMEOUT_SECONDS', '300'))),
                 )
             except TimeoutError:
                 stats = {'enabled': True, 'runtime_error': 'provider_deadline'}

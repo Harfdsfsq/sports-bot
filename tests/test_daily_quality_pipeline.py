@@ -1358,3 +1358,37 @@ def test_pre_upgrade_novorizontino_forecast_is_excluded_from_learning():
     row = {'prediction_id': 'soccer|aa ponte preta sp|gremio novorizontino sp|2026-10-12|totals|under||3|2026-10-12T22:00:00+00:00', 'status': 'pending', 'stake_amount': 2.52}
     assert invalid_prediction_reasons(row) == ['week_old_bzzoiro_prediction_used_before_freshness_guard']
     assert row['status'] == 'pending' and row['stake_amount'] == 2.52
+
+
+@pytest.mark.parametrize('age,refresh', [(120, False), (329, False), (331, True), (359, True)])
+def test_near_context_refreshes_before_admission_expiry(profile, tmp_path, age, refresh):
+    now = datetime.now(UTC)
+    m = match(now)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    r.sync([m])
+    context = MatchContext('sstats', {'HomeTeam': m.home_team, 'AwayTeam': m.away_team}, expected_home=1, expected_away=1)
+    r.record('sstats', 'context', [m], {m.match_key: context}, {}, observed_at=now-timedelta(minutes=age))
+    r.now = now
+    assert r.cached('sstats', 'context', m) is not None
+    assert bool(r.targets('sstats', 'context')) == refresh
+
+
+def test_openligadb_timeout_preserves_existing_verified_cache(profile, tmp_path, monkeypatch):
+    from app.services.runner import PredictionRunner
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv('DAILY_PROVIDER_TIMEOUT_SECONDS_OPENLIGADB', '.01')
+    now = datetime.now(UTC)
+    runner = DailyQualityRunner(Settings(_env_file=None))
+    m = match(now)
+    missing = match(now, name='Missing')
+    runner.registry.sync([m, missing])
+    context = MatchContext('openligadb', {'table': {'home_row': {'teamName': m.home_team}, 'away_row': {'teamName': m.away_team}}}, expected_home=1, expected_away=1)
+    runner.registry.record('openligadb', 'context', [m], {m.match_key: context}, {}, observed_at=now)
+    runner.inventory_matches = runner.registry.matches()
+    runner._provider_name = lambda provider: 'openligadb'
+    async def never(*args, **kwargs):
+        await asyncio.Event().wait()
+    monkeypatch.setattr(PredictionRunner, '_fetch_provider', never)
+    data, stats, _ = asyncio.run(runner._fetch_provider(SimpleNamespace(), 'fetch_context', [], empty_data={}))
+    assert stats['runtime_error'] == 'provider_deadline'
+    assert m.match_key in data and missing.match_key not in data

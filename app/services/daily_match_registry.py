@@ -145,8 +145,13 @@ class DailyMatchRegistry:
             minutes = (match.commence_time - self.now).total_seconds() / 60
             if minutes < 30:
                 continue
-            if self.cached(provider, role, match):
-                continue
+            current = self.cached(provider, role, match)
+            if current:
+                observed = parse_time(current.details.get('daily_evidence_observed_at')) if role == 'context' else None
+                buffer = min(120, max(0, int(os.getenv('DAILY_CONTEXT_REFRESH_BUFFER_MINUTES', '30'))))
+                refresh_soon = role == 'context' and provider != 'weather' and minutes <= 240 and observed is not None and self.now - observed >= timedelta(minutes=360-buffer)
+                if not refresh_soon:
+                    continue
             entry = self.data['matches'][match_identity(match)]
             attempt = entry['attempts'].get(provider + ':' + role, {})
             retry = parse_time(attempt.get('retry_after'))
