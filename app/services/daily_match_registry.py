@@ -117,9 +117,10 @@ class DailyMatchRegistry:
             if provider != 'weather' and admit_context(provider, match, context, evidence['observed_at'], self.now):
                 return None
             if provider == 'sstats' and context.source == 'sstats_form' and os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
-                from app.providers.sstats import conflicting_history_indices
+                from app.providers.sstats import SStatsContextProvider, conflicting_history_indices
                 if any(conflicting_history_indices(context.payload.get(side) or []) for side in ('home_recent', 'away_recent')):
                     return None
+                context = SStatsContextProvider.chronological_form_context(context)
             if provider == 'sstats' and context.source == 'sstats' and os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
                 from app.providers.sstats import market_only_context
                 # Also invalidate persisted entries produced before the provenance marker.

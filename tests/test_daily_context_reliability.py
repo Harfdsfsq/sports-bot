@@ -185,3 +185,36 @@ def test_legacy_quality_formula_remains_outside_daily_profile(monkeypatch):
     first = service._candidate_quality_score(c, [], {}, False)
     c.ev_pct = 1
     assert service._candidate_quality_score(c, [], {}, False) < first
+
+
+def test_cup_sample_weights_follow_dates_not_league_bucket(monkeypatch):
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    now = datetime.now(UTC)
+    old = {'start': now - timedelta(days=30), 'league': 'Cup', 'goals_for': 5, 'goals_against': 0, 'home': True}
+    new = {'start': now - timedelta(days=2), 'league': '2. liga', 'goals_for': 0, 'goals_against': 2, 'home': True}
+    rows = provider._select_recent_rows([new, old], league_name='Cup', before=now, limit=2)
+    assert rows == [new, old]
+    assert provider._weighted_average([r['goals_for'] for r in rows]) < 2.5
+    monkeypatch.setenv('PUBLICATION_PROFILE', 'legacy')
+    assert provider._select_recent_rows([new, old], league_name='Cup', before=now, limit=2) == [old, new]
+
+
+def test_cached_form_reweight_preserves_raw_evidence_time_and_is_idempotent():
+    import copy
+
+    from app.providers.sstats import SStatsContextProvider
+    now = datetime.now(UTC)
+    old = {'start': (now-timedelta(days=30)).isoformat(), 'goals_for': 5, 'goals_against': 0, 'home': True}
+    new = {'start': (now-timedelta(days=2)).isoformat(), 'goals_for': 0, 'goals_against': 2, 'home': True}
+    ctx = MatchContext('sstats_form', {'home_recent': [old, new], 'away_recent': [old, new]},
+                       expected_home=3, expected_away=3,
+                       details={'daily_source_observed_at': (now-timedelta(hours=4)).isoformat()})
+    original = copy.deepcopy(ctx)
+    corrected = SStatsContextProvider.chronological_form_context(ctx)
+    assert corrected.expected_home != ctx.expected_home
+    assert corrected.payload['home_recent'][0] == new
+    assert corrected.details['daily_source_observed_at'] == ctx.details['daily_source_observed_at']
+    assert ctx == original
+    assert SStatsContextProvider.chronological_form_context(corrected) is corrected

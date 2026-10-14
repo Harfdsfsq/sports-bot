@@ -69,7 +69,8 @@ def sample_support(context):
     status = 'unknown' if minimum is None else 'thin' if minimum < 3 else 'limited' if minimum < a_sample_floor() else 'supported'
     if minimum is None and source == 'football_data' and d.get('football_data_mode') == 'standings':
         status = 'unverified_table'
-    return {'provider': source, 'home': home, 'away': away, 'minimum': minimum, 'status': status}
+    return {'provider': source, 'home': home, 'away': away, 'minimum': minimum, 'status': status,
+            'form_weighting_version': d.get('sstats_form_weighting_version')}
 
 
 def blend_contexts(contexts, weight_for_source):

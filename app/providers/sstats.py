@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 from collections import defaultdict
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
 from typing import Any
@@ -915,6 +916,7 @@ class SStatsContextProvider:
                 away_win_probability=round(away_prob, 4),
                 confidence=round(confidence, 2),
                 details={
+                    "sstats_form_weighting_version": "chronological-v1" if os.getenv("PUBLICATION_PROFILE") == "daily_quality" else "legacy-league-order",
                     "sstats_mode": "team_form",
                     "home_team_key": home_key,
                     "away_team_key": away_key,
@@ -976,10 +978,38 @@ class SStatsContextProvider:
         selected = same_league[:limit]
         if len(selected) < limit:
             selected.extend(fallback[: max(0, limit - len(selected))])
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            # League preference chooses the sample, but recency weights must
+            # follow actual dates, not the order of competition buckets.
+            selected.sort(key=lambda row: row['start'], reverse=True)
         return selected
 
+    @classmethod
+    def chronological_form_context(cls, context: MatchContext) -> MatchContext:
+        """Recalculate derived fields from saved history, retaining observation time."""
+        if context.source != 'sstats_form':
+            return context
+        payload = context.payload or {}
+        if not all(isinstance(payload.get(side), list) and payload[side] for side in ('home_recent', 'away_recent')):
+            return context
+        recent = {side: sorted(payload[side], key=lambda row: parse_datetime(str(row['start'])), reverse=True)
+                  for side in ('home_recent', 'away_recent')}
+        if all(recent[side] == payload[side] for side in recent) and context.details.get('sstats_form_weighting_version') == 'chronological-v1':
+            return context
+        home = cls._blend_expected_goals(recent['home_recent'], recent['away_recent'], side='home')
+        away = cls._blend_expected_goals(recent['home_recent'], recent['away_recent'], side='away')
+        if home is None or away is None:
+            return context
+        total = home + away + .82
+        return replace(context, payload={**payload, **recent},
+                       expected_home=round(home, 3), expected_away=round(away, 3),
+                       home_win_probability=round(clamp(home / total, .08, .82), 4),
+                       away_win_probability=round(clamp(away / total, .08, .82), 4),
+                       details={**context.details, 'sstats_form_weighting_version': 'chronological-v1'})
+
+    @classmethod
     def _blend_expected_goals(
-        self,
+        cls,
         home_recent: list[dict[str, Any]],
         away_recent: list[dict[str, Any]],
         *,
@@ -989,15 +1019,15 @@ class SStatsContextProvider:
             return None
 
         if side == "home":
-            attack = self._weighted_average([row.get("goals_for") for row in home_recent])
-            opponent_defense = self._weighted_average([row.get("goals_against") for row in away_recent])
-            home_split = self._weighted_average([row.get("goals_for") for row in home_recent if row.get("home") is True])
-            away_def_split = self._weighted_average([row.get("goals_against") for row in away_recent if row.get("home") is False])
+            attack = cls._weighted_average([row.get("goals_for") for row in home_recent])
+            opponent_defense = cls._weighted_average([row.get("goals_against") for row in away_recent])
+            home_split = cls._weighted_average([row.get("goals_for") for row in home_recent if row.get("home") is True])
+            away_def_split = cls._weighted_average([row.get("goals_against") for row in away_recent if row.get("home") is False])
         else:
-            attack = self._weighted_average([row.get("goals_for") for row in away_recent])
-            opponent_defense = self._weighted_average([row.get("goals_against") for row in home_recent])
-            home_split = self._weighted_average([row.get("goals_for") for row in away_recent if row.get("home") is False])
-            away_def_split = self._weighted_average([row.get("goals_against") for row in home_recent if row.get("home") is True])
+            attack = cls._weighted_average([row.get("goals_for") for row in away_recent])
+            opponent_defense = cls._weighted_average([row.get("goals_against") for row in home_recent])
+            home_split = cls._weighted_average([row.get("goals_for") for row in away_recent if row.get("home") is False])
+            away_def_split = cls._weighted_average([row.get("goals_against") for row in home_recent if row.get("home") is True])
 
         values: list[tuple[float, float]] = []
         if attack is not None:
