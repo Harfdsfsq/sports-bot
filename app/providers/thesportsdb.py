@@ -113,12 +113,13 @@ class TheSportsDbContextProvider:
         counts = Counter(match.league_name for match in soccer_matches)
         league_names = list(dict.fromkeys(m.league_name for m in soccer_matches)) if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' else [name for name, _ in sorted(counts.items(), key=lambda item: (-item[1], self._normalize_league_key(item[0])))]
         max_leagues = max(1, int(self.settings.thesportsdb_max_leagues or 24))
-        if len(league_names) > max_leagues:
+        daily = os.getenv('PUBLICATION_PROFILE') == 'daily_quality'
+        if not daily and len(league_names) > max_leagues:
             league_names = league_names[:max_leagues]
             stats['league_limit_applied'] = max_leagues
 
-        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
-            stats['attempted_match_keys'] = [m.match_key for m in soccer_matches if m.league_name in league_names]
+        if daily:
+            stats['attempted_match_keys'] = []
         async with BudgetedAsyncClient(timeout=self.timeout) as client:
             all_leagues = await self._fetch_json(client, '/all_leagues.php', stats)
             league_rows = self._extract_rows(all_leagues, 'leagues')
@@ -126,13 +127,21 @@ class TheSportsDbContextProvider:
                 preview['sample_leagues'] = league_rows[:5]
 
             league_map = self._resolve_league_ids(league_names, league_rows)
+            if daily:
+                supported_ids = list(dict.fromkeys(league_map.values()))[:max_leagues]
+                stats['unsupported_catalog_matches'] = sum(m.league_name not in league_map for m in soccer_matches)
+                league_map = {name: league_id for name, league_id in league_map.items() if league_id in supported_ids}
             stats['leagues_resolved'] = len(league_map)
 
             tables_by_league: dict[str, list[dict[str, Any]]] = {}
             tables_by_id = {}
+            attempted_ids = set()
             for league_name, league_id in league_map.items():
                 if league_id not in tables_by_id:
+                    requests_before = stats['requests']
                     tables_by_id[league_id] = await self._fetch_json(client, '/lookuptable.php', stats, params={'l': league_id})
+                    if tables_by_id[league_id] is not None or stats['requests'] > requests_before:
+                        attempted_ids.add(league_id)
                 else:
                     stats['table_requests_deduplicated'] = stats.get('table_requests_deduplicated', 0) + 1
                 payload = tables_by_id[league_id]
@@ -143,6 +152,8 @@ class TheSportsDbContextProvider:
                 stats['tables_fetched'] += 1
                 if len(preview['sample_tables']) < 3:
                     preview['sample_tables'].append({'league_name': league_name, 'rows': rows[:3]})
+            if daily:
+                stats['attempted_match_keys'] = [m.match_key for m in soccer_matches if league_map.get(m.league_name) in attempted_ids]
 
         contexts: dict[str, MatchContext] = {}
         for match in soccer_matches:

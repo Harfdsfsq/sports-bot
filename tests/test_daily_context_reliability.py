@@ -716,3 +716,26 @@ def test_openliga_history_excludes_other_squads_and_unfinished_games():
 def test_openliga_preserves_zero_goal_final_scores():
     from app.providers.openligadb import OpenLigaDbContextProvider
     assert OpenLigaDbContextProvider._extract_final_score({'matchResults': [{'resultTypeID': 2, 'pointsTeam1': 0, 'pointsTeam2': 0}]}) == (0, 0)
+
+
+def test_thesportsdb_unsupported_leagues_do_not_exhaust_catalog_limit(monkeypatch):
+    import asyncio
+    from app.config import Settings
+    from app.providers.thesportsdb import TheSportsDbContextProvider
+    for key in ('ALL_PROXY', 'all_proxy', 'HTTP_PROXY', 'http_proxy', 'HTTPS_PROXY', 'https_proxy'):
+        monkeypatch.delenv(key, raising=False)
+    provider = TheSportsDbContextProvider(Settings(_env_file=None, enable_thesportsdb_context=True, thesportsdb_max_leagues=1))
+    now = datetime.now(UTC)
+    unsupported = [queue_match(now, name='Unknown '+str(i), league='Unavailable '+str(i)) for i in range(5)]
+    supported = queue_match(now, name='Supported', league='England - Championship')
+    calls = []
+    async def fetch(client, path, stats, params=None):
+        calls.append((path, params))
+        if path == '/all_leagues.php':
+            return {'leagues': [{'strSport': 'Soccer', 'strLeague': 'English League Championship', 'idLeague': '4329'}]}
+        return {'table': []}
+    monkeypatch.setattr(provider, '_fetch_json', fetch)
+    _, stats, _ = asyncio.run(provider.fetch_context(unsupported+[supported]))
+    assert calls[-1] == ('/lookuptable.php', {'l': '4329'})
+    assert stats['unsupported_catalog_matches'] == 5
+    assert stats['attempted_match_keys'] == [supported.match_key]
