@@ -84,6 +84,9 @@ def render(summary):
              '', '🧪 Воронка',
              f"Рассчитано вариантов ставок: {summary.get('candidates_model_evaluated', 'нет счётчика')}. После первичной проверки вероятности и ценности: {summary.get('candidates_before_quality', 0)}.",
              f"Кандидатов до качества: {summary.get('candidates_before_quality', 0)}; после качества: {summary.get('candidates_raw', 0)}; выбрано: {len(daily.get('selected') or [])}."]
+    if 'near_missing_both' in c:
+        position = next(i for i, line in enumerate(lines) if line.startswith('Дополнительные данные окна:'))
+        lines.insert(position, f"Добор окна: только линия — {c.get('near_only_line', 0)}; только контекст — {c.get('near_only_context', 0)}; нет обоих — {c['near_missing_both']}.")
     bank = summary.get('bankroll') or {}
     if bank:
         lines.insert(2, f"💼 Банк: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")

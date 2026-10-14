@@ -218,3 +218,222 @@ def test_cached_form_reweight_preserves_raw_evidence_time_and_is_idempotent():
     assert corrected.details['daily_source_observed_at'] == ctx.details['daily_source_observed_at']
     assert ctx == original
     assert SStatsContextProvider.chronological_form_context(corrected) is corrected
+
+
+def queue_match(now, minutes=90, name='Home', league='Premier League'):
+    from app.schemas import Match
+    return Match('day_inventory', name, 'soccer', league, name, 'Away',
+                 now + timedelta(minutes=minutes), name.lower(), 'away', 'league')
+
+
+@pytest.mark.parametrize('result,elapsed,expected', [('empty', 29, False), ('empty', 30, True), ('unavailable', 60, False), ('rate_limited', 60, False), ('deferred', 60, False)])
+def test_urgent_context_retry_only_overrides_short_empty_cooldown(tmp_path, result, elapsed, expected):
+    from app.services.daily_match_registry import DailyMatchRegistry, match_identity
+    now = datetime.now(UTC)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    m = queue_match(now)
+    registry.sync([m])
+    at = now - timedelta(minutes=elapsed)
+    registry.data['matches'][match_identity(m)]['attempts']['sstats:context'] = {
+        'at': at.isoformat(), 'retry_after': (at + timedelta(minutes=120)).isoformat(), 'result': result}
+    assert bool(registry.targets('sstats', 'context')) == expected
+
+
+def test_pair_completion_outranks_optional_confirmation_and_bare_fixture(tmp_path):
+    from app.schemas import MatchContext, Offer
+    from app.services.daily_match_registry import DailyMatchRegistry
+    now = datetime.now(UTC)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    bare, paired, confirmed = queue_match(now, 60, 'Bare'), queue_match(now, 120, 'Paired'), queue_match(now, 90, 'Confirmed')
+    registry.sync([bare, paired, confirmed])
+    registry.record('odds_api_io', 'offers', [paired], {paired.match_key: [Offer('odds_api_io', 'Bet365', 'totals', 'Over', 2, 2.5)]}, {}, observed_at=now)
+    ctx = MatchContext('sstats', {'HomeTeam': confirmed.home_team, 'AwayTeam': confirmed.away_team}, expected_home=1, expected_away=1)
+    registry.record('sstats', 'context', [confirmed], {confirmed.match_key: ctx}, {}, observed_at=now)
+    selected = registry.targets('other_sporting_api', 'context')
+    assert [m.home_team for m in selected] == ['Paired', 'Bare', 'Confirmed']
+
+
+def test_eligibility_filter_applies_before_provider_limit(tmp_path):
+    from app.services.daily_match_registry import DailyMatchRegistry
+    now = datetime.now(UTC)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    unsupported, supported = queue_match(now, 40, 'Unsupported'), queue_match(now, 90, 'Supported')
+    registry.sync([unsupported, supported])
+    assert registry.targets('espn', 'context', limit=1, eligible=lambda m: m.home_team == 'Supported')[0].home_team == 'Supported'
+
+
+def test_budget_truncation_is_deferred_not_a_negative_data_cache(tmp_path):
+    from app.services.daily_match_registry import DailyMatchRegistry, match_identity
+    now = datetime.now(UTC)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    m = queue_match(now)
+    registry.sync([m])
+    counts = registry.record('sstats', 'context', [m], {}, {'budget_exhausted': True}, observed_at=now)
+    attempt = registry.data['matches'][match_identity(m)]['attempts']['sstats:context']
+    assert attempt['result'] == 'deferred' and counts['deferred'] == 1
+    assert datetime.fromisoformat(attempt['retry_after']) == now + timedelta(minutes=30)
+
+
+def test_stale_provider_context_cannot_overwrite_valid_cached_evidence(tmp_path):
+    from app.services.daily_match_registry import DailyMatchRegistry
+    now = datetime.now(UTC)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    m = queue_match(now)
+    registry.sync([m])
+    good = MatchContext('sstats', {'HomeTeam': m.home_team, 'AwayTeam': m.away_team}, expected_home=1, expected_away=1)
+    registry.record('sstats', 'context', [m], {m.match_key: good}, {}, observed_at=now)
+    stale = replace(good, expected_home=4, details={'daily_source_observed_at': (now - timedelta(hours=7)).isoformat()})
+    counts = registry.record('sstats', 'context', [m], {m.match_key: stale}, {}, observed_at=now)
+    assert counts['rejected'] == 1 and counts['accepted'] == 0
+    assert registry.cached('sstats', 'context', m).expected_home == 1
+    assert registry.observation(m, 'context') == now.isoformat()
+
+
+def test_native_batch_cap_does_not_mark_unassigned_matches_as_attempted(tmp_path, monkeypatch):
+    import asyncio
+
+    from app.config import Settings
+    from app.services.daily_quality_runner import DailyQualityRunner
+    monkeypatch.chdir(tmp_path)
+    runner = DailyQualityRunner(Settings(_env_file=None, api_football_enabled=False))
+    now = datetime.now(UTC)
+    runner.registry.sync([queue_match(now, 60+i, f'Home{i}') for i in range(3)])
+    runner.inventory_matches = runner.registry.matches()
+    runner._provider_name = lambda p: 'api_football'
+    class Limited:
+        context_limit = 1
+        api_key = 'test'
+        async def fetch_context(self, matches):
+            assert len(matches) == 1
+            return {}, {'requests': 1}, {}
+    _, stats, _ = asyncio.run(runner._fetch_provider(Limited(), 'fetch_context', [], empty_data={}))
+    assert stats['assigned_matches'] == 1
+    assert sum(bool(e['attempts']) for e in runner.registry.data['matches'].values()) == 1
+
+
+def test_missing_api_key_does_not_call_provider_or_record_false_attempts(tmp_path, monkeypatch):
+    import asyncio
+
+    from app.config import Settings
+    from app.services.daily_quality_runner import DailyQualityRunner
+    monkeypatch.chdir(tmp_path)
+    runner = DailyQualityRunner(Settings(_env_file=None, api_football_enabled=False))
+    runner.registry.sync([queue_match(datetime.now(UTC))])
+    runner.inventory_matches = runner.registry.matches()
+    runner._provider_name = lambda p: 'api_football'
+    class Missing:
+        api_key = ''
+        async def fetch_context(self, matches):
+            pytest.fail('Missing-key provider called')
+    _, stats, _ = asyncio.run(runner._fetch_provider(Missing(), 'fetch_context', [], empty_data={}))
+    assert stats['assigned_matches'] == 0 and stats['reason'] == 'missing_api_key'
+    assert not next(iter(runner.registry.data['matches'].values()))['attempts']
+
+
+def test_espn_queries_only_target_league_and_target_utc_date(tmp_path, monkeypatch):
+    import asyncio
+
+    import httpx
+
+    from app.config import Settings
+    from app.providers.espn import EspnContextProvider
+    monkeypatch.chdir(tmp_path)
+    for key in ('ALL_PROXY', 'all_proxy', 'HTTP_PROXY', 'http_proxy', 'HTTPS_PROXY', 'https_proxy'):
+        monkeypatch.delenv(key, raising=False)
+    provider = EspnContextProvider(Settings(_env_file=None))
+    m = queue_match(datetime(2026, 10, 14, 10, tzinfo=UTC))
+    calls = []
+    async def get(client, url, **kwargs):
+        calls.append((url, kwargs['params']['dates']))
+        return httpx.Response(200, json={'events': []}, request=httpx.Request('GET', url))
+    monkeypatch.setattr(httpx.AsyncClient, 'get', get)
+    _, stats, _ = asyncio.run(provider.fetch_context([m]))
+    assert len(calls) == 1
+    assert '/eng.1/scoreboard' in calls[0][0]
+    assert calls[0][1] == m.commence_time.strftime('%Y%m%d')
+    assert stats['league_slugs_used'] == ['eng.1']
+
+
+def test_verified_espn_event_venue_is_available_to_weather(tmp_path):
+    from app.config import Settings
+    from app.providers.weather_common import WeatherContextEnricher
+    from app.services.daily_match_registry import DailyMatchRegistry, match_identity
+    from app.services.daily_quality_runner import DailyQualityRunner
+    now = datetime.now(UTC)
+    m = queue_match(now)
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    runner.registry.sync([m])
+    runner.inventory_matches = [m]
+    ctx = MatchContext('espn', {'event': {'competitions': [{'venue': {'fullName': 'Neutral stadium', 'address': {'city': 'London', 'country': 'England'}}}]}})
+    runner._retain_fixture_venues('espn', {m.match_key: ctx})
+    assert m.metadata['venue_source'] == 'espn'
+    assert runner.registry.data['matches'][match_identity(m)]['match']['metadata']['venue']['city'] == 'London'
+    assert WeatherContextEnricher(Settings(_env_file=None))._location_from_fixture(m, {})['query'] == 'London, England'
+
+
+def test_window_gap_counts_partition_real_matches(tmp_path):
+    from app.schemas import Offer
+    from app.services.daily_match_registry import DailyMatchRegistry
+    now = datetime.now(UTC)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    bare, line, ctx, both = [queue_match(now, name=name) for name in ('Bare', 'Line', 'Context', 'Both')]
+    registry.sync([bare, line, ctx, both])
+    for m in (line, both):
+        registry.record('odds_api_io', 'offers', [m], {m.match_key: [Offer('odds_api_io', 'Bet365', 'totals', 'Over', 2, 2.5)]}, {}, observed_at=now)
+    for m in (ctx, both):
+        c = MatchContext('sstats', {'HomeTeam': m.home_team, 'AwayTeam': m.away_team}, expected_home=1, expected_away=1)
+        registry.record('sstats', 'context', [m], {m.match_key: c}, {}, observed_at=now)
+    coverage = registry.coverage()
+    assert [coverage[key] for key in ('near_ready', 'near_only_line', 'near_only_context', 'near_missing_both')] == [1, 1, 1, 1]
+    assert coverage['near'] == 4
+    from scripts.send_daily_quality_report import render
+    assert 'Добор окна: только линия — 1; только контекст — 1; нет обоих — 1.' in render({'daily_quality': {'coverage': coverage}})
+
+
+@pytest.mark.parametrize('name,field', [('sstats', 'sstats_api_key'), ('football_data', 'football_data_api_key')])
+def test_settings_only_api_key_is_checked_without_exposing_credentials(name, field):
+    from app.services.daily_quality_runner import DailyQualityRunner
+    provider = SimpleNamespace(settings=SimpleNamespace(**{field: None}))
+    assert DailyQualityRunner._provider_missing_key(provider, name)
+    setattr(provider.settings, field, 'test')
+    assert not DailyQualityRunner._provider_missing_key(provider, name)
+
+
+def test_overnight_espn_fixture_queries_previous_calendar_bucket():
+    from app.config import Settings
+    from app.providers.espn import EspnContextProvider
+    provider = EspnContextProvider(Settings(_env_file=None))
+    m = queue_match(datetime(2026, 10, 14, 0, tzinfo=UTC), minutes=90)
+    assert provider._target_scoreboard_days([m], 'eng.1') == ['20261013', '20261014']
+
+
+def test_fixture_before_next_regular_run_outranks_later_pair_completion(tmp_path):
+    from app.schemas import Offer
+    from app.services.daily_match_registry import DailyMatchRegistry
+    now = datetime.now(UTC)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    early, later = queue_match(now, 60, 'Early'), queue_match(now, 220, 'Later')
+    registry.sync([early, later])
+    registry.record('odds_api_io', 'offers', [later], {later.match_key: [Offer('odds_api_io', 'Bet365', 'totals', 'Over', 2, 2.5)]}, {}, observed_at=now)
+    assert registry.targets('sstats', 'context', limit=1)[0].home_team == 'Early'
+
+
+def test_native_does_not_record_provider_subgroup_left_unqueried(tmp_path, monkeypatch):
+    import asyncio
+
+    from app.config import Settings
+    from app.services.daily_quality_runner import DailyQualityRunner
+    monkeypatch.chdir(tmp_path)
+    runner = DailyQualityRunner(Settings(_env_file=None, api_football_enabled=False))
+    now = datetime.now(UTC)
+    runner.registry.sync([queue_match(now, 60+i, f'Home{i}') for i in range(3)])
+    runner.inventory_matches = runner.registry.matches()
+    runner._provider_name = lambda p: 'sstats'
+    class Partial:
+        async def fetch_context(self, matches):
+            assert len(matches) == 3
+            return {}, {'requests': 1, 'attempted_match_keys': [matches[0].match_key]}, {}
+    _, stats, _ = asyncio.run(runner._fetch_provider(Partial(), 'fetch_context', [], empty_data={}))
+    assert stats['assigned_matches'] == 3 and stats['unattempted_matches'] == 2
+    assert sum(bool(e['attempts']) for e in runner.registry.data['matches'].values()) == 1

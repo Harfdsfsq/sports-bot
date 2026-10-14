@@ -1083,7 +1083,11 @@ def test_standings_coverage_counts_both_real_teams_in_restored_table(tmp_path):
     assert registry.coverage()['standings'] == 1
     context.details['thesportsdb_partial_context'] = True
     registry.record('thesportsdb', 'context', [m], {m.match_key: context}, {}, observed_at=now)
-    assert registry.coverage()['standings'] == 0
+    assert registry.coverage()['standings'] == 1  # Keep the previous complete, still-fresh response.
+    empty_registry = DailyMatchRegistry(tmp_path / 'partial.json', now)
+    empty_registry.sync([m])
+    empty_registry.record('thesportsdb', 'context', [m], {m.match_key: context}, {}, observed_at=now)
+    assert empty_registry.coverage()['standings'] == 0
 
 
 @pytest.mark.parametrize('label', ['Totals 2H', 'Totals 1H', 'totals_2h', 'Spreads HT', 'Team Total 1st Half', 'BTTS Second Half', 'Totals Extra Time', 'Totals Q1'])

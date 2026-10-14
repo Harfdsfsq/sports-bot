@@ -1,18 +1,16 @@
 from __future__ import annotations
 
+import os
 from collections import Counter
-import re
-from datetime import datetime, timedelta, timezone
-UTC = timezone.utc
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
 
-from app.services.api_budget import BudgetedAsyncClient
-
 from app.config import Settings
 from app.schemas import Match, MatchContext
-from app.utils import clamp, canonicalize_league_name, canonicalize_team_name, parse_datetime, score_event_match
+from app.services.api_budget import BudgetedAsyncClient
+from app.utils import canonicalize_league_name, canonicalize_team_name, clamp, parse_datetime, score_event_match
 
 ESPN_SOCCER_LEAGUE_ALIASES = {
     'epl': 'eng.1',
@@ -136,14 +134,16 @@ class EspnContextProvider:
         if not slugs:
             return {}, stats, preview
 
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            stats['attempted_match_keys'] = [m.match_key for m in prioritized if self._league_slug(m.league_name) in slugs]
         events_by_slug: dict[str, list[dict[str, Any]]] = {slug: [] for slug in slugs}
         now = datetime.now(UTC)
         days = max(1, int(self.settings.run_days_ahead or 4))
 
         async with BudgetedAsyncClient(timeout=self.timeout) as client:
             for slug in slugs:
-                for offset in range(days + 1):
-                    target_day = (now + timedelta(days=offset)).strftime('%Y%m%d')
+                target_days = self._target_scoreboard_days(prioritized, slug) if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' else [(now + timedelta(days=offset)).strftime('%Y%m%d') for offset in range(days + 1)]
+                for target_day in target_days:
                     url = f'{self.site_base_url}/sports/soccer/{slug}/scoreboard'
                     stats['scoreboard_requests'] += 1
                     try:
@@ -204,10 +204,25 @@ class EspnContextProvider:
 
         return contexts, stats, preview
 
+    def _target_scoreboard_days(self, matches, slug):
+        dates = set()
+        for match in matches:
+            if self._league_slug(match.league_name) != slug:
+                continue
+            kickoff = match.commence_time.astimezone(UTC)
+            dates.add(kickoff.strftime('%Y%m%d'))
+            # Overnight UTC fixtures may be listed under the previous local
+            # calendar day. Query that adjacent bucket rather than miss them.
+            if kickoff.hour < 6:
+                dates.add((kickoff - timedelta(days=1)).strftime('%Y%m%d'))
+        return sorted(dates)
+
     def supports_match(self, match: Match) -> bool:
         return bool(self._league_slug(match.league_name))
 
     def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            return list(matches)
         counts = Counter(match.league_name for match in matches)
         return sorted(
             matches,
@@ -230,6 +245,9 @@ class EspnContextProvider:
             competition_bonus = 2.5 if slug.startswith('uefa.') else 0.0
             recency_bonus = max(0.0, 3.0 - idx * 0.08)
             slug_scores[slug] = max(slug_scores.get(slug, 0.0), tier_bonus + competition_bonus + recency_bonus)
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            # Only fixture-relevant leagues, in queue order; no full allowed-pool sweep.
+            return list(slug_scores)[:max(1, int(getattr(self.settings, 'espn_slugs_per_run_limit', 30) or 30))]
         discovered = [slug for slug, _ in sorted(slug_scores.items(), key=lambda item: item[1], reverse=True)]
         if getattr(self.settings, 'espn_query_all_allowed_when_unmapped', True):
             for slug in self.allowed_leagues:

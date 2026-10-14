@@ -84,6 +84,36 @@ class DailyQualityRunner(PredictionRunner):
     def _select_provider_context_matches(self, matches, provider_name, **kwargs):
         return matches if provider_name in CONTEXT else []
 
+    def _provider_target_limit(self, provider, name, role):
+        limit = max(0, int(os.getenv('DAILY_PROVIDER_MATCH_LIMIT', '80')))
+        if role != 'context':
+            return limit
+        caps = {
+            'espn': getattr(self.settings, 'espn_max_matches', 120),
+            'football_data': getattr(self.settings, 'football_data_match_limit', 36),
+            'bzzoiro': getattr(self.settings, 'bzzoiro_context_match_limit', 300),
+            'openligadb': getattr(provider, 'match_limit', 80),
+            'api_football': getattr(provider, 'context_limit', 0),
+        }
+        cap = int(caps.get(name) or 0)
+        return min(limit, cap) if cap > 0 else limit
+
+    @staticmethod
+    def _provider_missing_key(provider, name):
+        if hasattr(provider, 'api_key'):
+            return not provider.api_key
+        field = {'sstats': 'sstats_api_key', 'football_data': 'football_data_api_key'}.get(name)
+        return bool(field and hasattr(provider, 'settings') and not getattr(provider.settings, field, None))
+
+    @staticmethod
+    def _provider_supports_match(provider, name, role, match):
+        if role == 'offers':
+            return True
+        if name == 'openligadb' and hasattr(provider, '_competition_key'):
+            return match.sport_key == 'soccer' and bool(provider._competition_key(match.league_name))
+        supports = getattr(provider, 'supports_match', None)
+        return bool(supports(match)) if callable(supports) else match.sport_key == 'soccer'
+
     async def _fetch_provider(self, provider, method_name, *args, empty_data):
         if not provider or not args or not isinstance(args[0], list):
             return await super()._fetch_provider(provider, method_name, *args, empty_data=empty_data)
@@ -92,12 +122,13 @@ class DailyQualityRunner(PredictionRunner):
         if name not in (ODDS if role == 'offers' else CONTEXT):
             return empty_data, {'enabled': False, 'reason': 'outside_daily_pipeline'}, {}
         self.registry.now = datetime.now(UTC)
-        limit = int(os.getenv('DAILY_PROVIDER_MATCH_LIMIT', '80'))
-        targets = self.registry.targets(name, role, limit=limit)
+        limit = self._provider_target_limit(provider, name, role)
+        missing_key = role == 'context' and self._provider_missing_key(provider, name)
+        targets = [] if missing_key else self.registry.targets(name, role, limit=limit, eligible=lambda m: self._provider_supports_match(provider, name, role, m))
         self.work_plan[name + ':' + role] = [match_identity(m) for m in targets]
         cached = {m.match_key: self.registry.cached(name, role, m) for m in self.inventory_matches}
         cached = {key: value for key, value in cached.items() if value}
-        data, stats, preview = {}, {'enabled': True}, {}
+        data, stats, preview = {}, {'enabled': True, **({'api_key_present': False, 'reason': 'missing_api_key'} if missing_key else {})}, {}
         if targets:
             try:
                 data, stats, preview = await asyncio.wait_for(
@@ -110,7 +141,13 @@ class DailyQualityRunner(PredictionRunner):
             # Drop data not associated with a requested canonical runtime match.
             requested_keys = {m.match_key for m in targets}
             data = {key: value for key, value in data.items() if key in requested_keys}
-            self.registry.record(name, role, targets, data, stats)
+            attempted_keys = stats.get('attempted_match_keys')
+            recorded_targets = targets
+            if isinstance(attempted_keys, list):
+                considered = set(attempted_keys) | set(data)
+                recorded_targets = [m for m in targets if m.match_key in considered]
+            stats['unattempted_matches'] = len(targets) - len(recorded_targets)
+            stats['registry_record'] = self.registry.record(name, role, recorded_targets, data, stats)
             self.registry.now = datetime.now(UTC)
         # Rebuild at completion: early cache entries may expire during API calls.
         cached = {}
@@ -170,13 +207,17 @@ class DailyQualityRunner(PredictionRunner):
 
     def _retain_fixture_venues(self, provider, contexts):
         # Use only the venue of the matched event, never a team's usual stadium.
-        if provider != 'bzzoiro':
+        if provider not in {'bzzoiro', 'espn'}:
             return
         changed = False
         for match in self.inventory_matches:
             context = contexts.get(match.match_key)
             event = context.payload.get('event') if context else None
             venue = event.get('venue') if isinstance(event, dict) else None
+            if provider == 'espn' and isinstance(event, dict):
+                raw_venue = (event.get('competitions') or [{}])[0].get('venue') or {}
+                address = raw_venue.get('address') or {}
+                venue = {'name': raw_venue.get('fullName'), 'city': address.get('city'), 'country': address.get('country')}
             if not isinstance(venue, dict) or not venue.get('city') or not venue.get('country'):
                 continue
             match.metadata.update(venue=dict(venue), country=venue['country'], venue_source=provider)
@@ -191,7 +232,7 @@ class DailyQualityRunner(PredictionRunner):
         self.registry.now = datetime.now(UTC)
         for match in matches:
             metadata = self.registry.data['matches'].get(match_identity(match), {}).get('match', {}).get('metadata', {})
-            if metadata.get('venue_source') == 'bzzoiro':
+            if metadata.get('venue_source') in {'bzzoiro', 'espn'}:
                 match.metadata.update({key: metadata[key] for key in ('venue', 'country', 'venue_source') if key in metadata})
         # Give verified locations priority within the weather request budget.
         matches = sorted(matches, key=lambda m: not (isinstance(m.metadata.get('venue'), dict) and m.metadata['venue'].get('city') and m.metadata.get('country')))

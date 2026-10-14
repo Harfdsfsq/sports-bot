@@ -140,12 +140,15 @@ class DailyMatchRegistry:
         providers = {name.split(':')[0] for name in self.data['matches'][match_identity(match)]['evidence'] if name.endswith(':' + role) and (role != 'context' or not name.startswith('weather:'))}
         return any(self.cached(p, role, match) for p in providers)
 
-    def targets(self, provider: str, role: str, *, limit: int = 60):
+    def targets(self, provider: str, role: str, *, limit: int = 60, eligible=None):
         ranked = []
         for match in self.matches():
+            if eligible is not None and not eligible(match):
+                continue
             minutes = (match.commence_time - self.now).total_seconds() / 60
             if minutes < 30:
                 continue
+            refresh_soon = False
             current = self.cached(provider, role, match)
             if current:
                 observed = parse_time(current.details.get('daily_evidence_observed_at')) if role == 'context' else None
@@ -159,10 +162,17 @@ class DailyMatchRegistry:
             if retry and self.now < retry:
                 attempted = parse_time(attempt.get('at'))
                 urgent_odds_retry = role == 'offers' and minutes <= 120 and attempt.get('result') == 'empty' and attempted is not None and self.now - attempted >= timedelta(minutes=30) and retry - attempted <= timedelta(minutes=120)
-                if not urgent_odds_retry:
+                urgent_context_retry = role == 'context' and provider != 'weather' and minutes <= 240 and attempt.get('result') == 'empty' and attempted is not None and self.now - attempted >= timedelta(minutes=30) and retry - attempted <= timedelta(minutes=120) and (refresh_soon or not self.has_role(match, 'context'))
+                if not (urgent_odds_retry or urgent_context_retry):
                     continue
             lane = 0 if minutes <= 240 else 1 if minutes <= 480 else 2
-            ranked.append(((lane, self.has_role(match, role), minutes), match))
+            has_current_role = self.has_role(match, role)
+            other_role = 'offers' if role == 'context' else 'context'
+            completes_pair = not has_current_role and self.has_role(match, other_role)
+            # With a two-hour cadence and 30-minute publication lead, these
+            # fixtures need this run; a later regular run would be too late.
+            before_next_run = minutes <= 150
+            ranked.append(((lane, has_current_role, not before_next_run, not completes_pair, minutes), match))
         ranked.sort(key=lambda item: item[0])
         # Close near window first, then prefetch next and rotate through the daily backlog.
         near = [m for key, m in ranked if key[0] == 0]
@@ -173,17 +183,26 @@ class DailyMatchRegistry:
     def record(self, provider, role, targets, data, stats, *, observed_at=None):
         fetched = observed_at or datetime.now(UTC)
         self.now = fetched
+        counts = {'accepted': 0, 'rejected': 0, 'deferred': 0, 'empty': 0, 'blocked': 0}
         for match in targets:
             entry = self.data['matches'][match_identity(match)]
             value = data.get(match.match_key)
-            if role == 'context' and provider != 'weather' and value and identity_reasons(provider, match, value):
-                reason = identity_reasons(provider, match, value)[0]
-                value = None
-                entry['evidence'].pop(provider + ':' + role, None)
-                self.data['issues'].append({'provider': provider, 'reason': reason, 'match_id': match_identity(match)})
+            rejected = False
+            if role == 'context' and provider != 'weather' and value:
+                observed = value.details.get('daily_source_observed_at') or fetched.isoformat()
+                reasons = admit_context(provider, match, value, observed, fetched)
+                if reasons:
+                    value = None
+                    counts['rejected'] += 1
+                    rejected = True
+                    # A bad response must not evict still-valid previous evidence.
+                    if self.cached(provider, role, match) is None:
+                        entry['evidence'].pop(provider + ':' + role, None)
+                    self.data['issues'].append({'provider': provider, 'reason': reasons[0], 'match_id': match_identity(match)})
             if role == 'offers' and value:
                 value = [offer for offer in value if is_full_match_market(offer)]
             if value:
+                counts['accepted'] += 1
                 payload = [asdict(offer) for offer in value] if role == 'offers' else asdict(value)
                 if role == 'offers':
                     for row in payload:
@@ -198,8 +217,25 @@ class DailyMatchRegistry:
             unavailable = bool(stats.get('auth_error') or stats.get('plan_restriction'))
             if unavailable:
                 delay = 1440
-            entry['attempts'][provider + ':' + role] = {'at': fetched.isoformat(), 'retry_after': (fetched + timedelta(minutes=delay)).isoformat(), 'result': 'data' if value else 'unavailable' if unavailable else 'empty'}
+            result = 'data' if value else 'unavailable' if unavailable else 'empty'
+            # A truncated batch or timed-out provider is not proof that a match
+            # has no data. Keep it in the queue without a two-hour negative cache.
+            if not value and not unavailable:
+                if stats.get('rate_limited'):
+                    result = 'rate_limited'
+                    delay = 120
+                elif stats.get('budget_exhausted') or stats.get('runtime_error') or stats.get('response_errors') or stats.get('reason') == 'missing_api_key':
+                    result = 'deferred'
+                    delay = 30
+                    if not rejected:
+                        counts['deferred'] += 1
+                elif not rejected:
+                    counts['empty'] += 1
+            if not value and not rejected and result in {'unavailable', 'rate_limited'}:
+                counts['blocked'] += 1
+            entry['attempts'][provider + ':' + role] = {'at': fetched.isoformat(), 'retry_after': (fetched + timedelta(minutes=delay)).isoformat(), 'result': result}
         self.save()
+        return counts
 
     def observation(self, match, role):
         times = []
@@ -212,7 +248,7 @@ class DailyMatchRegistry:
 
     def coverage(self):
         from app.providers.sstats import market_only_context
-        result = {'inventory': sum(m.commence_time.astimezone(TZ).date().isoformat() == self.date for m in self.matches()), 'line': 0, 'context': 0, 'ready': 0, 'near': 0, 'near_ready': 0, 'form': 0, 'standings': 0, 'weather': 0, 'collected_line': 0, 'collected_context': 0, 'lookahead': 0, 'near_line': 0, 'near_context': 0, 'near_missing_line': 0, 'near_missing_context': 0}
+        result = {'inventory': sum(m.commence_time.astimezone(TZ).date().isoformat() == self.date for m in self.matches()), 'line': 0, 'context': 0, 'ready': 0, 'near': 0, 'near_ready': 0, 'form': 0, 'standings': 0, 'weather': 0, 'collected_line': 0, 'collected_context': 0, 'lookahead': 0, 'near_line': 0, 'near_context': 0, 'near_missing_line': 0, 'near_missing_context': 0, 'near_only_line': 0, 'near_only_context': 0, 'near_missing_both': 0}
         for match in self.matches():
             line, context = self.has_role(match, 'offers'), self.has_role(match, 'context')
             near = 30 <= (match.commence_time - self.now).total_seconds() / 60 <= 240
@@ -222,6 +258,9 @@ class DailyMatchRegistry:
             result['near_context'] += bool(near and context)
             result['near_missing_line'] += bool(near and not line)
             result['near_missing_context'] += bool(near and not context)
+            result['near_only_line'] += bool(near and line and not context)
+            result['near_only_context'] += bool(near and context and not line)
+            result['near_missing_both'] += bool(near and not line and not context)
             evidence = self.data['matches'][match_identity(match)]['evidence']
             details = [row['payload'].get('details', {}) for name, row in evidence.items() if name.endswith(':context') and self.cached(name.split(':')[0], 'context', match)]
             if near:
