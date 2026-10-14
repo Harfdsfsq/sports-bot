@@ -5,7 +5,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-AUDIT_VERSION = 'context-audit-2026-10-12'
+AUDIT_VERSION = 'context-audit-2026-10-14'
 
 
 @lru_cache(maxsize=1)

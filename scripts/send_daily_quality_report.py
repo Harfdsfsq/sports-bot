@@ -11,6 +11,8 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'fixture_squad_ambiguous': 'источник не уточнил состав клуба в турнире с резервными командами',
+    'fixture_squad_conflict': 'указанный состав команды противоречит участникам турнира',
     'insufficient_team_sample': 'слишком мало подтверждённых матчей обеих команд для прогноза',
     'quality_insufficient_team_sample': 'слишком мало подтверждённых матчей обеих команд для прогноза',
     'context_team_identity_mismatch': 'спортивные данные относятся к другой команде или составу',

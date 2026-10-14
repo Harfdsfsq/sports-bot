@@ -11,7 +11,7 @@ from typing import Any
 import httpx
 
 from app.services.api_budget import BudgetedAsyncClient
-from app.services.fixture_identity import same_team_identity
+from app.services.fixture_identity import same_team_identity, squad_identity
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
@@ -40,13 +40,27 @@ def market_only_context(context: MatchContext) -> bool:
     return not all(any(context.payload.get(key) is not None for key in side) for side in fields)
 
 
+def form_team_key(name):
+    """Keep squad identity that the general display-name normalizer removes."""
+    base = canonicalize_team_name(name)
+    if os.getenv('PUBLICATION_PROFILE') != 'daily_quality':
+        return base
+    youth, reserve, women = squad_identity(name)
+    suffix = ['u' + age for age in youth]
+    if reserve:
+        suffix.append('reserves')
+    if women:
+        suffix.append('women')
+    return ' '.join([base, *suffix]).strip()
+
+
 def conflicting_history_indices(rows: list[dict]) -> set[int]:
     """Do not use two incompatible results for the same pair within six hours."""
     conflicting = set()
     for i, first in enumerate(rows):
         for j in range(i):
             second = rows[j]
-            if canonicalize_team_name(str(first.get('opponent') or '')) != canonicalize_team_name(str(second.get('opponent') or '')) or first.get('league') != second.get('league'):
+            if not same_team_identity(str(first.get('opponent') or ''), [str(second.get('opponent') or '')]) or first.get('league') != second.get('league'):
                 continue
             try:
                 a, b = parse_datetime(str(first['start'])), parse_datetime(str(second['start']))
@@ -816,8 +830,8 @@ class SStatsContextProvider:
                 continue
 
             league = self._extract_league_name(row)
-            home_key = canonicalize_team_name(home)
-            away_key = canonicalize_team_name(away)
+            home_key = form_team_key(home)
+            away_key = form_team_key(away)
             if not home_key or not away_key:
                 continue
 
@@ -865,13 +879,13 @@ class SStatsContextProvider:
                 continue
 
             home_recent = self._select_recent_rows(
-                team_rows.get(home_key, []),
+                [row for row in team_rows.get(home_key, []) if same_team_identity(match.home_team, [row["team"]])],
                 league_name=match.league_name,
                 before=match.commence_time,
                 limit=recent_limit,
             )
             away_recent = self._select_recent_rows(
-                team_rows.get(away_key, []),
+                [row for row in team_rows.get(away_key, []) if same_team_identity(match.away_team, [row["team"]])],
                 league_name=match.league_name,
                 before=match.commence_time,
                 limit=recent_limit,
@@ -1071,7 +1085,7 @@ class SStatsContextProvider:
         if raw in cache:
             return cache[raw]
 
-        canonical = canonicalize_team_name(raw)
+        canonical = form_team_key(raw)
         if canonical in canonical_keys and same_team_identity(raw, [canonical]):
             cache[raw] = canonical
             return canonical

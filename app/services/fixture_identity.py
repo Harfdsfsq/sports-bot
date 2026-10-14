@@ -1,11 +1,14 @@
 """Conservative team identity checks without acronym/substring fuzzy matches."""
 from __future__ import annotations
 
+import json
 import re
 from datetime import timedelta
 from difflib import SequenceMatcher
+from functools import lru_cache
+from pathlib import Path
 
-from app.utils import canonicalize_team_name, parse_datetime
+from app.utils import canonicalize_league_name, canonicalize_team_name, parse_datetime
 
 _GENERIC = {'united', 'city', 'town', 'real', 'racing', 'sporting', 'athletic', 'club', 'sbv', 'us', 'calcio'}
 
@@ -67,3 +70,38 @@ def football_data_context_matches(match, context):
         'commence_time': row.get('utcDate'),
     }
     return direct_fixture_identity(match, event)
+
+
+@lru_cache(maxsize=1)
+def competition_squad_rules():
+    path = Path(__file__).resolve().parents[2] / 'config/competition_squad_rules.json'
+    return json.loads(path.read_text())['rules']
+
+
+def fixture_squad_reasons(match):
+    """A known reserve participant cannot silently become its first team.
+
+    Rules are reviewed for a specified competition and season. No team names,
+    fixture IDs or dates are guessed or rewritten from the roster.
+    """
+    league = canonicalize_league_name(getattr(match, 'league_name', '') or '')
+    kickoff = getattr(match, 'commence_time', None)
+    if not league or kickoff is None:
+        return []
+    for rule in competition_squad_rules():
+        if kickoff.year != rule['season_year'] or league not in {canonicalize_league_name(v) for v in rule['league_names']}:
+            continue
+        for team in (getattr(match, 'home_team', ''), getattr(match, 'away_team', '')):
+            base = re.sub(r'\b(?:(?:u|under)[ -]?\d{2}|ii|iii|reserves?|women|ladies)\b|(?:\s|^)(?:b|2|3)$', ' ', team, flags=re.I)
+            # Full reviewed club names only: a city anchor such as Tallinn
+            # must not make independent FC Tallinn become Levadia or Flora.
+            tokens = set(canonicalize_team_name(base).split())
+            if not any(tokens == set(canonicalize_team_name(alias).split())
+                       for aliases in rule['club_aliases'] for alias in aliases):
+                continue
+            youth, reserve, women = squad_identity(team)
+            expected_age = str(rule['required_squad']).removeprefix('u')
+            if (youth == (expected_age,) or (not youth and reserve)) and not women:
+                continue
+            return ['fixture_squad_conflict' if youth or reserve or women else 'fixture_squad_ambiguous']
+    return []

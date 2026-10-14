@@ -437,3 +437,91 @@ def test_native_does_not_record_provider_subgroup_left_unqueried(tmp_path, monke
     _, stats, _ = asyncio.run(runner._fetch_provider(Partial(), 'fetch_context', [], empty_data={}))
     assert stats['assigned_matches'] == 3 and stats['unattempted_matches'] == 2
     assert sum(bool(e['attempts']) for e in runner.registry.data['matches'].values()) == 1
+
+
+@pytest.mark.parametrize('home,away,league,year,reason', [
+    ('FC Levadia Tallinn', 'Nomme Kalju FC', 'Estonia - Esiliiga', 2026, 'fixture_squad_ambiguous'),
+    ('FC Levadia Tallinn U21', 'Nomme Kalju FC U21', 'Estonia - Esiliiga', 2026, None),
+    ('FC Levadia Tallinn U19', 'Nomme Kalju FC U21', 'Esiliiga', 2026, 'fixture_squad_conflict'),
+    ('Tallinna FC Flora', 'Viimsi JK', 'Esiliiga', 2026, 'fixture_squad_ambiguous'),
+    ('FC Nõmme United', 'FC Tallinn', 'Esiliiga', 2026, 'fixture_squad_ambiguous'),
+    ('Viimsi JK', 'FC Tallinn', 'Esiliiga', 2026, None),
+    ('FC Levadia Tallinn', 'Nomme Kalju FC', 'Meistriliiga', 2026, None),
+    ('FC Levadia Tallinn', 'Nomme Kalju FC', 'Esiliiga', 2027, None),
+])
+def test_reviewed_competition_squad_guard_is_specific(home, away, league, year, reason):
+    from app.services.fixture_identity import fixture_squad_reasons
+    m = SimpleNamespace(home_team=home, away_team=away, league_name=league,
+                        commence_time=datetime(year, 10, 14, 16, tzinfo=UTC))
+    assert fixture_squad_reasons(m) == ([reason] if reason else [])
+
+
+def test_ambiguous_fixture_cannot_admit_context_or_publish_even_with_high_quality():
+    from app.services.context_admission import identity_reasons
+    c = candidate(blended(context(12)).details['daily_context_reliability'])
+    c.home_team, c.away_team, c.league_name = 'FC Levadia Tallinn', 'Nomme Kalju FC', 'Esiliiga'
+    c.commence_time = datetime(2026, 10, 14, 16, tzinfo=UTC)
+    c.source_summary['quality_score'] = 100
+    now = c.commence_time - timedelta(hours=1)
+    for key in ('daily_price_observed_at', 'daily_context_observed_at'):
+        c.source_summary[key] = now.isoformat()
+    assert identity_reasons('sstats', c, context(12)) == ['fixture_squad_ambiguous']
+    assert 'fixture_squad_ambiguous' in quality_decision(c, {'odds_sources_count': 1, 'context_sources_count': 1, 'books_count': 1}, now=now)[1]
+
+
+def test_form_history_keeps_adult_and_youth_buckets_separate():
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider, form_team_key
+    from app.services.context_admission import identity_reasons
+    now = datetime(2026, 10, 14, 16, tzinfo=UTC)
+    adult = queue_match(now, name='FC Levadia Tallinn', league='Meistriliiga')
+    adult.away_team = 'Nomme Kalju FC'
+    youth = replace(adult, source_event_id='youth', home_team='FC Levadia Tallinn U21',
+                    away_team='Nomme Kalju FC U21', league_name='Esiliiga',
+                    home_team_norm='levadia u21', away_team_norm='kalju u21')
+    assert form_team_key(adult.home_team) != form_team_key(youth.home_team)
+    rows = []
+    for day in range(1, 5):
+        for m, score in [(adult, (4, 0)), (youth, (0, 2))]:
+            rows.append({'HomeTeam': m.home_team, 'AwayTeam': m.away_team,
+                         'League': m.league_name, 'Date': (now-timedelta(days=day)).isoformat(),
+                         'HomeScore': score[0], 'AwayScore': score[1]})
+    contexts = []
+    for m, goals in [(adult, 4), (youth, 0)]:
+        ctx = SStatsContextProvider(Settings(_env_file=None))._build_team_form_contexts(
+            [m], rows, {'team_form_examples': []})[m.match_key]
+        contexts.append(ctx)
+        assert ctx.details['home_recent_count'] == 4
+        assert all(r['team'] == m.home_team and r['goals_for'] == goals for r in ctx.payload['home_recent'])
+        assert identity_reasons('sstats', m, ctx) == []
+    assert contexts[0].expected_home > contexts[1].expected_home
+
+
+def test_same_named_opponents_of_different_squads_are_not_conflicting_results():
+    from app.providers.sstats import conflicting_history_indices
+    now = datetime(2026, 10, 10, tzinfo=UTC)
+    row = {'opponent': 'Nomme Kalju FC', 'league': 'Cup', 'start': now,
+           'goals_for': 1, 'goals_against': 0}
+    other = dict(row, opponent='Nomme Kalju FC U21', goals_for=3)
+    assert conflicting_history_indices([row, other]) == set()
+    assert conflicting_history_indices([row, dict(other, opponent=row['opponent'])]) == {0, 1}
+
+
+def test_explicit_u21_fixture_still_rejects_cached_adult_history():
+    from app.services.context_admission import identity_reasons
+    now = datetime(2026, 10, 14, 16, tzinfo=UTC)
+    m = SimpleNamespace(home_team='FC Levadia Tallinn U21', away_team='Nomme Kalju FC U21',
+                        league_name='Esiliiga', commence_time=now)
+    ctx = MatchContext('sstats_form', {
+        'home_recent': [{'team': 'FC Levadia Tallinn', 'start': (now-timedelta(days=1)).isoformat()}],
+        'away_recent': [{'team': 'Nomme Kalju FC', 'start': (now-timedelta(days=1)).isoformat()}]})
+    assert identity_reasons('sstats', m, ctx) == ['context_team_identity_mismatch']
+
+
+def test_confirmed_u21_incident_is_excluded_without_rewriting_financial_row():
+    from app.services.prediction_audit import invalid_prediction_reasons
+    row = {'prediction_id': 'soccer|levadia tallinn|nomme kalju|2026-10-14|teamTotals|under|home|3.5|2026-10-14T16:00:00+00:00',
+           'stake': 2.5, 'status': 'pending', 'pnl': None}
+    original = dict(row)
+    assert invalid_prediction_reasons(row) == ['first_team_history_used_for_confirmed_esiliiga_u21_fixture']
+    assert row == original

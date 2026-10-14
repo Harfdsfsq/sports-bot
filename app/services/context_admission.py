@@ -3,11 +3,14 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from app.services.fixture_identity import direct_fixture_identity, football_data_context_matches, same_team_identity
+from app.services.fixture_identity import direct_fixture_identity, fixture_squad_reasons, football_data_context_matches, same_team_identity
 from app.utils import parse_datetime
 
 
 def identity_reasons(provider, match, context):
+    squad_reasons = fixture_squad_reasons(match)
+    if squad_reasons:
+        return squad_reasons
     payload = context.payload or {}
     if provider == 'football_data':
         return [] if football_data_context_matches(match, context) else ['context_fixture_identity_mismatch']
