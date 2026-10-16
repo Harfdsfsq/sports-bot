@@ -461,3 +461,37 @@ recent_home_evidence/recent_away_evidence рядом с числовой выб�
 Тест проверяет создание контекста реальным адаптером, его запись в реестр,
 сериализацию, восстановление и повторный допуск, а также старый формат.
 Банк и финансовая история при исправлении не переписываются.
+
+### 2026-10-16: daily-goals-v2
+
+The daily model now uses admitted provider goal projections once. It no longer
+adds hand-written form, points-per-game, rest or injury uplifts on top of those
+projections, nor another total/team-total/BTTS probability adjustment. For daily
+totals, direct provider over probabilities no longer override the common Poisson
+score distribution. Integer-line refunds and raw outcome probabilities therefore
+use the same goal intensities. Market shrinkage, quality/price guards, historical
+risk guards, publication limits and stakes remain in force. Legacy mode retains
+its previous goal adjustments.
+
+Context merging is deterministic. Conflicting top-level features are omitted
+rather than chosen by API completion order; original per-provider features are
+retained under `daily_provider_features`, with names of conflicts recorded under
+`daily_feature_conflicts`. Candidates record `goal_model_version` and
+`context_feature_conflicts`; the current-run summary and Telegram report also
+identify the goal model version. These changes are correctness fixes, not a
+trained model or evidence of increased profitability.
+
+Daily/loose match keys and registry IDs now preserve explicit youth, reserve and
+women's squad markers. Existing first-team keys stay unchanged. On registry load,
+old explicit-squad entries are re-keyed using their saved team names; publication
+acknowledgements are transferred, while old cached evidence/retry state is
+cleared for refetching. The financial ledger and historical prediction IDs are
+not rewritten. This migration cannot infer a squad missing from the saved name;
+existing admission and reviewed competition-roster guards still reject those
+ambiguous fixtures. The legacy daily match key still groups a team pair by date;
+full competition/kickoff-based routing is a separate migration.
+
+For the next user-triggered runs, inspect delivery errors, migrated publication
+markers, source matching, raw win/push probabilities and candidate counts. Track
+new v2 results separately when comparing with v1. Do not reset the bank, discard
+losses, relax guards or increase stakes to obtain a target daily pick count.

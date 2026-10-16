@@ -739,3 +739,114 @@ def test_thesportsdb_unsupported_leagues_do_not_exhaust_catalog_limit(monkeypatc
     assert calls[-1] == ('/lookuptable.php', {'l': '4329'})
     assert stats['unsupported_catalog_matches'] == 5
     assert stats['attempted_match_keys'] == [supported.match_key]
+
+
+def test_conflicting_provider_features_do_not_depend_on_completion_order():
+    a = context(8)
+    a.details.update(home_form=.8, away_form=.2, home_ppg=2., away_ppg=1.)
+    b = context(8, source='football_data')
+    b.details.update(football_data_home_sample=8, football_data_away_sample=8,
+                     home_form=.2, away_form=.8, home_ppg=1., away_ppg=2.)
+    first, second = blended(a, b), blended(b, a)
+    assert first == second
+    assert 'home_form' not in first.details
+    assert 'home_form' in first.details['daily_feature_conflicts']
+    assert len(first.details['daily_provider_features']) == 2
+    assert a.details['home_form'] == .8
+
+
+def test_daily_goal_projection_is_not_increased_by_duplicate_features(monkeypatch):
+    from app.services.model import CandidateFactory
+    factory = CandidateFactory(SimpleNamespace(target_bookmakers=[], consensus_bookmakers=[]))
+    c = context(8)
+    c.details.update(home_form=.8, away_form=.2, home_ppg=2., away_ppg=1.,
+                     home_rest_days=7., away_rest_days=3.)
+    assert factory._enriched_expected_goals(None, c) == (1.4, 1.2)
+    assert factory._adjust_total_probability(.6, 2.5, 1.4, 1.2, c) == .6
+    assert factory._adjust_team_total_probability(.6, 1.4, 1.5, 'home', c) == .6
+    monkeypatch.setenv('PUBLICATION_PROFILE', 'legacy')
+    assert factory._enriched_expected_goals(None, c)[0] == pytest.approx(1.6526)
+
+
+@pytest.mark.parametrize('point', [2., 2.5, 3., 3.5])
+def test_daily_totals_derive_probability_and_refund_from_same_goal_model(point, monkeypatch):
+    from collections import defaultdict
+    from pathlib import Path
+    from app.config import Settings
+    from app.schemas import Match, Offer
+    from app.services.model import CandidateFactory
+    from app.services.daily_goal_probability import total_probability
+    for line in Path('config/daily_quality.env').read_text().splitlines():
+        if line and not line.startswith('#'):
+            key, value = line.split('=', 1)
+            monkeypatch.setenv(key, value)
+    factory = CandidateFactory(Settings(_env_file=None))
+    now = datetime.now(UTC)
+    m = Match('day_inventory', 'test', 'soccer', 'Premier League', 'Home', 'Away',
+              now + timedelta(hours=1), 'home', 'away', 'premier')
+    c = blended(context(12))
+    # An API's unrelated direct total probability must not override score math.
+    c.details.update(prob_over_2_5=.99, home_form=.95, away_form=.95,
+                     home_gf_pg=3., away_gf_pg=3., home_ga_pg=3., away_ga_pg=3.)
+    offers = [Offer('odds_api_io', book, 'totals', side, 2., point)
+              for book in ['Bet365', 'Unibet'] for side in ['Over', 'Under']]
+    candidates = factory._build_totals_candidates(m, offers, c, defaultdict(int))
+    assert len(candidates) == 2
+    distribution = total_probability(2.6, point)
+    for candidate_row in candidates:
+        expected = distribution.decisive_win if candidate_row.selection_key == 'over' else 1-distribution.decisive_win
+        assert candidate_row.model_probability == pytest.approx(expected)
+        assert candidate_row.source_summary['model_push_probability'] == pytest.approx(distribution.push)
+        assert candidate_row.source_summary['goal_model_version'] == 'daily-goals-v2'
+
+
+def test_squad_keys_distinguish_teams_and_preserve_adult_key():
+    from app.utils import build_match_key
+    now = datetime(2026, 10, 16, tzinfo=UTC)
+    def key(home):
+        return build_match_key('soccer', home, 'Nomme Kalju FC', now)
+    adult = key('FC Levadia Tallinn')
+    assert adult == 'soccer|levadia tallinn|nomme kalju|2026-10-16'
+    assert len({adult, key('FC Levadia Tallinn U21'), key('FC Levadia Tallinn II'),
+                key('FC Levadia Tallinn III'), key('FC Levadia Tallinn Women')}) == 5
+    assert key('FC Levadia Tallinn U21') == key('FC Levadia Tallinn Under 21')
+
+
+def test_registry_migration_keeps_publication_and_requeues_squad_evidence(tmp_path):
+    import hashlib
+    import json
+    from dataclasses import asdict
+    from app.schemas import Match
+    from app.services.daily_match_registry import DailyMatchRegistry, match_identity
+    from app.utils import canonicalize_team_name
+    now = datetime(2026, 10, 16, 10, tzinfo=UTC)
+    m = Match('sstats', 'u21', 'soccer', 'Esiliiga', 'FC Levadia Tallinn U21',
+              'Nomme Kalju FC U21', now+timedelta(hours=1), 'levadia', 'kalju', 'esiliiga')
+    old = '|'.join(['soccer', *sorted([canonicalize_team_name(m.home_team), canonicalize_team_name(m.away_team)]), m.commence_time.isoformat()])
+    old_id = hashlib.sha256(old.encode()).hexdigest()[:24]
+    path = tmp_path / 'registry.json'
+    path.write_text(json.dumps({'date_local': '2026-10-16', 'matches': {old_id: {
+        'match': asdict(m), 'provider_ids': {}, 'evidence': {'old': {}}, 'attempts': {'old': {}}}},
+        'published': [{'match_id': old_id, 'tier': 'B', 'at': now.isoformat()}], 'issues': []}, default=str))
+    registry = DailyMatchRegistry(path, now)
+    new_id = match_identity(m)
+    assert new_id != old_id and old_id not in registry.data['matches']
+    entry = registry.data['matches'][new_id]
+    assert entry['publication']['match_id'] == new_id
+    assert not entry['evidence'] and not entry['attempts']
+    assert registry.data['published'][0]['match_id'] == new_id
+    registry.save()
+    assert DailyMatchRegistry(path, now).data == registry.data
+
+
+def test_export_keeps_model_version_without_changing_settlement(tmp_path):
+    from app.state import JsonStateStore
+    state = JsonStateStore(str(tmp_path/'state.json'), str(tmp_path/'debug.json'))
+    bet = {'status': 'won', 'odds': 2., 'stake_amount': 2.5,
+           'settlement': {'pnl': 2.5, 'outcome': 'won'},
+           'source_summary': {'goal_model_version': 'daily-goals-v2',
+                              'context_feature_conflicts': ['home_form']}}
+    row = state._accounting_row_for_bet(bet)
+    assert row['goal_model_version'] == 'daily-goals-v2'
+    assert row['context_feature_conflicts'] == ['home_form']
+    assert bet['settlement']['pnl'] == 2.5

@@ -21,6 +21,22 @@ def squad_identity(name):
     return tuple(sorted(youth)), reserve, women
 
 
+def team_identity_key(name):
+    """Keep existing first-team keys, distinguish youth, women and reserves."""
+    youth, reserve, women = squad_identity(name)
+    suffix = [f'u{age}' for age in youth]
+    if reserve:
+        text = str(name or '').lower()
+        level = '3' if re.search(r'\biii\b|(?:\s|^)3$', text) else '2'
+        suffix.append('reserve' + level)
+    if women:
+        suffix.append('women')
+    # The common normalizer handles U21 but not every spelling of Under 21.
+    base_name = re.sub(r'\b(?:u|under)[ -]?\d{2}\b', ' ', str(name or ''), flags=re.I)
+    base = canonicalize_team_name(base_name)
+    return base + ('#' + ','.join(suffix) if suffix else '')
+
+
 def same_team_identity(target, aliases):
     def normalized(name):
         text = str(name or '').translate(str.maketrans({'ø': 'o', 'Ø': 'O', 'ł': 'l', 'Ł': 'L', 'đ': 'd'}))

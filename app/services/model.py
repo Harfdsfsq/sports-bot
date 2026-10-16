@@ -173,7 +173,8 @@ class CandidateFactory:
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
-            explicit_total_prob = self._context_total_probability(context, point)
+            explicit_total_prob = (None if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality'
+                                   else self._context_total_probability(context, point))
             if explicit_total_prob is not None:
                 over_prob = explicit_total_prob
                 model_reason = 'context_total_probability'
@@ -1302,6 +1303,7 @@ class CandidateFactory:
             team_side=best_offer.team_side,
             analysis=analysis,
             source_summary={
+                'goal_model_version': ('daily-goals-v2' if daily_profile else 'legacy'),
                 'books': sorted(books),
                 'sources': sorted(sources),
                 'offers_seen': len(offers),
@@ -1317,6 +1319,7 @@ class CandidateFactory:
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode') or ('market_signal' if market_signal_derived else None),
                 'daily_context_reliability': context_details.get('daily_context_reliability'),
+                'context_feature_conflicts': context_details.get('daily_feature_conflicts', []),
                 'home_recent_count': context_details.get('home_recent_count'),
                 'away_recent_count': context_details.get('away_recent_count'),
                 'model_push_probability': model_push,
@@ -2121,6 +2124,10 @@ class CandidateFactory:
         base = self._validated_expected_goals(context)
         if base is None:
             return None
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            # Sporting providers already use form, goals and table information.
+            # Apply no second, untrained feature uplift to those projections.
+            return base
         home, away = base
         details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         max_goal = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
@@ -2400,6 +2407,8 @@ class CandidateFactory:
         return clamp(number, 0.0, 1.0)
 
     def _adjust_total_probability(self, base_prob: float, point: float, expected_home: float, expected_away: float, context: MatchContext | None) -> float:
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            return float(base_prob)
         prob = clamp(float(base_prob), 0.02, 0.98)
         details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         env = 0.0
@@ -2418,6 +2427,8 @@ class CandidateFactory:
         return clamp(prob + env, 0.02, 0.98)
 
     def _adjust_btts_probability(self, base_prob: float, expected_home: float, expected_away: float, context: MatchContext | None) -> float:
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            return float(base_prob)
         prob = clamp(float(base_prob), 0.02, 0.98)
         details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         boost = 0.0
@@ -2442,6 +2453,8 @@ class CandidateFactory:
         context: MatchContext | None,
     ) -> float:
         prob_yes = clamp(float(yes_prob), 0.02, 0.98)
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            return float(yes_prob) if selection_key == 'yes' else 1.0 - float(yes_prob)
         over25 = self._context_total_probability(context, 2.5)
         if over25 is not None:
             synergy = float(getattr(self.settings, 'btts_over25_synergy_weight', 0.08) or 0.08)
@@ -2496,6 +2509,8 @@ class CandidateFactory:
         return clamp(prob, 0.04, 0.88)
 
     def _adjust_team_total_probability(self, base_prob: float, lam: float, point: float, team_side: str, context: MatchContext | None) -> float:
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            return float(base_prob)
         prob = clamp(float(base_prob), 0.02, 0.98)
         details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         att_key = 'api_football_home_attack' if team_side == 'home' else 'api_football_away_attack'

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import math
 import os
+import json
 from dataclasses import replace
 
 
@@ -77,7 +78,9 @@ def blend_contexts(contexts, weight_for_source):
     """Flat blend: no repeated source-count bonus or order-dependent averaging."""
     if not contexts:
         raise ValueError('No sporting contexts to blend')
-    contexts = list(contexts)
+    # Stable ordering also makes payloads, provenance and floating point sums
+    # reproducible. Provider completion order must never select a feature.
+    contexts = sorted(contexts, key=lambda c: (c.source, json.dumps(c.details or {}, sort_keys=True, default=str)))
     supports = [sample_support(c) for c in contexts]
     # Clamp invalid provider projections before they enter any ensemble.
     cleaned = []
@@ -122,10 +125,21 @@ def blend_contexts(contexts, weight_for_source):
     all_thin = bool(predictive) and all(s['status'] in {'thin', 'unverified_table'} for _, s, _ in predictive)
     a_supported = share >= .5 and disagreement <= float(os.getenv('DAILY_A_MAX_GOAL_DISAGREEMENT', '.65'))
     cap = 59. if all_thin else 69. if not a_supported else 100.
-    details, profits = {}, {}
-    for c in contexts:
-        details.update(c.details or {})
-        profits.update(c.profits or {})
+    def unambiguous_maps(maps):
+        result, conflicts = {}, set()
+        for mapping in maps:
+            for key, value in mapping.items():
+                if key in result and result[key] != value:
+                    conflicts.add(key)
+                else:
+                    result[key] = value
+        return {k: v for k, v in result.items() if k not in conflicts}, sorted(conflicts)
+
+    details, conflicts = unambiguous_maps([c.details or {} for c in contexts])
+    profits, _ = unambiguous_maps([c.profits or {} for c in contexts])
+    details['daily_provider_features'] = [
+        {'source': c.source, 'details': dict(c.details or {})} for c in contexts]
+    details['daily_feature_conflicts'] = conflicts
     evidence = {'version': 'evidence-v1', 'sources': supports, 'best_team_sample': best_sample,
                 'supported_weight_share': round(share, 4), 'goal_disagreement': round(disagreement, 4),
                 'a_supported': a_supported, 'all_thin': all_thin, 'confidence_cap': cap}

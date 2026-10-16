@@ -474,7 +474,8 @@ def get_date_key(value: datetime | str) -> str:
 
 
 def sort_pair(a: str, b: str) -> str:
-    return "|".join(sorted([canonicalize_team_name(a), canonicalize_team_name(b)]))
+    from app.services.fixture_identity import team_identity_key
+    return "|".join(sorted([team_identity_key(a), team_identity_key(b)]))
 
 
 def build_match_key(sport: str, home: str, away: str, when: datetime | str) -> str:

@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 from app.schemas import Match, MatchContext, Offer
 from app.services.context_admission import admit_context, identity_reasons
 from app.services.market_period import is_full_match_market
+from app.services.fixture_identity import team_identity_key
 from app.utils import canonicalize_team_name
 
 TZ = ZoneInfo('Europe/Moscow')
@@ -41,7 +42,7 @@ def write_json(path, payload):
 
 
 def match_identity(match: Match) -> str:
-    pair = sorted([canonicalize_team_name(match.home_team), canonicalize_team_name(match.away_team)])
+    pair = sorted([team_identity_key(match.home_team), team_identity_key(match.away_team)])
     identity = '|'.join([match.sport_key, *pair, match.commence_time.astimezone(UTC).isoformat()])
     return hashlib.sha256(identity.encode()).hexdigest()[:24]
 
@@ -51,6 +52,27 @@ class DailyMatchRegistry:
         self.path, self.now = Path(path), now.astimezone(UTC)
         self.date = now.astimezone(TZ).date().isoformat()
         payload = read_json(path, {})
+        # Re-key only explicit youth/reserve/women entries. Adult IDs are stable.
+        # Retain publication acknowledgements but discard potentially conflated
+        # cached evidence and retry state. Financial ledgers are never rewritten.
+        remapped = {}
+        for old_key, entry in list(payload.get('matches', {}).items()):
+            row = dict(entry['match'])
+            row['commence_time'] = parse_time(row['commence_time'])
+            if row['commence_time'] is None:
+                continue
+            new_key = match_identity(Match(**row))
+            if new_key == old_key:
+                continue
+            if new_key in payload['matches']:
+                raise ValueError('Conflicting registry identity during squad migration')
+            payload['matches'][new_key] = payload['matches'].pop(old_key)
+            entry['evidence'], entry['attempts'] = {}, {}
+            if entry.get('publication'):
+                entry['publication']['match_id'] = new_key
+            remapped[old_key] = new_key
+        for publication in payload.get('published', []):
+            publication['match_id'] = remapped.get(publication.get('match_id'), publication.get('match_id'))
         # Retain acknowledged-match markers even when the sending day rolls over.
         for publication in payload.get('published', []):
             entry = payload.get('matches', {}).get(publication.get('match_id'))

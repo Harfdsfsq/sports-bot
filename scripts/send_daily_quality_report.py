@@ -174,6 +174,8 @@ def render(summary):
         lines.append('ℹ️ Сегодняшний инвентарь ниже 300: подключённые источники пока дали меньше матчей. Это фактическое покрытие; недостающие матчи не создаются искусственно.')
     if c.get('near_ready', 0) < c.get('near', 0):
         lines.append('⚠️ Ближайшее окно покрыто частично; отсутствующие данные остаются в очереди.')
+    if summary.get('goal_model_version'):
+        lines.extend(['', f"🧠 Голевая модель: {summary['goal_model_version']} — без повторных надбавок за форму и таблицу."])
     lines.extend(['', 'Проценты модели — оценки, а не подтверждённая проходимость. A/B обозначает качество отбора, а не гарантированный исход.',
                   f"Run {os.getenv('GITHUB_RUN_ID', 'local')} · {os.getenv('GITHUB_REF_NAME', 'local')}"])
     return '\n'.join(lines)

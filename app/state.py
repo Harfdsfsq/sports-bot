@@ -976,6 +976,8 @@ class JsonStateStore:
             'selected_bookmaker': source_summary.get('selected_bookmaker') or '',
             'selected_source': source_summary.get('selected_source') or '',
             'context_source': source_summary.get('context_source') or '',
+            'goal_model_version': source_summary.get('goal_model_version') or 'unversioned',
+            'context_feature_conflicts': source_summary.get('context_feature_conflicts') or [],
             'context_sources': source_summary.get('context_sources') or '',
             'context_confidence': self._round_value(source_summary.get('context_confidence'), 2),
             'model_push_probability': source_summary.get('model_push_probability'),
