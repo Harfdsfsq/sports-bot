@@ -861,6 +861,7 @@ class PredictionQualityService:
     def _apply_probability_adjustment(self, candidate: CandidateBet, delta: float) -> None:
         if abs(delta) < 0.0001:
             return
+        previous_probability = float(candidate.adjusted_probability)
         adjusted = clamp(float(candidate.adjusted_probability) + float(delta), 0.02, 0.98)
         candidate.adjusted_probability = adjusted
         candidate.final_probability = adjusted
@@ -872,6 +873,24 @@ class PredictionQualityService:
         candidate.confidence = clamp(float(candidate.confidence) + min(1.0, max(-5.0, delta * 45.0)), 0.0, 100.0)
         candidate.publication_score = round(float(candidate.publication_score) + delta * 135.0, 3)
         candidate.reasons.append(f'historical_calibration={delta * 100.0:+.2f}pp')
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            summary = candidate.source_summary
+            summary.setdefault('pre_calibration_adjusted_probability', previous_probability)
+            summary['adjusted_probability'] = round(adjusted, 4)
+            summary['probability_gap_pp'] = round(candidate.edge_pct, 2)
+            analysis = dict(getattr(candidate, 'analysis', None) or {})
+            sections = dict(analysis.get('sections') or {})
+            old_edge = sections.get('edge')
+            new_edge = (f'После калибровки модель даёт {adjusted * 100:.1f}% против '
+                        f'{candidate.market_probability * 100:.1f}% по линии; '
+                        f'запас {candidate.edge_pct:+.1f} п.п., EV {candidate.ev_pct:+.1f}%.')
+            sections['edge'] = new_edge
+            analysis.update(sections=sections, probability_gap_pp=summary['probability_gap_pp'],
+                            confidence=candidate.confidence)
+            for mapping, key in ((analysis, 'summary_points'), (summary, 'analysis_points')):
+                points = list(mapping.get(key) or [])
+                mapping[key] = [new_edge if old_edge and point == old_edge else point for point in points]
+            candidate.analysis = analysis
 
     def _candidate_quality_score(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> float:
         if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':

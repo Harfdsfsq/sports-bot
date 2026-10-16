@@ -501,3 +501,13 @@ is no longer treated as a women's squad marker; trailing W / (W) and explicit
 women's names still are. The report now distinguishes no qualifying candidates
 from qualifying candidates already acknowledged as published. This does not
 change publication deduplication or reopen historical bets.
+
+Run 38920474929 follow-up: Telegram evidence labels now identify per-provider
+recent-form samples separately from games played in season tables (for example,
+SStats 4/5 recent games versus Football-data 8/8 season games). This only changes
+explanations, not evidence weights or tier thresholds. Historical probability
+calibration also synchronizes the candidate's diagnostic adjusted probability,
+probability gap and edge explanation; the pre-calibration probability remains
+explicitly available. This avoids final Telegram values disagreeing with stale
+pre-calibration prose inside JSON artifacts. Raw score-model probabilities and
+financial history are unchanged.

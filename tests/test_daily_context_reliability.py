@@ -877,3 +877,37 @@ def test_report_explains_only_remaining_candidate_already_published():
     summary['dry_run'] = False
     summary['daily_quality']['published_today'] = [{'tier': 'B'}]*5
     assert 'дневной лимит достигнут' in render(summary)
+
+
+def test_sample_description_distinguishes_recent_form_and_season_table():
+    from app.services.daily_context_reliability import sample_description
+    form = MatchContext('sstats_form', {}, details={'home_recent_count': 4, 'away_recent_count': 5})
+    table = MatchContext('football_data', {}, details={'football_data_mode': 'standings',
+                          'football_data_home_played': 8, 'football_data_away_played': 8})
+    f, t = sample_support(form), sample_support(table)
+    assert f['sample_kind'] == 'recent_matches'
+    assert t['sample_kind'] == 'season_table'
+    description = sample_description({'sources': [f, t], 'best_team_sample': 8})
+    assert 'форма SStats: 4/5' in description
+    assert 'таблица сезона Football-data: 8/8' in description
+    assert sample_description({'best_team_sample': 8}).startswith('выборка наиболее полного')
+
+
+def test_calibration_synchronizes_artifact_explanation_and_keeps_previous_estimate():
+    service = PredictionQualityService(SimpleNamespace())
+    old_text = 'Модель до калибровки: 47.9%'
+    c = SimpleNamespace(adjusted_probability=.47868, final_probability=.47868,
+         market_probability=.38436, odds=2.55, confidence=70., publication_score=50.,
+         reasons=[], source_summary={'model_push_probability': .21468,
+         'adjusted_probability': .4787, 'analysis_points': [old_text, 'Другой контекст']},
+         analysis={'sections': {'edge': old_text, 'recent': 'Контекст'},
+                   'summary_points': [old_text, 'Другой контекст']})
+    service._apply_probability_adjustment(c, -.05962)
+    assert c.adjusted_probability == pytest.approx(.41906)
+    assert c.source_summary['adjusted_probability'] == pytest.approx(.4191)
+    assert c.source_summary['pre_calibration_adjusted_probability'] == .47868
+    assert '41.9%' in c.analysis['sections']['edge']
+    assert '47.9%' not in str(c.analysis)
+    assert c.source_summary['analysis_points'] == c.analysis['summary_points']
+    assert c.analysis['sections']['recent'] == 'Контекст'
+    assert c.analysis['probability_gap_pp'] == c.source_summary['probability_gap_pp']

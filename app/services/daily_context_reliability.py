@@ -70,8 +70,32 @@ def sample_support(context):
     status = 'unknown' if minimum is None else 'thin' if minimum < 3 else 'limited' if minimum < a_sample_floor() else 'supported'
     if minimum is None and source == 'football_data' and d.get('football_data_mode') == 'standings':
         status = 'unverified_table'
+    table = (source == 'football_data' and d.get('football_data_mode') == 'standings'
+             or source == 'thesportsdb'
+             or source == 'openligadb' and d.get('openligadb_history_home_sample') is None)
+    kind = 'unknown' if minimum is None else 'season_table' if table else 'recent_matches'
     return {'provider': source, 'home': home, 'away': away, 'minimum': minimum, 'status': status,
+            'sample_kind': kind,
             'form_weighting_version': d.get('sstats_form_weighting_version')}
+
+
+def sample_description(evidence):
+    """Separate recent form samples from games played in season tables."""
+    parts = []
+    names = {'sstats': 'SStats', 'sstats_form': 'SStats', 'football_data': 'Football-data',
+             'espn': 'ESPN', 'openligadb': 'OpenLigaDB', 'thesportsdb': 'TheSportsDB'}
+    for source in evidence.get('sources') or []:
+        if source.get('minimum') is None:
+            continue
+        kind = source.get('sample_kind')
+        label = 'форма' if kind == 'recent_matches' else 'таблица сезона' if kind == 'season_table' else 'выборка'
+        provider = names.get(source.get('provider'), source.get('provider') or 'источник')
+        parts.append(f"{label} {provider}: {source.get('home')}/{source.get('away')} матчей (хозяева/гости)")
+    if parts:
+        return '; '.join(parts)
+    support = evidence.get('best_team_sample')
+    return (f'выборка наиболее полного источника: от {support} матчей на команду' if support is not None
+            else 'объём выборки источника не указан; максимум B-tier')
 
 
 def blend_contexts(contexts, weight_for_source):
