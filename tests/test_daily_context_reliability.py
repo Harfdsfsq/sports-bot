@@ -850,3 +850,30 @@ def test_export_keeps_model_version_without_changing_settlement(tmp_path):
     assert row['goal_model_version'] == 'daily-goals-v2'
     assert row['context_feature_conflicts'] == ['home_form']
     assert bet['settlement']['pnl'] == 2.5
+
+
+@pytest.mark.parametrize('name', ['H W Welders', 'H&W Welders', 'Harland And Wolff Welders'])
+def test_club_initial_w_is_not_a_womens_squad(name):
+    from app.services.fixture_identity import squad_identity, team_identity_key
+    assert not squad_identity(name)[2]
+    assert '#women' not in team_identity_key(name)
+
+
+@pytest.mark.parametrize('name', ['Chelsea W', 'Chelsea (W)', 'Chelsea Women', 'Chelsea Ladies'])
+def test_explicit_womens_suffix_still_distinguishes_squad(name):
+    from app.services.fixture_identity import squad_identity
+    assert squad_identity(name)[2]
+
+
+def test_report_explains_only_remaining_candidate_already_published():
+    from scripts.send_daily_quality_report import render
+    summary = {'published_to_telegram': 0, 'candidates_raw': 1, 'skipped_already_in_state': 1,
+               'daily_quality': {'published_today': [], 'coverage': {}}}
+    report = render(summary)
+    assert 'Прошедшие отбор ставки уже отправлены' in report
+    assert 'Защита от повторов' in report
+    summary['dry_run'] = True
+    assert 'Проверка без отправки' in render(summary)
+    summary['dry_run'] = False
+    summary['daily_quality']['published_today'] = [{'tier': 'B'}]*5
+    assert 'дневной лимит достигнут' in render(summary)

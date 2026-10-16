@@ -68,8 +68,11 @@ def render(summary):
     a, b = sum(row['tier'] == 'A' for row in published), sum(row['tier'] == 'B' for row in published)
     picks = int(summary.get('published_to_telegram') or 0)
     dry = bool(summary.get('dry_run'))
+    duplicates = int(summary.get('skipped_already_in_state') or 0)
+    only_duplicates = (int(summary.get('candidates_raw') or 0) > 0
+                       and duplicates >= int(summary.get('candidates_raw') or 0))
     lines = ['🧾 HARIZON — отчёт по запуску',
-             ('🧪 Проверка без отправки прогнозов' if dry else f'✅ Отправлено прогнозов: {picks}' if picks else '⏸ Новые прогнозы не отправлены: дневной лимит достигнут' if len(published) >= 5 else '🟡 Подходящих прогнозов не отправлено'),
+             ('🧪 Проверка без отправки прогнозов' if dry else f'✅ Отправлено прогнозов: {picks}' if picks else '⏸ Новые прогнозы не отправлены: дневной лимит достигнут' if len(published) >= 5 else 'ℹ️ Прошедшие отбор ставки уже отправлены; повторная отправка пропущена' if only_duplicates else '🟡 Подходящих прогнозов не отправлено'),
              '', '📦 Дневной инвентарь — ' + str(summary.get('current_time_local', '')[:10]), f"Собрано {c.get('inventory', 0)} матчей при цели 300. Каждый матч имеет постоянную привязку к командам и времени начала.",
              f"Данные получены за день: линия {c.get('collected_line', 0)}, контекст {c.get('collected_context', 0)}.",
              f"Актуально сейчас: линия {c.get('line', 0)}, контекст {c.get('context', 0)}, оба вида данных {c.get('ready', 0)}.",
@@ -91,6 +94,8 @@ def render(summary):
     if 'near_missing_both' in c:
         position = next(i for i, line in enumerate(lines) if line.startswith('Дополнительные данные окна:'))
         lines.insert(position, f"Добор окна: только линия — {c.get('near_only_line', 0)}; только контекст — {c.get('near_only_context', 0)}; нет обоих — {c['near_missing_both']}.")
+    if duplicates:
+        lines.append(f'Защита от повторов: ранее опубликованных вариантов — {duplicates}. Повторно не отправлены.')
     bank = summary.get('bankroll') or {}
     if bank:
         lines.insert(2, f"💼 Банк: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")

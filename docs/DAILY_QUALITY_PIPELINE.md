@@ -495,3 +495,9 @@ For the next user-triggered runs, inspect delivery errors, migrated publication
 markers, source matching, raw win/push probabilities and candidate counts. Track
 new v2 results separately when comparing with v1. Do not reset the bank, discard
 losses, relax guards or increase stakes to obtain a target daily pick count.
+
+Run 38906292868 follow-up: a standalone W inside a club name (H W Welders)
+is no longer treated as a women's squad marker; trailing W / (W) and explicit
+women's names still are. The report now distinguishes no qualifying candidates
+from qualifying candidates already acknowledged as published. This does not
+change publication deduplication or reopen historical bets.

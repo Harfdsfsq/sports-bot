@@ -17,7 +17,10 @@ def squad_identity(name):
     text = str(name or '').lower()
     youth = re.findall(r'\b(?:u|under)[ -]?(\d{2})\b', text)
     reserve = bool(re.search(r'\b(?:ii|iii|reserves?|резерв|дубль)\b|(?:\s|^)(?:b|2|3)$', text))
-    women = bool(re.search(r'\b(?:women|woman|ladies|femenino|femenina|wfc|женщины|w)\b', text))
+    # A club initial (H W Welders / H&W Welders) is not a women's marker.
+    # The short W convention is accepted only as a trailing squad suffix.
+    women = bool(re.search(r'\b(?:women|woman|ladies|femenino|femenina|wfc|женщины)\b', text)
+                 or re.search(r'(?:\s|\()w\)?$', text.strip()))
     return tuple(sorted(youth)), reserve, women
 
 
