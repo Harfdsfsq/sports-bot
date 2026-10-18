@@ -10,7 +10,7 @@ import os
 import json
 from dataclasses import replace
 
-GOAL_MODEL_VERSION = 'daily-goals-v3'
+GOAL_MODEL_VERSION = 'daily-goals-v4'
 
 
 def b_sample_floor():

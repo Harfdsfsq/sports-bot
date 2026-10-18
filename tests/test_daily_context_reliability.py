@@ -797,7 +797,7 @@ def test_daily_totals_derive_probability_and_refund_from_same_goal_model(point, 
         expected = distribution.decisive_win if candidate_row.selection_key == 'over' else 1-distribution.decisive_win
         assert candidate_row.model_probability == pytest.approx(expected)
         assert candidate_row.source_summary['model_push_probability'] == pytest.approx(distribution.push)
-        assert candidate_row.source_summary['goal_model_version'] == 'daily-goals-v3'
+        assert candidate_row.source_summary['goal_model_version'] == 'daily-goals-v4'
 
 
 def test_squad_keys_distinguish_teams_and_preserve_adult_key():

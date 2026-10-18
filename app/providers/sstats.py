@@ -833,6 +833,9 @@ class SStatsContextProvider:
         rows: list[dict[str, Any]],
         preview: dict[str, Any],
     ) -> dict[str, MatchContext]:
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            from app.services.goal_research import archive_results
+            preview['goal_history'] = archive_results('sstats', rows)
         team_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
         canonical_keys: set[str] = set()
 
@@ -949,6 +952,7 @@ class SStatsContextProvider:
                 away_win_probability=round(away_prob, 4),
                 confidence=round(confidence, 2),
                 details={
+                    "sstats_score_basis": "regulation-preferred-v2",
                     "sstats_form_weighting_version": "chronological-v1" if os.getenv("PUBLICATION_PROFILE") == "daily_quality" else "legacy-league-order",
                     "sstats_mode": "team_form",
                     "home_team_key": home_key,
@@ -1261,6 +1265,13 @@ class SStatsContextProvider:
     @staticmethod
     def _extract_result(row: dict[str, Any], side: str) -> float | None:
         keys = ["homeResult", "homeFTResult", "HomeScore"] if side == "home" else ["awayResult", "awayFTResult", "AwayScore"]
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            ft = 'homeFTResult' if side == 'home' else 'awayFTResult'
+            # Games/list Final includes extra time. Explicit missing FT is not 0.
+            if ft in row:
+                keys = [ft]
+            elif any(token in str(row.get('statusName') or '').lower() for token in ('extra', 'penalt')):
+                return None
         for key in keys:
             value = row.get(key)
             if value in (None, ""):

@@ -618,3 +618,20 @@ joins the other paper reserve markets; it cannot consume live candidate slots
 or publication limits. The daily policy and factory defaults also use totals
 only if the publication-family environment variable is absent. Existing
 published team totals remain in the financial ledger and settle normally.
+
+### 2026-10-18: regulation scores, historical archive and opponent-model research
+
+Live publication remains full-match totals only. `daily-goals-v4` gives dedicated
+SStats regulation-time results priority over scores including extra time; explicit
+missing FT values do not fall back to final scores. Pre-fix aggregated SStats form
+cache entries are rebuilt, while original response caches, financial state and
+previous publications remain intact.
+
+A canonical historical archive and an isolated opponent-strength Poisson model now
+collect and test evidence prospectively. Results, deduplication, conflicts, score
+metrics and historical walk-forward limitations are documented in
+[API_DATA_QUALITY_ROADMAP.md](API_DATA_QUALITY_ROADMAP.md). The challenger never
+replaces live probabilities automatically. Bad historical segments may now enter
+the non-financial reserve after all other quality/data checks, with their live
+publication blockers retained. No historical or quarantine guard is relaxed for
+real Telegram forecasts.

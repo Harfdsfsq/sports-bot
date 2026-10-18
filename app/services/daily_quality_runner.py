@@ -356,7 +356,8 @@ class DailyQualityRunner(PredictionRunner):
         self.reserve_evaluation.update(passed_model=len(pool), model_rejections=getattr(self.factory, 'daily_reserve_rejections', {}))
         clv = self.market_monitor.resolved_clv_rows() if self.market_monitor else []
         report = self.quality.build_quality_report(self.state.prediction_ledger(self.settings, include_shadow=False), clv)
-        pool, rejected, _ = self.quality.apply_to_candidates(pool, report, datetime.now(UTC))
+        pool, rejected, _ = self.quality.apply_to_candidates(pool, report, datetime.now(UTC), research_only=True)
+        self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in pool)
         self.reserve_evaluation['rejections'].update(rejected)
         by_key = {match.match_key: match for match in self.inventory_matches}
         ledger = self.state.prediction_ledger(self.settings, include_shadow=True)
@@ -368,7 +369,7 @@ class DailyQualityRunner(PredictionRunner):
         for candidate in sorted(pool, key=lambda c: (c.source_summary.get('quality_score', 0), c.ev_pct), reverse=True):
             if len(selected) >= limit:
                 break
-            signature = (candidate.match_key, candidate.family, candidate.commence_time.isoformat(), GOAL_MODEL_VERSION)
+            signature = (candidate.match_key, candidate.family, candidate.commence_time.isoformat(), candidate.source_summary.get('goal_model_version'))
             if signature in reserved or self._candidate_fingerprint(candidate) in fingerprints:
                 continue
             match = by_key.get(candidate.match_key)
@@ -404,6 +405,7 @@ class DailyQualityRunner(PredictionRunner):
             selected.append(candidate)
             reserved.add(signature)
         self.reserve_evaluation['selected_new'] = len(selected)
+        self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in selected)
         return existing_shadow + selected
 
     async def run_once(self):
@@ -412,6 +414,12 @@ class DailyQualityRunner(PredictionRunner):
             summary['candidates_model_evaluated'] = getattr(self.factory, 'prefilter_candidates_count', 0)
             summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
             summary['goal_model_version'] = GOAL_MODEL_VERSION
+            from app.services.goal_research import GoalHistory
+            try:
+                summary['goal_research'] = GoalHistory().run_research(self.inventory_matches, datetime.now(UTC))
+            except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
+                summary['goal_research'] = {'status': 'error', 'error_type': type(exc).__name__}
+            write_json('.data/exports/latest-goal-research.json', summary['goal_research'])
             summary['clv_recovered_from_ledger'] = self.clv_recovered
             quality_report = read_json('.data/exports/latest-quality-report.json', {})
             summary['goal_model_history'] = {

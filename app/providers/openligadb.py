@@ -169,6 +169,9 @@ class OpenLigaDbContextProvider:
                 if not data_rows or used_season is None:
                     continue
                 datasets[(comp_key, used_season)] = {'matches': data_rows, 'table': table_rows}
+                if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+                    from app.services.goal_research import archive_results
+                    stats['goal_history'] = archive_results('openligadb', data_rows, match_group[0].league_name)
                 stats['datasets_loaded'] += 1
                 if table_rows:
                     stats['tables_loaded'] += 1
@@ -176,6 +179,30 @@ class OpenLigaDbContextProvider:
                     preview['sample_datasets'].append({'competition_key': comp_key, 'season': used_season, 'matches': data_rows[:2]})
                 if table_rows and len(preview['sample_tables']) < 3:
                     preview['sample_tables'].append({'competition_key': comp_key, 'season': used_season, 'rows': table_rows[:3]})
+
+        # Bootstrap the previous season only after current coverage is fetched.
+        # Completed seasons are reused from disk; this cannot consume requests
+        # needed for the current fixtures and is still under the provider budget.
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            from pathlib import Path
+            from app.services.daily_match_registry import read_json, write_json
+            from app.services.goal_research import archive_results
+            async with BudgetedAsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+                for comp_key, season in datasets:
+                    cache_path = Path(f'.data/provider_cache/openliga-history-{comp_key}-{season - 1}.json')
+                    old_rows = read_json(cache_path, [])
+                    if not old_rows and self._requests < self.max_http_requests:
+                        response = await self._fetch_json(client, f'/getmatchdata/{comp_key}/{season - 1}', stats, soft_fail=True)
+                        if isinstance(response, list):
+                            old_rows = [r for r in response if isinstance(r, dict) and r.get('matchIsFinished') is True]
+                            if len(old_rows) >= 30:
+                                try:
+                                    write_json(cache_path, old_rows)
+                                except OSError as exc:
+                                    stats['history_seed_cache_error'] = type(exc).__name__
+                    if old_rows:
+                        label = next(m.league_name for m in soccer_matches if self._competition_key(m.league_name) == comp_key)
+                        stats['history_seed'] = archive_results('openligadb', old_rows, label)
 
         contexts: dict[str, MatchContext] = {}
         for (comp_key, season), payload in datasets.items():

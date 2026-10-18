@@ -126,6 +126,8 @@ def render(summary):
         if reserve_reasons:
             labels = [f"{REASONS.get(reason, reason)} — {count}" for reason, count in reserve_reasons.most_common(3)]
             lines.append('Не допущены в резерв: ' + '; '.join(labels) + '.')
+        if reserve.get('historically_blocked_under_observation'):
+            lines.append(f"Из новых наблюдений {reserve['historically_blocked_under_observation']} запрещены к публикации по истории; проверяются только условно.")
     reviewed = [row for row in daily.get('quality_review', []) if row.get('reasons')]
     if reviewed:
         lines.extend(['', '🔎 Почему финальные кандидаты не прошли'])
@@ -200,6 +202,17 @@ def render(summary):
         lines.append(f"История этой версии: завершено {history.get('settled', 0)}; без возврата {history.get('count', 0)}. Для калибровки нужно {os.getenv('DAILY_CALIBRATION_MIN_VERSION_BETS', '50')} ставок без возврата этой версии.")
         lines.append(f"Известная выборка для публикации: от {os.getenv('DAILY_B_MIN_TEAM_SAMPLE', '6')} матчей на команду. Одинаковые сезонные данные нескольких API не увеличивают их общий вес.")
     monitor = summary.get('market_monitor') or {}
+    research = summary.get('goal_research') or {}
+    if research.get('status') == 'error':
+        lines.append('⚠️ Исследовательская модель не завершила расчёт; диагностика в артефакте. На банк она не влияет.')
+    elif research:
+        lines.extend(['', '🔬 Проверка новой модели общих тоталов — без ставок',
+                      f"Архив: {research.get('history_matches', 0)} матчей; спорных результатов: {research.get('history_conflicts', 0)}.",
+                      f"Новых оценок ТБ(2.5): {research.get('new_forecasts', 0)}; ожидают результата: {research.get('pending', 0)}; проверено: {research.get('resolved', 0)}."])
+        if research.get('brier') is not None:
+            lines.append(f"Ошибка вероятности Brier: {research['brier']:.3f}; простая модель лиги: {research['baseline_brier']:.3f}. Меньше — лучше; доходность это не подтверждает.")
+        elif research.get('skips'):
+            lines.append('Для части матчей пока недостаточно подтверждённой истории лиги и обеих команд.')
     if 'clv_measured_total' in monitor:
         lines.append(f"Проверка цены перед матчем: измерено {monitor['clv_measured_total']}; без подходящей свежей котировки в этом запуске — {monitor.get('clv_missing_quote_now', 0)}.")
     lines.extend(['', 'Проценты модели — оценки, а не подтверждённая проходимость. A/B обозначает качество отбора, а не гарантированный исход.',

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
@@ -234,7 +235,7 @@ class FootballDataContextProvider:
                 table = standings_by_ref.get(ref) or []
                 if not table or self._build_context_from_standings(item['match'], row, table) is None:
                     needs_history.add(ref)
-            history_refs = [ref for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0])) if ref in needs_history]
+            history_refs = [ref for ref, _ in sorted(competition_counts.items(), key=lambda item: (item[0] not in needs_history, -item[1], item[0])) if ref in needs_history or os.getenv('PUBLICATION_PROFILE') == 'daily_quality']
             for ref in history_refs[:history_limit]:
                 params: dict[str, Any] = {'limit': competition_match_limit}
                 season_year = competition_seasons.get(ref)
@@ -250,6 +251,10 @@ class FootballDataContextProvider:
                 stats['history_requests'] += 1
                 history_rows = self._extract_rows(history_payload, 'matches')
                 if history_rows:
+                    if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+                        from app.services.goal_research import archive_results
+                        labels = [item['match'].league_name for item in mapping.values() if str(((item['row'].get('competition') or {}).get('code') or (item['row'].get('competition') or {}).get('id') or '')).upper() == ref]
+                        stats['goal_history'] = archive_results('football_data', history_rows, labels[0] if labels else ref)
                     history_by_ref[ref].extend(history_rows)
                     stats['history_rows_fetched'] += len(history_rows)
                     if len(preview['sample_history']) < 3:

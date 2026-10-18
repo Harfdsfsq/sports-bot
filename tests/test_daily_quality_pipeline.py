@@ -1076,7 +1076,7 @@ def test_football_data_skips_fuzzy_work_for_outside_kickoffs(profile, monkeypatc
     assert len(calls) == 1
 
 
-def test_football_data_uses_existing_standings_before_history(profile, monkeypatch):
+def test_football_data_uses_standings_and_archives_bounded_history(profile, monkeypatch):
     for name in ('HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'):
         monkeypatch.delenv(name, raising=False)
     from app.providers.football_data import FootballDataContextProvider
@@ -1094,8 +1094,8 @@ def test_football_data_uses_existing_standings_before_history(profile, monkeypat
     monkeypatch.setattr(provider, '_build_context_from_standings', lambda *args: MatchContext('football_data', {}, expected_home=1, expected_away=1))
     contexts, stats, _ = asyncio.run(provider.fetch_context([m]))
     assert m.match_key in contexts
-    assert calls == ['/matches', '/competitions/PL/standings']
-    assert stats['history_requests'] == 0
+    assert calls == ['/matches', '/competitions/PL/standings', '/competitions/PL/matches']
+    assert stats['history_requests'] == 1
 
 
 def test_standings_coverage_counts_both_real_teams_in_restored_table(tmp_path):
@@ -1483,7 +1483,7 @@ def test_reserve_is_recorded_once_and_settles_without_touching_bank(profile,tmp_
     r=DailyQualityRunner.__new__(DailyQualityRunner)
     r.settings=Settings(_env_file=None);r.factory=SimpleNamespace(daily_reserve_candidates=[c],daily_reserve_evaluated_count=1)
     r.market_monitor=None;r.state=JsonStateStore(str(tmp_path/'state.json'),str(tmp_path/'debug.json'))
-    r.quality=SimpleNamespace(build_quality_report=lambda *args:{},apply_to_candidates=lambda rows,*args:(rows,{},{}))
+    r.quality=SimpleNamespace(build_quality_report=lambda *args:{},apply_to_candidates=lambda rows,*args,**kwargs:(rows,{},{}))
     r.inventory_matches=[m];r.admitted_sources={m.match_key:{'sstats':now.isoformat()}}
     r.registry=SimpleNamespace(observation=lambda *args:now.isoformat(),has_role=lambda *args:True,
         cached=lambda *args:MatchContext('sstats',{},details={'daily_evidence_observed_at':(now-timedelta(minutes=1)).isoformat() if invalid=='stale' else now.isoformat()}))
@@ -1524,3 +1524,25 @@ def test_existing_published_handicaps_still_settle_in_totals_mode(profile):
     bet={'family':'spreads','selection_key':'home','point':1.,'odds':2.,'stake_amount':2.5}
     assert service._grade_bet(bet,0,1)==('push',0.)
     assert service._grade_bet({**bet,'family':'h2h'},1,0)==('won',2.5)
+
+
+def test_research_history_block_is_observed_but_data_guards_still_reject(profile,monkeypatch):
+    from app.services.quality import PredictionQualityService
+    service=PredictionQualityService(Settings(_env_file=None))
+    now=datetime.now(UTC)
+    for name in ['_context_sample_guard','_market_sanity_guard','_post_calibration_threshold_guard']:
+        monkeypatch.setattr(service,name,lambda *args:None)
+    for name in ['_clv_guard','_quarantine_guard','_high_odds_guard']:
+        monkeypatch.setattr(service,name,lambda *args:None)
+    monkeypatch.setattr(service,'_historical_segment_guard',lambda *args:'bad_historical_segment_guard')
+    monkeypatch.setattr(service,'_candidate_quality_score',lambda *args:80.)
+    report={'summary':{'settled_binary_bets':100}}
+    c=reserve_candidate(now)
+    passed,_,_=service.apply_to_candidates([c],report,now)
+    assert passed==[]
+    c=reserve_candidate(now)
+    passed,_,_=service.apply_to_candidates([c],report,now,research_only=True)
+    assert passed==[c] and c.source_summary['reserve_only'] and not c.source_summary['can_publish']
+    assert c.source_summary['research_blockers']==['bad_historical_segment_guard']
+    monkeypatch.setattr(service,'_market_sanity_guard',lambda *args:'price_integrity_failed')
+    assert service.apply_to_candidates([reserve_candidate(now)],report,now,research_only=True)[0]==[]
