@@ -1396,3 +1396,102 @@ def test_openligadb_timeout_preserves_existing_verified_cache(profile, tmp_path,
     data, stats, _ = asyncio.run(runner._fetch_provider(SimpleNamespace(), 'fetch_context', [], empty_data={}))
     assert stats['runtime_error'] == 'provider_deadline'
     assert m.match_key in data and missing.match_key not in data
+
+
+def reserve_candidate(now, family='spreads'):
+    from app.schemas import CandidateBet
+    return CandidateBet(match_key='match', sport_key='soccer', league_name='Premier League',
+        home_team='Home',away_team='Away',commence_time=now+timedelta(minutes=90),
+        family=family,selection='Home',selection_key='home',odds=2.,fair_odds=1/.65,
+        implied_probability=.5,market_probability=.5,consensus_probability=.5,
+        model_probability=.7,final_probability=.65,adjusted_probability=.65,
+        edge_pct=15.,ev_pct=30.,confidence=75.,books_count=1,sources_count=1,
+        model_mode='xg_spread',point=1.,expected_home=1.4,expected_away=1.2,team_side='home',
+        publication_score=50.,source_summary={'context_source':'sstats','quality_score':80.,
+          'goal_model_version':'daily-goals-v3','context_sources_count':1,
+          'daily_context_reliability':{'a_supported':True,'best_team_sample':12},
+          'daily_price_observed_at':now.isoformat(),'daily_context_observed_at':now.isoformat()})
+
+
+def test_totals_only_policy_keeps_other_markets_paper_only(profile):
+    now=datetime.now(UTC);c=reserve_candidate(now)
+    coverage={'odds_sources_count':1,'context_sources_count':1,'books_count':1}
+    assert 'market_outside_daily_policy' in quality_decision(c,coverage,now=now)[1]
+    c.source_summary['reserve_only']=True
+    assert 'reserve_only' in quality_decision(c,coverage,now=now)[1]
+    assert not quality_decision(c,coverage,now=now,allow_shadow_markets=True)[1]
+    for family in ['totals','teamTotals']:
+        c.family=family;c.source_summary['reserve_only']=False;c.point=2.5
+        assert 'market_outside_daily_policy' not in quality_decision(c,coverage,now=now)[1]
+
+
+def test_factory_separates_reserve_before_live_candidate_limit(profile,monkeypatch):
+    from app.services.model import CandidateFactory
+    now=datetime.now(UTC);m=match(now)
+    factory=CandidateFactory(Settings(_env_file=None))
+    candidates={family:reserve_candidate(now,family) for family in ['totals','spreads','h2h']}
+    for c in candidates.values():c.match_key=m.match_key
+    monkeypatch.setattr(factory,'_build_totals_candidates',lambda *_:[candidates['totals']])
+    monkeypatch.setattr(factory,'_build_spread_candidates',lambda *_:[candidates['spreads']])
+    monkeypatch.setattr(factory,'_build_h2h_candidates',lambda *_:[candidates['h2h']])
+    def rank(rows,rejections):
+        factory.prefilter_candidates_count=len(rows)
+        return rows
+    monkeypatch.setattr(factory,'_filter_and_rank',rank)
+    offers=[Offer('odds_api_io','Bet365',f,'Home',2.,1.) for f in candidates]
+    live,_,_=factory.build_candidates([m],{m.match_key:offers},
+        {m.match_key:MatchContext('sstats',{},confidence=75)})
+    assert [c.family for c in live]==['totals']
+    assert {c.family for c in factory.daily_reserve_candidates}=={'spreads','h2h'}
+    assert factory.prefilter_candidates_count==1
+
+
+@pytest.mark.parametrize('invalid', [None,'price','stale'])
+def test_reserve_is_recorded_once_and_settles_without_touching_bank(profile,tmp_path,monkeypatch,invalid):
+    from app.state import JsonStateStore
+    from app.services.runner import PredictionRunner
+    now=datetime.now(UTC);m=match(now);c=reserve_candidate(now);c.match_key=m.match_key
+    r=DailyQualityRunner.__new__(DailyQualityRunner)
+    r.settings=Settings(_env_file=None);r.factory=SimpleNamespace(daily_reserve_candidates=[c],daily_reserve_evaluated_count=1)
+    r.market_monitor=None;r.state=JsonStateStore(str(tmp_path/'state.json'),str(tmp_path/'debug.json'))
+    r.quality=SimpleNamespace(build_quality_report=lambda *args:{},apply_to_candidates=lambda rows,*args:(rows,{},{}))
+    r.inventory_matches=[m];r.admitted_sources={m.match_key:{'sstats':now.isoformat()}}
+    r.registry=SimpleNamespace(observation=lambda *args:now.isoformat(),has_role=lambda *args:True,
+        cached=lambda *args:MatchContext('sstats',{},details={'daily_evidence_observed_at':(now-timedelta(minutes=1)).isoformat() if invalid=='stale' else now.isoformat()}))
+    monkeypatch.setattr(PredictionRunner,'_select_shadow_candidates',lambda self,**kwargs:[])
+    monkeypatch.setattr('app.services.daily_quality_runner.rejection_reasons',lambda _:['selected_price_outlier'] if invalid=='price' else [])
+    before=r.state.bankroll_summary(r.settings)
+    selected=r._select_shadow_candidates()
+    if invalid:
+        assert selected==[] and r.reserve_evaluation['rejections']
+        return
+    assert selected==[c] and c.source_summary['reserve_only']
+    assert r.state.store_shadow_candidates(selected)==1
+    c.point=1.5  # A changed quote/line must not create a second paper bet in the same family.
+    assert r._select_shadow_candidates()==[]
+    stored=r.state._state['shadow_bets'][0]
+    assert not stored['telegram_sent'] and stored['stake_amount']==1.
+    result=r.state.apply_settlements([{'fingerprint':stored['fingerprint'],'outcome':'won','pnl':1.}])
+    assert result['shadow_settled_count']==1 and result['settled_count']==0
+    assert r.state.bankroll_summary(r.settings)==before
+    ledger=r.state.prediction_ledger(r.settings,include_shadow=True)
+    assert ledger[0]['reserve_only'] and ledger[0]['status']=='won'
+    assert not r.state.prediction_ledger(r.settings,include_shadow=False)
+
+
+def test_publisher_cannot_send_reserve_even_if_passed_directly(profile,monkeypatch):
+    publisher=DailyTelegramPublisher(Settings(_env_file=None,PUBLISH_DRY_RUN=False))
+    c=reserve_candidate(datetime.now(UTC));c.source_summary['reserve_only']=True
+    async def forbidden(*args,**kwargs):
+        raise AssertionError('reserve reached Telegram transport')
+    monkeypatch.setattr('app.services.telegram.TelegramPublisher.publish',forbidden)
+    bets=[c];count,texts=asyncio.run(publisher.publish(bets))
+    assert count==0 and texts==[] and bets==[]
+
+
+def test_existing_published_handicaps_still_settle_in_totals_mode(profile):
+    from app.services.settlement import SettlementService
+    service=SettlementService(Settings(_env_file=None))
+    bet={'family':'spreads','selection_key':'home','point':1.,'odds':2.,'stake_amount':2.5}
+    assert service._grade_bet(bet,0,1)==('push',0.)
+    assert service._grade_bet({**bet,'family':'h2h'},1,0)==('won',2.5)

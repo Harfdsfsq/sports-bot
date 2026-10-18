@@ -49,6 +49,9 @@ class CandidateFactory:
         rejections: dict[str, int] = defaultdict(int)
         debug_rows: list[dict[str, Any]] = []
         self._market_signals_by_match = market_signals_by_match or {}
+        self.daily_reserve_candidates = []
+        self.daily_reserve_evaluated_count = 0
+        self.daily_reserve_rejections = {}
         matches_by_key = {m.match_key: m for m in matches}
 
         for match_key, offers in offers_by_match.items():
@@ -99,6 +102,13 @@ class CandidateFactory:
                 allowed = {v.strip().lower() for v in os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES', 'totals,spreads,teamTotals').split(',')}
                 excluded = [c for c in match_candidates if c.family.lower() not in allowed]
                 rejections['market_outside_daily_policy'] += len(excluded)
+                if os.getenv('DAILY_RESERVE_TRACKING_ENABLED', 'false').lower() == 'true':
+                    reserve_families = {s.strip().lower() for s in os.getenv('DAILY_RESERVE_MARKET_FAMILIES', 'spreads,h2h,dnb,doubleChance,btts').split(',')}
+                    kept_families = set()
+                    for item in sorted(excluded, key=self._candidate_rank_key, reverse=True):
+                        if item.family.lower() in reserve_families and item.family not in kept_families:
+                            self.daily_reserve_candidates.append(item)
+                            kept_families.add(item.family)
                 match_candidates = [c for c in match_candidates if c.family.lower() in allowed]
             match_candidates.sort(key=lambda item: self._candidate_rank_key(item), reverse=True)
             if match_candidates:
@@ -135,6 +145,13 @@ class CandidateFactory:
                 rejections['no_candidate_for_match'] += 1
 
         candidates = self._filter_and_rank(candidates, rejections)
+        if self.daily_reserve_candidates:
+            live_count = self.prefilter_candidates_count
+            self.daily_reserve_evaluated_count = len(self.daily_reserve_candidates)
+            reserve_rejections = defaultdict(int)
+            self.daily_reserve_candidates = self._filter_and_rank(self.daily_reserve_candidates, reserve_rejections)
+            self.daily_reserve_rejections = dict(reserve_rejections)
+            self.prefilter_candidates_count = live_count
         return candidates, dict(rejections), {'matches': debug_rows[:200]}
 
     def _build_totals_candidates(

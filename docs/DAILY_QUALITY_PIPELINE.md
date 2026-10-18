@@ -564,3 +564,39 @@ have only five confirmed games per team, and the pending Cambuur/AZ signal has
 four on its smaller side; these contexts fail the new sample floor. This replay
 checks policy behavior only, and is not an out-of-time backtest or an assertion
 that v3 would be profitable. Higher samples can still produce wrong predictions.
+
+### 2026-10-18: totals publication and paper reserve
+
+Live Telegram forecasts are restricted to `totals,teamTotals` (match and team
+Over/Under). Spreads, match winners, draw-no-bet, double chance and BTTS remain
+research markets under `DAILY_RESERVE_MARKET_FAMILIES`. There is no automatic
+promotion from reserve to publication. Previously published bets in any market
+remain in the financial ledger and continue normal settlement.
+
+The factory separates reserve candidates before applying the live per-match
+candidate limit. It considers the top candidate per fixture/market family, then
+uses model and quality checks; reserve admission also requires fresh matched
+context, current real quotes, price integrity, supported lines and the same
+sample/EV/quality rules. At most 25 new qualified variants per run are admitted,
+with one per fixture/family/model version across runs. Reserve counters and
+rejection reasons are available in the run summary.
+
+Selected reserve candidates are stored only in `shadow_bets`, tagged
+`reserve_only`, with a fixed paper stake of one unit. They are never sent as
+Telegram recommendations, never consume bank exposure or publication slots,
+and never enter live calibration or performance statistics. Their settlements
+are checked on subsequent runs using the existing settlement fetch; the report
+shows pending/settled counts and a separately labelled paper result. Even an
+accidental direct call to the daily Telegram publisher filters these rows out.
+These are correlated variants, not independent betting opportunities, and paper
+results do not establish an executable strategy or justify enabling a market.
+
+All three existing cron triggers on main were removed: run-bot,
+production-schedule and the legacy build-day-inventory. Manual workflows remain
+available. The feature branch also removes its dormant schedule declarations so
+a future merge cannot reintroduce them. Its externally dispatched daily pipeline
+still builds its own inventory and is not dependent on the old main scheduler.
+
+Daily CLV tracking now uses the financial ledger fingerprint for whole-number
+lines as well as half-lines. Existing pending tracking rows are normalized so
+integer-total measurements join the corresponding published bet correctly.

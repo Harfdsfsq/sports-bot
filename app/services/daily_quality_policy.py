@@ -21,7 +21,7 @@ def enabled() -> bool:
     return os.getenv('PUBLICATION_PROFILE', '').strip().lower() == 'daily_quality'
 
 
-def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[str, list[str], dict]:
+def quality_decision(candidate: Any, coverage: dict, *, now: datetime, allow_shadow_markets=False) -> tuple[str, list[str], dict]:
     summary = candidate.source_summary
     q = float(summary.get('quality_score') or 0)
     p = float(candidate.adjusted_probability)
@@ -31,6 +31,8 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
     ev = expected_value(p, odds, push)
     evidence = dict(summary.get('daily_context_reliability') or {})
     reasons = fixture_squad_reasons(candidate)
+    if summary.get('reserve_only') and not allow_shadow_markets:
+        reasons.append('reserve_only')
     sample = evidence.get('best_team_sample')
     if sample is not None and float(sample) < b_sample_floor():
         reasons.append('insufficient_confirmed_sample')
@@ -54,7 +56,7 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
     if str(summary.get('context_source') or '').lower() in {'market', 'market_signal', 'market_implied_xg', 'model', 'unknown', 'weather'}:
         reasons.append('synthetic_context')
     allowed = {v.strip().lower() for v in os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES', 'totals,spreads,teamTotals').split(',')}
-    if candidate.family.lower() not in allowed:
+    if candidate.family.lower() not in allowed and not allow_shadow_markets:
         reasons.append('market_outside_daily_policy')
     point = getattr(candidate, 'point', None)
     if point is not None and (not math.isfinite(float(point)) or not float(point * 2).is_integer()):

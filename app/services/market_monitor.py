@@ -65,6 +65,7 @@ class MarketMonitor:
             return {'tracked': 0}
         payload = self._load_json(self.pending_clv_path, default=[])
         rows = payload if isinstance(payload, list) else []
+        self._normalize_daily_tracking_rows(rows)
         seen = {str(item.get('fingerprint')) for item in rows if isinstance(item, dict)}
         history = self._load_json(self.clv_results_path, default=[])
         if isinstance(history, list):
@@ -191,6 +192,7 @@ class MarketMonitor:
         rows = self._load_json(self.pending_clv_path, default=[])
         resolved = self._load_json(self.clv_results_path, default=[])
         rows = rows if isinstance(rows, list) else []
+        self._normalize_daily_tracking_rows(rows)
         resolved = [row for row in resolved if isinstance(row, dict)] if isinstance(resolved, list) else []
         pending, values = [], []
         grace = timedelta(minutes=max(0, int(getattr(self.settings, 'clv_resolve_grace_minutes', 45))))
@@ -391,6 +393,10 @@ class MarketMonitor:
 
     @staticmethod
     def _candidate_fingerprint(candidate: CandidateBet) -> str:
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            # Share the financial ledger's integer-line and UTC normalization.
+            from app.state import JsonStateStore
+            return JsonStateStore._fingerprint_from_candidate(candidate)
         point = candidate.point
         if isinstance(point, float):
             point = round(point, 4)
@@ -413,6 +419,21 @@ class MarketMonitor:
                 candidate.commence_time.isoformat(),
             ]
         )
+
+    def _normalize_daily_tracking_rows(self, rows):
+        if os.getenv('PUBLICATION_PROFILE', '').lower() != 'daily_quality':
+            return
+        for row in rows:
+            if not isinstance(row, dict) or not all(row.get(key) for key in ('match_key', 'family', 'selection_key')):
+                continue
+            kickoff = self._parse_dt(row.get('commence_time'))
+            if kickoff is None:
+                continue
+            fields = {key: row.get(key) for key in ('match_key', 'family', 'selection', 'selection_key', 'point', 'team_side')}
+            fingerprint = self._candidate_fingerprint(SimpleNamespace(**fields, commence_time=kickoff))
+            if row.get('fingerprint') != fingerprint:
+                row['previous_fingerprint'] = row.get('fingerprint')
+                row['fingerprint'] = fingerprint
 
     @staticmethod
     def _snapshot_stamp(value: Any) -> str:

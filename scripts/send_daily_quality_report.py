@@ -11,6 +11,7 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'reserve_only': 'рынок проверяется только в резерве без публикации',
     'insufficient_confirmed_sample': 'подтверждённая выборка команд меньше минимальной',
     'context_history_identity_missing': 'история команды не содержит проверяемых названий участников',
     'context_payload_invalid': 'источник вернул спортивные данные в неподдерживаемом формате',
@@ -97,6 +98,12 @@ def render(summary):
         lines.insert(position, f"Добор окна: только линия — {c.get('near_only_line', 0)}; только контекст — {c.get('near_only_context', 0)}; нет обоих — {c['near_missing_both']}.")
     if duplicates:
         lines.append(f'Защита от повторов: ранее опубликованных вариантов — {duplicates}. Повторно не отправлены.')
+    reserve = summary.get('reserve_markets')
+    if reserve is not None:
+        lines.insert(2, '📌 Публикация: общие и индивидуальные тоталы. Остальные рынки — только резерв.')
+        lines.extend(['', '🧪 Резерв — проверка без ставок и публикаций',
+                      f"Новых вариантов: {reserve.get('selected_new', 0)}; ожидают результата: {reserve.get('pending', 0)}; завершено: {reserve.get('settled', 0)}.",
+                      f"Выигрыши {reserve.get('wins', 0)}, проигрыши {reserve.get('losses', 0)}, возвраты {reserve.get('pushes', 0)}. Условный результат при 1 единице на вариант: {reserve.get('paper_pnl', 0):+.2f}. В банк не входит."])
     bank = summary.get('bankroll') or {}
     if bank:
         lines.insert(2, f"💼 Банк: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")

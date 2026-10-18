@@ -22,6 +22,9 @@ CONTEXT = {'sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openlig
 
 class DailyTelegramPublisher(TelegramPublisher):
     async def publish(self, bets, bankroll_summary=None):
+        # Paper candidates must never enter a Telegram forecast, even if a
+        # future caller accidentally passes a mixed list.
+        bets[:] = [candidate for candidate in bets if not (getattr(candidate, 'source_summary', None) or {}).get('reserve_only')]
         if self.settings.publish_dry_run:
             return await super().publish(bets, bankroll_summary=bankroll_summary)
         confirmed, payloads, count = [], [], 0
@@ -299,6 +302,7 @@ class DailyQualityRunner(PredictionRunner):
         return publishable
 
     def _select_publishable_candidates(self, candidates):
+        candidates = [candidate for candidate in candidates if not candidate.source_summary.get('reserve_only')]
         published = self.registry.data['published']
         sent_match_ids = {row.get('match_id') for row in published if row.get('match_id')}
         sent_match_ids.update(key for key, entry in self.registry.data['matches'].items() if entry.get('publication'))
@@ -341,6 +345,67 @@ class DailyQualityRunner(PredictionRunner):
         self.selected_daily = selected
         return selected
 
+    def _select_shadow_candidates(self, **kwargs):
+        existing_shadow = super()._select_shadow_candidates(**kwargs)
+        self.reserve_evaluation = {'evaluated': getattr(self.factory, 'daily_reserve_evaluated_count', 0),
+                                   'selected_new': 0, 'rejections': {}}
+        if os.getenv('DAILY_RESERVE_TRACKING_ENABLED', 'false').lower() != 'true':
+            return existing_shadow
+        from app.services.daily_quality_policy import quality_decision
+        pool = list(getattr(self.factory, 'daily_reserve_candidates', []))
+        self.reserve_evaluation.update(passed_model=len(pool), model_rejections=getattr(self.factory, 'daily_reserve_rejections', {}))
+        clv = self.market_monitor.resolved_clv_rows() if self.market_monitor else []
+        report = self.quality.build_quality_report(self.state.prediction_ledger(self.settings, include_shadow=False), clv)
+        pool, rejected, _ = self.quality.apply_to_candidates(pool, report, datetime.now(UTC))
+        self.reserve_evaluation['rejections'].update(rejected)
+        by_key = {match.match_key: match for match in self.inventory_matches}
+        ledger = self.state.prediction_ledger(self.settings, include_shadow=True)
+        fingerprints = {row.get('fingerprint') for row in ledger}
+        reserved = {(row.get('match_key'), row.get('family'), row.get('commence_time_utc'), row.get('goal_model_version'))
+                    for row in ledger if row.get('reserve_only')}
+        selected = []
+        limit = max(0, int(os.getenv('DAILY_RESERVE_MAX_NEW_PER_RUN', '25')))
+        for candidate in sorted(pool, key=lambda c: (c.source_summary.get('quality_score', 0), c.ev_pct), reverse=True):
+            if len(selected) >= limit:
+                break
+            signature = (candidate.match_key, candidate.family, candidate.commence_time.isoformat(), GOAL_MODEL_VERSION)
+            if signature in reserved or self._candidate_fingerprint(candidate) in fingerprints:
+                continue
+            match = by_key.get(candidate.match_key)
+            if match is None:
+                continue
+            now = datetime.now(UTC)
+            self.registry.now = now
+            candidate.source_summary.update(
+                daily_price_observed_at=self.registry.observation(match, 'offers'),
+                daily_context_observed_at=self.registry.observation(match, 'context'),
+                registry_match_id=match_identity(match), reserve_only=True, can_publish=False,
+                shadow_tracking_reason='reserve_market_test')
+            admission = getattr(self, 'admitted_sources', {}).get(candidate.match_key, {})
+            reasons = rejection_reasons(candidate)
+            if not admission:
+                reasons.append('context_identity_missing')
+            for provider, observed in admission.items():
+                current = self.registry.cached(provider, 'context', match)
+                if current is None or current.details.get('daily_evidence_observed_at') != observed:
+                    reasons.append('context_source_expired_before_publication')
+            if not self.registry.has_role(match, 'offers'):
+                reasons.append('missing_real_line_or_context')
+            coverage = {'odds_sources_count': candidate.sources_count,
+                        'context_sources_count': len(admission), 'books_count': candidate.books_count}
+            _, policy_reasons, _ = quality_decision(candidate, coverage,
+                                                    now=now, allow_shadow_markets=True)
+            reasons.extend(policy_reasons)
+            if reasons:
+                for reason in set(reasons):
+                    self.reserve_evaluation['rejections'][reason] = self.reserve_evaluation['rejections'].get(reason, 0) + 1
+                continue
+            candidate.stake_amount, candidate.stake_pct = 0., 0.
+            selected.append(candidate)
+            reserved.add(signature)
+        self.reserve_evaluation['selected_new'] = len(selected)
+        return existing_shadow + selected
+
     async def run_once(self):
         try:
             summary = await super().run_once()
@@ -352,6 +417,16 @@ class DailyQualityRunner(PredictionRunner):
             summary['goal_model_history'] = {
                 version: {'settled': cohort['settled_total'], **cohort['summary']}
                 for version, cohort in (quality_report.get('model_versions') or {}).items()}
+            reserve_rows = [row for row in self.state.prediction_ledger(self.settings, include_shadow=True)
+                            if row.get('reserve_only') and row.get('goal_model_version') == GOAL_MODEL_VERSION]
+            outcomes = Counter(row.get('status') for row in reserve_rows)
+            summary['reserve_markets'] = {
+                **getattr(self, 'reserve_evaluation', {}), 'tracked': len(reserve_rows),
+                'pending': outcomes.get('shadow_pending', 0),
+                'settled': sum(outcomes.get(status, 0) for status in ('won', 'lost', 'push', 'void')),
+                'wins': outcomes.get('won', 0), 'losses': outcomes.get('lost', 0), 'pushes': outcomes.get('push', 0),
+                'paper_pnl': round(sum(float(row.get('pnl') or 0) for row in reserve_rows), 2),
+                'families': dict(Counter(row.get('family') for row in reserve_rows))}
             from app.services.api_budget import ApiBudget
             summary['api_budget'] = ApiBudget().snapshot()
             pending = self.state.pending_bets(include_shadow=False)

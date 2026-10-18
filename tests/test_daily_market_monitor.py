@@ -96,3 +96,20 @@ def test_recover_future_confirmed_entries_once_without_publishing(tmp_path,daily
     stored=json.loads(m.pending_clv_path.read_text())
     assert stored[0]['tracked_at']==bet['published_at']
     assert stored[0]['entry_bookmaker']=='bet365'
+
+
+def test_integer_total_clv_identity_matches_financial_ledger(tmp_path,daily):
+    from app.state import JsonStateStore
+    kickoff=datetime(2026,10,18,15,tzinfo=UTC);m=monitor(tmp_path)
+    c=SimpleNamespace(match_key='fixture',family='totals',selection='Over',selection_key='over',
+                      point=3.,team_side=None,commence_time=kickoff)
+    expected=JsonStateStore._fingerprint_from_candidate(c)
+    assert m._candidate_fingerprint(c)==expected
+    old={**row(kickoff),'family':'totals','selection':'Over','selection_key':'over','point':3.,'team_side':None}
+    old['fingerprint']=expected.replace('|3|','|3.0|')
+    m._write_json(m.pending_clv_path,[old])
+    m._update_pending_clv(kickoff-timedelta(minutes=30),snapshot(kickoff))
+    m._update_pending_clv(kickoff+timedelta(minutes=1),{'matches':{}})
+    resolved=m.resolved_clv_rows()[0]
+    assert resolved['fingerprint']==expected
+    assert resolved['previous_fingerprint']==old['fingerprint']
