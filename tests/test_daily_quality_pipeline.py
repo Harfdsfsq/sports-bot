@@ -297,7 +297,7 @@ def test_native_imports_do_not_install_legacy_patches(tmp_path):
     assert not (tmp_path / '.data/exports').exists()
 
 
-def test_night_coverage_counts_real_context_form_and_weather(tmp_path):
+def test_night_coverage_counts_real_context_form_and_weather(profile, tmp_path):
     now = datetime(2026, 10, 3, 20, 13, tzinfo=UTC)
     r = DailyMatchRegistry(tmp_path / 'registry.json', now)
     m = match(now, 90)
@@ -308,6 +308,9 @@ def test_night_coverage_counts_real_context_form_and_weather(tmp_path):
     assert not r.has_role(m, 'context')
     assert r.observation(m, 'context') is None
     ctx = MatchContext('sstats_form', {'home_recent': [{'team': m.home_team, 'start': now - timedelta(days=1)}], 'away_recent': [{'team': m.away_team, 'start': now - timedelta(days=1)}]}, expected_home=1, expected_away=1, details={'home_recent_count': 7, 'away_recent_count': 8})
+    r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
+    assert not r.has_role(m, 'context')  # Pre-fix aggregate form must be rebuilt.
+    ctx.details['sstats_score_basis'] = 'regulation-preferred-v2'
     r.record('sstats', 'context', [m], {m.match_key: ctx}, {}, observed_at=now)
     c = r.coverage()
     assert c['inventory'] == 0 and c['lookahead'] == 1
