@@ -610,3 +610,11 @@ Historical and data guards remain unchanged. Telegram report chunks prefer
 line boundaries, then word boundaries, and respect a UTF-16 length budget.
 Validation includes replaying artifact 39118104691 (266 reserve variants,
 21 passed the model, all 21 rejected by the historical segment guard).
+
+### 2026-10-18: match totals only
+
+Publication is now limited to full-match `totals` (Over/Under). `teamTotals`
+joins the other paper reserve markets; it cannot consume live candidate slots
+or publication limits. The daily policy and factory defaults also use totals
+only if the publication-family environment variable is absent. Existing
+published team totals remain in the financial ledger and settle normally.

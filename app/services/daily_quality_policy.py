@@ -55,7 +55,7 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime, allow_sha
             reasons.append(key + '_missing')
     if str(summary.get('context_source') or '').lower() in {'market', 'market_signal', 'market_implied_xg', 'model', 'unknown', 'weather'}:
         reasons.append('synthetic_context')
-    allowed = {v.strip().lower() for v in os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES', 'totals,spreads,teamTotals').split(',')}
+    allowed = {v.strip().lower() for v in os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES', 'totals').split(',')}
     if candidate.family.lower() not in allowed and not allow_shadow_markets:
         reasons.append('market_outside_daily_policy')
     point = getattr(candidate, 'point', None)

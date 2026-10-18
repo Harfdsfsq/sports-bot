@@ -99,11 +99,11 @@ class CandidateFactory:
                     match_candidates.extend(self._build_simple_market_spread_candidates(match, families['spreads'], rejections))
 
             if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
-                allowed = {v.strip().lower() for v in os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES', 'totals,spreads,teamTotals').split(',')}
+                allowed = {v.strip().lower() for v in os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES', 'totals').split(',')}
                 excluded = [c for c in match_candidates if c.family.lower() not in allowed]
                 rejections['market_outside_daily_policy'] += len(excluded)
                 if os.getenv('DAILY_RESERVE_TRACKING_ENABLED', 'false').lower() == 'true':
-                    reserve_families = {s.strip().lower() for s in os.getenv('DAILY_RESERVE_MARKET_FAMILIES', 'spreads,h2h,dnb,doubleChance,btts').split(',')}
+                    reserve_families = {s.strip().lower() for s in os.getenv('DAILY_RESERVE_MARKET_FAMILIES', 'teamTotals,spreads,h2h,dnb,doubleChance,btts').split(',')}
                     kept_families = set()
                     for item in sorted(excluded, key=self._candidate_rank_key, reverse=True):
                         if item.family.lower() in reserve_families and item.family not in kept_families:

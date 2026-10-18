@@ -1445,7 +1445,10 @@ def test_totals_only_policy_keeps_other_markets_paper_only(profile):
     c.source_summary['reserve_only']=True
     assert 'reserve_only' in quality_decision(c,coverage,now=now)[1]
     assert not quality_decision(c,coverage,now=now,allow_shadow_markets=True)[1]
-    for family in ['totals','teamTotals']:
+    c.family='teamTotals';c.point=2.5;c.selection_key='under'
+    assert 'market_outside_daily_policy' in quality_decision(c,coverage,now=now)[1]
+    assert 'market_outside_daily_policy' not in quality_decision(c,coverage,now=now,allow_shadow_markets=True)[1]
+    for family in ['totals']:
         c.family=family;c.source_summary['reserve_only']=False;c.point=2.5
         assert 'market_outside_daily_policy' not in quality_decision(c,coverage,now=now)[1]
 
@@ -1454,9 +1457,10 @@ def test_factory_separates_reserve_before_live_candidate_limit(profile,monkeypat
     from app.services.model import CandidateFactory
     now=datetime.now(UTC);m=match(now)
     factory=CandidateFactory(Settings(_env_file=None))
-    candidates={family:reserve_candidate(now,family) for family in ['totals','spreads','h2h']}
+    candidates={family:reserve_candidate(now,family) for family in ['totals','teamTotals','spreads','h2h']}
     for c in candidates.values():c.match_key=m.match_key
     monkeypatch.setattr(factory,'_build_totals_candidates',lambda *_:[candidates['totals']])
+    monkeypatch.setattr(factory,'_build_team_totals_candidates',lambda *_:[candidates['teamTotals']])
     monkeypatch.setattr(factory,'_build_spread_candidates',lambda *_:[candidates['spreads']])
     monkeypatch.setattr(factory,'_build_h2h_candidates',lambda *_:[candidates['h2h']])
     def rank(rows,rejections):
@@ -1467,7 +1471,7 @@ def test_factory_separates_reserve_before_live_candidate_limit(profile,monkeypat
     live,_,_=factory.build_candidates([m],{m.match_key:offers},
         {m.match_key:MatchContext('sstats',{},confidence=75)})
     assert [c.family for c in live]==['totals']
-    assert {c.family for c in factory.daily_reserve_candidates}=={'spreads','h2h'}
+    assert {c.family for c in factory.daily_reserve_candidates}=={'teamTotals','spreads','h2h'}
     assert factory.prefilter_candidates_count==1
 
 

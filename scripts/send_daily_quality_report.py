@@ -100,7 +100,7 @@ def render(summary):
         lines.append(f'Защита от повторов: ранее опубликованных вариантов — {duplicates}. Повторно не отправлены.')
     reserve = summary.get('reserve_markets')
     if reserve is not None:
-        lines.insert(2, '📌 Публикация: общие и индивидуальные тоталы. Остальные рынки — только резерв.')
+        lines.insert(2, '📌 Публикация: только общие тоталы матча. Индивидуальные тоталы и остальные рынки — только резерв.')
     bank = summary.get('bankroll') or {}
     if bank:
         lines.insert(2, f"💼 Банк: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")
