@@ -600,3 +600,13 @@ still builds its own inventory and is not dependent on the old main scheduler.
 Daily CLV tracking now uses the financial ledger fingerprint for whole-number
 lines as well as half-lines. Existing pending tracking rows are normalized so
 integer-total measurements join the corresponding published bet correctly.
+
+### 2026-10-18: reserve report diagnostics
+
+The report separates published picks from paper reserve statistics and displays
+reserve evaluated/prefilter counts plus final rejection reasons. An empty reserve
+therefore distinguishes a checked but rejected pool from missing evaluation.
+Historical and data guards remain unchanged. Telegram report chunks prefer
+line boundaries, then word boundaries, and respect a UTF-16 length budget.
+Validation includes replaying artifact 39118104691 (266 reserve variants,
+21 passed the model, all 21 rejected by the historical segment guard).

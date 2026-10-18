@@ -791,6 +791,31 @@ def test_report_prioritizes_actual_candidate_blockers():
     assert 'Отдельно пропущены неподдерживаемые рынки и линии: 310' in text
 
 
+def test_report_separates_live_picks_from_empty_reserve():
+    summary = {'daily_quality': {'selected': [
+        {'match': 'Celtic — Hearts', 'tier': 'B', 'odds': 1.51, 'quality': 74.1}
+    ]}, 'reserve_markets': {'evaluated': 266, 'passed_model': 21,
+                           'rejections': {'bad_historical_segment_guard': 21}}}
+    text = render(summary)
+    assert text.index('📨 Опубликованные прогнозы') < text.index('Celtic — Hearts') < text.index('🧪 Резерв')
+    assert 'Рассчитано вариантов: 266; первичный отбор прошли: 21.' in text
+    assert 'Не допущены в резерв: неблагоприятные результаты похожих прогнозов — 21.' in text
+
+
+def test_report_chunks_preserve_words_content_and_telegram_unicode_budget():
+    from scripts.send_daily_quality_report import split_report
+    text = ('📡 Источники линии\nС учётом свежего кеша: без повторного подсчёта матчей.\n\n' * 100)
+    chunks = split_report(text)
+    assert len(chunks) > 1 and ''.join(chunks) == text
+    assert all(len(chunk.encode('utf-16-le')) // 2 <= 3500 for chunk in chunks)
+    assert all(chunk.endswith('\n') for chunk in chunks[:-1])
+    # A malformed single long line must still make progress within the limit.
+    long_line = '🔥' * 4000
+    chunks = split_report(long_line)
+    assert ''.join(chunks) == long_line
+    assert all(len(chunk.encode('utf-16-le')) // 2 <= 3500 for chunk in chunks)
+
+
 def test_settlement_sstats_includes_end_date(profile, offline_http, monkeypatch):
     import httpx
 

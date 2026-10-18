@@ -101,9 +101,6 @@ def render(summary):
     reserve = summary.get('reserve_markets')
     if reserve is not None:
         lines.insert(2, '📌 Публикация: общие и индивидуальные тоталы. Остальные рынки — только резерв.')
-        lines.extend(['', '🧪 Резерв — проверка без ставок и публикаций',
-                      f"Новых вариантов: {reserve.get('selected_new', 0)}; ожидают результата: {reserve.get('pending', 0)}; завершено: {reserve.get('settled', 0)}.",
-                      f"Выигрыши {reserve.get('wins', 0)}, проигрыши {reserve.get('losses', 0)}, возвраты {reserve.get('pushes', 0)}. Условный результат при 1 единице на вариант: {reserve.get('paper_pnl', 0):+.2f}. В банк не входит."])
     bank = summary.get('bankroll') or {}
     if bank:
         lines.insert(2, f"💼 Банк: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")
@@ -112,7 +109,7 @@ def render(summary):
     if c.get('inventory', 0) > 300:
         lines.append(f"ℹ️ В реестре сохранены {c['inventory'] - 300} дополнительных матчей после объединения истории; цель 300 достигнута.")
     if daily.get('selected'):
-        lines.append('Подборка текущего запуска:')
+        lines.extend(['', '📨 Опубликованные прогнозы текущего запуска:'])
         for row in daily['selected']:
             lines.append(f"• {row['match']} | {row['tier']}-tier | @{row['odds']:.2f} | качество {row.get('quality') or 0:.1f}")
             if row.get('selection'):
@@ -120,6 +117,15 @@ def render(summary):
                 from app.services.daily_match_registry import TZ
                 when = kickoff.astimezone(TZ).strftime('%d.%m %H:%M MSK') if kickoff else 'время не указано'
                 lines.append(f"  {row['selection']} · {when} · модель {row.get('probability_pct', 0):.1f}% · EV {row.get('ev_pct', 0):+.1f}% · сумма {row.get('stake_amount', 0):.2f}")
+    if reserve is not None:
+        lines.extend(['', '🧪 Резерв — проверка без ставок и публикаций',
+                      f"Рассчитано вариантов: {reserve.get('evaluated', 0)}; первичный отбор прошли: {reserve.get('passed_model', 0)}.",
+                      f"Новых вариантов: {reserve.get('selected_new', 0)}; ожидают результата: {reserve.get('pending', 0)}; завершено: {reserve.get('settled', 0)}.",
+                      f"Выигрыши {reserve.get('wins', 0)}, проигрыши {reserve.get('losses', 0)}, возвраты {reserve.get('pushes', 0)}. Условный результат при 1 единице на вариант: {reserve.get('paper_pnl', 0):+.2f}. В банк не входит."])
+        reserve_reasons = Counter(reserve.get('rejections') or {})
+        if reserve_reasons:
+            labels = [f"{REASONS.get(reason, reason)} — {count}" for reason, count in reserve_reasons.most_common(3)]
+            lines.append('Не допущены в резерв: ' + '; '.join(labels) + '.')
     reviewed = [row for row in daily.get('quality_review', []) if row.get('reasons')]
     if reviewed:
         lines.extend(['', '🔎 Почему финальные кандидаты не прошли'])
@@ -201,6 +207,25 @@ def render(summary):
     return '\n'.join(lines)
 
 
+def split_report(text, limit=3500):
+    """Keep paragraph/word boundaries and Telegram's UTF-16 length budget."""
+    if limit < 2:
+        raise ValueError('Report chunk limit must be at least two UTF-16 units')
+    chunks = []
+    while text:
+        if len(text.encode('utf-16-le')) // 2 <= limit:
+            chunks.append(text)
+            break
+        prefix = text.encode('utf-16-le')[:limit * 2].decode('utf-16-le', errors='ignore')
+        boundary = prefix.rfind('\n')
+        if boundary <= 0:
+            boundary = prefix.rfind(' ')
+        chunk = prefix[:boundary + 1] if boundary > 0 else prefix
+        chunks.append(chunk)
+        text = text[len(chunk):]
+    return chunks
+
+
 def main():
     started = parse_time(os.getenv('RUN_STARTED_AT_UTC'))
     summary = read_json('.data/exports/latest-run-summary.json', {})
@@ -211,7 +236,7 @@ def main():
     else:
         text, valid = render(summary), True
     dry = os.getenv('PUBLISH_DRY_RUN', 'true').lower() == 'true'
-    chunks = [text[i:i + 3500] for i in range(0, len(text), 3500)]
+    chunks = split_report(text)
     sent = False if dry else all(send_telegram(chunk) for chunk in chunks)
     write_json('.data/exports/latest-daily-quality-report.json', {'created_at_utc': datetime.now(UTC).isoformat(), 'summary_valid': valid, 'telegram_sent': sent, 'dry_run': dry, 'text': text})
     Path('.data/exports/latest-daily-quality-report.txt').write_text(text + '\n')
