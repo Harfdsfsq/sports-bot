@@ -8,8 +8,8 @@
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 25,
+      "rows_kept": 64,
+      "rows_seen": 89,
       "rows_stale": 25
     },
     "lifecycle": {
@@ -25,28 +25,38 @@
       "rows_stale": 2
     },
     "rescue": {
-      "files_present": 0,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "files_present": 1,
+      "rows_kept": 11,
+      "rows_seen": 11,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 0,
+    "candidates_before_quality": 4,
     "candidates_publishable": 0,
-    "candidates_raw": 0,
-    "contexts_built": 0,
+    "candidates_raw": 4,
+    "contexts_built": 9,
     "controlled_candidates_seen": 336,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 0,
-    "matches_seen": 0,
-    "matches_with_offers": 0
+    "coverage_candidates_current_date": 31,
+    "matches_seen": 18,
+    "matches_with_offers": 6
   },
-  "created_at": "2026-10-17T19:20:10.985396+00:00",
-  "family_counts": {},
-  "matches_with_candidates": 0,
-  "missing_data_flags": {},
+  "created_at": "2026-10-18T01:05:08.901063+00:00",
+  "family_counts": {
+    "spreads": 13,
+    "totals": 18
+  },
+  "matches_with_candidates": 15,
+  "missing_data_flags": {
+    "confidence_below_micro_c": 24,
+    "edge_below_micro_c": 27,
+    "ev_below_micro_c": 26,
+    "single_book": 19,
+    "single_context_source": 24,
+    "single_odds_source": 25
+  },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -59,21 +69,21 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 0,
+  "positive_near_miss_count": 11,
   "provider_gap_summary": [
     {
       "api_key_present": true,
-      "budget_exhausted": false,
+      "budget_exhausted": null,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": true,
+      "enabled": null,
       "events_fetched": null,
-      "events_matched": null,
+      "events_matched": 20,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 1342,
-      "offers_parsed": null,
-      "provider": "odds_api_io",
+      "matches_built": null,
+      "offers_parsed": 1550,
+      "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
       "rows_fetched": null,
@@ -86,11 +96,32 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 1644,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors"
+      ],
+      "matches_built": 1271,
+      "offers_parsed": null,
+      "provider": "odds_api_io",
+      "rate_limited": false,
+      "response_errors": 5,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 1568,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 1342,
+      "matches_built": 1271,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -102,7 +133,7 @@
     {
       "api_key_present": null,
       "budget_exhausted": null,
-      "contexts_built": null,
+      "contexts_built": 0,
       "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
@@ -138,6 +169,176 @@
       "team_form_contexts_built": null
     },
     {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 9,
+      "direct_event_contexts_built": 9,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "team_form_fallback_only"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "sstats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 3,
+      "direct_event_contexts_built": 3,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "stats",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": 3,
+      "direct_event_contexts_built": 3,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "weather",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": 7,
+      "gap_flags": [
+        "low_overlap_or_matching_failed"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "allsportsapi",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "low_overlap_or_matching_issue",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "account2",
+      "rate_limited": false,
+      "response_errors": 5,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": true,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "budget_exhausted",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "clubelo",
+      "rate_limited": null,
+      "response_errors": 3,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": true,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "budget_exhausted",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "gnews",
+      "rate_limited": null,
+      "response_errors": 3,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 0,
+      "events_matched": 0,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "response_errors",
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "v2_primary",
+      "rate_limited": null,
+      "response_errors": 4,
+      "rows_fetched": null,
+      "status_category": "broken_or_unavailable",
+      "team_form_contexts_built": null
+    },
+    {
       "api_key_present": null,
       "budget_exhausted": null,
       "contexts_built": null,
@@ -154,6 +355,48 @@
       "provider": "bookies_bootstrap",
       "rate_limited": null,
       "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "bzzoiro",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": 0,
+      "provider": "bzzoiro_odds",
+      "rate_limited": null,
+      "response_errors": null,
       "rows_fetched": null,
       "status_category": "no_data",
       "team_form_contexts_built": null
@@ -181,10 +424,10 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
+      "budget_exhausted": null,
+      "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": true,
+      "enabled": null,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
@@ -193,28 +436,7 @@
       ],
       "matches_built": null,
       "offers_parsed": null,
-      "provider": "stats",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "no_data",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": 0,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "no_useful_rows"
-      ],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "weather",
+      "provider": "sstats_pari_odds",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -223,10 +445,472 @@
     }
   ],
   "provider_status_counts": {
-    "no_data": 4,
-    "working": 4
+    "broken_or_unavailable": 4,
+    "low_overlap_or_matching_issue": 1,
+    "no_data": 5,
+    "working": 8
   },
   "reject_reason_counts_from_rows": {},
-  "target_date": "2026-10-17",
-  "top_near_miss": []
+  "target_date": "2026-10-18",
+  "top_near_miss": [
+    {
+      "away_team": "San Diego FC",
+      "best_candidate": {
+        "adjusted_probability": 0.58212,
+        "books_count": 2,
+        "canonical_edge_pp": 3.21,
+        "canonical_ev_pct": 41.455,
+        "confidence": 75.969,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
+        "family": "totals",
+        "odds": 2.43,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.969,
+      "best_edge_pp": 3.21,
+      "best_ev_pct": 41.455,
+      "books_max": 2,
+      "candidate_count": 5,
+      "commence_time": "2026-10-18T02:30:00+00:00",
+      "confirmation_sources_max": 3,
+      "context_sources_max": 3,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 1,
+        "totals": 4
+      },
+      "home_team": "Los Angeles Galaxy",
+      "league_name": "USA - MLS",
+      "match_key": "soccer|los angeles galaxy|san diego|2026-10-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 4,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Melbourne Victory FC",
+      "best_candidate": {
+        "adjusted_probability": 0.670157,
+        "books_count": 2,
+        "canonical_edge_pp": 2.975,
+        "canonical_ev_pct": 20.628,
+        "confidence": 75.864,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.8,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 1.5,
+        "reject_reasons": [],
+        "selection": "Больше 1.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.864,
+      "best_edge_pp": 2.975,
+      "best_ev_pct": 20.628,
+      "books_max": 2,
+      "candidate_count": 5,
+      "commence_time": "2026-10-18T02:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 2
+      },
+      "home_team": "Wellington Phoenix FC",
+      "league_name": "Australia - A-League",
+      "match_key": "soccer|melbourne victory|wellington phoenix|2026-10-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 5,
+        "ev_below_micro_c": 4,
+        "single_book": 3,
+        "single_context_source": 5,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Atletico San Luis",
+      "best_candidate": {
+        "adjusted_probability": 0.602514,
+        "books_count": 5,
+        "canonical_edge_pp": 5.904,
+        "canonical_ev_pct": 10.863,
+        "confidence": 78.888,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.84,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 78.888,
+      "best_edge_pp": 5.904,
+      "best_ev_pct": 10.863,
+      "books_max": 5,
+      "candidate_count": 1,
+      "commence_time": "2026-10-18T01:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Deportivo Toluca FC",
+      "league_name": "Mexico - Liga MX, Apertura",
+      "match_key": "soccer|atletico san luis|toluca|2026-10-18",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "CF America",
+      "best_candidate": {
+        "adjusted_probability": 0.510515,
+        "books_count": 5,
+        "canonical_edge_pp": 4.969,
+        "canonical_ev_pct": 10.782,
+        "confidence": 78.852,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.17,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 78.852,
+      "best_edge_pp": 4.969,
+      "best_ev_pct": 10.782,
+      "books_max": 5,
+      "candidate_count": 1,
+      "commence_time": "2026-10-18T01:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Club Leon",
+      "league_name": "Mexico - Liga MX, Apertura",
+      "match_key": "soccer|america|leon|2026-10-18",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "CD Fuerte San Francisco Morazan",
+      "best_candidate": {
+        "adjusted_probability": 0.54392,
+        "books_count": 5,
+        "canonical_edge_pp": 4.141,
+        "canonical_ev_pct": 8.24,
+        "confidence": 77.708,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.99,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 77.708,
+      "best_edge_pp": 4.141,
+      "best_ev_pct": 8.24,
+      "books_max": 5,
+      "candidate_count": 1,
+      "commence_time": "2026-10-18T01:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "AD Isidro Metapan",
+      "league_name": "El Salvador - Primera Division, Apertura",
+      "match_key": "soccer|ad isidro metapan|fuerte san francisco morazan|2026-10-18",
+      "missing_flags": {},
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Venados  FC",
+      "best_candidate": {
+        "adjusted_probability": 0.457766,
+        "books_count": 5,
+        "canonical_edge_pp": 3.223,
+        "canonical_ev_pct": 7.575,
+        "confidence": 77.409,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 2.35,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 77.409,
+      "best_edge_pp": 3.223,
+      "best_ev_pct": 7.575,
+      "books_max": 5,
+      "candidate_count": 1,
+      "commence_time": "2026-10-18T01:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Cancun FC",
+      "league_name": "Mexico - Liga de Expansion MX, Apertura",
+      "match_key": "soccer|cancun|venados|2026-10-18",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Cruz Azul",
+      "best_candidate": {
+        "adjusted_probability": 0.475259,
+        "books_count": 4,
+        "canonical_edge_pp": 3.278,
+        "canonical_ev_pct": 7.408,
+        "confidence": 73.034,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.26,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 73.034,
+      "best_edge_pp": 3.278,
+      "best_ev_pct": 7.408,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-10-18T01:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "CF Monterrey",
+      "league_name": "Mexico - Liga MX, Women, Apertura",
+      "match_key": "2026-10-18|monterrey|cruz azul",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Chattanooga Red Wolves SC",
+      "best_candidate": {
+        "adjusted_probability": 0.352472,
+        "books_count": 4,
+        "canonical_edge_pp": 2.244,
+        "canonical_ev_pct": 6.799,
+        "confidence": 72.76,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 3.03,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 2.0,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 1
+      },
+      "best_confidence": 72.76,
+      "best_edge_pp": 2.244,
+      "best_ev_pct": 6.799,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-10-18T01:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Spokane Velocity FC",
+      "league_name": "USA - USL, League One",
+      "match_key": "soccer|chattanooga red wolves|spokane velocity|2026-10-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Av Alta FC",
+      "best_candidate": {
+        "adjusted_probability": 0.639323,
+        "books_count": 4,
+        "canonical_edge_pp": 4.052,
+        "canonical_ev_pct": 6.767,
+        "confidence": 76.245,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
+        "family": "totals",
+        "odds": 1.67,
+        "odds_sources_count": 2,
+        "origin": "rescue",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Меньше",
+        "sources_count": 2
+      },
+      "best_confidence": 76.245,
+      "best_edge_pp": 4.052,
+      "best_ev_pct": 6.767,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-10-18T01:00:00+00:00",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "AC Boise",
+      "league_name": "USA - USL, League One",
+      "match_key": "soccer|av alta|boise|2026-10-18",
+      "missing_flags": {
+        "ev_below_micro_c": 1
+      },
+      "odds_sources_max": 2,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 2
+    },
+    {
+      "away_team": "Colorado Rapids",
+      "best_candidate": {
+        "adjusted_probability": 0.53246,
+        "books_count": 2,
+        "canonical_edge_pp": 2.613,
+        "canonical_ev_pct": 5.161,
+        "confidence": 68.422,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.975,
+        "odds_sources_count": 1,
+        "origin": "rescue",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Больше",
+        "sources_count": 1
+      },
+      "best_confidence": 68.422,
+      "best_edge_pp": 2.613,
+      "best_ev_pct": 5.161,
+      "books_max": 2,
+      "candidate_count": 1,
+      "commence_time": "2026-10-18T02:30:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Portland Timbers",
+      "league_name": "USA - MLS",
+      "match_key": "soccer|colorado rapids|portland timbers|2026-10-18",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        "rescue": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    }
+  ]
 }
