@@ -797,7 +797,7 @@ def test_daily_totals_derive_probability_and_refund_from_same_goal_model(point, 
         expected = distribution.decisive_win if candidate_row.selection_key == 'over' else 1-distribution.decisive_win
         assert candidate_row.model_probability == pytest.approx(expected)
         assert candidate_row.source_summary['model_push_probability'] == pytest.approx(distribution.push)
-        assert candidate_row.source_summary['goal_model_version'] == 'daily-goals-v2'
+        assert candidate_row.source_summary['goal_model_version'] == 'daily-goals-v3'
 
 
 def test_squad_keys_distinguish_teams_and_preserve_adult_key():
@@ -911,3 +911,72 @@ def test_calibration_synchronizes_artifact_explanation_and_keeps_previous_estima
     assert c.source_summary['analysis_points'] == c.analysis['summary_points']
     assert c.analysis['sections']['recent'] == 'Контекст'
     assert c.analysis['probability_gap_pp'] == c.source_summary['probability_gap_pp']
+
+
+def test_repeated_season_tables_share_one_evidence_weight():
+    def table(source):
+        details={f'{source}_home_played':8,f'{source}_away_played':8,
+                 f'{source}_home_gf_pg':3.2,f'{source}_home_ga_pg':.8,
+                 f'{source}_away_gf_pg':3.,f'{source}_away_ga_pg':1.}
+        if source=='football_data':details['football_data_mode']='standings'
+        return MatchContext(source,{},expected_home=2.26,expected_away=1.9,
+                            confidence=75,details=details)
+    fd,ts=table('football_data'),table('thesportsdb')
+    form=context(12,home=1.5,away=1.1)
+    single=blended(fd,form);repeated=blended(fd,ts,form)
+    assert repeated.expected_home==pytest.approx(single.expected_home)
+    assert repeated.expected_away==pytest.approx(single.expected_away)
+    evidence=repeated.details['daily_context_reliability']
+    assert evidence['independent_evidence_count']==2
+    assert evidence['duplicate_evidence_groups']==[['football_data','thesportsdb']]
+
+
+@pytest.mark.parametrize('sample',[3,4,5])
+def test_more_apis_cannot_promote_known_short_samples(sample):
+    merged=blended(context(sample),context(source='espn'))
+    evidence=merged.details['daily_context_reliability']
+    assert evidence['insufficient_known_sample']
+    assert merged.confidence<60
+    c=candidate(evidence);c.source_summary['quality_score']=100
+    tier,reasons,_=quality_decision(c,{'odds_sources_count':1,'context_sources_count':2,'books_count':3},now=datetime.now(UTC))
+    assert 'insufficient_confirmed_sample' in reasons
+    assert evidence_quality(c)<65
+
+
+def test_model_version_cohorts_do_not_relabel_old_forecasts_or_remove_losses():
+    service=PredictionQualityService(SimpleNamespace())
+    def row(version,status,pnl):
+        return {'goal_model_version':version,'status':status,'pnl':pnl,'stake_amount':1.,
+                'adjusted_probability_pct':60.,'market_probability_pct':50.,'odds':2.,'family':'totals'}
+    old=row('daily-goals-v2','lost',-1.);new=row('daily-goals-v3','won',1.)
+    report=service.build_quality_report([old,new])
+    assert report['summary']['count']==2 and report['summary']['pnl']==0
+    cohorts=report['model_versions']
+    assert cohorts['daily-goals-v2']['summary']['pnl']==-1.
+    assert cohorts['daily-goals-v3']['summary']['pnl']==1.
+    assert old['goal_model_version']=='daily-goals-v2'
+
+
+@pytest.mark.parametrize('version_count,ready', [(0,False),(49,False),(50,True)])
+def test_calibration_never_uses_another_goal_model_version(monkeypatch,version_count,ready):
+    from datetime import UTC,datetime
+    service=PredictionQualityService(SimpleNamespace(quality_min_history_bets=1,
+        min_quality_score_publish=0,no_bet_quality_score_enabled=False))
+    monkeypatch.setenv('DAILY_CALIBRATION_MIN_VERSION_BETS','50')
+    c=candidate(blended(context(12)).details['daily_context_reliability'])
+    c.source_summary.update(goal_model_version='daily-goals-v3')
+    c.publication_score=50.;c.reasons=[];c.family='totals';c.selection_key='over'
+    c.selection='Over';c.point=2.5;c.team_side=None;c.home_team='Home';c.away_team='Away'
+    c.league_name='Premier League';c.match_key='match';c.model_mode='xg_total';c.diagnostics={};c.analysis={}
+    captured=[]
+    monkeypatch.setattr(service,'_candidate_calibration',lambda segments,profile,enough:captured.append((profile,enough)) or {'applied':False,'delta_probability':0.,'segments_used':[]})
+    # Stop before unrelated publication guards; this test only verifies history routing.
+    monkeypatch.setattr(service,'_context_sample_guard',lambda _: 'test_stop')
+    report={'summary':{'settled_binary_bets':100},'profile':{'old_version':True},
+            'model_versions':{'daily-goals-v2':{'summary':{'count':100},'profile':{'old_version':True}}}}
+    if version_count:
+        report['model_versions']['daily-goals-v3']={'summary':{'count':version_count},'profile':{'v3':True}}
+    service.apply_to_candidates([c],report,datetime.now(UTC))
+    assert captured==[({'v3':True} if version_count else {},ready)]
+    assert c.source_summary['calibration_history']['binary_count']==version_count
+    assert c.adjusted_probability==.65

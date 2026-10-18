@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
 from pathlib import Path
 from statistics import mean, median
 from typing import Any
+from types import SimpleNamespace
 
 from app.config import Settings
 from app.schemas import CandidateBet, Match, Offer
@@ -19,9 +21,14 @@ class MarketMonitor:
         self.settings = settings
         self.base_dir = Path(settings.storage_export_dir) / settings.market_monitor_subdir
         self.base_dir.mkdir(parents=True, exist_ok=True)
-        self.latest_snapshot_path = self.base_dir / 'latest-market-snapshot.json'
-        self.pending_clv_path = self.base_dir / 'pending-clv.json'
-        self.clv_results_path = self.base_dir / 'clv-results.json'
+        # Keep the existing workflow cache path list unchanged: actions/cache
+        # versions depend on that list, so adding paths would lose old ledgers.
+        self.state_dir = (Path(settings.storage_export_dir).parent / 'daily_quality' / settings.market_monitor_subdir
+                          if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' else self.base_dir)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        self.latest_snapshot_path = self.state_dir / 'latest-market-snapshot.json'
+        self.pending_clv_path = self.state_dir / 'pending-clv.json'
+        self.clv_results_path = self.state_dir / 'clv-results.json'
 
     def build_signals(
         self,
@@ -44,6 +51,8 @@ class MarketMonitor:
             'clv_resolved': clv_summary.get('resolved_count', 0),
             'avg_open_clv_pct': clv_summary.get('avg_open_clv_pct'),
             'avg_resolved_clv_pct': clv_summary.get('avg_resolved_clv_pct'),
+            'clv_measured_total': clv_summary.get('measured_total', 0),
+            'clv_missing_quote_now': clv_summary.get('missing_quote_count', 0),
         }
         preview = {
             'sample_signals': self._sample_signals(signals, limit=12),
@@ -57,6 +66,9 @@ class MarketMonitor:
         payload = self._load_json(self.pending_clv_path, default=[])
         rows = payload if isinstance(payload, list) else []
         seen = {str(item.get('fingerprint')) for item in rows if isinstance(item, dict)}
+        history = self._load_json(self.clv_results_path, default=[])
+        if isinstance(history, list):
+            seen.update(str(item.get('fingerprint')) for item in history if isinstance(item, dict))
         added = 0
         for candidate in candidates:
             summary = dict(getattr(candidate, 'source_summary', {}) or {})
@@ -85,17 +97,42 @@ class MarketMonitor:
                     'market_signal_key': signal_key,
                     'best_vs_consensus_edge_pct': summary.get('best_vs_consensus_edge_pct'),
                     'context_source': summary.get('context_source'),
+                    'goal_model_version': summary.get('goal_model_version', 'unversioned'),
+                    'entry_bookmaker': str(summary.get('selected_bookmaker') or '').strip().lower(),
                 }
             )
             added += 1
         self._write_json(self.pending_clv_path, rows)
         return {'tracked': added}
 
+    def restore_published_tracking(self, bets, now_utc):
+        """Recover future confirmed entries from the ledger after old cache loss."""
+        count = 0
+        if os.getenv('PUBLICATION_PROFILE', '').lower() != 'daily_quality':
+            return count
+        for row in bets:
+            kickoff, published = self._parse_dt(row.get('commence_time')), self._parse_dt(row.get('published_at'))
+            if not row.get('telegram_sent') or not kickoff or not published or kickoff <= now_utc:
+                continue
+            summary = dict(row.get('source_summary') or {})
+            if not summary.get('market_signal_key'):
+                continue
+            fields = {key: row.get(key) for key in ('home_team', 'away_team', 'match_key', 'family', 'selection', 'selection_key',
+                      'team_side', 'point', 'odds', 'fair_odds', 'market_probability', 'adjusted_probability')}
+            candidate = SimpleNamespace(**fields, commence_time=kickoff, source_summary=summary)
+            count += self.record_published_candidates([candidate], published)['tracked']
+        return count
+
     def resolved_clv_rows(self) -> list[dict[str, Any]]:
         payload = self._load_json(self.clv_results_path, default=[])
-        return [dict(item) for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+        rows = [dict(item) for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            rows = [row for row in rows if row.get('measurement_status') == 'measured']
+        return rows
 
     def _update_pending_clv(self, now_utc: datetime, snapshot: dict[str, Any]) -> dict[str, Any]:
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            return self._update_daily_pending_clv(now_utc, snapshot)
         payload = self._load_json(self.pending_clv_path, default=[])
         rows = payload if isinstance(payload, list) else []
         resolved_payload = self._load_json(self.clv_results_path, default=[])
@@ -150,6 +187,60 @@ class MarketMonitor:
             'results_kept': len(resolved_rows[-1000:]),
         }
 
+    def _update_daily_pending_clv(self, now_utc, snapshot):
+        rows = self._load_json(self.pending_clv_path, default=[])
+        resolved = self._load_json(self.clv_results_path, default=[])
+        rows = rows if isinstance(rows, list) else []
+        resolved = [row for row in resolved if isinstance(row, dict)] if isinstance(resolved, list) else []
+        pending, values = [], []
+        grace = timedelta(minutes=max(0, int(getattr(self.settings, 'clv_resolve_grace_minutes', 45))))
+        snapshot_time = self._parse_dt(snapshot.get('created_at'))
+        before = len(resolved)
+        for item in rows:
+            if not isinstance(item, dict):
+                continue
+            row = dict(item)
+            kickoff = self._parse_dt(row.get('commence_time'))
+            key, signal = row.get('match_key'), row.get('market_signal_key')
+            market = (snapshot.get('matches', {}).get(key) or {}).get(signal) or {}
+            event_time = self._parse_dt((snapshot.get('meta', {}).get(key) or {}).get('commence_time'))
+            book = row.get('entry_bookmaker')
+            price = self._to_float((market.get('prices_by_book') or {}).get(book)) if book else None
+            # A daily match key alone cannot distinguish two fixtures on one day.
+            # Only a later snapshot of the exact fixture and selected bookmaker
+            # may become the pre-kickoff reference. Never use in-play prices.
+            tracked = self._parse_dt(row.get('tracked_at'))
+            if (kickoff and event_time == kickoff and snapshot_time and tracked
+                    and tracked < snapshot_time <= now_utc and snapshot_time < kickoff
+                    and price is not None and price > 1):
+                previous = self._parse_dt(row.get('reference_observed_at'))
+                if previous is None or snapshot_time > previous:
+                    row['reference_odds'] = price
+                    row['reference_observed_at'] = snapshot_time.isoformat()
+            observed = self._parse_dt(row.get('reference_observed_at'))
+            valid = bool(kickoff and observed and timedelta(0) < kickoff - observed <= grace)
+            if kickoff is not None and now_utc >= kickoff:
+                row['resolved_at'] = now_utc.isoformat()
+                value = self._clv_pct(self._to_float(row.get('entry_odds')), self._to_float(row.get('reference_odds'))) if valid else None
+                row['measurement_status'] = 'measured' if value is not None else 'missing_recent_same_book_quote'
+                row['measurement_basis'] = 'same_book_pre_kickoff_snapshot'
+                row['pre_kickoff_drift_pct'] = self._clv_pct(self._to_float(row.get('entry_odds')), self._to_float(row.get('reference_odds')))
+                row['open_clv_pct'] = round(value, 3) if value is not None else None
+                # Do not silently turn the last available hours-old quote into CLV.
+                resolved.append(row)
+                if value is not None:
+                    values.append(value)
+            else:
+                pending.append(row)
+        self._write_json(self.pending_clv_path, pending)
+        self._write_json(self.clv_results_path, resolved[-1000:])
+        return {'pending_count': len(pending), 'resolved_count': len(resolved) - before,
+                'avg_open_clv_pct': None,
+                'avg_resolved_clv_pct': round(mean(values), 3) if values else None,
+                'results_kept': len(resolved[-1000:]),
+                'measured_total': sum(row.get('measurement_status') == 'measured' for row in resolved[-1000:]),
+                'missing_quote_count': len(resolved) - before - len(values)}
+
     def _build_snapshot(self, matches: list[Match], offers_by_match: dict[str, list[Offer]], now_utc: datetime) -> dict[str, Any]:
         match_index = {match.match_key: match for match in matches}
         payload: dict[str, Any] = {
@@ -174,6 +265,10 @@ class MarketMonitor:
                     'sources': sorted({str(item.source) for item in bucket}),
                     'offers_count': len(bucket),
                     'best_price': max(prices),
+                    'prices_by_book': {str(offer.bookmaker).strip().lower(): max(
+                        float(other.price) for other in bucket
+                        if str(other.bookmaker).strip().lower() == str(offer.bookmaker).strip().lower())
+                        for offer in bucket},
                     'median_price': round(median(prices), 4),
                     'mean_price': round(mean(prices), 4),
                     'min_price': min(prices),
@@ -363,10 +458,15 @@ class MarketMonitor:
             pass
         return default
 
-    @staticmethod
-    def _write_json(path: Path, payload: Any) -> None:
+    def _write_json(self, path: Path, payload: Any) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        content = json.dumps(payload, ensure_ascii=False, indent=2)
+        temp = path.with_suffix(path.suffix + '.tmp')
+        temp.write_text(content, encoding='utf-8')
+        temp.replace(path)
+        if path.parent == self.state_dir and self.state_dir != self.base_dir:
+            # Human-readable artifacts stay at their established export paths.
+            (self.base_dir / path.name).write_text(content, encoding='utf-8')
 
     @staticmethod
     def _sample_signals(signals: dict[str, dict[str, Any]], limit: int = 10) -> list[dict[str, Any]]:

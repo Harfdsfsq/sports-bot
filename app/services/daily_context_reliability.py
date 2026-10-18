@@ -10,6 +10,25 @@ import os
 import json
 from dataclasses import replace
 
+GOAL_MODEL_VERSION = 'daily-goals-v3'
+
+
+def b_sample_floor():
+    return max(3, int(os.getenv('DAILY_B_MIN_TEAM_SAMPLE', '6')))
+
+
+def table_evidence_signature(context, support):
+    """Only known identical season statistics can share an evidence group."""
+    if support.get('sample_kind') != 'season_table':
+        return None
+    prefix = {'football_data': 'football_data', 'thesportsdb': 'thesportsdb'}.get(support['provider'])
+    if prefix is None:
+        return None
+    values = [support.get('home'), support.get('away')]
+    for side in ('home', 'away'):
+        for metric in ('gf_pg', 'ga_pg'):
+            values.append(_number((context.details or {}).get(f'{prefix}_{side}_{metric}')))
+    return tuple(round(float(v), 3) for v in values) if all(v is not None for v in values) else None
 
 def a_sample_floor():
     return max(3, int(os.getenv('DAILY_A_MIN_TEAM_SAMPLE', '6')))
@@ -123,6 +142,17 @@ def blend_contexts(contexts, weight_for_source):
         n = support['minimum']
         reliability = 0. if support['status'] == 'unverified_table' else .5 if n is None else n / (n + 6.)
         weights.append(max(0., float(c.confidence)) * max(0., weight_for_source(c)) * reliability)
+    groups = {}
+    for index, (c, support) in enumerate(zip(contexts, supports, strict=True)):
+        signature = table_evidence_signature(c, support)
+        if signature is not None:
+            groups.setdefault(signature, []).append(index)
+    duplicates = [indices for indices in groups.values() if len(indices) > 1]
+    for indices in duplicates:
+        total = sum(weights[index] for index in indices)
+        scale = max(weights[index] for index in indices) / total if total > 0 else 0.
+        for index in indices:
+            weights[index] *= scale
     if sum(weights) <= 0:
         weights = [1.] * len(contexts)
 
@@ -146,9 +176,10 @@ def blend_contexts(contexts, weight_for_source):
                                      for c, _, w in predictive) / predictive_weight)
     known = [s['minimum'] for _, s, _ in predictive if s['minimum'] is not None]
     best_sample = max(known) if known else None
+    insufficient_sample = best_sample is not None and best_sample < b_sample_floor()
     all_thin = bool(predictive) and all(s['status'] in {'thin', 'unverified_table'} for _, s, _ in predictive)
     a_supported = share >= .5 and disagreement <= float(os.getenv('DAILY_A_MAX_GOAL_DISAGREEMENT', '.65'))
-    cap = 59. if all_thin else 69. if not a_supported else 100.
+    cap = 59. if all_thin or insufficient_sample else 69. if not a_supported else 100.
     def unambiguous_maps(maps):
         result, conflicts = {}, set()
         for mapping in maps:
@@ -164,7 +195,10 @@ def blend_contexts(contexts, weight_for_source):
     details['daily_provider_features'] = [
         {'source': c.source, 'details': dict(c.details or {})} for c in contexts]
     details['daily_feature_conflicts'] = conflicts
-    evidence = {'version': 'evidence-v1', 'sources': supports, 'best_team_sample': best_sample,
+    evidence = {'version': 'evidence-v2', 'sources': supports, 'best_team_sample': best_sample,
+                'insufficient_known_sample': insufficient_sample,
+                'independent_evidence_count': len(contexts) - sum(len(indices) - 1 for indices in duplicates),
+                'duplicate_evidence_groups': [[supports[index]['provider'] for index in indices] for indices in duplicates],
                 'supported_weight_share': round(share, 4), 'goal_disagreement': round(disagreement, 4),
                 'a_supported': a_supported, 'all_thin': all_thin, 'confidence_cap': cap}
     details.update(daily_context_reliability=evidence, merged_sources=[c.source for c in contexts])
@@ -182,12 +216,15 @@ def evidence_quality(candidate):
     score = 70. if n is None else 60. + min(20., float(n) * 20. / 12.)
     score += min(6., max(0, int(candidate.books_count) - 1) * 3.)
     score += min(3., max(0, int(candidate.sources_count) - 1) * 1.5)
-    score += min(2., max(0, int(s.get('context_sources_count') or 1) - 1))
+    independent = evidence.get('independent_evidence_count', s.get('context_sources_count') or 1)
+    score += min(2., max(0, int(independent) - 1))
     if candidate.books_count <= 1:
         score -= 2.
     score -= min(12., float(evidence.get('goal_disagreement') or 0) * 12.)
     if evidence.get('all_thin'):
         score = min(score, 60.)
+    elif evidence.get('insufficient_known_sample') or (n is not None and float(n) < b_sample_floor()):
+        score = min(score, 64.)
     elif not evidence.get('a_supported'):
         score = min(score, 76.)
     return max(0., min(100., score))

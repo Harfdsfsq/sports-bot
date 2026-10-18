@@ -9,6 +9,7 @@ from typing import Any
 
 from app.services.daily_goal_probability import expected_value
 from app.services.fixture_identity import fixture_squad_reasons
+from app.services.daily_context_reliability import b_sample_floor
 
 TIER_LIMITS = {
     'A': {'quality': 78, 'confidence': 70, 'ev': 5, 'edge': 3},
@@ -30,6 +31,9 @@ def quality_decision(candidate: Any, coverage: dict, *, now: datetime) -> tuple[
     ev = expected_value(p, odds, push)
     evidence = dict(summary.get('daily_context_reliability') or {})
     reasons = fixture_squad_reasons(candidate)
+    sample = evidence.get('best_team_sample')
+    if sample is not None and float(sample) < b_sample_floor():
+        reasons.append('insufficient_confirmed_sample')
     if evidence.get('all_thin'):
         reasons.append('insufficient_team_sample')
     # Quality scores describe ranking, never an independently verified win rate.

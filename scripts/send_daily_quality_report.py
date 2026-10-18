@@ -11,6 +11,7 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'insufficient_confirmed_sample': 'подтверждённая выборка команд меньше минимальной',
     'context_history_identity_missing': 'история команды не содержит проверяемых названий участников',
     'context_payload_invalid': 'источник вернул спортивные данные в неподдерживаемом формате',
     'fixture_squad_ambiguous': 'источник не уточнил состав клуба в турнире с резервными командами',
@@ -181,6 +182,13 @@ def render(summary):
         lines.append('⚠️ Ближайшее окно покрыто частично; отсутствующие данные остаются в очереди.')
     if summary.get('goal_model_version'):
         lines.extend(['', f"🧠 Голевая модель: {summary['goal_model_version']} — без повторных надбавок за форму и таблицу."])
+        version = summary['goal_model_version']
+        history = (summary.get('goal_model_history') or {}).get(version, {})
+        lines.append(f"История этой версии: завершено {history.get('settled', 0)}; без возврата {history.get('count', 0)}. Для калибровки нужно {os.getenv('DAILY_CALIBRATION_MIN_VERSION_BETS', '50')} ставок без возврата этой версии.")
+        lines.append(f"Известная выборка для публикации: от {os.getenv('DAILY_B_MIN_TEAM_SAMPLE', '6')} матчей на команду. Одинаковые сезонные данные нескольких API не увеличивают их общий вес.")
+    monitor = summary.get('market_monitor') or {}
+    if 'clv_measured_total' in monitor:
+        lines.append(f"Проверка цены перед матчем: измерено {monitor['clv_measured_total']}; без подходящей свежей котировки в этом запуске — {monitor.get('clv_missing_quote_now', 0)}.")
     lines.extend(['', 'Проценты модели — оценки, а не подтверждённая проходимость. A/B обозначает качество отбора, а не гарантированный исход.',
                   f"Run {os.getenv('GITHUB_RUN_ID', 'local')} · {os.getenv('GITHUB_REF_NAME', 'local')}"])
     return '\n'.join(lines)

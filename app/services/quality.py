@@ -89,6 +89,25 @@ class PredictionQualityService:
         }
         report['profile'] = self._profile_from_stats(segments, clv)
         report['learning'] = self._learning_summary(report['profile'])
+        if daily:
+            versions = defaultdict(list)
+            for row in rows:
+                version = row.get('goal_model_version') or (row.get('source_summary') or {}).get('goal_model_version') or 'unversioned'
+                versions[str(version)].append(row)
+            report['model_versions'] = {}
+            for version, group in sorted(versions.items()):
+                binary = [row for row in group if self._binary_result(row) is not None]
+                version_clv = self._clv_segment_stats([row for row in clv_rows if row.get('goal_model_version') == version])
+                report['model_versions'][version] = {
+                    'summary': self._portfolio_summary(binary),
+                    'settled_financial_summary': self._portfolio_summary([
+                        row for row in group if str(row.get('status')) in {'won', 'lost', 'push', 'void'}]),
+                    'settled_total': sum(str(row.get('status')) in {'won', 'lost', 'push', 'void'} for row in group),
+                    'outcomes': dict(Counter(str(row.get('status')) for row in group)),
+                    'paired_probability_scores': self._paired_probability_scores(binary),
+                    'win_push_loss_scores': self._win_push_loss_scores(group),
+                    'profile': self._profile_from_stats(self._segment_stats(binary), version_clv),
+                }
         return report
 
     def apply_to_candidates(
@@ -113,10 +132,21 @@ class PredictionQualityService:
         for candidate in candidates:
             original_probability = float(candidate.adjusted_probability)
             segments = self._candidate_segments(candidate)
-            calibration = self._candidate_calibration(segments, profile, enough_history)
+            calibration_profile, calibration_ready = profile, enough_history
+            version = candidate.source_summary.get('goal_model_version')
+            if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality' and version:
+                cohort = (quality_report.get('model_versions') or {}).get(version) or {}
+                count = int((cohort.get('summary') or {}).get('count') or 0)
+                minimum = max(min_history, int(os.getenv('DAILY_CALIBRATION_MIN_VERSION_BETS', '50')))
+                calibration_profile = cohort.get('profile') or {}
+                calibration_ready = count >= minimum
+                candidate.source_summary['calibration_history'] = {
+                    'goal_model_version': version, 'binary_count': count, 'minimum': minimum,
+                    'ready': calibration_ready, 'risk_guards_basis': 'pooled_clean_published_history'}
+            calibration = self._candidate_calibration(segments, calibration_profile, calibration_ready)
             if calibration['applied']:
                 self._apply_probability_adjustment(candidate, float(calibration['delta_probability']))
-            learning_adjustment = self._candidate_learning_adjustment(segments, profile, enough_history)
+            learning_adjustment = self._candidate_learning_adjustment(segments, calibration_profile, calibration_ready)
             if learning_adjustment['applied']:
                 candidate.publication_score = round(
                     float(getattr(candidate, 'publication_score', 0.0) or 0.0)
@@ -147,7 +177,7 @@ class PredictionQualityService:
             for guard in (
                 self._context_sample_guard,
                 self._market_sanity_guard,
-                lambda item: self._clv_guard(segments, profile, enough_history),
+                lambda item: self._clv_guard(segments, calibration_profile, calibration_ready),
                 lambda item: self._historical_segment_guard(item, segments, profile, enough_history),
                 lambda item: self._quarantine_guard(item, segments, profile, enough_history),
                 lambda item: self._high_odds_guard(item, quality_score),
@@ -826,6 +856,9 @@ class PredictionQualityService:
         if not bool(self._setting('nightly_review_store_adjustments_enabled', True)):
             return {'applied': False, 'score_delta': 0.0, 'sources': []}
         payload = dict((recent_learning_state or {}).get('next_day_adjustments') or {})
+        version = (candidate.source_summary or {}).get('goal_model_version')
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' and version and payload.get('goal_model_version') != version:
+            return {'applied': False, 'score_delta': 0.0, 'sources': [], 'reason': 'unverified_model_version'}
         if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' and payload.get('context_audit_version') != AUDIT_VERSION:
             return {'applied': False, 'score_delta': 0.0, 'sources': [], 'reason': 'unverified_legacy_adjustments'}
         if not payload or not bool(payload.get('enabled', True)):
@@ -895,7 +928,7 @@ class PredictionQualityService:
     def _candidate_quality_score(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> float:
         if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
             from app.services.daily_context_reliability import evidence_quality
-            candidate.source_summary['quality_score_basis'] = 'evidence-v1'
+            candidate.source_summary['quality_score_basis'] = 'evidence-v2'
             return evidence_quality(candidate)
         score = 43.0
         score += float(candidate.confidence) * 0.22

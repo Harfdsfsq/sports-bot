@@ -11,6 +11,7 @@ from app.schemas import CandidateBet, Match, MatchContext, MatchContextBundle, O
 from app.services.daily_goal_probability import expected_value, push_probability, spread_probability, total_probability
 from app.services.daily_quality_policy import TIER_LIMITS, sporting_context_sources
 from app.services.market_period import is_full_match_market
+from app.services.daily_context_reliability import GOAL_MODEL_VERSION
 from app.utils import (
     candidate_selection_key,
     clamp,
@@ -1176,6 +1177,11 @@ class CandidateFactory:
         context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         if daily_profile:
             confidence = min(confidence, float((context_details.get('daily_context_reliability') or {}).get('confidence_cap', 69.)))
+            sample = (context_details.get('daily_context_reliability') or {}).get('best_team_sample')
+            # Source counts are not a fitted confidence in the model's edge.
+            # Bound its market-blend weight by the supported sample size.
+            weight_cap = .15 if sample is None else float(sample) / (float(sample) + 12.)
+            shrink_min, shrink_max = min(shrink_min, weight_cap), min(shrink_max, weight_cap)
         confidence = clamp(confidence, 0, 100)
 
         adjusted = shrink_probability(model_prob, market_prob, confidence, shrink_min, shrink_max)
@@ -1303,7 +1309,7 @@ class CandidateFactory:
             team_side=best_offer.team_side,
             analysis=analysis,
             source_summary={
-                'goal_model_version': ('daily-goals-v2' if daily_profile else 'legacy'),
+                'goal_model_version': (GOAL_MODEL_VERSION if daily_profile else 'legacy'),
                 'books': sorted(books),
                 'sources': sorted(sources),
                 'offers_seen': len(offers),

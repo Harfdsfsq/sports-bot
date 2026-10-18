@@ -14,6 +14,7 @@ from app.services.line_movement_state import evaluate_and_record_line_movement
 from app.services.runner import PredictionRunner
 from app.services.strict_price_integrity import rejection_reasons
 from app.services.telegram import TelegramPublisher
+from app.services.daily_context_reliability import GOAL_MODEL_VERSION
 
 ODDS = {'odds_api_io'}
 CONTEXT = {'sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb', 'api_football'}
@@ -56,6 +57,8 @@ class DailyQualityRunner(PredictionRunner):
         self.work_plan = {}
         self.daily_rejections = Counter()
         self.selected_daily = []
+        self.clv_recovered = (self.market_monitor.restore_published_tracking(
+            self.state.pending_bets(include_shadow=False), datetime.now(UTC)) if self.market_monitor else 0)
 
     def _record_confirmed(self, candidate):
         identity = candidate.source_summary['registry_match_id']
@@ -343,7 +346,12 @@ class DailyQualityRunner(PredictionRunner):
             summary = await super().run_once()
             summary['candidates_model_evaluated'] = getattr(self.factory, 'prefilter_candidates_count', 0)
             summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
-            summary['goal_model_version'] = 'daily-goals-v2'
+            summary['goal_model_version'] = GOAL_MODEL_VERSION
+            summary['clv_recovered_from_ledger'] = self.clv_recovered
+            quality_report = read_json('.data/exports/latest-quality-report.json', {})
+            summary['goal_model_history'] = {
+                version: {'settled': cohort['settled_total'], **cohort['summary']}
+                for version, cohort in (quality_report.get('model_versions') or {}).items()}
             from app.services.api_budget import ApiBudget
             summary['api_budget'] = ApiBudget().snapshot()
             pending = self.state.pending_bets(include_shadow=False)

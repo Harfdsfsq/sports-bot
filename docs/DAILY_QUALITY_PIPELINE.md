@@ -511,3 +511,56 @@ probability gap and edge explanation; the pre-calibration probability remains
 explicitly available. This avoids final Telegram values disagreeing with stale
 pre-calibration prose inside JSON artifacts. Raw score-model probabilities and
 financial history are unchanged.
+
+### 2026-10-18: daily-goals-v3 / evidence-v2
+
+This is a provisional conservative model revision, not a fitted strength model
+or evidence of improved profitability. Existing financial history and published
+fingerprints are unchanged; v2 and unversioned forecasts keep their original tags.
+
+* Confirmed team samples below `DAILY_B_MIN_TEAM_SAMPLE=6` cannot pass B, even
+  with additional APIs. Such evidence caps confidence at 59 and quality below 65.
+  Unknown sample sizes remain unknown and do not become six fabricated games.
+* Exact repeated season statistics (games played and both teams' goals for/against)
+  from Football-data and TheSportsDB share one group weight, capped at the largest
+  individual weight. Other projections are not guessed to be independent or
+  duplicated. The evidence report records the groups and independent group count.
+* The goal model's maximum weight in the market probability blend is bounded by
+  `n/(n+12)` for known sample n, and 0.15 if the sample is unknown. These are
+  conservative provisional constants, not tuned on the recent losses. Original
+  raw score probabilities, quote integrity and publication thresholds remain.
+* Quality reports include per-version outcomes, probability scores, financial
+  summaries (including returns) and learning profiles. Probability calibration
+  and score learning use only the candidate's own version, after at least
+  `DAILY_CALIBRATION_MIN_VERSION_BETS=50` binary settled forecasts. Global clean
+  historical risk/quarantine guards remain active; no old losses are erased.
+  Fifty is a provisional minimum, not a claim of sufficient statistical power.
+
+The three market-monitor state files (`latest-market-snapshot.json`,
+`pending-clv.json`, and `clv-results.json`) now live in
+`.data/daily_quality/market-monitor`, which the workflow already restores/saves.
+The workflow cache path list is deliberately unchanged to preserve its cache
+version and the existing financial ledger. Export copies remain under
+`.data/exports/market-monitor` for artifact review. Future
+confirmed bets can also restore missing tracking entries from the financial
+ledger, without republishing a forecast. Snapshot archive files remain artifacts.
+
+Daily CLV uses the exact kickoff, market signature and selected bookmaker, and
+only a later pre-kickoff snapshot. The latest qualifying quote must be within
+45 minutes before kickoff; a reference is finalized after kickoff. In-play
+prices, another bookmaker's best price, a different fixture on the same day, or
+the entry snapshot itself cannot become CLV. Missing quotes are explicitly
+recorded and excluded from CLV learning. An older pre-kickoff drift may be kept
+as a diagnostic, but is not counted as closing CLV. This is a same-book snapshot
+proxy for closing value, not necessarily the final executable closing price.
+The two-hour run cadence cannot guarantee a quote in that 45-minute interval.
+The report shows measured references and missing-quote counts instead of hiding
+missing measurements or increasing request frequency automatically.
+
+For the next runs, check model tag v3, cohort sizes, sample rejections, duplicate
+evidence groups, cache restoration and CLV measurement statuses. In replay of
+saved admitted contexts, the former Frankfurt/Cologne and Bayern/Leipzig signals
+have only five confirmed games per team, and the pending Cambuur/AZ signal has
+four on its smaller side; these contexts fail the new sample floor. This replay
+checks policy behavior only, and is not an out-of-time backtest or an assertion
+that v3 would be profitable. Higher samples can still produce wrong predictions.
