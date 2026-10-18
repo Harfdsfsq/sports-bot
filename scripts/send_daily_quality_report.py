@@ -128,6 +128,8 @@ def render(summary):
             lines.append('Не допущены в резерв: ' + '; '.join(labels) + '.')
         if reserve.get('historically_blocked_under_observation'):
             lines.append(f"Из новых наблюдений {reserve['historically_blocked_under_observation']} запрещены к публикации по истории; проверяются только условно.")
+        if reserve.get('duplicates_ignored'):
+            lines.append(f"Из статистики резерва исключены повторы одного матча под разными названиями: {reserve['duplicates_ignored']}. Исходные записи сохранены.")
     reviewed = [row for row in daily.get('quality_review', []) if row.get('reasons')]
     if reviewed:
         lines.extend(['', '🔎 Почему финальные кандидаты не прошли'])

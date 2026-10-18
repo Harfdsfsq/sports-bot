@@ -1549,3 +1549,19 @@ def test_research_history_block_is_observed_but_data_guards_still_reject(profile
     assert c.source_summary['research_blockers']==['bad_historical_segment_guard']
     monkeypatch.setattr(service,'_market_sanity_guard',lambda *args:'price_integrity_failed')
     assert service.apply_to_candidates([reserve_candidate(now)],report,now,research_only=True)[0]==[]
+
+
+def test_reserve_aliases_do_not_inflate_paper_results(profile):
+    from app.services.daily_quality_runner import unique_reserve_rows,same_reserve_fixture
+    from app.services.fixture_identity import same_team_identity
+    first={'home_team':'San Martin S.J.','away_team':'Temperley','family':'spreads',
+           'commence_time_utc':'2026-10-18T21:00:00+00:00','goal_model_version':'daily-goals-v4','pnl':-1.}
+    alias={**first,'home_team':'San Martin de San Juan','away_team':'CA Temperley','pnl':1.}
+    assert same_reserve_fixture(first,alias)
+    assert unique_reserve_rows([first,alias])==[first]
+    assert not same_team_identity('San Martin S.J.',['San Martin de Tucuman'])
+    assert not same_team_identity('San Martin S.J.',['San Martin de San Juan U20'])
+    for changed in [{'family':'dnb'},{'goal_model_version':'other'},
+                    {'commence_time_utc':'2026-10-19T21:00:00+00:00'},
+                    {'away_team':'Another team'}]:
+        assert not same_reserve_fixture(first,{**alias,**changed})

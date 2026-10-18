@@ -20,6 +20,31 @@ ODDS = {'odds_api_io'}
 CONTEXT = {'sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb', 'api_football'}
 
 
+def same_reserve_fixture(first, second):
+    """One observation per actual fixture/family/version, despite feed aliases."""
+    from app.services.fixture_identity import same_team_identity
+    def value(row, key):
+        return row.get(key) if isinstance(row, dict) else getattr(row, key, None)
+    def version(row):
+        return value(row, 'goal_model_version') or (value(row, 'source_summary') or {}).get('goal_model_version')
+    a = parse_time(value(first, 'commence_time_utc') or value(first, 'commence_time'))
+    b = parse_time(value(second, 'commence_time_utc') or value(second, 'commence_time'))
+    return bool(a and b and abs(a - b) <= timedelta(minutes=15)
+                and value(first, 'family') == value(second, 'family')
+                and version(first) == version(second)
+                and same_team_identity(value(first, 'home_team'), [value(second, 'home_team')])
+                and same_team_identity(value(first, 'away_team'), [value(second, 'away_team')]))
+
+
+def unique_reserve_rows(rows):
+    # Keep the first recorded observation, never choose by eventual outcome.
+    unique = []
+    for row in rows:
+        if not any(same_reserve_fixture(row, previous) for previous in unique):
+            unique.append(row)
+    return unique
+
+
 class DailyTelegramPublisher(TelegramPublisher):
     async def publish(self, bets, bankroll_summary=None):
         # Paper candidates must never enter a Telegram forecast, even if a
@@ -364,13 +389,14 @@ class DailyQualityRunner(PredictionRunner):
         fingerprints = {row.get('fingerprint') for row in ledger}
         reserved = {(row.get('match_key'), row.get('family'), row.get('commence_time_utc'), row.get('goal_model_version'))
                     for row in ledger if row.get('reserve_only')}
+        reserved_rows = [row for row in ledger if row.get('reserve_only')]
         selected = []
         limit = max(0, int(os.getenv('DAILY_RESERVE_MAX_NEW_PER_RUN', '25')))
         for candidate in sorted(pool, key=lambda c: (c.source_summary.get('quality_score', 0), c.ev_pct), reverse=True):
             if len(selected) >= limit:
                 break
             signature = (candidate.match_key, candidate.family, candidate.commence_time.isoformat(), candidate.source_summary.get('goal_model_version'))
-            if signature in reserved or self._candidate_fingerprint(candidate) in fingerprints:
+            if signature in reserved or self._candidate_fingerprint(candidate) in fingerprints or any(same_reserve_fixture(candidate, previous) for previous in reserved_rows):
                 continue
             match = by_key.get(candidate.match_key)
             if match is None:
@@ -404,6 +430,7 @@ class DailyQualityRunner(PredictionRunner):
             candidate.stake_amount, candidate.stake_pct = 0., 0.
             selected.append(candidate)
             reserved.add(signature)
+            reserved_rows.append(candidate)
         self.reserve_evaluation['selected_new'] = len(selected)
         self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in selected)
         return existing_shadow + selected
@@ -427,9 +454,13 @@ class DailyQualityRunner(PredictionRunner):
                 for version, cohort in (quality_report.get('model_versions') or {}).items()}
             reserve_rows = [row for row in self.state.prediction_ledger(self.settings, include_shadow=True)
                             if row.get('reserve_only') and row.get('goal_model_version') == GOAL_MODEL_VERSION]
+            reserve_duplicates = len(reserve_rows)
+            reserve_rows = unique_reserve_rows(reserve_rows)
+            reserve_duplicates -= len(reserve_rows)
             outcomes = Counter(row.get('status') for row in reserve_rows)
             summary['reserve_markets'] = {
                 **getattr(self, 'reserve_evaluation', {}), 'tracked': len(reserve_rows),
+                'duplicates_ignored': reserve_duplicates,
                 'pending': outcomes.get('shadow_pending', 0),
                 'settled': sum(outcomes.get(status, 0) for status in ('won', 'lost', 'push', 'void')),
                 'wins': outcomes.get('won', 0), 'losses': outcomes.get('lost', 0), 'pushes': outcomes.get('push', 0),

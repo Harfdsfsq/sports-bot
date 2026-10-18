@@ -43,7 +43,9 @@ def team_identity_key(name):
 def same_team_identity(target, aliases):
     def normalized(name):
         text = str(name or '').translate(str.maketrans({'ø': 'o', 'Ø': 'O', 'ł': 'l', 'Ł': 'L', 'đ': 'd'}))
-        return ' '.join(token for token in canonicalize_team_name(text).split() if token not in {'fodbold', 'football', 'futbol'})
+        key = ' '.join(token for token in canonicalize_team_name(text).split() if token not in {'fodbold', 'football', 'futbol'})
+        return {'san martin s j': 'san martin san juan',
+                'san martin sj': 'san martin san juan'}.get(key, key)
 
     left = normalized(target)
     if not left:
