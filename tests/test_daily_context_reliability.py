@@ -980,3 +980,131 @@ def test_calibration_never_uses_another_goal_model_version(monkeypatch,version_c
     assert captured==[({'v3':True} if version_count else {},ready)]
     assert c.source_summary['calibration_history']['binary_count']==version_count
     assert c.adjusted_probability==.65
+
+
+def test_odds_batch_deduplicates_before_limit_and_rejects_conflicting_sides():
+    from app.providers.odds_api_io import OddsApiIoProvider
+    from dataclasses import replace
+    now = datetime.now(UTC)
+    first = queue_match(now)
+    alias = replace(first, home_team='Home FC')
+    item = lambda m: {'match': m, 'event': {'id': 123}}
+    stats = {}
+    assert len(OddsApiIoProvider._unique_event_targets([item(first), item(alias)], stats)) == 1
+    assert stats['duplicate_event_targets_removed'] == 1
+    reversed_match = replace(first, home_team=first.away_team, away_team=first.home_team)
+    assert OddsApiIoProvider._unique_event_targets([item(first), item(reversed_match)], stats) == []
+    assert stats['conflicting_event_targets'] == 1
+
+
+def test_odds_duplicate_id_uses_discovered_kickoff_or_quarantines():
+    from app.providers.odds_api_io import OddsApiIoProvider
+    now = datetime.now(UTC)
+    current = queue_match(now)
+    obsolete = replace(current, commence_time=current.commence_time + timedelta(hours=1))
+    rows = [{'match': obsolete, 'event': {'id': 123}},
+            {'match': current, 'event': {'id': 123, 'commence_time': current.commence_time}}]
+    stats = {}
+    assert OddsApiIoProvider._unique_event_targets(rows, stats)[0]['match'] is current
+    rows[1]['event'].pop('commence_time')
+    assert OddsApiIoProvider._unique_event_targets(rows, stats) == []
+
+
+def test_sstats_refreshes_recent_tail_without_redownloading_old_windows(tmp_path, monkeypatch):
+    import asyncio
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    from app.services.daily_match_registry import write_json
+    monkeypatch.chdir(tmp_path)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    today = datetime.now(UTC).date()
+    start, split, end = [(today - timedelta(days=d)).isoformat() for d in (13, 7, 0)]
+    tail = (today - timedelta(days=6)).isoformat()
+    stamp = (datetime.now(UTC) - timedelta(minutes=90)).isoformat()
+    old_row = {'id': 1, 'date': start}
+    write_json(f'.data/provider_cache/sstats-history-v4-{start}-{end}.json', {'observed_at': stamp, 'rows': [old_row]})
+    write_json(f'.data/provider_cache/sstats-window-v4-{start}-{split}.json', {'observed_at': stamp, 'rows': [old_row]})
+    write_json(f'.data/provider_cache/sstats-window-v4-{tail}-{end}.json', {'observed_at': stamp, 'rows': [{'id': 2}]})
+    calls = []
+    async def rows(client, a, b, stats):
+        calls.append((a, b))
+        return [{'id': 3, 'date': end}]
+    monkeypatch.setattr(provider, '_fetch_rows_window', rows)
+    stats = {}
+    result = asyncio.run(provider._fetch_rows(None, start, end, stats))
+    assert calls == [(tail, end)]
+    assert {r['id'] for r in result} == {1, 3}
+    assert stats['history_windows_cache_hits'] == 1
+    assert provider._daily_source_observed_at == stamp
+
+
+@pytest.mark.parametrize('extension_timeout', [False, True])
+def test_sstats_extends_only_thin_near_fixture_history(tmp_path, monkeypatch, extension_timeout):
+    import asyncio
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv('DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS', '90')
+    class NoNetworkClient:
+        def __init__(self, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+    monkeypatch.setattr('app.providers.sstats.BudgetedAsyncClient', NoNetworkClient)
+    settings = Settings(_env_file=None)
+    settings.sstats_api_key = 'test-only'
+    settings.enable_sstats_context = True
+    provider = SStatsContextProvider(settings)
+    near = queue_match(datetime.now(UTC))
+    later = replace(near, home_team='Later', commence_time=near.commence_time + timedelta(hours=8))
+    calls = []
+    async def fetch(client, start, end, stats):
+        calls.append((start, end))
+        provider._daily_source_observed_at = datetime.now(UTC).isoformat()
+        if len(calls) > 1 and extension_timeout:
+            raise TimeoutError
+        return [] if len(calls) == 1 else [{'older': True}]
+    def build(matches, rows, preview):
+        if rows:
+            assert matches == [near]
+        n = 6 if rows else 4
+        return {m.match_key: MatchContext('sstats_form', {}, expected_home=1.2, expected_away=1.1,
+                details={'home_recent_count': n, 'away_recent_count': n}) for m in matches}
+    monkeypatch.setattr(provider, '_fetch_rows', fetch)
+    monkeypatch.setattr(provider, '_build_team_form_contexts', build)
+    contexts, stats, _ = asyncio.run(provider.fetch_context([near, later]))
+    assert len(calls) == 2
+    assert stats['history_extension_targets'] == 1
+    assert stats.get('history_extension_improved', 0) == (0 if extension_timeout else 1)
+    assert bool(stats.get('history_extension_timeout')) == extension_timeout
+    assert contexts[near.match_key].details['home_recent_count'] == (4 if extension_timeout else 6)
+    assert contexts[later.match_key].details['home_recent_count'] == 4
+    assert calls[1][1] < calls[0][0]
+
+
+def test_coverage_identity_review_never_moves_evidence(tmp_path):
+    from app.services.daily_match_registry import DailyMatchRegistry, match_identity
+    now = datetime.now(UTC)
+    first = queue_match(now, name='Madura United')
+    second = replace(first, home_team='Persepam Madura Utd')
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    registry.sync([first, second])
+    import copy
+    before = copy.deepcopy(registry.data)
+    review = registry.identity_review()
+    assert len(review) == 1 and review[0]['automatic_merge'] is False
+    assert review[0]['reason'] == 'unmerged_fixture_records'
+    assert registry.data == before
+    assert match_identity(first) != match_identity(second)
+
+
+def test_report_explains_coverage_configuration_and_weather_gaps():
+    from scripts.send_daily_quality_report import render
+    text = render({'daily_quality': {'coverage': {}}, 'source_stats': {
+        'weather': {'missing_location': 10},
+        'api_football': {'reason': 'missing_api_key'},
+        'sstats': {'history_extension_targets': 3, 'history_extension_improved': 2}},
+        'rejections': {'non_target_bookmaker': 60}})
+    assert 'местоположения стадиона' in text
+    assert 'ключ отсутствует' in text
+    assert 'для 2 из 3' in text
+    assert 'букмекер не входит' in text

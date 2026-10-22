@@ -11,6 +11,7 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
+    'non_target_bookmaker': 'букмекер не входит в разрешённый список',
     'reserve_only': 'рынок проверяется только в резерве без публикации',
     'insufficient_confirmed_sample': 'подтверждённая выборка команд меньше минимальной',
     'context_history_identity_missing': 'история команды не содержит проверяемых названий участников',
@@ -180,6 +181,15 @@ def render(summary):
             lines.append(f'Odds-api.io · {label}: {status}.')
         if 'cached_matches' in odds_stats:
             lines.append(f"С учётом свежего кеша Odds-api.io: линии для {odds_stats['cached_matches']} матчей. Это общее покрытие двух аккаунтов без повторного подсчёта матчей.")
+    source_stats = summary.get('source_stats') or {}
+    weather = source_stats.get('weather') or {}
+    if weather.get('missing_location'):
+        lines.append(f"ℹ️ Погода недоступна для {weather['missing_location']} матчей: нет подтверждённого местоположения стадиона.")
+    sstats = source_stats.get('sstats') or {}
+    if sstats.get('history_extension_targets'):
+        lines.append(f"История команд: расширенный добор улучшил выборку для {sstats.get('history_extension_improved', 0)} из {sstats['history_extension_targets']} ближайших матчей.")
+    if (source_stats.get('api_football') or {}).get('reason') == 'missing_api_key':
+        lines.append('ℹ️ API-Football не подключён: ключ отсутствует, его данные в покрытии не учитываются.')
     if any(row.get('blocked') or row.get('last_block') for row in summary.get('api_budget') or []):
         lines.append('ℹ️ Часть запросов отложена по лимитам API; полученные данные сохранены, пропуски остаются в очереди.')
     overdue = summary.get('overdue_published_bets') or []

@@ -123,6 +123,30 @@ class DailyMatchRegistry:
             result.append(Match(**row))
         return result
 
+    def identity_review(self):
+        """Potential feed-name gaps for review only; never transfer evidence."""
+        from app.services.fixture_identity import same_team_identity
+        groups = {}
+        for match in self.matches():
+            if timedelta(minutes=30) <= match.commence_time - self.now <= timedelta(hours=4):
+                groups.setdefault((match.sport_key, match.commence_time), []).append(match)
+        reviews = []
+        for matches in groups.values():
+            for index, first in enumerate(matches):
+                for second in matches[index + 1:]:
+                    home = same_team_identity(first.home_team, [second.home_team])
+                    away = same_team_identity(first.away_team, [second.away_team])
+                    if not (home or away):
+                        continue
+                    reviews.append({'kickoff_utc': first.commence_time.isoformat(),
+                        'reason': 'unmerged_fixture_records',
+                        'automatic_merge': False,
+                        'matches': [{'match_id': match_identity(m), 'home': m.home_team, 'away': m.away_team,
+                                     'provider_ids': self.data['matches'][match_identity(m)]['provider_ids'],
+                                     'has_line': self.has_role(m, 'offers'), 'has_context': self.has_role(m, 'context')}
+                                    for m in (first, second)]})
+        return reviews
+
     def cached(self, provider: str, role: str, match: Match):
         evidence = self.data['matches'].get(match_identity(match), {}).get('evidence', {}).get(provider + ':' + role)
         if not evidence:

@@ -478,6 +478,10 @@ class DailyQualityRunner(PredictionRunner):
             rows = debug.get('candidates_before_quality', []) if debug.get('summary', {}).get('started_time_utc') == summary.get('started_time_utc') else []
             quality_review = [{'match': f"{row.get('home_team')} — {row.get('away_team')}", 'selection': row.get('selection'), 'point': row.get('point'), 'odds': row.get('odds'), 'quality': (row.get('source_summary') or {}).get('quality_score'), 'confidence': row.get('confidence'), 'reasons': (row.get('source_summary') or {}).get('quality_reasons') or []} for row in rows[:5]]
             summary['daily_quality'] = {'quality_review': quality_review, 'coverage': self.registry.coverage(), 'next_day_inventory': getattr(self, 'next_day_inventory_count', 0), 'published_today': self.registry.data['published'], 'rejections': dict(self.daily_rejections), 'selected': [{'match': f'{c.home_team} — {c.away_team}', 'tier': c.source_summary['publication_tier'], 'quality': c.source_summary.get('quality_score'), 'odds': c.odds, 'selection': self.telegram._compact_selection_display(c.family, c.selection, c.point, c.team_side, c.home_team, c.away_team, c.selection_key), 'kickoff_utc': c.commence_time.isoformat(), 'probability_pct': round(c.adjusted_probability * 100, 1), 'ev_pct': round(c.ev_pct, 1), 'stake_amount': c.stake_amount} for c in self.selected_daily]}
+            reviews = self.registry.identity_review()
+            summary['daily_quality']['identity_review_pairs'] = len(reviews)
+            write_json('.data/exports/latest-coverage-identity-review.json', {
+                'created_at_utc': self.registry.now.isoformat(), 'automatic_merge': False, 'pairs': reviews})
             write_json('.data/exports/latest-run-summary.json', summary)
             return summary
         finally:

@@ -556,6 +556,7 @@ class OddsApiIoProvider:
 
             matched_items = list(mapping.values())
             matched_items.sort(key=lambda row: self._match_priority(row["match"], now))
+            matched_items = self._unique_event_targets(matched_items, stats)
             max_fetch = max(1, int(getattr(self.settings, "max_matches_for_odds_fetch", 40) or 40))
             if len(matched_items) > max_fetch:
                 matched_items = matched_items[:max_fetch]
@@ -1192,6 +1193,36 @@ class OddsApiIoProvider:
             "commence_time": commence_time,
             "raw": raw,
         }
+
+    @staticmethod
+    def _unique_event_targets(items, stats):
+        """One request target per event; disputed identities receive no quotes."""
+        from app.services.fixture_identity import same_team_identity
+        groups = defaultdict(list)
+        for item in items:
+            groups[int(item['event']['id'])].append(item)
+        unique = []
+        stats['duplicate_event_targets_removed'] = len(items) - len(groups)
+        stats['conflicting_event_targets'] = 0
+        for rows in groups.values():
+            if len(rows) == 1:
+                unique.append(rows[0])
+                continue
+            # Discovery may resolve an obsolete registry kickoff. Prefer the
+            # actual event timestamp, never the fixture nearest the current run.
+            exact_time = [row for row in rows if row['event'].get('commence_time') == row['match'].commence_time]
+            candidates = exact_time or rows
+            first = candidates[0]['match']
+            compatible = all(
+                row['match'].commence_time == first.commence_time
+                and same_team_identity(first.home_team, [row['match'].home_team])
+                and same_team_identity(first.away_team, [row['match'].away_team])
+                for row in candidates)
+            if compatible:
+                unique.append(candidates[0])
+            else:
+                stats['conflicting_event_targets'] += 1
+        return unique
 
     @staticmethod
     def _registry_mapping(matches: list[Match]):

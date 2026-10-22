@@ -286,6 +286,41 @@ class SStatsContextProvider:
 
         # Pass 2: fallback from recent team form for matches still lacking context.
         fallback_contexts = self._build_team_form_contexts(soccer_matches, rows, preview)
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+            # A 45-day window can contain fewer than six games per team.
+            # Extend only when a near fixture lacks usable sporting history.
+            min_sample = max(2, int(os.getenv('DAILY_B_MIN_TEAM_SAMPLE', '6')))
+            missing = [m for m in soccer_matches
+                       if timedelta(minutes=30) <= m.commence_time - now_utc <= timedelta(hours=4)
+                       and m.match_key not in contexts
+                       and min((fallback_contexts.get(m.match_key).details.get(side + '_recent_count', 0)
+                                if fallback_contexts.get(m.match_key) else 0)
+                               for side in ('home', 'away')) < min_sample]
+            stats['history_extension_targets'] = len(missing)
+            extended_days = min(120, max(lookback_days, int(os.getenv('DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS', '90'))))
+            if missing and extended_days > lookback_days:
+                original_observed = getattr(self, '_daily_source_observed_at', None)
+                try:
+                    async with BudgetedAsyncClient(timeout=self.settings.sstats_timeout_seconds) as client:
+                        older = await asyncio.wait_for(self._fetch_rows(client,
+                            (min(now_utc, min_dt) - timedelta(days=extended_days)).date().isoformat(),
+                            (parse_datetime(from_date) - timedelta(days=1)).date().isoformat(), stats),
+                            timeout=min(120, max(1, float(os.getenv('DAILY_SSTATS_EXTENSION_TIMEOUT_SECONDS', '60')))))
+                except TimeoutError:
+                    older = []
+                    stats['history_extension_timeout'] = True
+                older_observed = getattr(self, '_daily_source_observed_at', None)
+                stamps = [v for v in (original_observed, older_observed) if v]
+                self._daily_source_observed_at = min(stamps) if stamps else None
+                stats['history_extension_rows'] = len(older)
+                if older:
+                    deeper = self._build_team_form_contexts(missing, rows + older, preview)
+                    improved = {key: value for key, value in deeper.items()
+                                if min(value.details.get(side + '_recent_count', 0) for side in ('home', 'away'))
+                                > min((fallback_contexts[key].details.get(side + '_recent_count', 0)
+                                       if key in fallback_contexts else 0) for side in ('home', 'away'))}
+                    fallback_contexts.update(improved)
+                    stats['history_extension_improved'] = len(improved)
         added_fallback = 0
         for match_key, context in fallback_contexts.items():
             existing = contexts.get(match_key)
@@ -331,6 +366,13 @@ class SStatsContextProvider:
                 context.details["daily_source_observed_at"] = getattr(self, "_daily_source_observed_at", None)
         return contexts, stats, preview
 
+    @staticmethod
+    def _history_cache_ttl(to_date):
+        # Refresh windows touching today/yesterday each run; retain the cheap
+        # cache for older history. Fetch timestamps never move on cache hits.
+        recent = parse_datetime(to_date).date() >= datetime.now(UTC).date() - timedelta(days=1)
+        return timedelta(minutes=60 if recent else 330)
+
     async def _fetch_rows(
         self,
         client: httpx.AsyncClient,
@@ -345,7 +387,7 @@ class SStatsContextProvider:
             cache_path = Path(f".data/provider_cache/sstats-history-v4-{from_date}-{to_date}.json")
             saved = read_json(cache_path, {})
             observed = parse_time(saved.get("observed_at"))
-            if observed and timedelta(0) <= datetime.now(UTC) - observed < timedelta(minutes=330) and saved.get("rows"):
+            if observed and timedelta(0) <= datetime.now(UTC) - observed < self._history_cache_ttl(to_date) and saved.get("rows"):
                 self._daily_source_observed_at = observed.isoformat()
                 stats["history_cache_reused"] = len(saved["rows"])
                 return saved["rows"]
@@ -360,7 +402,7 @@ class SStatsContextProvider:
                 window_path = Path(f".data/provider_cache/sstats-window-v4-{window_from}-{window_to}.json")
                 saved_window = read_json(window_path, {})
                 window_observed = parse_time(saved_window.get('observed_at'))
-                if window_observed and timedelta(0) <= datetime.now(UTC) - window_observed < timedelta(minutes=330) and isinstance(saved_window.get('rows'), list):
+                if window_observed and timedelta(0) <= datetime.now(UTC) - window_observed < self._history_cache_ttl(window_to) and isinstance(saved_window.get('rows'), list):
                     batch_rows = saved_window['rows']
                     observations.append(window_observed)
                     stats['history_windows_cache_hits'] = stats.get('history_windows_cache_hits', 0) + 1
