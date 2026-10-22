@@ -754,7 +754,7 @@ def test_sstats_market_only_row_is_not_sporting_context(profile, offline_http, m
     from app.providers.sstats import SStatsContextProvider
     m = match(datetime.now(UTC))
     provider = SStatsContextProvider(Settings(_env_file=None, sstats_api_key='test'))
-    async def fetch(*args):
+    async def fetch(*args, **kwargs):
         return [_sstats_market_row(m)]
     monkeypatch.setattr(provider, '_fetch_rows', fetch)
     contexts, stats, _ = asyncio.run(provider.fetch_context([m]))

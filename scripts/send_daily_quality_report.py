@@ -188,6 +188,8 @@ def render(summary):
     sstats = source_stats.get('sstats') or {}
     if sstats.get('history_extension_targets'):
         lines.append(f"История команд: расширенный добор улучшил выборку для {sstats.get('history_extension_improved', 0)} из {sstats['history_extension_targets']} ближайших матчей.")
+    if sstats.get('history_extension_timeout'):
+        lines.append(f"⚠️ Добор истории остановлен по времени. В расчёте использовано {sstats.get('history_extension_rows', 0)} строк из завершённых окон; остальные данные остаются в очереди.")
     if (source_stats.get('api_football') or {}).get('reason') == 'missing_api_key':
         lines.append('ℹ️ API-Football не подключён: ключ отсутствует, его данные в покрытии не учитываются.')
     if any(row.get('blocked') or row.get('last_block') for row in summary.get('api_budget') or []):

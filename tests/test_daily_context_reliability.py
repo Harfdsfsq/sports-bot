@@ -1038,7 +1038,7 @@ def test_sstats_refreshes_recent_tail_without_redownloading_old_windows(tmp_path
     assert provider._daily_source_observed_at == stamp
 
 
-@pytest.mark.parametrize('extension_timeout', [False, True])
+@pytest.mark.parametrize('extension_timeout', [False, True, 'partial'])
 def test_sstats_extends_only_thin_near_fixture_history(tmp_path, monkeypatch, extension_timeout):
     import asyncio
     from app.config import Settings
@@ -1057,10 +1057,13 @@ def test_sstats_extends_only_thin_near_fixture_history(tmp_path, monkeypatch, ex
     near = queue_match(datetime.now(UTC))
     later = replace(near, home_team='Later', commence_time=near.commence_time + timedelta(hours=8))
     calls = []
-    async def fetch(client, start, end, stats):
+    async def fetch(client, start, end, stats, **kwargs):
         calls.append((start, end))
         provider._daily_source_observed_at = datetime.now(UTC).isoformat()
         if len(calls) > 1 and extension_timeout:
+            if extension_timeout == 'partial':
+                provider._daily_partial_rows = [{'older': True}]
+                provider._daily_partial_observed_at = provider._daily_source_observed_at
             raise TimeoutError
         return [] if len(calls) == 1 else [{'older': True}]
     def build(matches, rows, preview):
@@ -1074,9 +1077,9 @@ def test_sstats_extends_only_thin_near_fixture_history(tmp_path, monkeypatch, ex
     contexts, stats, _ = asyncio.run(provider.fetch_context([near, later]))
     assert len(calls) == 2
     assert stats['history_extension_targets'] == 1
-    assert stats.get('history_extension_improved', 0) == (0 if extension_timeout else 1)
-    assert bool(stats.get('history_extension_timeout')) == extension_timeout
-    assert contexts[near.match_key].details['home_recent_count'] == (4 if extension_timeout else 6)
+    assert stats.get('history_extension_improved', 0) == (0 if extension_timeout is True else 1)
+    assert bool(stats.get('history_extension_timeout')) == bool(extension_timeout)
+    assert contexts[near.match_key].details['home_recent_count'] == (4 if extension_timeout is True else 6)
     assert contexts[later.match_key].details['home_recent_count'] == 4
     assert calls[1][1] < calls[0][0]
 
@@ -1108,3 +1111,48 @@ def test_report_explains_coverage_configuration_and_weather_gaps():
     assert 'ключ отсутствует' in text
     assert 'для 2 из 3' in text
     assert 'букмекер не входит' in text
+
+
+def test_sstats_newest_first_preserves_complete_windows_when_later_window_times_out(tmp_path, monkeypatch):
+    import asyncio
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    from app.services.daily_match_registry import read_json
+    monkeypatch.chdir(tmp_path)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    calls = []
+    async def fetch(client, start, end, stats):
+        calls.append((start, end))
+        if len(calls) == 2:
+            raise TimeoutError
+        return [{'id': 7, 'date': start}]
+    monkeypatch.setattr(provider, '_fetch_rows_window', fetch)
+    with pytest.raises(TimeoutError):
+        asyncio.run(provider._fetch_rows(None, '2026-07-01', '2026-07-14', {}, newest_first=True))
+    assert calls == [('2026-07-08', '2026-07-14'), ('2026-07-01', '2026-07-07')]
+    assert provider._daily_partial_rows == [{'id': 7, 'date': '2026-07-08'}]
+    assert provider._daily_partial_observed_at
+    assert read_json('.data/provider_cache/sstats-window-v4-2026-07-08-2026-07-14.json', {})['rows'] == provider._daily_partial_rows
+    assert not read_json('.data/provider_cache/sstats-history-v4-2026-07-01-2026-07-14.json', {})
+
+
+def test_sstats_extension_timeout_defers_missing_evidence_instead_of_empty_cache(tmp_path):
+    from app.services.daily_match_registry import DailyMatchRegistry, match_identity
+    now = datetime.now(UTC)
+    m = queue_match(now)
+    registry = DailyMatchRegistry(tmp_path/'registry.json', now)
+    registry.sync([m])
+    counts = registry.record('sstats', 'context', [m], {}, {'history_extension_timeout': True}, observed_at=now)
+    attempt = registry.data['matches'][match_identity(m)]['attempts']['sstats:context']
+    assert counts['deferred'] == 1
+    assert attempt['result'] == 'deferred'
+    assert datetime.fromisoformat(attempt['retry_after']) - now == timedelta(minutes=30)
+
+
+def test_report_distinguishes_unfinished_history_fetch_from_no_matching_data():
+    from scripts.send_daily_quality_report import render
+    text = render({'daily_quality': {'coverage': {}}, 'source_stats': {'sstats': {
+        'history_extension_targets': 28, 'history_extension_improved': 1,
+        'history_extension_timeout': True, 'history_extension_rows': 2500}}})
+    assert 'Добор истории остановлен по времени' in text
+    assert '2500 строк' in text

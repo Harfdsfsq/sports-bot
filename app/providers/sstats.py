@@ -300,15 +300,20 @@ class SStatsContextProvider:
             extended_days = min(120, max(lookback_days, int(os.getenv('DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS', '90'))))
             if missing and extended_days > lookback_days:
                 original_observed = getattr(self, '_daily_source_observed_at', None)
+                self._daily_partial_rows = []
+                self._daily_partial_observed_at = None
                 try:
                     async with BudgetedAsyncClient(timeout=self.settings.sstats_timeout_seconds) as client:
                         older = await asyncio.wait_for(self._fetch_rows(client,
                             (min(now_utc, min_dt) - timedelta(days=extended_days)).date().isoformat(),
-                            (parse_datetime(from_date) - timedelta(days=1)).date().isoformat(), stats),
+                            (parse_datetime(from_date) - timedelta(days=1)).date().isoformat(), stats, newest_first=True),
                             timeout=min(120, max(1, float(os.getenv('DAILY_SSTATS_EXTENSION_TIMEOUT_SECONDS', '60')))))
                 except TimeoutError:
-                    older = []
+                    older = self._daily_partial_rows
+                    if self._daily_partial_observed_at:
+                        self._daily_source_observed_at = self._daily_partial_observed_at
                     stats['history_extension_timeout'] = True
+                    stats['history_extension_partial'] = bool(older)
                 older_observed = getattr(self, '_daily_source_observed_at', None)
                 stamps = [v for v in (original_observed, older_observed) if v]
                 self._daily_source_observed_at = min(stamps) if stamps else None
@@ -379,6 +384,7 @@ class SStatsContextProvider:
         from_date: str,
         to_date: str,
         stats: dict[str, Any],
+        *, newest_first: bool = False,
     ) -> list[dict[str, Any]]:
         daily_cache = os.getenv("PUBLICATION_PROFILE") == "daily_quality"
         if daily_cache:
@@ -396,7 +402,10 @@ class SStatsContextProvider:
         seen_signatures: set[tuple[Any, ...]] = set()
         observations = []
 
-        for window_from, window_to in self._date_windows(from_date, to_date, chunk_days):
+        windows = self._date_windows(from_date, to_date, chunk_days)
+        if newest_first:
+            windows.reverse()
+        for window_from, window_to in windows:
             batch_rows = None
             if daily_cache:
                 window_path = Path(f".data/provider_cache/sstats-window-v4-{window_from}-{window_to}.json")
@@ -429,6 +438,11 @@ class SStatsContextProvider:
                     continue
                 seen_signatures.add(signature)
                 rows.append(row)
+            if daily_cache and newest_first:
+                # Only windows returned by the fetcher enter this checkpoint.
+                # A timeout in the next window must not discard completed work.
+                self._daily_partial_rows = list(rows)
+                self._daily_partial_observed_at = min(observations).isoformat() if observations else None
 
         if daily_cache and rows:
             self._daily_source_observed_at = min(observations).isoformat() if observations else datetime.now(UTC).isoformat()

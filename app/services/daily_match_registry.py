@@ -272,7 +272,7 @@ class DailyMatchRegistry:
                 if stats.get('rate_limited'):
                     result = 'rate_limited'
                     delay = 120
-                elif stats.get('budget_exhausted') or stats.get('runtime_error') or stats.get('response_errors') or stats.get('reason') == 'missing_api_key':
+                elif stats.get('budget_exhausted') or stats.get('runtime_error') or stats.get('response_errors') or stats.get('history_extension_timeout') or stats.get('reason') == 'missing_api_key':
                     result = 'deferred'
                     delay = 30
                     if not rejected:
