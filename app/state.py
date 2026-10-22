@@ -978,6 +978,7 @@ class JsonStateStore:
             'context_source': source_summary.get('context_source') or '',
             'goal_model_version': source_summary.get('goal_model_version') or 'unversioned',
             'reserve_only': bool(source_summary.get('reserve_only')),
+            'validation_protocol': source_summary.get('validation_protocol') or '',
             'context_feature_conflicts': source_summary.get('context_feature_conflicts') or [],
             'context_sources': source_summary.get('context_sources') or '',
             'context_confidence': self._round_value(source_summary.get('context_confidence'), 2),

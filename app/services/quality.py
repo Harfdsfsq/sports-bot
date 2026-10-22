@@ -134,6 +134,7 @@ class PredictionQualityService:
         for candidate in candidates:
             if research_only:
                 candidate.source_summary.update(reserve_only=True, can_publish=False)
+            frozen = research_only and bool(candidate.source_summary.get('frozen_quality_adjustments'))
             original_probability = float(candidate.adjusted_probability)
             segments = self._candidate_segments(candidate)
             calibration_profile, calibration_ready = profile, enough_history
@@ -148,10 +149,10 @@ class PredictionQualityService:
                     'goal_model_version': version, 'binary_count': count, 'minimum': minimum,
                     'ready': calibration_ready, 'risk_guards_basis': 'pooled_clean_published_history'}
             calibration = self._candidate_calibration(segments, calibration_profile, calibration_ready)
-            if calibration['applied']:
+            if calibration['applied'] and not frozen:
                 self._apply_probability_adjustment(candidate, float(calibration['delta_probability']))
             learning_adjustment = self._candidate_learning_adjustment(segments, calibration_profile, calibration_ready)
-            if learning_adjustment['applied']:
+            if learning_adjustment['applied'] and not frozen:
                 candidate.publication_score = round(
                     float(getattr(candidate, 'publication_score', 0.0) or 0.0)
                     + float(learning_adjustment['score_delta']),
@@ -163,7 +164,7 @@ class PredictionQualityService:
                         f"learning=score_delta({float(learning_adjustment['score_delta']):+.2f})"
                     )
             recent_adjustment = self._candidate_recent_adjustment(candidate, recent_learning_state)
-            if recent_adjustment['applied']:
+            if recent_adjustment['applied'] and not frozen:
                 candidate.publication_score = round(
                     float(getattr(candidate, 'publication_score', 0.0) or 0.0)
                     + float(recent_adjustment['score_delta']),
@@ -1127,6 +1128,12 @@ class PredictionQualityService:
                 'hard_segments': [item[0] for item in hard_hits],
             })
             return None
+        candidate.source_summary['historical_guard_evidence'] = {
+            'basis': 'pooled_clean_published_history',
+            'candidate_version': candidate.source_summary.get('goal_model_version'),
+            'bad_segment_count': bad_segments,
+            'hard_segments': [{'segment': key, 'roi_pct': roi, 'calibration_delta': delta,
+                               'count': stats[key].get('count')} for key, roi, delta in hard_hits]}
         if hard_hits:
             return 'bad_historical_segment_guard'
         if bad_segments >= hard_bad_segments:

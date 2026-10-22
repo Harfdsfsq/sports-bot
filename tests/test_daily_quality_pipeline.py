@@ -1565,3 +1565,91 @@ def test_reserve_aliases_do_not_inflate_paper_results(profile):
                     {'commence_time_utc':'2026-10-19T21:00:00+00:00'},
                     {'away_team':'Another team'}]:
         assert not same_reserve_fixture(first,{**alias,**changed})
+
+
+@pytest.mark.parametrize('invalid', [False, True])
+def test_overall_totals_trial_freezes_one_line_and_never_touches_bank(profile,tmp_path,monkeypatch,invalid):
+    from app.state import JsonStateStore
+    from app.services.runner import PredictionRunner
+    from app.services.totals_trial import summarize
+    from copy import deepcopy
+    now=datetime.now(UTC);m=match(now);c=reserve_candidate(now);c.family='totals';c.match_key=m.match_key
+    c.source_summary['goal_model_version']='daily-goals-v4'
+    alternative=deepcopy(c);alternative.point=3.5;alternative.ev_pct=c.ev_pct-1
+    r=DailyQualityRunner.__new__(DailyQualityRunner)
+    r.settings=Settings(_env_file=None);r.factory=SimpleNamespace(daily_reserve_candidates=[],daily_reserve_evaluated_count=0)
+    r.market_monitor=None;r.state=JsonStateStore(str(tmp_path/'state.json'),str(tmp_path/'debug.json'))
+    def quality(rows,*args,**kwargs):
+        for item in rows:
+            item.source_summary.update(reserve_only=True,can_publish=False)
+        return rows,{},{}
+    r.quality=SimpleNamespace(build_quality_report=lambda *args:{},apply_to_candidates=quality)
+    r.inventory_matches=[m];r.admitted_sources={m.match_key:{'sstats':now.isoformat()}}
+    r.registry=SimpleNamespace(observation=lambda *args:now.isoformat(),has_role=lambda *args:True,
+        cached=lambda *args:MatchContext('sstats',{},details={'daily_evidence_observed_at':now.isoformat()}))
+    monkeypatch.setenv('DAILY_TOTALS_TRIAL_ENABLED','true')
+    monkeypatch.setattr(PredictionRunner,'_select_shadow_candidates',lambda self,**kwargs:[c])
+    monkeypatch.setattr('app.services.daily_quality_runner.rejection_reasons',lambda _:['selected_price_outlier'] if invalid else [])
+    bank=r.state.bankroll_summary(r.settings)
+    selected=r._select_shadow_candidates(candidates_before_quality=[c,alternative])
+    if invalid:
+        assert not selected
+        return
+    assert len(selected)==1 and selected[0] is not c
+    assert selected[0].source_summary['reserve_only'] and selected[0].source_summary['validation_protocol']
+    assert not c.source_summary.get('reserve_only')  # Live candidate not mutated.
+    r.state.store_shadow_candidates(selected)
+    assert r.reserve_evaluation['selected_new']==0  # Separate from non-total reserve.
+    ledger=r.state.prediction_ledger(r.settings,include_shadow=True)
+    assert summarize(ledger,'daily-goals-v4')['pending']==1
+    assert r._select_shadow_candidates(candidates_before_quality=[alternative])==[]
+    stored=r.state._state['shadow_bets'][0]
+    r.state.apply_settlements([{'fingerprint':stored['fingerprint'],'outcome':'won','pnl':1.}])
+    assert summarize(r.state.prediction_ledger(r.settings,include_shadow=True),'daily-goals-v4')['settled']==1
+    assert r.state.bankroll_summary(r.settings)==bank
+
+
+def test_trial_summary_uses_first_forecast_and_excludes_postkickoff_and_other_versions():
+    from app.services.totals_trial import summarize,PROTOCOL
+    now=datetime.now(UTC)
+    base={'validation_protocol':PROTOCOL,'goal_model_version':'v4','family':'totals',
+          'reserve_only':True,'telegram_sent':False,'home_team':'Home','away_team':'Away',
+          'published_at':now.isoformat(),'commence_time_utc':(now+timedelta(hours=2)).isoformat(),
+          'status':'lost','odds':2.,'adjusted_probability_pct':60.,'market_probability_pct':50.}
+    later={**base,'published_at':(now+timedelta(minutes=10)).isoformat(),'status':'won','odds':3.}
+    other={**base,'goal_model_version':'v3'}
+    late={**base,'home_team':'Late','published_at':(now+timedelta(hours=3)).isoformat()}
+    s=summarize([later,other,late,base],'v4')
+    assert s['settled']==1 and s['paper_pnl']==-1
+    assert s['brier']==pytest.approx(.36) and s['market_brier']==.25
+    assert s['excluded']=={'not_frozen_before_kickoff':1,'duplicate_fixture':1}
+    assert s['automatic_live_promotion'] is False
+
+
+def test_totals_trial_void_does_not_become_probability_loss():
+    from app.services.totals_trial import summarize,PROTOCOL
+    now=datetime.now(UTC)
+    row={'validation_protocol':PROTOCOL,'goal_model_version':'v4','family':'totals','reserve_only':True,
+         'home_team':'Home','away_team':'Away','published_at':now.isoformat(),
+         'commence_time_utc':(now+timedelta(hours=2)).isoformat(),'status':'void','odds':2.,
+         'adjusted_probability_pct':60.,'market_probability_pct':50.}
+    s=summarize([row],'v4')
+    assert s['settled']==s['voids']==1 and s['paper_pnl']==0
+    assert s['brier'] is None and s['paired_scores']==0
+
+
+def test_totals_trial_does_not_apply_live_probability_adjustments_twice(profile,monkeypatch):
+    from app.services.quality import PredictionQualityService
+    c=reserve_candidate(datetime.now(UTC));c.family='totals'
+    c.source_summary['frozen_quality_adjustments']=True
+    q=PredictionQualityService(Settings(_env_file=None))
+    monkeypatch.setattr(q,'_candidate_calibration',lambda *args:{'applied':True,'delta_probability':.1})
+    monkeypatch.setattr(q,'_candidate_learning_adjustment',lambda *args:{'applied':True,'score_delta':5})
+    monkeypatch.setattr(q,'_candidate_recent_adjustment',lambda *args:{'applied':True,'score_delta':5})
+    monkeypatch.setattr(q,'_candidate_quality_score',lambda *args:80.)
+    for name in ['_context_sample_guard','_market_sanity_guard','_clv_guard','_historical_segment_guard',
+                 '_quarantine_guard','_high_odds_guard','_post_calibration_threshold_guard']:
+        monkeypatch.setattr(q,name,lambda *args:None)
+    probability,score=c.adjusted_probability,c.publication_score
+    passed,_,_=q.apply_to_candidates([c],{},datetime.now(UTC),research_only=True)
+    assert passed==[c] and c.adjusted_probability==probability and c.publication_score==score

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 import os
 from collections import Counter
 from dataclasses import replace
@@ -372,17 +373,33 @@ class DailyQualityRunner(PredictionRunner):
 
     def _select_shadow_candidates(self, **kwargs):
         existing_shadow = super()._select_shadow_candidates(**kwargs)
+        totals_trial = os.getenv('DAILY_TOTALS_TRIAL_ENABLED', 'false').lower() == 'true'
+        if totals_trial:
+            # Totals enter only the predeclared one-per-fixture quality trial.
+            existing_shadow = [c for c in existing_shadow if c.family != 'totals']
         self.reserve_evaluation = {'evaluated': getattr(self.factory, 'daily_reserve_evaluated_count', 0),
                                    'selected_new': 0, 'rejections': {}}
         if os.getenv('DAILY_RESERVE_TRACKING_ENABLED', 'false').lower() != 'true':
             return existing_shadow
         from app.services.daily_quality_policy import quality_decision
         pool = list(getattr(self.factory, 'daily_reserve_candidates', []))
-        self.reserve_evaluation.update(passed_model=len(pool), model_rejections=getattr(self.factory, 'daily_reserve_rejections', {}))
+        reserve_passed_model = len(pool)
+        if totals_trial:
+            totals = deepcopy([c for c in kwargs.get('candidates_before_quality', []) if c.family == 'totals'])
+            for candidate in totals:
+                for key in ('quality_reasons', 'quality_status', 'research_blockers'):
+                    candidate.source_summary.pop(key, None)
+                candidate.diagnostics.pop('quality', None)
+                candidate.source_summary['frozen_quality_adjustments'] = True
+            pool.extend(totals)
+        self.reserve_evaluation.update(passed_model=reserve_passed_model, model_rejections=getattr(self.factory, 'daily_reserve_rejections', {}))
         clv = self.market_monitor.resolved_clv_rows() if self.market_monitor else []
         report = self.quality.build_quality_report(self.state.prediction_ledger(self.settings, include_shadow=False), clv)
-        pool, rejected, _ = self.quality.apply_to_candidates(pool, report, datetime.now(UTC), research_only=True)
+        pool, rejected, quality_debug = self.quality.apply_to_candidates(pool, report, datetime.now(UTC), research_only=True)
         self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in pool)
+        if totals_trial:
+            rejected = Counter(reason for decision in quality_debug.get('decisions', [])
+                               if decision.get('family') != 'totals' for reason in decision.get('reasons', []))
         self.reserve_evaluation['rejections'].update(rejected)
         by_key = {match.match_key: match for match in self.inventory_matches}
         ledger = self.state.prediction_ledger(self.settings, include_shadow=True)
@@ -408,6 +425,9 @@ class DailyQualityRunner(PredictionRunner):
                 daily_context_observed_at=self.registry.observation(match, 'context'),
                 registry_match_id=match_identity(match), reserve_only=True, can_publish=False,
                 shadow_tracking_reason='reserve_market_test')
+            if totals_trial and candidate.family == 'totals':
+                from app.services.totals_trial import PROTOCOL
+                candidate.source_summary['validation_protocol'] = PROTOCOL
             admission = getattr(self, 'admitted_sources', {}).get(candidate.match_key, {})
             reasons = rejection_reasons(candidate)
             if not admission:
@@ -424,15 +444,15 @@ class DailyQualityRunner(PredictionRunner):
                                                     now=now, allow_shadow_markets=True)
             reasons.extend(policy_reasons)
             if reasons:
-                for reason in set(reasons):
+                for reason in set(reasons) if candidate.family != 'totals' else []:
                     self.reserve_evaluation['rejections'][reason] = self.reserve_evaluation['rejections'].get(reason, 0) + 1
                 continue
             candidate.stake_amount, candidate.stake_pct = 0., 0.
             selected.append(candidate)
             reserved.add(signature)
             reserved_rows.append(candidate)
-        self.reserve_evaluation['selected_new'] = len(selected)
-        self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in selected)
+        self.reserve_evaluation['selected_new'] = sum(c.family != 'totals' for c in selected)
+        self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in selected if c.family != 'totals')
         return existing_shadow + selected
 
     async def run_once(self):
@@ -453,7 +473,7 @@ class DailyQualityRunner(PredictionRunner):
                 version: {'settled': cohort['settled_total'], **cohort['summary']}
                 for version, cohort in (quality_report.get('model_versions') or {}).items()}
             reserve_rows = [row for row in self.state.prediction_ledger(self.settings, include_shadow=True)
-                            if row.get('reserve_only') and row.get('goal_model_version') == GOAL_MODEL_VERSION]
+                            if row.get('reserve_only') and row.get('family') != 'totals' and row.get('goal_model_version') == GOAL_MODEL_VERSION]
             reserve_duplicates = len(reserve_rows)
             reserve_rows = unique_reserve_rows(reserve_rows)
             reserve_duplicates -= len(reserve_rows)
@@ -466,6 +486,10 @@ class DailyQualityRunner(PredictionRunner):
                 'wins': outcomes.get('won', 0), 'losses': outcomes.get('lost', 0), 'pushes': outcomes.get('push', 0),
                 'paper_pnl': round(sum(float(row.get('pnl') or 0) for row in reserve_rows), 2),
                 'families': dict(Counter(row.get('family') for row in reserve_rows))}
+            from app.services.totals_trial import summarize as summarize_totals_trial
+            summary['totals_trial'] = summarize_totals_trial(
+                self.state.prediction_ledger(self.settings, include_shadow=True), GOAL_MODEL_VERSION)
+            write_json('.data/exports/latest-totals-forward-trial.json', summary['totals_trial'])
             from app.services.api_budget import ApiBudget
             summary['api_budget'] = ApiBudget().snapshot()
             pending = self.state.pending_bets(include_shadow=False)

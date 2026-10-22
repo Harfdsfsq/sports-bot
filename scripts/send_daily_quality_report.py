@@ -215,6 +215,13 @@ def render(summary):
         history = (summary.get('goal_model_history') or {}).get(version, {})
         lines.append(f"История этой версии: завершено {history.get('settled', 0)}; без возврата {history.get('count', 0)}. Для калибровки нужно {os.getenv('DAILY_CALIBRATION_MIN_VERSION_BETS', '50')} ставок без возврата этой версии.")
         lines.append(f"Известная выборка для публикации: от {os.getenv('DAILY_B_MIN_TEAM_SAMPLE', '6')} матчей на команду. Одинаковые сезонные данные нескольких API не увеличивают их общий вес.")
+    trial = summary.get('totals_trial') or {}
+    if trial:
+        lines.extend(['', '🧪 Общие тоталы текущей версии — проверка без ставок',
+            f"Один выбранный тотал на матч: ожидают {trial.get('pending', 0)}, завершено {trial.get('settled', 0)}; условный результат {trial.get('paper_pnl', 0):+.2f} ед.",
+            'Отбор проходит проверки B-tier; исторические запреты сохраняются как причины наблюдения. В банк и обучение опубликованных ставок не входит.'])
+        if trial.get('brier') is not None:
+            lines.append(f"Ошибка вероятности: модель {trial['brier']:.3f}, рынок {trial['market_brier']:.3f}; парных оценок {trial.get('paired_scores', 0)}. Меньше — лучше; автоматического допуска к ставкам нет.")
     monitor = summary.get('market_monitor') or {}
     research = summary.get('goal_research') or {}
     if research.get('status') == 'error':
