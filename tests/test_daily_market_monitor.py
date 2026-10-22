@@ -151,3 +151,28 @@ def test_cached_quote_time_cannot_become_fresh_closing_price(tmp_path,daily):
     saved=json.loads(m.clv_results_path.read_text())[0]
     assert saved['measurement_status']=='missing_recent_same_book_quote'
     assert saved['reference_observed_at']==(kickoff-timedelta(minutes=70)).isoformat()
+
+
+def test_monitor_uses_quote_collection_time_after_runner_start(tmp_path,daily):
+    m=monitor(tmp_path);now=datetime.now(UTC);kickoff=now+timedelta(minutes=35)
+    started=now-timedelta(minutes=3);fetched=now-timedelta(seconds=1)
+    match=Match('test','1','soccer','League','Home','Away',kickoff,'home','away','league')
+    offer=Offer('odds_api_io','Bet365','totals','Over',1.8,2.5,metadata={'fetched_at_utc':fetched.isoformat()})
+    signal=m._signal_key(offer) if hasattr(m,'_signal_key') else None
+    snap=m._build_snapshot([match],{match.match_key:[offer]},fetched)
+    key=next(iter(snap['matches'][match.match_key]))
+    tracked={**row(kickoff),'match_key':match.match_key,'market_signal_key':key,
+             'tracked_at':(started-timedelta(hours=1)).isoformat()}
+    m._write_json(m.pending_clv_path,[tracked])
+    m.build_signals([match],{match.match_key:[offer]},started)
+    saved=json.loads(m.pending_clv_path.read_text())[0]
+    assert saved['reference_observed_at']==fetched.isoformat()
+    assert json.loads(m.latest_snapshot_path.read_text())['created_at']==fetched.isoformat()
+
+
+def test_quote_clock_does_not_accept_actual_future_timestamp(tmp_path,daily):
+    m=monitor(tmp_path);now=datetime.now(UTC);kickoff=now+timedelta(hours=1)
+    match=Match('test','1','soccer','League','Home','Away',kickoff,'home','away','league')
+    offer=Offer('odds_api_io','Bet365','totals','Over',1.8,2.5,metadata={'fetched_at_utc':(now+timedelta(minutes=10)).isoformat()})
+    m.build_signals([match],{match.match_key:[offer]},now)
+    assert json.loads(m.latest_snapshot_path.read_text())['created_at']==now.isoformat()

@@ -36,6 +36,14 @@ class MarketMonitor:
         offers_by_match: dict[str, list[Offer]],
         now_utc: datetime,
     ) -> tuple[dict[str, dict[str, Any]], dict[str, Any], dict[str, Any]]:
+        # Runner start precedes network collection. A fresh fetched_at_utc
+        # must not be rejected merely because it is later than runner start.
+        # Cached quote timestamps remain unchanged; actual future clocks are ignored.
+        if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
+            wall_time = datetime.now(UTC)
+            stamps = [self._parse_dt((offer.metadata or {}).get('fetched_at_utc'))
+                      for values in offers_by_match.values() for offer in values]
+            now_utc = max([now_utc] + [stamp for stamp in stamps if stamp and now_utc < stamp <= wall_time])
         previous = self._load_json(self.latest_snapshot_path, default={})
         current_snapshot = self._build_snapshot(matches, offers_by_match, now_utc)
         signals = self._build_signal_map(current_snapshot, previous)
