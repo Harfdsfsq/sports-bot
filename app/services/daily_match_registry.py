@@ -209,7 +209,7 @@ class DailyMatchRegistry:
             retry = parse_time(attempt.get('retry_after'))
             if retry and self.now < retry:
                 attempted = parse_time(attempt.get('at'))
-                urgent_odds_retry = role == 'offers' and minutes <= 120 and attempt.get('result') == 'empty' and attempted is not None and self.now - attempted >= timedelta(minutes=30) and retry - attempted <= timedelta(minutes=120)
+                urgent_odds_retry = role == 'offers' and (minutes <= 120 or minutes <= 240 and self.has_role(match, 'context')) and attempt.get('result') == 'empty' and attempted is not None and self.now - attempted >= timedelta(minutes=30) and retry - attempted <= timedelta(minutes=120)
                 urgent_context_retry = role == 'context' and provider != 'weather' and minutes <= 240 and attempt.get('result') == 'empty' and attempted is not None and self.now - attempted >= timedelta(minutes=30) and retry - attempted <= timedelta(minutes=120) and (refresh_soon or not self.has_role(match, 'context'))
                 if not (urgent_odds_retry or urgent_context_retry):
                     continue

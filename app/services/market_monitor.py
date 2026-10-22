@@ -60,7 +60,9 @@ class MarketMonitor:
         }
         return signals, stats, preview
 
-    def record_published_candidates(self, candidates: list[CandidateBet], now_utc: datetime) -> dict[str, Any]:
+    def record_published_candidates(self, candidates: list[CandidateBet], now_utc: datetime, *, population='published') -> dict[str, Any]:
+        if population not in {'published', 'paper_totals'}:
+            raise ValueError('Unknown market tracking population')
         if not candidates:
             return {'tracked': 0}
         payload = self._load_json(self.pending_clv_path, default=[])
@@ -73,6 +75,8 @@ class MarketMonitor:
         added = 0
         for candidate in candidates:
             summary = dict(getattr(candidate, 'source_summary', {}) or {})
+            if population == 'published' and summary.get('reserve_only'):
+                continue
             signal_key = summary.get('market_signal_key')
             if not signal_key:
                 continue
@@ -83,6 +87,7 @@ class MarketMonitor:
             rows.append(
                 {
                     'fingerprint': fingerprint,
+                    'tracking_population': population,
                     'tracked_at': now_utc.isoformat(),
                     'match_key': candidate.match_key,
                     'family': candidate.family,
@@ -124,11 +129,36 @@ class MarketMonitor:
             count += self.record_published_candidates([candidate], published)['tracked']
         return count
 
+    def restore_trial_tracking(self, bets, now_utc):
+        from app.services.totals_trial import PROTOCOL
+        count = 0
+        for row in bets:
+            summary = dict(row.get('source_summary') or {})
+            kickoff, frozen = self._parse_dt(row.get('commence_time')), self._parse_dt(row.get('published_at'))
+            if (summary.get('validation_protocol') != PROTOCOL or not summary.get('reserve_only')
+                    or row.get('telegram_sent') or row.get('family') != 'totals'
+                    or not kickoff or not frozen or kickoff <= now_utc
+                    or kickoff - frozen < timedelta(minutes=30)):
+                continue
+            fields = {key: row.get(key) for key in ('home_team', 'away_team', 'match_key', 'family', 'selection',
+                      'selection_key', 'team_side', 'point', 'odds', 'fair_odds', 'market_probability', 'adjusted_probability')}
+            candidate = SimpleNamespace(**fields, commence_time=kickoff, source_summary=summary)
+            count += self.record_published_candidates([candidate], frozen, population='paper_totals')['tracked']
+        return count
+
+    def trial_clv_summary(self):
+        rows = self._load_json(self.clv_results_path, default=[])
+        rows = [r for r in rows if isinstance(r, dict) and r.get('tracking_population') == 'paper_totals'] if isinstance(rows, list) else []
+        measured = [r for r in rows if r.get('measurement_status') == 'measured' and r.get('open_clv_pct') is not None]
+        return {'measured': len(measured), 'missing_recent_quote': len(rows) - len(measured),
+                'average_pct': round(mean(r['open_clv_pct'] for r in measured), 3) if measured else None,
+                'basis': 'same_book_pre_kickoff_snapshot'}
+
     def resolved_clv_rows(self) -> list[dict[str, Any]]:
         payload = self._load_json(self.clv_results_path, default=[])
         rows = [dict(item) for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
         if os.getenv('PUBLICATION_PROFILE', '').lower() == 'daily_quality':
-            rows = [row for row in rows if row.get('measurement_status') == 'measured']
+            rows = [row for row in rows if row.get('measurement_status') == 'measured' and row.get('tracking_population', 'published') == 'published']
         return rows
 
     def _update_pending_clv(self, now_utc: datetime, snapshot: dict[str, Any]) -> dict[str, Any]:
@@ -212,13 +242,14 @@ class MarketMonitor:
             # Only a later snapshot of the exact fixture and selected bookmaker
             # may become the pre-kickoff reference. Never use in-play prices.
             tracked = self._parse_dt(row.get('tracked_at'))
+            quote_time = self._parse_dt((market.get('price_observed_at_by_book') or {}).get(book)) or snapshot_time
             if (kickoff and event_time == kickoff and snapshot_time and tracked
-                    and tracked < snapshot_time <= now_utc and snapshot_time < kickoff
+                    and quote_time and tracked < quote_time <= now_utc and quote_time < kickoff
                     and price is not None and price > 1):
                 previous = self._parse_dt(row.get('reference_observed_at'))
-                if previous is None or snapshot_time > previous:
+                if previous is None or quote_time > previous:
                     row['reference_odds'] = price
-                    row['reference_observed_at'] = snapshot_time.isoformat()
+                    row['reference_observed_at'] = quote_time.isoformat()
             observed = self._parse_dt(row.get('reference_observed_at'))
             valid = bool(kickoff and observed and timedelta(0) < kickoff - observed <= grace)
             if kickoff is not None and now_utc >= kickoff:
@@ -271,6 +302,10 @@ class MarketMonitor:
                         float(other.price) for other in bucket
                         if str(other.bookmaker).strip().lower() == str(offer.bookmaker).strip().lower())
                         for offer in bucket},
+                    'price_observed_at_by_book': {str(offer.bookmaker).strip().lower():
+                        str((offer.metadata or {}).get('fetched_at_utc') or now_utc.isoformat())
+                        for offer in sorted(bucket, key=lambda item: (float(item.price),
+                            str((item.metadata or {}).get('fetched_at_utc') or now_utc.isoformat())))},
                     'median_price': round(median(prices), 4),
                     'mean_price': round(mean(prices), 4),
                     'min_price': min(prices),

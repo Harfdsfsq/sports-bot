@@ -47,6 +47,13 @@ class SettlementService:
             rows.extend(await self._fetch_football_data_rows(start_date, end_date))
         if has_api_football:
             rows.extend(await self._fetch_api_football_rows(start_date, end_date))
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            # Reuse already fetched official results; no extra API requests.
+            from app.services.goal_research import archive_results
+            for provider in ('sstats', 'football_data'):
+                batch = [row for row in rows if row.get('_settlement_source') == provider]
+                if batch:
+                    archive_results(provider, batch)
         items: list[dict[str, Any]] = []
         reasons: defaultdict[str, int] = defaultdict(int)
         debug_bets: list[dict[str, Any]] = []

@@ -1653,3 +1653,48 @@ def test_totals_trial_does_not_apply_live_probability_adjustments_twice(profile,
     probability,score=c.adjusted_probability,c.publication_score
     passed,_,_=q.apply_to_candidates([c],{},datetime.now(UTC),research_only=True)
     assert passed==[c] and c.adjusted_probability==probability and c.publication_score==score
+
+
+def test_context_ready_match_retries_empty_line_within_four_hour_window(tmp_path):
+    now=datetime.now(UTC);m=match(now,minutes=220)
+    r=DailyMatchRegistry(tmp_path/'registry.json',now);r.sync([m])
+    r.record('sstats','context',[m],{m.match_key:MatchContext('sstats',{'HomeTeam':'Home','AwayTeam':'Away'},expected_home=1.,expected_away=1.,confidence=75)}, {},observed_at=now)
+    r.record('odds_api_io','offers',[m],{}, {},observed_at=now)
+    r.now=now+timedelta(minutes=31)
+    assert r.targets('odds_api_io','offers')==r.matches()
+
+
+def test_settlement_results_also_feed_research_archive(profile,tmp_path,monkeypatch):
+    from app.services.settlement import SettlementService
+    from app.services.goal_research import GoalHistory
+    monkeypatch.chdir(tmp_path)
+    settings=Settings(_env_file=None,sstats_api_key='test-only')
+    service=SettlementService(settings)
+    kickoff=datetime.now(UTC)-timedelta(hours=5)
+    async def fetch(*args):
+        return [{'id':12,'statusName':'Finished','date':kickoff.isoformat(),
+                 'homeTeam':{'name':'Home'},'awayTeam':{'name':'Away'},
+                 'homeFTResult':2,'awayFTResult':1,'season':{'league':{'id':10}},'_settlement_source':'sstats'}]
+    monkeypatch.setattr(service,'_fetch_sstats_rows',fetch)
+    bet={'fingerprint':'test','commence_time':kickoff.isoformat(),'home_team':'Home','away_team':'Away',
+         'league_name':'League','family':'totals','selection':'Over','selection_key':'over',
+         'point':2.5,'odds':2.,'stake_amount':1.,'status':'shadow_pending'}
+    asyncio.run(service.settle_pending_bets([bet],datetime.now(UTC)))
+    rows=list(GoalHistory().data['results'].values())
+    assert len(rows)==1 and rows[0]['hg']==2 and rows[0]['ag']==1
+
+
+def test_price_watch_checks_only_tracked_fixtures_before_kickoff(tmp_path,monkeypatch):
+    from app.services.market_monitor import MarketMonitor
+    now=datetime.now(UTC);m=match(now,minutes=20);late=match(now,minutes=-1,name='Late')
+    r=DailyQualityRunner.__new__(DailyQualityRunner);r.registry=DailyMatchRegistry(tmp_path/'registry.json',now);r.registry.sync([m,late])
+    r.market_monitor=MarketMonitor(SimpleNamespace(storage_export_dir=str(tmp_path/'exports'),market_monitor_subdir='market-monitor',clv_resolve_grace_minutes=45,bookmaker_weight=lambda _:1.,source_weight=lambda _:1.))
+    write_json(r.market_monitor.pending_clv_path,[{'match_key':item.match_key,'commence_time':item.commence_time.isoformat()} for item in [m,late]])
+    called=[]
+    class Odds:
+        async def fetch_offers(self,targets):
+            called.extend(targets)
+            return {},{'odds_requests':1},{}
+    r.odds_api_io=Odds()
+    result=asyncio.run(r._watch_pre_kickoff_prices())
+    assert len(called)==1 and called[0].home_team==m.home_team and result['targets']==1

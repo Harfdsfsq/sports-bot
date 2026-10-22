@@ -113,3 +113,41 @@ def test_integer_total_clv_identity_matches_financial_ledger(tmp_path,daily):
     resolved=m.resolved_clv_rows()[0]
     assert resolved['fingerprint']==expected
     assert resolved['previous_fingerprint']==old['fingerprint']
+
+
+def test_paper_price_measurements_never_enter_live_calibration(tmp_path,daily):
+    from app.services.totals_trial import PROTOCOL
+    kickoff=datetime(2026,10,22,19,tzinfo=UTC);m=monitor(tmp_path)
+    bet={'home_team':'Home','away_team':'Away','match_key':'fixture','family':'totals',
+         'selection':'Over','selection_key':'over','point':2.5,'odds':2.,'fair_odds':2.,
+         'market_probability':.5,'adjusted_probability':.6,'commence_time':kickoff.isoformat(),
+         'published_at':(kickoff-timedelta(hours=2)).isoformat(),'telegram_sent':False,
+         'source_summary':{'validation_protocol':PROTOCOL,'reserve_only':True,
+             'market_signal_key':'line','selected_bookmaker':'Bet365','goal_model_version':'v4'}}
+    assert m.restore_trial_tracking([bet],kickoff-timedelta(hours=1))==1
+    assert m.restore_trial_tracking([bet],kickoff-timedelta(hours=1))==0
+    m._update_pending_clv(kickoff-timedelta(minutes=30),snapshot(kickoff))
+    m._update_pending_clv(kickoff+timedelta(minutes=1),{'matches':{}})
+    assert m.resolved_clv_rows()==[]
+    assert m.trial_clv_summary()['measured']==1
+    assert m.trial_clv_summary()['average_pct']==pytest.approx((2/1.8-1)*100,abs=.001)
+
+
+def test_trial_tracking_rejects_postkickoff_and_nonprotocol_rows(tmp_path,daily):
+    m=monitor(tmp_path);now=datetime.now(UTC)
+    rows=[{'family':'totals','telegram_sent':False,'commence_time':(now-timedelta(hours=1)).isoformat(),
+           'published_at':(now-timedelta(hours=3)).isoformat(),'source_summary':{'reserve_only':True}}]
+    assert m.restore_trial_tracking(rows,now)==0
+
+
+def test_cached_quote_time_cannot_become_fresh_closing_price(tmp_path,daily):
+    m=monitor(tmp_path);kickoff=datetime(2026,10,22,19,tzinfo=UTC)
+    m._write_json(m.pending_clv_path,[row(kickoff)])
+    snap=snapshot(kickoff,before=30)
+    snap['matches']['fixture']['line']['price_observed_at_by_book']={'bet365':(kickoff-timedelta(minutes=70)).isoformat()}
+    m._update_pending_clv(kickoff-timedelta(minutes=30),snap)
+    m._update_pending_clv(kickoff+timedelta(minutes=1),{'matches':{}})
+    assert m.resolved_clv_rows()==[]
+    saved=json.loads(m.clv_results_path.read_text())[0]
+    assert saved['measurement_status']=='missing_recent_same_book_quote'
+    assert saved['reference_observed_at']==(kickoff-timedelta(minutes=70)).isoformat()

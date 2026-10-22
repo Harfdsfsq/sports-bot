@@ -222,6 +222,9 @@ def render(summary):
             'Отбор проходит проверки B-tier; исторические запреты сохраняются как причины наблюдения. В банк и обучение опубликованных ставок не входит.'])
         if trial.get('brier') is not None:
             lines.append(f"Ошибка вероятности: модель {trial['brier']:.3f}, рынок {trial['market_brier']:.3f}; парных оценок {trial.get('paired_scores', 0)}. Меньше — лучше; автоматического допуска к ставкам нет.")
+        price_check = trial.get('price_check') or {}
+        if price_check:
+            lines.append(f"Цена условных тоталов перед матчем: измерено {price_check.get('measured', 0)}, без свежей котировки {price_check.get('missing_recent_quote', 0)}. Условные измерения отделены от реальных ставок.")
     monitor = summary.get('market_monitor') or {}
     research = summary.get('goal_research') or {}
     if research.get('status') == 'error':

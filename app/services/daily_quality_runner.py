@@ -88,6 +88,8 @@ class DailyQualityRunner(PredictionRunner):
         self.selected_daily = []
         self.clv_recovered = (self.market_monitor.restore_published_tracking(
             self.state.pending_bets(include_shadow=False), datetime.now(UTC)) if self.market_monitor else 0)
+        if self.market_monitor:
+            self.market_monitor.restore_trial_tracking(self.state.pending_bets(include_shadow=True), datetime.now(UTC))
 
     def _record_confirmed(self, candidate):
         identity = candidate.source_summary['registry_match_id']
@@ -455,9 +457,38 @@ class DailyQualityRunner(PredictionRunner):
         self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in selected if c.family != 'totals')
         return existing_shadow + selected
 
+    async def _watch_pre_kickoff_prices(self):
+        """Small read-only price check; it cannot publish or alter bankroll."""
+        if not self.market_monitor or not self.odds_api_io:
+            return {'targets': 0}
+        now = datetime.now(UTC)
+        pending = read_json(self.market_monitor.pending_clv_path, [])
+        requested = {(row.get('match_key'), parse_time(row.get('commence_time')))
+                     for row in pending if isinstance(row, dict)}
+        targets = [m for m in self.registry.matches()
+                   if (m.match_key, m.commence_time) in requested
+                   and timedelta(0) < m.commence_time - now <= timedelta(minutes=45)]
+        targets = sorted(targets, key=lambda m: m.commence_time)[:10]
+        if not targets:
+            return {'targets': 0}
+        try:
+            offers, stats, _ = await asyncio.wait_for(self.odds_api_io.fetch_offers(targets), timeout=45)
+            observed = datetime.now(UTC)
+            for values in offers.values():
+                for offer in values:
+                    offer.metadata['fetched_at_utc'] = observed.isoformat()
+            snapshot = self.market_monitor._build_snapshot(targets, offers, observed)
+            measured = self.market_monitor._update_pending_clv(observed, snapshot)
+            return {'targets': len(targets), 'matches_with_quotes': len(offers),
+                    'requests': stats.get('odds_requests', 0), 'resolved': measured.get('resolved_count', 0)}
+        except Exception as exc:
+            return {'targets': len(targets), 'error_type': type(exc).__name__}
+
     async def run_once(self):
         try:
+            price_watch = await self._watch_pre_kickoff_prices()
             summary = await super().run_once()
+            summary['price_watch'] = price_watch
             summary['candidates_model_evaluated'] = getattr(self.factory, 'prefilter_candidates_count', 0)
             summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
             summary['goal_model_version'] = GOAL_MODEL_VERSION
@@ -489,6 +520,10 @@ class DailyQualityRunner(PredictionRunner):
             from app.services.totals_trial import summarize as summarize_totals_trial
             summary['totals_trial'] = summarize_totals_trial(
                 self.state.prediction_ledger(self.settings, include_shadow=True), GOAL_MODEL_VERSION)
+            if self.market_monitor:
+                self.market_monitor.restore_trial_tracking(self.state.pending_bets(include_shadow=True), datetime.now(UTC))
+                summary['totals_trial']['price_check'] = self.market_monitor.trial_clv_summary()
+
             write_json('.data/exports/latest-totals-forward-trial.json', summary['totals_trial'])
             from app.services.api_budget import ApiBudget
             summary['api_budget'] = ApiBudget().snapshot()
