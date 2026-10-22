@@ -127,3 +127,51 @@ def test_archive_failure_does_not_disable_provider(monkeypatch):
     import app.services.goal_research as module
     monkeypatch.setattr(module.GoalHistory,'ingest',lambda *args: (_ for _ in ()).throw(OSError('disk')))
     assert module.archive_results('sstats',[])=={'status':'error','error_type':'OSError'}
+
+
+def test_research_old_alias_keys_keep_first_prediction_and_single_metric(tmp_path):
+    from app.services.goal_research import VERSION
+    h=GoalHistory(tmp_path/'history.json')
+    kickoff=NOW-timedelta(days=2)
+    base={'version':VERSION,'home':'Home','away':'Away','kickoff':kickoff.isoformat(),
+          'created_at':(kickoff-timedelta(hours=2)).isoformat(),
+          'status':'pending','p_over25':.2,'baseline_over25':.5}
+    # Insertion order and best eventual score must not select the retained row.
+    h.data['forecasts']={'alias-later':{**base,'created_at':(kickoff-timedelta(hours=1)).isoformat(),'p_over25':.9},
+                         'first':base.copy()}
+    r=result_row('League','Home','Away',kickoff,2,1,'test')
+    # Result normalizer lowercases the names just as actual stored forecasts do.
+    for f in h.data['forecasts'].values():f.update(home=r['home'],away=r['away'])
+    r['observed_at']=(kickoff+timedelta(hours=3)).isoformat()
+    h.data['results'][r['id']]=r
+    s=h.run_research([],NOW)
+    assert s['resolved']==1 and s['duplicates_ignored']==1
+    assert s['brier']==pytest.approx(.64)
+    assert h.data['forecasts']['alias-later']['duplicate_of']=='first'
+    assert len(GoalHistory(h.path).data['forecasts'])==2
+
+
+def test_new_fixture_aliases_do_not_create_second_research_prediction(tmp_path,monkeypatch):
+    import app.services.goal_research as module
+    h=GoalHistory(tmp_path/'history.json')
+    monkeypatch.setattr(module,'fit_model',lambda *args:object())
+    monkeypatch.setattr(module,'predict',lambda *args:(1.2,1.4))
+    monkeypatch.setattr(module,'resolve_team',lambda model,name:'home' if 'Home' in name else 'away')
+    # Model dictionary is only used for the fixed league baseline here.
+    monkeypatch.setattr(module,'fit_model',lambda *args:{'league_total':2.5,'count':40})
+    m=SimpleNamespace(home_team='Home FC',away_team='Away FC',league_name='League',commence_time=NOW+timedelta(hours=2))
+    alias=SimpleNamespace(**{**vars(m),'home_team':'Home Football Club'})
+    assert h.run_research([m,alias],NOW)['new_forecasts']==1
+    assert h.run_research([alias],NOW+timedelta(minutes=10))['new_forecasts']==0
+
+
+def test_pending_research_warns_on_missing_results_without_inventing_score(tmp_path):
+    from app.services.goal_research import VERSION
+    h=GoalHistory(tmp_path/'history.json')
+    h.data['forecasts']={'old':{'version':VERSION,'home':'home','away':'away',
+       'kickoff':(NOW-timedelta(hours=10)).isoformat(),'created_at':(NOW-timedelta(hours=12)).isoformat(),
+       'status':'pending','p_over25':.5,'baseline_over25':.5}}
+    s=h.run_research([],NOW)
+    assert s['overdue_results']==1 and s['oldest_overdue_hours']==10
+    assert s['resolved']==0 and s['brier'] is None
+    assert 'total' not in h.data['forecasts']['old']

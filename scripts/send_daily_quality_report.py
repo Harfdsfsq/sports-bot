@@ -211,6 +211,10 @@ def render(summary):
         lines.extend(['', '🔬 Проверка новой модели общих тоталов — без ставок',
                       f"Архив: {research.get('history_matches', 0)} матчей; спорных результатов: {research.get('history_conflicts', 0)}.",
                       f"Новых оценок ТБ(2.5): {research.get('new_forecasts', 0)}; ожидают результата: {research.get('pending', 0)}; проверено: {research.get('resolved', 0)}."])
+        if research.get('duplicates_ignored'):
+            lines.append(f"Повторных оценок одного матча исключено из статистики: {research['duplicates_ignored']}. Учитывается первая оценка; исходные записи сохранены.")
+        if research.get('overdue_results'):
+            lines.append(f"⚠️ Для {research['overdue_results']} оценок результат не подтверждён спустя 6+ часов после начала; самая старая — {research.get('oldest_overdue_hours', 0):.0f} ч. В точности модели они не учитываются.")
         if research.get('brier') is not None:
             lines.append(f"Ошибка вероятности Brier: {research['brier']:.3f}; простая модель лиги: {research['baseline_brier']:.3f}. Меньше — лучше; доходность это не подтверждает.")
         elif research.get('skips'):

@@ -19,6 +19,24 @@ from app.services.fixture_identity import same_team_identity
 VERSION = 'opponent-poisson-research-v1'
 
 
+def forecast_identity(row):
+    return tuple(row.get(key) for key in ('version', 'home', 'away', 'kickoff'))
+
+
+def unique_forecasts(forecasts):
+    """Keep the earliest frozen forecast, without inspecting its outcome."""
+    first, unique = {}, []
+    for key, row in sorted(forecasts.items(), key=lambda item: item[1].get('created_at', '')):
+        identity = forecast_identity(row)
+        if identity in first:
+            row['duplicate_of'] = first[identity]
+            continue
+        row.pop('duplicate_of', None)
+        first[identity] = key
+        unique.append(row)
+    return unique
+
+
 def count(value):
     if isinstance(value, bool):
         return None
@@ -144,6 +162,7 @@ class GoalHistory:
 
     def run_research(self, matches, now):
         forecasts = self.data['forecasts']
+        seen = {forecast_identity(row) for row in unique_forecasts(forecasts)}
         new, skipped = 0, Counter()
         models = {}
         for match in matches:
@@ -166,8 +185,10 @@ class GoalHistory:
             if not forecast:
                 skipped['insufficient_league_or_team_history'] += 1
                 continue
-            key = '|'.join((VERSION, form_team_key(match.home_team), form_team_key(match.away_team), match.commence_time.isoformat()))
-            if key in forecasts:
+            home_name, away_name = resolve_team(model, match.home_team), resolve_team(model, match.away_team)
+            identity = (VERSION, home_name, away_name, match.commence_time.isoformat())
+            key = '|'.join(identity)
+            if identity in seen:
                 continue
             home, away = forecast
             forecasts[key] = {'version': VERSION, 'home': resolve_team(model, match.home_team),
@@ -175,6 +196,7 @@ class GoalHistory:
                               'created_at': now.isoformat(), 'expected_home': home, 'expected_away': away,
                               'p_over25': over25(home + away), 'baseline_over25': over25(model['league_total']),
                               'training_count': model['count'], 'status': 'pending'}
+            seen.add(identity)
             new += 1
         # Scores are looked up by names and kickoff; never infer results from odds.
         outcomes = {(r['home'], r['away'], r['kickoff']): r for r in self.data['results'].values() if not r.get('conflict')}
@@ -185,12 +207,17 @@ class GoalHistory:
             elif f.get('status') == 'resolved':
                 f['status'] = 'pending'  # A subsequently disputed result is not evidence.
                 f.pop('total', None)
-        resolved = [f for f in forecasts.values() if f['version'] == VERSION and f['status'] == 'resolved']
+        cohort = [f for f in unique_forecasts(forecasts) if f['version'] == VERSION]
+        resolved = [f for f in cohort if f['status'] == 'resolved']
+        overdue = [f for f in cohort if f['status'] == 'pending' and now - parse_time(f['kickoff']) >= timedelta(hours=6)]
         self.save()
         metrics = score_forecasts(resolved)
         return {'version': VERSION, 'mode': 'research_only', 'history_matches': len(self.data['results']),
                 'history_conflicts': sum(bool(r.get('conflict')) for r in self.data['results'].values()),
-                'new_forecasts': new, 'pending': sum(f['status'] == 'pending' for f in forecasts.values()),
+                'new_forecasts': new, 'pending': sum(f['status'] == 'pending' for f in cohort),
+                'duplicates_ignored': sum(bool(f.get('duplicate_of')) for f in forecasts.values() if f['version'] == VERSION),
+                'overdue_results': len(overdue),
+                'oldest_overdue_hours': round(max((now - parse_time(f['kickoff'])).total_seconds() / 3600 for f in overdue), 1) if overdue else None,
                 'resolved': len(resolved), 'skips': dict(skipped), **metrics}
 
 

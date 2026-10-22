@@ -635,3 +635,7 @@ replaces live probabilities automatically. Bad historical segments may now enter
 the non-financial reserve after all other quality/data checks, with their live
 publication blockers retained. No historical or quarantine guard is relaxed for
 real Telegram forecasts.
+
+## Проверка исследовательской статистики — 22 октября 2026
+
+У challenger-модели один матч учитывается один раз на версию по каноническим командам и времени начала. Из старых повторов сохраняется первая созданная оценка без выбора по результату; все исходные записи остаются в архиве. Отчёт отдельно показывает исключённые повторы и неподтверждённые результаты спустя 6 часов после начала. Они не входят в метрики точности. Исправление не меняет финансовую историю или допуск реальных ставок. Подробности: [аудит 18–22 октября](AUDIT_2026_10_22.md).
