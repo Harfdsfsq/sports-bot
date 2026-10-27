@@ -458,31 +458,8 @@ class DailyQualityRunner(PredictionRunner):
         return existing_shadow + selected
 
     async def _watch_pre_kickoff_prices(self):
-        """Small read-only price check; it cannot publish or alter bankroll."""
-        if not self.market_monitor or not self.odds_api_io:
-            return {'targets': 0}
-        now = datetime.now(UTC)
-        pending = read_json(self.market_monitor.pending_clv_path, [])
-        requested = {(row.get('match_key'), parse_time(row.get('commence_time')))
-                     for row in pending if isinstance(row, dict)}
-        targets = [m for m in self.registry.matches()
-                   if (m.match_key, m.commence_time) in requested
-                   and timedelta(0) < m.commence_time - now <= timedelta(minutes=45)]
-        targets = sorted(targets, key=lambda m: m.commence_time)[:10]
-        if not targets:
-            return {'targets': 0}
-        try:
-            offers, stats, _ = await asyncio.wait_for(self.odds_api_io.fetch_offers(targets), timeout=45)
-            observed = datetime.now(UTC)
-            for values in offers.values():
-                for offer in values:
-                    offer.metadata['fetched_at_utc'] = observed.isoformat()
-            snapshot = self.market_monitor._build_snapshot(targets, offers, observed)
-            measured = self.market_monitor._update_pending_clv(observed, snapshot)
-            return {'targets': len(targets), 'matches_with_quotes': len(offers),
-                    'requests': stats.get('odds_requests', 0), 'resolved': measured.get('resolved_count', 0)}
-        except Exception as exc:
-            return {'targets': len(targets), 'error_type': type(exc).__name__}
+        from app.services.daily_price_watch import watch_pre_kickoff_prices
+        return await watch_pre_kickoff_prices(self.registry, self.market_monitor, self.odds_api_io)
 
     async def run_once(self):
         try:
@@ -494,7 +471,10 @@ class DailyQualityRunner(PredictionRunner):
             summary['goal_model_version'] = GOAL_MODEL_VERSION
             from app.services.goal_research import GoalHistory
             try:
-                summary['goal_research'] = GoalHistory().run_research(self.inventory_matches, datetime.now(UTC))
+                history = GoalHistory()
+                refresh = await history.refresh_overdue_results(self.settings, datetime.now(UTC))
+                summary['goal_research'] = history.run_research(self.inventory_matches, datetime.now(UTC))
+                summary['goal_research']['result_refresh'] = refresh
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary['goal_research'] = {'status': 'error', 'error_type': type(exc).__name__}
             write_json('.data/exports/latest-goal-research.json', summary['goal_research'])

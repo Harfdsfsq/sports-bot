@@ -1698,3 +1698,29 @@ def test_price_watch_checks_only_tracked_fixtures_before_kickoff(tmp_path,monkey
     r.odds_api_io=Odds()
     result=asyncio.run(r._watch_pre_kickoff_prices())
     assert len(called)==1 and called[0].home_team==m.home_team and result['targets']==1
+
+
+def test_quote_only_entrypoint_preserves_ledger_and_never_runs_predictions(tmp_path,monkeypatch):
+    from scripts.run_daily_price_watch import main
+    from app.providers.odds_api_io import OddsApiIoProvider
+    monkeypatch.chdir(tmp_path)
+    (tmp_path/'config').mkdir();(tmp_path/'config/daily_quality.env').write_text('PUBLICATION_PROFILE=daily_quality\n')
+    (tmp_path/'.data').mkdir();ledger=tmp_path/'.data/state.json';ledger.write_text('{"bankroll": {"current_balance": 973.84}, "bets": []}')
+    before=ledger.read_bytes()
+    async def fail(*args,**kwargs):raise AssertionError('No prediction or unnecessary odds request allowed')
+    monkeypatch.setattr(DailyQualityRunner,'run_once',fail)
+    monkeypatch.setattr(OddsApiIoProvider,'fetch_offers',fail)
+    monkeypatch.setenv('TELEGRAM_BOT_TOKEN','must-not-be-used')
+    result=main()
+    assert result['mode']=='price_watch_only' and result['targets']==0
+    assert ledger.read_bytes()==before
+    assert not (tmp_path/'.data/exports/latest-daily-quality-report.json').exists()
+
+
+def test_account_entitlement_report_warns_about_missing_configured_bookmaker():
+    from scripts.send_daily_quality_report import render
+    summary={'source_stats':{'odds_api_io':{'configured_accounts':['account1'], 'accounts':{'account1':{
+        'bookmakers':'Bet365,Unibet','selected_bookmakers':['Unibet'],'entitlement_resolved':True,'events_matched':10}}}}}
+    text=render(summary)
+    assert 'API не подтвердил доступ к Bet365' in text
+    assert 'обновил линии для 10 матчей' in text

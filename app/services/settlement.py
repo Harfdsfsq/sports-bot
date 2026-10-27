@@ -172,11 +172,12 @@ class SettlementService:
         lookback = timedelta(days=int(getattr(self.settings, 'settlement_lookback_days', 5) or 5))
         return commence + grace <= now_utc <= commence + lookback
 
-    async def _fetch_sstats_rows(self, start_date: str, end_date: str) -> list[dict[str, Any]]:
+    async def _fetch_sstats_rows(self, start_date: str, end_date: str, *, max_requests: int | None = None) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         offset = 0
         limit = 1000
-        max_requests = max(1, min(50, int(os.getenv('SETTLEMENT_SSTATS_MAX_REQUESTS_PER_RUN', '12'))))
+        configured_max = max(1, min(50, int(os.getenv('SETTLEMENT_SSTATS_MAX_REQUESTS_PER_RUN', '12'))))
+        max_requests = configured_max if max_requests is None else min(configured_max, max(1, max_requests))
         stats = self.sstats_fetch_stats = {'requests': 0, 'rows': 0, 'complete': False, 'stop_reason': 'request_budget'}
         seen_signatures: set[tuple[Any, ...]] = set()
         try:

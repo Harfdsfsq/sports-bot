@@ -3,6 +3,10 @@ name: run-bot
 on:
   workflow_dispatch:
     inputs:
+      price_watch_only:
+        description: "Только предматчевые цены, без прогнозов и Telegram"
+        type: boolean
+        default: false
       dry_run:
         description: "Проверка без отправки в Telegram"
         type: boolean
@@ -20,6 +24,7 @@ jobs:
   daily:
     uses: ./.github/workflows/run-bot-rules.yml
     with:
+      price_watch_only: ${{ inputs.price_watch_only }}
       dry_run: ${{ inputs.dry_run }}
       max_picks: ${{ inputs.max_picks }}
     secrets: inherit

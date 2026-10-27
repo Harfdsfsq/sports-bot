@@ -1286,6 +1286,8 @@ class OddsApiIoProvider:
         bookmakers = payload.get("bookmakers")
         offers: list[Offer] = []
         seen: set[tuple[str, str, str, float | None]] = set()
+        fetched_at = datetime.now(UTC).isoformat()
+        market_changed_at = None
 
         def to_float(value: Any) -> float | None:
             try:
@@ -1325,7 +1327,12 @@ class OddsApiIoProvider:
                     team_side=normalized_team_side,
                     market_name=market_name,
                     market_key=family,
-                    metadata={"odds_api_io": True, "market_period": "full_time"},
+                    metadata={"odds_api_io": True, "market_period": "full_time",
+                              "fetched_at_utc": fetched_at,
+                              # Vendor updatedAt means last PRICE CHANGE, not
+                              # last check. Never use it as a freshness TTL.
+                              "provider_market_updated_at": market_changed_at,
+                              "provider_timestamp_basis": "last_price_change"},
                 )
             )
 
@@ -1532,6 +1539,7 @@ class OddsApiIoProvider:
                     if not isinstance(market, dict) or not is_full_match_market(market):
                         continue
                     market_key = str(market.get("key") or market.get("name") or market.get("market") or "").lower()
+                    market_changed_at = market.get("updatedAt")
                     outcomes = market.get("outcomes")
                     if isinstance(outcomes, list):
                         parse_outcomes(bookmaker_name, market_key, [row for row in outcomes if isinstance(row, dict)])
@@ -1542,6 +1550,7 @@ class OddsApiIoProvider:
             elif isinstance(markets, dict):
                 for market_key, market_value in markets.items():
                     key = str(market_key or "").lower()
+                    market_changed_at = market_value.get("updatedAt") if isinstance(market_value, dict) else None
                     if isinstance(market_value, dict):
                         if not is_full_match_market(market_value):
                             continue

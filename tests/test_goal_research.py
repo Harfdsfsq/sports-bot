@@ -8,6 +8,49 @@ from app.services.goal_research import GoalHistory, result_row, normalize_result
 NOW = datetime(2026, 10, 18, 10, tzinfo=UTC)
 
 
+@pytest.mark.parametrize('case', ['alias', 'shift', 'conflict', 'ambiguous', 'exact_conflict', 'exact_consistent', 'exact_disagrees', 'wrong_squad', 'wrong_time'])
+def test_result_recovery_requires_unique_safe_identity(tmp_path,case):
+    h=GoalHistory(tmp_path/'history.json');kickoff=NOW-timedelta(days=1)
+    f={'version':'opponent-poisson-research-v1','home':'tsg hoffenheim','away':'bayer leverkusen',
+       'kickoff':kickoff.isoformat(),'created_at':(kickoff-timedelta(hours=2)).isoformat(),
+       'p_over25':.5,'baseline_over25':.5,'status':'pending'}
+    h.data['forecasts']['f']=f
+    r=result_row('League','TSG 1899 Hoffenheim' if case!='wrong_squad' else 'TSG Hoffenheim U19',
+                 'Bayer Leverkusen',kickoff+timedelta(minutes=5 if case=='shift' else 60 if case=='wrong_time' else 0),2,1,'test')
+    r['observed_at']=NOW.isoformat();r['conflict']=case=='conflict';h.data['results'][r['id']]=r
+    if case in {'ambiguous','exact_conflict','exact_consistent','exact_disagrees'}:
+        other=dict(r,id='other',kickoff=(kickoff+timedelta(minutes=1)).isoformat());h.data['results']['other']=other
+        if case.startswith('exact_'):
+            f['home']=r['home']
+            other['conflict']=case=='exact_conflict'
+            if case=='exact_disagrees':other['hg']=5
+    summary=h.run_research([],NOW)
+    assert summary['resolved']==(1 if case in {'alias','shift','exact_consistent'} else 0)
+    if case in {'alias','shift','exact_consistent'}:assert f['total']==3
+    else:assert summary['overdue_reasons'] and 'total' not in f
+
+
+def test_result_backfill_is_bounded_and_keeps_conflicts_quarantined(tmp_path,monkeypatch):
+    import asyncio
+    from app.services.settlement import SettlementService
+    h=GoalHistory(tmp_path/'history.json')
+    for i in range(1,5):
+        dt=NOW-timedelta(days=i)
+        h.data['forecasts'][str(i)]={'version':'test','home':'Home','away':'Away','kickoff':dt.isoformat(),
+                                    'created_at':(dt-timedelta(hours=1)).isoformat(),'status':'pending'}
+    calls=[]
+    async def fetch(service,start,end,*,max_requests=None):
+        calls.append((start,end,max_requests));service.sstats_fetch_stats={'requests':1,'complete':True}
+        return []
+    monkeypatch.setattr(SettlementService,'_fetch_sstats_rows',fetch)
+    settings=SimpleNamespace(sstats_api_key='fake')
+    assert len(asyncio.run(h.refresh_overdue_results(settings,NOW))['dates'])==2
+    assert len(asyncio.run(h.refresh_overdue_results(settings,NOW))['dates'])==2
+    assert len(asyncio.run(h.refresh_overdue_results(settings,NOW))['dates'])==0
+    assert len(calls)==4 and all(a==b and cap==3 for a,b,cap in calls)
+    assert all(f['status']=='pending' for f in h.data['forecasts'].values())
+
+
 def dataset():
     # Distinct identities and dates; attack/defence effects are recoverable.
     return [result_row('League', f'Team {h}', f'Team {a}', NOW - timedelta(days=100-i),

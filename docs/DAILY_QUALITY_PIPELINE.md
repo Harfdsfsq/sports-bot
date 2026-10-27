@@ -695,3 +695,37 @@ real Telegram forecasts.
 Обнаружено расхождение: runner передаёт время начала запуска, а котировки получены позже. При проверке quote_time <= now_utc это ошибочно исключало новые ответы как будущие. Дневной монитор теперь продвигает время снимка до максимального подтверждённого fetched_at_utc, не выходящего за реальные текущие часы. Исходные метки кеша не обновляются; фактически будущие метки не принимаются.
 
 354 теста пройдены. На замороженном артефакте число наблюдений с сохранённым ценовым ориентиром изменилось с 0 на 5, число наблюдений осталось 5. Это не превращает ранние котировки в closing-price измерения: для них по-прежнему нужен отдельный снимок выбранного букмекера в последние 45 минут до начала.
+# Quote-only checks and result recovery (2026-10-27)
+
+The existing two-hour forecast dispatch remains unchanged. A second cron-job.org
+job can dispatch `run-bot.yml` every 30 minutes on the same branch with this body:
+
+```json
+{"ref":"feature/daily-quality-pipeline","inputs":{"price_watch_only":true,"dry_run":false}}
+```
+
+Use the same GitHub dispatch URL and authentication as the existing job. This
+mode collects prices only for tracked matches in the final 45 minutes. It does
+not run inventory, forecasts, settlement, or Telegram reports. Without the second
+external job the normal two-hour dispatch still works, but closing-price coverage
+remains limited. This change does not create an external scheduled job.
+
+Both modes share the existing concurrency group, live cache namespace, budget
+ledger and unchanged cache paths. Quote-only mode never writes `state.json`.
+Its diagnostic is `latest-price-watch.json`; provider failures fail the job.
+
+Odds-api.io `updatedAt` is the time of the last price **change**, not its last
+verification. Keep it as `provider_market_updated_at` separately from
+`fetched_at_utc`; old last-change timestamps alone do not invalidate stable odds.
+Source: https://odds-api.io/blog/live-odds-api
+
+Research results receive a separate bounded backfill: at most two dates and
+three SStats pages per date, a 25-second timeout per date and a six-hour cooldown.
+All requests use the shared budget. This never settles financial bets. Result
+matching permits one unambiguous squad-compatible alias within 15 minutes of the
+frozen kickoff; contradictory scores stay quarantined. Pending observations
+record missing, ambiguous, conflicted or temporally invalid result reasons.
+
+The report warns when the account's confirmed bookmaker selection is smaller
+than the configured set, even when its remaining bookmaker still returns odds.
+

@@ -3,6 +3,10 @@ name: run-bot-rules
 on:
   workflow_dispatch:
     inputs:
+      price_watch_only:
+        description: "Только предматчевые цены, без прогнозов и Telegram"
+        type: boolean
+        default: false
       dry_run:
         description: "Проверка без отправки в Telegram"
         type: boolean
@@ -18,6 +22,9 @@ on:
         default: false
   workflow_call:
     inputs:
+      price_watch_only:
+        type: boolean
+        default: false
       dry_run:
         type: boolean
         default: true
@@ -43,6 +50,8 @@ jobs:
       APP_TIMEZONE: Europe/Moscow
       PUBLICATION_PROFILE: daily_quality
       PUBLISH_DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+      CACHE_DRY_RUN: ${{ inputs.price_watch_only && 'false' || (inputs.dry_run && 'true' || 'false') }}
+      PRICE_WATCH_ONLY: ${{ inputs.price_watch_only && 'true' || 'false' }}
       MAX_PICKS_PER_RUN: ${{ inputs.max_picks || '2' }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
@@ -96,9 +105,9 @@ jobs:
             .data/provider_quota*
             .data/odds_api_io_account_quota_state.json
             .data/provider_cooldowns
-          key: daily-quality-v1-${{ github.ref_name }}-${{ inputs.dry_run }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: daily-quality-v1-${{ github.ref_name }}-${{ env.CACHE_DRY_RUN }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            daily-quality-v1-${{ github.ref_name }}-${{ inputs.dry_run }}-
+            daily-quality-v1-${{ github.ref_name }}-${{ env.CACHE_DRY_RUN }}-
       - name: Install dependencies
         run: pip install --disable-pip-version-check -r requirements.txt
       - name: Prepare one-time ledger recovery
@@ -141,6 +150,7 @@ jobs:
           restore-keys: |
             daily-quality-api-budget-${{ github.repository }}-
       - name: Verify critical pipeline tests
+        if: inputs.price_watch_only != true
         run: |
           set -o pipefail
           python - <<'PY' 2>&1 | tee .data/exports/latest-daily-quality-tests.log
@@ -165,6 +175,7 @@ jobs:
           sys.exit(result)
           PY
       - name: Build or complete today's inventory
+        if: inputs.price_watch_only != true
         shell: bash
         run: |
           if python scripts/daily_inventory_refresh_due.py ".data/day_inventory/${CACHE_DATE}.json"; then
@@ -181,17 +192,21 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          if [[ "$PUBLISH_DRY_RUN" == "true" ]]; then
+          if [[ "$PUBLISH_DRY_RUN" == "true" || "$PRICE_WATCH_ONLY" == "true" ]]; then
             unset TELEGRAM_BOT_TOKEN TELEGRAM_TOKEN TELEGRAM_CHAT_ID
           fi
           set -o pipefail
-          timeout 1500s python -u scripts/run_daily_quality_pipeline.py 2>&1 | tee .data/exports/latest-daily-quality-pipeline.log
+          if [[ "$PRICE_WATCH_ONLY" == "true" ]]; then
+            timeout 120s python -u scripts/run_daily_price_watch.py 2>&1 | tee .data/exports/latest-price-watch.log
+          else
+            timeout 1500s python -u scripts/run_daily_quality_pipeline.py 2>&1 | tee .data/exports/latest-daily-quality-pipeline.log
+          fi
       - name: Sanitize diagnostics
         if: always()
         run: python -u scripts/sanitize_daily_artifacts.py
       - name: Send current-run report
         id: report
-        if: always()
+        if: always() && inputs.price_watch_only != true
         continue-on-error: true
         run: python -u scripts/send_daily_quality_report.py
       - name: Save shared API budgets
@@ -217,9 +232,9 @@ jobs:
             .data/provider_quota*
             .data/odds_api_io_account_quota_state.json
             .data/provider_cooldowns
-          key: daily-quality-v1-${{ github.ref_name }}-${{ inputs.dry_run }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: daily-quality-v1-${{ github.ref_name }}-${{ env.CACHE_DRY_RUN }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload diagnostics
-        if: always()
+        if: always() && inputs.price_watch_only != true
         uses: actions/upload-artifact@v5
         with:
           name: run-bot-rules-${{ github.run_id }}
@@ -231,6 +246,17 @@ jobs:
             .logs/debug-last-run.json
           include-hidden-files: true
           retention-days: 14
+      - name: Upload quote-only diagnostics
+        if: always() && inputs.price_watch_only == true
+        uses: actions/upload-artifact@v5
+        with:
+          name: price-watch-${{ github.run_id }}
+          path: |
+            .data/exports/latest-price-watch.json
+            .data/exports/latest-price-watch.log
+            .data/daily_quality/market-monitor
+          include-hidden-files: true
+          retention-days: 7
       - name: Check pipeline and delivery
         if: always()
         env:
@@ -238,4 +264,6 @@ jobs:
           REPORT_OUTCOME: ${{ steps.report.outcome }}
         run: |
           test "$PIPELINE_OUTCOME" = "success"
-          test "$REPORT_OUTCOME" = "success"
+          if [[ "$PRICE_WATCH_ONLY" != "true" ]]; then
+            test "$REPORT_OUTCOME" = "success"
+          fi

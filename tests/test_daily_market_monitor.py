@@ -176,3 +176,20 @@ def test_quote_clock_does_not_accept_actual_future_timestamp(tmp_path,daily):
     offer=Offer('odds_api_io','Bet365','totals','Over',1.8,2.5,metadata={'fetched_at_utc':(now+timedelta(minutes=10)).isoformat()})
     m.build_signals([match],{match.match_key:[offer]},now)
     assert json.loads(m.latest_snapshot_path.read_text())['created_at']==now.isoformat()
+
+
+@pytest.mark.parametrize('layout', ['list', 'dict'])
+def test_vendor_last_change_is_preserved_but_does_not_expire_stable_prices(tmp_path, daily, layout):
+    from app.providers.odds_api_io import OddsApiIoProvider
+    now=datetime.now(UTC); changed=(now-timedelta(days=2)).isoformat()
+    match=Match('test','1','soccer','League','Home','Away',now+timedelta(minutes=30),'home','away','league')
+    market={'name':'Totals','updatedAt':changed,'odds':[{'hdp':2.5,'over':1.9,'under':1.9}]}
+    payload={'bookmakers':{'Bet365':[market] if layout=='list' else {'Totals':market}}}
+    offers=OddsApiIoProvider(SimpleNamespace())._parse_event_odds(payload,match)
+    assert len(offers)==2
+    assert all(o.metadata['provider_market_updated_at']==changed for o in offers)
+    assert all(datetime.fromisoformat(o.metadata['fetched_at_utc']) >= now for o in offers)
+    m=monitor(tmp_path);snap=m._build_snapshot([match],{match.match_key:offers},datetime.now(UTC))
+    market=next(iter(snap['matches'][match.match_key].values()))
+    assert market['price_changed_at_by_book']['bet365']==changed
+    assert market['price_observed_at_by_book']['bet365']!=changed

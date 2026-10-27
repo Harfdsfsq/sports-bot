@@ -6,6 +6,7 @@ The candidate model never changes live probabilities, stakes or admission.
 from __future__ import annotations
 
 import hashlib
+import asyncio
 import math
 import logging
 from collections import Counter
@@ -160,6 +161,37 @@ class GoalHistory:
                 and cutoff - timedelta(days=550) <= parse_time(r['kickoff']) < cutoff - timedelta(hours=3)
                 and (not prospective or parse_time(r['observed_at']) <= cutoff)]
 
+    async def refresh_overdue_results(self, settings, now):
+        """Bounded, rotating date backfill, independent of the financial ledger."""
+        from app.services.settlement import SettlementService
+        if not getattr(settings, 'sstats_api_key', None):
+            return {'status': 'missing_key', 'dates': []}
+        checks = self.data.setdefault('result_refresh_checks', {})
+        due = set()
+        for f in unique_forecasts(self.data['forecasts']):
+            kickoff = parse_time(f.get('kickoff'))
+            if f.get('status') == 'pending' and kickoff and timedelta(hours=6) <= now - kickoff <= timedelta(days=30):
+                due.add(kickoff.date().isoformat())
+        dates = [day for day in sorted(due) if not parse_time(checks.get(day))
+                 or now - parse_time(checks[day]) >= timedelta(hours=6)][:2]
+        summary = {'status': 'checked', 'dates': [], 'requests': 0, 'added': 0}
+        service = SettlementService(settings)
+        for day in dates:
+            # Persist the cooldown even on timeout; no tight retries on an outage.
+            checks[day] = now.isoformat()
+            self.save()
+            try:
+                rows = await asyncio.wait_for(service._fetch_sstats_rows(day, day, max_requests=3), timeout=25)
+                added = self.ingest('sstats', rows, now)
+                stats = service.sstats_fetch_stats
+                summary['added'] += added
+                summary['requests'] += stats.get('requests', 0)
+                summary['dates'].append({'date': day, 'rows': len(rows), 'complete': stats.get('complete', False),
+                                         'stop_reason': stats.get('stop_reason')})
+            except (TimeoutError, OSError, ValueError, TypeError, AttributeError) as exc:
+                summary['dates'].append({'date': day, 'error_type': type(exc).__name__})
+        return summary
+
     def run_research(self, matches, now):
         forecasts = self.data['forecasts']
         seen = {forecast_identity(row) for row in unique_forecasts(forecasts)}
@@ -199,14 +231,39 @@ class GoalHistory:
             seen.add(identity)
             new += 1
         # Scores are looked up by names and kickoff; never infer results from odds.
-        outcomes = {(r['home'], r['away'], r['kickoff']): r for r in self.data['results'].values() if not r.get('conflict')}
+        near_results, exact_results = {}, {}
+        for r in self.data['results'].values():
+            slot = int(parse_time(r['kickoff']).timestamp()) // 900
+            near_results.setdefault(slot, []).append(r)
+            exact_results[(r['home'], r['away'], r['kickoff'])] = r
+        resolution_reasons = Counter()
         for f in forecasts.values():
-            r = outcomes.get((f['home'], f['away'], f['kickoff']))
+            kickoff = parse_time(f['kickoff'])
+            slot = int(kickoff.timestamp()) // 900
+            possible = [item for offset in (-1, 0, 1) for item in near_results.get(slot + offset, [])
+                        if abs(parse_time(item['kickoff']) - kickoff) <= timedelta(minutes=15)
+                        and same_team_identity(f['home'], [item['home']])
+                        and same_team_identity(f['away'], [item['away']])]
+            # Exact identity is strongest, but cannot override a contradictory
+            # alias. Without it, require a single candidate, not a majority vote.
+            disputed = (any(item.get('conflict') for item in possible)
+                        or len({(item['hg'], item['ag']) for item in possible}) > 1)
+            r = exact_results.get((f['home'], f['away'], f['kickoff']))
+            if disputed:
+                r = None
+            elif r is None and len(possible) == 1:
+                r = possible[0]
+            reason = ('conflicting_result' if disputed
+                      else 'ambiguous_identity' if len(possible) > 1 else 'result_not_found')
             if r and parse_time(r['observed_at']) > parse_time(f['created_at']):
                 f.update(status='resolved', total=r['hg'] + r['ag'])
-            elif f.get('status') == 'resolved':
+                f.pop('resolution_reason', None)
+            else:
                 f['status'] = 'pending'  # A subsequently disputed result is not evidence.
                 f.pop('total', None)
+                f['resolution_reason'] = reason if not r else 'result_observed_before_forecast'
+                if f['version'] == VERSION and now - parse_time(f['kickoff']) >= timedelta(hours=6) and not f.get('duplicate_of'):
+                    resolution_reasons[f['resolution_reason']] += 1
         cohort = [f for f in unique_forecasts(forecasts) if f['version'] == VERSION]
         resolved = [f for f in cohort if f['status'] == 'resolved']
         overdue = [f for f in cohort if f['status'] == 'pending' and now - parse_time(f['kickoff']) >= timedelta(hours=6)]
@@ -217,6 +274,7 @@ class GoalHistory:
                 'new_forecasts': new, 'pending': sum(f['status'] == 'pending' for f in cohort),
                 'duplicates_ignored': sum(bool(f.get('duplicate_of')) for f in forecasts.values() if f['version'] == VERSION),
                 'overdue_results': len(overdue),
+                'overdue_reasons': dict(resolution_reasons),
                 'oldest_overdue_hours': round(max((now - parse_time(f['kickoff'])).total_seconds() / 3600 for f in overdue), 1) if overdue else None,
                 'resolved': len(resolved), 'skips': dict(skipped), **metrics}
 

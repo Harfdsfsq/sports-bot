@@ -179,6 +179,13 @@ def render(summary):
                       'использован свежий кеш' if not odds_stats.get('assigned_matches') else
                       'проверен; подходящих линий не получено')
             lines.append(f'Odds-api.io · {label}: {status}.')
+            if name in configured and row.get('entitlement_resolved'):
+                from app.utils import normalize_bookmaker_name
+                configured_books = {normalize_bookmaker_name(b): b.strip() for b in str(row.get('bookmakers') or '').split(',') if b.strip()}
+                selected = {normalize_bookmaker_name(b) for b in row.get('selected_bookmakers') or []}
+                missing = [label for key, label in configured_books.items() if key not in selected]
+                if missing:
+                    lines.append(f"⚠️ {label}: API не подтвердил доступ к {', '.join(missing)}. Используются доступные букмекеры аккаунта.")
         if 'cached_matches' in odds_stats:
             lines.append(f"С учётом свежего кеша Odds-api.io: линии для {odds_stats['cached_matches']} матчей. Это общее покрытие двух аккаунтов без повторного подсчёта матчей.")
     source_stats = summary.get('source_stats') or {}
@@ -237,6 +244,9 @@ def render(summary):
             lines.append(f"Повторных оценок одного матча исключено из статистики: {research['duplicates_ignored']}. Учитывается первая оценка; исходные записи сохранены.")
         if research.get('overdue_results'):
             lines.append(f"⚠️ Для {research['overdue_results']} оценок результат не подтверждён спустя 6+ часов после начала; самая старая — {research.get('oldest_overdue_hours', 0):.0f} ч. В точности модели они не учитываются.")
+        refresh = research.get('result_refresh') or {}
+        if refresh.get('dates'):
+            lines.append(f"Повторная проверка результатов: дат {len(refresh['dates'])}, запросов {refresh.get('requests', 0)}, добавлено матчей в архив {refresh.get('added', 0)}.")
         if research.get('brier') is not None:
             lines.append(f"Ошибка вероятности Brier: {research['brier']:.3f}; простая модель лиги: {research['baseline_brier']:.3f}. Меньше — лучше; доходность это не подтверждает.")
         elif research.get('skips'):

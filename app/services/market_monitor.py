@@ -315,6 +315,9 @@ class MarketMonitor:
                         for offer in sorted(bucket, key=lambda item: (float(item.price),
                             str((item.metadata or {}).get('fetched_at_utc') or now_utc.isoformat())))},
                     'median_price': round(median(prices), 4),
+                    'price_changed_at_by_book': {str(offer.bookmaker).strip().lower():
+                        (offer.metadata or {}).get('provider_market_updated_at')
+                        for offer in sorted(bucket, key=lambda item: float(item.price))},
                     'mean_price': round(mean(prices), 4),
                     'min_price': min(prices),
                     'max_price': max(prices),
