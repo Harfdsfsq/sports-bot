@@ -104,13 +104,16 @@ def render(summary):
         lines.insert(2, '📌 Публикация: только общие тоталы матча. Индивидуальные тоталы и остальные рынки — только резерв.')
     bank = summary.get('bankroll') or {}
     if bank:
-        lines.insert(2, f"💼 Банк: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")
+        label = 'Тестовый банк' if dry else 'Банк'
+        lines.insert(2, f"💼 {label}: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")
+        if dry:
+            lines.insert(3, 'ℹ️ Тестовый банк и история изолированы от рабочего режима; выбранные варианты не отправлены.')
     if len(published) > 5:
         lines.extend(['', 'ℹ️ После восстановления истории выявлено прежнее превышение дневного лимита. Новые публикации остановлены до следующего дня MSK.'])
     if c.get('inventory', 0) > 300:
         lines.append(f"ℹ️ В реестре сохранены {c['inventory'] - 300} дополнительных матчей после объединения истории; цель 300 достигнута.")
     if daily.get('selected'):
-        lines.extend(['', '📨 Опубликованные прогнозы текущего запуска:'])
+        lines.extend(['', '🧪 Выбранные варианты тестового запуска — без отправки:' if dry else '📨 Опубликованные прогнозы текущего запуска:'])
         for row in daily['selected']:
             lines.append(f"• {row['match']} | {row['tier']}-tier | @{row['odds']:.2f} | качество {row.get('quality') or 0:.1f}")
             if row.get('selection'):

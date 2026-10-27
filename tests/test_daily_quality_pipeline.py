@@ -1724,3 +1724,15 @@ def test_account_entitlement_report_warns_about_missing_configured_bookmaker():
     text=render(summary)
     assert 'API не подтвердил доступ к Bet365' in text
     assert 'обновил линии для 10 матчей' in text
+
+
+def test_dry_report_does_not_claim_selected_picks_were_published():
+    from scripts.send_daily_quality_report import render
+    summary={'dry_run':True,'published_to_telegram':0,'bankroll':{'current_balance':1000},
+             'daily_quality':{'selected':[{'match':'Home — Away','tier':'B','odds':2.0,'quality':75}]}}
+    text=render(summary)
+    assert 'Тестовый банк: 1000.00' in text
+    assert 'Выбранные варианты тестового запуска — без отправки' in text
+    assert 'Опубликованные прогнозы текущего запуска' not in text
+    summary['dry_run']=False;summary['published_to_telegram']=1
+    assert 'Опубликованные прогнозы текущего запуска' in render(summary)
