@@ -359,3 +359,20 @@ def test_alternative_score_cannot_clear_quarantined_result(tmp_path,monkeypatch)
     asyncio.run(recover_alternative_results(h,SimpleNamespace(football_data_api_key='fake'),NOW))
     assert h.run_research([],NOW)['resolved']==0
     assert r['conflict'] and f['resolution_reason']=='conflicting_result'
+
+
+@pytest.mark.parametrize('nested,finished',[(True,True),(False,True),(True,False)])
+def test_sstats_detail_game_wrapper_and_postponed_status(tmp_path,monkeypatch,nested,finished):
+    import asyncio
+    from app.services.research_result_recovery import recover_alternative_results
+    h=GoalHistory(tmp_path/'history.json');f=recovery_forecast();f['source_ids']={'sstats':'42'};h.data['forecasts']['f']=f
+    h.data['result_endpoint_checks']={'sstats:42':{'at':NOW.isoformat(),'status':'checked'}}
+    row={'id':42,'date':f['kickoff'],'statusName':'Finished' if finished else 'Postponed',
+         'homeTeam':{'name':'Home'},'awayTeam':{'name':'Away'},'season':{'league':{'id':1}},
+         'homeFTResult':2 if finished else None,'awayFTResult':1 if finished else None}
+    install_recovery_client(monkeypatch,lambda *_:{'data':{'game':row,'statistics':{}} if nested else row})
+    result=asyncio.run(recover_alternative_results(h,SimpleNamespace(sstats_api_key='fake'),NOW))
+    assert result['requests']==1 and result['added']==int(finished)
+    assert result['checks'][0]['game_status']==row['statusName']
+    assert 'response_issue' not in result['checks'][0]
+    assert h.run_research([],NOW)['resolved']==int(finished)

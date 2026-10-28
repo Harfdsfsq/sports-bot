@@ -39,6 +39,8 @@ def bind_source_ids(history, forecasts):
 
 def due(checks, key, now, hours=24):
     previous = checks.get(key) or {}
+    if key.startswith('sstats:') and previous.get('parser_version') != 2:
+        return True
     at = parse_time(previous.get('at'))
     if previous.get('status') == 'request_failed':
         hours = 6
@@ -105,7 +107,7 @@ async def recover_alternative_results(history, settings, now):
             if provider in blocked:
                 continue
             # Persist before I/O, including failures and quota refusals.
-            checks[key] = {'at': now.isoformat(), 'status': 'attempted'}
+            checks[key] = {'at': now.isoformat(), 'status': 'attempted', 'parser_version': 2}
             history.save()
             probe = {'provider': provider, 'target': key, 'rows': 0, 'added': 0}
             summary['requests'] += 1
@@ -118,7 +120,12 @@ async def recover_alternative_results(history, settings, now):
                 payload = response.json()
                 if provider == 'sstats':
                     row = payload.get('data', payload) if isinstance(payload, dict) else None
+                    # /Games/{id} wraps the game in data.game, unlike /Games/list.
+                    if isinstance(row, dict) and isinstance(row.get('game'), dict):
+                        row = row['game']
                     rows = [row] if isinstance(row, dict) and str(row.get('id')) == key.split(':', 1)[1] else []
+                    if rows:
+                        probe['game_status'] = str(row.get('statusName') or 'unknown')
                     if not rows:
                         probe['response_issue'] = 'unexpected_game_id_or_shape'
                 elif provider == 'football_data':
