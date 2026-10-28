@@ -218,3 +218,144 @@ def test_pending_research_warns_on_missing_results_without_inventing_score(tmp_p
     assert s['overdue_results']==1 and s['oldest_overdue_hours']==10
     assert s['resolved']==0 and s['brier'] is None
     assert 'total' not in h.data['forecasts']['old']
+
+
+def recovery_forecast(kickoff=None):
+    kickoff=kickoff or NOW-timedelta(days=2)
+    return {'version':'opponent-poisson-research-v1','home':'home','away':'away','kickoff':kickoff.isoformat(),
+            'created_at':(kickoff-timedelta(hours=2)).isoformat(),'status':'pending',
+            'p_over25':.5,'baseline_over25':.5}
+
+
+def install_recovery_client(monkeypatch,responder):
+    from app.services import research_result_recovery as recovery
+    calls=[]
+    class Response:
+        status_code=200
+        def __init__(self,payload):self.payload=payload
+        def raise_for_status(self):pass
+        def json(self):return self.payload
+    class Client:
+        def __init__(self,**kwargs):pass
+        async def __aenter__(self):return self
+        async def __aexit__(self,*args):pass
+        async def get(self,url,**kwargs):
+            calls.append((url,kwargs));return Response(responder(url,kwargs))
+    monkeypatch.setattr(recovery,'BudgetedAsyncClient',Client)
+    return calls
+
+
+def test_football_data_recovers_result_without_sstats_key(tmp_path,monkeypatch):
+    import asyncio
+    h=GoalHistory(tmp_path/'history.json');f=recovery_forecast();h.data['forecasts']['f']=f
+    def responder(url,kwargs):
+        assert kwargs['params']['dateTo']=='2026-10-17'
+        return {'matches':[{'id':42,'status':'FINISHED','utcDate':f['kickoff'],
+                'homeTeam':{'name':'Home'},'awayTeam':{'name':'Away'},'competition':{'code':'PL'},
+                'score':{'duration':'REGULAR','fullTime':{'home':1,'away':2}}}]}
+    calls=install_recovery_client(monkeypatch,responder)
+    s=asyncio.run(h.refresh_overdue_results(SimpleNamespace(football_data_api_key='fake'),NOW))
+    assert s['alternative']['added']==1 and len(calls)==1
+    assert h.run_research([],NOW)['resolved']==1
+    assert h.data['forecasts']['f']['total']==3
+    assert asyncio.run(h.refresh_overdue_results(SimpleNamespace(football_data_api_key='fake'),NOW))['alternative']['requests']==0
+
+
+def test_addressed_recovery_limits_requests_and_checks_returned_identity(tmp_path,monkeypatch):
+    import asyncio
+    from app.services.research_result_recovery import recover_alternative_results
+    h=GoalHistory(tmp_path/'history.json')
+    for i in range(1,6):
+        f=recovery_forecast(NOW-timedelta(days=i));f.update(source_ids={'sstats':str(i)},competition_name='Germany - Bundesliga');h.data['forecasts'][str(i)]=f
+    def responder(url,kwargs):
+        if '/Games/' in url:
+            # The endpoint returns an unrelated game with the requested ID.
+            return {'data':{'id':int(url.rsplit('/',1)[1]),'statusName':'Finished',
+                'date':h.data['forecasts']['1']['kickoff'],'homeTeam':{'name':'Other'},'awayTeam':{'name':'Away'},
+                'homeFTResult':1,'awayFTResult':0,'season':{'league':{'id':1}}}}
+        return {'matches':[]} if 'football-data' in url else []
+    calls=install_recovery_client(monkeypatch,responder)
+    s=asyncio.run(recover_alternative_results(h,SimpleNamespace(sstats_api_key='fake',football_data_api_key='fake'),NOW))
+    assert len(calls)==s['requests']==6
+    assert s['added']==0 and h.data['results']=={}
+    assert sum('/Games/' in url for url,_ in calls)==3
+    assert sum('football-data' in url for url,_ in calls)==2
+    assert sum('openligadb' in url for url,_ in calls)==1
+    assert all(f['status']=='pending' for f in h.data['forecasts'].values())
+
+
+def test_recovery_never_uses_et_or_wrong_squad_result():
+    from app.services.research_result_recovery import relevant_rows
+    f=recovery_forecast()
+    row={'matchIsFinished':True,'leagueName':'Cup','matchDateTimeUTC':f['kickoff'],
+         'team1':{'teamName':'Home'},'team2':{'teamName':'Away'},
+         'matchResults':[{'resultTypeKind':'AfterExtraTime','pointsTeam1':3,'pointsTeam2':2}]}
+    assert relevant_rows('openligadb',[row],[f])==[]
+    row['matchResults']=[{'resultTypeKind':'After90Minutes','pointsTeam1':1,'pointsTeam2':1}]
+    assert len(relevant_rows('openligadb',[row],[f]))==1
+    row['team1']['teamName']='Home U19'
+    assert relevant_rows('openligadb',[row],[f])==[]
+
+
+def test_legacy_provider_binding_requires_unique_exact_fixture(tmp_path):
+    from app.services.research_result_recovery import bind_source_ids
+    h=GoalHistory(tmp_path/'history.json');f=recovery_forecast()
+    row={k:f[k] for k in ('home','away','kickoff')}
+    h.data['fixture_ids']={'sstats:1':row,'sstats:2':row}
+    bind_source_ids(h,[f]);assert not f.get('source_ids')
+    del h.data['fixture_ids']['sstats:2']
+    bind_source_ids(h,[f]);assert f['source_ids']=={'sstats':'1'}
+
+
+def test_complete_empty_date_backfill_slows_down(tmp_path,monkeypatch):
+    import asyncio
+    from app.services.settlement import SettlementService
+    h=GoalHistory(tmp_path/'history.json');f=recovery_forecast();h.data['forecasts']['f']=f;calls=[]
+    async def fetch(service,*args,**kwargs):
+        calls.append(1);service.sstats_fetch_stats={'requests':1,'complete':True};return []
+    monkeypatch.setattr(SettlementService,'_fetch_sstats_rows',fetch)
+    install_recovery_client(monkeypatch,lambda *_:{})
+    settings=SimpleNamespace(sstats_api_key='fake')
+    asyncio.run(h.refresh_overdue_results(settings,NOW))
+    asyncio.run(h.refresh_overdue_results(settings,NOW+timedelta(hours=6)))
+    assert len(calls)==1
+    asyncio.run(h.refresh_overdue_results(settings,NOW+timedelta(hours=12)))
+    assert len(calls)==2
+    asyncio.run(h.refresh_overdue_results(settings,NOW+timedelta(hours=30)))
+    assert len(calls)==2
+    asyncio.run(h.refresh_overdue_results(settings,NOW+timedelta(hours=36)))
+    assert len(calls)==3
+
+
+def test_recovery_auth_failure_stops_provider_and_redacts_diagnostics(tmp_path,monkeypatch):
+    import asyncio,json
+    from app.services import research_result_recovery as recovery
+    h=GoalHistory(tmp_path/'history.json')
+    for i in (1,2,3):h.data['forecasts'][str(i)]=recovery_forecast(NOW-timedelta(days=i))
+    calls=[]
+    class Response:
+        status_code=401
+        def raise_for_status(self):raise RuntimeError('secret-token-must-not-appear')
+    class Client:
+        def __init__(self,**kw):pass
+        async def __aenter__(self):return self
+        async def __aexit__(self,*args):pass
+        async def get(self,*args,**kw):calls.append(1);return Response()
+    monkeypatch.setattr(recovery,'BudgetedAsyncClient',Client)
+    s=asyncio.run(recovery.recover_alternative_results(h,SimpleNamespace(football_data_api_key='secret-token-must-not-appear'),NOW))
+    assert len(calls)==1 and s['checks'][0]['http_status']==401
+    assert 'secret-token' not in json.dumps(s) and 'secret-token' not in h.path.read_text()
+    assert asyncio.run(recovery.recover_alternative_results(h,SimpleNamespace(football_data_api_key='fake'),NOW+timedelta(hours=6)))['requests']==1
+
+
+def test_alternative_score_cannot_clear_quarantined_result(tmp_path,monkeypatch):
+    import asyncio
+    from app.services.research_result_recovery import recover_alternative_results
+    h=GoalHistory(tmp_path/'history.json');f=recovery_forecast();h.data['forecasts']['f']=f
+    r=result_row('League','Home','Away',f['kickoff'],1,0,'sstats');r.update(conflict=True,observed_at=NOW.isoformat());h.data['results'][r['id']]=r
+    install_recovery_client(monkeypatch,lambda *_:{'matches':[{'id':42,'status':'FINISHED','utcDate':f['kickoff'],
+        'homeTeam':{'name':'Home'},'awayTeam':{'name':'Away'},'competition':{'code':'League'},
+        'score':{'duration':'REGULAR','fullTime':{'home':1,'away':0}}}]})
+    asyncio.run(recover_alternative_results(h,SimpleNamespace(football_data_api_key='fake'),NOW))
+    assert h.run_research([],NOW)['resolved']==0
+    assert r['conflict'] and f['resolution_reason']=='conflicting_result'

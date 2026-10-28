@@ -697,6 +697,32 @@ real Telegram forecasts.
 354 теста пройдены. На замороженном артефакте число наблюдений с сохранённым ценовым ориентиром изменилось с 0 на 5, число наблюдений осталось 5. Это не превращает ранние котировки в closing-price измерения: для них по-прежнему нужен отдельный снимок выбранного букмекера в последние 45 минут до начала.
 # Quote-only checks and result recovery (2026-10-27)
 
+## Recovery extensions (2026-10-28)
+
+Research-only result recovery now tries up to three SStats `/Games/{id}` details,
+two Football-data date queries and one relevant OpenLigaDB season per run. Legacy
+SStats IDs are recovered only from unique exact stored fixture bindings; new
+forecasts freeze their available source IDs and original competition name.
+Every returned result must still match both squads and kickoff within 15 minutes.
+Only explicit finished regulation-time scores are accepted. OpenLigaDB cup results
+require `After90Minutes`. Alternate results do not override quarantined conflicts
+and never settle a financial bet or change a frozen probability.
+
+All requests share the normal API budget, have a seven-second hard timeout and
+persist their cooldowns: successful checks repeat after 24 hours, failures after
+six. Authentication and quota errors stop further requests to that provider in
+the current recovery pass. The existing date backfill remains bounded to two
+dates and three pages per date. Complete no-progress date scans back off from
+six hours to 12, 24 and 48 hours; failed/incomplete scans do not increase backoff.
+`goal_research.result_refresh.alternative` records provider, status, accepted rows,
+additions and error types without credential URLs. The report shows missing versus
+conflicting result counts separately.
+
+Primary references:
+- https://api.sstats.net/docs/
+- https://docs.football-data.org/general/v4/match.html
+- https://api.openligadb.de/index.html
+
 The existing two-hour forecast dispatch remains unchanged. A second cron-job.org
 job can dispatch `run-bot.yml` every 30 minutes on the same branch with this body:
 

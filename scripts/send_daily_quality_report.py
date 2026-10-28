@@ -247,9 +247,18 @@ def render(summary):
             lines.append(f"Повторных оценок одного матча исключено из статистики: {research['duplicates_ignored']}. Учитывается первая оценка; исходные записи сохранены.")
         if research.get('overdue_results'):
             lines.append(f"⚠️ Для {research['overdue_results']} оценок результат не подтверждён спустя 6+ часов после начала; самая старая — {research.get('oldest_overdue_hours', 0):.0f} ч. В точности модели они не учитываются.")
+            names = {'result_not_found': 'результат не найден', 'conflicting_result': 'противоречивые счета',
+                     'ambiguous_identity': 'неоднозначный матч', 'result_observed_before_forecast': 'нарушение времени наблюдения'}
+            reasons = research.get('overdue_reasons') or {}
+            if reasons:
+                lines.append('Причины ожидания: ' + '; '.join(f'{names.get(key, key)} — {value}' for key, value in reasons.items()) + '.')
         refresh = research.get('result_refresh') or {}
         if refresh.get('dates'):
             lines.append(f"Повторная проверка результатов: дат {len(refresh['dates'])}, запросов {refresh.get('requests', 0)}, добавлено матчей в архив {refresh.get('added', 0)}.")
+        alternative = refresh.get('alternative') or {}
+        if alternative.get('requests'):
+            failures = sum(bool(p.get('error_type')) for p in alternative.get('checks') or [])
+            lines.append(f"Адресная и альтернативная проверка: запросов {alternative['requests']}, добавлено результатов {alternative.get('added', 0)}, ошибок {failures}.")
         if research.get('brier') is not None:
             lines.append(f"Ошибка вероятности Brier: {research['brier']:.3f}; простая модель лиги: {research['baseline_brier']:.3f}. Меньше — лучше; доходность это не подтверждает.")
         elif research.get('skips'):

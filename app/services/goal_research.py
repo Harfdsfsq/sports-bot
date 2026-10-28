@@ -164,17 +164,23 @@ class GoalHistory:
     async def refresh_overdue_results(self, settings, now):
         """Bounded, rotating date backfill, independent of the financial ledger."""
         from app.services.settlement import SettlementService
+        from app.services.research_result_recovery import recover_alternative_results
+        alternative = await recover_alternative_results(self, settings, now)
         if not getattr(settings, 'sstats_api_key', None):
-            return {'status': 'missing_key', 'dates': []}
+            return {'status': 'missing_key', 'dates': [], 'alternative': alternative}
         checks = self.data.setdefault('result_refresh_checks', {})
         due = set()
         for f in unique_forecasts(self.data['forecasts']):
             kickoff = parse_time(f.get('kickoff'))
             if f.get('status') == 'pending' and kickoff and timedelta(hours=6) <= now - kickoff <= timedelta(days=30):
                 due.add(kickoff.date().isoformat())
-        dates = [day for day in sorted(due) if not parse_time(checks.get(day))
-                 or now - parse_time(checks[day]) >= timedelta(hours=6)][:2]
-        summary = {'status': 'checked', 'dates': [], 'requests': 0, 'added': 0}
+        progress = self.data.setdefault('result_refresh_progress', {})
+        def retry_hours(day):
+            streak = min(3, int((progress.get(day) or {}).get('empty_streak', 0)))
+            return min(48, 6 * 2**streak)
+        dates = [day for day in sorted(due, key=lambda d: (checks.get(d, ''), d)) if not parse_time(checks.get(day))
+                 or now - parse_time(checks[day]) >= timedelta(hours=retry_hours(day))][:2]
+        summary = {'status': 'checked', 'dates': [], 'requests': 0, 'added': 0, 'alternative': alternative}
         service = SettlementService(settings)
         for day in dates:
             # Persist the cooldown even on timeout; no tight retries on an outage.
@@ -184,10 +190,16 @@ class GoalHistory:
                 rows = await asyncio.wait_for(service._fetch_sstats_rows(day, day, max_requests=3), timeout=25)
                 added = self.ingest('sstats', rows, now)
                 stats = service.sstats_fetch_stats
+                streak = int((progress.get(day) or {}).get('empty_streak', 0))
+                if stats.get('complete'):
+                    streak = min(3, streak+1) if added == 0 else 0
+                progress[day] = {'empty_streak': streak}
+                self.save()
                 summary['added'] += added
                 summary['requests'] += stats.get('requests', 0)
                 summary['dates'].append({'date': day, 'rows': len(rows), 'complete': stats.get('complete', False),
-                                         'stop_reason': stats.get('stop_reason')})
+                                         'stop_reason': stats.get('stop_reason'),
+                                         'next_retry_at': (now+timedelta(hours=retry_hours(day))).isoformat()})
             except (TimeoutError, OSError, ValueError, TypeError, AttributeError) as exc:
                 summary['dates'].append({'date': day, 'error_type': type(exc).__name__})
         return summary
@@ -227,7 +239,11 @@ class GoalHistory:
                               'away': resolve_team(model, match.away_team), 'kickoff': match.commence_time.isoformat(),
                               'created_at': now.isoformat(), 'expected_home': home, 'expected_away': away,
                               'p_over25': over25(home + away), 'baseline_over25': over25(model['league_total']),
-                              'training_count': model['count'], 'status': 'pending'}
+                              'training_count': model['count'], 'status': 'pending',
+                              'competition_name': match.league_name,
+                              'source_ids': {provider: str(value) for provider, value in provider_ids.items()
+                                             if provider in {'sstats', 'openligadb', 'football_data'}
+                                             and str(value).isdecimal() and int(value) > 0}}
             seen.add(identity)
             new += 1
         # Scores are looked up by names and kickoff; never infer results from odds.
