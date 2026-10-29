@@ -48,6 +48,22 @@ def summarize(rows, version):
         except (KeyError, TypeError, ValueError):
             continue
     outcomes = Counter(r.get('status') for r in unique)
+    segments = {}
+    for side in ('over', 'under'):
+        subset = [r for r in settled if r.get('selection_key') == side]
+        segment_pnl = sum(float(r['odds'])-1 if r['status']=='won' else -1 if r['status']=='lost' else 0 for r in subset)
+        segments[side] = {'settled':len(subset), 'wins':sum(r['status']=='won' for r in subset),
+                          'losses':sum(r['status']=='lost' for r in subset), 'paper_pnl':round(segment_pnl,3)}
+        goals = []
+        for r in subset:
+            try:
+                actual = float(r['final_home_goals'])+float(r['final_away_goals'])
+                expected = float(r['expected_home'])+float(r['expected_away'])
+                if math.isfinite(actual) and math.isfinite(expected):
+                    goals.append(actual-expected)
+            except (KeyError, TypeError, ValueError):
+                continue
+        segments[side].update(goal_pairs=len(goals), goal_bias_actual_minus_expected=mean(goals) if goals else None)
     return {'protocol': PROTOCOL, 'goal_model_version': version, 'mode': 'paper_only',
             'tracked': len(unique), 'settled': len(settled), 'pending': outcomes['shadow_pending'],
             'wins': outcomes['won'], 'losses': outcomes['lost'], 'pushes': outcomes['push'], 'voids': outcomes['void'],
@@ -56,4 +72,4 @@ def summarize(rows, version):
             'paired_scores': len(pairs),
             'brier': mean(a for a, _ in pairs) if pairs else None,
             'market_brier': mean(b for _, b in pairs) if pairs else None,
-            'excluded': dict(excluded), 'automatic_live_promotion': False}
+            'segments': segments, 'excluded': dict(excluded), 'automatic_live_promotion': False}

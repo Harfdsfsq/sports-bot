@@ -244,6 +244,8 @@ class GoalHistory:
                               'source_ids': {provider: str(value) for provider, value in provider_ids.items()
                                              if provider in {'sstats', 'openligadb', 'football_data'}
                                              and str(value).isdecimal() and int(value) > 0}}
+            from app.services.goal_comparison import variants, PROTOCOL
+            forecasts[key]['comparison'] = {'protocol': PROTOCOL, 'models': variants(model, match.home_team, match.away_team)}
             seen.add(identity)
             new += 1
         # Scores are looked up by names and kickoff; never infer results from odds.
@@ -285,6 +287,8 @@ class GoalHistory:
         overdue = [f for f in cohort if f['status'] == 'pending' and now - parse_time(f['kickoff']) >= timedelta(hours=6)]
         self.save()
         metrics = score_forecasts(resolved)
+        from app.services.goal_comparison import summarize
+        comparison = summarize(cohort)
         return {'version': VERSION, 'mode': 'research_only', 'history_matches': len(self.data['results']),
                 'history_conflicts': sum(bool(r.get('conflict')) for r in self.data['results'].values()),
                 'new_forecasts': new, 'pending': sum(f['status'] == 'pending' for f in cohort),
@@ -292,7 +296,7 @@ class GoalHistory:
                 'overdue_results': len(overdue),
                 'overdue_reasons': dict(resolution_reasons),
                 'oldest_overdue_hours': round(max((now - parse_time(f['kickoff'])).total_seconds() / 3600 for f in overdue), 1) if overdue else None,
-                'resolved': len(resolved), 'skips': dict(skipped), **metrics}
+                'resolved': len(resolved), 'skips': dict(skipped), 'comparison': comparison, **metrics}
 
 
 def over25(rate):
@@ -353,7 +357,9 @@ def fit_model(rows, cutoff, min_matches=30):
         if largest < .0001:
             break
     return {'beta': beta, 'index': index, 'counts': counts, 'components': components, 'size': size, 'count': len(rows),
-            'league_total': sum((r['hg'] + r['ag']) for r in rows) / len(rows)}
+            'league_total': sum((r['hg'] + r['ag']) for r in rows) / len(rows),
+            'league_home': sum(r['hg'] for r in rows)/len(rows),
+            'league_away': sum(r['ag'] for r in rows)/len(rows)}
 
 
 def predict(model, home, away):

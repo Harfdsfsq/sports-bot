@@ -232,11 +232,21 @@ def render(summary):
             'Отбор проходит проверки B-tier; исторические запреты сохраняются как причины наблюдения. В банк и обучение опубликованных ставок не входит.'])
         if trial.get('brier') is not None:
             lines.append(f"Ошибка вероятности: модель {trial['brier']:.3f}, рынок {trial['market_brier']:.3f}; парных оценок {trial.get('paired_scores', 0)}. Меньше — лучше; автоматического допуска к ставкам нет.")
+        if trial.get('segments'):
+            lines.append('Направления тоталов: ' + '; '.join(f"{label}: {trial['segments'][key]['settled']} расчётов, {trial['segments'][key]['paper_pnl']:+.2f} ед." for key,label in [('over','ТБ'),('under','ТМ')]) + ' Выборки могут быть малы.')
         price_check = trial.get('price_check') or {}
         if price_check:
             lines.append(f"Цена условных тоталов перед матчем: измерено {price_check.get('measured', 0)}, без свежей котировки {price_check.get('missing_recent_quote', 0)}. Условные измерения отделены от реальных ставок.")
     monitor = summary.get('market_monitor') or {}
     research = summary.get('goal_research') or {}
+    comparison = research.get('comparison') or {}
+    if comparison:
+        lines.extend(['', '🧪 Сравнение голевых моделей для ТБ(2.5) — без ставок',
+                      f"Новая общая выборка: завершено {comparison.get('settled', 0)}, ожидают {comparison.get('pending', 0)}. Старые прогнозы не пересчитаны."])
+        for name, metrics in (comparison.get('models') or {}).items():
+            if metrics.get('count'):
+                label = {'league':'Среднее лиги', 'opponent_poisson':'С учётом соперников', 'shrunk_poisson':'С приближением к среднему лиги'}.get(name, name)
+                lines.append(f"{label}: Brier {metrics['brier']:.3f}; ошибка голов (факт минус прогноз) {metrics['goal_bias_actual_minus_expected']:+.2f}.")
     if research.get('status') == 'error':
         lines.append('⚠️ Исследовательская модель не завершила расчёт; диагностика в артефакте. На банк она не влияет.')
     elif research:

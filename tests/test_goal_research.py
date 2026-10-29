@@ -201,7 +201,7 @@ def test_new_fixture_aliases_do_not_create_second_research_prediction(tmp_path,m
     monkeypatch.setattr(module,'predict',lambda *args:(1.2,1.4))
     monkeypatch.setattr(module,'resolve_team',lambda model,name:'home' if 'Home' in name else 'away')
     # Model dictionary is only used for the fixed league baseline here.
-    monkeypatch.setattr(module,'fit_model',lambda *args:{'league_total':2.5,'count':40})
+    monkeypatch.setattr(module,'fit_model',lambda *args:{'league_total':2.5,'count':40,'counts':{'home':8,'away':8}})
     m=SimpleNamespace(home_team='Home FC',away_team='Away FC',league_name='League',commence_time=NOW+timedelta(hours=2))
     alias=SimpleNamespace(**{**vars(m),'home_team':'Home Football Club'})
     assert h.run_research([m,alias],NOW)['new_forecasts']==1
@@ -376,3 +376,37 @@ def test_sstats_detail_game_wrapper_and_postponed_status(tmp_path,monkeypatch,ne
     assert result['checks'][0]['game_status']==row['statusName']
     assert 'response_issue' not in result['checks'][0]
     assert h.run_research([],NOW)['resolved']==int(finished)
+
+
+def test_comparison_is_frozen_and_uses_paired_fixture_population(tmp_path):
+    from app.services.goal_comparison import variants, summarize, PROTOCOL
+    model=fit_model(dataset(),NOW)
+    values=variants(model,'Team 0','Team 1')
+    assert set(values)=={'league','opponent_poisson','shrunk_poisson'}
+    assert all(0 < row['p'] < 1 for row in values.values())
+    base=values['opponent_poisson']['expected_total'];prior=values['league']['expected_total']
+    assert min(base,prior)<=values['shrunk_poisson']['expected_total']<=max(base,prior)
+    rows=[{'comparison':{'protocol':PROTOCOL,'models':values},'status':'resolved','total':4},
+          {'comparison':{'protocol':PROTOCOL,'models':values},'status':'pending'},
+          {'status':'resolved','total':0}]
+    s=summarize(rows)
+    assert s['tracked']==2 and s['settled']==1
+    assert all(x['count']==1 for x in s['models'].values())
+    assert not s['automatic_live_promotion']
+
+
+def test_comparison_walk_forward_keeps_test_after_validation(tmp_path,monkeypatch):
+    from scripts import evaluate_goal_research as script
+    h=GoalHistory(tmp_path/'history.json')
+    for r in dataset():
+        r['observed_at']=(__import__('datetime').datetime.fromisoformat(r['kickoff'])+timedelta(hours=3)).isoformat()
+        h.data['results'][r['id']]=r
+    original=script.fit_model
+    def fit(rows,cutoff):
+        assert all(__import__('datetime').datetime.fromisoformat(r['kickoff'])<cutoff-timedelta(hours=3) for r in rows)
+        return original(rows,cutoff)
+    monkeypatch.setattr(script,'fit_model',fit)
+    result=script.evaluate_comparison(h,30)
+    assert result['validation']['league']['count']>0 and result['test']['league']['count']>0
+    assert result['selected_on_validation']==min(result['validation'],key=lambda name:result['validation'][name]['brier'])
+    assert len({row['count'] for row in result['test'].values()})==1

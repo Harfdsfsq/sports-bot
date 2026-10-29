@@ -755,3 +755,32 @@ record missing, ambiguous, conflicted or temporally invalid result reasons.
 The report warns when the account's confirmed bookmaker selection is smaller
 than the configured set, even when its remaining bookmaker still returns odds.
 
+
+## Goal model experiments (2026-10-29)
+
+`goal-comparison-v1` freezes three TБ(2.5) probability estimates for each new
+eligible research fixture: league baseline, opponent-adjusted Poisson, and an
+opponent model shrunk towards league home/away rates. Shrinkage is fixed in advance
+as minimum team sample / (minimum team sample + 20). All versions use the same
+fixtures and regulation-time results. Reports include paired Brier, log loss,
+calibration bins and mean actual-minus-expected goals. Existing forecasts are
+not backfilled; this protocol never promotes a model to live publication.
+
+The overall-totals paper report now separates over/under sample counts and P&L;
+its exported segments also contain goal bias where paired scores are available.
+These are diagnostic selected samples, not evidence that a profitable segment
+will remain profitable.
+
+Offline comparison command:
+
+```sh
+python scripts/evaluate_goal_research.py --compare --limit 300 --output .data/exports/latest-goal-comparison-backtest.json
+```
+
+Fits are cached by league and UTC date, with training ending before the entire
+forecast day and archive observations first seen after the cutoff are excluded. The earliest 60% of distinct evaluated kickoff timestamps select a
+model; later timestamps form the held-out test. Equal kickoff times never cross
+the split. Corrected historical results may lack original observation vintages;
+this evaluation is not an executable-odds profitability backtest. It runs offline,
+not in every scheduled pipeline. Live probabilities and publication gates remain
+unchanged while the prospective comparison collects new evidence.
