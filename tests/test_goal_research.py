@@ -410,3 +410,13 @@ def test_comparison_walk_forward_keeps_test_after_validation(tmp_path,monkeypatc
     assert result['validation']['league']['count']>0 and result['test']['league']['count']>0
     assert result['selected_on_validation']==min(result['validation'],key=lambda name:result['validation'][name]['brier'])
     assert len({row['count'] for row in result['test'].values()})==1
+
+
+@pytest.mark.parametrize('status',['Finished After Penalty','Finished After Penalties','Finished After Extra Time'])
+def test_sstats_finished_extended_status_requires_regulation_score(status):
+    row={'id':1,'statusName':status,'date':NOW.isoformat(),'homeTeam':{'name':'Home'},'awayTeam':{'name':'Away'},
+         'season':{'league':{'id':1}},'homeFTResult':1,'awayFTResult':1,'homeResult':5,'awayResult':4}
+    r=normalize_result('sstats',row)
+    assert (r['hg'],r['ag'])==(1,1)
+    row['homeFTResult']=None
+    assert normalize_result('sstats',row) is None

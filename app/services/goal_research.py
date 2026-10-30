@@ -91,7 +91,8 @@ def normalize_result(provider, row, league=None):
                           ft.get('pointsTeam1'), ft.get('pointsTeam2'), provider, row.get('matchID'))
     if provider == 'sstats':
         status = str(row.get('statusName') or '').lower().replace(' ', '')
-        if status not in {'finished', 'afterextratime', 'afterpenalties', 'ended', 'ft'}:
+        if status not in {'finished', 'afterextratime', 'afterpenalties', 'ended', 'ft',
+                          'finishedafterpenalty', 'finishedafterpenalties', 'finishedafterextratime'}:
             return None
         # /Games/list homeResult includes ET; never silently substitute it.
         season = row.get('season') or {}
