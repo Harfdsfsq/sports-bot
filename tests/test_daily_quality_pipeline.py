@@ -179,7 +179,9 @@ def test_complete_native_run_with_fake_apis(profile, tmp_path, monkeypatch):
     class Odds:
         __module__ = 'app.providers.odds_api_io'
         async def fetch_offers(self, targets):
-            return {t.match_key: [Offer('odds_api_io', 'Bet365', 'totals', 'Under', 2.05, 2.5), Offer('odds_api_io', 'Bet365', 'totals', 'Over', 1.85, 2.5)] for t in targets}, {'requests': 1}, {}
+            observed = datetime.now(UTC).isoformat()
+            return {t.match_key: [Offer('odds_api_io', 'Bet365', 'totals', side, price, 2.5,
+                metadata={'fetched_at_utc': observed}) for side, price in [('Under', 2.05), ('Over', 1.85)]] for t in targets}, {'requests': 1}, {}
     class Context:
         __module__ = 'app.providers.sstats'
         async def fetch_context(self, targets):

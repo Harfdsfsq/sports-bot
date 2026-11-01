@@ -195,6 +195,9 @@ def blend_contexts(contexts, weight_for_source):
     details['daily_provider_features'] = [
         {'source': c.source, 'details': dict(c.details or {})} for c in contexts]
     details['daily_feature_conflicts'] = conflicts
+    from app.services.daily_evidence_snapshot import snapshot
+    details['daily_evidence_snapshot'] = [snapshot(c, s, w/sum(weights))
+        for c, s, w in zip(contexts, supports, weights, strict=True)]
     evidence = {'version': 'evidence-v2', 'sources': supports, 'best_team_sample': best_sample,
                 'insufficient_known_sample': insufficient_sample,
                 'independent_evidence_count': len(contexts) - sum(len(indices) - 1 for indices in duplicates),

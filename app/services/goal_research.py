@@ -206,6 +206,7 @@ class GoalHistory:
         return summary
 
     def run_research(self, matches, now):
+        self.current_predictions = {}
         forecasts = self.data['forecasts']
         seen = {forecast_identity(row) for row in unique_forecasts(forecasts)}
         new, skipped = 0, Counter()
@@ -231,6 +232,17 @@ class GoalHistory:
                 skipped['insufficient_league_or_team_history'] += 1
                 continue
             home_name, away_name = resolve_team(model, match.home_team), resolve_team(model, match.away_team)
+            # New price-aware experiment uses consistent time weights; the old
+            # comparison cohort and its frozen predictions remain unchanged.
+            if getattr(match, 'match_key', None):
+                n = min(model['effective_counts'][home_name], model['effective_counts'][away_name])
+                weight = n/(n+20.)
+                self.current_predictions[match.match_key] = {
+                    'opponent': sum(forecast),
+                    'shrunk': weight*sum(forecast)+(1-weight)*model['weighted_league_total'],
+                    'dispersion': model['dispersion'], 'effective_sample': n,
+                    'training_count': model['count'], 'trained_before': now.isoformat(),
+                    'model_version': 'weighted-opponent-v1'}
             identity = (VERSION, home_name, away_name, match.commence_time.isoformat())
             key = '|'.join(identity)
             if identity in seen:
@@ -357,7 +369,17 @@ def fit_model(rows, cutoff, min_matches=30):
             largest = max(largest, abs(step))
         if largest < .0001:
             break
+    # Effective sample reflects recency weights, not a raw count of old games.
+    weights = [math.exp(-math.log(2)*max(0., (cutoff-parse_time(r['kickoff'])).days)/180.) for r in rows]
+    weighted_total = sum(w*(r['hg']+r['ag']) for r,w in zip(rows,weights))/sum(weights)
+    variance = sum(w*((r['hg']+r['ag'])-weighted_total)**2 for r,w in zip(rows,weights))/sum(weights)
+    effective = {}
+    for team in teams:
+        tw = [w for r,w in zip(rows,weights) if team in (r['home'],r['away'])]
+        effective[team] = min(sum(tw), sum(tw)**2/sum(w*w for w in tw))
     return {'beta': beta, 'index': index, 'counts': counts, 'components': components, 'size': size, 'count': len(rows),
+            'effective_counts': effective, 'weighted_league_total': weighted_total,
+            'dispersion': max(0., min(.5, (variance-weighted_total)/max(.01,weighted_total**2))),
             'league_total': sum((r['hg'] + r['ag']) for r in rows) / len(rows),
             'league_home': sum(r['hg'] for r in rows)/len(rows),
             'league_away': sum(r['ag'] for r in rows)/len(rows)}

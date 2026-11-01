@@ -51,12 +51,25 @@ class DailyTelegramPublisher(TelegramPublisher):
         # Paper candidates must never enter a Telegram forecast, even if a
         # future caller accidentally passes a mixed list.
         bets[:] = [candidate for candidate in bets if not (getattr(candidate, 'source_summary', None) or {}).get('reserve_only')]
+        check = getattr(self, 'confirm_price', None)
+        if check:
+            approved = []
+            for candidate in bets:
+                if await check(candidate):
+                    approved.append(candidate)
+            bets[:] = approved
+            projection = getattr(self, 'bankroll_projection', None)
+            if projection:
+                bankroll_summary = projection(bets)
         if self.settings.publish_dry_run:
             return await super().publish(bets, bankroll_summary=bankroll_summary)
         confirmed, payloads, count = [], [], 0
         for candidate in list(bets):
             lead = (candidate.commence_time.astimezone(UTC) - datetime.now(UTC)).total_seconds() / 60
             if lead < 30:
+                continue
+            confirmation = candidate.source_summary.get('final_price_confirmation') if check else None
+            if check and (not confirmation or datetime.now(UTC)-parse_time(confirmation['observed_at']) > timedelta(seconds=60)):
                 continue
             try:
                 sent, texts = await super().publish([candidate], bankroll_summary=bankroll_summary)
@@ -82,6 +95,8 @@ class DailyQualityRunner(PredictionRunner):
         self.bzzoiro = self._safe_provider("app.providers.bzzoiro", "BzzoiroContextProvider")
         self.telegram = DailyTelegramPublisher(settings)
         self.telegram.on_confirm = self._record_confirmed
+        self.telegram.confirm_price = self._confirm_publication_price
+        self.telegram.bankroll_projection = self._project_bankroll_summary
         self.registry = DailyMatchRegistry(Path('.data/daily_quality/registry.json'), datetime.now(UTC))
         self.work_plan = {}
         self.daily_rejections = Counter()
@@ -99,6 +114,34 @@ class DailyQualityRunner(PredictionRunner):
         if not any(row['match_id'] == identity for row in self.registry.data['published']):
             self.registry.data['published'].append({'match_id': identity, 'tier': candidate.source_summary['publication_tier'], 'at': datetime.now(UTC).isoformat()})
             self.registry.save()
+
+    async def _confirm_publication_price(self, candidate):
+        from app.services.daily_price_confirmation import confirm
+        match = next((m for m in self.inventory_matches if m.match_key == candidate.match_key
+                      and m.commence_time == candidate.commence_time), None)
+        if match is None or self.odds_api_io is None:
+            self.daily_rejections['final_price_missing_fixture'] += 1
+            return False
+        requested = datetime.now(UTC)
+        if not timedelta(minutes=30) <= match.commence_time-requested <= timedelta(hours=4):
+            self.daily_rejections['final_kickoff_window'] += 1
+            return False
+        try:
+            offers, _, _ = await asyncio.wait_for(self.odds_api_io.fetch_offers([match]), timeout=20)
+            now = datetime.now(UTC)
+            valid, reason = confirm(candidate, offers.get(match.match_key, []), requested, now)
+            self.registry.now = now
+            admission = getattr(self, 'admitted_sources', {}).get(candidate.match_key, {})
+            if not admission or any(self.registry.cached(provider, 'context', match) is None for provider in admission):
+                valid, reason = False, 'context_expired'
+            if match.commence_time-now < timedelta(minutes=30):
+                valid, reason = False, 'kickoff_too_close'
+        except Exception as exc:
+            valid, reason = False, 'fetch_' + type(exc).__name__
+        if not valid:
+            self.daily_rejections['final_price_' + reason] += 1
+            candidate.source_summary['final_price_rejection'] = reason
+        return valid
 
     async def _fetch_matches(self):
         matches, stats = self._load_day_inventory_matches(datetime.now(UTC))
@@ -237,6 +280,7 @@ class DailyQualityRunner(PredictionRunner):
                 continue
             for key, context in mapping.items():
                 self.admitted_sources.setdefault(key, {})[provider] = context.details.get('daily_evidence_observed_at') or context.details.get('daily_source_observed_at')
+        self.research_contexts = fresh
         return fresh
 
     def _retain_fixture_venues(self, provider, contexts):
@@ -339,12 +383,9 @@ class DailyQualityRunner(PredictionRunner):
             self.daily_rejections['daily_publication_limit'] += len(candidates)
             self.selected_daily = []
             return []
-        a_today = sum(row['tier'] == 'A' for row in published)
-        b_today = sum(row['tier'] == 'B' for row in published)
         def priority(c):
-            tier = c.source_summary.get('publication_tier')
-            unmet = (tier == 'A' and a_today < 1) or (tier == 'B' and b_today < 2)
-            return (unmet, tier == 'A', float(c.source_summary.get('quality_score') or 0), c.ev_pct)
+            # Data quality is an admission gate, not an obligation to fill A/B.
+            return (c.ev_pct, float(c.source_summary.get('quality_score') or 0))
         selected, matches = [], set()
         cap = min(remaining, int(self.settings.max_picks_per_run))
         for candidate in sorted(candidates, key=priority, reverse=True):
@@ -477,7 +518,21 @@ class DailyQualityRunner(PredictionRunner):
                 summary['goal_research']['result_refresh'] = refresh
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary['goal_research'] = {'status': 'error', 'error_type': type(exc).__name__}
+            try:
+                from app.services.totals_strategy_lab import run_lab
+                self.registry.now = datetime.now(UTC)
+                fresh_contexts = {key: context for key, context in getattr(self, 'research_contexts', {}).items()
+                    if getattr(self, 'admitted_sources', {}).get(key) and all(
+                        self.registry.cached(provider, 'context', match) is not None
+                        for match in self.inventory_matches if match.match_key == key
+                        for provider in self.admitted_sources[key])}
+                summary['totals_strategy_lab'] = run_lab(history, self.inventory_matches,
+                    fresh_contexts, self.registry, self.registry.now,
+                    allowed_books={'bet365', 'unibet', '1xbet', 'betano'})
+            except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
+                summary['totals_strategy_lab'] = {'status': 'error', 'error_type': type(exc).__name__}
             write_json('.data/exports/latest-goal-research.json', summary['goal_research'])
+            write_json('.data/exports/latest-totals-strategy-lab.json', summary.get('totals_strategy_lab', {'status': 'not_completed'}))
             summary['clv_recovered_from_ledger'] = self.clv_recovered
             quality_report = read_json('.data/exports/latest-quality-report.json', {})
             summary['goal_model_history'] = {

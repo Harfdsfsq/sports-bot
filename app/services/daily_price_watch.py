@@ -14,6 +14,9 @@ async def watch_pre_kickoff_prices(registry, monitor, provider):
     pending = read_json(monitor.pending_clv_path, [])
     requested = {(row.get('match_key'), parse_time(row.get('commence_time')))
                  for row in pending if isinstance(row, dict)}
+    from app.services import totals_strategy_clv
+    requested.update(totals_strategy_clv.requested())
+    totals_strategy_clv.update([], {}, now)
     targets = [m for m in registry.matches()
                if (m.match_key, m.commence_time) in requested
                and timedelta(0) < m.commence_time - now <= timedelta(minutes=45)]
@@ -28,7 +31,9 @@ async def watch_pre_kickoff_prices(registry, monitor, provider):
                 offer.metadata['fetched_at_utc'] = observed.isoformat()
         snapshot = monitor._build_snapshot(targets, offers, observed)
         measured = monitor._update_pending_clv(observed, snapshot)
+        experiment = totals_strategy_clv.update(targets, offers, observed)
         return {'targets': len(targets), 'matches_with_quotes': len(offers),
+                'priced_totals_clv': experiment,
                 'requests': stats.get('odds_requests', 0), 'resolved': measured.get('resolved_count', 0),
                 'rate_limited': bool(stats.get('any_account_rate_limited') or stats.get('rate_limited')),
                 'budget_exhausted': bool(stats.get('budget_exhausted'))}

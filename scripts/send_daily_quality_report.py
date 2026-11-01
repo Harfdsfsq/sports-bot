@@ -90,7 +90,7 @@ def render(summary):
              'Качество оценивает данные отдельно от EV; высокий EV не повышает доверие к данным.',
              'A дополнительно требует подтверждённой выборки команд и согласованности голевых оценок. Неизвестная выборка — максимум B.',
              f'За день отправлено: A {a}, B {b}; всего {len(published)}. Дневной лимит: 5.',
-             'Цель отбора: 1+ A и 2+ B за день; при недостаточном качестве ставок будет меньше.',
+             'Дневной лимит ограничивает число публикаций. Обязательной нормы A/B нет; после проверок приоритет у EV.',
              '', '🧪 Воронка',
              f"Рассчитано вариантов ставок: {summary.get('candidates_model_evaluated', 'нет счётчика')}. После первичной проверки вероятности и ценности: {summary.get('candidates_before_quality', 0)}.",
              f"Кандидатов до качества: {summary.get('candidates_before_quality', 0)}; после качества: {summary.get('candidates_raw', 0)}; выбрано: {len(daily.get('selected') or [])}."]
@@ -238,6 +238,24 @@ def render(summary):
         if price_check:
             lines.append(f"Цена условных тоталов перед матчем: измерено {price_check.get('measured', 0)}, без свежей котировки {price_check.get('missing_recent_quote', 0)}. Условные измерения отделены от реальных ставок.")
     monitor = summary.get('market_monitor') or {}
+    lab = summary.get('totals_strategy_lab') or {}
+    if lab.get('status') == 'error':
+        lines.append('⚠️ Эксперимент моделей и цен не завершён; диагностика в артефакте. В банк не входит.')
+    if lab.get('protocol'):
+        lines.extend(['', '🧪 Модели и реальные цены — общий эксперимент без ставок',
+            f"Новых матчей: {lab.get('new', 0)}; завершено: {lab.get('settled', 0)}; ожидают: {lab.get('pending', 0)}.",
+            'Одинаковые котировки для всех моделей; один выбранный тотал на матч для каждой стратегии.'])
+        labels = {'market': 'Рынок', 'current_goals': 'Текущая голевая оценка', 'opponent': 'Сила соперников',
+                  'shrunk': 'Согласованное сглаживание', 'overdispersed': 'Повышенная вариативность', 'calibrated': 'Калиброванная модель'}
+        for name, m in lab.get('models', {}).items():
+            if m.get('paired_count'):
+                lines.append(f"{labels.get(name, name)}: Brier {m['brier']:.3f}; условных ставок {m['bets']}; результат {m['paper_pnl']:+.2f} ед.")
+        calibration = lab.get('calibration', {})
+        lines.append(f"Калибровка: {calibration.get('count', 0)} известных исходов; вес собственного сигнала {calibration.get('alpha', 0):.2f}. До проверки используется рынок.")
+        lines.append('Первый расширенный разбор — от 200 расчётов выбранной стратегии и 30 игровых дней. Автоматического допуска к ставкам нет.')
+        if lab.get('price_check'):
+            pc = lab['price_check']
+            lines.append(f"Цены перед матчем в эксперименте: измерено {pc.get('measured', 0)}, нет котировки {pc.get('missing', 0)}. Отдельно от реальных ставок.")
     research = summary.get('goal_research') or {}
     comparison = research.get('comparison') or {}
     if comparison:
