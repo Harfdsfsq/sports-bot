@@ -93,7 +93,11 @@ def send_telegram(text: str) -> bool:
                       data=json.dumps({'chat_id': chat, 'text': text}).encode(),
                       headers={'Content-Type': 'application/json'}, method='POST')
     try:
-        with urlopen(request, timeout=20) as response:
+        try:
+            timeout = max(5, min(90, int(os.getenv('TELEGRAM_REPORT_TIMEOUT_SECONDS', '45'))))
+        except ValueError:
+            timeout = 45
+        with urlopen(request, timeout=timeout) as response:
             result = json.loads(response.read())
         return result.get('ok') is True and bool((result.get('result') or {}).get('message_id'))
     except Exception as exc:

@@ -299,6 +299,25 @@ def split_report(text, limit=3500):
     return chunks
 
 
+def deliver_report(chunks, send):
+    """Journal acknowledgements; never retry a POST with uncertain delivery."""
+    delivery = {'total_chunks': len(chunks), 'confirmed_chunks': 0, 'status': 'sending'}
+    path = '.data/exports/latest-report-delivery.json'
+    write_json(path, delivery)
+    for number, chunk in enumerate(chunks, 1):
+        delivery['attempting_chunk'] = number
+        write_json(path, delivery)
+        if not send(chunk):
+            delivery['status'] = 'unconfirmed'
+            write_json(path, delivery)
+            return delivery
+        delivery['confirmed_chunks'] = number
+        write_json(path, delivery)
+    delivery['status'] = 'confirmed'
+    write_json(path, delivery)
+    return delivery
+
+
 def main():
     started = parse_time(os.getenv('RUN_STARTED_AT_UTC'))
     summary = read_json('.data/exports/latest-run-summary.json', {})
@@ -310,8 +329,9 @@ def main():
         text, valid = render(summary), True
     dry = os.getenv('PUBLISH_DRY_RUN', 'true').lower() == 'true'
     chunks = split_report(text)
-    sent = False if dry else all(send_telegram(chunk) for chunk in chunks)
-    write_json('.data/exports/latest-daily-quality-report.json', {'created_at_utc': datetime.now(UTC).isoformat(), 'summary_valid': valid, 'telegram_sent': sent, 'dry_run': dry, 'text': text})
+    delivery = {'status': 'dry_run', 'total_chunks': len(chunks), 'confirmed_chunks': 0} if dry else deliver_report(chunks, send_telegram)
+    sent = delivery['status'] == 'confirmed'
+    write_json('.data/exports/latest-daily-quality-report.json', {'created_at_utc': datetime.now(UTC).isoformat(), 'summary_valid': valid, 'telegram_sent': sent, 'dry_run': dry, 'text': text, 'delivery': delivery})
     Path('.data/exports/latest-daily-quality-report.txt').write_text(text + '\n')
     print(text)
     return 0 if valid and (dry or sent) else 1

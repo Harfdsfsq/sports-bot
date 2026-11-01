@@ -1736,3 +1736,34 @@ def test_dry_report_does_not_claim_selected_picks_were_published():
     assert 'Опубликованные прогнозы текущего запуска' not in text
     summary['dry_run']=False;summary['published_to_telegram']=1
     assert 'Опубликованные прогнозы текущего запуска' in render(summary)
+
+
+def test_report_delivery_journal_stops_at_unconfirmed_chunk(tmp_path,monkeypatch):
+    from scripts.send_daily_quality_report import deliver_report
+    from app.services.daily_match_registry import read_json
+    monkeypatch.chdir(tmp_path);calls=[]
+    def send(text):calls.append(text);return text!='second'
+    result=deliver_report(['first','second','third'],send)
+    assert calls==['first','second']
+    assert result['status']=='unconfirmed' and result['confirmed_chunks']==1 and result['attempting_chunk']==2
+    saved=read_json('.data/exports/latest-report-delivery.json',{})
+    assert saved==result
+
+
+def test_report_delivery_journal_confirms_all_chunks(tmp_path,monkeypatch):
+    from scripts.send_daily_quality_report import deliver_report
+    monkeypatch.chdir(tmp_path)
+    result=deliver_report(['first','second'],lambda text:True)
+    assert result['status']=='confirmed' and result['confirmed_chunks']==2
+
+
+def test_report_timeout_is_not_retried_or_leaked(monkeypatch,capsys):
+    from scripts import send_pipeline_run_report as report
+    monkeypatch.setenv('TELEGRAM_BOT_TOKEN','private-token');monkeypatch.setenv('TELEGRAM_CHAT_ID','fake-chat')
+    monkeypatch.delenv('TELEGRAM_REPORT_TIMEOUT_SECONDS',raising=False);calls=[]
+    def fail(request,timeout):
+        calls.append(timeout);raise TimeoutError('private-token-must-not-leak')
+    monkeypatch.setattr(report,'urlopen',fail)
+    assert report.send_telegram('test') is False
+    assert calls==[45]
+    assert 'private-token' not in capsys.readouterr().out
