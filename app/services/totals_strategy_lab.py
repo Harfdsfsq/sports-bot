@@ -178,16 +178,38 @@ def resolve(rows, history, now):
         possible = [r for offset in (-1, 0, 1) for r in results.get(slot+offset, [])
                     if abs(parse_time(r['kickoff'])-kickoff) <= timedelta(minutes=15)
                     and same_team_identity(row['home'], [r['home']]) and same_team_identity(row['away'], [r['away']])]
-        if len(possible) != 1 or possible[0].get('conflict'):
-            row.update(status='pending', resolution_reason='missing_or_ambiguous_result')
-            row.pop('total', None)
-            row.pop('resolved_at', None)
+        reason = None
+        if not possible:
+            reason = 'result_not_found'
+        elif any(r.get('conflict') for r in possible) or len({(r['hg'], r['ag']) for r in possible}) > 1:
+            reason = 'conflicting_result'
+        elif len(possible) > 1:
+            # Multiple providers may store the same fixture under different
+            # canonical aliases. Coalesce only exact-time, identified receipts;
+            # matching totals alone cannot establish fixture identity.
+            ids = defaultdict(set)
+            for r in possible:
+                for provider, identity in (r.get('provider_ids') or {}).items():
+                    ids[provider].add(str(identity))
+            if (any(parse_time(r['kickoff']) != kickoff for r in possible)
+                    or any(not r.get('provider_ids') for r in possible)
+                    or any(len(values) != 1 for values in ids.values())):
+                reason = 'ambiguous_identity'
+        observed_times = [parse_time(r.get('observed_at')) for r in possible]
+        created = parse_time(row.get('created_at'))
+        if reason is None and (not created or any(not observed or not created < observed <= now for observed in observed_times)):
+            reason = 'result_observation_time_invalid'
+        if reason:
+            row.update(status='pending', resolution_reason=reason)
+            for key in ('total', 'resolved_at', 'result_evidence'):
+                row.pop(key, None)
             continue
         r = possible[0]
-        observed = parse_time(r['observed_at'])
-        if not parse_time(row['created_at']) < observed <= now:
-            continue
-        row.update(status='resolved', total=r['hg']+r['ag'], resolved_at=observed.isoformat())
+        row.update(status='resolved', total=r['hg']+r['ag'], resolved_at=max(observed_times).isoformat(),
+                   result_evidence={'records': len(possible),
+                                    'provider_ids': {provider: sorted({str(result['provider_ids'][provider])
+                                        for result in possible if provider in (result.get('provider_ids') or {})})
+                                        for provider in {name for result in possible for name in (result.get('provider_ids') or {})}}})
         row.pop('resolution_reason', None)
 
 
