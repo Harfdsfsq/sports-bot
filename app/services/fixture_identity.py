@@ -40,6 +40,14 @@ def team_identity_key(name):
     return base + ('#' + ','.join(suffix) if suffix else '')
 
 
+def reviewed_team_alias_match(first, second):
+    if squad_identity(first) != squad_identity(second):
+        return False
+    groups = ({'js djidjel', 'js jijel'}, {'rc arbaa', 'rc arba'})
+    a, b = canonicalize_team_name(first), canonicalize_team_name(second)
+    return a != b and any(a in group and b in group for group in groups)
+
+
 def same_team_identity(target, aliases):
     def normalized(name):
         text = str(name or '').translate(str.maketrans({'ø': 'o', 'Ø': 'O', 'ł': 'l', 'Ł': 'L', 'đ': 'd'}))

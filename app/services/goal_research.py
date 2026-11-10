@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import asyncio
 import math
+import os
 import logging
 from collections import Counter
 from datetime import UTC, datetime, timedelta
@@ -180,7 +181,7 @@ class GoalHistory:
             streak = min(3, int((progress.get(day) or {}).get('empty_streak', 0)))
             return min(48, 6 * 2**streak)
         dates = [day for day in sorted(due, key=lambda d: (checks.get(d, ''), d)) if not parse_time(checks.get(day))
-                 or now - parse_time(checks[day]) >= timedelta(hours=retry_hours(day))][:2]
+                 or now - parse_time(checks[day]) >= timedelta(hours=retry_hours(day))][:min(4, max(0, int(os.getenv('DAILY_RESULT_BACKFILL_DATES_PER_RUN', '2'))))]
         summary = {'status': 'checked', 'dates': [], 'requests': 0, 'added': 0, 'alternative': alternative}
         service = SettlementService(settings)
         for day in dates:
@@ -292,7 +293,10 @@ class GoalHistory:
             else:
                 f['status'] = 'pending'  # A subsequently disputed result is not evidence.
                 f.pop('total', None)
-                f['resolution_reason'] = reason if not r else 'result_observed_before_forecast'
+                provider_status = str(f.get('provider_result_status', '')).lower()
+                state = ('provider_postponed' if 'postpon' in provider_status else
+                         'provider_cancelled_review' if 'cancel' in provider_status else reason)
+                f['resolution_reason'] = (state if not r and reason == 'result_not_found' else reason) if not r else 'result_observed_before_forecast'
                 if f['version'] == VERSION and now - parse_time(f['kickoff']) >= timedelta(hours=6) and not f.get('duplicate_of'):
                     resolution_reasons[f['resolution_reason']] += 1
         cohort = [f for f in unique_forecasts(forecasts) if f['version'] == VERSION]

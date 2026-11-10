@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 import asyncio
+import os
 from datetime import date, timedelta
 
 from app.services.api_budget import BudgetedAsyncClient
@@ -20,7 +21,8 @@ def matching_fixture(result, forecast):
 
 def overdue_forecasts(history, now):
     from app.services.goal_research import unique_forecasts
-    return [f for f in unique_forecasts(history.data['forecasts'])
+    rows = unique_forecasts(history.data['forecasts']) + list(history.data.get('priced_totals_trials', []))
+    return [f for f in rows
             if f.get('status') == 'pending' and parse_time(f.get('kickoff'))
             and timedelta(hours=6) <= now - parse_time(f['kickoff']) <= timedelta(days=30)]
 
@@ -29,12 +31,18 @@ def bind_source_ids(history, forecasts):
     """Recover legacy IDs only from a unique exact fixture binding."""
     index = defaultdict(list)
     for key, row in history.data.get('fixture_ids', {}).items():
-        if key.startswith('sstats:'):
-            index[(row['home'], row['away'], row['kickoff'])].append(key.split(':', 1)[1])
+        kickoff = parse_time(row.get('kickoff'))
+        if key.startswith('sstats:') and kickoff:
+            index[int(kickoff.timestamp()) // 900].append((key.split(':', 1)[1], row))
     for f in forecasts:
-        ids = index.get((f['home'], f['away'], f['kickoff']), [])
-        if len(ids) == 1 and ids[0].isdecimal():
-            f.setdefault('source_ids', {}).setdefault('sstats', ids[0])
+        kickoff = parse_time(f.get('kickoff'))
+        if not kickoff:
+            continue
+        slot = int(kickoff.timestamp()) // 900
+        ids = {sid for offset in (-1, 0, 1) for sid, row in index.get(slot + offset, [])
+               if sid.isdecimal() and int(sid) > 0 and matching_fixture(row, f)}
+        if len(ids) == 1:
+            f.setdefault('source_ids', {}).setdefault('sstats', next(iter(ids)))
 
 
 def due(checks, key, now, hours=24):
@@ -55,7 +63,7 @@ def relevant_rows(provider, rows, forecasts):
 
 
 async def recover_alternative_results(history, settings, now):
-    """At most 3 detail + 2 Football-data + 1 OpenLigaDB requests per run."""
+    """Bounded detail/date recovery for both research cohorts; shared quotas apply."""
     forecasts = overdue_forecasts(history, now)
     bind_source_ids(history, forecasts)
     checks = history.data.setdefault('result_endpoint_checks', {})
@@ -69,7 +77,7 @@ async def recover_alternative_results(history, settings, now):
             if sid.isdecimal() and int(sid) > 0 and f.get('resolution_reason') != 'conflicting_result':
                 targets.setdefault(sid, []).append(f)
         keys = sorted(targets, key=lambda sid: ((checks.get('sstats:'+sid) or {}).get('at', ''), sid))
-        for sid in [sid for sid in keys if due(checks, 'sstats:'+sid, now)][:3]:
+        for sid in [sid for sid in keys if due(checks, 'sstats:'+sid, now)][:min(12, max(0, int(os.getenv('DAILY_RESULT_DETAIL_REQUESTS_PER_RUN', '3'))))]:
             jobs.append(('sstats', 'sstats:'+sid, 'https://api.sstats.net/Games/'+sid,
                          {'apikey': str(settings.sstats_api_key)}, {'X-API-Key': str(settings.sstats_api_key)}, targets[sid]))
     if getattr(settings, 'football_data_api_key', None):
@@ -126,6 +134,14 @@ async def recover_alternative_results(history, settings, now):
                     rows = [row] if isinstance(row, dict) and str(row.get('id')) == key.split(':', 1)[1] else []
                     if rows:
                         probe['game_status'] = str(row.get('statusName') or 'unknown')
+                        # Non-final provider states are diagnostics, never a score or void.
+                        event = {'home': str((row.get('homeTeam') or {}).get('name') or ''),
+                                 'away': str((row.get('awayTeam') or {}).get('name') or ''),
+                                 'kickoff': row.get('date')}
+                        for forecast in targets:
+                            if matching_fixture(event, forecast):
+                                forecast['provider_result_status'] = probe['game_status']
+                                forecast['provider_result_checked_at'] = now.isoformat()
                     if not rows:
                         probe['response_issue'] = 'unexpected_game_id_or_shape'
                 elif provider == 'football_data':

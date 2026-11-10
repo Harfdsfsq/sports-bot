@@ -11,7 +11,7 @@ from typing import Any
 import httpx
 
 from app.services.api_budget import BudgetedAsyncClient
-from app.services.fixture_identity import same_team_identity, squad_identity
+from app.services.fixture_identity import same_team_identity, squad_identity, reviewed_team_alias_match
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
@@ -43,8 +43,7 @@ def market_only_context(context: MatchContext) -> bool:
 def form_team_key(name):
     """Keep squad identity that the general display-name normalizer removes."""
     base = canonicalize_team_name(name)
-    if os.getenv('PUBLICATION_PROFILE') != 'daily_quality':
-        return base
+    # Research and offline checks must preserve squads too, regardless of profile.
     youth, reserve, women = squad_identity(name)
     suffix = ['u' + age for age in youth]
     if reserve:
@@ -1169,6 +1168,10 @@ class SStatsContextProvider:
             cache[raw] = canonical
             return canonical
 
+        reviewed = [key for key in sorted(canonical_keys) if reviewed_team_alias_match(raw, key)]
+        if len(reviewed) == 1:
+            cache[raw] = reviewed[0]
+            return reviewed[0]
         best_key: str | None = None
         best_score = 0.0
         for key in sorted(canonical_keys):
