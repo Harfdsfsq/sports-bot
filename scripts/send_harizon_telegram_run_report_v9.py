@@ -165,3 +165,15 @@ _write_status({"status": "installed", "renderer": "v9", "main_module": "v8.v7.v5
 
 if __name__ == "__main__":
     raise SystemExit(v8.v7.v5.main())
+
+
+def is_real_pool_filter(name):
+    return str(name).endswith(('stale_or_outside_window', 'duplicate_in_pool')) or str(name).startswith(('reject_', 'missing_'))
+
+
+def pool_filter_counts(counts):
+    return {key: value for key, value in counts.items() if is_real_pool_filter(key)}
+
+
+def _strip_controlled_pool_block(text):
+    return re.sub(r'(?m)^🧯 Controlled fallback pool filter[^\n]*\n.*?(?=^📌|\Z)', '', text, flags=re.S)

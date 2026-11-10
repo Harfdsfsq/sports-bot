@@ -34,6 +34,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: daily-quality-${{ github.repository }}
@@ -149,6 +150,25 @@ jobs:
           key: daily-quality-api-budget-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             daily-quality-api-budget-${{ github.repository }}-
+      - name: Check branch history migration
+        id: migration
+        if: github.ref_name == 'fix/coverage-integrity-a-only'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/migrate_branch_state.py prepare
+      - name: Download verified production history
+        if: steps.migration.outputs.needed == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.migration.outputs.source_artifact }}
+          run-id: ${{ steps.migration.outputs.source_run }}
+          github-token: ${{ github.token }}
+          path: .migration-source
+      - name: Import verified history before pipeline
+        if: steps.migration.outputs.needed == 'true'
+        env:
+          MIGRATION_SOURCE_RUN: ${{ steps.migration.outputs.source_run }}
+        run: python scripts/migrate_branch_state.py finish .migration-source/.data
       - name: Verify critical pipeline tests
         if: inputs.price_watch_only != true
         run: |
@@ -172,7 +192,8 @@ jobs:
                                         'tests/test_daily_market_monitor.py',
                                         'tests/test_goal_research.py',
                                         'tests/test_totals_strategy_lab.py',
-                                        'tests/test_inventory_identity_integrity.py'],
+                                        'tests/test_inventory_identity_integrity.py',
+                                        'tests/test_branch_state_migration.py'],
                                        env=test_env, cwd=test_dir)
           sys.exit(result)
           PY

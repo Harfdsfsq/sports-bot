@@ -307,3 +307,16 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# Compatibility names for offline coverage diagnostics; never evidence admission.
+def generated_match_key_variants(row):
+    from app.services.targeted_enrichment_queue import row_key_variants as variants
+    return variants(row)
+
+
+def row_key_variants(row):
+    result = generated_match_key_variants(row)
+    if row.get("match_key"):
+        result.add(str(row["match_key"]))
+    return result

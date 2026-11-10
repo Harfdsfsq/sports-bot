@@ -105,7 +105,48 @@ class DailyMatchRegistry:
                     continue
                 entry['provider_ids'][provider] = event_id
             entry['match']['metadata'].update(match.metadata)
+        self._merge_exact_alias_duplicates()
         self.save()
+
+    def _merge_exact_alias_duplicates(self):
+        from app.services.fixture_identity import same_team_identity
+        entries = self.data['matches']
+        keys = list(entries)
+        for index, keep in enumerate(keys):
+            if keep not in entries:
+                continue
+            first = entries[keep]
+            a = first['match']
+            for drop in keys[index + 1:]:
+                if drop not in entries:
+                    continue
+                second = entries[drop]
+                b = second['match']
+                reviewed = {frozenset(('js djidjel', 'js jijel')), frozenset(('rc arbaa', 'rc arba'))}
+                if not any(frozenset((a[side].lower(), b[side].lower())) in reviewed for side in ('home_team', 'away_team')):
+                    continue
+                if (a['sport_key'] != b['sport_key'] or parse_time(a['commence_time']) != parse_time(b['commence_time'])
+                    or not same_team_identity(a['home_team'], [b['home_team']])
+                    or not same_team_identity(a['away_team'], [b['away_team']])):
+                    continue
+                ids, incoming = first.get('provider_ids', {}), second.get('provider_ids', {})
+                if any(str(ids[p]) != str(incoming[p]) for p in ids.keys() & incoming.keys()):
+                    continue
+                if first.get('publication') and second.get('publication'):
+                    continue  # Multiple acknowledgements require explicit review.
+                first.setdefault('provider_ids', {}).update(incoming)
+                for name, evidence in second.get('evidence', {}).items():
+                    current = first.setdefault('evidence', {}).get(name)
+                    if current is None or str(evidence.get('observed_at', '')) > str(current.get('observed_at', '')):
+                        first['evidence'][name] = evidence
+                # Evidence is revalidated against the retained exact fixture by cached().
+                if second.get('publication'):
+                    first['publication'] = {**second['publication'], 'match_id': keep}
+                for publication in self.data.get('published', []):
+                    if publication.get('match_id') == drop:
+                        publication['match_id'] = keep
+                del entries[drop]
+                self.data['issues'].append({'kind': 'exact_alias_duplicate_merged', 'kept': keep, 'removed': drop})
 
     def matches(self):
         result = []
@@ -122,6 +163,26 @@ class DailyMatchRegistry:
                 row['metadata']['sstats_game_id'] = ids['sstats']
             result.append(Match(**row))
         return result
+
+    def actionable_gaps(self):
+        rows = []
+        for match in self.matches():
+            lead = (match.commence_time - self.now).total_seconds() / 60
+            if not 30 <= lead <= 240:
+                continue
+            line, context = self.has_role(match, 'offers'), self.has_role(match, 'context')
+            if line and context:
+                continue
+            entry = self.data['matches'][match_identity(match)]
+            rows.append({'match_id': match_identity(match), 'home': match.home_team,
+                'away': match.away_team, 'kickoff_utc': match.commence_time.isoformat(),
+                'missing': [role for role, ready in [('offers', line), ('context', context)] if not ready],
+                'provider_ids': entry.get('provider_ids', {}),
+                'attempts': {name: {key: attempt.get(key) for key in ('at', 'retry_after', 'result')}
+                             for name, attempt in entry.get('attempts', {}).items()},
+                'unattempted_roles': [role for role in ('offers', 'context')
+                                     if not any(name.endswith(':' + role) for name in entry.get('attempts', {}))]})
+        return sorted(rows, key=lambda row: row['kickoff_utc'])
 
     def identity_review(self):
         """Potential feed-name gaps for review only; never transfer evidence."""
