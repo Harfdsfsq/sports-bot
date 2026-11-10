@@ -99,7 +99,7 @@ def source_is_fresh(provider, context, observed_at, now):
         if observed is None or not -timedelta(seconds=5) <= now - observed <= timedelta(hours=6):
             return False
         if provider == 'bzzoiro':
-            created = context.details.get('bzzoiro_prediction_created_at')
+            created = context.details.get('bzzoiro_prediction_updated_at') or context.details.get('bzzoiro_prediction_created_at')
             if created and not -timedelta(seconds=5) <= now - parse_datetime(created) <= timedelta(hours=24):
                 return False
         return True

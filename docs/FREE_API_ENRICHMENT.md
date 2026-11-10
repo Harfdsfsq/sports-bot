@@ -1,0 +1,80 @@
+# Native free API enrichment — 10 November 2026
+
+This supplements the existing daily pipeline. No new accounts, subscriptions,
+keys or higher provider quotas are introduced. Local verification has no live
+keys; real coverage must be measured in a fresh branch workflow artifact.
+
+## Bzzoiro v2
+
+The native v1 integration remains, with a bounded v2 supplement using the
+shared BudgetedAsyncClient. It requests paginated /api/v2/predictions/ for the
+near window, normalizes documented nested fields, and admits only a unique
+verified home/away/squad/time identity with a positive event ID. Explicit
+non-upcoming statuses are rejected. No confidence-ranked choice between
+ambiguous fixture/model records. Predictions without explicit sporting goal
+projections do not become inferred market-derived xG.
+
+Freshness uses updated_at when supplied, falling back to created_at for older
+payloads. Original created_at is retained separately. The API says created_at
+is immutable; treating it as last recalculation incorrectly rejects refreshed
+predictions. Market probabilities are 0–100 and converted explicitly; model
+confidence is 0–1. Predictions/goal projections are not measured shot-level xG.
+
+For admitted fixtures the supplement reads /events/{id}/ after validating its
+returned ID, team pair and kickoff. It retains event venue, weather, neutral
+venue, derby/travel/round/group facts where actually supplied. Venue flows to
+the existing verified-fixture weather path; no guessed stadium or home city.
+
+Optional /availability/ gates confirmed lineups. Predicted lineups are not
+labelled confirmed. /h2h/ is retained as supplemental history. A league table
+uses explicit league and season IDs from the verified event, not a guessed
+current season. Flat and grouped tables require both team IDs in one unique
+table/group. These optional facts are stored for audit/research; they do not
+add an unvalidated probability, quality bonus or another independent source.
+
+Limits: 8 near-window matches, 24 requests by default (hard maximum 30), shared
+native-provider per-run budget and daily/minute governor also apply. The
+supplement has a 60-second deadline and <=8 seconds per call; a 401/402/403/429
+stops new calls for that supplement. Cache TTLs: predictions/availability and
+lineups 10 minutes, detail 1 hour, table 2 hours, H2H 6 hours. Cached prediction
+receipt time is retained, never re-stamped as new evidence. Native v1 contexts
+are preserved if optional enrichment fails.
+
+**Free odds limitation:** Bzzoiro documents consensus-only prices for free keys.
+bookmaker_slug=consensus is not a bookmaker. This supplement never creates an
+Offer from those prices, never adds bookmaker_count to quorum, and never calls
+paid /odds/comparison/, /odds/best/ or bookmaker-filtered endpoints. Executable
+prices and final same-book confirmation continue through entitled Odds-api.io.
+
+## SStats
+
+The runtime history loader now advances by the actual returned page length;
+a server-capped short page is not proof of end-of-data. Empty response, trusted
+large total, repeated page or existing request budget terminates collection.
+Repeated pages mark the history incomplete and do not create a complete cache.
+Native history cache namespace v5 avoids trusting v4 pages that may have been
+truncated by the old implementation. Overlapping-window reuse, source timestamps,
+regulation-score selection and squad checks remain tested. The first run may
+need more history requests; shared 30/minute local pacing and run cap remain.
+
+## Verification and next run
+
+The exact critical workflow step is run locally with daily_quality.env loaded,
+a temporary repository copy and credentials stripped. Contract tests cover v2
+units/freshness, exact identity and youth rejection, table ID pairing, cache
+reuse, permission/quota refusal, zero request allowance, invalid sporting data,
+and capped/repeated SStats pages. This is not verification of live provider
+entitlements or achieved 90–95% coverage.
+
+In source_stats.bzzoiro inspect v2_native: requests, cache_hits, contexts, details,
+standings, rejected, errors and blocked_status. Inspect admitted context payloads
+and latest-actionable-coverage-gaps.json. New facts may legitimately be missing.
+The overall A-tier, historical/EV and bankroll contracts are unchanged.
+
+Official references consulted:
+- https://sports.bzzoiro.com/docs/football/events/
+- https://sports.bzzoiro.com/docs/football/odds-predictions/
+- https://sports.bzzoiro.com/docs/football/leagues/
+- https://sports.bzzoiro.com/docs/conventions/
+- https://api.sstats.net/docs/
+- https://sstats.net/api

@@ -389,7 +389,7 @@ class SStatsContextProvider:
         if daily_cache:
             from pathlib import Path
             from app.services.daily_match_registry import parse_time, read_json, write_json
-            cache_path = Path(f".data/provider_cache/sstats-history-v4-{from_date}-{to_date}.json")
+            cache_path = Path(f".data/provider_cache/sstats-history-v5-{from_date}-{to_date}.json")
             saved = read_json(cache_path, {})
             observed = parse_time(saved.get("observed_at"))
             if observed and timedelta(0) <= datetime.now(UTC) - observed < self._history_cache_ttl(to_date) and saved.get("rows"):
@@ -407,7 +407,7 @@ class SStatsContextProvider:
         for window_from, window_to in windows:
             batch_rows = None
             if daily_cache:
-                window_path = Path(f".data/provider_cache/sstats-window-v4-{window_from}-{window_to}.json")
+                window_path = Path(f".data/provider_cache/sstats-window-v5-{window_from}-{window_to}.json")
                 saved_window = read_json(window_path, {})
                 window_observed = parse_time(saved_window.get('observed_at'))
                 if window_observed and timedelta(0) <= datetime.now(UTC) - window_observed < self._history_cache_ttl(window_to) and isinstance(saved_window.get('rows'), list):
@@ -423,7 +423,7 @@ class SStatsContextProvider:
                 if daily_cache:
                     window_observed = datetime.now(UTC)
                     observations.append(window_observed)
-                    if stats.get('response_errors', 0) == errors_before and not stats.get('budget_exhausted'):
+                    if stats.get('response_errors', 0) == errors_before and not stats.get('budget_exhausted') and not stats.get('history_pagination_incomplete'):
                         write_json(window_path, {'observed_at': window_observed.isoformat(), 'rows': batch_rows})
             for row in batch_rows:
                 signature = (
@@ -445,7 +445,7 @@ class SStatsContextProvider:
 
         if daily_cache and rows:
             self._daily_source_observed_at = min(observations).isoformat() if observations else datetime.now(UTC).isoformat()
-            if not stats.get("response_errors") and not stats.get('budget_exhausted'):
+            if not stats.get("response_errors") and not stats.get('budget_exhausted') and not stats.get('history_pagination_incomplete'):
                 write_json(cache_path, {"observed_at": self._daily_source_observed_at, "rows": rows})
         return rows
 
@@ -460,6 +460,7 @@ class SStatsContextProvider:
         offset = 0
         total_count: int | None = None
         rows: list[dict[str, Any]] = []
+        seen_pages = set()
 
         while True:
             if self._http_budget_exhausted(stats):
@@ -513,10 +514,13 @@ class SStatsContextProvider:
             if not batch:
                 break
 
-            rows.extend(batch)
-
-            if len(batch) < limit:
+            signature = tuple((str(row.get('id')), str(row.get('date'))) for row in batch)
+            if signature in seen_pages:
+                stats['history_pagination_incomplete'] = True
+                stats['history_pagination_stop'] = 'repeated_page'
                 break
+            seen_pages.add(signature)
+            rows.extend(batch)
 
             offset += len(batch)
             # SStats frequently reports `count == batch_size` for the current page,

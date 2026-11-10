@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 from datetime import datetime, timezone
 UTC = timezone.utc
 from typing import Any
@@ -35,6 +36,7 @@ class BzzoiroContextProvider:
         self._requests_used = 0
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+        self._native_fetch_started = time.monotonic()
         stats: dict[str, Any] = {
             "enabled": bool(self.api_key),
             "api_key_present": bool(self.api_key),
@@ -219,6 +221,12 @@ class BzzoiroContextProvider:
                     }
                 )
 
+        if os.getenv('BZZOIRO_V2_NATIVE_ENRICHMENT_ENABLED', 'false').lower() == 'true':
+            from app.services.bzzoiro_free_enrichment import enrich
+            try:
+                await enrich(self, soccer_matches, contexts, stats)
+            except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+                stats['v2_native_error_type'] = type(exc).__name__
         return contexts, stats, preview
 
     def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
@@ -672,7 +680,7 @@ class BzzoiroContextProvider:
             pass
 
         prediction_age_hours: float | None = None
-        created_at_raw = prediction.get("created_at") or prediction.get("updated_at")
+        created_at_raw = prediction.get("updated_at") or prediction.get("created_at")
         if created_at_raw:
             try:
                 created_at = parse_datetime(created_at_raw)
@@ -719,7 +727,8 @@ class BzzoiroContextProvider:
                 "bzzoiro_favorite_probability": favorite_prob,
                 "bzzoiro_most_likely_score": prediction.get("most_likely_score"),
                 "bzzoiro_raw_confidence": round(raw_conf_pct, 3) if raw_conf_pct is not None else None,
-                "bzzoiro_prediction_created_at": created_at_raw,
+                "bzzoiro_prediction_created_at": prediction.get("created_at"),
+                "bzzoiro_prediction_updated_at": prediction.get("updated_at"),
                 "bzzoiro_prediction_age_hours": round(prediction_age_hours, 1) if prediction_age_hours is not None else None,
                 "bzzoiro_match_quality": match_quality,
                 "bzzoiro_model_version": prediction.get("model_version"),
