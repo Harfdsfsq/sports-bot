@@ -43,3 +43,21 @@ def test_reviewed_alias_duplicates_merge_only_exact_fixture(tmp_path):
     assert r.matches()[0].metadata['provider_source_ids']=={'odds_api_io':'1','sstats':'2'}
     r.sync([replace(other,home_team='JS Jijel U21')])
     assert len(r.matches())==2
+
+
+def test_reusable_workflow_caller_grants_artifact_read_permission():
+    # GitHub validates this chain before creating any jobs, so Python tests alone
+    # cannot catch a missing token scope in the caller workflow.
+    import re
+    root = Path(__file__).resolve().parents[1]
+    def permissions(path):
+        text = path.read_text()
+        block = re.search(r'^permissions:\n((?:[ \t]+[^\n]*\n)+)', text, re.M)
+        assert block, path
+        return dict(re.findall(r'^  ([a-z-]+): (read|write|none)$', block[1], re.M))
+    caller = permissions(root / '.github/workflows/run-bot.yml')
+    callee = permissions(root / '.github/workflows/run-bot-rules.yml')
+    rank = {'none': 0, 'read': 1, 'write': 2}
+    for scope, required in callee.items():
+        assert rank[caller.get(scope, 'none')] >= rank[required], scope
+    assert caller['actions'] == 'read'  # Artifact migration needs no write scope.
