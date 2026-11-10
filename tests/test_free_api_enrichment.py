@@ -193,6 +193,10 @@ def test_targeted_history_improves_real_form_and_keeps_receipt(tmp_path, monkeyp
         calls.append(params)
         assert params['Team']=='10,11' and params['Ended']=='true' and params['Order']==-1
         assert params['TimeZone']==0 and 'apikey' in params
+        # The live API rejected fractional seconds with HTTP 400 (run 42871752744).
+        import re
+        assert re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00',params['To'])
+        assert datetime.fromisoformat(params['To']).microsecond==0
         return {'data':rows if params['Offset']==0 else []}
     client_type=targeted_client(monkeypatch,response)
     monkeypatch.setitem(p.fetch_context.__func__.__globals__,'BudgetedAsyncClient',client_type)

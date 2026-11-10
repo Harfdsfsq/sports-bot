@@ -120,3 +120,12 @@ Documented detail flag names are retained alongside legacy names.
 
 Official SStats parameter contract: https://api.sstats.net/openapi/v1.json
 Actual coverage lift remains unmeasured until the next fresh workflow run.
+
+### SStats timestamp wire format
+
+Run 42871752744 returned HTTP 400 for the targeted To value with Python's
+microsecond suffix. Use UTC ISO timestamps with second precision
+(YYYY-MM-DDTHH:MM:SS+00:00), preserving To's exclusive bound. The native form
+integration test now checks this exact wire shape in addition to semantic
+identity and score contracts. A successful workflow does not imply a successful
+optional provider request; inspect targeted_history and native http_statuses.

@@ -61,7 +61,8 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
     now = datetime.now(UTC)
     params = {'Team': ','.join(sorted(bindings, key=int)), 'Ended': 'true',
               'Order': -1, 'From': (now - timedelta(days=120)).date().isoformat(),
-              'To': now.isoformat(), 'TimeZone': 0, 'Limit': 1000}
+              # SStats accepts second precision, not Python's default microseconds.
+              'To': now.isoformat(timespec='seconds'), 'TimeZone': 0, 'Limit': 1000}
     # A stable daily key; To remains the original receipt's cutoff on cache hits.
     digest = hashlib.sha256(json.dumps({**params, 'To': now.date().isoformat()}, sort_keys=True).encode()).hexdigest()[:24]
     cache = Path('.data/provider_cache') / ('sstats-targeted-v1-' + digest + '.json')
