@@ -22,6 +22,9 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
+from app.services.fixture_identity import direct_fixture_identity, team_identity_key
+from app.services.daily_match_registry import match_identity
+
 UTC = timezone.utc
 EXPORT_DIR = Path(".data/exports")
 STRICT_REPORT_PATH = EXPORT_DIR / "latest-day-inventory-core-strict-merge-report.json"
@@ -105,8 +108,8 @@ def install_strict_merge(core: Any) -> None:
             "policy": {
                 "min_team_similarity": 0.72,
                 "min_avg_similarity": 0.80,
-                "max_kickoff_diff_hours": 6.0,
-                "swapped_allowed": True,
+                "max_kickoff_diff_hours": 0.5,
+                "swapped_allowed": False,
             },
         }
         ordered = ["odds_api_io", "bzzoiro", "sstats", "sportlogic"]
@@ -116,6 +119,11 @@ def install_strict_merge(core: Any) -> None:
                 best_decision = None
                 best_rank = -1.0
                 for key, existing in canonical.items():
+                    if not direct_fixture_identity(existing, {
+                        'home': match.home_team, 'away': match.away_team,
+                        'commence_time': match.commence_time.isoformat(),
+                    }):
+                        continue
                     diff_h = _hours_diff(existing.commence_time, match.commence_time)
                     pair = _team_pair_score(existing, match)
                     rank = pair["avg"] * 100.0 - diff_h
@@ -126,12 +134,11 @@ def install_strict_merge(core: Any) -> None:
                 allowed = False
                 if best_key is not None and isinstance(best_decision, dict):
                     allowed = (
-                        best_decision["kickoff_diff_hours"] <= 6.0
-                        and best_decision["min"] >= 0.72
-                        and best_decision["avg"] >= 0.80
+                        best_decision["kickoff_diff_hours"] <= 0.5
+                        and best_decision["orientation"] == 'direct'
                     )
                 if not allowed:
-                    canonical[match.match_key] = match
+                    canonical[match_identity(match) + '|' + team_identity_key(match.home_team)] = match
                     row = {"provider": provider, "match_key": match.match_key, "home": match.home_team, "away": match.away_team, "reason": "new_canonical"}
                     if best_key and best_decision:
                         row.update({"best_candidate": best_key, "blocked_decision": best_decision})
@@ -202,13 +209,16 @@ def install_strict_enrich(core: Any) -> None:
             if isinstance(meta.get("sources_seen"), str):
                 sources.update(x for x in meta["sources_seen"].split(",") if x)
             coverage = dict(row.get("coverage") or {})
-            has_odds = bool({"odds_api_io", "sportlogic"} & sources) or bool(meta.get("has_current_odds_provider"))
-            has_context = bool({"sstats", "bzzoiro"} & sources) or bool(meta.get("bzzoiro_has_context_hint") or meta.get("sstats_has_context_hint"))
-            has_xg = bool(meta.get("bzzoiro_context_fields") or meta.get("sstats_context_fields"))
-            has_form = "sstats" in sources
+            has_odds = False  # Fixture discovery is not a timestamped price receipt.
+            has_context = False  # Runtime registry alone admits sporting evidence.
+            has_xg = False
+            has_form = False
             ready = bool(has_odds and has_context)
             coverage.update({
                 "fixture_core": True,
+                "odds_discovery_hint": bool({"odds_api_io", "sportlogic"} & sources),
+                "context_discovery_hint": bool({"sstats", "bzzoiro"} & sources),
+                "evidence_basis": "fixture_discovery_only",
                 "odds": has_odds,
                 "context": has_context,
                 "xg": has_xg,

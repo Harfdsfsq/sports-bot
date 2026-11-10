@@ -28,6 +28,7 @@ def profile(monkeypatch):
         if line and not line.startswith('#'):
             key, value = line.split('=', 1)
             monkeypatch.setenv(key, value)
+    monkeypatch.setenv('DAILY_LIVE_A_ONLY', 'false')
     monkeypatch.setenv('PUBLISH_DRY_RUN', 'true')
     monkeypatch.setenv('MAX_PICKS_PER_RUN', '2')
 
@@ -1769,3 +1770,24 @@ def test_report_timeout_is_not_retried_or_leaked(monkeypatch,capsys):
     assert report.send_telegram('test') is False
     assert calls==[45]
     assert 'private-token' not in capsys.readouterr().out
+
+
+def test_a_only_mode_never_sends_b_even_with_higher_ev(profile, tmp_path, monkeypatch):
+    monkeypatch.setenv('DAILY_LIVE_A_ONLY', 'true')
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', datetime.now(UTC))
+    runner.daily_rejections = {}
+    def c(tier, ev):
+        return SimpleNamespace(match_key=tier, source_summary={'publication_tier': tier, 'quality_score': 80}, ev_pct=ev, commence_time=datetime.now(UTC)+timedelta(hours=1), stake_amount=5, bankroll_snapshot=1000)
+    a, b = c('A', 6), c('B', 20)
+    assert runner._select_publishable_candidates([b, a]) == [a]
+    assert runner.daily_rejections['b_tier_observation_only'] == 1
+
+
+def test_window_sla_does_not_call_empty_window_complete(tmp_path):
+    r = DailyMatchRegistry(tmp_path / 'r.json', datetime.now(UTC))
+    assert r.coverage()['near_ready_pct'] is None
+    r.sync([match(r.now)])
+    assert r.coverage()['near_missing_to_95'] == 1
+    assert r.coverage()['near_coverage_status'] == 'below_target'

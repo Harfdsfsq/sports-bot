@@ -389,6 +389,9 @@ class DailyQualityRunner(PredictionRunner):
         selected, matches = [], set()
         cap = min(remaining, int(self.settings.max_picks_per_run))
         for candidate in sorted(candidates, key=priority, reverse=True):
+            if os.getenv('DAILY_LIVE_A_ONLY', 'false').lower() == 'true' and candidate.source_summary.get('publication_tier') != 'A':
+                self.daily_rejections['b_tier_observation_only'] = self.daily_rejections.get('b_tier_observation_only', 0) + 1
+                continue
             if len(selected) >= cap:
                 break
             if candidate.source_summary.get('registry_match_id') in sent_match_ids:

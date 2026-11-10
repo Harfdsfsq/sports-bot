@@ -330,6 +330,14 @@ class DailyMatchRegistry:
             result['line'] += bool(line)
             result['context'] += bool(context)
             result['ready'] += bool(line and context)
+        # A live SLA uses only the actionable window, never expired all-day prices.
+        denominator = result['near']
+        result['near_ready_pct'] = round(100 * result['near_ready'] / denominator, 1) if denominator else None
+        result['near_coverage_status'] = ('no_upcoming_matches' if not denominator else
+            'target_95' if result['near_ready'] / denominator >= .95 else
+            'minimum_90' if result['near_ready'] / denominator >= .90 else 'below_target')
+        result['near_missing_to_95'] = max(0, (95 * denominator + 99) // 100 - result['near_ready'])
+        result['inventory_shortfall'] = max(0, 300 - result['inventory'])
         return result
 
     def save(self):

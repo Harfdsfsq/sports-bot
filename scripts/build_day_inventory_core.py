@@ -427,6 +427,8 @@ async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match]
     limit = env_int("DAY_INVENTORY_SSTATS_LIMIT", 1000)
     max_requests = env_int("DAY_INVENTORY_SSTATS_MAX_REQUESTS", 3)
     rows: list[dict[str, Any]] = []
+    page_signatures = set()
+    stats["pagination_complete"] = False
     timeout = float(os.getenv("SSTATS_TIMEOUT_SECONDS") or 25.0)
     headers = {"User-Agent": "HARIZON-day-inventory-sstats/1.0", "Accept": "application/json,text/plain,*/*"}
     async with BudgetedAsyncClient(timeout=httpx.Timeout(timeout, connect=min(6.0, timeout)), follow_redirects=True, headers=headers) as client:
@@ -447,15 +449,23 @@ async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match]
                 payload = resp.json()
                 batch = iter_dicts(payload)
                 if not batch:
+                    stats['pagination_complete'] = True
+                    stats['pagination_stop'] = 'empty_page'
                     break
+                signature = json.dumps(batch, sort_keys=True, default=str)
+                if signature in page_signatures:
+                    stats['pagination_stop'] = 'repeated_page'
+                    break
+                page_signatures.add(signature)
                 rows.extend(batch)
-                if len(batch) < limit:
-                    break
+                # A server may cap the requested page size. A short page alone
+                # does not prove there are no more rows; advance by received rows.
                 offset += len(batch)
             except Exception as exc:
                 stats["response_errors"] += 1
                 stats["last_error"] = f"{type(exc).__name__}: {exc}"
                 break
+    stats.setdefault('pagination_stop', 'request_limit' if stats['requests'] >= max_requests else 'provider_error')
     stats["rows_fetched"] = len(rows)
     matches: list[Match] = []
     seen_keys: set[str] = set()

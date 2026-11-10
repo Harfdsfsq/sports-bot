@@ -87,6 +87,7 @@ def render(summary):
              '', '🏷️ Качество прогнозов',
              *[f"{tier}: качество {limits['quality']}+, уверенность модели {limits['confidence']}+, EV {limits['ev']}%+, запас {limits['edge']} п.п.+." for tier, limits in TIER_LIMITS.items()],
              'Для обоих: реальный контекст, текущая линия и положительная ценность. Два API — преимущество.',
+             ('Telegram: только A-tier; B-tier наблюдается в условном эксперименте.' if os.getenv('DAILY_LIVE_A_ONLY', 'false').lower() == 'true' else 'Telegram: A/B по действующему контракту.'),
              'Качество оценивает данные отдельно от EV; высокий EV не повышает доверие к данным.',
              'A дополнительно требует подтверждённой выборки команд и согласованности голевых оценок. Неизвестная выборка — максимум B.',
              f'За день отправлено: A {a}, B {b}; всего {len(published)}. Дневной лимит: 5.',
@@ -94,6 +95,8 @@ def render(summary):
              '', '🧪 Воронка',
              f"Рассчитано вариантов ставок: {summary.get('candidates_model_evaluated', 'нет счётчика')}. После первичной проверки вероятности и ценности: {summary.get('candidates_before_quality', 0)}.",
              f"Кандидатов до качества: {summary.get('candidates_before_quality', 0)}; после качества: {summary.get('candidates_raw', 0)}; выбрано: {len(daily.get('selected') or [])}."]
+    if 'near_coverage_status' in c:
+        lines.append(f"Покрытие ближайшего окна: {c.get('near_ready_pct') if c.get('near_ready_pct') is not None else 'нет матчей'}%; цель 95%, минимум 90%. До 95% не хватает {c.get('near_missing_to_95', 0)} матчей.")
     if 'near_missing_both' in c:
         position = next(i for i, line in enumerate(lines) if line.startswith('Дополнительные данные окна:'))
         lines.insert(position, f"Добор окна: только линия — {c.get('near_only_line', 0)}; только контекст — {c.get('near_only_context', 0)}; нет обоих — {c['near_missing_both']}.")
