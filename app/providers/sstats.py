@@ -296,8 +296,20 @@ class SStatsContextProvider:
                                 if fallback_contexts.get(m.match_key) else 0)
                                for side in ('home', 'away')) < min_sample]
             stats['history_extension_targets'] = len(missing)
+            if missing:
+                from app.services.sstats_targeted_history import enrich_team_form
+                targeted = await enrich_team_form(self, missing, rows, stats, preview)
+                improved = {key: value for key, value in targeted.items()
+                            if min(value.details.get(side + '_recent_count', 0) for side in ('home', 'away'))
+                            > min((fallback_contexts[key].details.get(side + '_recent_count', 0)
+                                   if key in fallback_contexts else 0) for side in ('home', 'away'))}
+                fallback_contexts.update(improved)
+                stats['targeted_history']['improved'] = len(improved)
+                missing = [m for m in missing
+                           if min((fallback_contexts[m.match_key].details.get(side + '_recent_count', 0)
+                                   if m.match_key in fallback_contexts else 0) for side in ('home', 'away')) < min_sample]
             extended_days = min(120, max(lookback_days, int(os.getenv('DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS', '90'))))
-            if missing and extended_days > lookback_days:
+            if missing and extended_days > lookback_days and os.getenv('DAILY_SSTATS_BROAD_EXTENSION_ENABLED', 'true').lower() == 'true':
                 original_observed = getattr(self, '_daily_source_observed_at', None)
                 self._daily_partial_rows = []
                 self._daily_partial_observed_at = None
@@ -367,7 +379,7 @@ class SStatsContextProvider:
         stats["contexts_built"] = len(contexts)
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             for context in contexts.values():
-                context.details["daily_source_observed_at"] = getattr(self, "_daily_source_observed_at", None)
+                context.details.setdefault("daily_source_observed_at", getattr(self, "_daily_source_observed_at", None))
         return contexts, stats, preview
 
     @staticmethod
@@ -540,11 +552,14 @@ class SStatsContextProvider:
         stats: dict[str, Any],
         headers: dict[str, str] | None = None,
         preview_limit: int = 2000,
+        request_ceiling: int | None = None,
     ) -> httpx.Response | None:
         retries = max(0, int(getattr(self.settings, "sstats_request_retries", 2) or 2))
         backoff = max(0.0, float(getattr(self.settings, "sstats_retry_backoff_seconds", 1.0) or 1.0))
 
         for attempt in range(retries + 1):
+            if request_ceiling is not None and int(stats.get('requests', 0)) >= request_ceiling:
+                return None
             if self._http_budget_exhausted(stats):
                 return None
             if attempt > 0:

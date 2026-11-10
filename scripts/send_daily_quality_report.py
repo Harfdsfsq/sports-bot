@@ -199,7 +199,10 @@ def render(summary):
     if weather.get('missing_location'):
         lines.append(f"ℹ️ Погода недоступна для {weather['missing_location']} матчей: нет подтверждённого местоположения стадиона.")
     sstats = source_stats.get('sstats') or {}
-    if sstats.get('history_extension_targets'):
+    targeted = sstats.get('targeted_history') or {}
+    if targeted:
+        lines.append(f"История команд: адресный добор улучшил выборку для {targeted.get('improved', 0)} из {targeted.get('targets', 0)} ближайших матчей; подтверждено ID команд: {targeted.get('bound_teams', 0)}, запросов: {targeted.get('requests', 0)}.")
+    if sstats.get('history_extension_targets') and (not targeted or 'history_extension_rows' in sstats):
         lines.append(f"История команд: расширенный добор улучшил выборку для {sstats.get('history_extension_improved', 0)} из {sstats['history_extension_targets']} ближайших матчей.")
     if sstats.get('history_extension_timeout'):
         lines.append(f"⚠️ Добор истории остановлен по времени. В расчёте использовано {sstats.get('history_extension_rows', 0)} строк из завершённых окон; остальные данные остаются в очереди.")

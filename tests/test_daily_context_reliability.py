@@ -1045,6 +1045,7 @@ def test_sstats_extends_only_thin_near_fixture_history(tmp_path, monkeypatch, ex
     from app.providers.sstats import SStatsContextProvider
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv('DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS', '90')
+    monkeypatch.setenv('DAILY_SSTATS_BROAD_EXTENSION_ENABLED', 'true')
     class NoNetworkClient:
         def __init__(self, **kwargs): pass
         async def __aenter__(self): return self

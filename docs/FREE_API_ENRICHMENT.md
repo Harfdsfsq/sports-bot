@@ -78,3 +78,45 @@ Official references consulted:
 - https://sports.bzzoiro.com/docs/conventions/
 - https://api.sstats.net/docs/
 - https://sstats.net/api
+
+## Targeted history follow-up after run 42823878703
+
+The first live dry run completed successfully but the broad SStats extension
+hit its 60-second deadline after 19,731 partial historical rows and improved no
+near-window samples. Native Bzz v2 made one request and built no contexts;
+its former counters did not distinguish empty discovery from unmatched data.
+These observations do not establish a provider entitlement or identity failure.
+
+SStats now first extends thin near-window form using documented Games/list
+parameters Team (comma-separated IDs, either side), Ended=true, Order=-1,
+From/To (exclusive To), TimeZone=0, Limit/Offset. IDs must be witnessed with
+compatible names and squad in the initial native rows. Ambiguous names across
+IDs and IDs spanning incompatible squads are refused. Up to eight fixtures,
+120 days and four physical requests (hard cap six), including retries, are
+allowed; the shared provider budget and a 25-second deadline also apply.
+
+Returned rows must contain a bound ID with the right name/squad, positive game
+ID, past kickoff, completed status when supplied, and finite, nonnegative
+integer regulation scores. Exact game copies cannot inflate samples; conflicting
+records for one game ID are excluded. Native form chronology and cross-record
+score conflict checks still apply. Targeted rows alone build replacement form;
+a context replaces the old form only if the smaller team sample improves.
+The change does not turn form-derived projections into measured shot-level xG.
+
+Complete targeted responses are cached for 60 minutes with their original
+receipt time. Short pages continue until empty, repeated page, deadline or
+budget; incomplete responses are usable after validation but are not cached as
+complete. The configured broad extension is disabled to avoid another world
+history scan; it remains an explicit opt-in compatibility path. Missing team
+IDs stay visible as no_unique_team_ids rather than being guessed.
+
+source_stats.sstats.targeted_history and the human-readable report expose
+bound_teams, requests, rows, rejected_rows, conflicting_ids, cache_hits, contexts,
+improved and stop_reason. Bzz v2 now exposes response_shape, prediction_records,
+fixtures_matched, skip_reasons and limited fixture/field-name samples, without
+credentials or full API bodies. The table integration also recognizes documented
+home_team_obj/away_team_obj IDs only after checking each object's team/squad.
+Documented detail flag names are retained alongside legacy names.
+
+Official SStats parameter contract: https://api.sstats.net/openapi/v1.json
+Actual coverage lift remains unmeasured until the next fresh workflow run.
