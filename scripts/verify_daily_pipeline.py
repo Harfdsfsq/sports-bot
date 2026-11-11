@@ -24,8 +24,10 @@ TESTS = (
     "prospective_validation",
     "release_and_quotes",
     "ci_repairs",
+    "repair_inventory_refresh_plan_counts_env",
 )
 EXTRA_TESTS = (
+    "tests/test_harizon_stopper_fixes.py::test_line_movement_key_is_stable_for_russian_english_totals",
     "tests/test_providers_and_telegram.py::test_odds_api_io_stops_event_paging_on_auth_error",
     "tests/test_providers_and_telegram.py::test_odds_api_io_full_auth_failure_activates_cooldown",
 )
