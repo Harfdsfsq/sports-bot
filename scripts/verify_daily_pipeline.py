@@ -26,6 +26,7 @@ TESTS = (
     "ci_repairs",
     "bulk_coverage",
     "history_identity_and_ncaa",
+    "odds_line_audit",
     "repair_inventory_refresh_plan_counts_env",
 )
 EXTRA_TESTS = (

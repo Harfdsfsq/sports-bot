@@ -216,7 +216,7 @@ class DailyMatchRegistry:
                     "missing": [role for role, ready in [("offers", line), ("context", context)] if not ready],
                     "provider_ids": entry.get("provider_ids", {}),
                     "attempts": {
-                        name: {key: attempt.get(key) for key in ("at", "retry_after", "result")}
+                        name: {key: attempt.get(key) for key in ("at", "retry_after", "result", "diagnostic")}
                         for name, attempt in entry.get("attempts", {}).items()
                     },
                     "unattempted_roles": [
@@ -477,6 +477,8 @@ class DailyMatchRegistry:
                 "result": result,
                 **({"history_identity_revision": SSTATS_HISTORY_IDENTITY_REVISION}
                    if provider == "sstats" and role == "context" else {}),
+                **({"diagnostic": stats["line_diagnostics"][match.match_key]}
+                   if role == "offers" and match.match_key in stats.get("line_diagnostics", {}) else {}),
             }
         self.save()
         return counts
