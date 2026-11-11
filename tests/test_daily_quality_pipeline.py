@@ -622,7 +622,7 @@ def test_sstats_inventory_uses_date_range_and_nested_league(profile, monkeypatch
     assert stats['rows_fetched'] == 2
 
 
-@pytest.mark.parametrize('count,revision,minutes,due', [(183, 3, 119, False), (183, 3, 120, True), (300, 3, 180, False), (183, 2, 1, True)])
+@pytest.mark.parametrize('count,revision,minutes,due', [(183, 4, 119, False), (183, 4, 120, True), (300, 4, 180, False), (183, 3, 1, True)])
 def test_incomplete_inventory_refresh_is_bounded(count, revision, minutes, due):
     from scripts.daily_inventory_refresh_due import refresh_due
     now = datetime.now(UTC)

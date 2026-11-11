@@ -360,6 +360,7 @@ def test_targeted_selection_finds_bound_fixture_after_unknown_prefix(tmp_path,mo
 
 
 def test_targeted_selection_caps_fixtures_and_queried_team_ids(tmp_path,monkeypatch):
+    monkeypatch.setenv("DAILY_SSTATS_TARGETED_MATCH_LIMIT", "8")
     from dataclasses import replace
     from app.services.sstats_targeted_history import enrich_team_form
     monkeypatch.chdir(tmp_path);monkeypatch.setenv('PUBLICATION_PROFILE','daily_quality')

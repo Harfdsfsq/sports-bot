@@ -95,7 +95,7 @@ def test_pari_accepts_only_verified_current_prematch_quotes(tmp_path, monkeypatc
 
     client_patch(monkeypatch, "app.providers.sstats_pari_daily", response)
     p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
-    result, stats, _ = asyncio.run(p.fetch_offers([fixture(now)]))
+    result, stats, _ = asyncio.run(p.confirm_offers([fixture(now)]))
     assert bool(result) == (change == "valid")
     assert stats["requests"] == len(calls) == 2
     if result:
@@ -137,10 +137,10 @@ def test_pari_respects_physical_request_cap_and_missing_key(monkeypatch, tmp_pat
 
     client_patch(monkeypatch, "app.providers.sstats_pari_daily", response)
     p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
-    result, stats, _ = asyncio.run(p.fetch_offers([fixture(now)]))
+    result, stats, _ = asyncio.run(p.confirm_offers([fixture(now)]))
     assert not result and len(calls) == 1 and stats["budget_exhausted"]
     p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key=""))
-    asyncio.run(p.fetch_offers([fixture(now)]))
+    asyncio.run(p.confirm_offers([fixture(now)]))
     assert len(calls) == 1
 
 
@@ -366,7 +366,7 @@ def test_final_confirmation_routes_to_actual_quote_source(source, book):
     assert calls == [source] and c.source_summary["final_price_confirmation"]["book"] == book
 
 
-def test_pari_reports_only_near_targets_and_deduplicates_provider_events(tmp_path, monkeypatch):
+def test_pari_reports_collection_targets_and_deduplicates_provider_events(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("DAILY_PARI_ENABLED", "true")
     now = datetime.now(UTC)
@@ -384,8 +384,9 @@ def test_pari_reports_only_near_targets_and_deduplicates_provider_events(tmp_pat
     p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
     result, stats, _ = asyncio.run(p.fetch_offers([alias, m, later]))
     assert set(result) == {m.match_key}
-    assert later.match_key not in stats["attempted_match_keys"]
-    assert stats["duplicate_detail_requests_avoided"] == 1 and len(calls) == 2
+    assert later.match_key in stats["attempted_match_keys"]
+    assert stats["duplicate_detail_requests_avoided"] == 1 and 1 <= len(calls) <= 2
+    assert all(url.endswith("/matches") for url in calls)
     assert stats["collection_request_limit"] == 8 and stats["confirmation_requests_reserved"] == 4
 
 

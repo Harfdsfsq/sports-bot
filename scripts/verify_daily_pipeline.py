@@ -24,6 +24,7 @@ TESTS = (
     "prospective_validation",
     "release_and_quotes",
     "ci_repairs",
+    "bulk_coverage",
     "repair_inventory_refresh_plan_counts_env",
 )
 EXTRA_TESTS = (

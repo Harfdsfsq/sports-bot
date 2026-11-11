@@ -36,6 +36,7 @@ from app.utils import (  # noqa: E402 - direct script execution requires the rep
     canonicalize_league_name,
     canonicalize_team_name,
     is_low_tier_league,
+    is_simulated_or_esports_event,
     parse_datetime,
     score_event_match_variants,
 )
@@ -82,7 +83,11 @@ def to_utc(value: Any) -> datetime | None:
     if value in (None, ""):
         return None
     try:
-        dt = parse_datetime(str(value))
+        dt = (
+            datetime.fromtimestamp(value, UTC)
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and 946684800 <= value <= 4102444800
+            else parse_datetime(str(value))
+        )
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=UTC)
         return dt.astimezone(UTC)
@@ -205,6 +210,10 @@ def make_match(
     away = clean_text(away_team)
     league = clean_text(league_name) or "Unknown"
     if not home or not away or not commence_time:
+        return None
+    if os.getenv("PUBLICATION_PROFILE") == "daily_quality" and (
+        "unknown" in league.casefold() or is_simulated_or_esports_event(home, away, league)
+    ):
         return None
     if not env_bool("DAY_INVENTORY_ALLOW_LOW_TIER", False) and is_low_quality_inventory_match(league, home, away):
         return None
@@ -503,6 +512,7 @@ def sstats_row_to_match(row: dict[str, Any], settings: Settings) -> Match | None
     start = to_utc(
         nested(
             row,
+            "dateUtc",
             "dateTime",
             "DateTime",
             "startTime",
@@ -530,6 +540,11 @@ def sstats_row_to_match(row: dict[str, Any], settings: Settings) -> Match | None
         "sstats_has_context_hint": True,
         "sstats_status": str(row.get("status") or ""),
     }
+    if sid.isdecimal() and int(sid) > 0:
+        # Preserve raw team IDs from this exact future fixture, not a context flag.
+        metadata["sstats_fixture"] = {
+            k: row[k] for k in ("id", "date", "dateUtc", "homeTeam", "awayTeam", "season") if k in row
+        }
     if any(k in row for k in ("xg", "homeXg", "awayXg", "homeRating", "awayRating")):
         metadata["sstats_context_fields"] = True
     return make_match(
@@ -863,7 +878,7 @@ async def main_async() -> int:
     existing = {} if env_bool("DAY_INVENTORY_REBUILD_FROM_SCRATCH", False) else store.load_inventory(local_date)
     payload = store.build_payload(local_date=local_date, matches=selected, source_meta=source_meta, existing=existing)
     payload = enrich_payload_coverage(payload)
-    payload["daily_inventory_revision"] = 3
+    payload["daily_inventory_revision"] = 4
     payload.setdefault("counts", {})["matches_after_top_cut"] = len(selected)
     payload["counts"]["target_matches"] = max_matches
     payload["counts"]["target_shortfall"] = max(0, max_matches - len(selected))

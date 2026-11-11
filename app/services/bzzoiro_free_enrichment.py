@@ -74,9 +74,16 @@ def flatten_prediction(payload):
 
 async def enrich(provider, matches, contexts, stats):
     now = datetime.now(UTC)
-    targets = [m for m in matches if timedelta(minutes=30) <= m.commence_time - now <= timedelta(hours=4)]
+    targets = [
+        m
+        for m in matches
+        if timedelta(minutes=30)
+        <= m.commence_time - now
+        <= timedelta(hours=min(48, max(4, float(os.getenv("DAILY_DATA_COLLECTION_WINDOW_HOURS", "24")))))
+    ]
     targets.sort(key=lambda m: (m.match_key in contexts, m.commence_time))
-    targets = targets[: max(0, min(20, int(os.getenv("BZZOIRO_V2_NATIVE_MATCH_LIMIT", "8"))))]
+    targets = targets[:300]
+    detail_limit = max(0, min(30, int(os.getenv("BZZOIRO_V2_NATIVE_MATCH_LIMIT", "8"))))
     if not targets:
         return
     limit = min(30, max(0, int(os.getenv("BZZOIRO_V2_NATIVE_REQUEST_LIMIT", "24"))))
@@ -85,6 +92,7 @@ async def enrich(provider, matches, contexts, stats):
         "cache_hits": 0,
         "contexts": 0,
         "details": 0,
+        "detail_attempts": 0,
         "standings": 0,
         "rejected": 0,
         "errors": 0,
@@ -148,12 +156,15 @@ async def enrich(provider, matches, contexts, stats):
                 return None, None
 
         predictions = []
-        start = min(m.commence_time for m in targets).date().isoformat()
-        end = max(m.commence_time for m in targets).date().isoformat()
+        # The API declares date-time bounds: equal date-only strings formed an
+        # empty same-day interval and could return midnight/past predictions.
+        start = now.isoformat(timespec="seconds")
+        end = (max(m.commence_time for m in targets) + timedelta(seconds=1)).isoformat(timespec="seconds")
         offset, seen = 0, set()
         for _ in range(4):
             payload, observed = await get(
-                "/predictions/", {"date_from": start, "date_to": end, "limit": 200, "offset": offset}
+                "/predictions/",
+                {"date_from": start, "date_to": end, "status": "upcoming", "limit": 200, "offset": offset},
             )
             report["response_shape"] = sorted(payload)[:20] if isinstance(payload, dict) else type(payload).__name__
             batch = (
@@ -254,6 +265,10 @@ async def enrich(provider, matches, contexts, stats):
             sid = str(event.get("id") or "")
             if not sid.isdecimal():
                 continue
+            if report["detail_attempts"] >= detail_limit:
+                skip("optional_detail_limit")
+                continue
+            report["detail_attempts"] += 1
             detail, _ = await get("/events/" + sid + "/", ttl=3600)
             if (
                 not isinstance(detail, dict)

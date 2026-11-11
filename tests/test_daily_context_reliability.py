@@ -1044,6 +1044,7 @@ def test_sstats_extends_only_thin_near_fixture_history(tmp_path, monkeypatch, ex
     from app.config import Settings
     from app.providers.sstats import SStatsContextProvider
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv('DAILY_DATA_COLLECTION_WINDOW_HOURS', '4')
     monkeypatch.setenv('DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS', '90')
     monkeypatch.setenv('DAILY_SSTATS_BROAD_EXTENSION_ENABLED', 'true')
     class NoNetworkClient:

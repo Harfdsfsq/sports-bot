@@ -210,7 +210,7 @@ def test_native_pari_collects_closing_reference_inside_publication_lead(tmp_path
     client_patch(monkeypatch, "app.providers.sstats_pari_daily", response)
     p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
     assert not asyncio.run(p.fetch_offers([m]))[0] and not calls
-    assert asyncio.run(p.watch_offers([m]))[0] and len(calls) == 2
+    assert asyncio.run(p.watch_offers([m]))[0] and len(calls) == 1
 
 
 def test_native_pari_discovery_binds_ids_without_fabricating_second_quote(tmp_path, monkeypatch):

@@ -160,10 +160,12 @@ class SStatsContextProvider:
 
         stats["rows_fetched"] = len(rows)
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+            from app.services.sstats_targeted_history import verified_fixture
             from app.services.team_result_archive import retain_history
 
             rows, stats["team_result_archive"] = retain_history(
-                self, rows, getattr(self, "_daily_source_observed_at", None)
+                self, rows, getattr(self, "_daily_source_observed_at", None),
+                binding_rows=[row for match in soccer_matches if (row := verified_fixture(match)) is not None],
             )
         if rows:
             preview["sample_rows"] = rows[:3]
@@ -306,12 +308,14 @@ class SStatsContextProvider:
         fallback_contexts = self._build_team_form_contexts(soccer_matches, rows, preview)
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             # A 45-day window can contain fewer than six games per team.
-            # Extend only when a near fixture lacks usable sporting history.
+            # Extend only when an upcoming fixture lacks usable sporting history.
             min_sample = max(2, int(os.getenv("DAILY_B_MIN_TEAM_SAMPLE", "6")))
             missing = [
                 m
                 for m in soccer_matches
-                if timedelta(minutes=30) <= m.commence_time - now_utc <= timedelta(hours=4)
+                if timedelta(minutes=30)
+                <= m.commence_time - now_utc
+                <= timedelta(hours=min(48, max(4, float(os.getenv("DAILY_DATA_COLLECTION_WINDOW_HOURS", "24")))))
                 and m.match_key not in contexts
                 and min(
                     (
@@ -1159,7 +1163,8 @@ class SStatsContextProvider:
                 stamps = [
                     str(r["history_observed_at"]) for r in home_recent + away_recent if r.get("history_observed_at")
                 ]
-                if getattr(self, "_daily_source_observed_at", None):
+                if (getattr(self, "_daily_source_observed_at", None)
+                        and any(not r.get("history_observed_at") for r in home_recent + away_recent)):
                     stamps.append(self._daily_source_observed_at)
                 context.details["daily_source_observed_at"] = max(stamps, key=parse_datetime)
                 context.details["history_oldest_observed_at"] = min(stamps, key=parse_datetime)

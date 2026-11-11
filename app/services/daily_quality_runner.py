@@ -6,7 +6,7 @@ import asyncio
 import os
 from collections import Counter
 from copy import deepcopy
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -214,10 +214,18 @@ class DailyQualityRunner(PredictionRunner):
     async def _fetch_matches(self):
         matches, stats = self._load_day_inventory_matches(datetime.now(UTC))
         self.registry.sync(matches)
-        # At the end of the day, cover fixtures beyond Moscow midnight as well.
+        # Prefetch the next day within the collection horizon; publication remains 4h.
         next_matches, _ = self._load_day_inventory_matches(datetime.now(UTC) + timedelta(days=1))
         self.next_day_inventory_count = len(next_matches)
-        self.registry.sync([m for m in next_matches if m.commence_time <= datetime.now(UTC) + timedelta(hours=4)])
+        self.registry.sync(
+            [
+                m
+                for m in next_matches
+                if m.commence_time
+                <= datetime.now(UTC)
+                + timedelta(hours=min(48, max(4, float(os.getenv("DAILY_DATA_COLLECTION_WINDOW_HOURS", "24")))))
+            ]
+        )
         self.inventory_matches = self.registry.matches()
         if not self.inventory_matches:
             raise RuntimeError("Current Moscow day inventory is empty; rebuild inventory")
@@ -322,6 +330,7 @@ class DailyQualityRunner(PredictionRunner):
                 recorded_targets = [m for m in targets if m.match_key in considered]
             stats["unattempted_matches"] = len(targets) - len(recorded_targets)
             if name == "sstats_pari":
+                from app.providers.sstats_pari_daily import info, matches_fixture
                 from app.services.fixture_identity import direct_fixture_identity
 
                 bindings = preview.get("verified_fixture_bindings") or {}
@@ -331,7 +340,13 @@ class DailyQualityRunner(PredictionRunner):
                     if (
                         sid.isdecimal()
                         and int(sid) > 0
-                        and direct_fixture_identity(match, binding, tolerance_hours=0.25)
+                        and (
+                            direct_fixture_identity(match, binding, tolerance_hours=0.25)
+                            or (
+                                str(info(binding.get("provider_event", {})).get("eventId")) == sid
+                                and matches_fixture(match, binding.get("provider_event", {}))
+                            )
+                        )
                     ):
                         entry = self.registry.data["matches"][match_identity(match)]
                         old = entry["provider_ids"].get(name)
@@ -349,6 +364,26 @@ class DailyQualityRunner(PredictionRunner):
             value = self.registry.cached(name, role, m)
             if value:
                 cached[m.match_key] = value
+        if name == "sstats" and role == "context" and cached and not missing_key:
+            # Enrich valid cached form too: missing tables must not wait for its
+            # six-hour form TTL. Updating a table never refreshes the form receipt.
+            from app.services.sstats_standings import enrich_standings
+
+            before = {key: deepcopy(value.details.get("sstats_standings")) for key, value in cached.items()}
+            try:
+                await enrich_standings(provider, self.inventory_matches, cached, stats)
+            except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+                stats["standings_error_type"] = type(exc).__name__
+            changed = False
+            for match in self.inventory_matches:
+                context = cached.get(match.match_key)
+                if context and context.details.get("sstats_standings") != before.get(match.match_key):
+                    entry = self.registry.data["matches"][match_identity(match)]["evidence"]["sstats:context"]
+                    context.details.setdefault("daily_source_observed_at", entry["observed_at"])
+                    entry["payload"] = asdict(context)
+                    changed = True
+            if changed:
+                self.registry.save()
         # Older cache entries were constructed with percent values as fractions.
         if name == "bzzoiro" and role == "context":
             for key, context in list(cached.items()):

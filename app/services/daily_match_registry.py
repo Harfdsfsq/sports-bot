@@ -94,7 +94,12 @@ class DailyMatchRegistry:
         for match in sorted(matches, key=lambda m: m.commence_time):
             day = match.commence_time.astimezone(TZ).date().isoformat()
             lookahead = day != self.date
-            if lookahead and not (self.now < match.commence_time <= self.now + timedelta(hours=4)):
+            if lookahead and not (
+                self.now
+                < match.commence_time
+                <= self.now
+                + timedelta(hours=min(48, max(4, float(os.getenv("DAILY_DATA_COLLECTION_WINDOW_HOURS", "24")))))
+            ):
                 continue
             key = match_identity(match)
             alias = self.data.get("aliases", {}).get(key)
@@ -104,7 +109,7 @@ class DailyMatchRegistry:
                 parse_time(row["match"]["commence_time"]).astimezone(TZ).date().isoformat() == day
                 for row in entries.values()
             )
-            if key not in entries and day_count >= (60 if lookahead else 300):
+            if key not in entries and day_count >= 300:
                 continue
             ids = match.metadata.get("provider_source_ids") or match.metadata.get("day_inventory_source_ids") or {}
             entry = entries.setdefault(
@@ -490,6 +495,14 @@ class DailyMatchRegistry:
             "weather": 0,
             "collected_line": 0,
             "collected_context": 0,
+            "collected_ready": 0,
+            "future_matches": 0,
+            "future_line": 0,
+            "future_context": 0,
+            "future_ready": 0,
+            "near_two_book_lines": 0,
+            "near_two_context_sources": 0,
+            "near_two_book_and_context": 0,
             "lookahead": 0,
             "near_line": 0,
             "near_context": 0,
@@ -511,7 +524,30 @@ class DailyMatchRegistry:
             result["near_only_line"] += bool(near and line and not context)
             result["near_only_context"] += bool(near and context and not line)
             result["near_missing_both"] += bool(near and not line and not context)
+            future = match.commence_time > self.now
+            result["future_matches"] += future
+            result["future_line"] += bool(future and line)
+            result["future_context"] += bool(future and context)
+            result["future_ready"] += bool(future and line and context)
             evidence = self.data["matches"][match_identity(match)]["evidence"]
+            if near:
+                from app.utils import normalize_bookmaker_name
+
+                books = {}
+                providers = set()
+                for name in evidence:
+                    provider, role = name.split(":", 1)
+                    value = self.cached(provider, role, match)
+                    if role == "offers" and value:
+                        for offer in value:
+                            key = (offer.family, offer.selection.casefold(), offer.point, offer.team_side)
+                            books.setdefault(key, set()).add(normalize_bookmaker_name(offer.bookmaker))
+                    elif role == "context" and provider not in {"weather", "self_history"} and value:
+                        providers.add(provider)
+                two_books = any(len(group) >= 2 for group in books.values())
+                result["near_two_book_lines"] += two_books
+                result["near_two_context_sources"] += len(providers) >= 2
+                result["near_two_book_and_context"] += two_books and len(providers) >= 2
             details = [
                 row["payload"].get("details", {})
                 for name, row in evidence.items()
@@ -544,11 +580,11 @@ class DailyMatchRegistry:
                 result["lookahead"] += 1
                 continue
             entry = self.data["matches"][match_identity(match)]
-            result["collected_line"] += any(
+            collected_line = any(
                 name.endswith(":offers") and any(is_full_match_market(offer) for offer in row["payload"])
                 for name, row in entry["evidence"].items()
             )
-            result["collected_context"] += any(
+            collected_context = any(
                 name.endswith(":context")
                 and not name.startswith("weather:")
                 and row["payload"]
@@ -556,6 +592,9 @@ class DailyMatchRegistry:
                 and not (name == "sstats:context" and market_only_context(MatchContext(**row["payload"])))
                 for name, row in entry["evidence"].items()
             )
+            result["collected_line"] += collected_line
+            result["collected_context"] += collected_context
+            result["collected_ready"] += bool(collected_line and collected_context)
             line, context = self.has_role(match, "offers"), self.has_role(match, "context")
             result["line"] += bool(line)
             result["context"] += bool(context)
