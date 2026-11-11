@@ -12,7 +12,7 @@ def identity_reasons(provider, match, context):
     if squad_reasons:
         return squad_reasons
     payload = context.payload or {}
-    if provider == 'football_data':
+    if provider == 'football_data' and context.details.get('football_data_mode') != 'verified_team_history':
         return [] if football_data_context_matches(match, context) else ['context_fixture_identity_mismatch']
     if provider == 'thesportsdb':
         for side, team in [('home', match.home_team), ('away', match.away_team)]:
@@ -21,7 +21,8 @@ def identity_reasons(provider, match, context):
                 return ['context_team_identity_mismatch']
         if context.details.get('thesportsdb_partial_context'):
             return ['partial_sporting_context']
-    if provider == 'sstats' and context.source == 'sstats_form':
+    if (provider == 'sstats' and context.source == 'sstats_form'
+            or provider == 'football_data' and context.details.get('football_data_mode') == 'verified_team_history'):
         for side, team in [('home', match.home_team), ('away', match.away_team)]:
             rows = payload.get(side + '_recent') or []
             if not rows or any(not same_team_identity(team, [row.get('team') or row.get('team_key')]) for row in rows):

@@ -195,6 +195,17 @@ def render(summary):
         if 'cached_matches' in odds_stats:
             lines.append(f"С учётом свежего кеша Odds-api.io: линии для {odds_stats['cached_matches']} матчей. Это общее покрытие двух аккаунтов без повторного подсчёта матчей.")
     source_stats = summary.get('source_stats') or {}
+    pari = source_stats.get('sstats_pari') or {}
+    backup = source_stats.get('the_odds') or {}
+    if backup.get('enabled'):
+        lines.append(f"The Odds API — резерв: линий для {backup.get('registry_record', {}).get('accepted', 0)} матчей; запросов {backup.get('requests', 0)}.")
+    if pari.get('enabled'):
+        lines.append(f"SStats / PARI: линий для {pari.get('registry_record', {}).get('accepted', 0)} матчей; запросов {pari.get('requests', 0)}.")
+        if pari.get('blocked_status'):
+            lines.append(f"⚠️ SStats / PARI: API отказал в доступе или ограничил запросы (HTTP {pari['blocked_status']}); коэффициенты не подменяются архивными.")
+    football_fallback = (source_stats.get('football_data') or {}).get('team_fallback') or {}
+    if football_fallback:
+        lines.append(f"Football-data: независимый добор истории дал контекст для {football_fallback.get('contexts', 0)} матчей; запросов {football_fallback.get('requests', 0)}.")
     weather = source_stats.get('weather') or {}
     if weather.get('missing_location'):
         lines.append(f"ℹ️ Погода недоступна для {weather['missing_location']} матчей: нет подтверждённого местоположения стадиона.")

@@ -210,7 +210,7 @@ def test_targeted_history_improves_real_form_and_keeps_receipt(tmp_path, monkeyp
     stamp=c.details['daily_source_observed_at']
     again,stats,_=asyncio.run(p.fetch_context([m]))
     assert again[m.match_key].details['daily_source_observed_at']==stamp
-    assert stats['targeted_history']['cache_hits']==1 and len(calls)==2
+    assert stats['team_result_archive']['reused']>=8 and len(calls)==2
 
 
 @pytest.mark.parametrize('change',['duplicate_name_id','id_wrong_squad','unknown_squad'])

@@ -154,6 +154,9 @@ class SStatsContextProvider:
             rows = await self._fetch_rows(client, from_date, to_date, stats)
 
         stats["rows_fetched"] = len(rows)
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            from app.services.team_result_archive import retain_history
+            rows, stats['team_result_archive'] = retain_history(self, rows, getattr(self, '_daily_source_observed_at', None))
         if rows:
             preview["sample_rows"] = rows[:3]
 
@@ -907,7 +910,7 @@ class SStatsContextProvider:
         rows: list[dict[str, Any]],
         preview: dict[str, Any],
     ) -> dict[str, MatchContext]:
-        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' and not preview.get('skip_goal_history_archive'):
             from app.services.goal_research import archive_results
             preview['goal_history'] = archive_results('sstats', rows)
         team_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -942,6 +945,7 @@ class SStatsContextProvider:
                     "goals_for": float(home_goals),
                     "goals_against": float(away_goals),
                     "home": True,
+                    **({'history_observed_at':row['_history_observed_at']} if row.get('_history_observed_at') else {}),
                 }
             )
             team_rows[away_key].append(
@@ -955,6 +959,7 @@ class SStatsContextProvider:
                     "goals_for": float(away_goals),
                     "goals_against": float(home_goals),
                     "home": False,
+                    **({'history_observed_at':row['_history_observed_at']} if row.get('_history_observed_at') else {}),
                 }
             )
             canonical_keys.add(home_key)
@@ -1040,6 +1045,12 @@ class SStatsContextProvider:
                     "away_goals_against_avg": round(away_goals_against_avg, 3) if away_goals_against_avg is not None else None,
                 },
             )
+            if any(r.get('history_observed_at') for r in home_recent+away_recent):
+                stamps = [str(r['history_observed_at']) for r in home_recent+away_recent if r.get('history_observed_at')]
+                if getattr(self, '_daily_source_observed_at', None):
+                    stamps.append(self._daily_source_observed_at)
+                context.details['daily_source_observed_at'] = max(stamps, key=parse_datetime)
+                context.details['history_oldest_observed_at'] = min(stamps, key=parse_datetime)
             contexts[match.match_key] = context
 
             if len(preview["team_form_examples"]) < 10:

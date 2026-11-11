@@ -163,6 +163,9 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
     valid = [row for sid, (_, row) in by_id.items() if sid not in conflicts]
     report['conflicting_ids'] = len(conflicts)
     report['rows'] = len(valid)
+    if valid and observed:
+        from app.services.team_result_archive import retain_history
+        valid, report['team_result_archive'] = retain_history(provider, valid, observed.isoformat())
     contexts = provider._build_team_form_contexts(targets, valid, preview) if valid else {}
     for context in contexts.values():
         context.details['daily_source_observed_at'] = observed.isoformat()

@@ -17,7 +17,7 @@ from app.services.strict_price_integrity import rejection_reasons
 from app.services.telegram import TelegramPublisher
 from app.services.daily_context_reliability import GOAL_MODEL_VERSION
 
-ODDS = {'odds_api_io'}
+ODDS = {'odds_api_io', 'sstats_pari', 'the_odds'}
 CONTEXT = {'sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb', 'api_football'}
 
 
@@ -93,6 +93,10 @@ class DailyQualityRunner(PredictionRunner):
         super().__init__(settings)
         # The legacy v2 adapter depends on monkey patches and constructs invalid contexts.
         self.bzzoiro = self._safe_provider("app.providers.bzzoiro", "BzzoiroContextProvider")
+        from app.providers.sstats_pari_daily import SStatsPariDailyProvider
+        self.sstats_pari = SStatsPariDailyProvider(settings)
+        from app.providers.the_odds_daily import TheOddsDailyProvider
+        self.the_odds = TheOddsDailyProvider(settings)
         self.telegram = DailyTelegramPublisher(settings)
         self.telegram.on_confirm = self._record_confirmed
         self.telegram.confirm_price = self._confirm_publication_price
@@ -119,7 +123,9 @@ class DailyQualityRunner(PredictionRunner):
         from app.services.daily_price_confirmation import confirm
         match = next((m for m in self.inventory_matches if m.match_key == candidate.match_key
                       and m.commence_time == candidate.commence_time), None)
-        if match is None or self.odds_api_io is None:
+        selected_source = candidate.source_summary.get('selected_source')
+        quote_provider = self.the_odds if selected_source == 'the_odds' else self.sstats_pari if selected_source == 'sstats_pari' or candidate.bookmaker.lower() == 'pari' else self.odds_api_io
+        if match is None or quote_provider is None:
             self.daily_rejections['final_price_missing_fixture'] += 1
             return False
         requested = datetime.now(UTC)
@@ -127,7 +133,8 @@ class DailyQualityRunner(PredictionRunner):
             self.daily_rejections['final_kickoff_window'] += 1
             return False
         try:
-            offers, _, _ = await asyncio.wait_for(self.odds_api_io.fetch_offers([match]), timeout=20)
+            fetch = getattr(quote_provider, 'confirm_offers', quote_provider.fetch_offers)
+            offers, _, _ = await asyncio.wait_for(fetch([match]), timeout=20)
             now = datetime.now(UTC)
             valid, reason = confirm(candidate, offers.get(match.match_key, []), requested, now)
             self.registry.now = now
@@ -185,11 +192,18 @@ class DailyQualityRunner(PredictionRunner):
     @staticmethod
     def _provider_supports_match(provider, name, role, match):
         if role == 'offers':
-            return True
+            return provider.supports_match(match) if name == 'the_odds' else True
         if name == 'openligadb' and hasattr(provider, '_competition_key'):
             return match.sport_key == 'soccer' and bool(provider._competition_key(match.league_name))
         supports = getattr(provider, 'supports_match', None)
         return bool(supports(match)) if callable(supports) else match.sport_key == 'soccer'
+
+    def _provider_name(self, provider):
+        if provider and provider.__class__.__module__.endswith('sstats_pari_daily'):
+            return 'sstats_pari'
+        if provider and provider.__class__.__module__.endswith('the_odds_daily'):
+            return 'the_odds'
+        return super()._provider_name(provider)
 
     async def _fetch_provider(self, provider, method_name, *args, empty_data):
         if not provider or not args or not isinstance(args[0], list):
@@ -201,7 +215,7 @@ class DailyQualityRunner(PredictionRunner):
         self.registry.now = datetime.now(UTC)
         limit = self._provider_target_limit(provider, name, role)
         missing_key = role == 'context' and self._provider_missing_key(provider, name)
-        targets = [] if missing_key else self.registry.targets(name, role, limit=limit, eligible=lambda m: self._provider_supports_match(provider, name, role, m), bulk=name == 'sstats' and role == 'context')
+        targets = [] if missing_key else self.registry.targets(name, role, limit=limit, eligible=lambda m: self._provider_supports_match(provider, name, role, m) and (not getattr(provider, 'gap_only', False) or not self.registry.has_role(m,role)), bulk=name == 'sstats' and role == 'context')
         self.work_plan[name + ':' + role] = [match_identity(m) for m in targets]
         cached = {m.match_key: self.registry.cached(name, role, m) for m in self.inventory_matches}
         cached = {key: value for key, value in cached.items() if value}
@@ -243,6 +257,18 @@ class DailyQualityRunner(PredictionRunner):
         if name == 'odds_api_io' and hasattr(provider, '_odds_accounts'):
             stats['configured_accounts'] = [account['name'] for account in provider._odds_accounts()]
         return cached, stats, preview
+
+    async def _fetch_additional_offers(self, matches):
+        maps, reports = {}, {}
+        if os.getenv('DAILY_PARI_ENABLED', 'false').lower() == 'true':
+            data, stats, _ = await self._fetch_provider(self.sstats_pari, 'fetch_offers', matches, empty_data={})
+            maps['sstats_pari'], reports['sstats_pari'] = data, stats
+        if self.the_odds.api_key:
+            data, stats, _ = await self._fetch_provider(self.the_odds, 'fetch_offers', matches, empty_data={})
+            maps['the_odds'], reports['the_odds'] = data, stats
+        else:
+            reports['the_odds'] = {'enabled':False,'reason':'missing_api_key'}
+        return maps, reports
 
     def _merge_context_maps(self, *maps):
         now = datetime.now(UTC)
@@ -531,7 +557,7 @@ class DailyQualityRunner(PredictionRunner):
                         for provider in self.admitted_sources[key])}
                 summary['totals_strategy_lab'] = run_lab(history, self.inventory_matches,
                     fresh_contexts, self.registry, self.registry.now,
-                    allowed_books={'bet365', 'unibet', '1xbet', 'betano'})
+                    allowed_books={'bet365', 'unibet', 'williamhill', '1xbet', 'betano', 'pari'})
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary['totals_strategy_lab'] = {'status': 'error', 'error_type': type(exc).__name__}
             write_json('.data/exports/latest-goal-research.json', summary['goal_research'])

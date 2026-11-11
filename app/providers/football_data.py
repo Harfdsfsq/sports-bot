@@ -146,6 +146,11 @@ class FootballDataContextProvider:
             if rows:
                 preview['sample_matches'] = rows[:3]
             if not rows:
+                if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+                    from app.services.football_data_team_context import fetch_team_contexts
+                    fallback = await fetch_team_contexts(self, soccer_matches, stats)
+                    stats['contexts_built'] = len(fallback)
+                    return fallback, stats, preview
                 return {}, stats, preview
 
             mapping: dict[str, dict[str, Any]] = {}
@@ -287,6 +292,12 @@ class FootballDataContextProvider:
                     'source': context.source,
                 })
 
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            missing = [m for m in soccer_matches if m.match_key not in contexts]
+            if missing:
+                from app.services.football_data_team_context import fetch_team_contexts
+                contexts.update(await fetch_team_contexts(self, missing, stats))
+                stats['contexts_built'] = len(contexts)
         return contexts, stats, preview
 
     def supports_match(self, match: Match) -> bool:

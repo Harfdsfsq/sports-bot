@@ -296,6 +296,9 @@ class PredictionRunner:
             )
             return None
 
+    async def _fetch_additional_offers(self, matches):
+        return {}, {}
+
     async def run_once(self) -> dict[str, Any]:
         started_at = datetime.now(UTC).isoformat()
         logger.info('Starting prediction run at %s', started_at)
@@ -392,6 +395,8 @@ class PredictionRunner:
                 'sportlogic': sportlogic_offers,
                 'bzzoiro': bzzoiro_offers,
             }
+            extra_offer_maps, extra_offer_stats = await self._fetch_additional_offers(filtered_matches)
+            offer_maps.update(extra_offer_maps)
             merged_offers = self._merge_offers(*offer_maps.values())
             market_signals: dict[str, dict[str, Any]] = {}
             market_monitor_stats: dict[str, Any] = {'enabled': False}
@@ -702,6 +707,7 @@ class PredictionRunner:
                 'self_history': self_history_stats,
                 'market_monitor': market_monitor_stats,
             }
+            source_stats.update(extra_offer_stats)
             mode_counts: dict[str, int] = defaultdict(int)
             for candidate in publishable_candidates:
                 mode_counts[str(candidate.model_mode)] += 1
