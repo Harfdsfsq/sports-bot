@@ -1337,7 +1337,10 @@ class SStatsContextProvider:
             return cache[raw]
 
         canonical = form_team_key(raw)
-        if canonical in canonical_keys and same_history_team_identity(raw, [canonical]):
+        # form_team_key already encodes the squad. Its appended "women" /
+        # "reserves" marker is an internal key, not a second provider name.
+        # Raw history names and fixture-bound IDs are checked separately.
+        if canonical in canonical_keys:
             cache[raw] = canonical
             return canonical
 

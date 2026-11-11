@@ -65,3 +65,37 @@ Run `run-bot` on `fix/coverage-integrity-a-only` with `dry_run=true`,
 `price_watch_only=false`, `max_picks=2`. Check accepted/rejected SStats contexts,
 ESPN assigned/matched events, near-window coverage, and the V4 declaration.
 Do not count the offline matches as newly collected production contexts.
+
+## Production follow-up: run 43109415991
+
+Started 12 November at 01:10 Moscow time; summary at 01:14. The intended SHA
+`51ba8d1` ran successfully. ESPN accepted 12 contexts from two shared scoreboard
+requests, with no errors or partial defaults. Weather enriched 12 fixtures.
+SStats accepted 52 rebuilt contexts from nine requests, including 30 targeted
+history contexts; all provider request error counters were zero.
+
+Overall fresh pairs fell from 49 to 39, and the changing near window had only
+7/30 ready (23.3%), despite 19/30 having sporting context. Sixteen near fixtures
+lacked lines and eleven lacked context. No pair had two independent sporting
+context sources. Inventory stayed at 150. This is not a completed coverage goal.
+
+The check exposed a regression in the prior patch: `_resolve_team_key` compared
+raw squad names to internally generated keys such as `dc power w women` using
+the strict *provider-name* matcher. That rejected valid women's history before
+the separately enforced raw-name/team-ID checks. Exact generated keys now take
+the existing canonical fast path. Raw row admission still checks squad, ID and
+country, and the FAS/Santa Ana contamination remains rejected.
+
+Old empty SStats attempts for squad fixtures are retried once under identity
+revision 2. New empty attempts retain their normal backoff; rate limits, auth
+failures and deferred attempts are not bypassed. This avoids waiting two hours
+for a negative cache created by the repaired defect. Shared API budgets remain
+enforced. V5 preserves V4 history (zero eligible prospective observations in
+this run) and declares the repaired input version without retrospective credit.
+
+The inspected run published no Telegram forecasts; its only quality-review
+candidate was rejected by `bad_historical_segment_guard`. Forward V4 remained
+collecting, with no validated profit. Three specialized CI checks passed; the
+general CI passed lint, mypy on 44 files and imports, then failed the full suite
+with 96 failed / 1,016 passed. This CI result belongs to the inspected SHA, not
+the follow-up fix.

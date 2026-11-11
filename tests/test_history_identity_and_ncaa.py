@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.providers.espn import EspnContextProvider
-from app.providers.sstats import SStatsContextProvider
+from app.providers.sstats import SStatsContextProvider, form_team_key
 from app.schemas import Match, MatchContext
 from app.services.context_admission import admit_context, identity_reasons
 from app.services.daily_match_registry import DailyMatchRegistry, match_identity
@@ -39,6 +39,50 @@ def test_city_and_squad_are_not_history_identity(home, history):
 def test_reviewed_spelling_and_abbreviation_survive():
     assert same_history_team_identity("JS Djidjel", ["JS Jijel"])
     assert same_history_team_identity("AGF Aarhus", ["AGF"])
+
+
+@pytest.mark.parametrize("team", ["DC Power W", "Brooklyn W", "América W", "Toluca W", "Arsenal U21", "Arsenal II"])
+def test_generated_squad_key_is_not_treated_as_a_provider_alias(team):
+    provider = SStatsContextProvider(SimpleNamespace())
+    key = form_team_key(team)
+    assert provider._resolve_team_key(team, {key}, {}) == key
+
+
+def test_womens_form_is_rebuilt_with_verified_ids():
+    m = fixture("DC Power W", "Brooklyn W", "USL Super League")
+    receipt = {"id": 42, "date": m.commence_time.isoformat(),
+               "homeTeam": {"id": 24659, "name": "DC Power W", "country": {"code": "US"}},
+               "awayTeam": {"id": 24657, "name": "Brooklyn W", "country": {"code": "US"}}}
+    m.metadata.update({"sstats_fixture": receipt, "provider_source_ids": {"sstats": "42"}})
+    rows = [{"id": i + 1, "date": (NOW - timedelta(days=i + 1)).isoformat(), "status": 8,
+             "homeTeam": receipt["homeTeam"], "awayTeam": receipt["awayTeam"],
+             "homeFTResult": 1, "awayFTResult": 2, "season": {"league": {"name": "USL Super League"}}}
+            for i in range(3)]
+    p = SStatsContextProvider(SimpleNamespace())
+    contexts = p._build_team_form_contexts([m], rows, {"skip_goal_history_archive": True, "team_form_examples": []})
+    assert m.match_key in contexts
+    assert identity_reasons("sstats", m, contexts[m.match_key]) == []
+    assert contexts[m.match_key].payload["home_recent"][0]["team_id"] == 24659
+
+
+@pytest.mark.parametrize("result,revision,expected", [
+    ("empty", None, True), ("empty", 2, False),
+    ("rate_limited", None, False), ("unavailable", None, False), ("deferred", None, False),
+])
+def test_squad_key_repair_retries_old_empty_once_but_respects_backoff(tmp_path, result, revision, expected):
+    m = fixture("DC Power W", "Brooklyn W")
+    registry = DailyMatchRegistry(tmp_path / "registry.json", NOW)
+    registry.sync([m])
+    registry.record("sstats", "context", [m], {}, {}, observed_at=NOW)
+    attempt = registry.data["matches"][match_identity(m)]["attempts"]["sstats:context"]
+    assert attempt["history_identity_revision"] == 2
+    attempt["result"] = result
+    if revision is None:
+        attempt.pop("history_identity_revision")
+    assert bool(registry.targets("sstats", "context")) is expected
+    if expected:
+        registry.record("sstats", "context", [m], {}, {}, observed_at=NOW)
+        assert not registry.targets("sstats", "context")
 
 
 def test_contaminated_cached_form_is_quarantined_without_deleting_receipt(tmp_path):

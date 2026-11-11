@@ -12,10 +12,11 @@ from zoneinfo import ZoneInfo
 
 from app.schemas import Match, MatchContext, Offer
 from app.services.context_admission import admit_context, identity_reasons
-from app.services.fixture_identity import team_identity_key
+from app.services.fixture_identity import squad_identity, team_identity_key
 from app.services.market_period import is_full_match_market
 
 TZ = ZoneInfo("Europe/Moscow")
+SSTATS_HISTORY_IDENTITY_REVISION = 2
 
 
 def parse_time(value):
@@ -379,7 +380,14 @@ class DailyMatchRegistry:
                     and retry - attempted <= timedelta(minutes=120)
                     and (refresh_soon or not self.has_role(match, "context"))
                 )
-                if not (urgent_odds_retry or urgent_context_retry):
+                repaired_squad_retry = (
+                    provider == "sstats"
+                    and role == "context"
+                    and attempt.get("result") == "empty"
+                    and attempt.get("history_identity_revision") != SSTATS_HISTORY_IDENTITY_REVISION
+                    and any(any(squad_identity(team)) for team in (match.home_team, match.away_team))
+                )
+                if not (urgent_odds_retry or urgent_context_retry or repaired_squad_retry):
                     continue
             lane = 0 if minutes <= 240 else 1 if minutes <= 480 else 2
             has_current_role = self.has_role(match, role)
@@ -467,6 +475,8 @@ class DailyMatchRegistry:
                 "at": fetched.isoformat(),
                 "retry_after": (fetched + timedelta(minutes=delay)).isoformat(),
                 "result": result,
+                **({"history_identity_revision": SSTATS_HISTORY_IDENTITY_REVISION}
+                   if provider == "sstats" and role == "context" else {}),
             }
         self.save()
         return counts
