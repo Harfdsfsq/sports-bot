@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from app.services.daily_match_registry import parse_time, read_json, write_json
-from app.services.fixture_identity import same_team_identity
+from app.services.fixture_identity import same_history_team_identity
 
 
 def retain_history(provider, rows, observed_at, *, binding_rows=None):
@@ -84,7 +84,7 @@ def retain_history(provider, rows, observed_at, *, binding_rows=None):
             team = row.get(side + "Team") or {}
             fresh_names = names.get(str(team.get("id")), set())
             if fresh_names:
-                agrees = all(same_team_identity(team["name"], [name]) for name in fresh_names)
+                agrees = all(same_history_team_identity(team["name"], [name]) for name in fresh_names)
                 bound = bound or agrees
                 compatible = compatible and agrees
         if bound and compatible:

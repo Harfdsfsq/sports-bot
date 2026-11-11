@@ -12,16 +12,17 @@ from pathlib import Path
 
 from app.services.api_budget import BudgetedAsyncClient
 from app.services.daily_match_registry import parse_time, read_json, write_json
-from app.services.fixture_identity import direct_fixture_identity, same_team_identity
+from app.services.fixture_identity import direct_fixture_identity, history_team_name, same_history_team_identity
 
 
 def verified_fixture(match):
     """A stored discovery receipt binds IDs only to its original exact fixture."""
-    row = match.metadata.get("sstats_fixture") or {}
+    metadata = getattr(match, "metadata", None) or {}
+    row = metadata.get("sstats_fixture") or {}
     if not isinstance(row, dict) or not all(isinstance(row.get(side + "Team"), dict) for side in ("home", "away")):
         return None
     sid = str(row.get("id") or "")
-    ids = match.metadata.get("provider_source_ids") or match.metadata.get("day_inventory_source_ids") or {}
+    ids = metadata.get("provider_source_ids") or metadata.get("day_inventory_source_ids") or {}
     start = parse_time(row.get("date"))
     raw = row.get("dateUtc")
     if start is None and isinstance(raw, (int, float)) and not isinstance(raw, bool) and 946684800 <= raw <= 4102444800:
@@ -58,13 +59,13 @@ def team_bindings(matches, rows):
                 names_by_id.setdefault(sid, set()).add(name)
     bindings = {}
     for match in matches:
-        for name in (match.home_team, match.away_team):
+        for name in (history_team_name(match, "home"), history_team_name(match, "away")):
             candidates = [
-                sid for sid, names in names_by_id.items() if any(same_team_identity(name, [n]) for n in names)
+                sid for sid, names in names_by_id.items() if any(same_history_team_identity(name, [n]) for n in names)
             ]
             if len(candidates) == 1:
                 sid = candidates[0]
-                if all(same_team_identity(name, [n]) for n in names_by_id[sid]):
+                if all(same_history_team_identity(name, [n]) for n in names_by_id[sid]):
                     bindings[sid] = name
     return bindings
 
@@ -88,7 +89,7 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
         m
         for m in sorted(matches, key=lambda m: m.commence_time)
         if all(
-            any(same_team_identity(name, [bound]) for bound in bindings.values()) for name in (m.home_team, m.away_team)
+            any(same_history_team_identity(name, [bound]) for bound in bindings.values()) for name in (history_team_name(m, "home"), history_team_name(m, "away"))
         )
     ]
     report["eligible_targets"] = len(eligible)
@@ -98,7 +99,7 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
         {
             sid: name
             for sid, name in bindings.items()
-            if any(same_team_identity(name, [m.home_team, m.away_team]) for m in targets)
+            if any(same_history_team_identity(name, [history_team_name(m, "home"), history_team_name(m, "away")]) for m in targets)
         }
         if targets
         else bindings
@@ -203,12 +204,12 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
             # A provider ignoring Team must not smuggle another target's form
             # through a correct opponent ID and an incompatible team ID.
             if any(
-                str(team.get("id")) != bid and same_team_identity(name, [str(team.get("name") or "")])
+                str(team.get("id")) != bid and same_history_team_identity(name, [str(team.get("name") or "")])
                 for bid, name in bindings.items()
             ):
                 bad_identity = True
             if expected:
-                matches_name = same_team_identity(expected, [str(team.get("name") or "")])
+                matches_name = same_history_team_identity(expected, [str(team.get("name") or "")])
                 bound = bound or matches_name
                 bad_identity = bad_identity or not matches_name
         status = row.get("status")

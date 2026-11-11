@@ -8,6 +8,8 @@ from app.services.fixture_identity import (
     direct_fixture_identity,
     fixture_squad_reasons,
     football_data_context_matches,
+    history_team_matches,
+    same_history_team_identity,
     same_team_identity,
 )
 from app.utils import parse_datetime
@@ -35,7 +37,11 @@ def identity_reasons(provider, match, context):
     ):
         for side, team in [("home", match.home_team), ("away", match.away_team)]:
             rows = payload.get(side + "_recent") or []
-            if not rows or any(not same_team_identity(team, [row.get("team") or row.get("team_key")]) for row in rows):
+            if not rows or any(
+                not (history_team_matches(match, side, row) if provider == "sstats"
+                     else same_history_team_identity(team, [row.get("team") or row.get("team_key")]))
+                for row in rows
+            ):
                 return ["context_team_identity_mismatch"]
             for row in rows:
                 try:
@@ -59,15 +65,17 @@ def identity_reasons(provider, match, context):
             return ["context_fixture_identity_mismatch"]
     if provider == "espn":
         event = payload.get("event") or {}
+        from app.services.espn_identity import espn_event_identity
+
         competition = (event.get("competitions") or [{}])[0]
-        teams = {c.get("homeAway"): c.get("team") or {} for c in competition.get("competitors") or []}
-        event_identity = {
-            "home_aliases": [teams.get("home", {}).get(k) for k in ("displayName", "shortDisplayName", "name")],
-            "away_aliases": [teams.get("away", {}).get(k) for k in ("displayName", "shortDisplayName", "name")],
-            "commence_time": event.get("date") or competition.get("date"),
-        }
+        state = ((competition.get("status") or event.get("status") or {}).get("type") or {}).get("state")
+        if state and state != "pre":
+            return ["context_fixture_not_prematch"]
+        event_identity = espn_event_identity(event, context.details.get("espn_league_slug"))
         if not direct_fixture_identity(match, event_identity):
             return ["context_fixture_identity_mismatch"]
+        if context.details.get("espn_partial_context"):
+            return ["partial_sporting_context"]
     if provider == "api_football":
         teams = payload.get("teams") or {}
         if any(

@@ -12,7 +12,14 @@ import httpx
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.services.api_budget import BudgetedAsyncClient
-from app.services.fixture_identity import reviewed_team_alias_match, same_team_identity, squad_identity
+from app.services.fixture_identity import (
+    history_team_matches,
+    history_team_name,
+    reviewed_team_alias_match,
+    same_history_team_identity,
+    same_team_identity,
+    squad_identity,
+)
 from app.utils import (
     canonicalize_league_name,
     canonicalize_team_name,
@@ -1045,6 +1052,8 @@ class SStatsContextProvider:
             team_rows[home_key].append(
                 {
                     "team": home,
+                    "team_id": (row.get("homeTeam") or {}).get("id"),
+                    "team_country": ((row.get("homeTeam") or {}).get("country") or {}).get("code"),
                     "opponent": away,
                     "team_key": home_key,
                     "opponent_key": away_key,
@@ -1059,6 +1068,8 @@ class SStatsContextProvider:
             team_rows[away_key].append(
                 {
                     "team": away,
+                    "team_id": (row.get("awayTeam") or {}).get("id"),
+                    "team_country": ((row.get("awayTeam") or {}).get("country") or {}).get("code"),
                     "opponent": home,
                     "team_key": away_key,
                     "opponent_key": home_key,
@@ -1082,19 +1093,19 @@ class SStatsContextProvider:
         min_sample = max(2, int(getattr(self.settings, "sstats_form_min_sample_per_team", 3) or 3))
 
         for match in matches:
-            home_key = self._resolve_team_key(match.home_team, canonical_keys, resolved_cache)
-            away_key = self._resolve_team_key(match.away_team, canonical_keys, resolved_cache)
+            home_key = self._resolve_team_key(history_team_name(match, "home"), canonical_keys, resolved_cache)
+            away_key = self._resolve_team_key(history_team_name(match, "away"), canonical_keys, resolved_cache)
             if not home_key or not away_key:
                 continue
 
             home_recent = self._select_recent_rows(
-                [row for row in team_rows.get(home_key, []) if same_team_identity(match.home_team, [row["team"]])],
+                [row for row in team_rows.get(home_key, []) if history_team_matches(match, "home", row)],
                 league_name=match.league_name,
                 before=match.commence_time,
                 limit=recent_limit,
             )
             away_recent = self._select_recent_rows(
-                [row for row in team_rows.get(away_key, []) if same_team_identity(match.away_team, [row["team"]])],
+                [row for row in team_rows.get(away_key, []) if history_team_matches(match, "away", row)],
                 league_name=match.league_name,
                 before=match.commence_time,
                 limit=recent_limit,
@@ -1326,7 +1337,7 @@ class SStatsContextProvider:
             return cache[raw]
 
         canonical = form_team_key(raw)
-        if canonical in canonical_keys and same_team_identity(raw, [canonical]):
+        if canonical in canonical_keys and same_history_team_identity(raw, [canonical]):
             cache[raw] = canonical
             return canonical
 
@@ -1337,7 +1348,7 @@ class SStatsContextProvider:
         best_key: str | None = None
         best_score = 0.0
         for key in sorted(canonical_keys):
-            if not same_team_identity(raw, [key]):
+            if not same_history_team_identity(raw, [key]):
                 continue
             score = team_similarity(raw, key)
             if score > best_score:

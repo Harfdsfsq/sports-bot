@@ -39,6 +39,14 @@ def fingerprint(rules):
     ):
         tree = ast.parse((ROOT / "app/services" / f"{name}.py").read_text())
         pieces.append(ast.dump(tree, include_attributes=False))
+    # Identity and provider transformations change the forecast input too.
+    for path in (
+        "app/providers/sstats.py", "app/providers/espn.py",
+        "app/services/fixture_identity.py", "app/services/espn_identity.py",
+        "app/services/sstats_targeted_history.py", "app/services/team_result_archive.py",
+    ):
+        pieces.append(ast.dump(ast.parse((ROOT / path).read_text()), include_attributes=False))
+    pieces.append(json.dumps(json.loads((ROOT / "config/espn_team_aliases.json").read_text()), sort_keys=True))
     return hashlib.sha256("\n".join(pieces).encode()).hexdigest()
 
 
