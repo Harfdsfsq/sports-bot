@@ -28,17 +28,17 @@ jobs:
       - name: Ruff lint changed Python files
         shell: bash
         run: |
-          mapfile -t files < <(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- app scripts | grep -E '\\.py$' || true)
+          mapfile -t files < <(git diff --diff-filter=ACMR --name-only "origin/${{ github.base_ref || github.event.repository.default_branch }}...HEAD" -- app scripts | grep -E '\.py$' || true)
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No changed Python files to lint"
           else
-            printf 'Linting %s changed Python files\\n' "${#files[@]}"
+            printf 'Linting %s changed Python files\n' "${#files[@]}"
             ruff check "${files[@]}" --config pyproject.toml
           fi
       - name: Mypy type smoke changed Python files
         shell: bash
         run: |
-          mapfile -t files < <(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- app scripts | grep -E '\\.py$' || true)
+          mapfile -t files < <(git diff --diff-filter=ACMR --name-only "origin/${{ github.base_ref || github.event.repository.default_branch }}...HEAD" -- app scripts | grep -E '\.py$' || true)
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No changed Python files to type-check"
           else

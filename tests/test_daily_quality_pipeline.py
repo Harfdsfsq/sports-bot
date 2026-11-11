@@ -128,7 +128,7 @@ def test_provider_id_conflicts_do_not_overwrite_verified_mapping(tmp_path):
 def test_daily_cap_and_smaller_b_limit(profile, tmp_path):
     now = datetime.now(UTC)
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
-    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
     runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
     runner.registry.data['published'] = [{'tier': 'B'}] * 4
     runner.daily_rejections = {}
@@ -517,7 +517,7 @@ def test_same_match_cannot_be_published_in_another_market_next_run(profile, tmp_
     from collections import Counter
     now = datetime.now(UTC)
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
-    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
     runner.registry = DailyMatchRegistry(tmp_path/'registry.json', now)
     runner.registry.data['published'] = [{'match_id': 'miami-id', 'tier': 'B'}]
     runner.daily_rejections = Counter()
@@ -1775,7 +1775,7 @@ def test_report_timeout_is_not_retried_or_leaked(monkeypatch,capsys):
 def test_a_only_mode_never_sends_b_even_with_higher_ev(profile, tmp_path, monkeypatch):
     monkeypatch.setenv('DAILY_LIVE_A_ONLY', 'true')
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
-    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
     runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', datetime.now(UTC))
     runner.daily_rejections = {}
     def c(tier, ev):

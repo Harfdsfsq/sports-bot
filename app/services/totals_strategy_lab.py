@@ -16,6 +16,7 @@ from app.services.daily_match_registry import parse_time, match_identity
 from app.services.daily_goal_probability import total_probability
 from app.services.fixture_identity import same_team_identity
 from app.services.market_period import is_full_match_market
+from app.utils import normalize_bookmaker_name
 
 PROTOCOL = 'priced-totals-v1'
 MODELS = ('market', 'current_goals', 'opponent', 'shrunk', 'overdispersed', 'calibrated')
@@ -94,7 +95,7 @@ def paired_lines(offers, now, allowed_books=None):
         if at is None or not -timedelta(seconds=5) <= now-at <= timedelta(minutes=15):
             continue
         book = offer.bookmaker.strip().lower()
-        if allowed_books is not None and book not in allowed_books:
+        if allowed_books is not None and normalize_bookmaker_name(book) not in {normalize_bookmaker_name(b) for b in allowed_books}:
             continue
         side = str(offer.selection).lower()
         side = 'over' if side.startswith('over') else 'under' if side.startswith('under') else None
@@ -280,7 +281,8 @@ def run_lab(history, matches, contexts, registry, now, allowed_books=None):
         if sample is None or sample < 6 or context.expected_home is None or context.expected_away is None:
             skips['unverified_sample'] += 1
             continue
-        offers = registry.cached('odds_api_io', 'offers', match) or []
+        offers = [offer for provider in ('odds_api_io', 'sstats_pari', 'the_odds')
+                  for offer in (registry.cached(provider, 'offers', match) or [])]
         lines = paired_lines(offers, now, allowed_books)
         if not lines:
             skips['no_fresh_paired_prices'] += 1

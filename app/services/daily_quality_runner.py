@@ -51,6 +51,9 @@ class DailyTelegramPublisher(TelegramPublisher):
         # Paper candidates must never enter a Telegram forecast, even if a
         # future caller accidentally passes a mixed list.
         bets[:] = [candidate for candidate in bets if not (getattr(candidate, 'source_summary', None) or {}).get('reserve_only')]
+        release = getattr(self, 'live_admission', None)
+        if not self.settings.publish_dry_run and release:
+            bets[:] = [candidate for candidate in bets if release(candidate)]
         check = getattr(self, 'confirm_price', None)
         if check:
             approved = []
@@ -101,6 +104,7 @@ class DailyQualityRunner(PredictionRunner):
         self.telegram.on_confirm = self._record_confirmed
         self.telegram.confirm_price = self._confirm_publication_price
         self.telegram.bankroll_projection = self._project_bankroll_summary
+        self.telegram.live_admission = self._live_admission
         self.registry = DailyMatchRegistry(Path('.data/daily_quality/registry.json'), datetime.now(UTC))
         self.work_plan = {}
         self.daily_rejections = Counter()
@@ -109,6 +113,17 @@ class DailyQualityRunner(PredictionRunner):
             self.state.pending_bets(include_shadow=False), datetime.now(UTC)) if self.market_monitor else 0)
         if self.market_monitor:
             self.market_monitor.restore_trial_tracking(self.state.pending_bets(include_shadow=True), datetime.now(UTC))
+
+    def _live_admission(self, candidate):
+        from app.services.prospective_validation import REPORT_PATH, live_admission
+        try:
+            valid, reason = live_admission(read_json(REPORT_PATH,{}),
+                candidate.source_summary.get('goal_model_version'), datetime.now(UTC))
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
+            valid, reason = False, 'validation_error'
+        if not valid:
+            self.daily_rejections['pilot_'+reason] += 1
+        return valid
 
     def _record_confirmed(self, candidate):
         identity = candidate.source_summary['registry_match_id']
@@ -238,6 +253,19 @@ class DailyQualityRunner(PredictionRunner):
                 considered = set(attempted_keys) | set(data)
                 recorded_targets = [m for m in targets if m.match_key in considered]
             stats['unattempted_matches'] = len(targets) - len(recorded_targets)
+            if name=='sstats_pari':
+                from app.services.fixture_identity import direct_fixture_identity
+                bindings=preview.get('verified_fixture_bindings') or {}
+                for match in targets:
+                    binding=bindings.get(match.match_key) or {}
+                    sid=str(binding.get('event_id') or '')
+                    if sid.isdecimal() and int(sid)>0 and direct_fixture_identity(match,binding,tolerance_hours=.25):
+                        entry=self.registry.data['matches'][match_identity(match)]
+                        old=entry['provider_ids'].get(name)
+                        if old is None or str(old)==sid:
+                            entry['provider_ids'][name]=sid
+                        else:
+                            self.registry.data['issues'].append({'kind':'provider_id_conflict','provider':name,'match_id':match_identity(match)})
             stats['registry_record'] = self.registry.record(name, role, recorded_targets, data, stats)
             self.registry.now = datetime.now(UTC)
         # Rebuild at completion: early cache entries may expire during API calls.
@@ -405,6 +433,17 @@ class DailyQualityRunner(PredictionRunner):
         sent_match_ids = {row.get('match_id') for row in published if row.get('match_id')}
         sent_match_ids.update(key for key, entry in self.registry.data['matches'].items() if entry.get('publication'))
         remaining = max(0, 5 - len(published))
+        pilot_rules = None
+        if not self.settings.publish_dry_run:
+            from app.services.prospective_validation import policy
+            pilot_rules = policy()
+            candidates = [candidate for candidate in candidates if self._live_admission(candidate)]
+            remaining = min(remaining,max(0,pilot_rules['pilot_max_per_day']-len(published)))
+            balance = self.state.bankroll_summary(self.settings)
+            peak = float(balance.get('peak_balance') or 0)
+            if peak<=0 or 100*(1-float(balance.get('current_balance') or 0)/peak)>=pilot_rules['pilot_max_drawdown_pct']:
+                self.daily_rejections['pilot_drawdown_stop'] += len(candidates)
+                candidates = []
         if remaining == 0:
             self.daily_rejections['daily_publication_limit'] += len(candidates)
             self.selected_daily = []
@@ -414,6 +453,8 @@ class DailyQualityRunner(PredictionRunner):
             return (c.ev_pct, float(c.source_summary.get('quality_score') or 0))
         selected, matches = [], set()
         cap = min(remaining, int(self.settings.max_picks_per_run))
+        if pilot_rules:
+            cap = min(cap,pilot_rules['pilot_max_per_run'])
         for candidate in sorted(candidates, key=priority, reverse=True):
             if os.getenv('DAILY_LIVE_A_ONLY', 'false').lower() == 'true' and candidate.source_summary.get('publication_tier') != 'A':
                 self.daily_rejections['b_tier_observation_only'] = self.daily_rejections.get('b_tier_observation_only', 0) + 1
@@ -432,6 +473,8 @@ class DailyQualityRunner(PredictionRunner):
                 continue
             tier = candidate.source_summary['publication_tier']
             pct = 0.5 if tier == 'A' else 0.25
+            if pilot_rules:
+                pct = min(pct,pilot_rules['pilot_stake_pct'])
             amount = min(float(candidate.stake_amount), float(candidate.bankroll_snapshot) * pct / 100)
             if amount <= 0:
                 continue
@@ -529,7 +572,8 @@ class DailyQualityRunner(PredictionRunner):
 
     async def _watch_pre_kickoff_prices(self):
         from app.services.daily_price_watch import watch_pre_kickoff_prices
-        return await watch_pre_kickoff_prices(self.registry, self.market_monitor, self.odds_api_io)
+        return await watch_pre_kickoff_prices(self.registry, self.market_monitor, self.odds_api_io,
+                                            pari_provider=getattr(self,'sstats_pari',None))
 
     async def run_once(self):
         try:
@@ -540,6 +584,7 @@ class DailyQualityRunner(PredictionRunner):
             summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
             summary['goal_model_version'] = GOAL_MODEL_VERSION
             from app.services.goal_research import GoalHistory
+            history = None
             try:
                 history = GoalHistory()
                 refresh = await history.refresh_overdue_results(self.settings, datetime.now(UTC))
@@ -555,11 +600,22 @@ class DailyQualityRunner(PredictionRunner):
                         self.registry.cached(provider, 'context', match) is not None
                         for match in self.inventory_matches if match.match_key == key
                         for provider in self.admitted_sources[key])}
+                if history is None:
+                    raise ValueError('goal_history_unavailable')
                 summary['totals_strategy_lab'] = run_lab(history, self.inventory_matches,
                     fresh_contexts, self.registry, self.registry.now,
                     allowed_books={'bet365', 'unibet', 'williamhill', '1xbet', 'betano', 'pari'})
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary['totals_strategy_lab'] = {'status': 'error', 'error_type': type(exc).__name__}
+            try:
+                from app.services.prospective_validation import REPORT_PATH, evaluate
+                if history is None:
+                    raise ValueError('goal_history_unavailable')
+                summary['prospective_validation'] = evaluate(history,datetime.now(UTC))
+                history.save()
+            except (OSError,ValueError,TypeError,KeyError,AttributeError,OverflowError) as exc:
+                summary['prospective_validation'] = {'status':'error','live_ready':False,'error_type':type(exc).__name__}
+            write_json(REPORT_PATH,summary['prospective_validation'])
             write_json('.data/exports/latest-goal-research.json', summary['goal_research'])
             write_json('.data/exports/latest-totals-strategy-lab.json', summary.get('totals_strategy_lab', {'status': 'not_completed'}))
             summary['clv_recovered_from_ledger'] = self.clv_recovered

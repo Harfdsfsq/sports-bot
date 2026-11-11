@@ -195,6 +195,12 @@ def render(summary):
         if 'cached_matches' in odds_stats:
             lines.append(f"С учётом свежего кеша Odds-api.io: линии для {odds_stats['cached_matches']} матчей. Это общее покрытие двух аккаунтов без повторного подсчёта матчей.")
     source_stats = summary.get('source_stats') or {}
+    validation = summary.get('prospective_validation') or {}
+    if validation:
+        metrics = validation.get('metrics') or {}
+        lines.append(f"Проверка на новых матчах: стратегия {validation.get('primary_strategy', 'не определена')}; завершено {metrics.get('bets', 0)}, игровых дней {metrics.get('days', 0)}. Статус: {validation.get('status', 'нет данных')}.")
+        if not validation.get('live_ready'):
+            lines.append("Реальные публикации закрыты до подтверждения модели; исторический плюс другой стратегии не даёт автоматического допуска.")
     pari = source_stats.get('sstats_pari') or {}
     backup = source_stats.get('the_odds') or {}
     if backup.get('enabled'):

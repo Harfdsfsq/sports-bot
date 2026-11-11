@@ -39,7 +39,10 @@ class SStatsPariDailyProvider:
     async def confirm_offers(self, matches):
         return await self.fetch_offers(matches, confirmation=True)
 
-    async def fetch_offers(self, matches, *, confirmation=False):
+    async def watch_offers(self, matches):
+        return await self.fetch_offers(matches, closing_watch=True)
+
+    async def fetch_offers(self, matches, *, confirmation=False, closing_watch=False):
         stats = {
             "enabled": os.getenv("DAILY_PARI_ENABLED", "false").lower() == "true",
             "api_key_present": bool(self.api_key),
@@ -50,10 +53,12 @@ class SStatsPariDailyProvider:
             "skip_reasons": {},
         }
         result = {}
+        preview = {'verified_fixture_bindings':{}}
         if not stats["enabled"] or not self.api_key or not self.limit:
             return result, stats, {}
         now = datetime.now(UTC)
-        targets = [m for m in matches if timedelta(minutes=30) <= m.commence_time - now <= timedelta(hours=4)]
+        lead = timedelta(microseconds=1) if closing_watch else timedelta(minutes=30)
+        targets = [m for m in matches if lead <= m.commence_time - now <= timedelta(hours=4)]
         targets.sort(key=lambda m: m.commence_time)
         stats["attempted_match_keys"] = [m.match_key for m in targets]
         blocked = False
@@ -135,6 +140,8 @@ class SStatsPariDailyProvider:
                     skip("no_unique_fixture")
                     continue
                 selected.append((match, found[0]))
+                preview['verified_fixture_bindings'][match.match_key] = {
+                    **identity(found[0]), 'event_id':str(info(found[0]).get('eventId') or '')}
             # One source event must not become two independent fixture receipts.
             # Prefer a unique exact provider spelling; ties remain unresolved.
             groups = {}
@@ -199,4 +206,4 @@ class SStatsPariDailyProvider:
                 if parsed:
                     result[match.match_key] = parsed
                     stats["offers_parsed"] += len(parsed)
-        return result, stats, {}
+        return result, stats, preview

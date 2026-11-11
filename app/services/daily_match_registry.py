@@ -92,6 +92,9 @@ class DailyMatchRegistry:
             if lookahead and not (self.now < match.commence_time <= self.now + timedelta(hours=4)):
                 continue
             key = match_identity(match)
+            alias=self.data.get('aliases',{}).get(key)
+            if alias in entries:
+                key=alias
             day_count = sum(parse_time(row['match']['commence_time']).astimezone(TZ).date().isoformat() == day for row in entries.values())
             if key not in entries and day_count >= (60 if lookahead else 300):
                 continue
@@ -123,7 +126,10 @@ class DailyMatchRegistry:
                 second = entries[drop]
                 b = second['match']
                 reviewed = {frozenset(('js djidjel', 'js jijel')), frozenset(('rc arbaa', 'rc arba'))}
-                if not any(frozenset((a[side].lower(), b[side].lower())) in reviewed for side in ('home_team', 'away_team')):
+                ids, incoming = first.get('provider_ids', {}), second.get('provider_ids', {})
+                shared=any(str(ids[p])==str(incoming[p]) and str(ids[p]).strip()
+                           for p in ids.keys() & incoming.keys())
+                if not shared and not any(frozenset((a[side].lower(), b[side].lower())) in reviewed for side in ('home_team', 'away_team')):
                     continue
                 if (a['sport_key'] != b['sport_key'] or parse_time(a['commence_time']) != parse_time(b['commence_time'])
                     or not same_team_identity(a['home_team'], [b['home_team']])
@@ -146,6 +152,9 @@ class DailyMatchRegistry:
                     if publication.get('match_id') == drop:
                         publication['match_id'] = keep
                 del entries[drop]
+                self.data.setdefault('aliases',{})[drop]=keep
+                for alias,target in list(self.data['aliases'].items()):
+                    if target==drop:self.data['aliases'][alias]=keep
                 self.data['issues'].append({'kind': 'exact_alias_duplicate_merged', 'kept': keep, 'removed': drop})
 
     def matches(self):

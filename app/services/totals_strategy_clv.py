@@ -40,9 +40,10 @@ def update(matches, offers, now):
                     and at and parse_time(row['created_at']) < at <= now < kickoff
                     and kickoff-at <= timedelta(minutes=45) and now-at <= timedelta(seconds=60)
                     and 1 < offer.price < 100):
-                    quotes.append(offer.price)
+                    quotes.append((offer.price,at))
             if quotes:
-                row.update(reference_price=min(quotes), reference_at=now.isoformat())
+                price, observed = min(quotes)
+                row.update(reference_price=price, reference_at=observed.isoformat())
         if now >= kickoff:
             if row.get('reference_price'):
                 row.update(status='measured', clv_pct=(row['odds']/row['reference_price']-1)*100)
