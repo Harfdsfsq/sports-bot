@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fcntl
+import re
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -10,7 +11,7 @@ from pathlib import Path
 import httpx
 
 from app.services.daily_match_registry import parse_time, read_json, write_json
-from app.services.fixture_identity import direct_fixture_identity
+from app.services.fixture_identity import direct_fixture_identity, squad_identity
 
 
 def quote_identity_reason(payload, match, event_id):
@@ -18,8 +19,19 @@ def quote_identity_reason(payload, match, event_id):
         return "event_id_mismatch"
     if payload.get("status") != "pending":
         return "event_not_pending"
+    names = {side: payload.get(side) for side in ("home", "away")}
+    league = payload.get("league") or {}
+    league_name = league.get("name", "") if isinstance(league, dict) else str(league)
+    # Some bookmaker feeds omit W from team labels but explicitly retain the
+    # women's competition. Only supply the missing marker within that receipt.
+    women_competition = bool(re.search(r"\b(?:women|womens|ladies|femenil|femenina|femenino)\b", league_name, re.I))
+    if women_competition and all(squad_identity(getattr(match, side + "_team"))[2] for side in names):
+        for side, name in names.items():
+            youth, reserve, women = squad_identity(name)
+            if isinstance(name, str) and name.strip() and not (youth or reserve or women):
+                names[side] = name + " W"
     if not direct_fixture_identity(match, {
-        "home": payload.get("home"), "away": payload.get("away"),
+        **names,
         "commence_time": payload.get("date"),
     }, tolerance_hours=0.25):
         return "fixture_identity_mismatch"
@@ -39,7 +51,8 @@ def _reserve(event_id, now):
         receipt = state["receipts"].get(str(event_id), {})
         receipt = receipt if isinstance(receipt, dict) else {}
         observed = parse_time(receipt.get("observed_at"))
-        if observed and timedelta(0) <= now - observed < timedelta(minutes=30):
+        ttl = timedelta(hours=6) if receipt.get("reason") == "bookmaker_count_unknown" else timedelta(minutes=30)
+        if observed and timedelta(0) <= now - observed < ttl:
             return receipt, False
         if state.get("day") != now.date().isoformat():
             state["day"], state["used"] = now.date().isoformat(), 0
@@ -101,7 +114,8 @@ async def audit_empty_lines(provider, client, accounts, mapping, diagnostics, st
                         receipt["reason"] = "invalid_metadata_response"
                     else:
                         reason = quote_identity_reason(payload, match, event_id)
-                        receipt["fixture"] = {k: payload.get(k) for k in ("id", "home", "away", "date", "status")}
+                        receipt["fixture"] = {k: payload.get(k) for k in ("id", "home", "away", "date", "status", "league")}
+                        receipt["metadata_fields"] = sorted(payload)
                         count = payload.get("bookmakerCount")
                         receipt.update(status=payload.get("status"), identity_verified=reason is None)
                         if reason:

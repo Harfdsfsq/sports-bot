@@ -206,6 +206,18 @@ class SStatsPariDailyProvider:
                         stats["response_errors"] += 1
                         return None, None
                     return response.json(), datetime.now(UTC)
+                except (httpx.ConnectTimeout, httpx.ConnectError) as exc:
+                    stats["response_errors"] += 1
+                    stats["last_error_type"] = type(exc).__name__
+                    # One retry per provider call, charged to the same physical
+                    # budget. Never retry auth/plan/rate-limit responses here.
+                    if not stats.get("connection_retries") and self.used < ceiling:
+                        stats["connection_retries"] = 1
+                        recovered = await get(path, params)
+                        if recovered[0] is not None:
+                            stats["connection_recoveries"] = 1
+                        return recovered
+                    return None, None
                 except (TimeoutError, OSError, ValueError, httpx.HTTPError) as exc:
                     stats["response_errors"] += 1
                     stats["last_error_type"] = type(exc).__name__

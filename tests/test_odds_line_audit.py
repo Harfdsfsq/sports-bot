@@ -218,3 +218,78 @@ def test_malformed_odds_response_does_not_become_a_coverage_claim(tmp_path, monk
     assert not offers and stats["response_errors"] > 0
     assert stats["line_availability_audit"]["requests"] == 0
     assert preview["line_diagnostics"][m.match_key]["reason"] == "incomplete_or_rejected_response"
+
+
+@pytest.mark.parametrize("change,accepted", [
+    ("valid", True), ("no_competition_marker", False), ("wrong_team", False),
+    ("wrong_squad", False), ("wrong_time", False), ("live", False), ("reversed", False),
+])
+def test_omitted_w_marker_requires_explicit_womens_competition(change, accepted):
+    m = replace(fixture(), home_team="DC Power W", away_team="Brooklyn W")
+    raw = {**payload(m), "home": "DC Power FC", "away": "Brooklyn FC",
+           "league": {"name": "USA - USL Super League, Women"}}
+    if change == "no_competition_marker":
+        raw["league"] = {"name": "USL Super League"}
+    elif change == "wrong_team":
+        raw["home"] = "Washington Spirit"
+    elif change == "wrong_squad":
+        raw["home"] = "DC Power U21"
+    elif change == "wrong_time":
+        raw["date"] = (m.commence_time + timedelta(hours=1)).isoformat()
+    elif change == "live":
+        raw["status"] = "live"
+    elif change == "reversed":
+        raw["home"], raw["away"] = raw["away"], raw["home"]
+    assert (quote_identity_reason(raw, m, 100) is None) is accepted
+
+
+@pytest.mark.parametrize("old_revision,expected", [(True, True), (False, False)])
+def test_repaired_womens_quote_is_retried_once(tmp_path, old_revision, expected):
+    m = replace(fixture(), home_team="DC Power W", away_team="Brooklyn W")
+    now = datetime.now(UTC)
+    r = DailyMatchRegistry(tmp_path / "registry.json", now)
+    r.sync([m])
+    stats = {"line_diagnostics": {m.match_key: {"accounts": {"account1": {"result": "fixture_identity_mismatch"}}}}}
+    r.record("odds_api_io", "offers", [m], {}, stats, observed_at=now)
+    if old_revision:
+        r.data["matches"][match_identity(m)]["attempts"]["odds_api_io:offers"].pop("quote_identity_revision")
+    assert bool(r.targets("odds_api_io", "offers")) is expected
+    if expected:
+        r.record("odds_api_io", "offers", [m], {}, stats, observed_at=now)
+        assert not r.targets("odds_api_io", "offers")
+
+
+@pytest.mark.parametrize("mode", ["recovers", "fails_again", "rate_limit"])
+def test_pari_transient_connection_failure_has_one_budgeted_retry(tmp_path, monkeypatch, mode):
+    from app.providers.sstats_pari_daily import SStatsPariDailyProvider
+    from tests.test_native_data_expansion import client_patch as pari_client_patch
+    from tests.test_native_data_expansion import fixture as pari_fixture
+    from tests.test_native_data_expansion import pari_row
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DAILY_PARI_ENABLED", "true")
+    now = datetime.now(UTC)
+    calls = []
+
+    def response(url, params):
+        calls.append(url)
+        if mode == "rate_limit":
+            return 429, {}
+        if len(calls) == 1 or mode == "fails_again":
+            raise httpx.ConnectTimeout("test connection timeout")
+        if url.endswith("/matches"):
+            return 200, {"data": [pari_row(now)], "TotalCount": 1}
+        return 200, {"data": pari_row(now)}
+
+    pari_client_patch(monkeypatch, "app.providers.sstats_pari_daily", response)
+    p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
+    result, stats, _ = asyncio.run(p.fetch_offers([pari_fixture(now)]))
+    assert bool(result) is (mode == "recovers")
+    assert stats["requests"] == len(calls)
+    if mode == "rate_limit":
+        assert len(calls) == 1 and not stats.get("connection_retries")
+    else:
+        assert stats["connection_retries"] == 1
+        assert stats.get("connection_recoveries", 0) == (1 if mode == "recovers" else 0)
+        if mode == "fails_again":
+            assert len(calls) == 2

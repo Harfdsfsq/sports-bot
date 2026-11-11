@@ -623,6 +623,9 @@ class OddsApiIoProvider:
                             from app.services.odds_line_audit import quote_identity_reason
 
                             account_result = diagnostics[row["match"].match_key]["accounts"][str(account["name"])]
+                            account_result["returned_fixture"] = {
+                                k: event_payload.get(k) for k in ("id", "home", "away", "date", "status", "league", "homeId", "awayId")
+                            }
                             reason = quote_identity_reason(event_payload, row["match"], event_id)
                             if reason:
                                 account_result["result"] = reason

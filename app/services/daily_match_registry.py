@@ -17,6 +17,7 @@ from app.services.market_period import is_full_match_market
 
 TZ = ZoneInfo("Europe/Moscow")
 SSTATS_HISTORY_IDENTITY_REVISION = 2
+ODDS_QUOTE_IDENTITY_REVISION = 2
 
 
 def parse_time(value):
@@ -387,7 +388,15 @@ class DailyMatchRegistry:
                     and attempt.get("history_identity_revision") != SSTATS_HISTORY_IDENTITY_REVISION
                     and any(any(squad_identity(team)) for team in (match.home_team, match.away_team))
                 )
-                if not (urgent_odds_retry or urgent_context_retry or repaired_squad_retry):
+                repaired_womens_quote_retry = (
+                    provider == "odds_api_io" and role == "offers"
+                    and attempt.get("result") == "empty"
+                    and attempt.get("quote_identity_revision") != ODDS_QUOTE_IDENTITY_REVISION
+                    and all(squad_identity(team)[2] for team in (match.home_team, match.away_team))
+                    and any(r.get("result") == "fixture_identity_mismatch"
+                            for r in attempt.get("diagnostic", {}).get("accounts", {}).values())
+                )
+                if not (urgent_odds_retry or urgent_context_retry or repaired_squad_retry or repaired_womens_quote_retry):
                     continue
             lane = 0 if minutes <= 240 else 1 if minutes <= 480 else 2
             has_current_role = self.has_role(match, role)
@@ -477,6 +486,8 @@ class DailyMatchRegistry:
                 "result": result,
                 **({"history_identity_revision": SSTATS_HISTORY_IDENTITY_REVISION}
                    if provider == "sstats" and role == "context" else {}),
+                **({"quote_identity_revision": ODDS_QUOTE_IDENTITY_REVISION}
+                   if provider == "odds_api_io" and role == "offers" else {}),
                 **({"diagnostic": stats["line_diagnostics"][match.match_key]}
                    if role == "offers" and match.match_key in stats.get("line_diagnostics", {}) else {}),
             }
