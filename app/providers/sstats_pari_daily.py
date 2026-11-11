@@ -9,7 +9,7 @@ import httpx
 
 from app.providers.sstats_pari_parser import extract_list, parse_offers, unwrap
 from app.services.api_budget import BudgetedAsyncClient
-from app.services.fixture_identity import direct_fixture_identity
+from app.services.fixture_identity import direct_fixture_identity, team_identity_key
 
 
 def info(row):
@@ -55,8 +55,14 @@ class SStatsPariDailyProvider:
         now = datetime.now(UTC)
         targets = [m for m in matches if timedelta(minutes=30) <= m.commence_time - now <= timedelta(hours=4)]
         targets.sort(key=lambda m: m.commence_time)
+        stats["attempted_match_keys"] = [m.match_key for m in targets]
         blocked = False
         ceiling = self.limit if confirmation or self.limit <= 4 else self.limit - 4
+        stats.update(
+            collection_request_limit=ceiling,
+            physical_request_limit=self.limit,
+            confirmation_requests_reserved=max(0, self.limit - ceiling),
+        )
 
         def skip(reason):
             stats["skip_reasons"][reason] = stats["skip_reasons"].get(reason, 0) + 1
@@ -129,12 +135,38 @@ class SStatsPariDailyProvider:
                     skip("no_unique_fixture")
                     continue
                 selected.append((match, found[0]))
+            # One source event must not become two independent fixture receipts.
+            # Prefer a unique exact provider spelling; ties remain unresolved.
+            groups = {}
+            for match, event in selected:
+                groups.setdefault(str(info(event).get("eventId")), []).append((match, event))
+            selected = []
+            stats["duplicate_detail_requests_avoided"] = 0
+            for group in groups.values():
+                if len(group) == 1:
+                    selected.extend(group)
+                    continue
+                exact = [
+                    (m, e)
+                    for m, e in group
+                    if team_identity_key(m.home_team) == team_identity_key(identity(e)["home"])
+                    and team_identity_key(m.away_team) == team_identity_key(identity(e)["away"])
+                ]
+                stats["duplicate_detail_requests_avoided"] += len(group) - int(len(exact) == 1)
+                if len(exact) == 1:
+                    selected.extend(exact)
+                else:
+                    skip("ambiguous_runtime_fixture")
+            selected.sort(key=lambda item: item[0].commence_time)
             for match, event in selected[:8]:
                 sid = str(info(event).get("eventId") or "")
                 if not sid.isdecimal() or int(sid) <= 0:
                     skip("invalid_event_id")
                     continue
                 payload, observed = await get("/Pari/match/" + sid)
+                if payload is None:
+                    skip("detail_budget_or_request_failure")
+                    continue
                 detail = unwrap(payload)
                 if (
                     not isinstance(detail, dict)

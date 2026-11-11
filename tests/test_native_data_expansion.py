@@ -364,3 +364,45 @@ def test_final_confirmation_routes_to_actual_quote_source(source, book):
     )
     assert asyncio.run(r._confirm_publication_price(c))
     assert calls == [source] and c.source_summary["final_price_confirmation"]["book"] == book
+
+
+def test_pari_reports_only_near_targets_and_deduplicates_provider_events(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DAILY_PARI_ENABLED", "true")
+    now = datetime.now(UTC)
+    m = fixture(now)
+    alias = replace(m, home_team="AS Arsenal", home_team_norm="as arsenal")
+    later = replace(m, home_team="Later", home_team_norm="later", commence_time=now + timedelta(hours=8))
+    calls = []
+    row = pari_row(now)
+
+    def response(url, params):
+        calls.append(url)
+        return 200, {"data": [row], "TotalCount": 1} if url.endswith("/matches") else {"data": row}
+
+    client_patch(monkeypatch, "app.providers.sstats_pari_daily", response)
+    p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
+    result, stats, _ = asyncio.run(p.fetch_offers([alias, m, later]))
+    assert set(result) == {m.match_key}
+    assert later.match_key not in stats["attempted_match_keys"]
+    assert stats["duplicate_detail_requests_avoided"] == 1 and len(calls) == 2
+    assert stats["collection_request_limit"] == 8 and stats["confirmation_requests_reserved"] == 4
+
+
+def test_pari_ambiguous_exact_runtime_aliases_never_duplicate_quotes(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DAILY_PARI_ENABLED", "true")
+    now = datetime.now(UTC)
+    m = fixture(now)
+    alias = replace(m, home_team="Arsenal FC", home_team_norm="arsenal fc")
+    calls = []
+
+    def response(url, params):
+        calls.append(url)
+        return 200, {"data": [pari_row(now)], "TotalCount": 1}
+
+    client_patch(monkeypatch, "app.providers.sstats_pari_daily", response)
+    p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
+    result, stats, _ = asyncio.run(p.fetch_offers([m, alias]))
+    assert not result and len(calls) == 1
+    assert stats["skip_reasons"]["ambiguous_runtime_fixture"] == 1
