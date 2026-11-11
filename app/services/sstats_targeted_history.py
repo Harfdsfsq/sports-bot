@@ -43,11 +43,19 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
         'targets': len(matches), 'bound_teams': 0, 'requests': 0,
         'rows': 0, 'rejected_rows': 0, 'cache_hits': 0, 'contexts': 0,
     }
-    targets = sorted(matches, key=lambda m: m.commence_time)[:8]
-    bindings = team_bindings(targets, seed_rows)
+    # Bind before applying the eight-fixture request cap. Unsupported early
+    # fixtures must not prevent a later fixture with two known IDs being tried.
+    bindings = team_bindings(matches, seed_rows)
+    report['available_bound_teams'] = len(bindings)
+    eligible = [m for m in sorted(matches, key=lambda m: m.commence_time)
+                if all(any(same_team_identity(name, [bound]) for bound in bindings.values())
+                       for name in (m.home_team, m.away_team))]
+    report['eligible_targets'] = len(eligible)
+    targets = eligible[:8]
+    report['selected_targets'] = len(targets)
+    bindings = {sid: name for sid, name in bindings.items()
+                if any(same_team_identity(name, [m.home_team, m.away_team]) for m in targets)} if targets else bindings
     report['bound_teams'] = len(bindings)
-    targets = [m for m in targets if all(any(same_team_identity(name, [bound]) for bound in bindings.values())
-                                        for name in (m.home_team, m.away_team))]
     request_limit = min(6, max(0, int(os.getenv('DAILY_SSTATS_TARGETED_REQUEST_LIMIT', '4'))))
     if not bindings:
         report['stop_reason'] = 'no_unique_team_ids'

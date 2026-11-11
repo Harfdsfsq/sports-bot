@@ -336,3 +336,48 @@ def test_targeted_history_rejects_target_name_on_wrong_opponent_id(tmp_path,monk
     stats={'requests':0}
     result=asyncio.run(enrich_team_form(p,[fixture(now)],seed,stats,{'team_form_examples':[]}))
     assert not result and stats['targeted_history']['rejected_rows']==8
+
+
+def test_targeted_selection_finds_bound_fixture_after_unknown_prefix(tmp_path,monkeypatch):
+    from dataclasses import replace
+    from app.services.sstats_targeted_history import enrich_team_form
+    monkeypatch.chdir(tmp_path);monkeypatch.setenv('PUBLICATION_PROFILE','daily_quality')
+    p=targeted_provider();now=datetime.now(UTC);known=fixture(now);rows=history_rows(now);calls=[]
+    unknown=[replace(known,home_team=f'Unknown home {i}',away_team=f'Unknown away {i}',
+                     commence_time=known.commence_time-timedelta(minutes=20-i)) for i in range(8)]
+    def response(params):
+        calls.append(params)
+        assert params['Team']=='10,11'
+        return {'data':rows if params['Offset']==0 else []}
+    targeted_client(monkeypatch,response)
+    stats={'requests':0}
+    result=asyncio.run(enrich_team_form(p,unknown+[known],rows,stats,{'team_form_examples':[]}))
+    assert set(result)=={known.match_key}
+    assert stats['targeted_history']['targets']==9
+    assert stats['targeted_history']['eligible_targets']==1
+    assert stats['targeted_history']['selected_targets']==1
+    assert len(calls)==2
+
+
+def test_targeted_selection_caps_fixtures_and_queried_team_ids(tmp_path,monkeypatch):
+    from dataclasses import replace
+    from app.services.sstats_targeted_history import enrich_team_form
+    monkeypatch.chdir(tmp_path);monkeypatch.setenv('PUBLICATION_PROFILE','daily_quality')
+    p=targeted_provider();now=datetime.now(UTC);matches=[];seed=[];calls=[]
+    names=['Arsenal','Barcelona','Chelsea','Dortmund','Everton','Feyenoord',
+           'Galatasaray','Hamburg','Inter','Juventus','Kobenhavn','Liverpool',
+           'Monaco','Napoli','Olympiakos','Porto','Qarabaq','Rangers','Spartak','Tottenham']
+    for i in range(10):
+        m=replace(fixture(now),home_team=names[2*i],away_team=names[2*i+1],
+                  commence_time=now+timedelta(minutes=40+i))
+        matches.append(m)
+        seed.append({'homeTeam':{'id':10+2*i,'name':m.home_team},
+                     'awayTeam':{'id':11+2*i,'name':m.away_team}})
+    def response(params):calls.append(params);return {'data':[]}
+    targeted_client(monkeypatch,response)
+    stats={'requests':0}
+    asyncio.run(enrich_team_form(p,matches,seed,stats,{'team_form_examples':[]}))
+    report=stats['targeted_history']
+    assert report['eligible_targets']==10 and report['selected_targets']==8
+    assert report['available_bound_teams']==20 and report['bound_teams']==16
+    assert calls[0]['Team']==','.join(str(i) for i in range(10,26))
