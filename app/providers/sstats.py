@@ -4,17 +4,15 @@ import asyncio
 import os
 from collections import defaultdict
 from dataclasses import replace
-from datetime import datetime, timedelta, timezone
-UTC = timezone.utc
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
 
-from app.services.api_budget import BudgetedAsyncClient
-from app.services.fixture_identity import same_team_identity, squad_identity, reviewed_team_alias_match
-
 from app.config import Settings
 from app.schemas import Match, MatchContext
+from app.services.api_budget import BudgetedAsyncClient
+from app.services.fixture_identity import reviewed_team_alias_match, same_team_identity, squad_identity
 from app.utils import (
     canonicalize_league_name,
     canonicalize_team_name,
@@ -45,27 +43,32 @@ def form_team_key(name):
     base = canonicalize_team_name(name)
     # Research and offline checks must preserve squads too, regardless of profile.
     youth, reserve, women = squad_identity(name)
-    suffix = ['u' + age for age in youth]
+    suffix = ["u" + age for age in youth]
     if reserve:
-        suffix.append('reserves')
+        suffix.append("reserves")
     if women:
-        suffix.append('women')
-    return ' '.join([base, *suffix]).strip()
+        suffix.append("women")
+    return " ".join([base, *suffix]).strip()
 
 
 def conflicting_history_indices(rows: list[dict]) -> set[int]:
     """Do not use two incompatible results for the same pair within six hours."""
-    conflicting = set()
+    conflicting: set[int] = set()
     for i, first in enumerate(rows):
         for j in range(i):
             second = rows[j]
-            if not same_team_identity(str(first.get('opponent') or ''), [str(second.get('opponent') or '')]) or first.get('league') != second.get('league'):
+            if not same_team_identity(
+                str(first.get("opponent") or ""), [str(second.get("opponent") or "")]
+            ) or first.get("league") != second.get("league"):
                 continue
             try:
-                a, b = parse_datetime(str(first['start'])), parse_datetime(str(second['start']))
+                a, b = parse_datetime(str(first["start"])), parse_datetime(str(second["start"]))
             except (ValueError, TypeError, KeyError):
                 continue
-            if abs((a - b).total_seconds()) <= 6 * 3600 and (first.get('goals_for'), first.get('goals_against')) != (second.get('goals_for'), second.get('goals_against')):
+            if abs((a - b).total_seconds()) <= 6 * 3600 and (first.get("goals_for"), first.get("goals_against")) != (
+                second.get("goals_for"),
+                second.get("goals_against"),
+            ):
                 conflicting.update((i, j))
     return conflicting
 
@@ -73,13 +76,15 @@ def conflicting_history_indices(rows: list[dict]) -> set[int]:
 class SStatsContextProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        self._daily_source_observed_at: str | None = None
+        self._daily_partial_rows: list[dict[str, Any]] = []
         self.url = "https://api.sstats.net/Games/list"
         self.max_http_requests = max(
             0,
             int(
                 os.getenv("SSTATS_MAX_HTTP_REQUESTS_PER_RUN")
                 or os.getenv("SSTATS_REQUESTS_MAX_PER_RUN")
-                or getattr(settings, "sstats_requests_max_per_run", 0)
+                or getattr(settings, "sstats_requests_max_per_run", "0")
                 or 0
             ),
         )
@@ -154,18 +159,24 @@ class SStatsContextProvider:
             rows = await self._fetch_rows(client, from_date, to_date, stats)
 
         stats["rows_fetched"] = len(rows)
-        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             from app.services.team_result_archive import retain_history
-            rows, stats['team_result_archive'] = retain_history(self, rows, getattr(self, '_daily_source_observed_at', None))
+
+            rows, stats["team_result_archive"] = retain_history(
+                self, rows, getattr(self, "_daily_source_observed_at", None)
+            )
         if rows:
             preview["sample_rows"] = rows[:3]
 
         contexts: dict[str, MatchContext] = {}
         best_scores: dict[str, float] = {}
-        direct_window_hours = max(
-            int(getattr(self.settings, "match_start_tolerance_hours", 12) or 12),
-            int(getattr(self.settings, "fallback_match_start_tolerance_hours", 48) or 48),
-        ) + 6
+        direct_window_hours = (
+            max(
+                int(getattr(self.settings, "match_start_tolerance_hours", 12) or 12),
+                int(getattr(self.settings, "fallback_match_start_tolerance_hours", 48) or 48),
+            )
+            + 6
+        )
         earliest_match_start = min(m.commence_time for m in soccer_matches).astimezone(UTC)
         latest_match_start = max(m.commence_time for m in soccer_matches).astimezone(UTC)
 
@@ -185,7 +196,9 @@ class SStatsContextProvider:
                 stats["unmatched_rows"] += 1
                 continue
 
-            if event_start < earliest_match_start - timedelta(hours=direct_window_hours) or event_start > latest_match_start + timedelta(hours=direct_window_hours):
+            if event_start < earliest_match_start - timedelta(
+                hours=direct_window_hours
+            ) or event_start > latest_match_start + timedelta(hours=direct_window_hours):
                 stats["unmatched_rows"] += 1
                 if len(preview["unmatched_rows"]) < 10:
                     preview["unmatched_rows"].append(
@@ -241,7 +254,10 @@ class SStatsContextProvider:
                 continue
 
             context = self._row_to_context(row)
-            if os.getenv("PUBLICATION_PROFILE") == "daily_quality" and context.details.get("expected_goals_basis") == "market_odds":
+            if (
+                os.getenv("PUBLICATION_PROFILE") == "daily_quality"
+                and context.details.get("expected_goals_basis") == "market_odds"
+            ):
                 stats["market_only_rows_skipped"] = stats.get("market_only_rows_skipped", 0) + 1
                 continue
             if context.expected_home is None and context.expected_away is None:
@@ -291,55 +307,103 @@ class SStatsContextProvider:
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             # A 45-day window can contain fewer than six games per team.
             # Extend only when a near fixture lacks usable sporting history.
-            min_sample = max(2, int(os.getenv('DAILY_B_MIN_TEAM_SAMPLE', '6')))
-            missing = [m for m in soccer_matches
-                       if timedelta(minutes=30) <= m.commence_time - now_utc <= timedelta(hours=4)
-                       and m.match_key not in contexts
-                       and min((fallback_contexts.get(m.match_key).details.get(side + '_recent_count', 0)
-                                if fallback_contexts.get(m.match_key) else 0)
-                               for side in ('home', 'away')) < min_sample]
-            stats['history_extension_targets'] = len(missing)
+            min_sample = max(2, int(os.getenv("DAILY_B_MIN_TEAM_SAMPLE", "6")))
+            missing = [
+                m
+                for m in soccer_matches
+                if timedelta(minutes=30) <= m.commence_time - now_utc <= timedelta(hours=4)
+                and m.match_key not in contexts
+                and min(
+                    (
+                        fallback_contexts.get(m.match_key).details.get(side + "_recent_count", 0)
+                        if fallback_contexts.get(m.match_key)
+                        else 0
+                    )
+                    for side in ("home", "away")
+                )
+                < min_sample
+            ]
+            stats["history_extension_targets"] = len(missing)
             if missing:
                 from app.services.sstats_targeted_history import enrich_team_form
+
                 targeted = await enrich_team_form(self, missing, rows, stats, preview)
-                improved = {key: value for key, value in targeted.items()
-                            if min(value.details.get(side + '_recent_count', 0) for side in ('home', 'away'))
-                            > min((fallback_contexts[key].details.get(side + '_recent_count', 0)
-                                   if key in fallback_contexts else 0) for side in ('home', 'away'))}
+                improved = {
+                    key: value
+                    for key, value in targeted.items()
+                    if min(value.details.get(side + "_recent_count", 0) for side in ("home", "away"))
+                    > min(
+                        (
+                            fallback_contexts[key].details.get(side + "_recent_count", 0)
+                            if key in fallback_contexts
+                            else 0
+                        )
+                        for side in ("home", "away")
+                    )
+                }
                 fallback_contexts.update(improved)
-                stats['targeted_history']['improved'] = len(improved)
-                missing = [m for m in missing
-                           if min((fallback_contexts[m.match_key].details.get(side + '_recent_count', 0)
-                                   if m.match_key in fallback_contexts else 0) for side in ('home', 'away')) < min_sample]
-            extended_days = min(120, max(lookback_days, int(os.getenv('DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS', '90'))))
-            if missing and extended_days > lookback_days and os.getenv('DAILY_SSTATS_BROAD_EXTENSION_ENABLED', 'true').lower() == 'true':
-                original_observed = getattr(self, '_daily_source_observed_at', None)
+                stats["targeted_history"]["improved"] = len(improved)
+                missing = [
+                    m
+                    for m in missing
+                    if min(
+                        (
+                            fallback_contexts[m.match_key].details.get(side + "_recent_count", 0)
+                            if m.match_key in fallback_contexts
+                            else 0
+                        )
+                        for side in ("home", "away")
+                    )
+                    < min_sample
+                ]
+            extended_days = min(120, max(lookback_days, int(os.getenv("DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS", "90"))))
+            if (
+                missing
+                and extended_days > lookback_days
+                and os.getenv("DAILY_SSTATS_BROAD_EXTENSION_ENABLED", "true").lower() == "true"
+            ):
+                original_observed = getattr(self, "_daily_source_observed_at", None)
                 self._daily_partial_rows = []
                 self._daily_partial_observed_at = None
                 try:
                     async with BudgetedAsyncClient(timeout=self.settings.sstats_timeout_seconds) as client:
-                        older = await asyncio.wait_for(self._fetch_rows(client,
-                            (min(now_utc, min_dt) - timedelta(days=extended_days)).date().isoformat(),
-                            (parse_datetime(from_date) - timedelta(days=1)).date().isoformat(), stats, newest_first=True),
-                            timeout=min(120, max(1, float(os.getenv('DAILY_SSTATS_EXTENSION_TIMEOUT_SECONDS', '60')))))
+                        older = await asyncio.wait_for(
+                            self._fetch_rows(
+                                client,
+                                (min(now_utc, min_dt) - timedelta(days=extended_days)).date().isoformat(),
+                                (parse_datetime(from_date) - timedelta(days=1)).date().isoformat(),
+                                stats,
+                                newest_first=True,
+                            ),
+                            timeout=min(120, max(1, float(os.getenv("DAILY_SSTATS_EXTENSION_TIMEOUT_SECONDS", "60")))),
+                        )
                 except TimeoutError:
                     older = self._daily_partial_rows
                     if self._daily_partial_observed_at:
                         self._daily_source_observed_at = self._daily_partial_observed_at
-                    stats['history_extension_timeout'] = True
-                    stats['history_extension_partial'] = bool(older)
-                older_observed = getattr(self, '_daily_source_observed_at', None)
+                    stats["history_extension_timeout"] = True
+                    stats["history_extension_partial"] = bool(older)
+                older_observed = getattr(self, "_daily_source_observed_at", None)
                 stamps = [v for v in (original_observed, older_observed) if v]
                 self._daily_source_observed_at = min(stamps) if stamps else None
-                stats['history_extension_rows'] = len(older)
+                stats["history_extension_rows"] = len(older)
                 if older:
                     deeper = self._build_team_form_contexts(missing, rows + older, preview)
-                    improved = {key: value for key, value in deeper.items()
-                                if min(value.details.get(side + '_recent_count', 0) for side in ('home', 'away'))
-                                > min((fallback_contexts[key].details.get(side + '_recent_count', 0)
-                                       if key in fallback_contexts else 0) for side in ('home', 'away'))}
+                    improved = {
+                        key: value
+                        for key, value in deeper.items()
+                        if min(value.details.get(side + "_recent_count", 0) for side in ("home", "away"))
+                        > min(
+                            (
+                                fallback_contexts[key].details.get(side + "_recent_count", 0)
+                                if key in fallback_contexts
+                                else 0
+                            )
+                            for side in ("home", "away")
+                        )
+                    }
                     fallback_contexts.update(improved)
-                    stats['history_extension_improved'] = len(improved)
+                    stats["history_extension_improved"] = len(improved)
         added_fallback = 0
         for match_key, context in fallback_contexts.items():
             existing = contexts.get(match_key)
@@ -360,7 +424,11 @@ class SStatsContextProvider:
         stats["team_form_contexts_built"] = added_fallback
 
         bzz_preview: list[dict[str, Any]] = []
-        if os.getenv("PUBLICATION_PROFILE") != "daily_quality" and getattr(self.settings, "bzzoiro_api_key", None) and bool(getattr(self.settings, "enable_bzzoiro_context", True)):
+        if (
+            os.getenv("PUBLICATION_PROFILE") != "daily_quality"
+            and getattr(self.settings, "bzzoiro_api_key", None)
+            and bool(getattr(self.settings, "enable_bzzoiro_context", True))
+        ):
             timeout = float(getattr(self.settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
             async with BudgetedAsyncClient(timeout=timeout) as client:
                 bzz_contexts, bzz_stats, bzz_preview = await self._fetch_bzzoiro_contexts(client, soccer_matches)
@@ -398,16 +466,23 @@ class SStatsContextProvider:
         from_date: str,
         to_date: str,
         stats: dict[str, Any],
-        *, newest_first: bool = False,
+        *,
+        newest_first: bool = False,
     ) -> list[dict[str, Any]]:
         daily_cache = os.getenv("PUBLICATION_PROFILE") == "daily_quality"
         if daily_cache:
             from pathlib import Path
+
             from app.services.daily_match_registry import parse_time, read_json, write_json
+
             cache_path = Path(f".data/provider_cache/sstats-history-v5-{from_date}-{to_date}.json")
             saved = read_json(cache_path, {})
             observed = parse_time(saved.get("observed_at"))
-            if observed and timedelta(0) <= datetime.now(UTC) - observed < self._history_cache_ttl(to_date) and saved.get("rows"):
+            if (
+                observed
+                and timedelta(0) <= datetime.now(UTC) - observed < self._history_cache_ttl(to_date)
+                and saved.get("rows")
+            ):
                 self._daily_source_observed_at = observed.isoformat()
                 stats["history_cache_reused"] = len(saved["rows"])
                 return saved["rows"]
@@ -424,22 +499,30 @@ class SStatsContextProvider:
             if daily_cache:
                 window_path = Path(f".data/provider_cache/sstats-window-v5-{window_from}-{window_to}.json")
                 saved_window = read_json(window_path, {})
-                window_observed = parse_time(saved_window.get('observed_at'))
-                if window_observed and timedelta(0) <= datetime.now(UTC) - window_observed < self._history_cache_ttl(window_to) and isinstance(saved_window.get('rows'), list):
-                    batch_rows = saved_window['rows']
+                window_observed = parse_time(saved_window.get("observed_at"))
+                if (
+                    window_observed
+                    and timedelta(0) <= datetime.now(UTC) - window_observed < self._history_cache_ttl(window_to)
+                    and isinstance(saved_window.get("rows"), list)
+                ):
+                    batch_rows = saved_window["rows"]
                     observations.append(window_observed)
-                    stats['history_windows_cache_hits'] = stats.get('history_windows_cache_hits', 0) + 1
+                    stats["history_windows_cache_hits"] = stats.get("history_windows_cache_hits", 0) + 1
             if batch_rows is None:
                 if self._http_budget_exhausted(stats):
                     continue
                 stats["chunk_windows_requested"] = int(stats.get("chunk_windows_requested", 0) or 0) + 1
-                errors_before = stats.get('response_errors', 0)
+                errors_before = stats.get("response_errors", 0)
                 batch_rows = await self._fetch_rows_window(client, window_from, window_to, stats)
                 if daily_cache:
                     window_observed = datetime.now(UTC)
                     observations.append(window_observed)
-                    if stats.get('response_errors', 0) == errors_before and not stats.get('budget_exhausted') and not stats.get('history_pagination_incomplete'):
-                        write_json(window_path, {'observed_at': window_observed.isoformat(), 'rows': batch_rows})
+                    if (
+                        stats.get("response_errors", 0) == errors_before
+                        and not stats.get("budget_exhausted")
+                        and not stats.get("history_pagination_incomplete")
+                    ):
+                        write_json(window_path, {"observed_at": window_observed.isoformat(), "rows": batch_rows})
             for row in batch_rows:
                 signature = (
                     row.get("id"),
@@ -459,8 +542,14 @@ class SStatsContextProvider:
                 self._daily_partial_observed_at = min(observations).isoformat() if observations else None
 
         if daily_cache and rows:
-            self._daily_source_observed_at = min(observations).isoformat() if observations else datetime.now(UTC).isoformat()
-            if not stats.get("response_errors") and not stats.get('budget_exhausted') and not stats.get('history_pagination_incomplete'):
+            self._daily_source_observed_at = (
+                min(observations).isoformat() if observations else datetime.now(UTC).isoformat()
+            )
+            if (
+                not stats.get("response_errors")
+                and not stats.get("budget_exhausted")
+                and not stats.get("history_pagination_incomplete")
+            ):
                 write_json(cache_path, {"observed_at": self._daily_source_observed_at, "rows": rows})
         return rows
 
@@ -529,10 +618,10 @@ class SStatsContextProvider:
             if not batch:
                 break
 
-            signature = tuple((str(row.get('id')), str(row.get('date'))) for row in batch)
+            signature = tuple((str(row.get("id")), str(row.get("date"))) for row in batch)
             if signature in seen_pages:
-                stats['history_pagination_incomplete'] = True
-                stats['history_pagination_stop'] = 'repeated_page'
+                stats["history_pagination_incomplete"] = True
+                stats["history_pagination_stop"] = "repeated_page"
                 break
             seen_pages.add(signature)
             rows.extend(batch)
@@ -561,7 +650,7 @@ class SStatsContextProvider:
         backoff = max(0.0, float(getattr(self.settings, "sstats_retry_backoff_seconds", 1.0) or 1.0))
 
         for attempt in range(retries + 1):
-            if request_ceiling is not None and int(stats.get('requests', 0)) >= request_ceiling:
+            if request_ceiling is not None and int(stats.get("requests", 0)) >= request_ceiling:
                 return None
             if self._http_budget_exhausted(stats):
                 return None
@@ -598,13 +687,21 @@ class SStatsContextProvider:
                 stats["budget_exhausted"] = True
                 stats["stop_on_429"] = True
                 # Per-run stop only; do not write daily/monthly state.
-                self.max_http_requests = min(self.max_http_requests, int(stats.get("requests") or 0)) if self.max_http_requests > 0 else self.max_http_requests
+                self.max_http_requests = (
+                    min(self.max_http_requests, int(stats.get("requests") or 0))
+                    if self.max_http_requests > 0
+                    else self.max_http_requests
+                )
                 return None
             if response.status_code >= 500:
                 stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
                 stats["server_error_stop"] = True
                 stats["budget_exhausted"] = True
-                self.max_http_requests = min(self.max_http_requests, int(stats.get("requests") or 0)) if self.max_http_requests > 0 else self.max_http_requests
+                self.max_http_requests = (
+                    min(self.max_http_requests, int(stats.get("requests") or 0))
+                    if self.max_http_requests > 0
+                    else self.max_http_requests
+                )
                 return None
             if attempt >= retries or not self._retryable_status(response.status_code):
                 stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
@@ -732,7 +829,11 @@ class SStatsContextProvider:
                 str(away_obj.get("name") or "").strip() if isinstance(away_obj, dict) else "",
                 str(away_obj.get("short_name") or "").strip() if isinstance(away_obj, dict) else "",
             ]
-            event_league = str((event.get("league") or {}).get("name") or "").strip() if isinstance(event.get("league"), dict) else str(event.get("league") or "").strip()
+            event_league = (
+                str((event.get("league") or {}).get("name") or "").strip()
+                if isinstance(event.get("league"), dict)
+                else str(event.get("league") or "").strip()
+            )
             if not event_home or not event_away:
                 stats["unmatched_rows"] += 1
                 continue
@@ -794,19 +895,21 @@ class SStatsContextProvider:
             elif best_quality == "fuzzy":
                 stats["matched_fuzzy"] += 1
             if len(preview) < 10:
-                preview.append({
-                    "match_key": best_match.match_key,
-                    "match_home": best_match.home_team,
-                    "match_away": best_match.away_team,
-                    "provider_home": event_home,
-                    "provider_away": event_away,
-                    "expected_home": context.expected_home,
-                    "expected_away": context.expected_away,
-                    "source": context.source,
-                    "quality": best_quality,
-                    "score": round(best_score, 2),
-                    "leagues_related": related_leagues,
-                })
+                preview.append(
+                    {
+                        "match_key": best_match.match_key,
+                        "match_home": best_match.home_team,
+                        "match_away": best_match.away_team,
+                        "provider_home": event_home,
+                        "provider_away": event_away,
+                        "expected_home": context.expected_home,
+                        "expected_away": context.expected_away,
+                        "source": context.source,
+                        "quality": best_quality,
+                        "score": round(best_score, 2),
+                        "leagues_related": related_leagues,
+                    }
+                )
         stats["contexts_built"] = len(contexts)
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             for context in contexts.values():
@@ -910,9 +1013,10 @@ class SStatsContextProvider:
         rows: list[dict[str, Any]],
         preview: dict[str, Any],
     ) -> dict[str, MatchContext]:
-        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality' and not preview.get('skip_goal_history_archive'):
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality" and not preview.get("skip_goal_history_archive"):
             from app.services.goal_research import archive_results
-            preview['goal_history'] = archive_results('sstats', rows)
+
+            preview["goal_history"] = archive_results("sstats", rows)
         team_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
         canonical_keys: set[str] = set()
 
@@ -945,7 +1049,7 @@ class SStatsContextProvider:
                     "goals_for": float(home_goals),
                     "goals_against": float(away_goals),
                     "home": True,
-                    **({'history_observed_at':row['_history_observed_at']} if row.get('_history_observed_at') else {}),
+                    **({"history_observed_at": row["_history_observed_at"]} if row.get("_history_observed_at") else {}),
                 }
             )
             team_rows[away_key].append(
@@ -959,7 +1063,7 @@ class SStatsContextProvider:
                     "goals_for": float(away_goals),
                     "goals_against": float(home_goals),
                     "home": False,
-                    **({'history_observed_at':row['_history_observed_at']} if row.get('_history_observed_at') else {}),
+                    **({"history_observed_at": row["_history_observed_at"]} if row.get("_history_observed_at") else {}),
                 }
             )
             canonical_keys.add(home_key)
@@ -1004,12 +1108,12 @@ class SStatsContextProvider:
             total = expected_home + expected_away + 0.82
             home_prob = clamp(expected_home / total, 0.08, 0.82)
             away_prob = clamp(expected_away / total, 0.08, 0.82)
-            league_overlap = int(self._count_league_matches(home_recent, match.league_name) + self._count_league_matches(away_recent, match.league_name))
+            league_overlap = int(
+                self._count_league_matches(home_recent, match.league_name)
+                + self._count_league_matches(away_recent, match.league_name)
+            )
             confidence = clamp(
-                53.0
-                + min(len(home_recent), 4) * 1.6
-                + min(len(away_recent), 4) * 1.6
-                + min(league_overlap, 4) * 0.8,
+                53.0 + min(len(home_recent), 4) * 1.6 + min(len(away_recent), 4) * 1.6 + min(league_overlap, 4) * 0.8,
                 54.0,
                 65.0,
             )
@@ -1032,7 +1136,9 @@ class SStatsContextProvider:
                 confidence=round(confidence, 2),
                 details={
                     "sstats_score_basis": "regulation-preferred-v2",
-                    "sstats_form_weighting_version": "chronological-v1" if os.getenv("PUBLICATION_PROFILE") == "daily_quality" else "legacy-league-order",
+                    "sstats_form_weighting_version": "chronological-v1"
+                    if os.getenv("PUBLICATION_PROFILE") == "daily_quality"
+                    else "legacy-league-order",
                     "sstats_mode": "team_form",
                     "home_team_key": home_key,
                     "away_team_key": away_key,
@@ -1040,17 +1146,23 @@ class SStatsContextProvider:
                     "away_recent_count": len(away_recent),
                     "league_overlap_count": league_overlap,
                     "home_goals_for_avg": round(home_goals_for_avg, 3) if home_goals_for_avg is not None else None,
-                    "home_goals_against_avg": round(home_goals_against_avg, 3) if home_goals_against_avg is not None else None,
+                    "home_goals_against_avg": round(home_goals_against_avg, 3)
+                    if home_goals_against_avg is not None
+                    else None,
                     "away_goals_for_avg": round(away_goals_for_avg, 3) if away_goals_for_avg is not None else None,
-                    "away_goals_against_avg": round(away_goals_against_avg, 3) if away_goals_against_avg is not None else None,
+                    "away_goals_against_avg": round(away_goals_against_avg, 3)
+                    if away_goals_against_avg is not None
+                    else None,
                 },
             )
-            if any(r.get('history_observed_at') for r in home_recent+away_recent):
-                stamps = [str(r['history_observed_at']) for r in home_recent+away_recent if r.get('history_observed_at')]
-                if getattr(self, '_daily_source_observed_at', None):
+            if any(r.get("history_observed_at") for r in home_recent + away_recent):
+                stamps = [
+                    str(r["history_observed_at"]) for r in home_recent + away_recent if r.get("history_observed_at")
+                ]
+                if getattr(self, "_daily_source_observed_at", None):
                     stamps.append(self._daily_source_observed_at)
-                context.details['daily_source_observed_at'] = max(stamps, key=parse_datetime)
-                context.details['history_oldest_observed_at'] = min(stamps, key=parse_datetime)
+                context.details["daily_source_observed_at"] = max(stamps, key=parse_datetime)
+                context.details["history_oldest_observed_at"] = min(stamps, key=parse_datetime)
             contexts[match.match_key] = context
 
             if len(preview["team_form_examples"]) < 10:
@@ -1080,7 +1192,7 @@ class SStatsContextProvider:
     ) -> list[dict[str, Any]]:
         if not rows:
             return []
-        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             conflicts = conflicting_history_indices(rows)
             rows = [row for i, row in enumerate(rows) if i not in conflicts]
 
@@ -1100,34 +1212,43 @@ class SStatsContextProvider:
         selected = same_league[:limit]
         if len(selected) < limit:
             selected.extend(fallback[: max(0, limit - len(selected))])
-        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             # League preference chooses the sample, but recency weights must
             # follow actual dates, not the order of competition buckets.
-            selected.sort(key=lambda row: row['start'], reverse=True)
+            selected.sort(key=lambda row: row["start"], reverse=True)
         return selected
 
     @classmethod
     def chronological_form_context(cls, context: MatchContext) -> MatchContext:
         """Recalculate derived fields from saved history, retaining observation time."""
-        if context.source != 'sstats_form':
+        if context.source != "sstats_form":
             return context
         payload = context.payload or {}
-        if not all(isinstance(payload.get(side), list) and payload[side] for side in ('home_recent', 'away_recent')):
+        if not all(isinstance(payload.get(side), list) and payload[side] for side in ("home_recent", "away_recent")):
             return context
-        recent = {side: sorted(payload[side], key=lambda row: parse_datetime(str(row['start'])), reverse=True)
-                  for side in ('home_recent', 'away_recent')}
-        if all(recent[side] == payload[side] for side in recent) and context.details.get('sstats_form_weighting_version') == 'chronological-v1':
+        recent = {
+            side: sorted(payload[side], key=lambda row: parse_datetime(str(row["start"])), reverse=True)
+            for side in ("home_recent", "away_recent")
+        }
+        if (
+            all(recent[side] == payload[side] for side in recent)
+            and context.details.get("sstats_form_weighting_version") == "chronological-v1"
+        ):
             return context
-        home = cls._blend_expected_goals(recent['home_recent'], recent['away_recent'], side='home')
-        away = cls._blend_expected_goals(recent['home_recent'], recent['away_recent'], side='away')
+        home = cls._blend_expected_goals(recent["home_recent"], recent["away_recent"], side="home")
+        away = cls._blend_expected_goals(recent["home_recent"], recent["away_recent"], side="away")
         if home is None or away is None:
             return context
-        total = home + away + .82
-        return replace(context, payload={**payload, **recent},
-                       expected_home=round(home, 3), expected_away=round(away, 3),
-                       home_win_probability=round(clamp(home / total, .08, .82), 4),
-                       away_win_probability=round(clamp(away / total, .08, .82), 4),
-                       details={**context.details, 'sstats_form_weighting_version': 'chronological-v1'})
+        total = home + away + 0.82
+        return replace(
+            context,
+            payload={**payload, **recent},
+            expected_home=round(home, 3),
+            expected_away=round(away, 3),
+            home_win_probability=round(clamp(home / total, 0.08, 0.82), 4),
+            away_win_probability=round(clamp(away / total, 0.08, 0.82), 4),
+            details={**context.details, "sstats_form_weighting_version": "chronological-v1"},
+        )
 
     @classmethod
     def _blend_expected_goals(
@@ -1144,12 +1265,18 @@ class SStatsContextProvider:
             attack = cls._weighted_average([row.get("goals_for") for row in home_recent])
             opponent_defense = cls._weighted_average([row.get("goals_against") for row in away_recent])
             home_split = cls._weighted_average([row.get("goals_for") for row in home_recent if row.get("home") is True])
-            away_def_split = cls._weighted_average([row.get("goals_against") for row in away_recent if row.get("home") is False])
+            away_def_split = cls._weighted_average(
+                [row.get("goals_against") for row in away_recent if row.get("home") is False]
+            )
         else:
             attack = cls._weighted_average([row.get("goals_for") for row in away_recent])
             opponent_defense = cls._weighted_average([row.get("goals_against") for row in home_recent])
-            home_split = cls._weighted_average([row.get("goals_for") for row in away_recent if row.get("home") is False])
-            away_def_split = cls._weighted_average([row.get("goals_against") for row in home_recent if row.get("home") is True])
+            home_split = cls._weighted_average(
+                [row.get("goals_for") for row in away_recent if row.get("home") is False]
+            )
+            away_def_split = cls._weighted_average(
+                [row.get("goals_against") for row in home_recent if row.get("home") is True]
+            )
 
         values: list[tuple[float, float]] = []
         if attack is not None:
@@ -1218,7 +1345,9 @@ class SStatsContextProvider:
 
     @staticmethod
     def _count_league_matches(rows: list[dict[str, Any]], league_name: str) -> int:
-        return sum(1 for row in rows if SStatsContextProvider._league_related(league_name, str(row.get("league") or "")))
+        return sum(
+            1 for row in rows if SStatsContextProvider._league_related(league_name, str(row.get("league") or ""))
+        )
 
     @staticmethod
     def _league_related(a: str, b: str) -> bool:
@@ -1353,13 +1482,17 @@ class SStatsContextProvider:
 
     @staticmethod
     def _extract_result(row: dict[str, Any], side: str) -> float | None:
-        keys = ["homeResult", "homeFTResult", "HomeScore"] if side == "home" else ["awayResult", "awayFTResult", "AwayScore"]
-        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
-            ft = 'homeFTResult' if side == 'home' else 'awayFTResult'
+        keys = (
+            ["homeResult", "homeFTResult", "HomeScore"]
+            if side == "home"
+            else ["awayResult", "awayFTResult", "AwayScore"]
+        )
+        if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+            ft = "homeFTResult" if side == "home" else "awayFTResult"
             # Games/list Final includes extra time. Explicit missing FT is not 0.
             if ft in row:
                 keys = [ft]
-            elif any(token in str(row.get('statusName') or '').lower() for token in ('extra', 'penalt')):
+            elif any(token in str(row.get("statusName") or "").lower() for token in ("extra", "penalt")):
                 return None
         for key in keys:
             value = row.get(key)

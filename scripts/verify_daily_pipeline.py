@@ -23,6 +23,11 @@ TESTS = (
     "native_data_expansion",
     "prospective_validation",
     "release_and_quotes",
+    "ci_repairs",
+)
+EXTRA_TESTS = (
+    "tests/test_providers_and_telegram.py::test_odds_api_io_stops_event_paging_on_auth_error",
+    "tests/test_providers_and_telegram.py::test_odds_api_io_full_auth_failure_activates_cooldown",
 )
 
 
@@ -45,7 +50,7 @@ def main():
             )
         env["PYTHONPATH"] = directory
         return subprocess.call(
-            [sys.executable, "-m", "pytest", "-q", *("tests/test_" + name + ".py" for name in TESTS)],
+            [sys.executable, "-m", "pytest", "-q", *("tests/test_" + name + ".py" for name in TESTS), *EXTRA_TESTS],
             cwd=directory,
             env=env,
         )

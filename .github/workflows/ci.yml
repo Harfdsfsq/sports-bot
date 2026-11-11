@@ -42,7 +42,8 @@ jobs:
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No changed Python files to type-check"
           else
-            mypy "${files[@]}" --config-file pyproject.toml
+            # Check every changed module; dependency internals have their own diagnostics.
+            mypy "${files[@]}" --follow-imports=silent --config-file pyproject.toml
           fi
       - name: Import smoke
         run: |

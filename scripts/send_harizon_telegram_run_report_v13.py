@@ -3,12 +3,54 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 EXPORT = Path(".data/exports")
 OUT_TXT = EXPORT / "latest-harizon-telegram-run-report.txt"
 OUT_JSON = EXPORT / "latest-harizon-telegram-run-report.json"
+
+
+def _load(path: Path, default: Any = None) -> Any:
+    """Read report evidence without treating missing/invalid JSON as evidence."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return default
+
+
+def _repair_sportlogic_runtime_line(text: str, payload: dict[str, Any] | None = None) -> str:
+    payload = payload or {}
+    current = (payload.get("api") or {}).get("sportlogic") or {}
+    probe = _load(EXPORT / "latest-sportlogic-coverage-probe.json", {})
+    debug = _load(EXPORT / "latest-sportlogic-debug.json", {})
+    stamp = probe.get("created_at_utc")
+    try:
+        at = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+        fresh = at.tzinfo is not None and timedelta(0) <= datetime.now(UTC) - at <= timedelta(hours=2)
+    except (ValueError, TypeError):
+        fresh = False
+    if current and not current.get("stale_sample"):
+        stats = current
+        rows = stats.get("fixtures", 0)
+        fixtures = rows
+    elif fresh:
+        stats = {**(debug.get("stats") or {}), **probe}
+        rows = stats.get("active_odds_rows_seen", stats.get("fixtures_fetched", 0))
+        fixtures = stats.get("current_games", 0)
+    else:
+        return text
+    if not stats.get("requests"):
+        return text
+    line = (
+        f"• SportLogic: enabled_runtime; запросы {stats.get('requests', 0)}; "
+        f"rows {rows}; current fixtures {fixtures}; "
+        f"matched {stats.get('matched', stats.get('matched_games', 0))}; "
+        f"diag {stats.get('diagnosis', '')}."
+    )
+    return re.sub(r"^• SportLogic:.*$", lambda _: line, text, flags=re.MULTILINE)
 
 
 def _load_v5() -> Any:
@@ -70,6 +112,7 @@ def main() -> int:
         payload, text = patch(payload, text)
     except Exception:
         pass
+    text = _repair_sportlogic_runtime_line(text, payload)
     payload["telegram_sent"] = False
     _write(payload, text)
     if os.getenv("TELEGRAM_CHAT_ID") and (os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN")):

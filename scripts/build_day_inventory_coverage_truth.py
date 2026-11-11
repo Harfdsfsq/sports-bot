@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Build an auditable per-match coverage truth table for the day inventory.
 
 The Telegram summary is intentionally compact, but debugging the 300-match
@@ -9,18 +7,19 @@ independent live odds providers, price confirmations, context sources, and the
 remaining gaps before a match can be considered publish-ready.
 """
 
+from __future__ import annotations
+
 import csv
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
-from app.services.publication_thresholds import publish_min_context_sources, publish_min_odds_sources
 from zoneinfo import ZoneInfo
 
-UTC = timezone.utc
+from app.services.publication_thresholds import publish_min_context_sources, publish_min_odds_sources
+
 ROOT = Path(".").resolve()
 DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 EXPORT_DIR = ROOT / ".data" / "exports"
@@ -29,7 +28,19 @@ OUT_CSV = EXPORT_DIR / "latest-day-inventory-coverage-truth.csv"
 SUMMARY_PATH = EXPORT_DIR / "latest-day-inventory-summary.json"
 
 LIVE_ODDS_SOURCES = {"odds_api_io", "bzzoiro", "sportlogic"}
-CONTEXT_ONLY = {"sstats", "bzzoiro", "sportlogic", "clubelo", "football_data", "thesportsdb", "openfootball", "openligadb", "espn", "weatherapi", "open_meteo"}
+CONTEXT_ONLY = {
+    "sstats",
+    "bzzoiro",
+    "sportlogic",
+    "clubelo",
+    "football_data",
+    "thesportsdb",
+    "openfootball",
+    "openligadb",
+    "espn",
+    "weatherapi",
+    "open_meteo",
+}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -88,7 +99,7 @@ def norm(value: Any) -> str:
 
 def list_from_any(value: Any) -> list[str]:
     if isinstance(value, dict):
-        return [str(k).strip() for k in value.keys() if str(k).strip()]
+        return [str(k).strip() for k in value if str(k).strip()]
     if isinstance(value, (list, tuple, set)):
         return [str(x).strip() for x in value if str(x).strip()]
     if isinstance(value, str) and value.strip():
@@ -143,7 +154,15 @@ def context_sources(row: dict[str, Any], extra_sources: list[str] | None = None)
     for item in sources:
         if item.startswith("provider_"):
             item = item.removeprefix("provider_")
-        if item in {"ensemble", "market", "market_signal", "line_history", "odds_api_io", "xg_model_context", "form_context"}:
+        if item in {
+            "ensemble",
+            "market",
+            "market_signal",
+            "line_history",
+            "odds_api_io",
+            "xg_model_context",
+            "form_context",
+        }:
             continue
         if re.match(r"^context_(source|confirmation)_\d+$", item):
             continue
@@ -153,7 +172,9 @@ def context_sources(row: dict[str, Any], extra_sources: list[str] | None = None)
 
 def price_confirmations(row: dict[str, Any]) -> int:
     return max(
-        count_from_metadata(row, "price_confirmation_sources_count", "price_sources_count", "books_count", "latest_books_max"),
+        count_from_metadata(
+            row, "price_confirmation_sources_count", "price_sources_count", "books_count", "latest_books_max"
+        ),
         len(list_from_any(row.get("price_confirmations"))),
         len(list_from_any(row.get("books"))),
     )
@@ -252,7 +273,9 @@ def main() -> int:
     inv = load_json(inv_path, {})
     matches = [row for row in inv.get("matches", []) if isinstance(row, dict)] if isinstance(inv, dict) else []
     rows = [row_truth(row, min_odds, min_context) for row in matches]
-    rows.sort(key=lambda x: (str(x.get("kickoff_utc") or ""), str(x.get("league_name") or ""), str(x.get("home_team") or "")))
+    rows.sort(
+        key=lambda x: (str(x.get("kickoff_utc") or ""), str(x.get("league_name") or ""), str(x.get("home_team") or ""))
+    )
 
     counts = {
         "matches_total": len(rows),
@@ -301,7 +324,14 @@ def main() -> int:
         summary["coverage_truth_counts"] = counts
         summary["updated_at_utc"] = now
         write_json(SUMMARY_PATH, summary)
-    print(json.dumps({k: payload[k] for k in ("status", "date_local", "updated_at_utc", "counts", "gap_examples")}, ensure_ascii=False, indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {k: payload[k] for k in ("status", "date_local", "updated_at_utc", "counts", "gap_examples")},
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0
 
 
@@ -312,6 +342,7 @@ if __name__ == "__main__":
 # Compatibility names for offline coverage diagnostics; never evidence admission.
 def generated_match_key_variants(row):
     from app.services.targeted_enrichment_queue import row_key_variants as variants
+
     return variants(row)
 
 

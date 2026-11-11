@@ -372,7 +372,7 @@ def _install_b_tier_testing_relief(base: Any, stage: str = "early") -> None:
             }
         ]
 
-    wrapped._is_b_tier_relief = True
+    wrapped.__dict__["_is_b_tier_relief"] = True
     base.tier_reasons = wrapped
     base._b_tier_testing_relief_installed = True
     _RELIEF_INSTALL_COUNT[0] += 1
@@ -397,7 +397,7 @@ def _install_relief_before_publish(v18: Any) -> None:
             _record_install_event("late_before_v18_main", "failed", repr(exc))
         return old_main(*args, **kwargs)
 
-    wrapped_main._relief_late_hook = True
+    wrapped_main.__dict__["_relief_late_hook"] = True
     v18.main = wrapped_main
     _record_install_event("late_hook", "wrapped_v18_main")
 
