@@ -5,13 +5,12 @@ import hashlib
 import json
 from collections.abc import Sequence
 from dataclasses import asdict
-from datetime import date, datetime, timedelta, timezone
-UTC = timezone.utc
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from app.services.prediction_audit import AUDIT_VERSION, invalid_prediction_reasons
 from app.schemas import CandidateBet, Match
+from app.services.prediction_audit import AUDIT_VERSION, invalid_prediction_reasons
 from app.services.publication_lifecycle import is_sent_pick_row
 from app.utils import candidate_selection_key, parse_datetime
 
@@ -495,7 +494,6 @@ class JsonStateStore:
             if isinstance(item, dict)
         }
         added = 0
-        published_added = 0
         for candidate in candidates:
             row = self._serialize_candidate(candidate)
             fp = row['fingerprint']
@@ -733,10 +731,7 @@ class JsonStateStore:
     @staticmethod
     def _compact_settlement_attempt(item: dict[str, Any], attempted_at: str) -> dict[str, Any]:
         top_candidates = item.get('top_candidates')
-        if isinstance(top_candidates, list):
-            top_candidates = top_candidates[:3]
-        else:
-            top_candidates = []
+        top_candidates = top_candidates[:3] if isinstance(top_candidates, list) else []
         return {
             'attempted_at': attempted_at,
             'reason': item.get('reason') or '',
@@ -979,6 +974,8 @@ class JsonStateStore:
             'goal_model_version': source_summary.get('goal_model_version') or 'unversioned',
             'reserve_only': bool(source_summary.get('reserve_only')),
             'validation_protocol': source_summary.get('validation_protocol') or '',
+            'paper_quality_tier': source_summary.get('paper_quality_tier') or '',
+            'paper_research_blockers': source_summary.get('paper_research_blockers') or [],
             'context_feature_conflicts': source_summary.get('context_feature_conflicts') or [],
             'context_sources': source_summary.get('context_sources') or '',
             'context_confidence': self._round_value(source_summary.get('context_confidence'), 2),
@@ -1161,7 +1158,7 @@ class JsonStateStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         headers: list[str] = []
         for row in rows:
-            for key in row.keys():
+            for key in row:
                 if key not in headers:
                     headers.append(key)
         with path.open('w', newline='', encoding='utf-8') as handle:

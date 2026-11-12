@@ -247,16 +247,19 @@ def test_form_builder_keeps_receipt_ids_and_provider_names(sid, accepted):
 
 
 @pytest.mark.parametrize("changed_path", ["app/services/fixture_identity.py", "config/espn_team_aliases.json"])
-def test_forward_fingerprint_includes_identity_code_and_aliases(tmp_path, monkeypatch, changed_path):
+def test_collection_revision_is_recorded_without_changing_model_cohort(tmp_path, monkeypatch, changed_path):
     import shutil
 
     from app.services import prospective_validation as validation
+    from app.services import validation_lineage
 
     root = Path(__file__).parents[1]
     for name in ("app", "config"):
         shutil.copytree(root / name, tmp_path / name, ignore=shutil.ignore_patterns("__pycache__"))
     monkeypatch.setattr(validation, "ROOT", tmp_path)
+    monkeypatch.setattr(validation_lineage, "ROOT", tmp_path)
     before = validation.fingerprint(validation.policy())
+    pipeline_before = validation_lineage.pipeline_fingerprint()
     path = tmp_path / changed_path
     if changed_path.endswith(".json"):
         aliases = json.loads(path.read_text())
@@ -264,4 +267,5 @@ def test_forward_fingerprint_includes_identity_code_and_aliases(tmp_path, monkey
         path.write_text(json.dumps(aliases))
     else:
         path.write_text(path.read_text() + "\nIDENTITY_INPUT_VERSION = 2\n")
-    assert validation.fingerprint(validation.policy()) != before
+    assert validation.fingerprint(validation.policy()) == before
+    assert validation_lineage.pipeline_fingerprint() != pipeline_before

@@ -44,6 +44,13 @@ def identity_reasons(provider, match, context):
             ):
                 return ["context_team_identity_mismatch"]
             for row in rows:
+                catalogue = context.details.get("sstats_team_catalogue", {}).get(side)
+                if provider == "sstats" and catalogue:
+                    from app.services.sstats_team_lookup import verified_lookup
+
+                    if (not verified_lookup(match, side, catalogue)
+                            or str(row.get("team_id")) != str(catalogue["team"]["id"])):
+                        return ["context_team_identity_mismatch"]
                 try:
                     if parse_datetime(row.get("start")) >= match.commence_time:
                         return ["context_future_history"]

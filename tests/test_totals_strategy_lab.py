@@ -114,7 +114,8 @@ def test_lab_freezes_first_prices_and_does_not_write_bankroll(tmp_path, monkeypa
     context.expected_home=4.
     assert run_lab(history,[match],{'fixture':context},registry,NOW+timedelta(minutes=1))['new']==0
     assert history.data['priced_totals_trials']==frozen
-    assert set(history.data)=={'results','priced_totals_trials'}
+    assert set(history.data)=={'results','priced_totals_trials','prospective_validation'}
+    assert frozen[0]['validation_cohort_id']==history.data['prospective_validation']['cohort_id']
 
 
 def test_conflicting_result_withdraws_evidence_and_push_is_zero_profit():

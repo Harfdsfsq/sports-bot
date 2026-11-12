@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import ast
 import hashlib
 import json
 import math
+from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
@@ -24,33 +24,29 @@ def policy():
 
 
 def fingerprint(rules):
-    pieces = [json.dumps(rules, sort_keys=True)]
-    for name in (
-        "goal_research",
-        "totals_strategy_lab",
-        "totals_strategy_clv",
-        "daily_price_watch",
-        "daily_goal_probability",
-        "daily_context_reliability",
-        "context_admission",
-        "prospective_validation",
-        "model",
-        "daily_quality_runner",
-    ):
-        tree = ast.parse((ROOT / "app/services" / f"{name}.py").read_text())
-        pieces.append(ast.dump(tree, include_attributes=False))
-    # Identity and provider transformations change the forecast input too.
-    for path in (
-        "app/providers/sstats.py", "app/providers/espn.py",
-        "app/services/fixture_identity.py", "app/services/espn_identity.py",
-        "app/services/sstats_targeted_history.py", "app/services/team_result_archive.py",
-        "app/services/daily_match_registry.py",
-        "app/providers/odds_api_io.py", "app/services/odds_line_audit.py",
-        "app/providers/sstats_pari_daily.py",
-    ):
-        pieces.append(ast.dump(ast.parse((ROOT / path).read_text()), include_attributes=False))
-    pieces.append(json.dumps(json.loads((ROOT / "config/espn_team_aliases.json").read_text()), sort_keys=True))
-    return hashlib.sha256("\n".join(pieces).encode()).hexdigest()
+    from app.services.validation_lineage import model_fingerprint
+
+    return model_fingerprint(rules)
+
+
+def declare(history, now, *, rules=None, code_hash=None):
+    """Freeze before a forecast; restart only when the model/policy changes."""
+    from app.services.validation_lineage import pipeline_fingerprint
+
+    rules = rules or policy()
+    code_hash = code_hash or fingerprint(rules)
+    state = history.data.get("prospective_validation")
+    if not state or state.get("protocol_id") != rules["protocol_id"] or state.get("code_hash") != code_hash or not state.get("cohort_id"):
+        if state:
+            history.data.setdefault("previous_validation_protocols", []).append(deepcopy(state))
+        state = {
+            "protocol_id": rules["protocol_id"], "declared_at": now.isoformat(),
+            "code_hash": code_hash, "rules": deepcopy(rules),
+            "cohort_id": hashlib.sha256((rules["protocol_id"] + code_hash + now.isoformat()).encode()).hexdigest()[:24],
+            "pipeline_hash_at_declaration": pipeline_fingerprint(),
+        }
+        history.data["prospective_validation"] = state
+    return state
 
 
 def evaluate(history, now, *, rules=None, code_hash=None, clv=None):
@@ -58,15 +54,7 @@ def evaluate(history, now, *, rules=None, code_hash=None, clv=None):
     code_hash = code_hash or fingerprint(rules)
     state = history.data.get("prospective_validation")
     if not state or state.get("protocol_id") != rules["protocol_id"]:
-        if state:
-            history.data.setdefault("previous_validation_protocols", []).append(deepcopy(state))
-        state = {
-            "protocol_id": rules["protocol_id"],
-            "declared_at": now.isoformat(),
-            "code_hash": code_hash,
-            "rules": deepcopy(rules),
-        }
-        history.data["prospective_validation"] = state
+        state = declare(history, now, rules=rules, code_hash=code_hash)
     report = {
         "protocol_id": state["protocol_id"],
         "declared_at": state["declared_at"],
@@ -85,6 +73,7 @@ def evaluate(history, now, *, rules=None, code_hash=None, clv=None):
         }
     rows = []
     invalid = 0
+    unversioned = 0
     for row in sorted(history.data.get("priced_totals_trials", []), key=lambda r: r.get("created_at", "")):
         if row.get("protocol") != PROTOCOL:
             continue
@@ -102,6 +91,12 @@ def evaluate(history, now, *, rules=None, code_hash=None, clv=None):
             and same_team_identity(row.get("away"), [old.get("away")])
             for old in rows
         ):
+            continue
+        if rules.get("require_frozen_lineage") and (
+            row.get("validation_cohort_id") != state.get("cohort_id")
+            or row.get("model_hash") != code_hash
+        ):
+            unversioned += 1
             continue
         copy = deepcopy(row)
         anchor = copy.get("anchor") or {}
@@ -199,6 +194,9 @@ def evaluate(history, now, *, rules=None, code_hash=None, clv=None):
         "reasons": reasons,
         "live_ready": native_ready,
         "cohort": len(rows),
+        "cohort_id": state.get("cohort_id"),
+        "unversioned_excluded": unversioned,
+        "pipeline_revisions": dict(Counter(r.get("pipeline_hash", "unknown") for r in rows)),
         "metrics": metrics,
         "overdue": len(overdue),
         "invalid_observations": invalid,

@@ -37,6 +37,9 @@ def cohort(model="opponent"):
         row = {
             "id": str(i),
             "protocol": PROTOCOL,
+            "validation_cohort_id": "test-cohort",
+            "model_hash": "test",
+            "pipeline_hash": "pipeline-1",
             "home": f"Home {i}",
             "away": f"Away {i}",
             "kickoff": kickoff.isoformat(),
@@ -59,6 +62,7 @@ def cohort(model="opponent"):
         "protocol_id": rules["protocol_id"],
         "declared_at": (NOW - timedelta(days=40)).isoformat(),
         "code_hash": "test",
+        "cohort_id": "test-cohort",
         "rules": deepcopy(rules),
     }
     return SimpleNamespace(data={"priced_totals_trials": rows, "prospective_validation": state}), rules, clv

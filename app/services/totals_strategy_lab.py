@@ -352,6 +352,11 @@ def cluster_interval(groups):
 
 
 def run_lab(history, matches, contexts, registry, now, allowed_books=None):
+    from app.services.prospective_validation import declare
+    from app.services.validation_lineage import pipeline_fingerprint
+
+    declaration = declare(history, now)
+    pipeline_hash = pipeline_fingerprint()
     rows = history.data.setdefault("priced_totals_trials", [])
     resolve(rows, history, now)
     profile = fit_calibration(rows, now)
@@ -395,6 +400,9 @@ def run_lab(history, matches, contexts, registry, now, allowed_books=None):
                 "id": match_identity(match),
                 "match_key": match.match_key,
                 "protocol": PROTOCOL,
+                "validation_cohort_id": declaration["cohort_id"],
+                "model_hash": declaration["code_hash"],
+                "pipeline_hash": pipeline_hash,
                 "home": match.home_team,
                 "away": match.away_team,
                 "league": match.league_name,

@@ -22,6 +22,18 @@ from app.services.fixture_identity import same_team_identity
 VERSION = "opponent-poisson-research-v1"
 
 
+def research_rates(model, home_name, away_name, forecast, now):
+    n = min(model["effective_counts"][home_name], model["effective_counts"][away_name])
+    weight = n / (n + 20.0)
+    return {
+        "opponent": sum(forecast),
+        "shrunk": weight * sum(forecast) + (1 - weight) * model["weighted_league_total"],
+        "dispersion": model["dispersion"], "effective_sample": n,
+        "training_count": model["count"], "trained_before": now.isoformat(),
+        "model_version": "weighted-opponent-v1",
+    }
+
+
 def forecast_identity(row):
     return tuple(row.get(key) for key in ("version", "home", "away", "kickoff"))
 
@@ -311,17 +323,7 @@ class GoalHistory:
             # New price-aware experiment uses consistent time weights; the old
             # comparison cohort and its frozen predictions remain unchanged.
             if getattr(match, "match_key", None):
-                n = min(model["effective_counts"][home_name], model["effective_counts"][away_name])
-                weight = n / (n + 20.0)
-                self.current_predictions[match.match_key] = {
-                    "opponent": sum(forecast),
-                    "shrunk": weight * sum(forecast) + (1 - weight) * model["weighted_league_total"],
-                    "dispersion": model["dispersion"],
-                    "effective_sample": n,
-                    "training_count": model["count"],
-                    "trained_before": now.isoformat(),
-                    "model_version": "weighted-opponent-v1",
-                }
+                self.current_predictions[match.match_key] = research_rates(model, home_name, away_name, forecast, now)
             identity = (VERSION, home_name, away_name, match.commence_time.isoformat())
             key = "|".join(identity)
             if identity in seen:

@@ -84,6 +84,10 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
     # Bind before applying the configurable fixture cap. Unsupported early
     # fixtures must not prevent a later fixture with two known IDs being tried.
     bindings = team_bindings(matches, seed_rows)
+    from app.services.sstats_team_lookup import discover
+
+    discovered, catalogue = await discover(provider, matches, bindings, stats)
+    bindings.update(discovered)
     report["available_bound_teams"] = len(bindings)
     eligible = [
         m
@@ -246,5 +250,8 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
     for context in contexts.values():
         context.details["daily_source_observed_at"] = observed.isoformat()
         context.details["sstats_history_scope"] = "verified_team_ids"
+    for match in targets:
+        if match.match_key in contexts and match.match_key in catalogue:
+            contexts[match.match_key].details["sstats_team_catalogue"] = catalogue[match.match_key]
     report["contexts"] = len(contexts)
     return contexts

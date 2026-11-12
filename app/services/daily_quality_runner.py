@@ -757,7 +757,10 @@ class DailyQualityRunner(PredictionRunner):
                 "context_sources_count": len(admission),
                 "books_count": candidate.books_count,
             }
-            _, policy_reasons, _ = quality_decision(candidate, coverage, now=now, allow_shadow_markets=True)
+            paper_tier, policy_reasons, paper_meta = quality_decision(candidate, coverage, now=now, allow_shadow_markets=True)
+            candidate.source_summary.update(paper_quality_tier=paper_tier,
+                                            paper_policy_evidence=paper_meta,
+                                            paper_research_blockers=candidate.source_summary.get("research_blockers", []))
             reasons.extend(policy_reasons)
             if reasons:
                 for reason in set(reasons) if candidate.family != "totals" else []:
@@ -880,6 +883,10 @@ class DailyQualityRunner(PredictionRunner):
             summary["totals_trial"] = summarize_totals_trial(
                 self.state.prediction_ledger(self.settings, include_shadow=True), GOAL_MODEL_VERSION
             )
+            from app.services.system_readiness import assess
+
+            summary["system_readiness"] = assess(summary, self.registry.coverage())
+            write_json(".data/exports/latest-system-readiness.json", summary["system_readiness"])
             if self.market_monitor:
                 self.market_monitor.restore_trial_tracking(
                     self.state.pending_bets(include_shadow=True), datetime.now(UTC)

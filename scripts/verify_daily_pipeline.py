@@ -28,6 +28,7 @@ TESTS = (
     "history_identity_and_ncaa",
     "odds_line_audit",
     "sstats_progress_recovery",
+    "stable_learning_and_lookup",
     "repair_inventory_refresh_plan_counts_env",
 )
 EXTRA_TESTS = (
