@@ -229,6 +229,23 @@ class DailyMatchRegistry:
             )
         return sorted(rows, key=lambda row: row["kickoff_utc"])
 
+    def runtime_conflicts(self):
+        """Legacy provider maps omit kickoff; never mix different fixtures."""
+        groups = {}
+        for match in self.matches():
+            groups.setdefault(match.match_key, []).append(match)
+        return {
+            key: [{"match_id": match_identity(m), "home": m.home_team, "away": m.away_team,
+                   "kickoff_utc": m.commence_time.isoformat()} for m in matches]
+            for key, matches in groups.items()
+            if len({(team_identity_key(m.home_team), team_identity_key(m.away_team), m.commence_time)
+                    for m in matches}) > 1
+        }
+
+    def runtime_matches(self):
+        conflicts = self.runtime_conflicts()
+        return [m for m in self.matches() if m.match_key not in conflicts]
+
     def identity_review(self):
         """Potential feed-name gaps for review only; never transfer evidence."""
         from app.services.fixture_identity import same_team_identity
@@ -338,7 +355,7 @@ class DailyMatchRegistry:
 
     def targets(self, provider: str, role: str, *, limit: int = 60, eligible=None, bulk=False):
         ranked = []
-        for match in self.matches():
+        for match in self.runtime_matches():
             if eligible is not None and not eligible(match):
                 continue
             minutes = (match.commence_time - self.now).total_seconds() / 60
@@ -506,7 +523,10 @@ class DailyMatchRegistry:
     def coverage(self):
         from app.providers.sstats import market_only_context
 
+        conflicts = self.runtime_conflicts()
         result = {
+            "runtime_identity_quarantined": sum(len(rows) for rows in conflicts.values()),
+            "near_runtime_identity_quarantined": 0,
             "inventory": sum(m.commence_time.astimezone(TZ).date().isoformat() == self.date for m in self.matches()),
             "line": 0,
             "context": 0,
@@ -536,10 +556,12 @@ class DailyMatchRegistry:
             "near_missing_both": 0,
         }
         for match in self.matches():
+            usable = match.match_key not in conflicts
             line, context = self.has_role(match, "offers"), self.has_role(match, "context")
             near = 30 <= (match.commence_time - self.now).total_seconds() / 60 <= 240
             result["near"] += near
-            result["near_ready"] += bool(near and line and context)
+            result["near_runtime_identity_quarantined"] += bool(near and not usable)
+            result["near_ready"] += bool(near and usable and line and context)
             result["near_line"] += bool(near and line)
             result["near_context"] += bool(near and context)
             result["near_missing_line"] += bool(near and not line)
@@ -551,7 +573,7 @@ class DailyMatchRegistry:
             result["future_matches"] += future
             result["future_line"] += bool(future and line)
             result["future_context"] += bool(future and context)
-            result["future_ready"] += bool(future and line and context)
+            result["future_ready"] += bool(future and usable and line and context)
             evidence = self.data["matches"][match_identity(match)]["evidence"]
             if near:
                 from app.utils import normalize_bookmaker_name
@@ -621,7 +643,7 @@ class DailyMatchRegistry:
             line, context = self.has_role(match, "offers"), self.has_role(match, "context")
             result["line"] += bool(line)
             result["context"] += bool(context)
-            result["ready"] += bool(line and context)
+            result["ready"] += bool(usable and line and context)
         # A live SLA uses only the actionable window, never expired all-day prices.
         denominator = result["near"]
         result["near_ready_pct"] = round(100 * result["near_ready"] / denominator, 1) if denominator else None

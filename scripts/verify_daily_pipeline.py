@@ -29,6 +29,7 @@ TESTS = (
     "odds_line_audit",
     "sstats_progress_recovery",
     "stable_learning_and_lookup",
+    "runtime_identity_and_enrichment",
     "repair_inventory_refresh_plan_counts_env",
 )
 EXTRA_TESTS = (

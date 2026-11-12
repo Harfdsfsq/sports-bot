@@ -24,7 +24,7 @@ async def watch_pre_kickoff_prices(registry, monitor, provider, *, pari_provider
     totals_strategy_clv.update([], {}, now)
     targets = [
         m
-        for m in registry.matches()
+        for m in registry.runtime_matches()
         if (m.match_key, m.commence_time) in requested and timedelta(0) < m.commence_time - now <= timedelta(minutes=45)
     ]
     targets = sorted(targets, key=lambda m: m.commence_time)[:10]

@@ -11,6 +11,8 @@ def assess(summary, coverage):
     near = int(coverage.get("near") or 0)
     ready = int(coverage.get("near_ready") or 0)
     blockers = []
+    if coverage.get("near_runtime_identity_quarantined", 0):
+        blockers.append("conflicting_fixture_times")
     if failures:
         blockers.append("provider_deadline_or_runtime_error")
     if near and ready / near < 0.9:

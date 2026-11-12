@@ -226,7 +226,8 @@ class DailyQualityRunner(PredictionRunner):
                 + timedelta(hours=min(48, max(4, float(os.getenv("DAILY_DATA_COLLECTION_WINDOW_HOURS", "24")))))
             ]
         )
-        self.inventory_matches = self.registry.matches()
+        self.inventory_matches = self.registry.runtime_matches()
+        stats["runtime_identity_quarantined"] = sum(len(rows) for rows in self.registry.runtime_conflicts().values())
         if not self.inventory_matches:
             raise RuntimeError("Current Moscow day inventory is empty; rebuild inventory")
         return self.inventory_matches, {"provider": "daily_match_registry", "stats": stats, "attempts": {}}
@@ -299,7 +300,9 @@ class DailyQualityRunner(PredictionRunner):
             )
         )
         self.work_plan[name + ":" + role] = [match_identity(m) for m in targets]
-        cached = {m.match_key: self.registry.cached(name, role, m) for m in self.inventory_matches}
+        safe_keys = {m.match_key for m in self.registry.runtime_matches()}
+        runtime_inventory = [m for m in self.inventory_matches if m.match_key in safe_keys]
+        cached = {m.match_key: self.registry.cached(name, role, m) for m in runtime_inventory}
         cached = {key: value for key, value in cached.items() if value}
         data, stats, preview = (
             {},
@@ -362,7 +365,7 @@ class DailyQualityRunner(PredictionRunner):
             self.registry.now = datetime.now(UTC)
         # Rebuild at completion: early cache entries may expire during API calls.
         cached = {}
-        for m in self.inventory_matches:
+        for m in runtime_inventory:
             value = self.registry.cached(name, role, m)
             if value:
                 cached[m.match_key] = value
@@ -372,18 +375,29 @@ class DailyQualityRunner(PredictionRunner):
             from app.services.sstats_standings import enrich_standings
 
             before = {key: deepcopy(value.details.get("sstats_standings")) for key, value in cached.items()}
+            original = {m.match_key: self.registry.data["matches"].get(match_identity(m), {}).get("evidence", {}).get("sstats:context")
+                        for m in runtime_inventory if m.match_key in cached}
+            enriched = deepcopy(cached)
             try:
-                await enrich_standings(provider, self.inventory_matches, cached, stats)
+                await enrich_standings(provider, runtime_inventory, enriched, stats)
             except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
                 stats["standings_error_type"] = type(exc).__name__
             changed = False
-            for match in self.inventory_matches:
-                context = cached.get(match.match_key)
-                if context and context.details.get("sstats_standings") != before.get(match.match_key):
-                    entry = self.registry.data["matches"][match_identity(match)]["evidence"]["sstats:context"]
-                    context.details.setdefault("daily_source_observed_at", entry["observed_at"])
+            self.registry.now = datetime.now(UTC)
+            cached = {}
+            for match in runtime_inventory:
+                context = self.registry.cached(name, role, match)
+                if context is None:
+                    continue
+                entry = self.registry.data["matches"].get(match_identity(match), {}).get("evidence", {}).get("sstats:context")
+                update = enriched.get(match.match_key)
+                if (entry is not None and entry is original.get(match.match_key) and update is not None
+                        and update.details.get("sstats_standings") != before.get(match.match_key)):
+                    context.payload = {**context.payload, "verified_standings": update.payload.get("verified_standings")}
+                    context.details = {**context.details, "sstats_standings": update.details.get("sstats_standings")}
                     entry["payload"] = asdict(context)
                     changed = True
+                cached[match.match_key] = context
             if changed:
                 self.registry.save()
         # Older cache entries were constructed with percent values as fractions.
@@ -954,6 +968,9 @@ class DailyQualityRunner(PredictionRunner):
                 {"created_at_utc": self.registry.now.isoformat(), "matches": self.registry.actionable_gaps()},
             )
             reviews = self.registry.identity_review()
+            conflicts = self.registry.runtime_conflicts()
+            summary["daily_quality"]["runtime_identity_conflicts"] = len(conflicts)
+            write_json(".data/exports/latest-runtime-identity-conflicts.json", conflicts)
             summary["daily_quality"]["identity_review_pairs"] = len(reviews)
             write_json(
                 ".data/exports/latest-coverage-identity-review.json",

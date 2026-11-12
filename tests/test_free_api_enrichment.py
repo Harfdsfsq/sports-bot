@@ -34,6 +34,12 @@ def test_updated_prediction_not_rejected_for_original_creation_date():
 @pytest.mark.parametrize('team_id_mode',['explicit','objects','wrong_squad'])
 def test_v2_only_enriches_exact_fixture_and_reuses_cache(tmp_path,monkeypatch,team_id_mode):
     monkeypatch.chdir(tmp_path);monkeypatch.setenv('BZZOIRO_V2_NATIVE_EXTRA_FACTS_ENABLED','false');now=datetime.now(UTC);m=fixture(now);calls=[]
+    class FixedClock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now.astimezone(tz) if tz else now.replace(tzinfo=None)
+    # Cache reuse requires the same date-time query, not a second-boundary change.
+    monkeypatch.setitem(enrich.__globals__, 'datetime', FixedClock)
     event={**prediction(now)['event'],'league_id':3,'season_id':9,'home_team_id':10,'away_team_id':11,
            'venue':{'city':'Paris','country':'France'},'is_neutral_ground':True}
     if team_id_mode!='explicit':
