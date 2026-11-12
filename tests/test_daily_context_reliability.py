@@ -550,10 +550,12 @@ def test_sstats_reuses_overlapping_history_windows_and_keeps_oldest_timestamp(tm
         return [{'id': start, 'date': start, 'home': 'Home', 'away': 'Away'}]
     monkeypatch.setattr(provider, '_fetch_rows_window', rows)
     asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-10', {}))
-    original = provider._daily_source_observed_at
+    import json
+    from pathlib import Path
+    original = json.loads(Path('.data/provider_cache/sstats-window-v5-2026-10-01-2026-10-07.json').read_text())['observed_at']
     stats = {}
     asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-11', stats))
-    assert calls == [('2026-10-01', '2026-10-07'), ('2026-10-08', '2026-10-10'), ('2026-10-08', '2026-10-11')]
+    assert calls == [('2026-10-08', '2026-10-10'), ('2026-10-01', '2026-10-07'), ('2026-10-08', '2026-10-11')]
     assert stats['history_windows_cache_hits'] == 1
     assert provider._daily_source_observed_at == original
 

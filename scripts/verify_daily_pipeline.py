@@ -27,6 +27,7 @@ TESTS = (
     "bulk_coverage",
     "history_identity_and_ncaa",
     "odds_line_audit",
+    "sstats_progress_recovery",
     "repair_inventory_refresh_plan_counts_env",
 )
 EXTRA_TESTS = (

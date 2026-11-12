@@ -319,6 +319,8 @@ class DailyQualityRunner(PredictionRunner):
                 )
             except TimeoutError:
                 stats = {"enabled": True, "runtime_error": "provider_deadline"}
+                if name == "sstats" and callable(getattr(provider, "recover_daily_progress", None)):
+                    data, stats, preview = provider.recover_daily_progress()
             data = data if isinstance(data, dict) else {}
             # Drop data not associated with a requested canonical runtime match.
             requested_keys = {m.match_key for m in targets}

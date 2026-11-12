@@ -85,6 +85,8 @@ class SStatsContextProvider:
         self.settings = settings
         self._daily_source_observed_at: str | None = None
         self._daily_partial_rows: list[dict[str, Any]] = []
+        self._daily_partial_observed_at: str | None = None
+        self._daily_completed_contexts: dict[str, MatchContext] = {}
         self.url = "https://api.sstats.net/Games/list"
         self.max_http_requests = max(
             0,
@@ -100,6 +102,10 @@ class SStatsContextProvider:
         self,
         matches: list[Match],
     ) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+        self._daily_partial_rows = []
+        self._daily_partial_observed_at = None
+        self._daily_source_observed_at = None
+        self._daily_completed_contexts = {}
         stats: dict[str, Any] = {
             "enabled": bool(self.settings.enable_sstats_context),
             "api_key_present": bool(self.settings.sstats_api_key),
@@ -162,8 +168,24 @@ class SStatsContextProvider:
         to_date = max(now_utc, max_dt).date().isoformat()
         stats["days_requested"] = (parse_datetime(to_date).date() - parse_datetime(from_date).date()).days + 1
 
+        self._daily_progress_stats, self._daily_progress_preview = stats, preview
+        stats["collection_stage"] = "initial_history"
         async with BudgetedAsyncClient(timeout=self.settings.sstats_timeout_seconds) as client:
-            rows = await self._fetch_rows(client, from_date, to_date, stats)
+            if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+                try:
+                    rows = await asyncio.wait_for(
+                        self._fetch_rows(client, from_date, to_date, stats),
+                        timeout=min(120, max(1, float(os.getenv("DAILY_SSTATS_INITIAL_HISTORY_TIMEOUT_SECONDS", "90")))),
+                    )
+                except TimeoutError:
+                    rows = list(self._daily_partial_rows)
+                    self._daily_source_observed_at = self._daily_partial_observed_at
+                    stats["initial_history_timeout"] = True
+                    stats["runtime_error"] = "initial_history_deadline"
+                    stats["history_pagination_incomplete"] = True
+                    stats["initial_history_partial_rows"] = len(rows)
+            else:
+                rows = await self._fetch_rows(client, from_date, to_date, stats)
 
         stats["rows_fetched"] = len(rows)
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
@@ -313,6 +335,7 @@ class SStatsContextProvider:
 
         # Pass 2: fallback from recent team form for matches still lacking context.
         fallback_contexts = self._build_team_form_contexts(soccer_matches, rows, preview)
+        self._checkpoint_daily_contexts({**fallback_contexts, **contexts}, "initial_form")
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             # A 45-day window can contain fewer than six games per team.
             # Extend only when an upcoming fixture lacks usable sporting history.
@@ -338,6 +361,7 @@ class SStatsContextProvider:
             if missing:
                 from app.services.sstats_targeted_history import enrich_team_form
 
+                stats["collection_stage"] = "targeted_history"
                 targeted = await enrich_team_form(self, missing, rows, stats, preview)
                 improved = {
                     key: value
@@ -353,6 +377,7 @@ class SStatsContextProvider:
                     )
                 }
                 fallback_contexts.update(improved)
+                self._checkpoint_daily_contexts({**fallback_contexts, **contexts}, "targeted_form")
                 stats["targeted_history"]["improved"] = len(improved)
                 missing = [
                     m
@@ -464,6 +489,24 @@ class SStatsContextProvider:
                 context.details.setdefault("daily_source_observed_at", getattr(self, "_daily_source_observed_at", None))
         return contexts, stats, preview
 
+    def _checkpoint_daily_contexts(self, contexts, stage):
+        if os.getenv("PUBLICATION_PROFILE") != "daily_quality":
+            return
+        completed = {}
+        for key, context in contexts.items():
+            stamp = context.details.get("daily_source_observed_at") or self._daily_source_observed_at
+            if stamp:
+                completed[key] = replace(context, details={**context.details, "daily_source_observed_at": stamp})
+        self._daily_completed_contexts = completed
+        self._daily_progress_stats["last_completed_stage"] = stage
+
+    def recover_daily_progress(self):
+        """Return completed receipts after cancellation, never redate old history."""
+        data = dict(getattr(self, "_daily_completed_contexts", {}))
+        stats = dict(getattr(self, "_daily_progress_stats", {}))
+        stats.update(enabled=True, runtime_error="provider_deadline", salvaged_contexts=len(data))
+        return data, stats, dict(getattr(self, "_daily_progress_preview", {}))
+
     @staticmethod
     def _history_cache_ttl(to_date):
         # Refresh windows touching today/yesterday each run; retain the cheap
@@ -495,6 +538,8 @@ class SStatsContextProvider:
                 and saved.get("rows")
             ):
                 self._daily_source_observed_at = observed.isoformat()
+                self._daily_partial_rows = list(saved["rows"])
+                self._daily_partial_observed_at = observed.isoformat()
                 stats["history_cache_reused"] = len(saved["rows"])
                 return saved["rows"]
         chunk_days = max(1, int(getattr(self.settings, "sstats_request_chunk_days", 7) or 7))
@@ -503,7 +548,7 @@ class SStatsContextProvider:
         observations = []
 
         windows = self._date_windows(from_date, to_date, chunk_days)
-        if newest_first:
+        if newest_first or (daily_cache and os.getenv("DAILY_SSTATS_RECENT_WINDOWS_FIRST", "true").lower() == "true"):
             windows.reverse()
         for window_from, window_to in windows:
             batch_rows = None
@@ -546,7 +591,7 @@ class SStatsContextProvider:
                     continue
                 seen_signatures.add(signature)
                 rows.append(row)
-            if daily_cache and newest_first:
+            if daily_cache:
                 # Only windows returned by the fetcher enter this checkpoint.
                 # A timeout in the next window must not discard completed work.
                 self._daily_partial_rows = list(rows)
@@ -636,6 +681,10 @@ class SStatsContextProvider:
                 break
             seen_pages.add(signature)
             rows.extend(batch)
+            if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+                self._daily_partial_rows.extend(batch)
+                if not getattr(self, "_daily_partial_observed_at", None):
+                    self._daily_partial_observed_at = datetime.now(UTC).isoformat()
 
             offset += len(batch)
             # SStats frequently reports `count == batch_size` for the current page,
