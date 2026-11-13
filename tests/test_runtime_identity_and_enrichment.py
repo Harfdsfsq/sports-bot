@@ -11,8 +11,8 @@ from app.services.daily_quality_runner import DailyQualityRunner
 from tests.test_free_api_enrichment import fixture, history_rows, targeted_provider
 
 
-def setup_runner(tmp_path):
-    now = datetime.now(UTC)
+def setup_runner(tmp_path, now=None):
+    now = now or datetime.now(UTC)
     m, p = fixture(now), targeted_provider()
     context = p._build_team_form_contexts([m], history_rows(now), {"team_form_examples": []})[m.match_key]
     stamp = (now - timedelta(hours=1)).isoformat()
@@ -63,9 +63,19 @@ def test_standings_never_resurrect_or_overwrite_obsolete_form(tmp_path, monkeypa
         assert "sstats_standings" not in result[m.match_key].details
 
 
-def test_same_day_kickoff_collision_is_visible_but_never_transfers_evidence(tmp_path, monkeypatch):
+@pytest.mark.parametrize("hour,inventory", [(10, 2), (19, 1)])
+def test_same_day_kickoff_collision_is_visible_but_never_transfers_evidence(tmp_path, monkeypatch, hour, inventory):
     monkeypatch.chdir(tmp_path)
-    r, p, first, _, _ = setup_runner(tmp_path)
+    now = datetime(2026, 11, 12, hour, 30, tzinfo=UTC)
+
+    class FixedClock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now.astimezone(tz) if tz else now.replace(tzinfo=None)
+
+    for module in ("daily_match_registry", "daily_quality_runner"):
+        monkeypatch.setattr(importlib.import_module("app.services." + module), "datetime", FixedClock)
+    r, p, first, _, _ = setup_runner(tmp_path, now)
     second = replace(first, commence_time=first.commence_time + timedelta(hours=1))
     assert first.match_key == second.match_key and match_identity(first) != match_identity(second)
     r.registry.sync([second])
@@ -80,7 +90,9 @@ def test_same_day_kickoff_collision_is_visible_but_never_transfers_evidence(tmp_
     assert "sstats:context" not in r.registry.data["matches"][match_identity(second)]["evidence"]
     coverage = r.registry.coverage()
     assert coverage["runtime_identity_quarantined"] == 2
-    assert coverage["inventory"] == 2 and coverage["near_ready"] == 0
+    # Inventory is scoped to Moscow's date, while collision keys use UTC.
+    # At 19:30 UTC the second kickoff is already on the next Moscow day.
+    assert coverage["inventory"] == inventory and coverage["near_ready"] == 0
     # Once authoritative inventory correction removes the conflicting record,
     # the original receipt becomes usable without moving or re-dating it.
     r.registry.data["matches"].pop(match_identity(second))
