@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """HARIZON Telegram run report v9.
 
 A/B publication-contract renderer from Правила.txt:
@@ -7,6 +5,8 @@ A/B publication-contract renderer from Правила.txt:
 - B-tier: 1 line/odds source, 2 bookmaker/price confirmations, 1 context;
 - line movement/value/xG/quality and price-integrity still apply to both.
 """
+
+from __future__ import annotations
 
 import importlib.util
 import json
@@ -60,7 +60,9 @@ def _load_json(path: Path) -> dict[str, Any]:
 def _write_status(payload: dict[str, Any]) -> None:
     try:
         V9_STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        V9_STATUS_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        V9_STATUS_PATH.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
     except Exception:
         pass
 
@@ -80,12 +82,28 @@ def _counts(payload: dict[str, Any]) -> dict[str, int]:
     diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
     truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
     truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
-    bookmaker_norm = diag.get("bookmaker_quorum_normalizer") if isinstance(diag.get("bookmaker_quorum_normalizer"), dict) else {}
+    bookmaker_norm = (
+        diag.get("bookmaker_quorum_normalizer") if isinstance(diag.get("bookmaker_quorum_normalizer"), dict) else {}
+    )
 
     inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
-    with_odds = (_as_int(truth_counts.get("matches_with_1plus_price_confirmations")) or _as_int(truth_counts.get("matches_with_price_confirmations")) or _as_int(truth_counts.get("matches_with_odds")) or _as_int(coverage.get("day_inventory_with_odds")) or _as_int(coverage.get("matches_with_offers")))
-    with_context = (_as_int(truth_counts.get("matches_with_context")) or _as_int(coverage.get("day_inventory_with_context")) or _as_int(coverage.get("matches_with_context")))
-    price2 = (_as_int(truth_counts.get("matches_with_2plus_price_confirmations")) or _as_int(bookmaker_norm.get("normalized_inventory_2plus_books")) or _as_int(coverage.get("matches_with_2plus_books")))
+    with_odds = (
+        _as_int(truth_counts.get("matches_with_1plus_price_confirmations"))
+        or _as_int(truth_counts.get("matches_with_price_confirmations"))
+        or _as_int(truth_counts.get("matches_with_odds"))
+        or _as_int(coverage.get("day_inventory_with_odds"))
+        or _as_int(coverage.get("matches_with_offers"))
+    )
+    with_context = (
+        _as_int(truth_counts.get("matches_with_context"))
+        or _as_int(coverage.get("day_inventory_with_context"))
+        or _as_int(coverage.get("matches_with_context"))
+    )
+    price2 = (
+        _as_int(truth_counts.get("matches_with_2plus_price_confirmations"))
+        or _as_int(bookmaker_norm.get("normalized_inventory_2plus_books"))
+        or _as_int(coverage.get("matches_with_2plus_books"))
+    )
     context2 = _as_int(truth_counts.get("matches_with_2plus_context_sources"))
     odds2 = _as_int(truth_counts.get("matches_with_2plus_odds_sources"))
     fallback_published = _as_int(funnel.get("fallback_published_count"))
@@ -96,13 +114,29 @@ def _counts(payload: dict[str, Any]) -> dict[str, int]:
     # fallback/watch contract from the diagnostics: 1+ odds/line, 2+ books, 1+ context.
     b_cover = min(with_odds, price2, with_context) if inv_total else 0
     a_cover = min(odds2, price2, context2) if inv_total else 0
-    return {"inv_total": inv_total, "with_odds": with_odds, "with_context": with_context, "price2": price2, "context2": context2, "odds2": odds2, "b_cover": b_cover, "a_cover": a_cover, "main_published": main_published, "fallback_published": fallback_published, "fallback_a_published": fallback_a_published}
+    return {
+        "inv_total": inv_total,
+        "with_odds": with_odds,
+        "with_context": with_context,
+        "price2": price2,
+        "context2": context2,
+        "odds2": odds2,
+        "b_cover": b_cover,
+        "a_cover": a_cover,
+        "main_published": main_published,
+        "fallback_published": fallback_published,
+        "fallback_a_published": fallback_a_published,
+    }
 
 
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     payload["version"] = "harizon-telegram-report-v9-rules-ab-contract"
-    payload.setdefault("diagnostics", {})["ab_tier_contract"] = {"A": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2}, "B": {"min_odds_sources": 1, "min_bookmakers": 2, "min_context_sources": 1}, "independent_odds_sources": "required_for_a_tier_only"}
+    payload.setdefault("diagnostics", {})["ab_tier_contract"] = {
+        "A": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
+        "B": {"min_odds_sources": 1, "min_bookmakers": 2, "min_context_sources": 1},
+        "independent_odds_sources": "required_for_a_tier_only",
+    }
     return payload
 
 
@@ -126,26 +160,45 @@ def _rewrite_contract_lines(text: str, counts: dict[str, int]) -> str:
                 published_note += f"; A через fallback: {counts['fallback_a_published']}"
             out.append(f"• A-tier strict-ready: {counts['a_cover']} | {published_note}")
             continue
-        if ("b-tier bookmaker coverage:" in lower or "b-tier 1+ bookmaker/context coverage:" in lower or "b-tier strict coverage:" in lower or "b-tier 1+ line/1+ bookmaker/1+ context coverage:" in lower or "b-tier 1 line/2 books/1 context coverage:" in lower or "b-tier coverage-ready:" in lower):
-            out.append(f"• B-tier 1+ line/2+ bookmaker/1+ context coverage: {counts['b_cover']} | fallback опубликовано: {counts['fallback_published']}")
+        if (
+            "b-tier bookmaker coverage:" in lower
+            or "b-tier 1+ bookmaker/context coverage:" in lower
+            or "b-tier strict coverage:" in lower
+            or "b-tier 1+ line/1+ bookmaker/1+ context coverage:" in lower
+            or "b-tier 1 line/2 books/1 context coverage:" in lower
+            or "b-tier coverage-ready:" in lower
+        ):
+            out.append(
+                f"• B-tier 1+ line/2+ bookmaker/1+ context coverage: {counts['b_cover']} | fallback опубликовано: {counts['fallback_published']}"
+            )
             continue
         if "b-tier =" in lower:
-            out.append("  B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value.")
+            out.append(
+                "  B-tier = 1+ линия/odds-source + 2+ букмекер/ценовое подтверждение + 1+ контекст + движение линии + value."
+            )
             continue
         if "a-tier =" in lower:
-            out.append("  A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.")
+            out.append(
+                "  A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value."
+            )
             continue
         if lower.lstrip().startswith("• 2+ independent odds-source:"):
             out.append(_replace_odds_source_line(line))
             continue
         if "strict-cover" in lower or "b-cover 1+" in lower or re.search(r"пересечение 2\+.*2\+", lower):
-            out.append(f"• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до {counts['a_cover']} матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до {counts['b_cover']} матчей.")
+            out.append(
+                f"• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до {counts['a_cover']} матчей; B-cover 1+ линия ∩ 2+ букмекера ∩ 1+ контекст: до {counts['b_cover']} матчей."
+            )
             continue
         if "контракт публикации сейчас" in lower or "ценовой контракт" in lower:
-            out.append("• Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен.")
+            out.append(
+                "• Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекер + 1 контекст; price-integrity guard обязателен."
+            )
             continue
         if "не форсировать публикацию" in lower:
-            out.append("• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.")
+            out.append(
+                "• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity."
+            )
             continue
         out.append(line)
     return "\n".join(out)
@@ -160,8 +213,29 @@ v8.v7.v5.build_payload = build_payload
 v8.v7.v5.render = render
 v8.v7.build_payload = build_payload
 v8.v7.render = render
-_write_status({"status": "installed", "renderer": "v9", "main_module": "v8.v7.v5", "contract": "A=2 odds sources + 2 bookmakers + 2 contexts; B=1 odds source + 2 bookmakers + 1 context"})
+_write_status(
+    {
+        "status": "installed",
+        "renderer": "v9",
+        "main_module": "v8.v7.v5",
+        "contract": "A=2 odds sources + 2 bookmakers + 2 contexts; B=1 odds source + 2 bookmakers + 1 context",
+    }
+)
 
 
 if __name__ == "__main__":
     raise SystemExit(v8.v7.v5.main())
+
+
+def is_real_pool_filter(name):
+    return str(name).endswith(("stale_or_outside_window", "duplicate_in_pool")) or str(name).startswith(
+        ("reject_", "missing_")
+    )
+
+
+def pool_filter_counts(counts):
+    return {key: value for key, value in counts.items() if is_real_pool_filter(key)}
+
+
+def _strip_controlled_pool_block(text):
+    return re.sub(r"(?m)^🧯 Controlled fallback pool filter[^\n]*\n.*?(?=^📌|\Z)", "", text, flags=re.S)

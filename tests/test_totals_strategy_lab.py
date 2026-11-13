@@ -114,7 +114,8 @@ def test_lab_freezes_first_prices_and_does_not_write_bankroll(tmp_path, monkeypa
     context.expected_home=4.
     assert run_lab(history,[match],{'fixture':context},registry,NOW+timedelta(minutes=1))['new']==0
     assert history.data['priced_totals_trials']==frozen
-    assert set(history.data)=={'results','priced_totals_trials'}
+    assert set(history.data)=={'results','priced_totals_trials','prospective_validation'}
+    assert frozen[0]['validation_cohort_id']==history.data['prospective_validation']['cohort_id']
 
 
 def test_conflicting_result_withdraws_evidence_and_push_is_zero_profit():
@@ -177,3 +178,40 @@ def test_weighted_league_and_effective_sample_follow_same_decay():
     assert model['weighted_league_total'] < model['league_total']
     assert all(model['effective_counts'][t] < model['counts'][t] for t in model['counts'])
     assert 0<=model['dispersion']<=.5
+
+
+@pytest.mark.parametrize('case,settled', [('agree',True),('different_score',False),('provider_id_conflict',False),('different_time',False),('missing_ids',False),('future_observation',False),('wrong_squad',True)])
+def test_consistent_identified_result_receipts_can_confirm_same_fixture(case,settled):
+    from copy import deepcopy
+    row={'home':'Chapecoense SC','away':'Mirassol FC SP','created_at':NOW.isoformat(),
+         'kickoff':(NOW+timedelta(hours=2)).isoformat(),'status':'pending'}
+    first={'home':'chapecoense','away':'mirassol','kickoff':row['kickoff'], 'hg':1,'ag':2,
+           'observed_at':(NOW+timedelta(hours=5)).isoformat(),'provider_ids':{'sstats':'1492443'}}
+    second={**deepcopy(first),'home':'chapecoense af','provider_ids':{'football_data':'555073'}}
+    if case=='different_score':second['hg']=2
+    if case=='provider_id_conflict':second['provider_ids']={'sstats':'different'}
+    if case=='different_time':second['kickoff']=(NOW+timedelta(hours=2,minutes=1)).isoformat()
+    if case=='missing_ids':second.pop('provider_ids')
+    if case=='future_observation':second['observed_at']=(NOW+timedelta(days=1)).isoformat()
+    if case=='wrong_squad':second['home']='Chapecoense U19'  # excluded, first receipt remains valid
+    history=SimpleNamespace(data={'results':{'first':first,'second':second}})
+    resolve([row],history,NOW+timedelta(hours=6))
+    assert (row['status']=='resolved') is settled
+    if settled:assert row['total']==3
+    else:assert 'total' not in row and 'resolved_at' not in row
+
+
+def test_invalidated_result_withdraws_outcome_without_changing_frozen_forecast():
+    row={'home':'Home','away':'Away','created_at':NOW.isoformat(),
+         'kickoff':(NOW+timedelta(hours=2)).isoformat(),'status':'pending',
+         'rates':{'opponent':2.9},'anchor':{'point':2.5,'market':.5},
+         'picks':{'opponent':{'side':'over','point':2.5,'odds':2.1}}}
+    frozen=deepcopy({k:row[k] for k in ('rates','anchor','picks')})
+    result={'home':'Home','away':'Away','kickoff':row['kickoff'],'hg':2,'ag':1,
+            'observed_at':(NOW+timedelta(hours=5)).isoformat()}
+    h=SimpleNamespace(data={'results':{'one':result}})
+    resolve([row],h,NOW+timedelta(hours=6));assert row['status']=='resolved'
+    result['observed_at']=(NOW+timedelta(days=1)).isoformat()
+    resolve([row],h,NOW+timedelta(hours=6))
+    assert row['status']=='pending' and 'total' not in row and 'resolved_at' not in row
+    assert {k:row[k] for k in frozen}==frozen

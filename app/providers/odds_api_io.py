@@ -1,21 +1,19 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-UTC = timezone.utc
-from typing import Any
+from typing import Any, cast
 
 import httpx
-import hashlib
-
-from app.services.api_budget import BudgetedAsyncClient
-from app.services.market_period import is_full_match_market
 
 from app.config import Settings
-from app.schemas import Match, Offer
+from app.schemas import MarketFamily, Match, Offer
+from app.services.api_budget import BudgetedAsyncClient
+from app.services.market_period import is_full_match_market
 from app.utils import (
     is_simulated_or_esports_event,
     normalize_bookmaker_name,
@@ -254,7 +252,7 @@ class OddsApiIoProvider:
             for page in range(1, max_pages + 1):
                 if not self._request_budget_allows(stats, account_name=event_account_name):
                     break
-                params = {
+                params: dict[str, Any] = {
                     "apiKey": api_key,
                     "sport": "football",
                     "status": "pending,live",
@@ -442,6 +440,10 @@ class OddsApiIoProvider:
 
         registry_mapping = {}
         registry_missing = soccer_matches
+        daily = os.getenv("PUBLICATION_PROFILE") == "daily_quality"
+        attempted_keys: set[str] = set()
+        discovery_complete = False
+        diagnostics: dict[str, dict[str, Any]] = {}
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             registry_mapping, registry_missing = self._registry_mapping(soccer_matches)
 
@@ -466,7 +468,7 @@ class OddsApiIoProvider:
                 for page in range(1, max_pages + 1):
                     if not self._request_budget_allows(stats, account_name=str(event_account["name"])):
                         break
-                    params = {
+                    params: dict[str, Any] = {
                         "apiKey": api_key,
                         "sport": "football",
                         "status": "pending,live",
@@ -509,6 +511,7 @@ class OddsApiIoProvider:
                     if page == 1 and items:
                         preview["sample_events"] = items[:3]
                     if not items:
+                        discovery_complete = True
                         break
 
                     before = len(seen_event_ids)
@@ -524,6 +527,7 @@ class OddsApiIoProvider:
                     if len(seen_event_ids) == before:
                         break
                     if len(items) < page_limit:
+                        discovery_complete = True
                         break
             mapping: dict[str, dict[str, Any]] = dict(registry_mapping)
             for raw_event in events:
@@ -545,6 +549,18 @@ class OddsApiIoProvider:
                     mapping[matched.match_key] = {"match": matched, "event": event}
 
             stats["events_matched"] = len(mapping)
+            if daily:
+                diagnostics = {
+                    m.match_key: {"home": m.home_team, "away": m.away_team,
+                                  "event_id": (mapping.get(m.match_key) or {}).get("event", {}).get("id"),
+                                  "accounts": {}, "reason": "not_queried"}
+                    for m in soccer_matches
+                }
+                if discovery_complete:
+                    attempted_keys.update(m.match_key for m in registry_missing if m.match_key not in mapping)
+                for m in registry_missing:
+                    if m.match_key not in mapping:
+                        diagnostics[m.match_key]["reason"] = "event_not_found" if discovery_complete else "discovery_incomplete"
             for item in mapping.values():
                 quality = item["event"].get("match_quality")
                 if quality == "exact":
@@ -570,6 +586,8 @@ class OddsApiIoProvider:
                     continue
                 event_id_list = [int(item["event"]["id"]) for item in chunk]
                 for account in accounts:
+                    before_requests = stats["odds_requests"]
+                    before_errors = stats["response_errors"]
                     event_list = await self._fetch_odds_multi_chunk(
                         client,
                         str(account["api_key"]),
@@ -579,6 +597,19 @@ class OddsApiIoProvider:
                         account_name=str(account["name"]),
                         fallback_books=str(account.get("fallback_bookmakers") or ""),
                     )
+                    if daily:
+                        queried = stats["odds_requests"] > before_requests
+                        account_state = stats["accounts"][str(account["name"])]
+                        for item in chunk:
+                            key = item["match"].match_key
+                            if queried:
+                                attempted_keys.add(key)
+                            diagnostics[key]["accounts"][str(account["name"])] = {
+                                "bookmakers": account_state.get("effective_bookmakers") or account["bookmakers"],
+                                "result": "request_error" if stats["response_errors"] > before_errors
+                                or account_state.get("auth_error") or account_state.get("plan_restriction")
+                                else "response_absent" if queried else "not_queried",
+                            }
                     if stats.get("rate_limited") and os.getenv('PUBLICATION_PROFILE') != 'daily_quality':
                         break
                     if len(preview["sample_odds"]) < 2 and event_list:
@@ -588,7 +619,24 @@ class OddsApiIoProvider:
                         row = next((item for item in chunk if int(item["event"]["id"]) == event_id), None)
                         if row is None:
                             continue
+                        if daily:
+                            from app.services.odds_line_audit import quote_identity_reason
+
+                            account_result = diagnostics[row["match"].match_key]["accounts"][str(account["name"])]
+                            account_result["returned_fixture"] = {
+                                k: event_payload.get(k) for k in ("id", "home", "away", "date", "status", "league", "homeId", "awayId")
+                            }
+                            reason = quote_identity_reason(event_payload, row["match"], event_id)
+                            if reason:
+                                account_result["result"] = reason
+                                continue
                         parsed = self._parse_event_odds(event_payload, row["match"])
+                        if daily:
+                            account_result.update(
+                                result="quotes" if parsed else "no_supported_full_match_markets" if event_payload.get("bookmakers") else "empty_bookmakers",
+                                returned_bookmakers=list(event_payload.get("bookmakers") or {}),
+                                parsed_offers=len(parsed),
+                            )
                         if not parsed:
                             continue
                         for offer in parsed:
@@ -636,6 +684,31 @@ class OddsApiIoProvider:
                 for flag in ('auth_error', 'plan_restriction', 'rate_limited'):
                     stats['any_account_' + flag] = any(row.get(flag) for row in account_rows)
                     stats[flag] = bool(account_rows) and all(row.get(flag) for row in account_rows)
+                for key, diagnostic in diagnostics.items():
+                    results = [r["result"] for r in diagnostic["accounts"].values()]
+                    if key in result_offers:
+                        diagnostic["reason"] = "quotes_collected"
+                    elif results:
+                        diagnostic["reason"] = (
+                            "no_quotes_from_selected_books"
+                            if all(r in {"response_absent", "empty_bookmakers"} for r in results)
+                            else "no_supported_full_match_markets"
+                            if all(r == "no_supported_full_match_markets" for r in results)
+                            else "incomplete_or_rejected_response"
+                        )
+                from app.services.odds_line_audit import audit_empty_lines
+
+                try:
+                    await audit_empty_lines(self, client, accounts, mapping, diagnostics, stats)
+                except (OSError, ValueError, TypeError, KeyError):
+                    stats.setdefault("line_availability_audit", {})["status"] = "audit_cache_error"
+                stats["attempted_match_keys"] = sorted(attempted_keys)
+                stats["line_gap_reasons"] = {
+                    reason: sum(d["reason"] == reason for d in diagnostics.values())
+                    for reason in sorted({d["reason"] for d in diagnostics.values()})
+                }
+                preview["line_diagnostics"] = diagnostics
+                stats["line_diagnostics"] = diagnostics
             self._write_offer_snapshot(soccer_matches, result_offers, stats)
             return result_offers, stats, preview
 
@@ -748,13 +821,13 @@ class OddsApiIoProvider:
                     by_match[match_key]["best_same_side_books"] = max(int(by_match[match_key].get("best_same_side_books") or 0), len({b for b in books if b}))
             flat_by_match = []
             for item in by_match.values():
-                books = sorted({b for b in item.pop("books", set()) if b})
-                item["books"] = books
-                item["books_count"] = len(books)
+                sorted_books = sorted({b for b in item.pop("books", set()) if b})
+                item["books"] = sorted_books
+                item["books_count"] = len(sorted_books)
                 flat_by_match.append(item)
             payload = {
                 "status": "ok",
-                "created_at_utc": datetime.now(timezone.utc).isoformat(),
+                "created_at_utc": datetime.now(UTC).isoformat(),
                 "provider": "odds_api_io",
                 "policy": "direct_provider_parsed_offer_snapshot_for_bookmaker_quorum_backfill",
                 "rows_count": len(rows),
@@ -902,7 +975,11 @@ class OddsApiIoProvider:
                     account_stats["entitlement_fallback_used"] = True
                     account_stats["plan_restriction_recovered"] = True
                     stats["plan_restriction_recovered"] = True
-                return [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+                if not isinstance(payload, list):
+                    stats["response_errors"] += 1
+                    account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
+                    return []
+                return [item for item in payload if isinstance(item, dict)]
             if response.status_code >= 500 and len(event_ids) > 1:
                 mid = max(1, len(event_ids) // 2)
                 left = await self._fetch_odds_multi_chunk(
@@ -1021,10 +1098,7 @@ class OddsApiIoProvider:
 
     @staticmethod
     def _split_bookmakers(value: str | list[str] | tuple[str, ...]) -> list[str]:
-        if isinstance(value, (list, tuple)):
-            raw_items = value
-        else:
-            raw_items = str(value or "").split(",")
+        raw_items = value if isinstance(value, (list, tuple)) else str(value or "").split(",")
         return [str(item or "").strip() for item in raw_items if str(item or "").strip()]
 
     def _bookmakers_param_from_values(
@@ -1227,7 +1301,7 @@ class OddsApiIoProvider:
     @staticmethod
     def _registry_mapping(matches: list[Match]):
         """Route already verified registry IDs straight to the odds batch endpoint."""
-        ids = {}
+        ids: dict[int, list[Match]] = {}
         for match in matches:
             source_ids = match.metadata.get("provider_source_ids") or match.metadata.get("day_inventory_source_ids") or {}
             value = source_ids.get("odds_api_io")
@@ -1285,7 +1359,7 @@ class OddsApiIoProvider:
     def _parse_event_odds(self, payload: dict[str, Any], match: Match) -> list[Offer]:
         bookmakers = payload.get("bookmakers")
         offers: list[Offer] = []
-        seen: set[tuple[str, str, str, float | None]] = set()
+        seen: set[tuple[str, str, str, float | None, str | None]] = set()
         fetched_at = datetime.now(UTC).isoformat()
         market_changed_at = None
 
@@ -1320,7 +1394,7 @@ class OddsApiIoProvider:
                 Offer(
                     source="odds_api_io",
                     bookmaker=book,
-                    family=family,
+                    family=cast(MarketFamily, family),
                     selection=selection,
                     price=price,
                     point=point_value,
@@ -1517,7 +1591,7 @@ class OddsApiIoProvider:
                             add_offer(bookmaker_name, family, selection, price_value, point, market_key, team_side=inferred_side)
 
         if isinstance(bookmakers, dict):
-            iterator = bookmakers.items()
+            iterator = list(bookmakers.items())
         elif isinstance(bookmakers, list):
             iterator = []
             for item in bookmakers:
@@ -1581,9 +1655,7 @@ class OddsApiIoProvider:
             'correct score', 'alternative', 'alternate', 'alt ', 'race to', 'odd/even',
             'clean sheet', 'win to nil', 'to qualify', 'penalty', 'minute', 'asian corners',
         )
-        if any(term in key for term in banned_terms):
-            return False
-        return True
+        return not any(term in key for term in banned_terms)
 
     @staticmethod
     def _family_for_market(market_key: str) -> str | None:

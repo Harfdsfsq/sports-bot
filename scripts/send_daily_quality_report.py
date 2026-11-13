@@ -1,4 +1,5 @@
 """Human-readable Telegram report from current-run artifacts only."""
+
 from __future__ import annotations
 
 import os
@@ -11,349 +12,599 @@ from app.services.daily_quality_policy import TIER_LIMITS
 from scripts.send_pipeline_run_report import send_telegram
 
 REASONS = {
-    'non_target_bookmaker': 'букмекер не входит в разрешённый список',
-    'reserve_only': 'рынок проверяется только в резерве без публикации',
-    'insufficient_confirmed_sample': 'подтверждённая выборка команд меньше минимальной',
-    'context_history_identity_missing': 'история команды не содержит проверяемых названий участников',
-    'context_payload_invalid': 'источник вернул спортивные данные в неподдерживаемом формате',
-    'fixture_squad_ambiguous': 'источник не уточнил состав клуба в турнире с резервными командами',
-    'fixture_squad_conflict': 'указанный состав команды противоречит участникам турнира',
-    'insufficient_team_sample': 'слишком мало подтверждённых матчей обеих команд для прогноза',
-    'quality_insufficient_team_sample': 'слишком мало подтверждённых матчей обеих команд для прогноза',
-    'context_team_identity_mismatch': 'спортивные данные относятся к другой команде или составу',
-    'context_fixture_identity_mismatch': 'спортивные данные относятся к другому матчу',
-    'context_source_stale': 'спортивный источник устарел',
-    'context_source_expired_before_publication': 'спортивные данные устарели до публикации',
-    'partial_sporting_context': 'нет подтверждённых данных обеих команд',
-    'unsupported_market_period': 'линия относится к тайму или другому периоду, а не ко всему матчу',
-    'selected_price_outlier': 'выбранный коэффициент резко отличается от цен других букмекеров',
-    'daily_publication_limit': 'достигнут дневной лимит публикаций',
-    'unsupported_spread_line': 'четвертная или некорректная фора не поддерживается',
-    'post_calibration_probability_guard': 'вероятность ниже финального порога модели',
-    'quality_post_calibration_probability_guard': 'вероятность ниже финального порога модели',
-    'quality_high_odds_confidence_guard': 'недостаточная уверенность при повышенном коэффициенте',
-    'no_bet_quality_score_guard': 'качество ниже минимальных 65 баллов',
-    'quality_no_bet_quality_score_guard': 'качество ниже минимальных 65 баллов',
-    'unsupported_total_line': 'тотал вне поддерживаемых целых и половинных линий',
-    'unsupported_team_total_line': 'индивидуальный тотал вне поддерживаемых линий',
-    'non_core_confidence_guard': 'недостаточная уверенность для менее изученного турнира',
-    'non_core_context_guard': 'спортивные данные недостаточно подтверждают модель',
-    'totals_over25_confidence_guard': 'для ТБ(2.5) недостаточна уверенность модели',
-    'totals_over25_edge_guard': 'для ТБ(2.5) недостаточен запас над линией',
-    'totals_over25_probability_guard': 'для ТБ(2.5) недостаточна скорректированная вероятность',
-    'totals_over25_xg_guard': 'ТБ(2.5) не подтверждён голевой моделью',
-    'totals_over25_dual_threat_guard': 'ТБ(2.5) слишком зависит от голов одной команды',
-    'quality_quality_high_odds_score_guard': 'качество недостаточно при повышенном коэффициенте',
-    'confidence_below_threshold': 'недостаточная уверенность модели',
-    'probability_below_threshold': 'вероятность исхода ниже порога модели',
-    'publish_books_guard': 'недостаточное подтверждение цены',
-    'quality_quality_high_odds_books_guard': 'недостаточное подтверждение цены',
-    'quality_quality_high_odds_confidence_guard': 'недостаточная уверенность при повышенном коэффициенте',
-    'market_outside_daily_policy': 'рынок не входит в правила дневного отбора',
-    'missing_real_line_or_context': 'нет реальной линии или спортивного контекста',
-    'below_b_quality': 'данные, уверенность или ценность ниже требований B-tier',
-    'missing_goal_model': 'нет данных для голевой модели',
-    'line_or_value_changed': 'линия изменилась или потеряла ценность',
-    'bad_historical_segment_guard': 'неблагоприятные результаты похожих прогнозов',
-    'quality_bad_historical_segment_guard': 'неблагоприятные результаты похожих прогнозов',
-    'daily_price_observed_at_stale': 'коэффициент устарел',
-    'daily_context_observed_at_stale': 'контекст устарел',
-    'already_published_match': 'на этот матч рекомендация уже отправлена',
-    'final_kickoff_window': 'до начала осталось меньше 30 минут',
-    'kickoff_outside_30m_4h': 'матч вне окна от 30 минут до 4 часов',
+    "non_target_bookmaker": "букмекер не входит в разрешённый список",
+    "reserve_only": "рынок проверяется только в резерве без публикации",
+    "insufficient_confirmed_sample": "подтверждённая выборка команд меньше минимальной",
+    "context_history_identity_missing": "история команды не содержит проверяемых названий участников",
+    "context_payload_invalid": "источник вернул спортивные данные в неподдерживаемом формате",
+    "fixture_squad_ambiguous": "источник не уточнил состав клуба в турнире с резервными командами",
+    "fixture_squad_conflict": "указанный состав команды противоречит участникам турнира",
+    "insufficient_team_sample": "слишком мало подтверждённых матчей обеих команд для прогноза",
+    "quality_insufficient_team_sample": "слишком мало подтверждённых матчей обеих команд для прогноза",
+    "context_team_identity_mismatch": "спортивные данные относятся к другой команде или составу",
+    "context_fixture_identity_mismatch": "спортивные данные относятся к другому матчу",
+    "context_source_stale": "спортивный источник устарел",
+    "context_source_expired_before_publication": "спортивные данные устарели до публикации",
+    "partial_sporting_context": "нет подтверждённых данных обеих команд",
+    "unsupported_market_period": "линия относится к тайму или другому периоду, а не ко всему матчу",
+    "selected_price_outlier": "выбранный коэффициент резко отличается от цен других букмекеров",
+    "daily_publication_limit": "достигнут дневной лимит публикаций",
+    "unsupported_spread_line": "четвертная или некорректная фора не поддерживается",
+    "post_calibration_probability_guard": "вероятность ниже финального порога модели",
+    "quality_post_calibration_probability_guard": "вероятность ниже финального порога модели",
+    "quality_high_odds_confidence_guard": "недостаточная уверенность при повышенном коэффициенте",
+    "no_bet_quality_score_guard": "качество ниже минимальных 65 баллов",
+    "quality_no_bet_quality_score_guard": "качество ниже минимальных 65 баллов",
+    "unsupported_total_line": "тотал вне поддерживаемых целых и половинных линий",
+    "unsupported_team_total_line": "индивидуальный тотал вне поддерживаемых линий",
+    "non_core_confidence_guard": "недостаточная уверенность для менее изученного турнира",
+    "non_core_context_guard": "спортивные данные недостаточно подтверждают модель",
+    "totals_over25_confidence_guard": "для ТБ(2.5) недостаточна уверенность модели",
+    "totals_over25_edge_guard": "для ТБ(2.5) недостаточен запас над линией",
+    "totals_over25_probability_guard": "для ТБ(2.5) недостаточна скорректированная вероятность",
+    "totals_over25_xg_guard": "ТБ(2.5) не подтверждён голевой моделью",
+    "totals_over25_dual_threat_guard": "ТБ(2.5) слишком зависит от голов одной команды",
+    "quality_quality_high_odds_score_guard": "качество недостаточно при повышенном коэффициенте",
+    "confidence_below_threshold": "недостаточная уверенность модели",
+    "probability_below_threshold": "вероятность исхода ниже порога модели",
+    "publish_books_guard": "недостаточное подтверждение цены",
+    "quality_quality_high_odds_books_guard": "недостаточное подтверждение цены",
+    "quality_quality_high_odds_confidence_guard": "недостаточная уверенность при повышенном коэффициенте",
+    "market_outside_daily_policy": "рынок не входит в правила дневного отбора",
+    "missing_real_line_or_context": "нет реальной линии или спортивного контекста",
+    "below_b_quality": "данные, уверенность или ценность ниже требований B-tier",
+    "missing_goal_model": "нет данных для голевой модели",
+    "line_or_value_changed": "линия изменилась или потеряла ценность",
+    "bad_historical_segment_guard": "неблагоприятные результаты похожих прогнозов",
+    "quality_bad_historical_segment_guard": "неблагоприятные результаты похожих прогнозов",
+    "daily_price_observed_at_stale": "коэффициент устарел",
+    "daily_context_observed_at_stale": "контекст устарел",
+    "already_published_match": "на этот матч рекомендация уже отправлена",
+    "final_kickoff_window": "до начала осталось меньше 30 минут",
+    "kickoff_outside_30m_4h": "матч вне окна от 30 минут до 4 часов",
 }
 
 
 def render(summary):
-    daily = summary.get('daily_quality') or {}
-    c = daily.get('coverage') or {}
-    published = daily.get('published_today') or []
-    a, b = sum(row['tier'] == 'A' for row in published), sum(row['tier'] == 'B' for row in published)
-    picks = int(summary.get('published_to_telegram') or 0)
-    dry = bool(summary.get('dry_run'))
-    duplicates = int(summary.get('skipped_already_in_state') or 0)
-    only_duplicates = (int(summary.get('candidates_raw') or 0) > 0
-                       and duplicates >= int(summary.get('candidates_raw') or 0))
-    lines = ['🧾 HARIZON — отчёт по запуску',
-             ('🧪 Проверка без отправки прогнозов' if dry else f'✅ Отправлено прогнозов: {picks}' if picks else '⏸ Новые прогнозы не отправлены: дневной лимит достигнут' if len(published) >= 5 else 'ℹ️ Прошедшие отбор ставки уже отправлены; повторная отправка пропущена' if only_duplicates else '🟡 Подходящих прогнозов не отправлено'),
-             '', '📦 Дневной инвентарь — ' + str(summary.get('current_time_local', '')[:10]), f"Собрано {c.get('inventory', 0)} матчей при цели 300. Каждый матч имеет постоянную привязку к командам и времени начала.",
-             f"Данные получены за день: линия {c.get('collected_line', 0)}, контекст {c.get('collected_context', 0)}.",
-             f"Актуально сейчас: линия {c.get('line', 0)}, контекст {c.get('context', 0)}, оба вида данных {c.get('ready', 0)}.",
-             f"Инвентарь следующего дня: {str(daily.get('next_day_inventory', 0)) + '/300 матчей подготовлено' if daily.get('next_day_inventory') else 'будет подготовлен вечером; сейчас приоритет у текущего дня'}.",
-             f"Матчей после полуночи в очереди ближайшего окна: {c.get('lookahead', 0)}. Они считаются отдельно от сегодняшних 300.",
-             '', '⏱️ Ближайшее окно — 4 часа', f"Матчей с запасом 30+ минут: {c.get('near', 0)}. С актуальной линией и контекстом: {c.get('near_ready', 0)}.",
-             f"В этом окне: линия {c.get('near_line', 0)}, спортивный контекст {c.get('near_context', 0)}; нет линии у {c.get('near_missing_line', 0)}, нет контекста у {c.get('near_missing_context', 0)}.",
-             f"Дополнительные данные окна: форма {c.get('form', 0)}, таблица {c.get('standings', 0)}, погода {c.get('weather', 0)}.",
-             '', '🏷️ Качество прогнозов',
-             *[f"{tier}: качество {limits['quality']}+, уверенность модели {limits['confidence']}+, EV {limits['ev']}%+, запас {limits['edge']} п.п.+." for tier, limits in TIER_LIMITS.items()],
-             'Для обоих: реальный контекст, текущая линия и положительная ценность. Два API — преимущество.',
-             'Качество оценивает данные отдельно от EV; высокий EV не повышает доверие к данным.',
-             'A дополнительно требует подтверждённой выборки команд и согласованности голевых оценок. Неизвестная выборка — максимум B.',
-             f'За день отправлено: A {a}, B {b}; всего {len(published)}. Дневной лимит: 5.',
-             'Дневной лимит ограничивает число публикаций. Обязательной нормы A/B нет; после проверок приоритет у EV.',
-             '', '🧪 Воронка',
-             f"Рассчитано вариантов ставок: {summary.get('candidates_model_evaluated', 'нет счётчика')}. После первичной проверки вероятности и ценности: {summary.get('candidates_before_quality', 0)}.",
-             f"Кандидатов до качества: {summary.get('candidates_before_quality', 0)}; после качества: {summary.get('candidates_raw', 0)}; выбрано: {len(daily.get('selected') or [])}."]
-    if 'near_missing_both' in c:
-        position = next(i for i, line in enumerate(lines) if line.startswith('Дополнительные данные окна:'))
-        lines.insert(position, f"Добор окна: только линия — {c.get('near_only_line', 0)}; только контекст — {c.get('near_only_context', 0)}; нет обоих — {c['near_missing_both']}.")
+    daily = summary.get("daily_quality") or {}
+    c = daily.get("coverage") or {}
+    published = daily.get("published_today") or []
+    a, b = sum(row["tier"] == "A" for row in published), sum(row["tier"] == "B" for row in published)
+    picks = int(summary.get("published_to_telegram") or 0)
+    dry = bool(summary.get("dry_run"))
+    duplicates = int(summary.get("skipped_already_in_state") or 0)
+    only_duplicates = int(summary.get("candidates_raw") or 0) > 0 and duplicates >= int(
+        summary.get("candidates_raw") or 0
+    )
+    lines = [
+        "🧾 HARIZON — отчёт по запуску",
+        (
+            "🧪 Проверка без отправки прогнозов"
+            if dry
+            else f"✅ Отправлено прогнозов: {picks}"
+            if picks
+            else "⏸ Новые прогнозы не отправлены: дневной лимит достигнут"
+            if len(published) >= 5
+            else "ℹ️ Прошедшие отбор ставки уже отправлены; повторная отправка пропущена"
+            if only_duplicates
+            else "🟡 Подходящих прогнозов не отправлено"
+        ),
+        "",
+        "📦 Дневной инвентарь — " + str(summary.get("current_time_local", "")[:10]),
+        f"Собрано {c.get('inventory', 0)} матчей при цели 300. Каждый матч имеет постоянную привязку к командам и времени начала.",
+        f"Данные получены за день: линия {c.get('collected_line', 0)}, контекст {c.get('collected_context', 0)}, оба вида {c.get('collected_ready', 0)}.",
+        f"Предстоящие матчи с данными: {c.get('future_ready', 0)}/{c.get('future_matches', 0)}; линия {c.get('future_line', 0)}, контекст {c.get('future_context', 0)}.",
+        f"Ближайшее окно: два букмекера на одной линии {c.get('near_two_book_lines', 0)}, два контекстных источника {c.get('near_two_context_sources', 0)}, оба условия {c.get('near_two_book_and_context', 0)}.",
+        f"Актуально сейчас: линия {c.get('line', 0)}, контекст {c.get('context', 0)}, оба вида данных {c.get('ready', 0)}.",
+        f"Инвентарь следующего дня: {str(daily.get('next_day_inventory', 0)) + '/300 матчей подготовлено' if daily.get('next_day_inventory') else 'будет подготовлен вечером; сейчас приоритет у текущего дня'}.",
+        f"Матчей после полуночи в очереди ближайшего окна: {c.get('lookahead', 0)}. Они считаются отдельно от сегодняшних 300.",
+        "",
+        "⏱️ Ближайшее окно — 4 часа",
+        f"Матчей с запасом 30+ минут: {c.get('near', 0)}. С актуальной линией и контекстом: {c.get('near_ready', 0)}.",
+        f"В этом окне: линия {c.get('near_line', 0)}, спортивный контекст {c.get('near_context', 0)}; нет линии у {c.get('near_missing_line', 0)}, нет контекста у {c.get('near_missing_context', 0)}.",
+        f"Дополнительные данные окна: форма {c.get('form', 0)}, таблица {c.get('standings', 0)}, погода {c.get('weather', 0)}.",
+        "",
+        "🏷️ Качество прогнозов",
+        *[
+            f"{tier}: качество {limits['quality']}+, уверенность модели {limits['confidence']}+, EV {limits['ev']}%+, запас {limits['edge']} п.п.+."
+            for tier, limits in TIER_LIMITS.items()
+        ],
+        "Для обоих: реальный контекст, текущая линия и положительная ценность. Два API — преимущество.",
+        (
+            "Telegram: только A-tier; B-tier наблюдается в условном эксперименте."
+            if os.getenv("DAILY_LIVE_A_ONLY", "false").lower() == "true"
+            else "Telegram: A/B по действующему контракту."
+        ),
+        "Качество оценивает данные отдельно от EV; высокий EV не повышает доверие к данным.",
+        "A дополнительно требует подтверждённой выборки команд и согласованности голевых оценок. Неизвестная выборка — максимум B.",
+        f"За день отправлено: A {a}, B {b}; всего {len(published)}. Дневной лимит: 5.",
+        "Дневной лимит ограничивает число публикаций. Обязательной нормы A/B нет; после проверок приоритет у EV.",
+        "",
+        "🧪 Воронка",
+        f"Рассчитано вариантов ставок: {summary.get('candidates_model_evaluated', 'нет счётчика')}. После первичной проверки вероятности и ценности: {summary.get('candidates_before_quality', 0)}.",
+        f"Кандидатов до качества: {summary.get('candidates_before_quality', 0)}; после качества: {summary.get('candidates_raw', 0)}; выбрано: {len(daily.get('selected') or [])}.",
+    ]
+    if "near_coverage_status" in c:
+        lines.append(
+            f"Покрытие ближайшего окна: {c.get('near_ready_pct') if c.get('near_ready_pct') is not None else 'нет матчей'}%; цель 95%, минимум 90%. До 95% не хватает {c.get('near_missing_to_95', 0)} матчей."
+        )
+    if "near_missing_both" in c:
+        position = next(i for i, line in enumerate(lines) if line.startswith("Дополнительные данные окна:"))
+        lines.insert(
+            position,
+            f"Добор окна: только линия — {c.get('near_only_line', 0)}; только контекст — {c.get('near_only_context', 0)}; нет обоих — {c['near_missing_both']}.",
+        )
     if duplicates:
-        lines.append(f'Защита от повторов: ранее опубликованных вариантов — {duplicates}. Повторно не отправлены.')
-    reserve = summary.get('reserve_markets')
+        lines.append(f"Защита от повторов: ранее опубликованных вариантов — {duplicates}. Повторно не отправлены.")
+    reserve = summary.get("reserve_markets")
     if reserve is not None:
-        lines.insert(2, '📌 Публикация: только общие тоталы матча. Индивидуальные тоталы и остальные рынки — только резерв.')
-    bank = summary.get('bankroll') or {}
+        lines.insert(
+            2, "📌 Публикация: только общие тоталы матча. Индивидуальные тоталы и остальные рынки — только резерв."
+        )
+    bank = summary.get("bankroll") or {}
     if bank:
-        label = 'Тестовый банк' if dry else 'Банк'
-        lines.insert(2, f"💼 {label}: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}")
+        label = "Тестовый банк" if dry else "Банк"
+        lines.insert(
+            2,
+            f"💼 {label}: {bank.get('current_balance', 0):.2f} | открытый риск: {bank.get('open_exposure', 0):.2f} | доступно: {bank.get('available_balance', 0):.2f}",
+        )
         if dry:
-            lines.insert(3, 'ℹ️ Тестовый банк и история изолированы от рабочего режима; выбранные варианты не отправлены.')
+            lines.insert(
+                3, "ℹ️ Тестовый банк и история изолированы от рабочего режима; выбранные варианты не отправлены."
+            )
     if len(published) > 5:
-        lines.extend(['', 'ℹ️ После восстановления истории выявлено прежнее превышение дневного лимита. Новые публикации остановлены до следующего дня MSK.'])
-    if c.get('inventory', 0) > 300:
-        lines.append(f"ℹ️ В реестре сохранены {c['inventory'] - 300} дополнительных матчей после объединения истории; цель 300 достигнута.")
-    if daily.get('selected'):
-        lines.extend(['', '🧪 Выбранные варианты тестового запуска — без отправки:' if dry else '📨 Опубликованные прогнозы текущего запуска:'])
-        for row in daily['selected']:
-            lines.append(f"• {row['match']} | {row['tier']}-tier | @{row['odds']:.2f} | качество {row.get('quality') or 0:.1f}")
-            if row.get('selection'):
-                kickoff = parse_time(row.get('kickoff_utc'))
+        lines.extend(
+            [
+                "",
+                "ℹ️ После восстановления истории выявлено прежнее превышение дневного лимита. Новые публикации остановлены до следующего дня MSK.",
+            ]
+        )
+    if c.get("inventory", 0) > 300:
+        lines.append(
+            f"ℹ️ В реестре сохранены {c['inventory'] - 300} дополнительных матчей после объединения истории; цель 300 достигнута."
+        )
+    if daily.get("selected"):
+        lines.extend(
+            [
+                "",
+                "🧪 Выбранные варианты тестового запуска — без отправки:"
+                if dry
+                else "📨 Опубликованные прогнозы текущего запуска:",
+            ]
+        )
+        for row in daily["selected"]:
+            lines.append(
+                f"• {row['match']} | {row['tier']}-tier | @{row['odds']:.2f} | качество {row.get('quality') or 0:.1f}"
+            )
+            if row.get("selection"):
+                kickoff = parse_time(row.get("kickoff_utc"))
                 from app.services.daily_match_registry import TZ
-                when = kickoff.astimezone(TZ).strftime('%d.%m %H:%M MSK') if kickoff else 'время не указано'
-                lines.append(f"  {row['selection']} · {when} · модель {row.get('probability_pct', 0):.1f}% · EV {row.get('ev_pct', 0):+.1f}% · сумма {row.get('stake_amount', 0):.2f}")
+
+                when = kickoff.astimezone(TZ).strftime("%d.%m %H:%M MSK") if kickoff else "время не указано"
+                lines.append(
+                    f"  {row['selection']} · {when} · модель {row.get('probability_pct', 0):.1f}% · EV {row.get('ev_pct', 0):+.1f}% · сумма {row.get('stake_amount', 0):.2f}"
+                )
     if reserve is not None:
-        lines.extend(['', '🧪 Резерв — проверка без ставок и публикаций',
-                      f"Рассчитано вариантов: {reserve.get('evaluated', 0)}; первичный отбор прошли: {reserve.get('passed_model', 0)}.",
-                      f"Новых вариантов: {reserve.get('selected_new', 0)}; ожидают результата: {reserve.get('pending', 0)}; завершено: {reserve.get('settled', 0)}.",
-                      f"Выигрыши {reserve.get('wins', 0)}, проигрыши {reserve.get('losses', 0)}, возвраты {reserve.get('pushes', 0)}. Условный результат при 1 единице на вариант: {reserve.get('paper_pnl', 0):+.2f}. В банк не входит."])
-        reserve_reasons = Counter(reserve.get('rejections') or {})
+        lines.extend(
+            [
+                "",
+                "🧪 Резерв — проверка без ставок и публикаций",
+                f"Рассчитано вариантов: {reserve.get('evaluated', 0)}; первичный отбор прошли: {reserve.get('passed_model', 0)}.",
+                f"Новых вариантов: {reserve.get('selected_new', 0)}; ожидают результата: {reserve.get('pending', 0)}; завершено: {reserve.get('settled', 0)}.",
+                f"Выигрыши {reserve.get('wins', 0)}, проигрыши {reserve.get('losses', 0)}, возвраты {reserve.get('pushes', 0)}. Условный результат при 1 единице на вариант: {reserve.get('paper_pnl', 0):+.2f}. В банк не входит.",
+            ]
+        )
+        reserve_reasons = Counter(reserve.get("rejections") or {})
         if reserve_reasons:
             labels = [f"{REASONS.get(reason, reason)} — {count}" for reason, count in reserve_reasons.most_common(3)]
-            lines.append('Не допущены в резерв: ' + '; '.join(labels) + '.')
-        if reserve.get('historically_blocked_under_observation'):
-            lines.append(f"Из новых наблюдений {reserve['historically_blocked_under_observation']} запрещены к публикации по истории; проверяются только условно.")
-        if reserve.get('duplicates_ignored'):
-            lines.append(f"Из статистики резерва исключены повторы одного матча под разными названиями: {reserve['duplicates_ignored']}. Исходные записи сохранены.")
-    reviewed = [row for row in daily.get('quality_review', []) if row.get('reasons')]
+            lines.append("Не допущены в резерв: " + "; ".join(labels) + ".")
+        if reserve.get("historically_blocked_under_observation"):
+            lines.append(
+                f"Из новых наблюдений {reserve['historically_blocked_under_observation']} запрещены к публикации по истории; проверяются только условно."
+            )
+        if reserve.get("duplicates_ignored"):
+            lines.append(
+                f"Из статистики резерва исключены повторы одного матча под разными названиями: {reserve['duplicates_ignored']}. Исходные записи сохранены."
+            )
+    reviewed = [row for row in daily.get("quality_review", []) if row.get("reasons")]
     if reviewed:
-        lines.extend(['', '🔎 Почему финальные кандидаты не прошли'])
+        lines.extend(["", "🔎 Почему финальные кандидаты не прошли"])
         for row in reviewed:
-            labels = [REASONS.get(reason, 'дополнительная проверка модели') for reason in row['reasons']]
-            point = '' if row.get('point') is None else f" ({row['point']:+g})"
-            lines.append(f"• {row['match']} | {row.get('selection')}{point} @{row.get('odds') or 0:.2f}: {'; '.join(labels)}; качество {row.get('quality') or 0:.1f}.")
-    reasons = Counter(daily.get('rejections') or {})
-    for key, value in (summary.get('rejections') or {}).items():
+            labels = [REASONS.get(reason, "дополнительная проверка модели") for reason in row["reasons"]]
+            point = "" if row.get("point") is None else f" ({row['point']:+g})"
+            lines.append(
+                f"• {row['match']} | {row.get('selection')}{point} @{row.get('odds') or 0:.2f}: {'; '.join(labels)}; качество {row.get('quality') or 0:.1f}."
+            )
+    reasons = Counter(daily.get("rejections") or {})
+    for key, value in (summary.get("rejections") or {}).items():
         if isinstance(value, int):
             reasons[key] += value
     if reasons:
-        lines.extend(['', '🚫 Основные причины отказов'])
+        lines.extend(["", "🚫 Основные причины отказов"])
         groups = Counter()
         policy_skips = 0
         for reason, value in reasons.items():
             # Prefetched next-window matches are deliberately outside this model run.
-            if reason in {'match_not_found', 'simple_market_h2h_high_odds_skip'}:
+            if reason in {"match_not_found", "simple_market_h2h_high_odds_skip"}:
                 continue
-            if reason in {'market_outside_daily_policy', 'unsupported_total_line', 'unsupported_spread_line', 'unsupported_team_total_line'}:
+            if reason in {
+                "market_outside_daily_policy",
+                "unsupported_total_line",
+                "unsupported_spread_line",
+                "unsupported_team_total_line",
+            }:
                 policy_skips += value
                 continue
             label = REASONS.get(reason)
             if label is None:
-                label = 'нет контекста для рынка' if 'missing_context' in reason else 'ценность ниже порога' if 'edge' in reason or 'ev_' in reason else 'дополнительная проверка модели или цены'
+                label = (
+                    "нет контекста для рынка"
+                    if "missing_context" in reason
+                    else "ценность ниже порога"
+                    if "edge" in reason or "ev_" in reason
+                    else "дополнительная проверка модели или цены"
+                )
             groups[label] += value
         for label, value in groups.most_common(5):
-            lines.append(f'• {label}: {value}')
+            lines.append(f"• {label}: {value}")
         if policy_skips:
-            lines.append(f'Отдельно пропущены неподдерживаемые рынки и линии: {policy_skips}.')
-        lines.append('Счётчики относятся к вариантам ставок; один матч может иметь несколько вариантов.')
-    excluded = (summary.get('quality') or {}).get('summary', {}).get('excluded_data_incidents', 0)
+            lines.append(f"Отдельно пропущены неподдерживаемые рынки и линии: {policy_skips}.")
+        lines.append("Счётчики относятся к вариантам ставок; один матч может иметь несколько вариантов.")
+    excluded = (summary.get("quality") or {}).get("summary", {}).get("excluded_data_incidents", 0)
     if excluded:
-        lines.append(f'⚠️ Из оценки модели и обучения исключены прогнозы с подтверждёнными ошибками данных: {excluded}. Их финансовая история сохранена.')
-    odds_stats = (summary.get('source_stats') or {}).get('odds_api_io') or {}
-    configured = odds_stats.get('configured_accounts')
+        lines.append(
+            f"⚠️ Из оценки модели и обучения исключены прогнозы с подтверждёнными ошибками данных: {excluded}. Их финансовая история сохранена."
+        )
+    odds_stats = (summary.get("source_stats") or {}).get("odds_api_io") or {}
+    configured = odds_stats.get("configured_accounts")
     if configured is not None:
-        lines.extend(['', '📡 Источники линии'])
-        for name, label in [('account1', 'Аккаунт 1'), ('account2', 'Аккаунт 2')]:
-            row = (odds_stats.get('accounts') or {}).get(name) or {}
-            status = ('ключ не подключён' if name not in configured else
-                      'ограничение квоты; повтор после сброса' if row.get('rate_limited') or row.get('quota_exhausted') else
-                      f"выбранные букмекеры недоступны по тарифу ({row.get('effective_bookmakers') or row.get('bookmakers')}); проверьте выбор букмекеров в аккаунте" if row.get('plan_restriction') else
-                      'ошибка авторизации — проверьте ключ' if row.get('auth_error') else
-                      f"обновил линии для {row['events_matched']} матчей в этом запуске" if row.get('events_matched') else
-                      'использован свежий кеш' if not odds_stats.get('assigned_matches') else
-                      'проверен; подходящих линий не получено')
-            lines.append(f'Odds-api.io · {label}: {status}.')
-            if name in configured and row.get('entitlement_resolved'):
+        lines.extend(["", "📡 Источники линии"])
+        for name, label in [("account1", "Аккаунт 1"), ("account2", "Аккаунт 2")]:
+            row = (odds_stats.get("accounts") or {}).get(name) or {}
+            status = (
+                "ключ не подключён"
+                if name not in configured
+                else "ограничение квоты; повтор после сброса"
+                if row.get("rate_limited") or row.get("quota_exhausted")
+                else f"выбранные букмекеры недоступны по тарифу ({row.get('effective_bookmakers') or row.get('bookmakers')}); проверьте выбор букмекеров в аккаунте"
+                if row.get("plan_restriction")
+                else "ошибка авторизации — проверьте ключ"
+                if row.get("auth_error")
+                else f"обновил линии для {row['events_matched']} матчей в этом запуске"
+                if row.get("events_matched")
+                else "использован свежий кеш"
+                if not odds_stats.get("assigned_matches")
+                else "проверен; подходящих линий не получено"
+            )
+            lines.append(f"Odds-api.io · {label}: {status}.")
+            if name in configured and row.get("entitlement_resolved"):
                 from app.utils import normalize_bookmaker_name
-                configured_books = {normalize_bookmaker_name(b): b.strip() for b in str(row.get('bookmakers') or '').split(',') if b.strip()}
-                selected = {normalize_bookmaker_name(b) for b in row.get('selected_bookmakers') or []}
+
+                configured_books = {
+                    normalize_bookmaker_name(b): b.strip()
+                    for b in str(row.get("bookmakers") or "").split(",")
+                    if b.strip()
+                }
+                selected = {normalize_bookmaker_name(b) for b in row.get("selected_bookmakers") or []}
                 missing = [label for key, label in configured_books.items() if key not in selected]
                 if missing:
-                    lines.append(f"⚠️ {label}: API не подтвердил доступ к {', '.join(missing)}. Используются доступные букмекеры аккаунта.")
-        if 'cached_matches' in odds_stats:
-            lines.append(f"С учётом свежего кеша Odds-api.io: линии для {odds_stats['cached_matches']} матчей. Это общее покрытие двух аккаунтов без повторного подсчёта матчей.")
-    source_stats = summary.get('source_stats') or {}
-    weather = source_stats.get('weather') or {}
-    if weather.get('missing_location'):
-        lines.append(f"ℹ️ Погода недоступна для {weather['missing_location']} матчей: нет подтверждённого местоположения стадиона.")
-    sstats = source_stats.get('sstats') or {}
-    if sstats.get('history_extension_targets'):
-        lines.append(f"История команд: расширенный добор улучшил выборку для {sstats.get('history_extension_improved', 0)} из {sstats['history_extension_targets']} ближайших матчей.")
-    if sstats.get('history_extension_timeout'):
-        lines.append(f"⚠️ Добор истории остановлен по времени. В расчёте использовано {sstats.get('history_extension_rows', 0)} строк из завершённых окон; остальные данные остаются в очереди.")
-    if (source_stats.get('api_football') or {}).get('reason') == 'missing_api_key':
-        lines.append('ℹ️ API-Football не подключён: ключ отсутствует, его данные в покрытии не учитываются.')
-    if any(row.get('blocked') or row.get('last_block') for row in summary.get('api_budget') or []):
-        lines.append('ℹ️ Часть запросов отложена по лимитам API; полученные данные сохранены, пропуски остаются в очереди.')
-    overdue = summary.get('overdue_published_bets') or []
-    result_fetch = (summary.get('settlement') or {}).get('sstats_fetch') or {}
-    if result_fetch and not result_fetch.get('complete'):
-        lines.append('⚠️ Результаты проверены частично; неподтверждённые ставки остаются открытыми до следующей проверки.')
+                    lines.append(
+                        f"⚠️ {label}: API не подтвердил доступ к {', '.join(missing)}. Используются доступные букмекеры аккаунта."
+                    )
+        if "cached_matches" in odds_stats:
+            lines.append(
+                f"С учётом свежего кеша Odds-api.io: линии для {odds_stats['cached_matches']} матчей. Это общее покрытие двух аккаунтов без повторного подсчёта матчей."
+            )
+    source_stats = summary.get("source_stats") or {}
+    validation = summary.get("prospective_validation") or {}
+    if validation:
+        metrics = validation.get("metrics") or {}
+        lines.append(
+            f"Проверка на новых матчах: стратегия {validation.get('primary_strategy', 'не определена')}; завершено {metrics.get('bets', 0)}, игровых дней {metrics.get('days', 0)}. Статус: {validation.get('status', 'нет данных')}."
+        )
+        if not validation.get("live_ready"):
+            lines.append(
+                "Реальные публикации закрыты до подтверждения модели; исторический плюс другой стратегии не даёт автоматического допуска."
+            )
+    pari = source_stats.get("sstats_pari") or {}
+    backup = source_stats.get("the_odds") or {}
+    if backup.get("enabled"):
+        lines.append(
+            f"The Odds API — резерв: линий для {backup.get('registry_record', {}).get('accepted', 0)} матчей; запросов {backup.get('requests', 0)}."
+        )
+    if pari.get("enabled"):
+        lines.append(
+            f"SStats / PARI: линий для {pari.get('registry_record', {}).get('accepted', 0)} матчей; запросов {pari.get('requests', 0)}."
+        )
+        if pari.get("blocked_status"):
+            lines.append(
+                f"⚠️ SStats / PARI: API отказал в доступе или ограничил запросы (HTTP {pari['blocked_status']}); коэффициенты не подменяются архивными."
+            )
+    football_fallback = (source_stats.get("football_data") or {}).get("team_fallback") or {}
+    if football_fallback:
+        lines.append(
+            f"Football-data: независимый добор истории дал контекст для {football_fallback.get('contexts', 0)} матчей; запросов {football_fallback.get('requests', 0)}."
+        )
+    weather = source_stats.get("weather") or {}
+    if weather.get("missing_location"):
+        lines.append(
+            f"ℹ️ Погода недоступна для {weather['missing_location']} матчей: нет подтверждённого местоположения стадиона."
+        )
+    sstats = source_stats.get("sstats") or {}
+    targeted = sstats.get("targeted_history") or {}
+    if targeted:
+        lines.append(
+            f"История команд: адресный добор улучшил выборку для {targeted.get('improved', 0)} из {targeted.get('targets', 0)} ближайших матчей; подтверждено ID команд: {targeted.get('bound_teams', 0)}, запросов: {targeted.get('requests', 0)}."
+        )
+    if sstats.get("history_extension_targets") and (not targeted or "history_extension_rows" in sstats):
+        lines.append(
+            f"История команд: расширенный добор улучшил выборку для {sstats.get('history_extension_improved', 0)} из {sstats['history_extension_targets']} ближайших матчей."
+        )
+    if sstats.get("history_extension_timeout"):
+        lines.append(
+            f"⚠️ Добор истории остановлен по времени. В расчёте использовано {sstats.get('history_extension_rows', 0)} строк из завершённых окон; остальные данные остаются в очереди."
+        )
+    if (source_stats.get("api_football") or {}).get("reason") == "missing_api_key":
+        lines.append("ℹ️ API-Football не подключён: ключ отсутствует, его данные в покрытии не учитываются.")
+    if any(row.get("blocked") or row.get("last_block") for row in summary.get("api_budget") or []):
+        lines.append(
+            "ℹ️ Часть запросов отложена по лимитам API; полученные данные сохранены, пропуски остаются в очереди."
+        )
+    overdue = summary.get("overdue_published_bets") or []
+    result_fetch = (summary.get("settlement") or {}).get("sstats_fetch") or {}
+    if result_fetch and not result_fetch.get("complete"):
+        lines.append(
+            "⚠️ Результаты проверены частично; неподтверждённые ставки остаются открытыми до следующей проверки."
+        )
     if overdue:
-        amount = sum(float(row.get('stake_amount') or 0) for row in overdue)
-        lines.append(f'⚠️ Ожидают результата старые опубликованные ставки: {len(overdue)}, сумма {amount:.2f}. Этот риск остаётся в банке до подтверждённого расчёта.')
-    if summary.get('telegram_delivery_errors'):
-        lines.append('⚠️ Часть прогнозов не доставлена в Telegram; учитываются только подтверждённые отправки.')
-    if any(isinstance(stats, dict) and stats.get('response_errors') for stats in (summary.get('source_stats') or {}).values()):
-        lines.append('⚠️ Часть данных недоступна у источников; подробности сохранены в артефакте.')
-    if c.get('inventory', 0) < 300:
-        lines.append('ℹ️ Сегодняшний инвентарь ниже 300: подключённые источники пока дали меньше матчей. Это фактическое покрытие; недостающие матчи не создаются искусственно.')
-    if c.get('near_ready', 0) < c.get('near', 0):
-        lines.append('⚠️ Ближайшее окно покрыто частично; отсутствующие данные остаются в очереди.')
-    if summary.get('goal_model_version'):
-        lines.extend(['', f"🧠 Голевая модель: {summary['goal_model_version']} — без повторных надбавок за форму и таблицу."])
-        version = summary['goal_model_version']
-        history = (summary.get('goal_model_history') or {}).get(version, {})
-        lines.append(f"История этой версии: завершено {history.get('settled', 0)}; без возврата {history.get('count', 0)}. Для калибровки нужно {os.getenv('DAILY_CALIBRATION_MIN_VERSION_BETS', '50')} ставок без возврата этой версии.")
-        lines.append(f"Известная выборка для публикации: от {os.getenv('DAILY_B_MIN_TEAM_SAMPLE', '6')} матчей на команду. Одинаковые сезонные данные нескольких API не увеличивают их общий вес.")
-    trial = summary.get('totals_trial') or {}
+        amount = sum(float(row.get("stake_amount") or 0) for row in overdue)
+        lines.append(
+            f"⚠️ Ожидают результата старые опубликованные ставки: {len(overdue)}, сумма {amount:.2f}. Этот риск остаётся в банке до подтверждённого расчёта."
+        )
+    if summary.get("telegram_delivery_errors"):
+        lines.append("⚠️ Часть прогнозов не доставлена в Telegram; учитываются только подтверждённые отправки.")
+    if any(
+        isinstance(stats, dict) and stats.get("response_errors")
+        for stats in (summary.get("source_stats") or {}).values()
+    ):
+        lines.append("⚠️ Часть данных недоступна у источников; подробности сохранены в артефакте.")
+    if c.get("inventory", 0) < 300:
+        lines.append(
+            "ℹ️ Сегодняшний инвентарь ниже 300: подключённые источники пока дали меньше матчей. Это фактическое покрытие; недостающие матчи не создаются искусственно."
+        )
+    if c.get("near_ready", 0) < c.get("near", 0):
+        lines.append("⚠️ Ближайшее окно покрыто частично; отсутствующие данные остаются в очереди.")
+    if summary.get("goal_model_version"):
+        lines.extend(
+            ["", f"🧠 Голевая модель: {summary['goal_model_version']} — без повторных надбавок за форму и таблицу."]
+        )
+        version = summary["goal_model_version"]
+        history = (summary.get("goal_model_history") or {}).get(version, {})
+        lines.append(
+            f"История этой версии: завершено {history.get('settled', 0)}; без возврата {history.get('count', 0)}. Для калибровки нужно {os.getenv('DAILY_CALIBRATION_MIN_VERSION_BETS', '50')} ставок без возврата этой версии."
+        )
+        lines.append(
+            f"Известная выборка для публикации: от {os.getenv('DAILY_B_MIN_TEAM_SAMPLE', '6')} матчей на команду. Одинаковые сезонные данные нескольких API не увеличивают их общий вес."
+        )
+    trial = summary.get("totals_trial") or {}
     if trial:
-        lines.extend(['', '🧪 Общие тоталы текущей версии — проверка без ставок',
-            f"Один выбранный тотал на матч: ожидают {trial.get('pending', 0)}, завершено {trial.get('settled', 0)}; условный результат {trial.get('paper_pnl', 0):+.2f} ед.",
-            'Отбор проходит проверки B-tier; исторические запреты сохраняются как причины наблюдения. В банк и обучение опубликованных ставок не входит.'])
-        if trial.get('brier') is not None:
-            lines.append(f"Ошибка вероятности: модель {trial['brier']:.3f}, рынок {trial['market_brier']:.3f}; парных оценок {trial.get('paired_scores', 0)}. Меньше — лучше; автоматического допуска к ставкам нет.")
-        if trial.get('segments'):
-            lines.append('Направления тоталов: ' + '; '.join(f"{label}: {trial['segments'][key]['settled']} расчётов, {trial['segments'][key]['paper_pnl']:+.2f} ед." for key,label in [('over','ТБ'),('under','ТМ')]) + ' Выборки могут быть малы.')
-        price_check = trial.get('price_check') or {}
+        lines.extend(
+            [
+                "",
+                "🧪 Общие тоталы текущей версии — проверка без ставок",
+                f"Один выбранный тотал на матч: ожидают {trial.get('pending', 0)}, завершено {trial.get('settled', 0)}; условный результат {trial.get('paper_pnl', 0):+.2f} ед.",
+                "Отбор проходит проверки B-tier; исторические запреты сохраняются как причины наблюдения. В банк и обучение опубликованных ставок не входит.",
+            ]
+        )
+        if trial.get("brier") is not None:
+            lines.append(
+                f"Ошибка вероятности: модель {trial['brier']:.3f}, рынок {trial['market_brier']:.3f}; парных оценок {trial.get('paired_scores', 0)}. Меньше — лучше; автоматического допуска к ставкам нет."
+            )
+        if trial.get("segments"):
+            lines.append(
+                "Направления тоталов: "
+                + "; ".join(
+                    f"{label}: {trial['segments'][key]['settled']} расчётов, {trial['segments'][key]['paper_pnl']:+.2f} ед."
+                    for key, label in [("over", "ТБ"), ("under", "ТМ")]
+                )
+                + " Выборки могут быть малы."
+            )
+        price_check = trial.get("price_check") or {}
         if price_check:
-            lines.append(f"Цена условных тоталов перед матчем: измерено {price_check.get('measured', 0)}, без свежей котировки {price_check.get('missing_recent_quote', 0)}. Условные измерения отделены от реальных ставок.")
-    monitor = summary.get('market_monitor') or {}
-    lab = summary.get('totals_strategy_lab') or {}
-    if lab.get('status') == 'error':
-        lines.append('⚠️ Эксперимент моделей и цен не завершён; диагностика в артефакте. В банк не входит.')
-    if lab.get('protocol'):
-        lines.extend(['', '🧪 Модели и реальные цены — общий эксперимент без ставок',
-            f"Новых матчей: {lab.get('new', 0)}; завершено: {lab.get('settled', 0)}; ожидают: {lab.get('pending', 0)}.",
-            'Одинаковые котировки для всех моделей; один выбранный тотал на матч для каждой стратегии.'])
-        labels = {'market': 'Рынок', 'current_goals': 'Текущая голевая оценка', 'opponent': 'Сила соперников',
-                  'shrunk': 'Согласованное сглаживание', 'overdispersed': 'Повышенная вариативность', 'calibrated': 'Калиброванная модель'}
-        for name, m in lab.get('models', {}).items():
-            if m.get('paired_count'):
-                lines.append(f"{labels.get(name, name)}: Brier {m['brier']:.3f}; условных ставок {m['bets']}; результат {m['paper_pnl']:+.2f} ед.")
-        calibration = lab.get('calibration', {})
-        lines.append(f"Калибровка: {calibration.get('count', 0)} известных исходов; вес собственного сигнала {calibration.get('alpha', 0):.2f}. До проверки используется рынок.")
-        lines.append('Первый расширенный разбор — от 200 расчётов выбранной стратегии и 30 игровых дней. Автоматического допуска к ставкам нет.')
-        if lab.get('price_check'):
-            pc = lab['price_check']
-            lines.append(f"Цены перед матчем в эксперименте: измерено {pc.get('measured', 0)}, нет котировки {pc.get('missing', 0)}. Отдельно от реальных ставок.")
-    research = summary.get('goal_research') or {}
-    comparison = research.get('comparison') or {}
+            lines.append(
+                f"Цена условных тоталов перед матчем: измерено {price_check.get('measured', 0)}, без свежей котировки {price_check.get('missing_recent_quote', 0)}. Условные измерения отделены от реальных ставок."
+            )
+    monitor = summary.get("market_monitor") or {}
+    lab = summary.get("totals_strategy_lab") or {}
+    if lab.get("status") == "error":
+        lines.append("⚠️ Эксперимент моделей и цен не завершён; диагностика в артефакте. В банк не входит.")
+    if lab.get("protocol"):
+        lines.extend(
+            [
+                "",
+                "🧪 Модели и реальные цены — общий эксперимент без ставок",
+                f"Новых матчей: {lab.get('new', 0)}; завершено: {lab.get('settled', 0)}; ожидают: {lab.get('pending', 0)}.",
+                "Одинаковые котировки для всех моделей; один выбранный тотал на матч для каждой стратегии.",
+            ]
+        )
+        labels = {
+            "market": "Рынок",
+            "current_goals": "Текущая голевая оценка",
+            "opponent": "Сила соперников",
+            "shrunk": "Согласованное сглаживание",
+            "overdispersed": "Повышенная вариативность",
+            "calibrated": "Калиброванная модель",
+        }
+        for name, m in lab.get("models", {}).items():
+            if m.get("paired_count"):
+                lines.append(
+                    f"{labels.get(name, name)}: Brier {m['brier']:.3f}; условных ставок {m['bets']}; результат {m['paper_pnl']:+.2f} ед."
+                )
+        calibration = lab.get("calibration", {})
+        lines.append(
+            f"Калибровка: {calibration.get('count', 0)} известных исходов; вес собственного сигнала {calibration.get('alpha', 0):.2f}. До проверки используется рынок."
+        )
+        lines.append(
+            "Первый расширенный разбор — от 200 расчётов выбранной стратегии и 30 игровых дней. Автоматического допуска к ставкам нет."
+        )
+        if lab.get("price_check"):
+            pc = lab["price_check"]
+            lines.append(
+                f"Цены перед матчем в эксперименте: измерено {pc.get('measured', 0)}, нет котировки {pc.get('missing', 0)}. Отдельно от реальных ставок."
+            )
+    research = summary.get("goal_research") or {}
+    comparison = research.get("comparison") or {}
     if comparison:
-        lines.extend(['', '🧪 Сравнение голевых моделей для ТБ(2.5) — без ставок',
-                      f"Новая общая выборка: завершено {comparison.get('settled', 0)}, ожидают {comparison.get('pending', 0)}. Старые прогнозы не пересчитаны."])
-        for name, metrics in (comparison.get('models') or {}).items():
-            if metrics.get('count'):
-                label = {'league':'Среднее лиги', 'opponent_poisson':'С учётом соперников', 'shrunk_poisson':'С приближением к среднему лиги'}.get(name, name)
-                lines.append(f"{label}: Brier {metrics['brier']:.3f}; ошибка голов (факт минус прогноз) {metrics['goal_bias_actual_minus_expected']:+.2f}.")
-    if research.get('status') == 'error':
-        lines.append('⚠️ Исследовательская модель не завершила расчёт; диагностика в артефакте. На банк она не влияет.')
+        lines.extend(
+            [
+                "",
+                "🧪 Сравнение голевых моделей для ТБ(2.5) — без ставок",
+                f"Новая общая выборка: завершено {comparison.get('settled', 0)}, ожидают {comparison.get('pending', 0)}. Старые прогнозы не пересчитаны.",
+            ]
+        )
+        for name, metrics in (comparison.get("models") or {}).items():
+            if metrics.get("count"):
+                label = {
+                    "league": "Среднее лиги",
+                    "opponent_poisson": "С учётом соперников",
+                    "shrunk_poisson": "С приближением к среднему лиги",
+                }.get(name, name)
+                lines.append(
+                    f"{label}: Brier {metrics['brier']:.3f}; ошибка голов (факт минус прогноз) {metrics['goal_bias_actual_minus_expected']:+.2f}."
+                )
+    if research.get("status") == "error":
+        lines.append("⚠️ Исследовательская модель не завершила расчёт; диагностика в артефакте. На банк она не влияет.")
     elif research:
-        lines.extend(['', '🔬 Проверка новой модели общих тоталов — без ставок',
-                      f"Архив: {research.get('history_matches', 0)} матчей; спорных результатов: {research.get('history_conflicts', 0)}.",
-                      f"Новых оценок ТБ(2.5): {research.get('new_forecasts', 0)}; ожидают результата: {research.get('pending', 0)}; проверено: {research.get('resolved', 0)}."])
-        if research.get('duplicates_ignored'):
-            lines.append(f"Повторных оценок одного матча исключено из статистики: {research['duplicates_ignored']}. Учитывается первая оценка; исходные записи сохранены.")
-        if research.get('overdue_results'):
-            lines.append(f"⚠️ Для {research['overdue_results']} оценок результат не подтверждён спустя 6+ часов после начала; самая старая — {research.get('oldest_overdue_hours', 0):.0f} ч. В точности модели они не учитываются.")
-            names = {'result_not_found': 'результат не найден', 'conflicting_result': 'противоречивые счета',
-                     'ambiguous_identity': 'неоднозначный матч', 'result_observed_before_forecast': 'нарушение времени наблюдения'}
-            reasons = research.get('overdue_reasons') or {}
+        lines.extend(
+            [
+                "",
+                "🔬 Проверка новой модели общих тоталов — без ставок",
+                f"Архив: {research.get('history_matches', 0)} матчей; спорных результатов: {research.get('history_conflicts', 0)}.",
+                f"Новых оценок ТБ(2.5): {research.get('new_forecasts', 0)}; ожидают результата: {research.get('pending', 0)}; проверено: {research.get('resolved', 0)}.",
+            ]
+        )
+        if research.get("duplicates_ignored"):
+            lines.append(
+                f"Повторных оценок одного матча исключено из статистики: {research['duplicates_ignored']}. Учитывается первая оценка; исходные записи сохранены."
+            )
+        if research.get("overdue_results"):
+            lines.append(
+                f"⚠️ Для {research['overdue_results']} оценок результат не подтверждён спустя 6+ часов после начала; самая старая — {research.get('oldest_overdue_hours', 0):.0f} ч. В точности модели они не учитываются."
+            )
+            names = {
+                "result_not_found": "результат не найден",
+                "conflicting_result": "противоречивые счета",
+                "ambiguous_identity": "неоднозначный матч",
+                "result_observed_before_forecast": "нарушение времени наблюдения",
+            }
+            reasons = research.get("overdue_reasons") or {}
             if reasons:
-                lines.append('Причины ожидания: ' + '; '.join(f'{names.get(key, key)} — {value}' for key, value in reasons.items()) + '.')
-        refresh = research.get('result_refresh') or {}
-        if refresh.get('dates'):
-            lines.append(f"Повторная проверка результатов: дат {len(refresh['dates'])}, запросов {refresh.get('requests', 0)}, добавлено матчей в архив {refresh.get('added', 0)}.")
-        alternative = refresh.get('alternative') or {}
-        if alternative.get('requests'):
-            failures = sum(bool(p.get('error_type')) for p in alternative.get('checks') or [])
-            lines.append(f"Адресная и альтернативная проверка: запросов {alternative['requests']}, добавлено результатов {alternative.get('added', 0)}, ошибок {failures}.")
-        if research.get('brier') is not None:
-            lines.append(f"Ошибка вероятности Brier: {research['brier']:.3f}; простая модель лиги: {research['baseline_brier']:.3f}. Меньше — лучше; доходность это не подтверждает.")
-        elif research.get('skips'):
-            lines.append('Для части матчей пока недостаточно подтверждённой истории лиги и обеих команд.')
-    if 'clv_measured_total' in monitor:
-        lines.append(f"Проверка цены перед матчем: измерено {monitor['clv_measured_total']}; без подходящей свежей котировки в этом запуске — {monitor.get('clv_missing_quote_now', 0)}.")
-    lines.extend(['', 'Проценты модели — оценки, а не подтверждённая проходимость. A/B обозначает качество отбора, а не гарантированный исход.',
-                  f"Run {os.getenv('GITHUB_RUN_ID', 'local')} · {os.getenv('GITHUB_REF_NAME', 'local')}"])
-    return '\n'.join(lines)
+                lines.append(
+                    "Причины ожидания: "
+                    + "; ".join(f"{names.get(key, key)} — {value}" for key, value in reasons.items())
+                    + "."
+                )
+        refresh = research.get("result_refresh") or {}
+        if refresh.get("dates"):
+            lines.append(
+                f"Повторная проверка результатов: дат {len(refresh['dates'])}, запросов {refresh.get('requests', 0)}, добавлено матчей в архив {refresh.get('added', 0)}."
+            )
+        alternative = refresh.get("alternative") or {}
+        if alternative.get("requests"):
+            failures = sum(bool(p.get("error_type")) for p in alternative.get("checks") or [])
+            lines.append(
+                f"Адресная и альтернативная проверка: запросов {alternative['requests']}, добавлено результатов {alternative.get('added', 0)}, ошибок {failures}."
+            )
+        if research.get("brier") is not None:
+            lines.append(
+                f"Ошибка вероятности Brier: {research['brier']:.3f}; простая модель лиги: {research['baseline_brier']:.3f}. Меньше — лучше; доходность это не подтверждает."
+            )
+        elif research.get("skips"):
+            lines.append("Для части матчей пока недостаточно подтверждённой истории лиги и обеих команд.")
+    if "clv_measured_total" in monitor:
+        lines.append(
+            f"Проверка цены перед матчем: измерено {monitor['clv_measured_total']}; без подходящей свежей котировки в этом запуске — {monitor.get('clv_missing_quote_now', 0)}."
+        )
+    lines.extend(
+        [
+            "",
+            "Проценты модели — оценки, а не подтверждённая проходимость. A/B обозначает качество отбора, а не гарантированный исход.",
+            f"Run {os.getenv('GITHUB_RUN_ID', 'local')} · {os.getenv('GITHUB_REF_NAME', 'local')}",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def split_report(text, limit=3500):
     """Keep paragraph/word boundaries and Telegram's UTF-16 length budget."""
     if limit < 2:
-        raise ValueError('Report chunk limit must be at least two UTF-16 units')
+        raise ValueError("Report chunk limit must be at least two UTF-16 units")
     chunks = []
     while text:
-        if len(text.encode('utf-16-le')) // 2 <= limit:
+        if len(text.encode("utf-16-le")) // 2 <= limit:
             chunks.append(text)
             break
-        prefix = text.encode('utf-16-le')[:limit * 2].decode('utf-16-le', errors='ignore')
-        boundary = prefix.rfind('\n')
+        prefix = text.encode("utf-16-le")[: limit * 2].decode("utf-16-le", errors="ignore")
+        boundary = prefix.rfind("\n")
         if boundary <= 0:
-            boundary = prefix.rfind(' ')
-        chunk = prefix[:boundary + 1] if boundary > 0 else prefix
+            boundary = prefix.rfind(" ")
+        chunk = prefix[: boundary + 1] if boundary > 0 else prefix
         chunks.append(chunk)
-        text = text[len(chunk):]
+        text = text[len(chunk) :]
     return chunks
 
 
 def deliver_report(chunks, send):
     """Journal acknowledgements; never retry a POST with uncertain delivery."""
-    delivery = {'total_chunks': len(chunks), 'confirmed_chunks': 0, 'status': 'sending'}
-    path = '.data/exports/latest-report-delivery.json'
+    delivery = {"total_chunks": len(chunks), "confirmed_chunks": 0, "status": "sending"}
+    path = ".data/exports/latest-report-delivery.json"
     write_json(path, delivery)
     for number, chunk in enumerate(chunks, 1):
-        delivery['attempting_chunk'] = number
+        delivery["attempting_chunk"] = number
         write_json(path, delivery)
         if not send(chunk):
-            delivery['status'] = 'unconfirmed'
+            delivery["status"] = "unconfirmed"
             write_json(path, delivery)
             return delivery
-        delivery['confirmed_chunks'] = number
+        delivery["confirmed_chunks"] = number
         write_json(path, delivery)
-    delivery['status'] = 'confirmed'
+    delivery["status"] = "confirmed"
     write_json(path, delivery)
     return delivery
 
 
 def main():
-    started = parse_time(os.getenv('RUN_STARTED_AT_UTC'))
-    summary = read_json('.data/exports/latest-run-summary.json', {})
-    observed = parse_time(summary.get('started_time_utc'))
-    if started is None or observed is None or observed < started or not summary.get('daily_quality'):
-        text = '🧾 HARIZON: запуск не завершил текущую сводку. Проверьте артефакт и шаг pipeline. Старые результаты не использованы.'
+    started = parse_time(os.getenv("RUN_STARTED_AT_UTC"))
+    summary = read_json(".data/exports/latest-run-summary.json", {})
+    observed = parse_time(summary.get("started_time_utc"))
+    if started is None or observed is None or observed < started or not summary.get("daily_quality"):
+        text = "🧾 HARIZON: запуск не завершил текущую сводку. Проверьте артефакт и шаг pipeline. Старые результаты не использованы."
         valid = False
     else:
         text, valid = render(summary), True
-    dry = os.getenv('PUBLISH_DRY_RUN', 'true').lower() == 'true'
+    dry = os.getenv("PUBLISH_DRY_RUN", "true").lower() == "true"
     chunks = split_report(text)
-    delivery = {'status': 'dry_run', 'total_chunks': len(chunks), 'confirmed_chunks': 0} if dry else deliver_report(chunks, send_telegram)
-    sent = delivery['status'] == 'confirmed'
-    write_json('.data/exports/latest-daily-quality-report.json', {'created_at_utc': datetime.now(UTC).isoformat(), 'summary_valid': valid, 'telegram_sent': sent, 'dry_run': dry, 'text': text, 'delivery': delivery})
-    Path('.data/exports/latest-daily-quality-report.txt').write_text(text + '\n')
+    delivery = (
+        {"status": "dry_run", "total_chunks": len(chunks), "confirmed_chunks": 0}
+        if dry
+        else deliver_report(chunks, send_telegram)
+    )
+    sent = delivery["status"] == "confirmed"
+    write_json(
+        ".data/exports/latest-daily-quality-report.json",
+        {
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "summary_valid": valid,
+            "telegram_sent": sent,
+            "dry_run": dry,
+            "text": text,
+            "delivery": delivery,
+        },
+    )
+    Path(".data/exports/latest-daily-quality-report.txt").write_text(text + "\n")
     print(text)
     return 0 if valid and (dry or sent) else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())

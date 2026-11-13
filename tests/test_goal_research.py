@@ -8,6 +8,14 @@ from app.services.goal_research import GoalHistory, result_row, normalize_result
 NOW = datetime(2026, 10, 18, 10, tzinfo=UTC)
 
 
+@pytest.fixture(autouse=True)
+def isolate_recovery_budgets(monkeypatch):
+    # Workflow settings must not change the default contract of fake-client tests.
+    # Tests for configured budgets set their intended value explicitly below.
+    monkeypatch.delenv('DAILY_RESULT_DETAIL_REQUESTS_PER_RUN', raising=False)
+    monkeypatch.delenv('DAILY_RESULT_BACKFILL_DATES_PER_RUN', raising=False)
+
+
 @pytest.mark.parametrize('case', ['alias', 'shift', 'conflict', 'ambiguous', 'exact_conflict', 'exact_consistent', 'exact_disagrees', 'wrong_squad', 'wrong_time'])
 def test_result_recovery_requires_unique_safe_identity(tmp_path,case):
     h=GoalHistory(tmp_path/'history.json');kickoff=NOW-timedelta(days=1)
@@ -30,7 +38,10 @@ def test_result_recovery_requires_unique_safe_identity(tmp_path,case):
     else:assert summary['overdue_reasons'] and 'total' not in f
 
 
-def test_result_backfill_is_bounded_and_keeps_conflicts_quarantined(tmp_path,monkeypatch):
+@pytest.mark.parametrize('configured,expected', [(None,2), ('4',4), ('99',4), ('0',0)])
+def test_result_backfill_is_bounded_and_keeps_conflicts_quarantined(tmp_path,monkeypatch,configured,expected):
+    if configured is not None:
+        monkeypatch.setenv('DAILY_RESULT_BACKFILL_DATES_PER_RUN', configured)
     import asyncio
     from app.services.settlement import SettlementService
     h=GoalHistory(tmp_path/'history.json')
@@ -44,10 +55,10 @@ def test_result_backfill_is_bounded_and_keeps_conflicts_quarantined(tmp_path,mon
         return []
     monkeypatch.setattr(SettlementService,'_fetch_sstats_rows',fetch)
     settings=SimpleNamespace(sstats_api_key='fake')
-    assert len(asyncio.run(h.refresh_overdue_results(settings,NOW))['dates'])==2
-    assert len(asyncio.run(h.refresh_overdue_results(settings,NOW))['dates'])==2
+    assert len(asyncio.run(h.refresh_overdue_results(settings,NOW))['dates'])==expected
+    assert len(asyncio.run(h.refresh_overdue_results(settings,NOW))['dates'])==min(expected,4-expected)
     assert len(asyncio.run(h.refresh_overdue_results(settings,NOW))['dates'])==0
-    assert len(calls)==4 and all(a==b and cap==3 for a,b,cap in calls)
+    assert len(calls)==(4 if expected else 0) and all(a==b and cap==3 for a,b,cap in calls)
     assert all(f['status']=='pending' for f in h.data['forecasts'].values())
 
 
@@ -261,11 +272,14 @@ def test_football_data_recovers_result_without_sstats_key(tmp_path,monkeypatch):
     assert asyncio.run(h.refresh_overdue_results(SimpleNamespace(football_data_api_key='fake'),NOW))['alternative']['requests']==0
 
 
-def test_addressed_recovery_limits_requests_and_checks_returned_identity(tmp_path,monkeypatch):
+@pytest.mark.parametrize('configured,expected', [(None,3), ('12',12), ('99',12), ('0',0)])
+def test_addressed_recovery_limits_requests_and_checks_returned_identity(tmp_path,monkeypatch,configured,expected):
+    if configured is not None:
+        monkeypatch.setenv('DAILY_RESULT_DETAIL_REQUESTS_PER_RUN', configured)
     import asyncio
     from app.services.research_result_recovery import recover_alternative_results
     h=GoalHistory(tmp_path/'history.json')
-    for i in range(1,6):
+    for i in range(1,16):
         f=recovery_forecast(NOW-timedelta(days=i));f.update(source_ids={'sstats':str(i)},competition_name='Germany - Bundesliga');h.data['forecasts'][str(i)]=f
     def responder(url,kwargs):
         if '/Games/' in url:
@@ -276,9 +290,9 @@ def test_addressed_recovery_limits_requests_and_checks_returned_identity(tmp_pat
         return {'matches':[]} if 'football-data' in url else []
     calls=install_recovery_client(monkeypatch,responder)
     s=asyncio.run(recover_alternative_results(h,SimpleNamespace(sstats_api_key='fake',football_data_api_key='fake'),NOW))
-    assert len(calls)==s['requests']==6
+    assert len(calls)==s['requests']==expected+3
     assert s['added']==0 and h.data['results']=={}
-    assert sum('/Games/' in url for url,_ in calls)==3
+    assert sum('/Games/' in url for url,_ in calls)==expected
     assert sum('football-data' in url for url,_ in calls)==2
     assert sum('openligadb' in url for url,_ in calls)==1
     assert all(f['status']=='pending' for f in h.data['forecasts'].values())

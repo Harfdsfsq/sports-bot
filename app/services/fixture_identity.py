@@ -40,10 +40,19 @@ def team_identity_key(name):
     return base + ('#' + ','.join(suffix) if suffix else '')
 
 
+def reviewed_team_alias_match(first, second):
+    if squad_identity(first) != squad_identity(second):
+        return False
+    groups = ({'js djidjel', 'js jijel'}, {'rc arbaa', 'rc arba'})
+    a, b = canonicalize_team_name(first), canonicalize_team_name(second)
+    return a != b and any(a in group and b in group for group in groups)
+
+
 def same_team_identity(target, aliases):
     def normalized(name):
         text = str(name or '').translate(str.maketrans({'ø': 'o', 'Ø': 'O', 'ł': 'l', 'Ł': 'L', 'đ': 'd'}))
         key = ' '.join(token for token in canonicalize_team_name(text).split() if token not in {'fodbold', 'football', 'futbol'})
+        key = {'js djidjel': 'js jijel', 'rc arbaa': 'rc arba'}.get(key, key)
         return {'san martin s j': 'san martin san juan',
                 'san martin sj': 'san martin san juan'}.get(key, key)
 
@@ -66,6 +75,52 @@ def same_team_identity(target, aliases):
         if min(len(left), len(right)) >= 8 and SequenceMatcher(None, left, right).ratio() >= .90:
             return True
     return False
+
+
+def same_history_team_identity(target, aliases):
+    """History has no opposing fixture to disambiguate a city-only match.
+
+    Do not drop distinctive tokens (FAS Santa Ana -> Santa Ana). Keep the
+    explicitly reviewed abbreviations and long spelling variants.
+    """
+    left = canonicalize_team_name(target)
+    for alias in aliases:
+        right = canonicalize_team_name(alias)
+        if not same_team_identity(target, [alias]):
+            continue
+        if reviewed_team_alias_match(target, alias) or {left, right} == {'agf', 'agf aarhus'}:
+            return True
+        a, b = set(left.split()), set(right.split())
+        if a and b and not (a < b or b < a):
+            return True
+    return False
+
+
+def history_team_matches(match, side, row):
+    """Revalidate cached form against the fixture's witnessed provider team ID."""
+    from app.services.sstats_targeted_history import verified_fixture
+
+    target = getattr(match, side + '_team')
+    fixture = verified_fixture(match)
+    witnessed_name = row.get('team') or row.get('team_key')
+    if fixture:
+        expected = fixture[side + 'Team']
+        if not same_history_team_identity(expected.get('name'), [witnessed_name]):
+            return False
+        sid = expected.get('id')
+        if sid is not None and str(row.get('team_id') or '') != str(sid):
+            return False
+        country = (expected.get('country') or {}).get('code')
+        return not (country and row.get('team_country') and country != row['team_country'])
+    return same_history_team_identity(target, [witnessed_name])
+
+
+def history_team_name(match, side):
+    """Use the provider's name only when its future fixture receipt was verified."""
+    from app.services.sstats_targeted_history import verified_fixture
+
+    fixture = verified_fixture(match)
+    return fixture[side + 'Team']['name'] if fixture else getattr(match, side + '_team')
 
 
 def direct_fixture_identity(match, event, *, tolerance_hours=.5):

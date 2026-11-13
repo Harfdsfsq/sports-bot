@@ -1,40 +1,48 @@
 """Native daily pipeline: no legacy startup monkey-patches or reserve promotions."""
+
 from __future__ import annotations
 
 import asyncio
-from copy import deepcopy
 import os
 from collections import Counter
-from dataclasses import replace
+from copy import deepcopy
+from dataclasses import asdict, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from app.services.context_admission import admit_context
+from app.services.daily_context_reliability import GOAL_MODEL_VERSION
 from app.services.daily_match_registry import DailyMatchRegistry, match_identity, parse_time, read_json, write_json
 from app.services.line_movement_state import evaluate_and_record_line_movement
 from app.services.runner import PredictionRunner
 from app.services.strict_price_integrity import rejection_reasons
 from app.services.telegram import TelegramPublisher
-from app.services.daily_context_reliability import GOAL_MODEL_VERSION
 
-ODDS = {'odds_api_io'}
-CONTEXT = {'sstats', 'bzzoiro', 'football_data', 'thesportsdb', 'espn', 'openligadb', 'api_football'}
+ODDS = {"odds_api_io", "sstats_pari", "the_odds"}
+CONTEXT = {"sstats", "bzzoiro", "football_data", "thesportsdb", "espn", "openligadb", "api_football"}
 
 
 def same_reserve_fixture(first, second):
     """One observation per actual fixture/family/version, despite feed aliases."""
     from app.services.fixture_identity import same_team_identity
+
     def value(row, key):
         return row.get(key) if isinstance(row, dict) else getattr(row, key, None)
+
     def version(row):
-        return value(row, 'goal_model_version') or (value(row, 'source_summary') or {}).get('goal_model_version')
-    a = parse_time(value(first, 'commence_time_utc') or value(first, 'commence_time'))
-    b = parse_time(value(second, 'commence_time_utc') or value(second, 'commence_time'))
-    return bool(a and b and abs(a - b) <= timedelta(minutes=15)
-                and value(first, 'family') == value(second, 'family')
-                and version(first) == version(second)
-                and same_team_identity(value(first, 'home_team'), [value(second, 'home_team')])
-                and same_team_identity(value(first, 'away_team'), [value(second, 'away_team')]))
+        return value(row, "goal_model_version") or (value(row, "source_summary") or {}).get("goal_model_version")
+
+    a = parse_time(value(first, "commence_time_utc") or value(first, "commence_time"))
+    b = parse_time(value(second, "commence_time_utc") or value(second, "commence_time"))
+    return bool(
+        a
+        and b
+        and abs(a - b) <= timedelta(minutes=15)
+        and value(first, "family") == value(second, "family")
+        and version(first) == version(second)
+        and same_team_identity(value(first, "home_team"), [value(second, "home_team")])
+        and same_team_identity(value(first, "away_team"), [value(second, "away_team")])
+    )
 
 
 def unique_reserve_rows(rows):
@@ -50,15 +58,22 @@ class DailyTelegramPublisher(TelegramPublisher):
     async def publish(self, bets, bankroll_summary=None):
         # Paper candidates must never enter a Telegram forecast, even if a
         # future caller accidentally passes a mixed list.
-        bets[:] = [candidate for candidate in bets if not (getattr(candidate, 'source_summary', None) or {}).get('reserve_only')]
-        check = getattr(self, 'confirm_price', None)
+        bets[:] = [
+            candidate
+            for candidate in bets
+            if not (getattr(candidate, "source_summary", None) or {}).get("reserve_only")
+        ]
+        release = getattr(self, "live_admission", None)
+        if not self.settings.publish_dry_run and release:
+            bets[:] = [candidate for candidate in bets if release(candidate)]
+        check = getattr(self, "confirm_price", None)
         if check:
             approved = []
             for candidate in bets:
                 if await check(candidate):
                     approved.append(candidate)
             bets[:] = approved
-            projection = getattr(self, 'bankroll_projection', None)
+            projection = getattr(self, "bankroll_projection", None)
             if projection:
                 bankroll_summary = projection(bets)
         if self.settings.publish_dry_run:
@@ -68,19 +83,21 @@ class DailyTelegramPublisher(TelegramPublisher):
             lead = (candidate.commence_time.astimezone(UTC) - datetime.now(UTC)).total_seconds() / 60
             if lead < 30:
                 continue
-            confirmation = candidate.source_summary.get('final_price_confirmation') if check else None
-            if check and (not confirmation or datetime.now(UTC)-parse_time(confirmation['observed_at']) > timedelta(seconds=60)):
+            confirmation = candidate.source_summary.get("final_price_confirmation") if check else None
+            if check and (
+                not confirmation or datetime.now(UTC) - parse_time(confirmation["observed_at"]) > timedelta(seconds=60)
+            ):
                 continue
             try:
                 sent, texts = await super().publish([candidate], bankroll_summary=bankroll_summary)
             except Exception as exc:
-                self.delivery_errors = getattr(self, 'delivery_errors', []) + [type(exc).__name__]
+                self.delivery_errors = getattr(self, "delivery_errors", []) + [type(exc).__name__]
                 continue
             payloads.extend(texts)
             if sent > 0:
                 confirmed.append(candidate)
                 count += sent
-                callback = getattr(self, 'on_confirm', None)
+                callback = getattr(self, "on_confirm", None)
                 if callback:
                     callback(candidate)
         # Downstream state must contain only forecasts with acknowledged delivery.
@@ -93,67 +110,127 @@ class DailyQualityRunner(PredictionRunner):
         super().__init__(settings)
         # The legacy v2 adapter depends on monkey patches and constructs invalid contexts.
         self.bzzoiro = self._safe_provider("app.providers.bzzoiro", "BzzoiroContextProvider")
+        from app.providers.sstats_pari_daily import SStatsPariDailyProvider
+
+        self.sstats_pari = SStatsPariDailyProvider(settings)
+        from app.providers.the_odds_daily import TheOddsDailyProvider
+
+        self.the_odds = TheOddsDailyProvider(settings)
         self.telegram = DailyTelegramPublisher(settings)
         self.telegram.on_confirm = self._record_confirmed
         self.telegram.confirm_price = self._confirm_publication_price
         self.telegram.bankroll_projection = self._project_bankroll_summary
-        self.registry = DailyMatchRegistry(Path('.data/daily_quality/registry.json'), datetime.now(UTC))
+        self.telegram.live_admission = self._live_admission
+        self.registry = DailyMatchRegistry(Path(".data/daily_quality/registry.json"), datetime.now(UTC))
         self.work_plan = {}
         self.daily_rejections = Counter()
         self.selected_daily = []
-        self.clv_recovered = (self.market_monitor.restore_published_tracking(
-            self.state.pending_bets(include_shadow=False), datetime.now(UTC)) if self.market_monitor else 0)
+        self.clv_recovered = (
+            self.market_monitor.restore_published_tracking(
+                self.state.pending_bets(include_shadow=False), datetime.now(UTC)
+            )
+            if self.market_monitor
+            else 0
+        )
         if self.market_monitor:
             self.market_monitor.restore_trial_tracking(self.state.pending_bets(include_shadow=True), datetime.now(UTC))
 
+    def _live_admission(self, candidate):
+        from app.services.prospective_validation import REPORT_PATH, live_admission
+
+        try:
+            valid, reason = live_admission(
+                read_json(REPORT_PATH, {}), candidate.source_summary.get("goal_model_version"), datetime.now(UTC)
+            )
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
+            valid, reason = False, "validation_error"
+        if not valid:
+            self.daily_rejections["pilot_" + reason] += 1
+        return valid
+
     def _record_confirmed(self, candidate):
-        identity = candidate.source_summary['registry_match_id']
-        entry = self.registry.data['matches'].get(identity)
+        identity = candidate.source_summary["registry_match_id"]
+        entry = self.registry.data["matches"].get(identity)
         if entry is not None:
-            entry['publication'] = {'match_id': identity, 'tier': candidate.source_summary['publication_tier'], 'at': datetime.now(UTC).isoformat()}
-        if not any(row['match_id'] == identity for row in self.registry.data['published']):
-            self.registry.data['published'].append({'match_id': identity, 'tier': candidate.source_summary['publication_tier'], 'at': datetime.now(UTC).isoformat()})
+            entry["publication"] = {
+                "match_id": identity,
+                "tier": candidate.source_summary["publication_tier"],
+                "at": datetime.now(UTC).isoformat(),
+            }
+        if not any(row["match_id"] == identity for row in self.registry.data["published"]):
+            self.registry.data["published"].append(
+                {
+                    "match_id": identity,
+                    "tier": candidate.source_summary["publication_tier"],
+                    "at": datetime.now(UTC).isoformat(),
+                }
+            )
             self.registry.save()
 
     async def _confirm_publication_price(self, candidate):
         from app.services.daily_price_confirmation import confirm
-        match = next((m for m in self.inventory_matches if m.match_key == candidate.match_key
-                      and m.commence_time == candidate.commence_time), None)
-        if match is None or self.odds_api_io is None:
-            self.daily_rejections['final_price_missing_fixture'] += 1
+
+        match = next(
+            (
+                m
+                for m in self.inventory_matches
+                if m.match_key == candidate.match_key and m.commence_time == candidate.commence_time
+            ),
+            None,
+        )
+        selected_source = candidate.source_summary.get("selected_source")
+        quote_provider = (
+            self.the_odds
+            if selected_source == "the_odds"
+            else self.sstats_pari
+            if selected_source == "sstats_pari" or candidate.bookmaker.lower() == "pari"
+            else self.odds_api_io
+        )
+        if match is None or quote_provider is None:
+            self.daily_rejections["final_price_missing_fixture"] += 1
             return False
         requested = datetime.now(UTC)
-        if not timedelta(minutes=30) <= match.commence_time-requested <= timedelta(hours=4):
-            self.daily_rejections['final_kickoff_window'] += 1
+        if not timedelta(minutes=30) <= match.commence_time - requested <= timedelta(hours=4):
+            self.daily_rejections["final_kickoff_window"] += 1
             return False
         try:
-            offers, _, _ = await asyncio.wait_for(self.odds_api_io.fetch_offers([match]), timeout=20)
+            fetch = getattr(quote_provider, "confirm_offers", quote_provider.fetch_offers)
+            offers, _, _ = await asyncio.wait_for(fetch([match]), timeout=20)
             now = datetime.now(UTC)
             valid, reason = confirm(candidate, offers.get(match.match_key, []), requested, now)
             self.registry.now = now
-            admission = getattr(self, 'admitted_sources', {}).get(candidate.match_key, {})
-            if not admission or any(self.registry.cached(provider, 'context', match) is None for provider in admission):
-                valid, reason = False, 'context_expired'
-            if match.commence_time-now < timedelta(minutes=30):
-                valid, reason = False, 'kickoff_too_close'
+            admission = getattr(self, "admitted_sources", {}).get(candidate.match_key, {})
+            if not admission or any(self.registry.cached(provider, "context", match) is None for provider in admission):
+                valid, reason = False, "context_expired"
+            if match.commence_time - now < timedelta(minutes=30):
+                valid, reason = False, "kickoff_too_close"
         except Exception as exc:
-            valid, reason = False, 'fetch_' + type(exc).__name__
+            valid, reason = False, "fetch_" + type(exc).__name__
         if not valid:
-            self.daily_rejections['final_price_' + reason] += 1
-            candidate.source_summary['final_price_rejection'] = reason
+            self.daily_rejections["final_price_" + reason] += 1
+            candidate.source_summary["final_price_rejection"] = reason
         return valid
 
     async def _fetch_matches(self):
         matches, stats = self._load_day_inventory_matches(datetime.now(UTC))
         self.registry.sync(matches)
-        # At the end of the day, cover fixtures beyond Moscow midnight as well.
+        # Prefetch the next day within the collection horizon; publication remains 4h.
         next_matches, _ = self._load_day_inventory_matches(datetime.now(UTC) + timedelta(days=1))
         self.next_day_inventory_count = len(next_matches)
-        self.registry.sync([m for m in next_matches if m.commence_time <= datetime.now(UTC) + timedelta(hours=4)])
-        self.inventory_matches = self.registry.matches()
+        self.registry.sync(
+            [
+                m
+                for m in next_matches
+                if m.commence_time
+                <= datetime.now(UTC)
+                + timedelta(hours=min(48, max(4, float(os.getenv("DAILY_DATA_COLLECTION_WINDOW_HOURS", "24")))))
+            ]
+        )
+        self.inventory_matches = self.registry.runtime_matches()
+        stats["runtime_identity_quarantined"] = sum(len(rows) for rows in self.registry.runtime_conflicts().values())
         if not self.inventory_matches:
-            raise RuntimeError('Current Moscow day inventory is empty; rebuild inventory')
-        return self.inventory_matches, {'provider': 'daily_match_registry', 'stats': stats, 'attempts': {}}
+            raise RuntimeError("Current Moscow day inventory is empty; rebuild inventory")
+        return self.inventory_matches, {"provider": "daily_match_registry", "stats": stats, "attempts": {}}
 
     def _merge_day_inventory_matches(self, matches, metadata, now):
         return matches, metadata
@@ -162,87 +239,196 @@ class DailyQualityRunner(PredictionRunner):
         return matches if provider_name in CONTEXT else []
 
     def _provider_target_limit(self, provider, name, role):
-        limit = max(0, int(os.getenv('DAILY_PROVIDER_MATCH_LIMIT', '80')))
-        if role != 'context':
+        limit = max(0, int(os.getenv("DAILY_PROVIDER_MATCH_LIMIT", "80")))
+        if role != "context":
             return limit
         caps = {
-            'espn': getattr(self.settings, 'espn_max_matches', 120),
-            'football_data': getattr(self.settings, 'football_data_match_limit', 36),
-            'bzzoiro': getattr(self.settings, 'bzzoiro_context_match_limit', 300),
-            'openligadb': getattr(provider, 'match_limit', 80),
-            'api_football': getattr(provider, 'context_limit', 0),
+            "espn": getattr(self.settings, "espn_max_matches", 120),
+            "football_data": getattr(self.settings, "football_data_match_limit", 36),
+            "bzzoiro": getattr(self.settings, "bzzoiro_context_match_limit", 300),
+            "openligadb": getattr(provider, "match_limit", 80),
+            "api_football": getattr(provider, "context_limit", 0),
         }
         cap = int(caps.get(name) or 0)
         return min(limit, cap) if cap > 0 else limit
 
     @staticmethod
     def _provider_missing_key(provider, name):
-        if hasattr(provider, 'api_key'):
+        if hasattr(provider, "api_key"):
             return not provider.api_key
-        field = {'sstats': 'sstats_api_key', 'football_data': 'football_data_api_key'}.get(name)
-        return bool(field and hasattr(provider, 'settings') and not getattr(provider.settings, field, None))
+        field = {"sstats": "sstats_api_key", "football_data": "football_data_api_key"}.get(name)
+        return bool(field and hasattr(provider, "settings") and not getattr(provider.settings, field, None))
 
     @staticmethod
     def _provider_supports_match(provider, name, role, match):
-        if role == 'offers':
-            return True
-        if name == 'openligadb' and hasattr(provider, '_competition_key'):
-            return match.sport_key == 'soccer' and bool(provider._competition_key(match.league_name))
-        supports = getattr(provider, 'supports_match', None)
-        return bool(supports(match)) if callable(supports) else match.sport_key == 'soccer'
+        if role == "offers":
+            return provider.supports_match(match) if name == "the_odds" else True
+        if name == "openligadb" and hasattr(provider, "_competition_key"):
+            return match.sport_key == "soccer" and bool(provider._competition_key(match.league_name))
+        supports = getattr(provider, "supports_match", None)
+        return bool(supports(match)) if callable(supports) else match.sport_key == "soccer"
+
+    def _provider_name(self, provider):
+        if provider and provider.__class__.__module__.endswith("sstats_pari_daily"):
+            return "sstats_pari"
+        if provider and provider.__class__.__module__.endswith("the_odds_daily"):
+            return "the_odds"
+        return super()._provider_name(provider)
 
     async def _fetch_provider(self, provider, method_name, *args, empty_data):
         if not provider or not args or not isinstance(args[0], list):
             return await super()._fetch_provider(provider, method_name, *args, empty_data=empty_data)
         name = self._provider_name(provider)
-        role = 'offers' if 'offer' in method_name else 'context'
-        if name not in (ODDS if role == 'offers' else CONTEXT):
-            return empty_data, {'enabled': False, 'reason': 'outside_daily_pipeline'}, {}
+        role = "offers" if "offer" in method_name else "context"
+        if name not in (ODDS if role == "offers" else CONTEXT):
+            return empty_data, {"enabled": False, "reason": "outside_daily_pipeline"}, {}
         self.registry.now = datetime.now(UTC)
         limit = self._provider_target_limit(provider, name, role)
-        missing_key = role == 'context' and self._provider_missing_key(provider, name)
-        targets = [] if missing_key else self.registry.targets(name, role, limit=limit, eligible=lambda m: self._provider_supports_match(provider, name, role, m), bulk=name == 'sstats' and role == 'context')
-        self.work_plan[name + ':' + role] = [match_identity(m) for m in targets]
-        cached = {m.match_key: self.registry.cached(name, role, m) for m in self.inventory_matches}
+        missing_key = role == "context" and self._provider_missing_key(provider, name)
+        targets = (
+            []
+            if missing_key
+            else self.registry.targets(
+                name,
+                role,
+                limit=limit,
+                eligible=lambda m: (
+                    self._provider_supports_match(provider, name, role, m)
+                    and (not getattr(provider, "gap_only", False) or not self.registry.has_role(m, role))
+                ),
+                bulk=name == "sstats" and role == "context",
+            )
+        )
+        self.work_plan[name + ":" + role] = [match_identity(m) for m in targets]
+        safe_keys = {m.match_key for m in self.registry.runtime_matches()}
+        runtime_inventory = [m for m in self.inventory_matches if m.match_key in safe_keys]
+        cached = {m.match_key: self.registry.cached(name, role, m) for m in runtime_inventory}
         cached = {key: value for key, value in cached.items() if value}
-        data, stats, preview = {}, {'enabled': True, **({'api_key_present': False, 'reason': 'missing_api_key'} if missing_key else {})}, {}
+        data, stats, preview = (
+            {},
+            {"enabled": True, **({"api_key_present": False, "reason": "missing_api_key"} if missing_key else {})},
+            {},
+        )
         if targets:
             try:
                 data, stats, preview = await asyncio.wait_for(
                     super()._fetch_provider(provider, method_name, targets, *args[1:], empty_data=empty_data),
-                    timeout=float(os.getenv('DAILY_PROVIDER_TIMEOUT_SECONDS_' + name.upper(), os.getenv('DAILY_PROVIDER_TIMEOUT_SECONDS', '300'))),
+                    timeout=float(
+                        os.getenv(
+                            "DAILY_PROVIDER_TIMEOUT_SECONDS_" + name.upper(),
+                            os.getenv("DAILY_PROVIDER_TIMEOUT_SECONDS", "300"),
+                        )
+                    ),
                 )
             except TimeoutError:
-                stats = {'enabled': True, 'runtime_error': 'provider_deadline'}
+                stats = {"enabled": True, "runtime_error": "provider_deadline"}
+                if name == "sstats" and callable(getattr(provider, "recover_daily_progress", None)):
+                    data, stats, preview = provider.recover_daily_progress()
             data = data if isinstance(data, dict) else {}
             # Drop data not associated with a requested canonical runtime match.
             requested_keys = {m.match_key for m in targets}
             data = {key: value for key, value in data.items() if key in requested_keys}
-            attempted_keys = stats.get('attempted_match_keys')
+            attempted_keys = stats.get("attempted_match_keys")
             recorded_targets = targets
             if isinstance(attempted_keys, list):
                 considered = set(attempted_keys) | set(data)
                 recorded_targets = [m for m in targets if m.match_key in considered]
-            stats['unattempted_matches'] = len(targets) - len(recorded_targets)
-            stats['registry_record'] = self.registry.record(name, role, recorded_targets, data, stats)
+            stats["unattempted_matches"] = len(targets) - len(recorded_targets)
+            if name == "sstats_pari":
+                from app.providers.sstats_pari_daily import info, matches_fixture
+                from app.services.fixture_identity import direct_fixture_identity
+
+                bindings = preview.get("verified_fixture_bindings") or {}
+                for match in targets:
+                    binding = bindings.get(match.match_key) or {}
+                    sid = str(binding.get("event_id") or "")
+                    if (
+                        sid.isdecimal()
+                        and int(sid) > 0
+                        and (
+                            direct_fixture_identity(match, binding, tolerance_hours=0.25)
+                            or (
+                                str(info(binding.get("provider_event", {})).get("eventId")) == sid
+                                and matches_fixture(match, binding.get("provider_event", {}))
+                            )
+                        )
+                    ):
+                        entry = self.registry.data["matches"][match_identity(match)]
+                        old = entry["provider_ids"].get(name)
+                        if old is None or str(old) == sid:
+                            entry["provider_ids"][name] = sid
+                        else:
+                            self.registry.data["issues"].append(
+                                {"kind": "provider_id_conflict", "provider": name, "match_id": match_identity(match)}
+                            )
+            stats["registry_record"] = self.registry.record(name, role, recorded_targets, data, stats)
             self.registry.now = datetime.now(UTC)
         # Rebuild at completion: early cache entries may expire during API calls.
         cached = {}
-        for m in self.inventory_matches:
+        for m in runtime_inventory:
             value = self.registry.cached(name, role, m)
             if value:
                 cached[m.match_key] = value
+        if name == "sstats" and role == "context" and cached and not missing_key:
+            # Enrich valid cached form too: missing tables must not wait for its
+            # six-hour form TTL. Updating a table never refreshes the form receipt.
+            from app.services.sstats_standings import enrich_standings
+
+            before = {key: deepcopy(value.details.get("sstats_standings")) for key, value in cached.items()}
+            original = {m.match_key: self.registry.data["matches"].get(match_identity(m), {}).get("evidence", {}).get("sstats:context")
+                        for m in runtime_inventory if m.match_key in cached}
+            enriched = deepcopy(cached)
+            try:
+                await enrich_standings(provider, runtime_inventory, enriched, stats)
+            except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+                stats["standings_error_type"] = type(exc).__name__
+            changed = False
+            self.registry.now = datetime.now(UTC)
+            cached = {}
+            for match in runtime_inventory:
+                context = self.registry.cached(name, role, match)
+                if context is None:
+                    continue
+                entry = self.registry.data["matches"].get(match_identity(match), {}).get("evidence", {}).get("sstats:context")
+                update = enriched.get(match.match_key)
+                if (entry is not None and entry is original.get(match.match_key) and update is not None
+                        and update.details.get("sstats_standings") != before.get(match.match_key)):
+                    context.payload = {**context.payload, "verified_standings": update.payload.get("verified_standings")}
+                    context.details = {**context.details, "sstats_standings": update.details.get("sstats_standings")}
+                    entry["payload"] = asdict(context)
+                    changed = True
+                cached[match.match_key] = context
+            if changed:
+                self.registry.save()
         # Older cache entries were constructed with percent values as fractions.
-        if name == 'bzzoiro' and role == 'context':
+        if name == "bzzoiro" and role == "context":
             for key, context in list(cached.items()):
-                if context.details.get('probability_units') != 'fraction' and isinstance(context.payload.get('prediction'), dict):
-                    cached[key] = provider._prediction_to_context(context.payload['prediction'], context.payload.get('event'), context.details.get('bzzoiro_match_quality'))
-        stats.update({'assigned_matches': len(targets), 'cached_matches': len(cached), 'daily_pipeline': True})
-        if role == 'context':
+                if context.details.get("probability_units") != "fraction" and isinstance(
+                    context.payload.get("prediction"), dict
+                ):
+                    cached[key] = provider._prediction_to_context(
+                        context.payload["prediction"],
+                        context.payload.get("event"),
+                        context.details.get("bzzoiro_match_quality"),
+                    )
+        stats.update({"assigned_matches": len(targets), "cached_matches": len(cached), "daily_pipeline": True})
+        if role == "context":
             self._retain_fixture_venues(name, cached)
-        if name == 'odds_api_io' and hasattr(provider, '_odds_accounts'):
-            stats['configured_accounts'] = [account['name'] for account in provider._odds_accounts()]
+        if name == "odds_api_io" and hasattr(provider, "_odds_accounts"):
+            stats["configured_accounts"] = [account["name"] for account in provider._odds_accounts()]
         return cached, stats, preview
+
+    async def _fetch_additional_offers(self, matches):
+        maps, reports = {}, {}
+        if os.getenv("DAILY_PARI_ENABLED", "false").lower() == "true":
+            data, stats, _ = await self._fetch_provider(self.sstats_pari, "fetch_offers", matches, empty_data={})
+            maps["sstats_pari"], reports["sstats_pari"] = data, stats
+        if self.the_odds.api_key:
+            data, stats, _ = await self._fetch_provider(self.the_odds, "fetch_offers", matches, empty_data={})
+            maps["the_odds"], reports["the_odds"] = data, stats
+        else:
+            reports["the_odds"] = {"enabled": False, "reason": "missing_api_key"}
+        return maps, reports
 
     def _merge_context_maps(self, *maps):
         now = datetime.now(UTC)
@@ -250,13 +436,18 @@ class DailyQualityRunner(PredictionRunner):
         for mapping in maps:
             for key, context in list((mapping or {}).items()):
                 match = by_key.get(key)
-                provider = context.details.get('daily_evidence_provider') or ('sstats' if context.source == 'sstats_form' else context.source)
-                observed = context.details.get('daily_evidence_observed_at') or context.details.get('daily_source_observed_at')
-                reasons = admit_context(provider, match, context, observed, now) if match else ['unknown_match']
+                provider = context.details.get("daily_evidence_provider") or (
+                    "sstats" if context.source == "sstats_form" else context.source
+                )
+                observed = context.details.get("daily_evidence_observed_at") or context.details.get(
+                    "daily_source_observed_at"
+                )
+                reasons = admit_context(provider, match, context, observed, now) if match else ["unknown_match"]
                 if reasons:
                     mapping.pop(key)
                     self.daily_rejections.update(reasons)
         from app.services.daily_context_reliability import blend_contexts
+
         groups = {}
         for mapping in maps:
             for key, context in (mapping or {}).items():
@@ -265,9 +456,9 @@ class DailyQualityRunner(PredictionRunner):
 
     def _prepare_model_context_maps(self, context_maps, contexts):
         # Revalidate after the slowest provider and weather requests, before bundles.
-        sporting = [mapping for provider, mapping in context_maps.items() if provider != 'weather']
+        sporting = [mapping for provider, mapping in context_maps.items() if provider != "weather"]
         fresh = self._merge_context_maps(*sporting)
-        weather = context_maps.get('weather', {})
+        weather = context_maps.get("weather", {})
         for key, cached_weather in list(weather.items()):
             if key not in fresh:
                 weather.pop(key)
@@ -276,32 +467,38 @@ class DailyQualityRunner(PredictionRunner):
         fresh.update(weather)
         self.admitted_sources = {}
         for provider, mapping in context_maps.items():
-            if provider == 'weather':
+            if provider == "weather":
                 continue
             for key, context in mapping.items():
-                self.admitted_sources.setdefault(key, {})[provider] = context.details.get('daily_evidence_observed_at') or context.details.get('daily_source_observed_at')
+                self.admitted_sources.setdefault(key, {})[provider] = context.details.get(
+                    "daily_evidence_observed_at"
+                ) or context.details.get("daily_source_observed_at")
         self.research_contexts = fresh
         return fresh
 
     def _retain_fixture_venues(self, provider, contexts):
         # Use only the venue of the matched event, never a team's usual stadium.
-        if provider not in {'bzzoiro', 'espn'}:
+        if provider not in {"bzzoiro", "espn"}:
             return
         changed = False
         for match in self.inventory_matches:
             context = contexts.get(match.match_key)
-            event = context.payload.get('event') if context else None
-            venue = event.get('venue') if isinstance(event, dict) else None
-            if provider == 'espn' and isinstance(event, dict):
-                raw_venue = (event.get('competitions') or [{}])[0].get('venue') or {}
-                address = raw_venue.get('address') or {}
-                venue = {'name': raw_venue.get('fullName'), 'city': address.get('city'), 'country': address.get('country')}
-            if not isinstance(venue, dict) or not venue.get('city') or not venue.get('country'):
+            event = context.payload.get("event") if context else None
+            venue = event.get("venue") if isinstance(event, dict) else None
+            if provider == "espn" and isinstance(event, dict):
+                raw_venue = (event.get("competitions") or [{}])[0].get("venue") or {}
+                address = raw_venue.get("address") or {}
+                venue = {
+                    "name": raw_venue.get("fullName"),
+                    "city": address.get("city"),
+                    "country": address.get("country"),
+                }
+            if not isinstance(venue, dict) or not venue.get("city") or not venue.get("country"):
                 continue
-            match.metadata.update(venue=dict(venue), country=venue['country'], venue_source=provider)
-            entry = self.registry.data['matches'].get(match_identity(match))
+            match.metadata.update(venue=dict(venue), country=venue["country"], venue_source=provider)
+            entry = self.registry.data["matches"].get(match_identity(match))
             if entry is not None:
-                entry['match']['metadata'].update(venue=dict(venue), country=venue['country'], venue_source=provider)
+                entry["match"]["metadata"].update(venue=dict(venue), country=venue["country"], venue_source=provider)
                 changed = True
         if changed:
             self.registry.save()
@@ -309,31 +506,53 @@ class DailyQualityRunner(PredictionRunner):
     async def _fetch_weather_contexts(self, matches, base_contexts):
         self.registry.now = datetime.now(UTC)
         for match in matches:
-            metadata = self.registry.data['matches'].get(match_identity(match), {}).get('match', {}).get('metadata', {})
-            if metadata.get('venue_source') in {'bzzoiro', 'espn'}:
-                match.metadata.update({key: metadata[key] for key in ('venue', 'country', 'venue_source') if key in metadata})
+            metadata = self.registry.data["matches"].get(match_identity(match), {}).get("match", {}).get("metadata", {})
+            if metadata.get("venue_source") in {"bzzoiro", "espn"}:
+                match.metadata.update(
+                    {key: metadata[key] for key in ("venue", "country", "venue_source") if key in metadata}
+                )
         # Give verified locations priority within the weather request budget.
-        matches = sorted(matches, key=lambda m: not (isinstance(m.metadata.get('venue'), dict) and m.metadata['venue'].get('city') and m.metadata.get('country')))
+        matches = sorted(
+            matches,
+            key=lambda m: (
+                not (
+                    isinstance(m.metadata.get("venue"), dict)
+                    and m.metadata["venue"].get("city")
+                    and m.metadata.get("country")
+                )
+            ),
+        )
         available = {m.match_key: m for m in matches if m.match_key in base_contexts}
-        cached = {key: self.registry.cached('weather', 'context', m) for key, m in available.items()}
+        cached = {key: self.registry.cached("weather", "context", m) for key, m in available.items()}
         targets = [m for key, m in available.items() if not cached[key]]
         data, stats, preview = await super()._fetch_weather_contexts(targets, base_contexts)
-        self.registry.record('weather', 'context', targets, data, stats)
+        self.registry.record("weather", "context", targets, data, stats)
         # Weather cache carries old sporting fields; reuse only the weather effect.
-        data.update({key: self._reapply_cached_weather(base_contexts[key], value) for key, value in cached.items() if value})
+        data.update(
+            {key: self._reapply_cached_weather(base_contexts[key], value) for key, value in cached.items() if value}
+        )
         return data, stats, preview
 
     @staticmethod
     def _reapply_cached_weather(base, cached):
         from app.utils import clamp
-        weather = {key: value for key, value in cached.details.items() if key.startswith('weather_')}
-        factor = clamp(float(weather.get('weather_total_factor', 1.0)), 0.78, 1.03)
+
+        weather = {key: value for key, value in cached.details.items() if key.startswith("weather_")}
+        factor = clamp(float(weather.get("weather_total_factor", 1.0)), 0.78, 1.03)
+
         def adjusted(value):
             return clamp(float(value) * factor, 0.15, 4.80) if value is not None else None
+
         confidence = float(base.confidence)
-        if weather.get('weather_adjustment_reasons'):
+        if weather.get("weather_adjustment_reasons"):
             confidence = clamp(confidence + 0.8, 50.0, 78.0)
-        return replace(base, expected_home=adjusted(base.expected_home), expected_away=adjusted(base.expected_away), confidence=confidence, details={**base.details, **weather})
+        return replace(
+            base,
+            expected_home=adjusted(base.expected_home),
+            expected_away=adjusted(base.expected_away),
+            confidence=confidence,
+            details={**base.details, **weather},
+        )
 
     def _filter_publishable_candidates(self, candidates):
         now = datetime.now(UTC)
@@ -343,26 +562,28 @@ class DailyQualityRunner(PredictionRunner):
         for candidate in candidates:
             match = by_key.get(candidate.match_key)
             if not match:
-                self.daily_rejections['unknown_match'] += 1
+                self.daily_rejections["unknown_match"] += 1
                 continue
-            candidate.source_summary.update({
-                'daily_price_observed_at': self.registry.observation(match, 'offers'),
-                'daily_context_observed_at': self.registry.observation(match, 'context'),
-                'registry_match_id': match_identity(match),
-            })
-            admission = getattr(self, 'admitted_sources', {}).get(candidate.match_key, {})
-            candidate.source_summary['context_admission'] = dict(admission)
+            candidate.source_summary.update(
+                {
+                    "daily_price_observed_at": self.registry.observation(match, "offers"),
+                    "daily_context_observed_at": self.registry.observation(match, "context"),
+                    "registry_match_id": match_identity(match),
+                }
+            )
+            admission = getattr(self, "admitted_sources", {}).get(candidate.match_key, {})
+            candidate.source_summary["context_admission"] = dict(admission)
             reasons = rejection_reasons(candidate)
-            if hasattr(self, 'admitted_sources') and not admission:
-                reasons.append('context_identity_missing')
+            if hasattr(self, "admitted_sources") and not admission:
+                reasons.append("context_identity_missing")
             for provider, observed in admission.items():
-                current = self.registry.cached(provider, 'context', match)
-                if current is None or current.details.get('daily_evidence_observed_at') != observed:
-                    reasons.append('context_source_expired_before_publication')
+                current = self.registry.cached(provider, "context", match)
+                if current is None or current.details.get("daily_evidence_observed_at") != observed:
+                    reasons.append("context_source_expired_before_publication")
             movement = evaluate_and_record_line_movement(candidate, self.settings, now=now)
             # A first current quote is valid; an observed adverse move remains a blocker.
-            if movement.get('status') in {'movement_failed', 'value_failed'}:
-                reasons.append('line_or_value_changed')
+            if movement.get("status") in {"movement_failed", "value_failed"}:
+                reasons.append("line_or_value_changed")
             if reasons:
                 self.daily_rejections.update(reasons)
                 continue
@@ -370,45 +591,77 @@ class DailyQualityRunner(PredictionRunner):
         publishable = super()._filter_publishable_candidates(eligible)
         for candidate in eligible:
             if candidate not in publishable:
-                self.daily_rejections.update(candidate.source_summary.get('publish_coverage_reasons') or ['quality_contract_blocked'])
+                self.daily_rejections.update(
+                    candidate.source_summary.get("publish_coverage_reasons") or ["quality_contract_blocked"]
+                )
         return publishable
 
     def _select_publishable_candidates(self, candidates):
-        candidates = [candidate for candidate in candidates if not candidate.source_summary.get('reserve_only')]
-        published = self.registry.data['published']
-        sent_match_ids = {row.get('match_id') for row in published if row.get('match_id')}
-        sent_match_ids.update(key for key, entry in self.registry.data['matches'].items() if entry.get('publication'))
+        candidates = [candidate for candidate in candidates if not candidate.source_summary.get("reserve_only")]
+        published = self.registry.data["published"]
+        sent_match_ids = {row.get("match_id") for row in published if row.get("match_id")}
+        sent_match_ids.update(key for key, entry in self.registry.data["matches"].items() if entry.get("publication"))
         remaining = max(0, 5 - len(published))
+        pilot_rules = None
+        if not self.settings.publish_dry_run:
+            from app.services.prospective_validation import policy
+
+            pilot_rules = policy()
+            candidates = [candidate for candidate in candidates if self._live_admission(candidate)]
+            remaining = min(remaining, max(0, pilot_rules["pilot_max_per_day"] - len(published)))
+            balance = self.state.bankroll_summary(self.settings)
+            peak = float(balance.get("peak_balance") or 0)
+            if (
+                peak <= 0
+                or 100 * (1 - float(balance.get("current_balance") or 0) / peak)
+                >= pilot_rules["pilot_max_drawdown_pct"]
+            ):
+                self.daily_rejections["pilot_drawdown_stop"] += len(candidates)
+                candidates = []
         if remaining == 0:
-            self.daily_rejections['daily_publication_limit'] += len(candidates)
+            self.daily_rejections["daily_publication_limit"] += len(candidates)
             self.selected_daily = []
             return []
+
         def priority(c):
             # Data quality is an admission gate, not an obligation to fill A/B.
-            return (c.ev_pct, float(c.source_summary.get('quality_score') or 0))
+            return (c.ev_pct, float(c.source_summary.get("quality_score") or 0))
+
         selected, matches = [], set()
         cap = min(remaining, int(self.settings.max_picks_per_run))
+        if pilot_rules:
+            cap = min(cap, pilot_rules["pilot_max_per_run"])
         for candidate in sorted(candidates, key=priority, reverse=True):
+            if (
+                os.getenv("DAILY_LIVE_A_ONLY", "false").lower() == "true"
+                and candidate.source_summary.get("publication_tier") != "A"
+            ):
+                self.daily_rejections["b_tier_observation_only"] = (
+                    self.daily_rejections.get("b_tier_observation_only", 0) + 1
+                )
+                continue
             if len(selected) >= cap:
                 break
-            if candidate.source_summary.get('registry_match_id') in sent_match_ids:
-                self.daily_rejections['already_published_match'] += 1
+            if candidate.source_summary.get("registry_match_id") in sent_match_ids:
+                self.daily_rejections["already_published_match"] += 1
                 continue
             if candidate.match_key in matches:
                 continue
             # Recheck at the final selection time; API work may have consumed lead time.
             lead = (candidate.commence_time.astimezone(UTC) - datetime.now(UTC)).total_seconds() / 60
             if not 30 <= lead <= 240:
-                self.daily_rejections['final_kickoff_window'] += 1
+                self.daily_rejections["final_kickoff_window"] += 1
                 continue
-            tier = candidate.source_summary['publication_tier']
-            pct = 0.5 if tier == 'A' else 0.25
+            tier = candidate.source_summary["publication_tier"]
+            pct = 0.5 if tier == "A" else 0.25
+            if pilot_rules:
+                pct = min(pct, pilot_rules["pilot_stake_pct"])
             amount = min(float(candidate.stake_amount), float(candidate.bankroll_snapshot) * pct / 100)
             if amount <= 0:
                 continue
             candidate.stake_amount = round(amount, 2)
             candidate.stake_pct = pct
-            candidate.risk_label = 'A_quality' if tier == 'A' else 'B_reduced'
+            candidate.risk_label = "A_quality" if tier == "A" else "B_reduced"
             matches.add(candidate.match_key)
             selected.append(candidate)
         self.selected_daily = selected
@@ -416,47 +669,75 @@ class DailyQualityRunner(PredictionRunner):
 
     def _select_shadow_candidates(self, **kwargs):
         existing_shadow = super()._select_shadow_candidates(**kwargs)
-        totals_trial = os.getenv('DAILY_TOTALS_TRIAL_ENABLED', 'false').lower() == 'true'
+        totals_trial = os.getenv("DAILY_TOTALS_TRIAL_ENABLED", "false").lower() == "true"
         if totals_trial:
             # Totals enter only the predeclared one-per-fixture quality trial.
-            existing_shadow = [c for c in existing_shadow if c.family != 'totals']
-        self.reserve_evaluation = {'evaluated': getattr(self.factory, 'daily_reserve_evaluated_count', 0),
-                                   'selected_new': 0, 'rejections': {}}
-        if os.getenv('DAILY_RESERVE_TRACKING_ENABLED', 'false').lower() != 'true':
+            existing_shadow = [c for c in existing_shadow if c.family != "totals"]
+        self.reserve_evaluation = {
+            "evaluated": getattr(self.factory, "daily_reserve_evaluated_count", 0),
+            "selected_new": 0,
+            "rejections": {},
+        }
+        if os.getenv("DAILY_RESERVE_TRACKING_ENABLED", "false").lower() != "true":
             return existing_shadow
         from app.services.daily_quality_policy import quality_decision
-        pool = list(getattr(self.factory, 'daily_reserve_candidates', []))
+
+        pool = list(getattr(self.factory, "daily_reserve_candidates", []))
         reserve_passed_model = len(pool)
         if totals_trial:
-            totals = deepcopy([c for c in kwargs.get('candidates_before_quality', []) if c.family == 'totals'])
+            totals = deepcopy([c for c in kwargs.get("candidates_before_quality", []) if c.family == "totals"])
             for candidate in totals:
-                for key in ('quality_reasons', 'quality_status', 'research_blockers'):
+                for key in ("quality_reasons", "quality_status", "research_blockers"):
                     candidate.source_summary.pop(key, None)
-                candidate.diagnostics.pop('quality', None)
-                candidate.source_summary['frozen_quality_adjustments'] = True
+                candidate.diagnostics.pop("quality", None)
+                candidate.source_summary["frozen_quality_adjustments"] = True
             pool.extend(totals)
-        self.reserve_evaluation.update(passed_model=reserve_passed_model, model_rejections=getattr(self.factory, 'daily_reserve_rejections', {}))
+        self.reserve_evaluation.update(
+            passed_model=reserve_passed_model, model_rejections=getattr(self.factory, "daily_reserve_rejections", {})
+        )
         clv = self.market_monitor.resolved_clv_rows() if self.market_monitor else []
-        report = self.quality.build_quality_report(self.state.prediction_ledger(self.settings, include_shadow=False), clv)
-        pool, rejected, quality_debug = self.quality.apply_to_candidates(pool, report, datetime.now(UTC), research_only=True)
-        self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in pool)
+        report = self.quality.build_quality_report(
+            self.state.prediction_ledger(self.settings, include_shadow=False), clv
+        )
+        pool, rejected, quality_debug = self.quality.apply_to_candidates(
+            pool, report, datetime.now(UTC), research_only=True
+        )
+        self.reserve_evaluation["historically_blocked_under_observation"] = sum(
+            bool(c.source_summary.get("research_blockers")) for c in pool
+        )
         if totals_trial:
-            rejected = Counter(reason for decision in quality_debug.get('decisions', [])
-                               if decision.get('family') != 'totals' for reason in decision.get('reasons', []))
-        self.reserve_evaluation['rejections'].update(rejected)
+            rejected = Counter(
+                reason
+                for decision in quality_debug.get("decisions", [])
+                if decision.get("family") != "totals"
+                for reason in decision.get("reasons", [])
+            )
+        self.reserve_evaluation["rejections"].update(rejected)
         by_key = {match.match_key: match for match in self.inventory_matches}
         ledger = self.state.prediction_ledger(self.settings, include_shadow=True)
-        fingerprints = {row.get('fingerprint') for row in ledger}
-        reserved = {(row.get('match_key'), row.get('family'), row.get('commence_time_utc'), row.get('goal_model_version'))
-                    for row in ledger if row.get('reserve_only')}
-        reserved_rows = [row for row in ledger if row.get('reserve_only')]
+        fingerprints = {row.get("fingerprint") for row in ledger}
+        reserved = {
+            (row.get("match_key"), row.get("family"), row.get("commence_time_utc"), row.get("goal_model_version"))
+            for row in ledger
+            if row.get("reserve_only")
+        }
+        reserved_rows = [row for row in ledger if row.get("reserve_only")]
         selected = []
-        limit = max(0, int(os.getenv('DAILY_RESERVE_MAX_NEW_PER_RUN', '25')))
-        for candidate in sorted(pool, key=lambda c: (c.source_summary.get('quality_score', 0), c.ev_pct), reverse=True):
+        limit = max(0, int(os.getenv("DAILY_RESERVE_MAX_NEW_PER_RUN", "25")))
+        for candidate in sorted(pool, key=lambda c: (c.source_summary.get("quality_score", 0), c.ev_pct), reverse=True):
             if len(selected) >= limit:
                 break
-            signature = (candidate.match_key, candidate.family, candidate.commence_time.isoformat(), candidate.source_summary.get('goal_model_version'))
-            if signature in reserved or self._candidate_fingerprint(candidate) in fingerprints or any(same_reserve_fixture(candidate, previous) for previous in reserved_rows):
+            signature = (
+                candidate.match_key,
+                candidate.family,
+                candidate.commence_time.isoformat(),
+                candidate.source_summary.get("goal_model_version"),
+            )
+            if (
+                signature in reserved
+                or self._candidate_fingerprint(candidate) in fingerprints
+                or any(same_reserve_fixture(candidate, previous) for previous in reserved_rows)
+            ):
                 continue
             match = by_key.get(candidate.match_key)
             if match is None:
@@ -464,120 +745,247 @@ class DailyQualityRunner(PredictionRunner):
             now = datetime.now(UTC)
             self.registry.now = now
             candidate.source_summary.update(
-                daily_price_observed_at=self.registry.observation(match, 'offers'),
-                daily_context_observed_at=self.registry.observation(match, 'context'),
-                registry_match_id=match_identity(match), reserve_only=True, can_publish=False,
-                shadow_tracking_reason='reserve_market_test')
-            if totals_trial and candidate.family == 'totals':
+                daily_price_observed_at=self.registry.observation(match, "offers"),
+                daily_context_observed_at=self.registry.observation(match, "context"),
+                registry_match_id=match_identity(match),
+                reserve_only=True,
+                can_publish=False,
+                shadow_tracking_reason="reserve_market_test",
+            )
+            if totals_trial and candidate.family == "totals":
                 from app.services.totals_trial import PROTOCOL
-                candidate.source_summary['validation_protocol'] = PROTOCOL
-            admission = getattr(self, 'admitted_sources', {}).get(candidate.match_key, {})
+
+                candidate.source_summary["validation_protocol"] = PROTOCOL
+            admission = getattr(self, "admitted_sources", {}).get(candidate.match_key, {})
             reasons = rejection_reasons(candidate)
             if not admission:
-                reasons.append('context_identity_missing')
+                reasons.append("context_identity_missing")
             for provider, observed in admission.items():
-                current = self.registry.cached(provider, 'context', match)
-                if current is None or current.details.get('daily_evidence_observed_at') != observed:
-                    reasons.append('context_source_expired_before_publication')
-            if not self.registry.has_role(match, 'offers'):
-                reasons.append('missing_real_line_or_context')
-            coverage = {'odds_sources_count': candidate.sources_count,
-                        'context_sources_count': len(admission), 'books_count': candidate.books_count}
-            _, policy_reasons, _ = quality_decision(candidate, coverage,
-                                                    now=now, allow_shadow_markets=True)
+                current = self.registry.cached(provider, "context", match)
+                if current is None or current.details.get("daily_evidence_observed_at") != observed:
+                    reasons.append("context_source_expired_before_publication")
+            if not self.registry.has_role(match, "offers"):
+                reasons.append("missing_real_line_or_context")
+            coverage = {
+                "odds_sources_count": candidate.sources_count,
+                "context_sources_count": len(admission),
+                "books_count": candidate.books_count,
+            }
+            paper_tier, policy_reasons, paper_meta = quality_decision(candidate, coverage, now=now, allow_shadow_markets=True)
+            candidate.source_summary.update(paper_quality_tier=paper_tier,
+                                            paper_policy_evidence=paper_meta,
+                                            paper_research_blockers=candidate.source_summary.get("research_blockers", []))
             reasons.extend(policy_reasons)
             if reasons:
-                for reason in set(reasons) if candidate.family != 'totals' else []:
-                    self.reserve_evaluation['rejections'][reason] = self.reserve_evaluation['rejections'].get(reason, 0) + 1
+                for reason in set(reasons) if candidate.family != "totals" else []:
+                    self.reserve_evaluation["rejections"][reason] = (
+                        self.reserve_evaluation["rejections"].get(reason, 0) + 1
+                    )
                 continue
-            candidate.stake_amount, candidate.stake_pct = 0., 0.
+            candidate.stake_amount, candidate.stake_pct = 0.0, 0.0
             selected.append(candidate)
             reserved.add(signature)
             reserved_rows.append(candidate)
-        self.reserve_evaluation['selected_new'] = sum(c.family != 'totals' for c in selected)
-        self.reserve_evaluation['historically_blocked_under_observation'] = sum(bool(c.source_summary.get('research_blockers')) for c in selected if c.family != 'totals')
+        self.reserve_evaluation["selected_new"] = sum(c.family != "totals" for c in selected)
+        self.reserve_evaluation["historically_blocked_under_observation"] = sum(
+            bool(c.source_summary.get("research_blockers")) for c in selected if c.family != "totals"
+        )
         return existing_shadow + selected
 
     async def _watch_pre_kickoff_prices(self):
         from app.services.daily_price_watch import watch_pre_kickoff_prices
-        return await watch_pre_kickoff_prices(self.registry, self.market_monitor, self.odds_api_io)
+
+        return await watch_pre_kickoff_prices(
+            self.registry, self.market_monitor, self.odds_api_io, pari_provider=getattr(self, "sstats_pari", None)
+        )
 
     async def run_once(self):
         try:
             price_watch = await self._watch_pre_kickoff_prices()
             summary = await super().run_once()
-            summary['price_watch'] = price_watch
-            summary['candidates_model_evaluated'] = getattr(self.factory, 'prefilter_candidates_count', 0)
-            summary['telegram_delivery_errors'] = getattr(self.telegram, 'delivery_errors', [])
-            summary['goal_model_version'] = GOAL_MODEL_VERSION
+            summary["price_watch"] = price_watch
+            summary["candidates_model_evaluated"] = getattr(self.factory, "prefilter_candidates_count", 0)
+            summary["telegram_delivery_errors"] = getattr(self.telegram, "delivery_errors", [])
+            summary["goal_model_version"] = GOAL_MODEL_VERSION
             from app.services.goal_research import GoalHistory
+
+            history = None
             try:
                 history = GoalHistory()
                 refresh = await history.refresh_overdue_results(self.settings, datetime.now(UTC))
-                summary['goal_research'] = history.run_research(self.inventory_matches, datetime.now(UTC))
-                summary['goal_research']['result_refresh'] = refresh
+                summary["goal_research"] = history.run_research(self.inventory_matches, datetime.now(UTC))
+                summary["goal_research"]["result_refresh"] = refresh
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
-                summary['goal_research'] = {'status': 'error', 'error_type': type(exc).__name__}
+                summary["goal_research"] = {"status": "error", "error_type": type(exc).__name__}
             try:
                 from app.services.totals_strategy_lab import run_lab
+
                 self.registry.now = datetime.now(UTC)
-                fresh_contexts = {key: context for key, context in getattr(self, 'research_contexts', {}).items()
-                    if getattr(self, 'admitted_sources', {}).get(key) and all(
-                        self.registry.cached(provider, 'context', match) is not None
-                        for match in self.inventory_matches if match.match_key == key
-                        for provider in self.admitted_sources[key])}
-                summary['totals_strategy_lab'] = run_lab(history, self.inventory_matches,
-                    fresh_contexts, self.registry, self.registry.now,
-                    allowed_books={'bet365', 'unibet', '1xbet', 'betano'})
+                fresh_contexts = {
+                    key: context
+                    for key, context in getattr(self, "research_contexts", {}).items()
+                    if getattr(self, "admitted_sources", {}).get(key)
+                    and all(
+                        self.registry.cached(provider, "context", match) is not None
+                        for match in self.inventory_matches
+                        if match.match_key == key
+                        for provider in self.admitted_sources[key]
+                    )
+                }
+                if history is None:
+                    raise ValueError("goal_history_unavailable")
+                summary["totals_strategy_lab"] = run_lab(
+                    history,
+                    self.inventory_matches,
+                    fresh_contexts,
+                    self.registry,
+                    self.registry.now,
+                    allowed_books={"bet365", "unibet", "williamhill", "1xbet", "betano", "pari"},
+                )
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
-                summary['totals_strategy_lab'] = {'status': 'error', 'error_type': type(exc).__name__}
-            write_json('.data/exports/latest-goal-research.json', summary['goal_research'])
-            write_json('.data/exports/latest-totals-strategy-lab.json', summary.get('totals_strategy_lab', {'status': 'not_completed'}))
-            summary['clv_recovered_from_ledger'] = self.clv_recovered
-            quality_report = read_json('.data/exports/latest-quality-report.json', {})
-            summary['goal_model_history'] = {
-                version: {'settled': cohort['settled_total'], **cohort['summary']}
-                for version, cohort in (quality_report.get('model_versions') or {}).items()}
-            reserve_rows = [row for row in self.state.prediction_ledger(self.settings, include_shadow=True)
-                            if row.get('reserve_only') and row.get('family') != 'totals' and row.get('goal_model_version') == GOAL_MODEL_VERSION]
+                summary["totals_strategy_lab"] = {"status": "error", "error_type": type(exc).__name__}
+            try:
+                from app.services.prospective_validation import REPORT_PATH, evaluate
+
+                if history is None:
+                    raise ValueError("goal_history_unavailable")
+                summary["prospective_validation"] = evaluate(history, datetime.now(UTC))
+                history.save()
+            except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
+                summary["prospective_validation"] = {
+                    "status": "error",
+                    "live_ready": False,
+                    "error_type": type(exc).__name__,
+                }
+            write_json(REPORT_PATH, summary["prospective_validation"])
+            write_json(".data/exports/latest-goal-research.json", summary["goal_research"])
+            write_json(
+                ".data/exports/latest-totals-strategy-lab.json",
+                summary.get("totals_strategy_lab", {"status": "not_completed"}),
+            )
+            summary["clv_recovered_from_ledger"] = self.clv_recovered
+            quality_report = read_json(".data/exports/latest-quality-report.json", {})
+            summary["goal_model_history"] = {
+                version: {"settled": cohort["settled_total"], **cohort["summary"]}
+                for version, cohort in (quality_report.get("model_versions") or {}).items()
+            }
+            reserve_rows = [
+                row
+                for row in self.state.prediction_ledger(self.settings, include_shadow=True)
+                if row.get("reserve_only")
+                and row.get("family") != "totals"
+                and row.get("goal_model_version") == GOAL_MODEL_VERSION
+            ]
             reserve_duplicates = len(reserve_rows)
             reserve_rows = unique_reserve_rows(reserve_rows)
             reserve_duplicates -= len(reserve_rows)
-            outcomes = Counter(row.get('status') for row in reserve_rows)
-            summary['reserve_markets'] = {
-                **getattr(self, 'reserve_evaluation', {}), 'tracked': len(reserve_rows),
-                'duplicates_ignored': reserve_duplicates,
-                'pending': outcomes.get('shadow_pending', 0),
-                'settled': sum(outcomes.get(status, 0) for status in ('won', 'lost', 'push', 'void')),
-                'wins': outcomes.get('won', 0), 'losses': outcomes.get('lost', 0), 'pushes': outcomes.get('push', 0),
-                'paper_pnl': round(sum(float(row.get('pnl') or 0) for row in reserve_rows), 2),
-                'families': dict(Counter(row.get('family') for row in reserve_rows))}
+            outcomes = Counter(row.get("status") for row in reserve_rows)
+            summary["reserve_markets"] = {
+                **getattr(self, "reserve_evaluation", {}),
+                "tracked": len(reserve_rows),
+                "duplicates_ignored": reserve_duplicates,
+                "pending": outcomes.get("shadow_pending", 0),
+                "settled": sum(outcomes.get(status, 0) for status in ("won", "lost", "push", "void")),
+                "wins": outcomes.get("won", 0),
+                "losses": outcomes.get("lost", 0),
+                "pushes": outcomes.get("push", 0),
+                "paper_pnl": round(sum(float(row.get("pnl") or 0) for row in reserve_rows), 2),
+                "families": dict(Counter(row.get("family") for row in reserve_rows)),
+            }
             from app.services.totals_trial import summarize as summarize_totals_trial
-            summary['totals_trial'] = summarize_totals_trial(
-                self.state.prediction_ledger(self.settings, include_shadow=True), GOAL_MODEL_VERSION)
-            if self.market_monitor:
-                self.market_monitor.restore_trial_tracking(self.state.pending_bets(include_shadow=True), datetime.now(UTC))
-                summary['totals_trial']['price_check'] = self.market_monitor.trial_clv_summary()
 
-            write_json('.data/exports/latest-totals-forward-trial.json', summary['totals_trial'])
+            summary["totals_trial"] = summarize_totals_trial(
+                self.state.prediction_ledger(self.settings, include_shadow=True), GOAL_MODEL_VERSION
+            )
+            from app.services.system_readiness import assess
+
+            summary["system_readiness"] = assess(summary, self.registry.coverage())
+            write_json(".data/exports/latest-system-readiness.json", summary["system_readiness"])
+            if self.market_monitor:
+                self.market_monitor.restore_trial_tracking(
+                    self.state.pending_bets(include_shadow=True), datetime.now(UTC)
+                )
+                summary["totals_trial"]["price_check"] = self.market_monitor.trial_clv_summary()
+
+            write_json(".data/exports/latest-totals-forward-trial.json", summary["totals_trial"])
             from app.services.api_budget import ApiBudget
-            summary['api_budget'] = ApiBudget().snapshot()
+
+            summary["api_budget"] = ApiBudget().snapshot()
             pending = self.state.pending_bets(include_shadow=False)
-            summary['overdue_published_bets'] = [
-                {'match': f"{row.get('home_team')} — {row.get('away_team')}", 'stake_amount': float(row.get('stake_amount') or 0)}
-                for row in pending if parse_time(row.get('commence_time')) and datetime.now(UTC) - parse_time(row['commence_time']) >= timedelta(hours=6)
+            summary["overdue_published_bets"] = [
+                {
+                    "match": f"{row.get('home_team')} — {row.get('away_team')}",
+                    "stake_amount": float(row.get("stake_amount") or 0),
+                }
+                for row in pending
+                if parse_time(row.get("commence_time"))
+                and datetime.now(UTC) - parse_time(row["commence_time"]) >= timedelta(hours=6)
             ]
             self.registry.now = datetime.now(UTC)
-            debug = read_json(summary.get('debug_path') or '.logs/debug-last-run.json', {})
-            rows = debug.get('candidates_before_quality', []) if debug.get('summary', {}).get('started_time_utc') == summary.get('started_time_utc') else []
-            quality_review = [{'match': f"{row.get('home_team')} — {row.get('away_team')}", 'selection': row.get('selection'), 'point': row.get('point'), 'odds': row.get('odds'), 'quality': (row.get('source_summary') or {}).get('quality_score'), 'confidence': row.get('confidence'), 'reasons': (row.get('source_summary') or {}).get('quality_reasons') or []} for row in rows[:5]]
-            summary['daily_quality'] = {'quality_review': quality_review, 'coverage': self.registry.coverage(), 'next_day_inventory': getattr(self, 'next_day_inventory_count', 0), 'published_today': self.registry.data['published'], 'rejections': dict(self.daily_rejections), 'selected': [{'match': f'{c.home_team} — {c.away_team}', 'tier': c.source_summary['publication_tier'], 'quality': c.source_summary.get('quality_score'), 'odds': c.odds, 'selection': self.telegram._compact_selection_display(c.family, c.selection, c.point, c.team_side, c.home_team, c.away_team, c.selection_key), 'kickoff_utc': c.commence_time.isoformat(), 'probability_pct': round(c.adjusted_probability * 100, 1), 'ev_pct': round(c.ev_pct, 1), 'stake_amount': c.stake_amount} for c in self.selected_daily]}
+            debug = read_json(summary.get("debug_path") or ".logs/debug-last-run.json", {})
+            rows = (
+                debug.get("candidates_before_quality", [])
+                if debug.get("summary", {}).get("started_time_utc") == summary.get("started_time_utc")
+                else []
+            )
+            quality_review = [
+                {
+                    "match": f"{row.get('home_team')} — {row.get('away_team')}",
+                    "selection": row.get("selection"),
+                    "point": row.get("point"),
+                    "odds": row.get("odds"),
+                    "quality": (row.get("source_summary") or {}).get("quality_score"),
+                    "confidence": row.get("confidence"),
+                    "reasons": (row.get("source_summary") or {}).get("quality_reasons") or [],
+                }
+                for row in rows[:5]
+            ]
+            summary["daily_quality"] = {
+                "quality_review": quality_review,
+                "coverage": self.registry.coverage(),
+                "next_day_inventory": getattr(self, "next_day_inventory_count", 0),
+                "published_today": self.registry.data["published"],
+                "rejections": dict(self.daily_rejections),
+                "selected": [
+                    {
+                        "match": f"{c.home_team} — {c.away_team}",
+                        "tier": c.source_summary["publication_tier"],
+                        "quality": c.source_summary.get("quality_score"),
+                        "odds": c.odds,
+                        "selection": self.telegram._compact_selection_display(
+                            c.family, c.selection, c.point, c.team_side, c.home_team, c.away_team, c.selection_key
+                        ),
+                        "kickoff_utc": c.commence_time.isoformat(),
+                        "probability_pct": round(c.adjusted_probability * 100, 1),
+                        "ev_pct": round(c.ev_pct, 1),
+                        "stake_amount": c.stake_amount,
+                    }
+                    for c in self.selected_daily
+                ],
+            }
+            write_json(
+                ".data/exports/latest-actionable-coverage-gaps.json",
+                {"created_at_utc": self.registry.now.isoformat(), "matches": self.registry.actionable_gaps()},
+            )
             reviews = self.registry.identity_review()
-            summary['daily_quality']['identity_review_pairs'] = len(reviews)
-            write_json('.data/exports/latest-coverage-identity-review.json', {
-                'created_at_utc': self.registry.now.isoformat(), 'automatic_merge': False, 'pairs': reviews})
-            write_json('.data/exports/latest-run-summary.json', summary)
+            conflicts = self.registry.runtime_conflicts()
+            summary["daily_quality"]["runtime_identity_conflicts"] = len(conflicts)
+            write_json(".data/exports/latest-runtime-identity-conflicts.json", conflicts)
+            summary["daily_quality"]["identity_review_pairs"] = len(reviews)
+            write_json(
+                ".data/exports/latest-coverage-identity-review.json",
+                {"created_at_utc": self.registry.now.isoformat(), "automatic_merge": False, "pairs": reviews},
+            )
+            write_json(".data/exports/latest-run-summary.json", summary)
             return summary
         finally:
             self.registry.save()
-            write_json('.data/exports/latest-daily-provider-plan.json', {'date_local': self.registry.date, 'run_id': os.getenv('GITHUB_RUN_ID'), 'assignments': self.work_plan, 'issues': self.registry.data['issues']})
+            write_json(
+                ".data/exports/latest-daily-provider-plan.json",
+                {
+                    "date_local": self.registry.date,
+                    "run_id": os.getenv("GITHUB_RUN_ID"),
+                    "assignments": self.work_plan,
+                    "issues": self.registry.data["issues"],
+                },
+            )

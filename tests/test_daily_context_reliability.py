@@ -550,10 +550,12 @@ def test_sstats_reuses_overlapping_history_windows_and_keeps_oldest_timestamp(tm
         return [{'id': start, 'date': start, 'home': 'Home', 'away': 'Away'}]
     monkeypatch.setattr(provider, '_fetch_rows_window', rows)
     asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-10', {}))
-    original = provider._daily_source_observed_at
+    import json
+    from pathlib import Path
+    original = json.loads(Path('.data/provider_cache/sstats-window-v5-2026-10-01-2026-10-07.json').read_text())['observed_at']
     stats = {}
     asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-11', stats))
-    assert calls == [('2026-10-01', '2026-10-07'), ('2026-10-08', '2026-10-10'), ('2026-10-08', '2026-10-11')]
+    assert calls == [('2026-10-08', '2026-10-10'), ('2026-10-01', '2026-10-07'), ('2026-10-08', '2026-10-11')]
     assert stats['history_windows_cache_hits'] == 1
     assert provider._daily_source_observed_at == original
 
@@ -646,7 +648,7 @@ def test_sstats_uses_cached_windows_even_when_no_http_budget_remains(tmp_path, m
     provider = SStatsContextProvider(Settings(_env_file=None))
     provider.max_http_requests = 1
     row = {'id': 1, 'date': '2026-10-08', 'home': 'Home', 'away': 'Away'}
-    write_json(tmp_path/'.data/provider_cache/sstats-window-v4-2026-10-08-2026-10-10.json',
+    write_json(tmp_path/'.data/provider_cache/sstats-window-v5-2026-10-08-2026-10-10.json',
                {'observed_at': datetime.now(UTC).isoformat(), 'rows': [row]})
     stats = {'requests': 1}
     result = asyncio.run(provider._fetch_rows(None, '2026-10-01', '2026-10-10', stats))
@@ -1022,9 +1024,9 @@ def test_sstats_refreshes_recent_tail_without_redownloading_old_windows(tmp_path
     tail = (today - timedelta(days=6)).isoformat()
     stamp = (datetime.now(UTC) - timedelta(minutes=90)).isoformat()
     old_row = {'id': 1, 'date': start}
-    write_json(f'.data/provider_cache/sstats-history-v4-{start}-{end}.json', {'observed_at': stamp, 'rows': [old_row]})
-    write_json(f'.data/provider_cache/sstats-window-v4-{start}-{split}.json', {'observed_at': stamp, 'rows': [old_row]})
-    write_json(f'.data/provider_cache/sstats-window-v4-{tail}-{end}.json', {'observed_at': stamp, 'rows': [{'id': 2}]})
+    write_json(f'.data/provider_cache/sstats-history-v5-{start}-{end}.json', {'observed_at': stamp, 'rows': [old_row]})
+    write_json(f'.data/provider_cache/sstats-window-v5-{start}-{split}.json', {'observed_at': stamp, 'rows': [old_row]})
+    write_json(f'.data/provider_cache/sstats-window-v5-{tail}-{end}.json', {'observed_at': stamp, 'rows': [{'id': 2}]})
     calls = []
     async def rows(client, a, b, stats):
         calls.append((a, b))
@@ -1044,7 +1046,9 @@ def test_sstats_extends_only_thin_near_fixture_history(tmp_path, monkeypatch, ex
     from app.config import Settings
     from app.providers.sstats import SStatsContextProvider
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv('DAILY_DATA_COLLECTION_WINDOW_HOURS', '4')
     monkeypatch.setenv('DAILY_SSTATS_EXTENDED_LOOKBACK_DAYS', '90')
+    monkeypatch.setenv('DAILY_SSTATS_BROAD_EXTENSION_ENABLED', 'true')
     class NoNetworkClient:
         def __init__(self, **kwargs): pass
         async def __aenter__(self): return self
@@ -1132,8 +1136,8 @@ def test_sstats_newest_first_preserves_complete_windows_when_later_window_times_
     assert calls == [('2026-07-08', '2026-07-14'), ('2026-07-01', '2026-07-07')]
     assert provider._daily_partial_rows == [{'id': 7, 'date': '2026-07-08'}]
     assert provider._daily_partial_observed_at
-    assert read_json('.data/provider_cache/sstats-window-v4-2026-07-08-2026-07-14.json', {})['rows'] == provider._daily_partial_rows
-    assert not read_json('.data/provider_cache/sstats-history-v4-2026-07-01-2026-07-14.json', {})
+    assert read_json('.data/provider_cache/sstats-window-v5-2026-07-08-2026-07-14.json', {})['rows'] == provider._daily_partial_rows
+    assert not read_json('.data/provider_cache/sstats-history-v5-2026-07-01-2026-07-14.json', {})
 
 
 def test_sstats_extension_timeout_defers_missing_evidence_instead_of_empty_cache(tmp_path):
