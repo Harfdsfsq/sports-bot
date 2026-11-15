@@ -845,6 +845,17 @@ class DailyQualityRunner(PredictionRunner):
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary["totals_strategy_lab"] = {"status": "error", "error_type": type(exc).__name__}
             try:
+                from app.services.conservative_totals import run as run_conservative_totals
+
+                if history is None:
+                    raise ValueError("goal_history_unavailable")
+                summary["conservative_totals"] = run_conservative_totals(history, self.registry.now)
+            except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
+                summary["conservative_totals"] = {
+                    "status": "error", "live_ready": False, "error_type": type(exc).__name__,
+                }
+            write_json(".data/exports/latest-conservative-totals.json", summary["conservative_totals"])
+            try:
                 from app.services.prospective_validation import REPORT_PATH, evaluate
 
                 if history is None:
