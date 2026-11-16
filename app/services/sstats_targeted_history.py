@@ -27,6 +27,7 @@ def verified_fixture(match):
     raw = row.get("dateUtc")
     if start is None and isinstance(raw, (int, float)) and not isinstance(raw, bool) and 946684800 <= raw <= 4102444800:
         start = datetime.fromtimestamp(raw, UTC)
+    league = (row.get("season") or {}).get("league") or {}
     if (
         sid.isdecimal()
         and int(sid) > 0
@@ -37,6 +38,8 @@ def verified_fixture(match):
                 "home": row["homeTeam"].get("name"),
                 "away": row["awayTeam"].get("name"),
                 "commence_time": start.isoformat() if start else None,
+                "league": league.get("name"),
+                "country": (league.get("country") or {}).get("code"),
             },
             tolerance_hours=0.25,
         )

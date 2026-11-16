@@ -17,7 +17,7 @@ from app.services.market_period import is_full_match_market
 
 TZ = ZoneInfo("Europe/Moscow")
 SSTATS_HISTORY_IDENTITY_REVISION = 2
-ODDS_QUOTE_IDENTITY_REVISION = 2
+ODDS_QUOTE_IDENTITY_REVISION = 3
 
 
 def parse_time(value):
@@ -130,6 +130,7 @@ class DailyMatchRegistry:
 
     def _merge_exact_alias_duplicates(self):
         from app.services.fixture_identity import same_team_identity
+        from app.services.reviewed_fixture_aliases import fixture_view, scoped_fixture_alias_match
 
         entries = self.data["matches"]
         keys = list(entries)
@@ -148,15 +149,16 @@ class DailyMatchRegistry:
                 shared = any(
                     str(ids[p]) == str(incoming[p]) and str(ids[p]).strip() for p in ids.keys() & incoming.keys()
                 )
-                if not shared and not any(
+                scoped = scoped_fixture_alias_match(a, fixture_view(b))
+                if not shared and not scoped and not any(
                     frozenset((a[side].lower(), b[side].lower())) in reviewed for side in ("home_team", "away_team")
                 ):
                     continue
                 if (
                     a["sport_key"] != b["sport_key"]
                     or parse_time(a["commence_time"]) != parse_time(b["commence_time"])
-                    or not same_team_identity(a["home_team"], [b["home_team"]])
-                    or not same_team_identity(a["away_team"], [b["away_team"]])
+                    or (not scoped and not same_team_identity(a["home_team"], [b["home_team"]]))
+                    or (not scoped and not same_team_identity(a["away_team"], [b["away_team"]]))
                 ):
                     continue
                 ids, incoming = first.get("provider_ids", {}), second.get("provider_ids", {})
@@ -165,6 +167,8 @@ class DailyMatchRegistry:
                 if first.get("publication") and second.get("publication"):
                     continue  # Multiple acknowledgements require explicit review.
                 first.setdefault("provider_ids", {}).update(incoming)
+                if scoped:
+                    first["match"]["metadata"] = {**(b.get("metadata") or {}), **(a.get("metadata") or {})}
                 for name, evidence in second.get("evidence", {}).items():
                     current = first.setdefault("evidence", {}).get(name)
                     if current is None or str(evidence.get("observed_at", "")) > str(current.get("observed_at", "")):
@@ -413,7 +417,20 @@ class DailyMatchRegistry:
                     and any(r.get("result") == "fixture_identity_mismatch"
                             for r in attempt.get("diagnostic", {}).get("accounts", {}).values())
                 )
-                if not (urgent_odds_retry or urgent_context_retry or repaired_squad_retry or repaired_womens_quote_retry):
+                repaired_scoped_quote_retry = False
+                if (provider == "odds_api_io" and role == "offers" and attempt.get("result") == "empty"
+                        and attempt.get("quote_identity_revision") != ODDS_QUOTE_IDENTITY_REVISION):
+                    from app.services.odds_line_audit import quote_identity_reason
+
+                    diagnostic = attempt.get("diagnostic") or {}
+                    repaired_scoped_quote_retry = any(
+                        receipt.get("result") == "fixture_identity_mismatch"
+                        and isinstance(receipt.get("returned_fixture"), dict)
+                        and quote_identity_reason(receipt["returned_fixture"], match, diagnostic.get("event_id")) is None
+                        for receipt in diagnostic.get("accounts", {}).values()
+                    )
+                if not (urgent_odds_retry or urgent_context_retry or repaired_squad_retry
+                        or repaired_womens_quote_retry or repaired_scoped_quote_retry):
                     continue
             lane = 0 if minutes <= 240 else 1 if minutes <= 480 else 2
             has_current_role = self.has_role(match, role)

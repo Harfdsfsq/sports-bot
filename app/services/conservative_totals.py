@@ -15,6 +15,7 @@ from datetime import timedelta
 from pathlib import Path
 from statistics import mean
 
+from app.services.daily_goal_probability import total_probability
 from app.services.daily_match_registry import parse_time
 from app.services.fixture_identity import same_team_identity
 from app.utils import normalize_bookmaker_name
@@ -57,6 +58,25 @@ def anchor(row, point):
     return raw, a["market"]
 
 
+def goal_rate(row):
+    value = (row.get("rates") or {}).get("shrunk")
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and .1 <= value <= 15:
+        return value
+    return None
+
+
+def corrected_anchor(row, profile, point):
+    values = anchor(row, point)
+    if values is None or "goal_rate_factor" not in profile:
+        return values
+    rate = goal_rate(row)
+    if rate is None:
+        return None
+    raw, market = values
+    corrected = total_probability(rate * profile["goal_rate_factor"], point).decisive_win
+    return .5 * raw + .5 * corrected, market
+
+
 def verified_result(row, now):
     created, kickoff, resolved = (parse_time(row.get(k)) for k in ("created_at", "kickoff", "resolved_at"))
     total = row.get("total")
@@ -87,9 +107,10 @@ def fit(rows, now, rules, base_hash):
         if not verified_result(row, now):
             continue
         values = anchor(row, rules["point"])
-        if values is None:
+        rate = goal_rate(row)
+        if values is None or rate is None:
             continue
-        usable.append((parse_time(row["kickoff"]), row["id"], *values, float(row["total"] > rules["point"])))
+        usable.append((parse_time(row["kickoff"]), row["id"], *values, float(row["total"] > rules["point"]), rate, row["total"]))
     usable.sort()
     report = {"status": "insufficient_history", "count": len(usable), "trained_before": now.isoformat(),
               "alpha": 0.0, "intercept": 0.0}
@@ -100,10 +121,24 @@ def fit(rows, now, rules, base_hash):
     report.update(train_count=len(train), validation_count=len(valid), split_at=boundary.isoformat())
     if len(train) < rules["min_training"] or len(valid) < rules["min_validation"]:
         return report
+    weights = [math.exp(-math.log(2) * (boundary - row[0]).total_seconds() / 86400 / rules["goal_bias_half_life_days"])
+               for row in train]
+    expected = sum(w * row[5] for w, row in zip(weights, train, strict=True))
+    actual = sum(w * row[6] for w, row in zip(weights, train, strict=True))
+    shrink = sum(weights) / (sum(weights) + rules["goal_bias_prior_matches"])
+    factor = max(rules["goal_bias_min_factor"], min(rules["goal_bias_max_factor"], 1 + shrink * (actual / expected - 1)))
+    report.update(goal_rate_factor=factor, train_mean_goals=actual / sum(weights),
+                  train_mean_predicted_goals=expected / sum(weights))
+
+    def corrected(rows):
+        return [(at, key, .5 * raw + .5 * total_probability(rate * factor, rules["point"]).decisive_win, market, y)
+                for at, key, raw, market, y, rate, _ in rows]
+
+    train_features, valid_features = corrected(train), corrected(valid)
     alpha, intercept = 0.0, 0.0
     for _ in range(250):
         ga, gb = .08 * alpha, .1 * intercept
-        for _, _, raw, market, y in train:
+        for _, _, raw, market, y in train_features:
             error = prediction(raw, market, alpha, intercept) - y
             ga += error * (logit(raw) - logit(market)) / len(train)
             gb += error / len(train)
@@ -112,7 +147,7 @@ def fit(rows, now, rules, base_hash):
 
     def scores(corrected):
         pairs = [(prediction(raw, market, alpha, intercept) if corrected else market, y)
-                 for _, _, raw, market, y in valid]
+                 for _, _, raw, market, y in valid_features]
         return (mean((p - y) ** 2 for p, y in pairs),
                 mean(-math.log(max(1e-12, p if y else 1 - p)) for p, y in pairs))
 
@@ -129,7 +164,7 @@ def fit(rows, now, rules, base_hash):
 def choose(row, profile, rules, now):
     if profile.get("status") != "validated":
         return None, "calibration_not_validated"
-    values = anchor(row, rules["point"])
+    values = corrected_anchor(row, profile, rules["point"])
     if values is None:
         return None, "no_fixed_anchor"
     evidence = row.get("evidence") or {}
@@ -222,7 +257,7 @@ def run(history, now):
                 or any(same_fixture(source, old) for old in state["observations"])):
             continue
         pick, reason = choose(source, profile, rules, now)
-        values = anchor(source, rules["point"])
+        values = corrected_anchor(source, profile, rules["point"])
         forecast = None
         if values is not None and profile.get("status") == "validated":
             raw, market = values

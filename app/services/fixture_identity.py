@@ -128,7 +128,9 @@ def direct_fixture_identity(match, event, *, tolerance_hours=.5):
     home = event.get('home_aliases') or [event.get('home')]
     away = event.get('away_aliases') or [event.get('away')]
     if not same_team_identity(match.home_team, home) or not same_team_identity(match.away_team, away):
-        return False
+        from app.services.reviewed_fixture_aliases import scoped_fixture_alias_match
+
+        return scoped_fixture_alias_match(match, event)
     try:
         kickoff = parse_datetime(event.get('commence_time'))
         return kickoff is not None and abs(match.commence_time - kickoff) <= timedelta(hours=tolerance_hours)

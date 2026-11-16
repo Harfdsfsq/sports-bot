@@ -31,6 +31,7 @@ TESTS = (
     "stable_learning_and_lookup",
     "runtime_identity_and_enrichment",
     "conservative_totals",
+    "reviewed_fixture_aliases",
     "repair_inventory_refresh_plan_counts_env",
 )
 EXTRA_TESTS = (

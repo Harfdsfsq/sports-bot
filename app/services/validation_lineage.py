@@ -77,9 +77,10 @@ def pipeline_fingerprint():
              ROOT / "app/services/sstats_targeted_history.py", ROOT / "app/services/team_result_archive.py",
              ROOT / "app/services/sstats_team_lookup.py", ROOT / "app/services/espn_identity.py",
              ROOT / "app/services/bzzoiro_free_enrichment.py", ROOT / "app/services/sstats_standings.py",
+             ROOT / "app/services/reviewed_fixture_aliases.py",
              ROOT / "app/utils.py"]
     for path in paths:
         parts.append(ast.dump(ast.parse(path.read_text()), include_attributes=False))
-    for name in ("daily_quality.env", "espn_team_aliases.json", "competition_squad_rules.json"):
+    for name in ("daily_quality.env", "espn_team_aliases.json", "competition_squad_rules.json", "reviewed_fixture_aliases.json"):
         parts.append((ROOT / "config" / name).read_text())
     return digest(parts)

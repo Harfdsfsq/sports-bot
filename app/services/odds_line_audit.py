@@ -33,6 +33,7 @@ def quote_identity_reason(payload, match, event_id):
     if not direct_fixture_identity(match, {
         **names,
         "commence_time": payload.get("date"),
+        "league": league_name,
     }, tolerance_hours=0.25):
         return "fixture_identity_mismatch"
     return None

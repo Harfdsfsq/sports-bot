@@ -19,7 +19,7 @@ def source(i="next", *, created=NOW):
               for side, odds in (("over", 1.7), ("under", 2.2))}
     return {"id": i, "home": "Home " + i, "away": "Away " + i, "protocol": "priced-totals-v1",
             "created_at": created.isoformat(), "kickoff": (created + timedelta(hours=2)).isoformat(),
-            "model_hash": BASE, "status": "pending", "anchor": a,
+            "model_hash": BASE, "status": "pending", "anchor": a, "rates": {"shrunk": 3.5},
             "evidence": {"best_team_sample": 10, "supported_weight_share": .8},
             "lines": [{"point": 2.5, "books": [{"book": b, "quotes": deepcopy(quotes)} for b in ("Unibet", "Pari")]}]}
 
@@ -34,6 +34,7 @@ def training():
         r = source(str(i), created=NOW - timedelta(days=201-i))
         probability = .85 if i % 2 else .15
         r["anchor"] = {**dict.fromkeys(c.MODELS, probability), "market": .5, "point": 2.5}
+        r["rates"]["shrunk"] = 4. if i % 2 else 2.
         r.update(status="resolved", total=4 if i % 2 else 1,
                  resolved_at=(datetime.fromisoformat(r["kickoff"]) + timedelta(hours=3)).isoformat(),
                  result_evidence={"provider_ids": {"sstats": [str(i + 1)]}})
@@ -51,6 +52,7 @@ def test_temporal_calibration_does_not_train_on_holdout_or_future_results():
     rejected = c.fit(changed, NOW, rules, BASE)
     assert rejected["status"] == "market_not_beaten"
     assert rejected["alpha"] == p["alpha"] and rejected["intercept"] == p["intercept"]
+    assert rejected["goal_rate_factor"] == p["goal_rate_factor"]
     future = deepcopy(rows)
     for r in future:
         r["resolved_at"] = (NOW + timedelta(hours=1)).isoformat()
@@ -165,3 +167,22 @@ def test_under_selection_and_settlement_use_the_selected_side(monkeypatch):
              result_evidence={"provider_ids": {"sstats": ["7"]}})
     report = c.run(h, NOW+timedelta(hours=4))
     assert report["wins"] == 1 and report["paper_pnl"] == pytest.approx(.7)
+
+
+def test_goal_bias_correction_uses_training_goals_only_and_checks_rate():
+    rows = training()
+    p = c.fit(rows, NOW, c.policy(), BASE)
+    assert .8 <= p["goal_rate_factor"] < 1
+    changed = deepcopy(rows)
+    for row in changed[-50:]:
+        row["total"] = 20 if row["total"] > 2.5 else 0
+    q = c.fit(changed, NOW, c.policy(), BASE)
+    assert q["goal_rate_factor"] == p["goal_rate_factor"]
+    assert q["training_hash"] == p["training_hash"]
+    assert q["validation_hash"] != p["validation_hash"]
+    missing = source()
+    missing.pop("rates")
+    assert c.choose(missing, p, c.policy(), NOW)[0] is None
+    up = source()
+    up["rates"]["shrunk"] = float("nan")
+    assert c.corrected_anchor(up, p, 2.5) is None
