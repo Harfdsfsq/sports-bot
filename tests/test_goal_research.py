@@ -434,3 +434,30 @@ def test_sstats_finished_extended_status_requires_regulation_score(status):
     assert (r['hg'],r['ag'])==(1,1)
     row['homeFTResult']=None
     assert normalize_result('sstats',row) is None
+
+
+def test_recent_filtered_result_gets_one_existing_sstats_slot(tmp_path, monkeypatch):
+    import asyncio
+
+    from app.services.research_result_recovery import recover_alternative_results
+
+    monkeypatch.setenv("DAILY_RESULT_DETAIL_REQUESTS_PER_RUN", "2")
+    history = GoalHistory(tmp_path / "history.json")
+    recent = recovery_forecast(NOW - timedelta(hours=4))
+    recent.update(id="chosen", source_ids={"sstats": "90"})
+    history.data["priced_totals_trials"] = [recent]
+    history.data["totals_loss_review"] = {
+        "decisions": {"chosen": {**recent, "pick": {"reason": "selected"}}}
+    }
+    for index in (1, 2):
+        old = recovery_forecast(NOW - timedelta(days=index))
+        old["source_ids"] = {"sstats": str(index)}
+        history.data["forecasts"][str(index)] = old
+    calls = install_recovery_client(monkeypatch, lambda url, kwargs: {})
+    result = asyncio.run(recover_alternative_results(
+        history, SimpleNamespace(sstats_api_key="fake", enable_openligadb_context=False), NOW,
+    ))
+    assert result["requests"] == 2 and result["priority_sstats_targets"] == 1
+    assert [url.rsplit("/", 1)[1] for url, _ in calls] == ["90", "1"]
+    assert result["added"] == 0
+    assert recent["status"] == "pending"

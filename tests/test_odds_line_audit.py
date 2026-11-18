@@ -75,7 +75,9 @@ def test_empty_snapshot_is_classified_by_separate_metadata_not_invented_odds(tmp
     r.sync([m])
     r.record("odds_api_io", "offers", [m], {}, stats)
     assert r.data["matches"][match_identity(m)]["attempts"]["odds_api_io:offers"]["diagnostic"] == d
-    assert r.actionable_gaps()[0]["attempts"]["odds_api_io:offers"]["diagnostic"] == d
+    gap = r.actionable_gaps()[0]
+    assert gap["attempts"]["odds_api_io:offers"]["diagnostic"] == d
+    assert gap["line_gap_reasons"] == {"odds_api_io": ["no_quote_from_selected_books"]}
 
 
 def test_metadata_audit_reuses_receipt_but_revalidates_identity(tmp_path, monkeypatch):

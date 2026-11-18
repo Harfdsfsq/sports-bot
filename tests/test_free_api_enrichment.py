@@ -383,8 +383,9 @@ def test_targeted_selection_caps_fixtures_and_queried_team_ids(tmp_path,monkeypa
     def response(params):calls.append(params);return {'data':[]}
     targeted_client(monkeypatch,response)
     stats={'requests':0}
-    asyncio.run(enrich_team_form(p,matches,seed,stats,{'team_form_examples':[]}))
+    # The registry may put a later kickoff first when it already has a line.
+    asyncio.run(enrich_team_form(p,matches[::-1],seed,stats,{'team_form_examples':[]}))
     report=stats['targeted_history']
     assert report['eligible_targets']==10 and report['selected_targets']==8
     assert report['available_bound_teams']==20 and report['bound_teams']==16
-    assert calls[0]['Team']==','.join(str(i) for i in range(10,26))
+    assert calls[0]['Team']==','.join(str(i) for i in range(14,30))

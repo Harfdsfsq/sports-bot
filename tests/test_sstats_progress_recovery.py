@@ -102,6 +102,7 @@ def test_outer_deadline_salvages_completed_context_through_normal_admission(monk
     data, stats, _ = asyncio.run(r._fetch_provider(p, "fetch_context", [m], empty_data={}))
     assert stats["runtime_error"] == "provider_deadline"
     assert stats["salvaged_contexts"] == 1 and stats["requests"] == 2
+    assert {"initial_history", "archive_reuse", "direct_matching", "initial_form", "targeted_history"} <= set(stats["stage_elapsed_seconds"])
     assert (m.match_key in data) is accepted
     if accepted:
         assert data[m.match_key].details["daily_source_observed_at"] == stamp

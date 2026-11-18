@@ -983,9 +983,12 @@ class DailyQualityRunner(PredictionRunner):
                     for c in self.selected_daily
                 ],
             }
+            gaps = self.registry.actionable_gaps()
+            gap_counts = self.registry.line_gap_counts(gaps)
+            summary["daily_quality"]["line_gap_reasons"] = gap_counts
             write_json(
                 ".data/exports/latest-actionable-coverage-gaps.json",
-                {"created_at_utc": self.registry.now.isoformat(), "matches": self.registry.actionable_gaps()},
+                {"created_at_utc": self.registry.now.isoformat(), "line_gap_reasons": gap_counts, "matches": gaps},
             )
             reviews = self.registry.identity_review()
             conflicts = self.registry.runtime_conflicts()

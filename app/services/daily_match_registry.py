@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from collections import Counter
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -204,12 +205,14 @@ class DailyMatchRegistry:
 
     def actionable_gaps(self):
         rows = []
+        conflicts = self.runtime_conflicts()
         for match in self.matches():
             lead = (match.commence_time - self.now).total_seconds() / 60
             if not 30 <= lead <= 240:
                 continue
             line, context = self.has_role(match, "offers"), self.has_role(match, "context")
-            if line and context:
+            quarantined = match.match_key in conflicts
+            if line and context and not quarantined:
                 continue
             entry = self.data["matches"][match_identity(match)]
             rows.append(
@@ -219,6 +222,8 @@ class DailyMatchRegistry:
                     "away": match.away_team,
                     "kickoff_utc": match.commence_time.isoformat(),
                     "missing": [role for role, ready in [("offers", line), ("context", context)] if not ready],
+                    "runtime_identity_quarantined": quarantined,
+                    "line_gap_reasons": self.line_gap_reasons(entry, quarantined) if not line or quarantined else {},
                     "provider_ids": entry.get("provider_ids", {}),
                     "attempts": {
                         name: {key: attempt.get(key) for key in ("at", "retry_after", "result", "diagnostic")}
@@ -232,6 +237,44 @@ class DailyMatchRegistry:
                 }
             )
         return sorted(rows, key=lambda row: row["kickoff_utc"])
+
+    def line_gap_reasons(self, entry, quarantined):
+        """Keep each provider's evidence and failed attempts distinct."""
+        if quarantined:
+            return {"fixture": ["fixture_identity_conflict"]}
+        attempts = entry.get("attempts", {})
+        evidence = entry.get("evidence", {})
+        keys = {key for key in attempts.keys() | evidence.keys() if key.endswith(":offers")}
+        reasons = {}
+        for key in sorted(keys):
+            provider = key.split(":", 1)[0]
+            row = attempts.get(key) or {}
+            diagnostic = row.get("diagnostic") or {}
+            account_results = {
+                a.get("result") for a in (diagnostic.get("accounts") or {}).values()
+            }
+            labels = []
+            stamp = parse_time((evidence.get(key) or {}).get("observed_at"))
+            if stamp and self.now - stamp > timedelta(minutes=15):
+                labels.append("expired_quote")
+            if "fixture_identity_mismatch" in account_results:
+                labels.append("fixture_identity_mismatch")
+            if account_results & {"empty_bookmakers", "response_absent"}:
+                labels.append("no_quote_from_selected_books")
+            if "no_supported_full_match_markets" in account_results:
+                labels.append("no_supported_full_match_markets")
+            if row.get("result") in {"deferred", "rate_limited", "unavailable"}:
+                labels.append(row["result"])
+            reasons[provider] = labels or ["no_usable_quote"]
+        return reasons or {"fixture": ["line_not_attempted"]}
+
+    @staticmethod
+    def line_gap_counts(gaps):
+        return dict(Counter(
+            reason
+            for gap in gaps
+            for reason in {r for values in gap["line_gap_reasons"].values() for r in values}
+        ))
 
     def runtime_conflicts(self):
         """Legacy provider maps omit kickoff; never mix different fixtures."""

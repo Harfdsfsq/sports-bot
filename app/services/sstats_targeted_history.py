@@ -9,6 +9,7 @@ import math
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from time import monotonic
 
 from app.services.api_budget import BudgetedAsyncClient
 from app.services.daily_match_registry import parse_time, read_json, write_json
@@ -86,15 +87,24 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
     }
     # Bind before applying the configurable fixture cap. Unsupported early
     # fixtures must not prevent a later fixture with two known IDs being tried.
+    started = monotonic()
+    report["stage"] = "team_binding"
     bindings = team_bindings(matches, seed_rows)
+    report["team_binding_seconds"] = round(monotonic() - started, 3)
     from app.services.sstats_team_lookup import discover
 
-    discovered, catalogue = await discover(provider, matches, bindings, stats)
+    report["stage"] = "catalogue"
+    started = monotonic()
+    try:
+        discovered, catalogue = await discover(provider, matches, bindings, stats)
+    finally:
+        report["catalogue_seconds"] = round(monotonic() - started, 3)
+    report["stage"] = "target_selection"
     bindings.update(discovered)
     report["available_bound_teams"] = len(bindings)
     eligible = [
         m
-        for m in sorted(matches, key=lambda m: m.commence_time)
+        for m in matches
         if all(
             any(same_history_team_identity(name, [bound]) for bound in bindings.values()) for name in (history_team_name(m, "home"), history_team_name(m, "away"))
         )
@@ -122,6 +132,7 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
     if request_limit == 0:
         report["stop_reason"] = "request_limit"
         return {}
+    report["stage"] = "history_fetch"
     now = datetime.now(UTC)
     params = {
         "Team": ",".join(sorted(bindings, key=int)),

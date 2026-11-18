@@ -24,6 +24,13 @@ def matching_fixture(result, forecast):
     )
 
 
+def selected_filter_pick(history, row):
+    decision = (history.data.get("totals_loss_review") or {}).get("decisions", {}).get(row.get("id")) or {}
+    return ((decision.get("pick") or {}).get("reason") == "selected"
+            and decision.get("created_at") == row.get("created_at")
+            and all(decision.get(key) == row.get(key) for key in ("kickoff", "home", "away")))
+
+
 def overdue_forecasts(history, now):
     from app.services.goal_research import unique_forecasts
 
@@ -33,7 +40,8 @@ def overdue_forecasts(history, now):
         for f in rows
         if f.get("status") == "pending"
         and parse_time(f.get("kickoff"))
-        and timedelta(hours=6) <= now - parse_time(f["kickoff"]) <= timedelta(days=30)
+        and timedelta(hours=3 if selected_filter_pick(history, f) else 6)
+        <= now - parse_time(f["kickoff"]) <= timedelta(days=30)
     ]
 
 
@@ -88,6 +96,7 @@ async def recover_alternative_results(history, settings, now):
     checks = history.data.setdefault("result_endpoint_checks", {})
     summary = {"requests": 0, "added": 0, "checks": [], "id_bound": sum(bool(f.get("source_ids")) for f in forecasts)}
     jobs = []
+    summary["priority_sstats_targets"] = 0
     if getattr(settings, "sstats_api_key", None):
         targets = {}
         for f in forecasts:
@@ -96,9 +105,21 @@ async def recover_alternative_results(history, settings, now):
             if sid.isdecimal() and int(sid) > 0 and f.get("resolution_reason") != "conflicting_result":
                 targets.setdefault(sid, []).append(f)
         keys = sorted(targets, key=lambda sid: ((checks.get("sstats:" + sid) or {}).get("at", ""), sid))
-        for sid in [sid for sid in keys if due(checks, "sstats:" + sid, now)][
-            : min(12, max(0, int(os.getenv("DAILY_RESULT_DETAIL_REQUESTS_PER_RUN", "3"))))
-        ]:
+        limit = min(12, max(0, int(os.getenv("DAILY_RESULT_DETAIL_REQUESTS_PER_RUN", "3"))))
+        # Reserve one slot within the existing budget for recent filtered picks.
+        # Keep a slot for the older queue whenever the budget allows it.
+        recent = {
+            sid for sid, group in targets.items()
+            if any(selected_filter_pick(history, row)
+                   and now - parse_time(row["kickoff"]) <= timedelta(hours=24)
+                   for row in group)
+        }
+        priority = next((sid for sid in keys if sid in recent and due(checks, "sstats:" + sid, now, hours=2)), None)
+        keys_due = [sid for sid in keys if due(checks, "sstats:" + sid, now)]
+        if priority is not None and limit and (limit > 1 or not keys_due):
+            keys_due = [priority, *(sid for sid in keys_due if sid != priority)]
+            summary["priority_sstats_targets"] = 1
+        for sid in keys_due[:limit]:
             jobs.append(
                 (
                     "sstats",

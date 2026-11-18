@@ -5,6 +5,7 @@ import os
 from collections import defaultdict
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from time import monotonic
 from typing import Any
 
 import httpx
@@ -106,6 +107,7 @@ class SStatsContextProvider:
         self._daily_partial_observed_at = None
         self._daily_source_observed_at = None
         self._daily_completed_contexts = {}
+        self._history_stage_started = None
         stats: dict[str, Any] = {
             "enabled": bool(self.settings.enable_sstats_context),
             "api_key_present": bool(self.settings.sstats_api_key),
@@ -169,7 +171,7 @@ class SStatsContextProvider:
         stats["days_requested"] = (parse_datetime(to_date).date() - parse_datetime(from_date).date()).days + 1
 
         self._daily_progress_stats, self._daily_progress_preview = stats, preview
-        stats["collection_stage"] = "initial_history"
+        self._start_history_stage(stats, "initial_history")
         async with BudgetedAsyncClient(timeout=self.settings.sstats_timeout_seconds) as client:
             if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
                 try:
@@ -187,6 +189,7 @@ class SStatsContextProvider:
             else:
                 rows = await self._fetch_rows(client, from_date, to_date, stats)
 
+        self._start_history_stage(stats, "archive_reuse")
         stats["rows_fetched"] = len(rows)
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             from app.services.sstats_targeted_history import verified_fixture
@@ -211,6 +214,7 @@ class SStatsContextProvider:
         earliest_match_start = min(m.commence_time for m in soccer_matches).astimezone(UTC)
         latest_match_start = max(m.commence_time for m in soccer_matches).astimezone(UTC)
 
+        self._start_history_stage(stats, "direct_matching")
         # Pass 1: direct event matching, but keep it strict to avoid false positives.
         # When SStats returns only historical rows, skip the expensive O(rows * matches)
         # matcher entirely for rows that are far outside the target fixture window.
@@ -333,6 +337,7 @@ class SStatsContextProvider:
                     }
                 )
 
+        self._start_history_stage(stats, "initial_form")
         # Pass 2: fallback from recent team form for matches still lacking context.
         fallback_contexts = self._build_team_form_contexts(soccer_matches, rows, preview)
         self._checkpoint_daily_contexts({**fallback_contexts, **contexts}, "initial_form")
@@ -361,7 +366,7 @@ class SStatsContextProvider:
             if missing:
                 from app.services.sstats_targeted_history import enrich_team_form
 
-                stats["collection_stage"] = "targeted_history"
+                self._start_history_stage(stats, "targeted_history")
                 targeted = await enrich_team_form(self, missing, rows, stats, preview)
                 improved = {
                     key: value
@@ -398,6 +403,7 @@ class SStatsContextProvider:
                 and extended_days > lookback_days
                 and os.getenv("DAILY_SSTATS_BROAD_EXTENSION_ENABLED", "true").lower() == "true"
             ):
+                self._start_history_stage(stats, "extended_history")
                 original_observed = getattr(self, "_daily_source_observed_at", None)
                 self._daily_partial_rows = []
                 self._daily_partial_observed_at = None
@@ -440,6 +446,7 @@ class SStatsContextProvider:
                     }
                     fallback_contexts.update(improved)
                     stats["history_extension_improved"] = len(improved)
+        self._start_history_stage(stats, "finalize_contexts")
         added_fallback = 0
         for match_key, context in fallback_contexts.items():
             existing = contexts.get(match_key)
@@ -487,7 +494,19 @@ class SStatsContextProvider:
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             for context in contexts.values():
                 context.details.setdefault("daily_source_observed_at", getattr(self, "_daily_source_observed_at", None))
+        self._finish_history_stage(stats)
         return contexts, stats, preview
+
+    def _start_history_stage(self, stats, stage):
+        self._finish_history_stage(stats)
+        stats["collection_stage"] = stage
+        self._history_stage_started = monotonic()
+
+    def _finish_history_stage(self, stats):
+        started = getattr(self, "_history_stage_started", None)
+        if started is not None:
+            stats.setdefault("stage_elapsed_seconds", {})[stats["collection_stage"]] = round(monotonic() - started, 3)
+            self._history_stage_started = None
 
     def _checkpoint_daily_contexts(self, contexts, stage):
         if os.getenv("PUBLICATION_PROFILE") != "daily_quality":
@@ -504,6 +523,7 @@ class SStatsContextProvider:
         """Return completed receipts after cancellation, never redate old history."""
         data = dict(getattr(self, "_daily_completed_contexts", {}))
         stats = dict(getattr(self, "_daily_progress_stats", {}))
+        self._finish_history_stage(stats)
         stats.update(enabled=True, runtime_error="provider_deadline", salvaged_contexts=len(data))
         return data, stats, dict(getattr(self, "_daily_progress_preview", {}))
 

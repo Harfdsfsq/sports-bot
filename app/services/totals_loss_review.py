@@ -9,7 +9,8 @@ from datetime import timedelta
 from statistics import mean
 
 from app.services.conservative_totals import same_fixture, verified_result
-from app.services.daily_match_registry import parse_time
+from app.services.daily_match_registry import parse_time, read_json
+from app.services.totals_strategy_clv import PATH as CLOSING_QUOTES_PATH
 from app.services.totals_strategy_lab import PROTOCOL as SOURCE_PROTOCOL
 from app.utils import normalize_bookmaker_name
 
@@ -124,7 +125,27 @@ def compare(settled):
     }
 
 
-def run(history, now):
+def closing_price_change(decision, receipt):
+    pick = decision["pick"]
+    at = parse_time(receipt.get("reference_at"))
+    kickoff = parse_time(decision["kickoff"])
+    created = parse_time(decision["created_at"])
+    price = receipt.get("reference_price")
+    if (
+        receipt.get("status") == "measured"
+        and parse_time(receipt.get("kickoff")) == kickoff
+        and parse_time(receipt.get("created_at")) == created
+        and at and created and kickoff and created < at < kickoff
+        and kickoff - at <= timedelta(minutes=45)
+        and normalize_bookmaker_name(receipt.get("book") or "") == pick["book"]
+        and receipt.get("point") == pick["point"] and receipt.get("side") == pick["side"]
+        and isinstance(price, (int, float)) and math.isfinite(price) and price > 1
+    ):
+        return (pick["odds"] / price - 1) * 100
+    return None
+
+
+def run(history, now, *, closing_quotes=None):
     baseline = history.data.get("prospective_validation") or {}
     cohort, model_hash = baseline.get("cohort_id"), baseline.get("code_hash")
     if not cohort or not model_hash:
@@ -175,23 +196,49 @@ def run(history, now):
         new += 1
 
     settled = []
+    measurements = {"baseline": [], "filtered": []}
+    pending_reasons = Counter()
+    closing_quotes = read_json(CLOSING_QUOTES_PATH, {}) if closing_quotes is None else closing_quotes
     for key, decision in decisions.items():
         source = sources.get(key, [])
-        if len(source) != 1:
+        selected = decision["pick"]["reason"] == "selected"
+        if len(source) != 1 or any(source[0].get(field) != decision[field]
+                                   for field in ("created_at", "kickoff", "home", "away")):
+            if selected:
+                pending_reasons["missing_or_ambiguous_source"] += 1
             continue
         row = source[0]
-        if (
-            all(row.get(field) == decision[field] for field in ("created_at", "kickoff", "home", "away"))
-            and verified_result(row, now)
-        ):
+        if verified_result(row, now):
             settled.append((decision["pick"], row["total"]))
+            change = closing_price_change(decision, closing_quotes.get(key + "|opponent") or {})
+            if change is not None:
+                measurements["baseline"].append(change)
+                if selected:
+                    measurements["filtered"].append(change)
+        elif selected:
+            kickoff = parse_time(decision["kickoff"])
+            reason = "awaiting_match_or_result"
+            if kickoff and now - kickoff >= timedelta(hours=2):
+                reason = row.get("resolution_reason") or "awaiting_verified_score"
+                status = str(row.get("provider_result_status", "")).lower()
+                if reason == "result_not_found" and status in {"postponed", "cancelled", "abandoned", "not started"}:
+                    reason = "provider_" + status.replace(" ", "_")
+            pending_reasons[reason] += 1
     history.save()
     reasons = Counter(d["pick"]["reason"] for d in decisions.values())
     result = compare(settled)
     result["baseline"]["pending"] = len(decisions) - result["baseline"]["settled"]
     result["filtered"]["pending"] = reasons["selected"] - result["filtered"]["settled"]
+    for group, values in measurements.items():
+        count = result[group]["settled"]
+        result[group]["closing_price"] = {
+            "measured": len(values),
+            "coverage_pct": 100 * len(values) / count if count else None,
+            "mean_clv_pct": mean(values) if values else None,
+        }
     return {
         "protocol": PROTOCOL, "source_cohort": cohort, "declared_at": state["declared_at"],
         "mode": "paper_only", "status": "collecting", "new": new, "observed": len(decisions),
-        "min_reference_probability": MIN_REFERENCE_PROBABILITY, "decisions": dict(reasons), **result,
+        "min_reference_probability": MIN_REFERENCE_PROBABILITY, "decisions": dict(reasons),
+        "filtered_pending_reasons": dict(pending_reasons), **result,
     }

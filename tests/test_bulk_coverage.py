@@ -456,12 +456,12 @@ def test_cached_form_can_receive_standings_without_receipt_reset(tmp_path, monke
 def test_collection_and_live_coverage_are_separate(tmp_path):
     from app.schemas import Offer
 
-    now = datetime.now(UTC)
+    now = datetime(2026, 11, 18, 12, tzinfo=UTC)
     m = fixture(now)
     r = DailyMatchRegistry(tmp_path / "registry.json", now)
     r.sync([m])
     quotes = [Offer("odds_api_io", book, "totals", "Over", 1.9, 2.5) for book in ("William Hill", "Unibet")]
-    r.record("odds_api_io", "offers", [m], {m.match_key: quotes}, {})
+    r.record("odds_api_io", "offers", [m], {m.match_key: quotes}, {}, observed_at=now)
     c = r.coverage()
     assert c["collected_line"] == c["future_line"] == c["near_two_book_lines"] == 1
     r.now = now + timedelta(minutes=16)

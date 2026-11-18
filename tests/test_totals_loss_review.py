@@ -67,11 +67,21 @@ def test_forward_comparison_preserves_refusals_and_counts_returns_separately():
                    result_evidence={"provider_ids": {"sstats": [row["id"]]}})
     # A later edit to the source prices must not change the stored decision.
     rows[1]["lines"] = deepcopy(rows[0]["lines"])
-    second = run(history, NOW + timedelta(hours=4))
+    quote = {
+        "status": "measured", "reference_at": (NOW + timedelta(minutes=100)).isoformat(),
+        "reference_price": 2.0, "book": "Pari", "point": 2.0, "side": "under",
+        "created_at": rows[0]["created_at"], "kickoff": rows[0]["kickoff"],
+    }
+    second = run(history, NOW + timedelta(hours=4), closing_quotes={
+        "A|opponent": quote, "C|opponent": {**quote, "book": "Betano"},
+    })
     assert second["new"] == 0 and second["losses_avoided"] == 1 and second["wins_skipped"] == 0
     assert second["filtered"]["wins"] == 1 and second["filtered"]["pushes"] == 1
     assert second["baseline"]["settled"] == 3 and second["filtered"]["settled"] == 2
+    assert second["filtered"]["closing_price"]["measured"] == 1
+    assert second["filtered"]["closing_price"]["coverage_pct"] == 50
 
-    rows[0]["status"] = "pending"
+    rows[0].update(status="pending", resolution_reason="result_not_found", provider_result_status="Postponed")
     third = run(history, NOW + timedelta(hours=5))
     assert third["filtered"]["wins"] == 0 and third["filtered"]["pending"] == 1
+    assert third["filtered_pending_reasons"] == {"provider_postponed": 1}
