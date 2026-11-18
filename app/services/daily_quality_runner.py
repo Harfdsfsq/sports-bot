@@ -856,6 +856,15 @@ class DailyQualityRunner(PredictionRunner):
                 }
             write_json(".data/exports/latest-conservative-totals.json", summary["conservative_totals"])
             try:
+                from app.services.totals_loss_review import run as run_loss_review
+
+                if history is None:
+                    raise ValueError("goal_history_unavailable")
+                summary["totals_loss_review"] = run_loss_review(history, self.registry.now)
+            except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
+                summary["totals_loss_review"] = {"status": "error", "error_type": type(exc).__name__}
+            write_json(".data/exports/latest-totals-loss-review.json", summary["totals_loss_review"])
+            try:
                 from app.services.prospective_validation import REPORT_PATH, evaluate
 
                 if history is None:
