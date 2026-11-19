@@ -1,7 +1,64 @@
 from __future__ import annotations
 
+import inspect
 import re
 from typing import Any
+
+import pytest
+
+_NATIVE_CONTRACTS = []
+
+
+def pytest_sessionstart(session):
+    """Capture the production methods before legacy test-module installers run."""
+    from app.providers.bzzoiro import BzzoiroContextProvider
+    from app.providers.odds_api_io import OddsApiIoProvider
+    from app.providers.sstats import SStatsContextProvider
+    from app.services.market_monitor import MarketMonitor
+    from app.services.model import CandidateFactory
+    from app.services.quality import PredictionQualityService
+    from app.services.runner import PredictionRunner
+
+    for cls in (
+        BzzoiroContextProvider,
+        OddsApiIoProvider,
+        SStatsContextProvider,
+        MarketMonitor,
+        CandidateFactory,
+        PredictionQualityService,
+        PredictionRunner,
+    ):
+        methods = {
+            name: method
+            for name, method in vars(cls).items()
+            if inspect.isfunction(method) or isinstance(method, (classmethod, staticmethod))
+        }
+        _NATIVE_CONTRACTS.append((cls, methods))
+
+
+@pytest.fixture(autouse=True)
+def isolate_native_contracts(request, monkeypatch):
+    """A legacy collector must not replace the implementation under native tests.
+
+    Only restore the native starting implementation. Test-local monkeypatches and
+    runtime installers still run normally; teardown restores the legacy state.
+    No test is skipped or its assertion changed.
+    """
+    from scripts.verify_daily_pipeline import EXTRA_TESTS, TESTS
+
+    if request.path.stem not in {"test_" + name for name in TESTS} and request.node.nodeid not in EXTRA_TESTS:
+        return
+    from pathlib import Path
+
+    # Use the same public profile as the native workflow. Legacy installers
+    # mutate os.environ during collection, outside pytest's monkeypatch scope.
+    for line in (Path(__file__).parents[1] / "config/daily_quality.env").read_text().splitlines():
+        if line and not line.startswith("#"):
+            key, value = line.split("=", 1)
+            monkeypatch.setenv(key, value)
+    for cls, methods in _NATIVE_CONTRACTS:
+        for name, method in methods.items():
+            monkeypatch.setattr(cls, name, method)
 
 
 def _as_int(value: Any) -> int:
@@ -13,7 +70,12 @@ def _as_int(value: Any) -> int:
 
 def _is_real_pool_filter(name: Any) -> bool:
     text = str(name or "")
-    if text in {"debug_candidates_before_quality", "debug_candidates_before_quality_duplicate_in_pool", "latest_rescue_candidates", "day_inventory_membership_keys"}:
+    if text in {
+        "debug_candidates_before_quality",
+        "debug_candidates_before_quality_duplicate_in_pool",
+        "latest_rescue_candidates",
+        "day_inventory_membership_keys",
+    }:
         return False
     return any(token in text for token in ("_stale_or_outside_window", "_not_in_day_inventory", "_prefilter"))
 
@@ -55,7 +117,9 @@ def _render_samples_with_points(payload: Any) -> list[str]:
             odds = f"{float(str(metrics.get('odds') or row.get('odds')).replace(',', '.')):.2f}"
         except Exception:
             odds = str(metrics.get("odds") or row.get("odds") or "n/a")
-        lines.append(f"{index}. {row.get('home_team', '')} — {row.get('away_team', '')} | {_selection_with_point(row)} @{odds}")
+        lines.append(
+            f"{index}. {row.get('home_team', '')} — {row.get('away_team', '')} | {_selection_with_point(row)} @{odds}"
+        )
         reasons = row.get("reject_reasons") if isinstance(row.get("reject_reasons"), list) else []
         if reasons:
             lines.append("   • причина: " + ", ".join(_reason_ru(r) for r in reasons[:4]))
@@ -69,7 +133,11 @@ def _independent_odds_count(row: Any) -> int:
     values = summary.get("line_sources") or summary.get("odds_sources") or []
     if isinstance(values, str):
         values = re.split(r"[,|;/]+", values)
-    normalized = {"odds_api_io" if str(v).lower().startswith("odds_api_io") else str(v).strip().lower() for v in values if str(v).strip()}
+    normalized = {
+        "odds_api_io" if str(v).lower().startswith("odds_api_io") else str(v).strip().lower()
+        for v in values
+        if str(v).strip()
+    }
     return len(normalized)
 
 
@@ -82,11 +150,25 @@ def _independent_odds_sources(candidate: Any) -> tuple[list[str], int, dict[str,
     summary = data.get("source_summary") if isinstance(data.get("source_summary"), dict) else {}
     values.extend(summary.get("odds_sources") or [])
     diagnostics = data.get("diagnostics") if isinstance(data.get("diagnostics"), dict) else {}
-    contract = diagnostics.get("publish_coverage_contract") if isinstance(diagnostics.get("publish_coverage_contract"), dict) else {}
+    contract = (
+        diagnostics.get("publish_coverage_contract")
+        if isinstance(diagnostics.get("publish_coverage_contract"), dict)
+        else {}
+    )
     values.extend(contract.get("odds_sources") or [])
-    consensus = diagnostics.get("api_coverage_consensus") if isinstance(diagnostics.get("api_coverage_consensus"), dict) else {}
+    consensus = (
+        diagnostics.get("api_coverage_consensus") if isinstance(diagnostics.get("api_coverage_consensus"), dict) else {}
+    )
     values.extend(consensus.get("exact_odds_sources") or [])
-    aliases = {"oddsapiio": "odds_api_io", "odds_api": "odds_api_io", "odds_api_io_account1": "odds_api_io", "odds_api_io_account2": "odds_api_io", "bzzoiro_v2": "bzzoiro", "bzzoiro_predictions": "bzzoiro", "sport_logic": "sportlogic"}
+    aliases = {
+        "oddsapiio": "odds_api_io",
+        "odds_api": "odds_api_io",
+        "odds_api_io_account1": "odds_api_io",
+        "odds_api_io_account2": "odds_api_io",
+        "bzzoiro_v2": "bzzoiro",
+        "bzzoiro_predictions": "bzzoiro",
+        "sport_logic": "sportlogic",
+    }
     sources = set()
     for value in values:
         key = re.sub(r"[^a-z0-9_]+", "_", str(value or "").strip().lower()).strip("_")
@@ -98,9 +180,11 @@ def _independent_odds_sources(candidate: Any) -> tuple[list[str], int, dict[str,
 
 def _generated_match_key_variants(row: Any) -> set[str]:
     data = row if isinstance(row, dict) else {}
+
     def team(value: Any) -> str:
         text = re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
         return re.sub(r"\s+", " ", re.sub(r"\b(fc|fk)\b", "", text)).strip()
+
     home = team(data.get("home_team") or data.get("home"))
     away = team(data.get("away_team") or data.get("away"))
     date = str(data.get("kickoff_utc") or data.get("commence_time") or data.get("event_date") or "")[:10]
@@ -110,14 +194,21 @@ def _generated_match_key_variants(row: Any) -> set[str]:
 def _next_step(payload: Any, _: Any, __: Any) -> str:
     reasons = payload.get("reasons", []) if isinstance(payload, dict) else []
     text = " ".join(str(r.get("reason") or "") for r in reasons if isinstance(r, dict))
-    return "Следующий шаг: publish/decline после повторной проверки движения линии." if "line_movement" in text else "Следующий шаг: проверить quality/xG/value и только затем принять publish/decline решение."
+    return (
+        "Следующий шаг: publish/decline после повторной проверки движения линии."
+        if "line_movement" in text
+        else "Следующий шаг: проверить quality/xG/value и только затем принять publish/decline решение."
+    )
 
 
 def _patch_report_conclusion(text: Any, payload: Any) -> str:
     result = str(text or "")
     diagnostics = payload.get("diagnostics", {}) if isinstance(payload, dict) else {}
     if _pool_filter_counts(diagnostics.get("controlled_fallback_pool_filter_counts", {})):
-        return result.replace("Нужно смотреть candidate factory/mapping: линии и контекст есть, но кандидаты не дошли до проверки.", "Candidate pipeline работает: часть кандидатов была отсечена до quality stage контролируемым prefilter.")
+        return result.replace(
+            "Нужно смотреть candidate factory/mapping: линии и контекст есть, но кандидаты не дошли до проверки.",
+            "Candidate pipeline работает: часть кандидатов была отсечена до quality stage контролируемым prefilter.",
+        )
     return result
 
 
@@ -126,6 +217,7 @@ def pytest_configure() -> None:
     from scripts import publish_controlled_fallback_with_run_context as fallback
     from scripts import send_harizon_telegram_run_report_v8 as v8
     from scripts import send_harizon_telegram_run_report_v9 as v9
+
     coverage_truth.generated_match_key_variants = _generated_match_key_variants
     fallback._independent_odds_sources = _independent_odds_sources
     v8._next_step = _next_step

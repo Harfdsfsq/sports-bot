@@ -196,7 +196,11 @@ def test_full_odds_fetch_keeps_second_account_after_first_429(budget_env, monkey
             return httpx.Response(200, request=httpx.Request('GET', url), json={'bookmakers': ['Bet365', 'Unibet']})
         assert url.endswith('/odds/multi')
         ids = [int(n) for n in kwargs['params']['eventIds'].split(',')]
-        return httpx.Response(429 if key == 'first' else 200, request=httpx.Request('GET', url), json=[] if key == 'first' else [{'id': n} for n in ids])
+        rows = [] if key == 'first' else [
+            {'id': n, 'home': matches[n - 1].home_team, 'away': matches[n - 1].away_team,
+             'date': matches[n - 1].commence_time.isoformat(), 'status': 'pending'} for n in ids
+        ]
+        return httpx.Response(429 if key == 'first' else 200, request=httpx.Request('GET', url), json=rows)
     monkeypatch.setattr(httpx.AsyncClient, 'get', get)
     monkeypatch.setattr(provider, '_parse_event_odds', lambda payload, match: [Offer('odds_api_io', 'Bet365', 'totals', 'Under', 2.0, 2.5)])
     offers, stats, _ = asyncio.run(provider.fetch_offers(matches))

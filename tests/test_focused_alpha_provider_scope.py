@@ -3,9 +3,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
+import pytest
+
 from app.services import daily_coverage_full_inventory_provider_patch as scope
 from app.services import daily_coverage_plan as coverage_plan
-import pytest
+
 
 @pytest.fixture(autouse=True)
 def explicit_focus(monkeypatch):

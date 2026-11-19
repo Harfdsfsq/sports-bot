@@ -2,26 +2,25 @@ from __future__ import annotations
 
 import asyncio
 import os
-from datetime import datetime, timezone
-UTC = timezone.utc
+import time
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 
-from app.services.api_budget import BudgetedAsyncClient
-
 from app.config import Settings
 from app.schemas import Match, MatchContext
+from app.services.api_budget import BudgetedAsyncClient
 from app.utils import (
     clamp,
     implied_probability,
     leagues_related,
-    to_decimal_probability,
     over_probability_from_lambda,
     parse_datetime,
     score_event_match_variants,
     strip_vig_three_way,
     strip_vig_two_way,
+    to_decimal_probability,
 )
 
 
@@ -31,10 +30,20 @@ class BzzoiroContextProvider:
         self.base_url = "https://sports.bzzoiro.com/api"
         self.api_key = os.getenv("BZZOIRO_API_KEY") or getattr(settings, "bzzoiro_api_key", None)
         self.timeout = float(getattr(settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
-        self.max_http_requests = max(0, int(float(os.getenv("BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN") or getattr(settings, "bzzoiro_per_run_max", 70) or 70)))
+        self.max_http_requests = max(
+            0,
+            int(
+                float(
+                    os.getenv("BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN") or getattr(settings, "bzzoiro_per_run_max", 70) or 70
+                )
+            ),
+        )
         self._requests_used = 0
 
-    async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+    async def fetch_context(
+        self, matches: list[Match]
+    ) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+        self._native_fetch_started = time.monotonic()
         stats: dict[str, Any] = {
             "enabled": bool(self.api_key),
             "api_key_present": bool(self.api_key),
@@ -89,7 +98,9 @@ class BzzoiroContextProvider:
         if not soccer_matches:
             return {}, stats, preview
 
-        target_limit = max(1, int(getattr(self.settings, "bzzoiro_context_match_limit", len(soccer_matches)) or len(soccer_matches)))
+        target_limit = max(
+            1, int(getattr(self.settings, "bzzoiro_context_match_limit", len(soccer_matches)) or len(soccer_matches))
+        )
         soccer_matches = self._prioritize_matches(soccer_matches)[:target_limit]
         stats["target_matches"] = len(soccer_matches)
 
@@ -149,7 +160,9 @@ class BzzoiroContextProvider:
 
             prediction_diag: dict[str, Any] | None = None
             if prediction is None:
-                prediction, quality, prediction_score, prediction_diag = self._match_prediction(match, predictions, used_prediction_ids)
+                prediction, quality, prediction_score, prediction_diag = self._match_prediction(
+                    match, predictions, used_prediction_ids
+                )
                 if prediction is not None:
                     stats["fallback_prediction_matches"] = int(stats.get("fallback_prediction_matches", 0) or 0) + 1
                     event = self._prediction_event(prediction, events) or event
@@ -219,13 +232,22 @@ class BzzoiroContextProvider:
                     }
                 )
 
+        if os.getenv("BZZOIRO_V2_NATIVE_ENRICHMENT_ENABLED", "false").lower() == "true":
+            from app.services.bzzoiro_free_enrichment import enrich
+
+            try:
+                await enrich(self, soccer_matches, contexts, stats)
+            except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+                stats["v2_native_error_type"] = type(exc).__name__
         return contexts, stats, preview
 
     def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
         now = datetime.now(UTC)
 
         def key(match: Match) -> tuple[int, float, str]:
-            tier_rank = 0 if getattr(match, "tier", "mid") == "top" else 1 if getattr(match, "tier", "mid") == "mid" else 2
+            tier_rank = (
+                0 if getattr(match, "tier", "mid") == "top" else 1 if getattr(match, "tier", "mid") == "mid" else 2
+            )
             kickoff_distance = abs((match.commence_time - now).total_seconds()) / 3600.0
             return (tier_rank, kickoff_distance, match.league_name.lower())
 
@@ -381,7 +403,9 @@ class BzzoiroContextProvider:
             return [row for row in payload if isinstance(row, dict)]
         return []
 
-    def _match_event(self, match: Match, events: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str | None, float, dict[str, Any] | None]:
+    def _match_event(
+        self, match: Match, events: list[dict[str, Any]]
+    ) -> tuple[dict[str, Any] | None, str | None, float, dict[str, Any] | None]:
         best: dict[str, Any] | None = None
         best_quality: str | None = None
         best_score = 0.0
@@ -428,7 +452,9 @@ class BzzoiroContextProvider:
 
         if best is None or best_quality is None:
             return None, None, 0.0, best_diag
-        accepted, rejection_reason, required_score = self._acceptance_diagnostic(match, self._event_league_name(best), best_quality, best_score)
+        accepted, rejection_reason, required_score = self._acceptance_diagnostic(
+            match, self._event_league_name(best), best_quality, best_score
+        )
         if best_diag is not None:
             best_diag["accepted"] = accepted
             best_diag["rejection_reason"] = rejection_reason
@@ -519,7 +545,9 @@ class BzzoiroContextProvider:
 
         if best is None or best_quality is None:
             return None, None, 0.0, best_diag
-        accepted, rejection_reason, required_score = self._acceptance_diagnostic(match, self._event_league_name(best.get("event") or {}, best), best_quality, best_score)
+        accepted, rejection_reason, required_score = self._acceptance_diagnostic(
+            match, self._event_league_name(best.get("event") or {}, best), best_quality, best_score
+        )
         if best_diag is not None:
             best_diag["accepted"] = accepted
             best_diag["rejection_reason"] = rejection_reason
@@ -534,7 +562,9 @@ class BzzoiroContextProvider:
         accepted, _, _ = self._acceptance_diagnostic(match, event_league, quality, score)
         return accepted
 
-    def _acceptance_diagnostic(self, match: Match, event_league: str, quality: str | None, score: float) -> tuple[bool, str, float]:
+    def _acceptance_diagnostic(
+        self, match: Match, event_league: str, quality: str | None, score: float
+    ) -> tuple[bool, str, float]:
         if quality is None:
             return False, "no_quality", 0.0
         min_score = 69.0 if quality == "fuzzy" else 64.0
@@ -574,13 +604,22 @@ class BzzoiroContextProvider:
 
             try:
                 event_start = parse_datetime(event.get("event_date"))
-                prediction_start = parse_datetime(prediction_event.get("event_date") or prediction.get("event_date") or prediction.get("date"))
+                prediction_start = parse_datetime(
+                    prediction_event.get("event_date") or prediction.get("event_date") or prediction.get("date")
+                )
             except Exception:
                 continue
 
             event_home_candidates, event_away_candidates = self._event_team_candidates(event)
-            prediction_home_candidates, prediction_away_candidates = self._event_team_candidates(prediction_event, prediction)
-            if not event_home_candidates or not event_away_candidates or not prediction_home_candidates or not prediction_away_candidates:
+            prediction_home_candidates, prediction_away_candidates = self._event_team_candidates(
+                prediction_event, prediction
+            )
+            if (
+                not event_home_candidates
+                or not event_away_candidates
+                or not prediction_home_candidates
+                or not prediction_away_candidates
+            ):
                 continue
 
             score, quality, _, _ = score_event_match_variants(
@@ -672,7 +711,7 @@ class BzzoiroContextProvider:
             pass
 
         prediction_age_hours: float | None = None
-        created_at_raw = prediction.get("created_at") or prediction.get("updated_at")
+        created_at_raw = prediction.get("updated_at") or prediction.get("created_at")
         if created_at_raw:
             try:
                 created_at = parse_datetime(created_at_raw)
@@ -719,8 +758,11 @@ class BzzoiroContextProvider:
                 "bzzoiro_favorite_probability": favorite_prob,
                 "bzzoiro_most_likely_score": prediction.get("most_likely_score"),
                 "bzzoiro_raw_confidence": round(raw_conf_pct, 3) if raw_conf_pct is not None else None,
-                "bzzoiro_prediction_created_at": created_at_raw,
-                "bzzoiro_prediction_age_hours": round(prediction_age_hours, 1) if prediction_age_hours is not None else None,
+                "bzzoiro_prediction_created_at": prediction.get("created_at"),
+                "bzzoiro_prediction_updated_at": prediction.get("updated_at"),
+                "bzzoiro_prediction_age_hours": round(prediction_age_hours, 1)
+                if prediction_age_hours is not None
+                else None,
                 "bzzoiro_match_quality": match_quality,
                 "bzzoiro_model_version": prediction.get("model_version"),
             },
@@ -870,7 +912,11 @@ class BzzoiroContextProvider:
         score: float,
         quality: str | None,
     ) -> dict[str, Any]:
-        event = payload.get("event") if provider_type == "prediction" and isinstance(payload.get("event"), dict) else payload
+        event = (
+            payload.get("event")
+            if provider_type == "prediction" and isinstance(payload.get("event"), dict)
+            else payload
+        )
         return {
             "provider_type": provider_type,
             "provider_id": payload.get("id"),
@@ -903,11 +949,7 @@ class BzzoiroContextProvider:
     def _entity_ids(payload: dict[str, Any]) -> set[str]:
         if not isinstance(payload, dict):
             return set()
-        return {
-            str(value).strip()
-            for value in (payload.get("id"), payload.get("api_id"))
-            if value not in (None, "")
-        }
+        return {str(value).strip() for value in (payload.get("id"), payload.get("api_id")) if value not in (None, "")}
 
     @classmethod
     def _prediction_identity(cls, prediction: dict[str, Any]) -> str:
@@ -924,7 +966,9 @@ class BzzoiroContextProvider:
         parts = [
             str((event or {}).get("home_team") or prediction.get("home_team") or "").strip().lower(),
             str((event or {}).get("away_team") or prediction.get("away_team") or "").strip().lower(),
-            str((event or {}).get("event_date") or prediction.get("event_date") or prediction.get("date") or "").strip(),
+            str(
+                (event or {}).get("event_date") or prediction.get("event_date") or prediction.get("date") or ""
+            ).strip(),
         ]
         return "|".join(part for part in parts if part)
 

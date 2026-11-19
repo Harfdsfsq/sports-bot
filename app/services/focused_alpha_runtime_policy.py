@@ -1,6 +1,8 @@
 """Optional Focused Alpha shadow policy and production rules bootstrap."""
+
 import os
 from typing import Any
+
 from app.services.focused_alpha_runtime_contract import POLICY
 from app.services.focused_alpha_runtime_contract import apply as _apply_contract
 
@@ -28,17 +30,21 @@ RULES_AB_INVARIANTS = {
     "LEGACY_RUNTIME_EXTENSIONS_ENABLED": "false",
 }
 
+
 def _enabled() -> bool:
     return os.getenv("FOCUSED_ALPHA_RUNTIME_POLICY_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+
 
 def _apply_rules_ab_invariants() -> dict[str, object]:
     for key, value in RULES_AB_INVARIANTS.items():
         os.environ[key] = value
     try:
         from app.services.rules_source_integrity import install
+
         return install()
     except Exception as exc:
         return {"installed": False, "error": f"{type(exc).__name__}: {exc}"}
+
 
 def _install_runtime_patches() -> None:
     global ACCUMULATION_PATCH, SETTLEMENT_PAGINATION_PATCH, _PATCHES_INSTALLED
@@ -46,21 +52,39 @@ def _install_runtime_patches() -> None:
         return
     try:
         from app.services.focused_alpha_accumulation_runtime_patch_v2 import install
+
         ACCUMULATION_PATCH = install()
     except Exception as exc:
-        ACCUMULATION_PATCH = {"status": "install_error", "error": f"{type(exc).__name__}: {exc}", "publication_contract_relaxed": False}
+        ACCUMULATION_PATCH = {
+            "status": "install_error",
+            "error": f"{type(exc).__name__}: {exc}",
+            "publication_contract_relaxed": False,
+        }
     try:
         from app.services.settlement_sstats_pagination_runtime_patch import install
+
         SETTLEMENT_PAGINATION_PATCH = install()
     except Exception as exc:
-        SETTLEMENT_PAGINATION_PATCH = {"status": "install_error", "error": f"{type(exc).__name__}: {exc}", "publication_contract_relaxed": False}
+        SETTLEMENT_PAGINATION_PATCH = {
+            "status": "install_error",
+            "error": f"{type(exc).__name__}: {exc}",
+            "publication_contract_relaxed": False,
+        }
     _PATCHES_INSTALLED = True
+
 
 def apply(*, force: bool = False) -> dict[str, Any]:
     if not _enabled():
         integrity = _apply_rules_ab_invariants()
-        return {"enabled": False, "status": "disabled_for_rules_ab", "publication_contract_relaxed": False, "rules_invariants_applied": True, "source_integrity": integrity}
+        return {
+            "enabled": False,
+            "status": "disabled_for_rules_ab",
+            "publication_contract_relaxed": False,
+            "rules_invariants_applied": True,
+            "source_integrity": integrity,
+        }
     _install_runtime_patches()
     return _apply_contract(force=force)
+
 
 __all__ = ["ACCUMULATION_PATCH", "POLICY", "RULES_AB_INVARIANTS", "SETTLEMENT_PAGINATION_PATCH", "apply"]

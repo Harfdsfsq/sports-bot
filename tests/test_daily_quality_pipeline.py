@@ -28,6 +28,7 @@ def profile(monkeypatch):
         if line and not line.startswith('#'):
             key, value = line.split('=', 1)
             monkeypatch.setenv(key, value)
+    monkeypatch.setenv('DAILY_LIVE_A_ONLY', 'false')
     monkeypatch.setenv('PUBLISH_DRY_RUN', 'true')
     monkeypatch.setenv('MAX_PICKS_PER_RUN', '2')
 
@@ -127,7 +128,7 @@ def test_provider_id_conflicts_do_not_overwrite_verified_mapping(tmp_path):
 def test_daily_cap_and_smaller_b_limit(profile, tmp_path):
     now = datetime.now(UTC)
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
-    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
     runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
     runner.registry.data['published'] = [{'tier': 'B'}] * 4
     runner.daily_rejections = {}
@@ -516,7 +517,7 @@ def test_same_match_cannot_be_published_in_another_market_next_run(profile, tmp_
     from collections import Counter
     now = datetime.now(UTC)
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
-    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
     runner.registry = DailyMatchRegistry(tmp_path/'registry.json', now)
     runner.registry.data['published'] = [{'match_id': 'miami-id', 'tier': 'B'}]
     runner.daily_rejections = Counter()
@@ -621,7 +622,7 @@ def test_sstats_inventory_uses_date_range_and_nested_league(profile, monkeypatch
     assert stats['rows_fetched'] == 2
 
 
-@pytest.mark.parametrize('count,revision,minutes,due', [(183, 3, 119, False), (183, 3, 120, True), (300, 3, 180, False), (183, 2, 1, True)])
+@pytest.mark.parametrize('count,revision,minutes,due', [(183, 4, 119, False), (183, 4, 120, True), (300, 4, 180, False), (183, 3, 1, True)])
 def test_incomplete_inventory_refresh_is_bounded(count, revision, minutes, due):
     from scripts.daily_inventory_refresh_due import refresh_due
     now = datetime.now(UTC)
@@ -1769,3 +1770,24 @@ def test_report_timeout_is_not_retried_or_leaked(monkeypatch,capsys):
     assert report.send_telegram('test') is False
     assert calls==[45]
     assert 'private-token' not in capsys.readouterr().out
+
+
+def test_a_only_mode_never_sends_b_even_with_higher_ev(profile, tmp_path, monkeypatch):
+    monkeypatch.setenv('DAILY_LIVE_A_ONLY', 'true')
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', datetime.now(UTC))
+    runner.daily_rejections = {}
+    def c(tier, ev):
+        return SimpleNamespace(match_key=tier, source_summary={'publication_tier': tier, 'quality_score': 80}, ev_pct=ev, commence_time=datetime.now(UTC)+timedelta(hours=1), stake_amount=5, bankroll_snapshot=1000)
+    a, b = c('A', 6), c('B', 20)
+    assert runner._select_publishable_candidates([b, a]) == [a]
+    assert runner.daily_rejections['b_tier_observation_only'] == 1
+
+
+def test_window_sla_does_not_call_empty_window_complete(tmp_path):
+    r = DailyMatchRegistry(tmp_path / 'r.json', datetime.now(UTC))
+    assert r.coverage()['near_ready_pct'] is None
+    r.sync([match(r.now)])
+    assert r.coverage()['near_missing_to_95'] == 1
+    assert r.coverage()['near_coverage_status'] == 'below_target'

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Repair refresh-plan counters after inventory priority calculation.
 
 `update_day_inventory_priority_and_line_state.py` correctly sets per-row
@@ -16,16 +14,17 @@ This script makes the exported counters strict and auditable:
   from row-level refresh plans.
 """
 
+from __future__ import annotations
+
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from scripts.day_inventory_aliases import write_current_aliases
 
-UTC = timezone.utc
 ROOT = Path(".").resolve()
 EXPORT_DIR = ROOT / ".data" / "exports"
 DAY_INV_DIR = ROOT / ".data" / "day_inventory"
@@ -52,7 +51,6 @@ def load_json(path: Path, default: Any) -> Any:
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
 
 
 def env_int(name: str, default: int) -> int:
@@ -90,13 +88,21 @@ def parse_dt(value: Any) -> datetime | None:
 
 
 def now_utc_from_debug() -> datetime:
+    wall_now = datetime.now(UTC)
     debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
+    if not isinstance(debug, dict):
+        return wall_now
     summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
+    max_age = timedelta(minutes=max(0, env_int("MAX_TRUSTED_ARTIFACT_NOW_AGE_MINUTES", 360)))
     for value in (summary.get("current_time_utc"), debug.get("current_time_utc") if isinstance(debug, dict) else None):
         dt = parse_dt(value)
-        if dt is not None:
+        if (
+            dt is not None
+            and dt <= wall_now
+            and (wall_now - dt <= max_age or env_bool("ALLOW_STALE_DEBUG_TIME_FOR_INVENTORY", False))
+        ):
             return dt
-    return datetime.now(UTC)
+    return wall_now
 
 
 def target_date(now: datetime) -> str:

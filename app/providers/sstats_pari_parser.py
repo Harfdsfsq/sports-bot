@@ -4,9 +4,8 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
-from app.schemas import Match, Offer
+from app.schemas import MarketFamily, Match, Offer
 from app.utils import canonicalize_team_name, parse_datetime
-
 
 _DISALLOWED_MARKET_TOKENS = (
     "first half",
@@ -170,18 +169,21 @@ def _safe_full_time_market(text: str) -> bool:
     if any(token in text for token in _DISALLOWED_MARKET_TOKENS):
         return False
     period_markers = ("half", "period", "тайм", "четверть", "сет")
-    if any(marker in text for marker in period_markers) and "full time" not in text:
-        return False
-    return True
+    return not (any(marker in text for marker in period_markers) and "full time" not in text)
 
 
 def parse_market_name(
     name: str,
     match: Match,
-) -> tuple[str, str, float | None, str | None, str] | None:
+) -> tuple[MarketFamily, str, float | None, str | None, str] | None:
     text = re.sub(r"\s+", " ", name.strip()).lower().replace(",", ".")
     if not text or not _safe_full_time_market(text):
         return None
+    outcome = re.fullmatch(r"(?:full time[. :]+)?1x2\s*:\s*(1|2|x)", text)
+    if outcome:
+        side = {"1": "home", "2": "away", "x": None}[outcome.group(1)]
+        selection = match.home_team if side == "home" else match.away_team if side == "away" else "Draw"
+        return "h2h", selection, None, side, "h2h:" + (side or "draw")
     numbers = [float(value) for value in re.findall(r"(?<!\d)[+-]?\d+(?:\.\d+)?", text)]
     point = numbers[-1] if numbers else None
     is_over = any(token in text for token in (" over", "over ", "больше", "тб", "б "))

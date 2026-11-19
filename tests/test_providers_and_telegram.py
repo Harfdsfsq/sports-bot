@@ -63,7 +63,7 @@ def test_odds_api_io_stops_event_paging_on_auth_error(tmp_path, monkeypatch):
             calls.append({"url": url, "params": dict(params or {})})
             return _FakeOddsApiIoResponse()
 
-    monkeypatch.setattr("app.providers.odds_api_io.httpx.AsyncClient", FakeAsyncClient)
+    monkeypatch.setattr("app.providers.odds_api_io.BudgetedAsyncClient", FakeAsyncClient)
     settings = Settings(
         _env_file=None,
         odds_api_io_key="bad-key",
@@ -319,6 +319,9 @@ def test_odds_api_io_stops_auth_failed_account_after_first_rejection(tmp_path, m
 
 
 def test_odds_api_io_full_auth_failure_activates_cooldown(tmp_path, monkeypatch):
+    # The legacy profile uses the global cooldown; daily_quality uses the
+    # shared credential-specific governor, covered by native budget tests.
+    monkeypatch.delenv("PUBLICATION_PROFILE", raising=False)
     cooldown_path = tmp_path / "odds-api-cooldown.json"
     monkeypatch.setenv("ODDS_API_IO_COOLDOWN_PATH", str(cooldown_path))
     monkeypatch.setenv("ODDS_API_IO_AUTH_ERROR_COOLDOWN_MINUTES", "60")
@@ -338,7 +341,7 @@ def test_odds_api_io_full_auth_failure_activates_cooldown(tmp_path, monkeypatch)
             calls.append({"url": url, "params": dict(params or {})})
             return _FakeOddsApiIoResponse()
 
-    monkeypatch.setattr("app.providers.odds_api_io.httpx.AsyncClient", FakeAsyncClient)
+    monkeypatch.setattr("app.providers.odds_api_io.BudgetedAsyncClient", FakeAsyncClient)
     settings = Settings(
         _env_file=None,
         odds_api_io_key="bad-key",

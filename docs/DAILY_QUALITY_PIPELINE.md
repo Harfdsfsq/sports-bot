@@ -727,7 +727,7 @@ The existing two-hour forecast dispatch remains unchanged. A second cron-job.org
 job can dispatch `run-bot.yml` every 30 minutes on the same branch with this body:
 
 ```json
-{"ref":"feature/daily-quality-pipeline","inputs":{"price_watch_only":true,"dry_run":false}}
+{"ref":"fix/coverage-integrity-a-only","inputs":{"price_watch_only":true,"dry_run":true,"max_picks":"1"}}
 ```
 
 Use the same GitHub dispatch URL and authentication as the existing job. This
@@ -736,7 +736,8 @@ not run inventory, forecasts, settlement, or Telegram reports. Without the secon
 external job the normal two-hour dispatch still works, but closing-price coverage
 remains limited. This change does not create an external scheduled job.
 
-Both modes share the existing concurrency group, live cache namespace, budget
+Both modes share the existing concurrency group, the namespace selected by
+`dry_run` (paper for this development setup), budget
 ledger and unchanged cache paths. Quote-only mode never writes `state.json`.
 Its diagnostic is `latest-price-watch.json`; provider failures fail the job.
 
