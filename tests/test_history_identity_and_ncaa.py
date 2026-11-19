@@ -269,3 +269,31 @@ def test_collection_revision_is_recorded_without_changing_model_cohort(tmp_path,
         path.write_text(path.read_text() + "\nIDENTITY_INPUT_VERSION = 2\n")
     assert validation.fingerprint(validation.policy()) == before
     assert validation_lineage.pipeline_fingerprint() != pipeline_before
+
+
+def test_team_binding_keeps_ambiguity_and_conflicting_id_names_out():
+    match = fixture("Aldershot Town", "Stirling Albion")
+    rows = [
+        {"homeTeam": {"name": match.home_team, "id": 10}, "awayTeam": {"name": match.away_team, "id": 20}},
+        {"homeTeam": {"name": match.home_team, "id": 11}, "awayTeam": {"name": "Unrelated Club", "id": 20}},
+        {"homeTeam": {"name": match.home_team, "id": 10}, "awayTeam": {"name": match.away_team, "id": 20}},
+    ]
+    assert team_bindings([match, match], rows) == {}
+    assert team_bindings([match, match], rows[:1]) == {"10": match.home_team, "20": match.away_team}
+
+
+def test_prepared_name_cache_uses_current_normalization_in_each_pass(monkeypatch):
+    import importlib
+
+    identity = importlib.import_module("app.services.fixture_identity")
+    first, second = "Alderbridge Borough", "Alderbrdge Borough"
+    with identity.team_name_cache():
+        assert identity.same_history_team_identity(first, [second])
+        assert not identity.same_history_team_identity(first, ["Alderbridge"])
+        assert not identity.same_history_team_identity(first, [first + " U21"])
+
+    original = identity.canonicalize_team_name
+    monkeypatch.setattr(identity, "canonicalize_team_name",
+                        lambda name: "another club" if name == second else original(name))
+    with identity.team_name_cache():
+        assert not identity.same_history_team_identity(first, [second])

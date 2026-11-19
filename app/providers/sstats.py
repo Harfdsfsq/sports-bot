@@ -20,6 +20,7 @@ from app.services.fixture_identity import (
     same_history_team_identity,
     same_team_identity,
     squad_identity,
+    team_name_cache,
 )
 from app.utils import (
     canonicalize_league_name,
@@ -339,7 +340,8 @@ class SStatsContextProvider:
 
         self._start_history_stage(stats, "initial_form")
         # Pass 2: fallback from recent team form for matches still lacking context.
-        fallback_contexts = self._build_team_form_contexts(soccer_matches, rows, preview)
+        with team_name_cache():
+            fallback_contexts = self._build_team_form_contexts(soccer_matches, rows, preview)
         self._checkpoint_daily_contexts({**fallback_contexts, **contexts}, "initial_form")
         if os.getenv("PUBLICATION_PROFILE") == "daily_quality":
             # A 45-day window can contain fewer than six games per team.
@@ -430,7 +432,8 @@ class SStatsContextProvider:
                 self._daily_source_observed_at = min(stamps) if stamps else None
                 stats["history_extension_rows"] = len(older)
                 if older:
-                    deeper = self._build_team_form_contexts(missing, rows + older, preview)
+                    with team_name_cache():
+                        deeper = self._build_team_form_contexts(missing, rows + older, preview)
                     improved = {
                         key: value
                         for key, value in deeper.items()

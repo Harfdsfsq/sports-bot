@@ -3,18 +3,33 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import timedelta
 from difflib import SequenceMatcher
 from functools import lru_cache
 from pathlib import Path
+from typing import NamedTuple
 
 from app.utils import canonicalize_league_name, canonicalize_team_name, parse_datetime
 
 _GENERIC = {'united', 'city', 'town', 'real', 'racing', 'sporting', 'athletic', 'club', 'sbv', 'us', 'calcio'}
+_REVIEWED_GROUPS = (frozenset({'js djidjel', 'js jijel'}), frozenset({'rc arbaa', 'rc arba'}))
+_TEAM_TRANSLATION = str.maketrans({'ø': 'o', 'Ø': 'O', 'ł': 'l', 'Ł': 'L', 'đ': 'd'})
+_NORMALIZED_ALIASES = {
+    'js djidjel': 'js jijel', 'rc arbaa': 'rc arba',
+    'san martin s j': 'san martin san juan', 'san martin sj': 'san martin san juan',
+}
 
 
 def squad_identity(name):
-    text = str(name or '').lower()
+    return _squad_identity(str(name or ''))
+
+
+@lru_cache(maxsize=16384)
+def _squad_identity(name):
+    text = name.lower()
     youth = re.findall(r'\b(?:u|under)[ -]?(\d{2})\b', text)
     reserve = bool(re.search(r'\b(?:ii|iii|reserves?|резерв|дубль)\b|(?:\s|^)(?:b|2|3)$', text))
     # A club initial (H W Welders / H&W Welders) is not a women's marker.
@@ -40,58 +55,95 @@ def team_identity_key(name):
     return base + ('#' + ','.join(suffix) if suffix else '')
 
 
+class _TeamName(NamedTuple):
+    canonical: str
+    canonical_tokens: frozenset[str]
+    normalized: str
+    tokens: frozenset[str]
+    anchors: frozenset[str]
+    squad: tuple[tuple[str, ...], bool, bool]
+    characters: Counter[str]
+
+
+_prepared_names: ContextVar[dict[str, _TeamName] | None] = ContextVar("prepared_team_names", default=None)
+
+
+@contextmanager
+def team_name_cache():
+    """Reuse normalized names within one synchronous pass."""
+    if _prepared_names.get() is not None:
+        yield
+        return
+    token = _prepared_names.set({})
+    try:
+        yield
+    finally:
+        _prepared_names.reset(token)
+
+
+def _team_name(name: str) -> _TeamName:
+    cache = _prepared_names.get()
+    if cache is not None and name in cache:
+        return cache[name]
+    canonical = canonicalize_team_name(name)
+    translated = name.translate(_TEAM_TRANSLATION)
+    normalized_name = canonical if translated == name else canonicalize_team_name(translated)
+    key = ' '.join(token for token in normalized_name.split()
+                   if token not in {'fodbold', 'football', 'futbol'})
+    normalized = _NORMALIZED_ALIASES.get(key, key)
+    tokens = frozenset(normalized.split())
+    anchors = frozenset(token for token in tokens if len(token) >= 5 and token not in _GENERIC)
+    prepared = _TeamName(canonical, frozenset(canonical.split()), normalized, tokens, anchors,
+                         squad_identity(name), Counter(normalized))
+    if cache is not None:
+        cache[name] = prepared
+    return prepared
+
+
+def _reviewed(first: _TeamName, second: _TeamName) -> bool:
+    a, b = first.canonical, second.canonical
+    return first.squad == second.squad and a != b and any(a in group and b in group for group in _REVIEWED_GROUPS)
+
+
 def reviewed_team_alias_match(first, second):
-    if squad_identity(first) != squad_identity(second):
+    return _reviewed(_team_name(str(first or '')), _team_name(str(second or '')))
+
+
+def _same_team(first: _TeamName, second: _TeamName) -> bool:
+    left, right = first.normalized, second.normalized
+    if first.squad != second.squad or not left or not right:
         return False
-    groups = ({'js djidjel', 'js jijel'}, {'rc arbaa', 'rc arba'})
-    a, b = canonicalize_team_name(first), canonicalize_team_name(second)
-    return a != b and any(a in group and b in group for group in groups)
+    if left == right or {left, right} == {'agf aarhus', 'agf'}:
+        return True
+    if first.anchors & second.anchors and (first.tokens <= second.tokens or second.tokens <= first.tokens):
+        return True
+    shortest = min(len(left), len(right))
+    length = len(left) + len(right)
+    if shortest < 8 or 2 * shortest / length < .90:
+        return False
+    # Shared characters bound the number of matching characters from above.
+    # Only the original SequenceMatcher ratio can accept a fuzzy match.
+    overlap = sum(min(count, second.characters.get(char, 0)) for char, count in first.characters.items())
+    return 2 * overlap / length >= .90 and SequenceMatcher(None, left, right).ratio() >= .90
 
 
 def same_team_identity(target, aliases):
-    def normalized(name):
-        text = str(name or '').translate(str.maketrans({'ø': 'o', 'Ø': 'O', 'ł': 'l', 'Ł': 'L', 'đ': 'd'}))
-        key = ' '.join(token for token in canonicalize_team_name(text).split() if token not in {'fodbold', 'football', 'futbol'})
-        key = {'js djidjel': 'js jijel', 'rc arbaa': 'rc arba'}.get(key, key)
-        return {'san martin s j': 'san martin san juan',
-                'san martin sj': 'san martin san juan'}.get(key, key)
-
-    left = normalized(target)
-    if not left:
-        return False
-    for alias in aliases:
-        if squad_identity(target) != squad_identity(alias):
-            continue
-        right = normalized(alias)
-        if not right:
-            continue
-        if left == right or {left, right} == {'agf aarhus', 'agf'}:
-            return True
-        a, b = set(left.split()), set(right.split())
-        anchors = {t for t in a & b if len(t) >= 5 and t not in _GENERIC}
-        if anchors and (a <= b or b <= a):
-            return True
-        # Long near-identical full names can tolerate a spelling variation.
-        if min(len(left), len(right)) >= 8 and SequenceMatcher(None, left, right).ratio() >= .90:
-            return True
-    return False
+    first = _team_name(str(target or ''))
+    return any(_same_team(first, _team_name(str(alias or ''))) for alias in aliases)
 
 
 def same_history_team_identity(target, aliases):
-    """History has no opposing fixture to disambiguate a city-only match.
-
-    Do not drop distinctive tokens (FAS Santa Ana -> Santa Ana). Keep the
-    explicitly reviewed abbreviations and long spelling variants.
-    """
-    left = canonicalize_team_name(target)
+    """Keep reviewed abbreviations and spelling variants without city-only matches."""
+    first = _team_name(str(target or ''))
     for alias in aliases:
-        right = canonicalize_team_name(alias)
-        if not same_team_identity(target, [alias]):
+        second = _team_name(str(alias or ''))
+        # A strict canonical subset is rejected unless explicitly reviewed.
+        if _reviewed(first, second) or {first.canonical, second.canonical} == {'agf', 'agf aarhus'}:
+            if _same_team(first, second):
+                return True
             continue
-        if reviewed_team_alias_match(target, alias) or {left, right} == {'agf', 'agf aarhus'}:
-            return True
-        a, b = set(left.split()), set(right.split())
-        if a and b and not (a < b or b < a):
+        a, b = first.canonical_tokens, second.canonical_tokens
+        if a and b and not (a < b or b < a) and _same_team(first, second):
             return True
     return False
 

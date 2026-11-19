@@ -7,13 +7,19 @@ import hashlib
 import json
 import math
 import os
+from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from time import monotonic
 
 from app.services.api_budget import BudgetedAsyncClient
 from app.services.daily_match_registry import parse_time, read_json, write_json
-from app.services.fixture_identity import direct_fixture_identity, history_team_name, same_history_team_identity
+from app.services.fixture_identity import (
+    direct_fixture_identity,
+    history_team_name,
+    same_history_team_identity,
+    team_name_cache,
+)
 
 
 def verified_fixture(match):
@@ -49,6 +55,7 @@ def verified_fixture(match):
     return None
 
 
+@team_name_cache()
 def team_bindings(matches, rows):
     """Bind only unique IDs witnessed with a compatible name and squad."""
     rows = list(rows) + [row for match in matches if (row := verified_fixture(match)) is not None]
@@ -61,16 +68,28 @@ def team_bindings(matches, rows):
             sid, name = str(team.get("id") or ""), team.get("name")
             if sid.isdecimal() and int(sid) > 0 and isinstance(name, str) and name.strip():
                 names_by_id.setdefault(sid, set()).add(name)
+    ids_by_name = defaultdict(set)
+    for sid, names in names_by_id.items():
+        for name in names:
+            ids_by_name[name].add(sid)
+
     bindings = {}
+    resolved = {}
     for match in matches:
         for name in (history_team_name(match, "home"), history_team_name(match, "away")):
-            candidates = [
-                sid for sid, names in names_by_id.items() if any(same_history_team_identity(name, [n]) for n in names)
-            ]
-            if len(candidates) == 1:
-                sid = candidates[0]
-                if all(same_history_team_identity(name, [n]) for n in names_by_id[sid]):
-                    bindings[sid] = name
+            if name not in resolved:
+                candidates = set()
+                for witnessed, ids in ids_by_name.items():
+                    if same_history_team_identity(name, [witnessed]):
+                        candidates.update(ids)
+                        if len(candidates) > 1:
+                            break
+                sid = next(iter(candidates)) if len(candidates) == 1 else None
+                resolved[name] = sid if sid and all(
+                    same_history_team_identity(name, [n]) for n in names_by_id[sid]
+                ) else None
+            if sid := resolved[name]:
+                bindings[sid] = name
     return bindings
 
 
@@ -260,7 +279,8 @@ async def enrich_team_form(provider, matches, seed_rows, stats, preview):
         from app.services.team_result_archive import retain_history
 
         valid, report["team_result_archive"] = retain_history(provider, valid, observed.isoformat())
-    contexts = provider._build_team_form_contexts(targets, valid, preview) if valid else {}
+    with team_name_cache():
+        contexts = provider._build_team_form_contexts(targets, valid, preview) if valid else {}
     for context in contexts.values():
         context.details["daily_source_observed_at"] = observed.isoformat()
         context.details["sstats_history_scope"] = "verified_team_ids"
