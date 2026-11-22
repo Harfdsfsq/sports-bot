@@ -571,7 +571,13 @@ class OddsApiIoProvider:
                     stats["matched_fuzzy"] += 1
 
             matched_items = list(mapping.values())
-            matched_items.sort(key=lambda row: self._match_priority(row["match"], now))
+            if daily:
+                # Keep the registry's deadline and coverage priorities when
+                # mixing known IDs with freshly discovered events.
+                queue_order = {match.match_key: i for i, match in enumerate(soccer_matches)}
+                matched_items.sort(key=lambda row: queue_order[row["match"].match_key])
+            else:
+                matched_items.sort(key=lambda row: self._match_priority(row["match"], now))
             matched_items = self._unique_event_targets(matched_items, stats)
             max_fetch = max(1, int(getattr(self.settings, "max_matches_for_odds_fetch", 40) or 40))
             if len(matched_items) > max_fetch:

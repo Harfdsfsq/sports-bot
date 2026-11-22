@@ -334,6 +334,22 @@ class DailyQualityRunner(PredictionRunner):
                 considered = set(attempted_keys) | set(data)
                 recorded_targets = [m for m in targets if m.match_key in considered]
             stats["unattempted_matches"] = len(targets) - len(recorded_targets)
+            if role == "offers" and name in {"odds_api_io", "sstats_pari"} and data:
+                from app.services import totals_strategy_clv
+
+                observed = datetime.now(UTC)
+                closing_targets = [
+                    match for match in recorded_targets
+                    if match.match_key in data and timedelta(0) < match.commence_time - observed <= timedelta(minutes=45)
+                ]
+                if closing_targets:
+                    # Use the original provider timestamps, before the registry
+                    # applies its own observation timestamp to serving receipts.
+                    try:
+                        totals_strategy_clv.update(closing_targets, data, observed, finalize=False)
+                        stats["research_closing_targets"] = len(closing_targets)
+                    except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+                        stats["research_closing_error_type"] = type(exc).__name__
             if name == "sstats_pari":
                 from app.providers.sstats_pari_daily import info, matches_fixture
                 from app.services.fixture_identity import direct_fixture_identity
@@ -861,6 +877,11 @@ class DailyQualityRunner(PredictionRunner):
                 if history is None:
                     raise ValueError("goal_history_unavailable")
                 summary["totals_loss_review"] = run_loss_review(history, self.registry.now)
+                from app.services import totals_strategy_clv
+
+                totals_strategy_clv.prioritize_selected(
+                    (history.data.get("totals_loss_review") or {}).get("decisions", {})
+                )
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary["totals_loss_review"] = {"status": "error", "error_type": type(exc).__name__}
             write_json(".data/exports/latest-totals-loss-review.json", summary["totals_loss_review"])

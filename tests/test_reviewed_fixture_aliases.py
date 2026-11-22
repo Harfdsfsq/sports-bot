@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from app.schemas import Match
+from app.schemas import Match, MatchContext
 from app.services.daily_match_registry import DailyMatchRegistry, match_identity
 from app.services.fixture_identity import direct_fixture_identity, history_team_name, same_history_team_identity
 from app.services.odds_line_audit import quote_identity_reason
@@ -128,3 +128,33 @@ def test_repaired_scoped_quote_can_retry_once_without_waiting_for_old_empty_cool
     assert registry.targets("odds_api_io", "offers")
     registry.record("odds_api_io", "offers", [a], {}, {"line_diagnostics": {a.match_key: diagnostic}}, observed_at=NOW)
     assert not registry.targets("odds_api_io", "offers")
+
+
+def test_chile_alias_merge_keeps_verified_history_route_and_pari_identity(tmp_path, monkeypatch):
+    monkeypatch.delenv("PUBLICATION_PROFILE", raising=False)
+    a, b = matches("Colo Colo", "U. Catolica", "Colo-Colo", "CD Universidad Catolica")
+    a = replace(a, league_name="Primera División")
+    b = replace(b, league_name="Chile - Primera Division")
+    a.metadata["sstats_fixture"]["season"]["league"].update(name=a.league_name, country={"code": "CL"})
+    for match in (a, b):
+        match.metadata["provider_source_ids"]["sstats_pari"] = "69776911"
+    assert not scoped_fixture_alias_match(a, fixture_view(replace(b, league_name="Primera División")))
+    assert not scoped_fixture_alias_match(a, fixture_view(replace(b, away_team="CD Universidad Catolica W")))
+    assert not scoped_fixture_alias_match(a, fixture_view(replace(b, commence_time=b.commence_time + timedelta(minutes=1))))
+    registry = DailyMatchRegistry(tmp_path / "registry.json", NOW)
+    donor = DailyMatchRegistry(tmp_path / "sstats.json", NOW)
+    for store, match, at in ((registry, b, NOW), (donor, a, NOW - timedelta(minutes=10))):
+        store.sync([match])
+        context = MatchContext("sstats_form", {
+            "home_recent": [{"team": match.home_team, "team_id": 1, "start": (NOW - timedelta(days=4)).isoformat()}],
+            "away_recent": [{"team": match.away_team, "team_id": 2, "start": (NOW - timedelta(days=4)).isoformat()}],
+        })
+        assert store.record("sstats", "context", [match], {match.match_key: context}, {}, observed_at=at)["accepted"] == 1
+    registry.data["matches"].update(donor.data["matches"])
+    registry.sync([])
+    [merged] = registry.runtime_matches()
+    assert merged.metadata["provider_source_ids"] == {"odds_api_io": "20", "sstats": "10", "sstats_pari": "69776911"}
+    assert verified_fixture(merged)["awayTeam"]["name"] == "U. Catolica"
+    cached = registry.cached("sstats", "context", merged)
+    assert cached.payload["away_recent"][0]["team"] == "U. Catolica"
+    assert cached.details["daily_evidence_observed_at"] == (NOW - timedelta(minutes=10)).isoformat()

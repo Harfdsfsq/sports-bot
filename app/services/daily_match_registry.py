@@ -18,7 +18,7 @@ from app.services.market_period import is_full_match_market
 
 TZ = ZoneInfo("Europe/Moscow")
 SSTATS_HISTORY_IDENTITY_REVISION = 2
-ODDS_QUOTE_IDENTITY_REVISION = 3
+ODDS_QUOTE_IDENTITY_REVISION = 4
 
 
 def parse_time(value):
@@ -171,9 +171,26 @@ class DailyMatchRegistry:
                 if scoped:
                     first["match"]["metadata"] = {**(b.get("metadata") or {}), **(a.get("metadata") or {})}
                 for name, evidence in second.get("evidence", {}).items():
-                    current = first.setdefault("evidence", {}).get(name)
-                    if current is None or str(evidence.get("observed_at", "")) > str(current.get("observed_at", "")):
-                        first["evidence"][name] = evidence
+                    receipts = first.setdefault("evidence", {})
+                    current = receipts.get(name)
+                    prefer_incoming = (
+                        current is None or str(evidence.get("observed_at", "")) > str(current.get("observed_at", ""))
+                    )
+                    if scoped and current is not None and name.endswith(":context"):
+                        # The merged SStats fixture can supply a stronger team
+                        # ID than either card had alone. Compare both receipts
+                        # against that identity before applying the time order.
+                        merged = self._match_from_entry(first)
+                        provider = name.rsplit(":", 1)[0]
+                        current_valid = self.cached(provider, "context", merged) is not None
+                        receipts[name] = evidence
+                        incoming_valid = self.cached(provider, "context", merged) is not None
+                        if incoming_valid != current_valid:
+                            prefer_incoming = incoming_valid
+                        if not prefer_incoming:
+                            receipts[name] = current
+                    elif prefer_incoming:
+                        receipts[name] = evidence
                 # Evidence is revalidated against the retained exact fixture by cached().
                 if second.get("publication"):
                     first["publication"] = {**second["publication"], "match_id": keep}
@@ -187,21 +204,22 @@ class DailyMatchRegistry:
                         self.data["aliases"][alias] = keep
                 self.data["issues"].append({"kind": "exact_alias_duplicate_merged", "kept": keep, "removed": drop})
 
+    @staticmethod
+    def _match_from_entry(entry):
+        row = dict(entry["match"])
+        row["commence_time"] = parse_time(row["commence_time"])
+        row["metadata"] = dict(row.get("metadata") or {})
+        ids = entry["provider_ids"]
+        row["metadata"].update({"provider_source_ids": ids, "day_inventory_source_ids": ids, "source_ids": ids})
+        for provider, event_id in ids.items():
+            row["metadata"][provider + "_id"] = event_id
+            row["metadata"][provider + "_event_id"] = event_id
+        if ids.get("sstats"):
+            row["metadata"]["sstats_game_id"] = ids["sstats"]
+        return Match(**row)
+
     def matches(self):
-        result = []
-        for entry in self.data["matches"].values():
-            row = dict(entry["match"])
-            row["commence_time"] = parse_time(row["commence_time"])
-            row["metadata"] = dict(row.get("metadata") or {})
-            ids = entry["provider_ids"]
-            row["metadata"].update({"provider_source_ids": ids, "day_inventory_source_ids": ids, "source_ids": ids})
-            for provider, event_id in ids.items():
-                row["metadata"][provider + "_id"] = event_id
-                row["metadata"][provider + "_event_id"] = event_id
-            if ids.get("sstats"):
-                row["metadata"]["sstats_game_id"] = ids["sstats"]
-            result.append(Match(**row))
-        return result
+        return [self._match_from_entry(entry) for entry in self.data["matches"].values()]
 
     def actionable_gaps(self):
         rows = []
@@ -401,6 +419,8 @@ class DailyMatchRegistry:
         return any(self.cached(p, role, match) for p in providers)
 
     def targets(self, provider: str, role: str, *, limit: int = 60, eligible=None, bulk=False):
+        from app.services.sstats_targeted_history import verified_fixture
+
         ranked = []
         for match in self.runtime_matches():
             if eligible is not None and not eligible(match):
@@ -482,7 +502,13 @@ class DailyMatchRegistry:
             # With a two-hour cadence and 30-minute publication lead, these
             # fixtures need this run; a later regular run would be too late.
             before_next_run = minutes <= 150
-            ranked.append(((lane, has_current_role, not before_next_run, not completes_pair, minutes), match))
+            has_verified_history_route = (
+                lane == 0 and provider == "sstats" and role == "context" and verified_fixture(match) is not None
+            )
+            ranked.append((
+                (lane, has_current_role, not before_next_run, not completes_pair, not has_verified_history_route, minutes),
+                match,
+            ))
         ranked.sort(key=lambda item: item[0])
         # Close near window first, then prefetch next and rotate through the daily backlog.
         near = [m for key, m in ranked if key[0] == 0]

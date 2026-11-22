@@ -20,14 +20,29 @@ async def watch_pre_kickoff_prices(registry, monitor, provider, *, pari_provider
     }
     from app.services import totals_strategy_clv
 
-    requested.update(totals_strategy_clv.requested())
+    journal = read_json(totals_strategy_clv.PATH, {})
+    experiments = [row for row in journal.values() if row["status"] == "pending"]
+    experimental_targets = {(row["match_key"], parse_time(row["kickoff"])) for row in experiments}
+    selected_targets = {
+        (row["match_key"], parse_time(row["kickoff"])) for row in experiments if row.get("market_filter_selected")
+    }
+    selected_without_quote = {
+        (row["match_key"], parse_time(row["kickoff"]))
+        for row in experiments if row.get("market_filter_selected") and not row.get("reference_price")
+    }
+    all_requested = requested | experimental_targets
     totals_strategy_clv.update([], {}, now)
     targets = [
         m
         for m in registry.runtime_matches()
-        if (m.match_key, m.commence_time) in requested and timedelta(0) < m.commence_time - now <= timedelta(minutes=45)
+        if (m.match_key, m.commence_time) in all_requested
+        and timedelta(0) < m.commence_time - now <= timedelta(minutes=45)
     ]
-    targets = sorted(targets, key=lambda m: m.commence_time)[:10]
+    def priority(match):
+        key = (match.match_key, match.commence_time)
+        return key not in requested, key not in selected_targets, key not in selected_without_quote, match.commence_time
+
+    targets = sorted(targets, key=priority)[:10]
     if not targets:
         return {"targets": 0, "resolved": finalized.get("resolved_count", 0)}
     try:
@@ -44,8 +59,8 @@ async def watch_pre_kickoff_prices(registry, monitor, provider, *, pari_provider
         }
         pari_requested.update(
             (row.get("match_key"), parse_time(row.get("kickoff")))
-            for row in read_json(totals_strategy_clv.PATH, {}).values()
-            if row.get("status") == "pending" and row.get("book") == "pari"
+            for row in experiments
+            if row.get("book") == "pari"
         )
         pari_targets = [m for m in targets if (m.match_key, m.commence_time) in pari_requested][:2]
         if pari_provider and pari_targets:
@@ -74,6 +89,7 @@ async def watch_pre_kickoff_prices(registry, monitor, provider, *, pari_provider
         experiment = totals_strategy_clv.update(targets, offers, observed)
         return {
             "targets": len(targets),
+            "market_filter_targets": sum((m.match_key, m.commence_time) in selected_targets for m in targets),
             "matches_with_quotes": len(offers),
             "priced_totals_clv": experiment,
             "requests": stats.get("odds_requests", 0),

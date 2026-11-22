@@ -28,13 +28,21 @@ def register(rows, now):
     write_json(PATH, journal)
 
 
-def requested():
-    return {
-        (r["match_key"], parse_time(r["kickoff"])) for r in read_json(PATH, {}).values() if r["status"] == "pending"
-    }
+def prioritize_selected(decisions):
+    journal = read_json(PATH, {})
+    changed = False
+    for key, decision in decisions.items():
+        row = journal.get(key + "|opponent")
+        if (row and row["status"] == "pending" and not row.get("market_filter_selected")
+                and decision["pick"]["reason"] == "selected"
+                and row["created_at"] == decision["created_at"] and row["kickoff"] == decision["kickoff"]):
+            row["market_filter_selected"] = True
+            changed = True
+    if changed:
+        write_json(PATH, journal)
 
 
-def update(matches, offers, now):
+def update(matches, offers, now, *, finalize=True):
     journal = read_json(PATH, {})
     actual = {(m.match_key, m.commence_time) for m in matches}
     for row in journal.values():
@@ -59,9 +67,14 @@ def update(matches, offers, now):
                 ):
                     quotes.append((offer.price, at))
             if quotes:
-                price, observed = min(quotes)
-                row.update(reference_price=price, reference_at=observed.isoformat())
-        if now >= kickoff:
+                observed = max(at for _, at in quotes)
+                price = min(price for price, at in quotes if at == observed)
+                previous = parse_time(row.get("reference_at"))
+                if previous is None or observed > previous or (
+                    observed == previous and price < row.get("reference_price", float("inf"))
+                ):
+                    row.update(reference_price=price, reference_at=observed.isoformat())
+        if finalize and now >= kickoff:
             if row.get("reference_price"):
                 row.update(status="measured", clv_pct=(row["odds"] / row["reference_price"] - 1) * 100)
             else:

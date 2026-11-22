@@ -168,6 +168,30 @@ def test_price_experiment_clv_requires_same_book_and_before_kickoff(tmp_path, mo
     assert measured['measured']==1 and measured['missing']==1
 
 
+def test_experiment_closing_quote_prefers_latest_receipt_across_collection_passes(tmp_path, monkeypatch):
+    from app.services import totals_strategy_clv as clv
+    from app.services.daily_match_registry import read_json
+
+    monkeypatch.chdir(tmp_path)
+    kickoff = NOW + timedelta(minutes=30)
+    row = {"id": "fixture", "match_key": "fixture", "kickoff": kickoff.isoformat(),
+           "created_at": (NOW - timedelta(hours=1)).isoformat(),
+           "picks": {"opponent": {"point": 2.5, "side": "over", "book": "bet365", "odds": 2.0}}}
+    match = SimpleNamespace(match_key="fixture", commence_time=kickoff)
+    clv.register([row], NOW)
+    clv.prioritize_selected({"fixture": {**row, "pick": {"reason": "selected"}}})
+    old = Offer("test", "bet365", "totals", "over", 1.7, 2.5,
+                metadata={"fetched_at_utc": (NOW - timedelta(seconds=30)).isoformat()})
+    latest = Offer("test", "bet365", "totals", "over", 1.95, 2.5, metadata={"fetched_at_utc": NOW.isoformat()})
+    clv.update([match], {"fixture": [old, latest]}, NOW, finalize=False)
+    clv.update([match], {"fixture": [old]}, NOW, finalize=False)
+    receipt = read_json(clv.PATH, {})["fixture|opponent"]
+    assert receipt["market_filter_selected"]
+    assert receipt["reference_at"] == NOW.isoformat()
+    assert receipt["reference_price"] == 1.95
+    assert clv.update([], {}, kickoff)["average_pct"] == pytest.approx((2 / 1.95 - 1) * 100)
+
+
 def test_weighted_league_and_effective_sample_follow_same_decay():
     from app.services.goal_research import fit_model, result_row
     rows=[]
