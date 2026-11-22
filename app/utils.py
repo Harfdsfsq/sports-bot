@@ -3,11 +3,10 @@ from __future__ import annotations
 import math
 import re
 import unicodedata
+from collections.abc import Iterable
+from datetime import UTC, datetime
 from difflib import SequenceMatcher
-from datetime import datetime, timezone
-UTC = timezone.utc
 from statistics import median
-from typing import Iterable
 
 CYRILLIC_MAP = {
     "a": "a",
@@ -620,25 +619,22 @@ def score_event_match(
     if diff is None:
         diff = 999.0
 
-    league_match = canonicalize_league_name(match_league)
-    league_event = canonicalize_league_name(event_league)
-    league_score = league_similarity(league_match, league_event)
-    league_same = league_match == league_event
-    league_related = league_score >= 0.52
-
-    if build_match_key(sport, match_home, match_away, match_start) == build_match_key(sport, event_home, event_away, event_start):
-        if diff <= exact_tolerance_hours:
+    if diff <= exact_tolerance_hours and (
+        build_loose_match_key(sport, match_home, match_away)
+        == build_loose_match_key(sport, event_home, event_away)
+    ):
+        if get_date_key(match_start) == get_date_key(event_start):
             return 100.0 + max(0.0, 6.0 - diff), "exact"
-    if build_loose_match_key(sport, match_home, match_away) == build_loose_match_key(sport, event_home, event_away):
-        if diff <= exact_tolerance_hours:
-            return 92.0 + max(0.0, 5.0 - diff), "loose"
+        return 92.0 + max(0.0, 5.0 - diff), "loose"
 
     if diff > fuzzy_tolerance_hours:
         return 0.0, None
 
     direct_home = team_similarity(match_home, event_home)
-    direct_away = team_similarity(match_away, event_away)
     reverse_home = team_similarity(match_home, event_away)
+    if max(direct_home, reverse_home) < 0.45:
+        return 0.0, None
+    direct_away = team_similarity(match_away, event_away)
     reverse_away = team_similarity(match_away, event_home)
 
     direct_score = direct_home + direct_away
@@ -656,10 +652,14 @@ def score_event_match(
     score = teams_score * 38.0
     score += max(0.0, 12.0 - diff) * 2.2
     score += side_floor * 10.0
-    if league_same:
+    league_match = canonicalize_league_name(match_league)
+    league_event = canonicalize_league_name(event_league)
+    if league_match == league_event:
         score += 10.0
-    elif league_related:
-        score += 4.0 + min(4.0, league_score * 4.0)
+    else:
+        league_score = league_similarity(league_match, league_event)
+        if league_score >= 0.52:
+            score += 4.0 + min(4.0, league_score * 4.0)
     if score < 54.0:
         return 0.0, None
     return score, "fuzzy"
@@ -1095,7 +1095,7 @@ def _coerce_numeric_probability(value: object | None) -> float | None:
         except Exception:
             return None
     try:
-        return float(value)
+        return float(value)  # type: ignore[arg-type]  # Invalid inputs are handled below.
     except Exception:
         return None
 
@@ -1155,9 +1155,7 @@ def looks_like_simulated_team_name(name: str) -> bool:
         return False
     # Typical simulated feeds use gamer-like nicknames in brackets, e.g.
     # Liverpool (pikalicaaa), Germany (Profik), England (Koss).
-    if len(suffix_norm.replace(" ", "")) <= 24 and " " not in suffix_norm:
-        return True
-    return False
+    return len(suffix_norm.replace(" ", "")) <= 24 and " " not in suffix_norm
 
 
 def is_simulated_or_esports_event(home: str, away: str, league_name: str = "") -> bool:
@@ -1169,9 +1167,7 @@ def is_simulated_or_esports_event(home: str, away: str, league_name: str = "") -
     if home_flag and away_flag:
         return True
     joined = normalize_text(f"{home} {away} {league_name}")
-    if any(re.search(pattern, joined) for pattern in SIMULATED_LEAGUE_PATTERNS):
-        return True
-    return False
+    return any(re.search(pattern, joined) for pattern in SIMULATED_LEAGUE_PATTERNS)
 
 
 
@@ -1216,7 +1212,4 @@ def russian_selection(family: str, selection: str, point: float | None = None) -
         if low in {'draw', 'x'}:
             return 'Ничья'
         return value
-    if family_key in {'spreads', 'dnb'}:
-        if value:
-            return value
     return value

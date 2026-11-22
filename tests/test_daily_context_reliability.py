@@ -574,6 +574,36 @@ def test_sstats_incomplete_history_is_not_saved_as_complete(tmp_path, monkeypatc
     assert not list(tmp_path.rglob('sstats-*.json'))
 
 
+def test_sstats_caches_complete_window_after_incomplete_one(tmp_path, monkeypatch):
+    import asyncio
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    from app.services.daily_match_registry import read_json
+
+    monkeypatch.chdir(tmp_path)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    calls = []
+
+    async def fetch(client, start, end, stats):
+        calls.append((start, end))
+        if len(calls) == 1:
+            stats['history_pagination_incomplete'] = True
+        return [{'id': start, 'date': start}]
+
+    monkeypatch.setattr(provider, '_fetch_rows_window', fetch)
+    stats = {}
+    asyncio.run(provider._fetch_rows(None, '2026-07-01', '2026-07-14', stats))
+    assert stats['history_pagination_incomplete'] is True
+    assert not read_json('.data/provider_cache/sstats-history-v5-2026-07-01-2026-07-14.json', {})
+    assert not read_json('.data/provider_cache/sstats-window-v5-2026-07-08-2026-07-14.json', {})
+    assert read_json('.data/provider_cache/sstats-window-v5-2026-07-01-2026-07-07.json', {})['rows']
+
+    replay_stats = {}
+    asyncio.run(provider._fetch_rows(None, '2026-07-01', '2026-07-14', replay_stats))
+    assert calls == [('2026-07-08', '2026-07-14'), ('2026-07-01', '2026-07-07'), ('2026-07-08', '2026-07-14')]
+    assert replay_stats['history_windows_cache_hits'] == 1
+
+
 def test_sstats_date_queries_explicitly_use_utc(monkeypatch):
     import asyncio
     import httpx

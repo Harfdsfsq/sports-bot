@@ -592,14 +592,22 @@ class SStatsContextProvider:
                     continue
                 stats["chunk_windows_requested"] = int(stats.get("chunk_windows_requested", 0) or 0) + 1
                 errors_before = stats.get("response_errors", 0)
-                batch_rows = await self._fetch_rows_window(client, window_from, window_to, stats)
+                # One incomplete window blocks the combined cache, but a later
+                # successful window can still be reused on its own.
+                earlier_incomplete = stats.pop("history_pagination_incomplete", False)
+                try:
+                    batch_rows = await self._fetch_rows_window(client, window_from, window_to, stats)
+                    window_incomplete = stats.get("history_pagination_incomplete", False)
+                finally:
+                    if earlier_incomplete:
+                        stats["history_pagination_incomplete"] = True
                 if daily_cache:
                     window_observed = datetime.now(UTC)
                     observations.append(window_observed)
                     if (
                         stats.get("response_errors", 0) == errors_before
                         and not stats.get("budget_exhausted")
-                        and not stats.get("history_pagination_incomplete")
+                        and not window_incomplete
                     ):
                         write_json(window_path, {"observed_at": window_observed.isoformat(), "rows": batch_rows})
             for row in batch_rows:
@@ -688,9 +696,11 @@ class SStatsContextProvider:
                 shape = type(payload).__name__
                 if shape not in stats["payload_shapes"]:
                     stats["payload_shapes"].append(shape)
+                stats["history_pagination_incomplete"] = True
                 break
 
             if not isinstance(data, list):
+                stats["history_pagination_incomplete"] = True
                 break
 
             batch = [row for row in data if isinstance(row, dict)]
