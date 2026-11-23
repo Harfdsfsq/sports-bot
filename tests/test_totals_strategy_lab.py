@@ -189,7 +189,11 @@ def test_experiment_closing_quote_prefers_latest_receipt_across_collection_passe
     assert receipt["market_filter_selected"]
     assert receipt["reference_at"] == NOW.isoformat()
     assert receipt["reference_price"] == 1.95
-    assert clv.update([], {}, kickoff)["average_pct"] == pytest.approx((2 / 1.95 - 1) * 100)
+    final_at = kickoff - timedelta(seconds=5)
+    final = Offer("test", "bet365", "totals", "over", 1.9, 2.5, metadata={"fetched_at_utc": final_at.isoformat()})
+    live = Offer("test", "bet365", "totals", "over", 1.6, 2.5, metadata={"fetched_at_utc": kickoff.isoformat()})
+    settled = clv.update([match], {"fixture": [final, live]}, kickoff + timedelta(seconds=1))
+    assert settled["average_pct"] == pytest.approx((2 / 1.9 - 1) * 100)
 
 
 def test_weighted_league_and_effective_sample_follow_same_decay():

@@ -47,11 +47,6 @@ async def watch_pre_kickoff_prices(registry, monitor, provider, *, pari_provider
         return {"targets": 0, "resolved": finalized.get("resolved_count", 0)}
     try:
         offers, stats = {}, {}
-        if provider:
-            try:
-                offers, stats, _ = await asyncio.wait_for(provider.fetch_offers(targets), timeout=30)
-            except Exception as exc:
-                stats["primary_error_type"] = type(exc).__name__
         pari_requested = {
             (row.get("match_key"), parse_time(row.get("commence_time")))
             for row in pending
@@ -63,14 +58,27 @@ async def watch_pre_kickoff_prices(registry, monitor, provider, *, pari_provider
             if row.get("book") == "pari"
         )
         pari_targets = [m for m in targets if (m.match_key, m.commence_time) in pari_requested][:2]
+        fetches = {}
+        if provider:
+            fetches["primary"] = provider.fetch_offers(targets)
         if pari_provider and pari_targets:
-            try:
-                extra, pari_stats, _ = await asyncio.wait_for(pari_provider.watch_offers(pari_targets), timeout=30)
-                for key, quotes in extra.items():
-                    offers.setdefault(key, []).extend(quotes)
-                stats["pari_requests"] = pari_stats.get("requests", 0)
-            except Exception as exc:
-                stats["pari_error_type"] = type(exc).__name__
+            fetches["pari"] = pari_provider.watch_offers(pari_targets)
+        responses = await asyncio.gather(
+            *(asyncio.wait_for(fetch, timeout=30) for fetch in fetches.values()), return_exceptions=True
+        )
+        for name, response in zip(fetches, responses, strict=True):
+            if isinstance(response, asyncio.CancelledError):
+                raise response
+            if isinstance(response, BaseException):
+                stats[name + "_error_type"] = type(response).__name__
+                continue
+            quotes_by_match, provider_stats, _ = response
+            for key, quotes in quotes_by_match.items():
+                offers.setdefault(key, []).extend(quotes)
+            if name == "primary":
+                stats.update(provider_stats)
+            else:
+                stats["pari_requests"] = provider_stats.get("requests", 0)
         observed = datetime.now(UTC)
         offers = {
             key: [

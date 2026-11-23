@@ -49,7 +49,7 @@ def update(matches, offers, now, *, finalize=True):
         if row["status"] != "pending":
             continue
         kickoff = parse_time(row["kickoff"])
-        if (row["match_key"], kickoff) in actual and timedelta(0) < kickoff - now <= timedelta(minutes=45):
+        if (row["match_key"], kickoff) in actual and kickoff - now <= timedelta(minutes=45):
             quotes = []
             for offer in offers.get(row["match_key"], []):
                 at = parse_time(offer.metadata.get("fetched_at_utc"))
@@ -60,7 +60,8 @@ def update(matches, offers, now, *, finalize=True):
                     and offer.bookmaker.strip().lower() == row["book"]
                     and offer.selection.lower() == row["side"]
                     and at
-                    and parse_time(row["created_at"]) < at <= now < kickoff
+                    and parse_time(row["created_at"]) < at <= now
+                    and at < kickoff
                     and kickoff - at <= timedelta(minutes=45)
                     and now - at <= timedelta(seconds=60)
                     and 1 < offer.price < 100

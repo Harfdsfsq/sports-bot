@@ -18,7 +18,7 @@ from app.services.market_period import is_full_match_market
 
 TZ = ZoneInfo("Europe/Moscow")
 SSTATS_HISTORY_IDENTITY_REVISION = 2
-ODDS_QUOTE_IDENTITY_REVISION = 4
+ODDS_QUOTE_IDENTITY_REVISION = 5
 
 
 def parse_time(value):

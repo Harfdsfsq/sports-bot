@@ -109,14 +109,17 @@ def test_pari_closing_watch_is_independent_and_never_restamps_prices(tmp_path, m
     )
     at = (now - timedelta(minutes=2) if stale else now - timedelta(seconds=50)).isoformat()
     quote = Offer("sstats_pari", "Pari", "totals", "Over", 1.9, 2.5, metadata={"fetched_at_utc": at})
+    pari_started = asyncio.Event()
 
     class Primary:
         async def fetch_offers(self, targets):
+            await asyncio.wait_for(pari_started.wait(), timeout=1)
             raise OSError("unavailable")
 
     class Pari:
         async def watch_offers(self, targets):
             assert len(targets) == 1
+            pari_started.set()
             return {m.match_key: [quote]}, {"requests": 2}, {}
 
     report = asyncio.run(watch_pre_kickoff_prices(r, monitor, Primary(), pari_provider=Pari()))
@@ -211,6 +214,38 @@ def test_native_pari_collects_closing_reference_inside_publication_lead(tmp_path
     p = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
     assert not asyncio.run(p.fetch_offers([m]))[0] and not calls
     assert asyncio.run(p.watch_offers([m]))[0] and len(calls) == 1
+
+
+@pytest.mark.parametrize("wrong_fixture", [False, True])
+def test_pari_bookmarked_detail_can_recover_after_list_read_timeout(tmp_path, monkeypatch, wrong_fixture):
+    import httpx
+
+    from app.providers.sstats_pari_daily import SStatsPariDailyProvider
+    from tests.test_native_data_expansion import client_patch, pari_row
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DAILY_PARI_ENABLED", "true")
+    monkeypatch.setenv("DAILY_PARI_REQUEST_LIMIT", "12")
+    now = datetime.now(UTC)
+    m = replace(fixture(now), metadata={"provider_source_ids": {"sstats_pari": "42"}})
+    row = pari_row(now)
+    row["matchInfo"]["startDate"] = m.commence_time.isoformat()
+    if wrong_fixture:
+        row["matchInfo"]["homeTeam"]["name"] = "Arsenal U21"
+    calls = []
+
+    def response(url, params):
+        calls.append(url)
+        if url.endswith("/matches"):
+            raise httpx.ReadTimeout("list timeout")
+        assert url.endswith("/match/42")
+        return 200, {"data": row}
+
+    client_patch(monkeypatch, "app.providers.sstats_pari_daily", response)
+    provider = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
+    offers, stats, _ = asyncio.run(provider.fetch_offers([m]))
+    assert len(calls) == 3 and stats["connection_retries"] == 1
+    assert bool(offers.get(m.match_key)) is not wrong_fixture
 
 
 def test_native_pari_discovery_binds_ids_without_fabricating_second_quote(tmp_path, monkeypatch):

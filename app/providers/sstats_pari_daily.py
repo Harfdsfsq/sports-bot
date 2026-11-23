@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import os
+from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -14,6 +15,12 @@ from app.providers.sstats_pari_parser import extract_list, parse_offers, unwrap
 from app.services.api_budget import BudgetedAsyncClient
 from app.services.daily_match_registry import parse_time, read_json, write_json
 from app.services.fixture_identity import direct_fixture_identity, squad_identity, team_identity_key
+
+
+def registered_pari_id(match):
+    ids = match.metadata.get("provider_source_ids") or match.metadata.get("day_inventory_source_ids") or {}
+    sid = str(ids.get("sstats_pari") or "")
+    return sid if sid.isdecimal() and int(sid) > 0 else None
 
 
 def info(row):
@@ -36,6 +43,9 @@ def matches_fixture(match, row):
     from app.services.sstats_targeted_history import verified_fixture
 
     event = info(row)
+    registered = registered_pari_id(match)
+    if registered and str(event.get("eventId")) != registered:
+        return False
     fixture = verified_fixture(match)
     source_id = str((fixture or {}).get("id") or "")
     mapping = event.get("mappings") or {}
@@ -62,6 +72,12 @@ def matches_fixture(match, row):
     start = parse_time(event.get("startDate"))
     if not start or abs(start - match.commence_time) > timedelta(minutes=15):
         return False
+    names = identity(row)
+    if all(
+        names[side] and team_identity_key(names[side]) == team_identity_key(fixture[side + "Team"].get("name"))
+        for side in ("home", "away")
+    ):
+        return True
     for side, name in (("home", match.home_team), ("away", match.away_team)):
         team = event.get(side + "Team") or {}
         if not isinstance(team, dict) or squad_identity(name) != squad_identity(team.get("name")):
@@ -206,12 +222,13 @@ class SStatsPariDailyProvider:
                         stats["response_errors"] += 1
                         return None, None
                     return response.json(), datetime.now(UTC)
-                except (httpx.ConnectTimeout, httpx.ConnectError) as exc:
+                except (httpx.ConnectTimeout, httpx.ConnectError, httpx.ReadTimeout) as exc:
                     stats["response_errors"] += 1
                     stats["last_error_type"] = type(exc).__name__
                     # One retry per provider call, charged to the same physical
                     # budget. Never retry auth/plan/rate-limit responses here.
-                    if not stats.get("connection_retries") and self.used < ceiling:
+                    retryable = not isinstance(exc, httpx.ReadTimeout) or path == "/Pari/matches"
+                    if retryable and not stats.get("connection_retries") and self.used < ceiling:
                         stats["connection_retries"] = 1
                         recovered = await get(path, params)
                         if recovered[0] is not None:
@@ -286,10 +303,18 @@ class SStatsPariDailyProvider:
                         write_json(dictionary_path, {"payload": payload, "observed_at": at.isoformat()})
                 stats["market_dictionary_outcomes"] = len(definitions)
             selected = []
+            saved_ids = Counter(sid for match in matches if (sid := registered_pari_id(match)))
+            listed_ids = {str(info(row).get("eventId")) for row in rows}
+            known_fallbacks = []
             for match in targets:
                 found = [r for r in rows if prematch(r) and matches_fixture(match, r)]
                 if len(found) != 1:
-                    skip("no_unique_fixture")
+                    sid = registered_pari_id(match)
+                    if (not found and sid and saved_ids[sid] == 1 and sid not in listed_ids
+                            and timedelta(0) < match.commence_time - now <= timedelta(hours=4)):
+                        known_fallbacks.append((match, sid))
+                    else:
+                        skip("no_unique_fixture")
                     continue
                 selected.append((match, found[0]))
                 preview["verified_fixture_bindings"][match.match_key] = {
@@ -319,12 +344,14 @@ class SStatsPariDailyProvider:
                     selected.extend(exact)
                 else:
                     skip("ambiguous_runtime_fixture")
-            for match, event in selected:
-                sid = str(info(event).get("eventId") or "")
+            lookups = [(match, event, str(info(event).get("eventId") or "")) for match, event in selected]
+            lookups.extend((match, None, sid) for match, sid in known_fallbacks[:2])
+            stats["known_id_fallback_candidates"] = len(known_fallbacks)
+            for match, event, sid in lookups:
                 if not sid.isdecimal() or int(sid) <= 0:
                     skip("invalid_event_id")
                     continue
-                if not confirmation:
+                if not confirmation and event is not None:
                     bulk = self._parse_receipt(event, match, sid, observed_by_id.get(sid), definitions)
                     if bulk:
                         result[match.match_key] = bulk
@@ -351,6 +378,8 @@ class SStatsPariDailyProvider:
                     stats["fixtures_matched"] += 1
                     result[match.match_key] = parsed
                     stats["offers_parsed"] += len(parsed)
+                    if event is None:
+                        stats["known_id_recoveries"] = stats.get("known_id_recoveries", 0) + 1
                 else:
                     skip("no_usable_current_odds")
         return result, stats, preview
