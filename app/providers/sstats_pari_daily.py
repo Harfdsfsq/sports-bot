@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import math
 import os
@@ -242,6 +243,7 @@ class SStatsPariDailyProvider:
 
             rows = []
             observed_by_id = {}
+            failed_list_days = set()
             stats["bulk_quotes_matches"] = 0
             stats["detail_requests_avoided"] = 0
             for day in sorted({m.commence_time.date().isoformat() for m in targets}):
@@ -259,6 +261,8 @@ class SStatsPariDailyProvider:
                         },
                     )
                     if payload is None:
+                        if not blocked and not stats.get("budget_exhausted"):
+                            failed_list_days.add(day)
                         break
                     page = extract_list(payload)
                     signature = tuple(str(info(r).get("eventId")) for r in page)
@@ -345,8 +349,16 @@ class SStatsPariDailyProvider:
                 else:
                     skip("ambiguous_runtime_fixture")
             lookups = [(match, event, str(info(event).get("eventId") or "")) for match, event in selected]
-            lookups.extend((match, None, sid) for match, sid in known_fallbacks[:2])
+            normal_fallbacks = 0
+            for match, sid in known_fallbacks:
+                if match.commence_time.date().isoformat() not in failed_list_days:
+                    if normal_fallbacks >= 2:
+                        continue
+                    normal_fallbacks += 1
+                lookups.append((match, None, sid))
             stats["known_id_fallback_candidates"] = len(known_fallbacks)
+            stats["failed_list_days"] = sorted(failed_list_days)
+            stats["known_id_fallback_attempts"] = 0
             for match, event, sid in lookups:
                 if not sid.isdecimal() or int(sid) <= 0:
                     skip("invalid_event_id")
@@ -360,7 +372,22 @@ class SStatsPariDailyProvider:
                         stats["bulk_quotes_matches"] += 1
                         stats["detail_requests_avoided"] += 1
                         continue
-                payload, observed = await get("/Pari/match/" + sid)
+                if event is None:
+                    if blocked or self.used >= ceiling:
+                        if self.used >= ceiling:
+                            stats["budget_exhausted"] = True
+                        break
+                    stats["known_id_fallback_attempts"] += 1
+                    try:
+                        # Keep the extra lookups bounded even if the shared
+                        # budget paces requests or the detail endpoint is slow.
+                        payload, observed = await asyncio.wait_for(get("/Pari/match/" + sid), timeout=5)
+                    except TimeoutError:
+                        stats["response_errors"] += 1
+                        skip("known_id_detail_timeout")
+                        continue
+                else:
+                    payload, observed = await get("/Pari/match/" + sid)
                 if payload is None:
                     skip("detail_budget_or_request_failure")
                     continue

@@ -248,6 +248,49 @@ def test_pari_bookmarked_detail_can_recover_after_list_read_timeout(tmp_path, mo
     assert bool(offers.get(m.match_key)) is not wrong_fixture
 
 
+@pytest.mark.parametrize(("list_result", "expected"), [("empty", 2), ("timeout", 6), ("blocked", 0)])
+def test_pari_failed_list_expands_fallbacks_within_collection_budget(tmp_path, monkeypatch, list_result, expected):
+    import httpx
+
+    from app.providers.sstats_pari_daily import SStatsPariDailyProvider
+    from tests.test_native_data_expansion import client_patch, pari_row
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DAILY_PARI_ENABLED", "true")
+    monkeypatch.setenv("DAILY_PARI_REQUEST_LIMIT", "12")
+    now = datetime.now(UTC)
+    targets = [
+        replace(fixture(now), home_team=f"Team {sid}", metadata={"provider_source_ids": {"sstats_pari": str(sid)}})
+        for sid in range(100, 109)
+    ]
+    # The first ID is ambiguous and must not use the detail endpoint.
+    targets.append(replace(targets[0], home_team="Duplicate Club"))
+    rows = {}
+    for sid, match in zip(range(100, 109), targets[:-1], strict=True):
+        row = pari_row(now)
+        row["matchInfo"].update(eventId=sid, homeTeam={"name": match.home_team}, startDate=match.commence_time.isoformat())
+        rows[sid] = row
+    detail_ids = []
+
+    def response(url, params):
+        if url.endswith("/matches"):
+            if list_result == "timeout":
+                raise httpx.ReadTimeout("list timeout")
+            return (429, {}) if list_result == "blocked" else (200, {"data": [], "TotalCount": 0})
+        sid = int(url.rsplit("/", 1)[1])
+        detail_ids.append(sid)
+        return 200, {"data": rows[sid]}
+
+    client_patch(monkeypatch, "app.providers.sstats_pari_daily", response)
+    provider = SStatsPariDailyProvider(SimpleNamespace(sstats_api_key="test-only"))
+    offers, stats, _ = asyncio.run(provider.fetch_offers(targets))
+    assert detail_ids == list(range(101, 101 + expected))
+    assert len(offers) == stats["known_id_fallback_attempts"] == expected
+    assert stats["confirmation_requests_reserved"] == 4
+    assert provider.used == (2 if list_result == "timeout" else 1) + expected
+    assert bool(stats["failed_list_days"]) is (list_result == "timeout")
+
+
 def test_native_pari_discovery_binds_ids_without_fabricating_second_quote(tmp_path, monkeypatch):
     from app.config import Settings
     from app.services.daily_quality_runner import DailyQualityRunner
