@@ -299,6 +299,9 @@ class DailyQualityRunner(PredictionRunner):
                 bulk=name == "sstats" and role == "context",
             )
         )
+        refresh_keys = (
+            {m.match_key for m in targets if self.registry.offer_refresh_due(name, m)} if role == "offers" else set()
+        )
         self.work_plan[name + ":" + role] = [match_identity(m) for m in targets]
         safe_keys = {m.match_key for m in self.registry.runtime_matches()}
         runtime_inventory = [m for m in self.inventory_matches if m.match_key in safe_keys]
@@ -343,8 +346,7 @@ class DailyQualityRunner(PredictionRunner):
                     if match.match_key in data and timedelta(0) < match.commence_time - observed <= timedelta(minutes=45)
                 ]
                 if closing_targets:
-                    # Use the original provider timestamps, before the registry
-                    # applies its own observation timestamp to serving receipts.
+                    # Use the original provider timestamps for closing receipts.
                     try:
                         totals_strategy_clv.update(closing_targets, data, observed, finalize=False)
                         stats["research_closing_targets"] = len(closing_targets)
@@ -377,7 +379,9 @@ class DailyQualityRunner(PredictionRunner):
                             self.registry.data["issues"].append(
                                 {"kind": "provider_id_conflict", "provider": name, "match_id": match_identity(match)}
                             )
-            stats["registry_record"] = self.registry.record(name, role, recorded_targets, data, stats)
+            stats["registry_record"] = self.registry.record(
+                name, role, recorded_targets, data, stats, refresh_keys=refresh_keys
+            )
             self.registry.now = datetime.now(UTC)
         # Rebuild at completion: early cache entries may expire during API calls.
         cached = {}

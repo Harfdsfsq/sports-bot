@@ -125,6 +125,47 @@ def test_registry_expires_each_quote_from_its_own_receipt_time(tmp_path):
     assert r.observation(m, 'offers') == late
 
 
+def test_expiring_near_quote_refresh_keeps_last_valid_receipt_when_no_market(tmp_path, monkeypatch):
+    monkeypatch.setenv('DAILY_OFFER_REFRESH_BUFFER_MINUTES', '8')
+    now = datetime(2026, 10, 3, 0, tzinfo=UTC)
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    near, far = match(now, 90, 'Near'), match(now, 300, 'Far')
+    registry.sync([near, far])
+    original = now - timedelta(minutes=10)
+    data = {
+        m.match_key: [Offer('odds_api_io', 'Unibet', 'totals', 'Under', 1.9, 2.5,
+                            metadata={'fetched_at_utc': original.isoformat()})]
+        for m in (near, far)
+    }
+    registry.record('odds_api_io', 'offers', [near, far], data, {}, observed_at=now)
+    assert [m.match_key for m in registry.targets('odds_api_io', 'offers')] == [near.match_key]
+    stats = {}
+    registry.record('odds_api_io', 'offers', [near], {}, stats, observed_at=now, refresh_keys={near.match_key})
+    assert stats['offer_refresh'] == {'scheduled': 1, 'not_attempted': 0, 'no_usable_quote': 1}
+    assert registry.observation(near, 'offers') == original.isoformat()
+    assert not registry.targets('odds_api_io', 'offers')
+    registry.now = now + timedelta(minutes=6)
+    assert registry.cached('odds_api_io', 'offers', near) is None
+
+
+@pytest.mark.parametrize('newer', [True, False])
+def test_quote_refresh_records_only_a_newer_provider_receipt(tmp_path, newer):
+    now = datetime(2026, 10, 3, 0, tzinfo=UTC)
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now)
+    registry.sync([m])
+    original = now - timedelta(minutes=10)
+    received = now if newer else original
+    for price, stamp in [(1.9, original), (2.0, received)]:
+        offers = [Offer('odds_api_io', 'Unibet', 'totals', 'Under', price, 2.5,
+                        metadata={'fetched_at_utc': stamp.isoformat()})]
+        stats = {}
+        registry.record('odds_api_io', 'offers', [m], {m.match_key: offers}, stats,
+                        observed_at=now, refresh_keys={m.match_key} if price == 2.0 else set())
+    assert stats['offer_refresh']['refreshed' if newer else 'no_newer_quote'] == 1
+    assert registry.cached('odds_api_io', 'offers', m)[0].price == (2.0 if newer else 1.9)
+
+
 def test_registry_caps_inventory_at_300(tmp_path):
     now = datetime.now(UTC).replace(hour=0)
     r = DailyMatchRegistry(tmp_path / 'registry.json', now)

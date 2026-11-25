@@ -422,6 +422,20 @@ class DailyMatchRegistry:
         }
         return any(self.cached(p, role, match) for p in providers)
 
+    def offer_refresh_due(self, provider: str, match: Match, current=None) -> bool:
+        if not timedelta(minutes=30) <= match.commence_time - self.now <= timedelta(hours=4):
+            return False
+        buffer = min(14, max(0, int(os.getenv("DAILY_OFFER_REFRESH_BUFFER_MINUTES", "8"))))
+        if not buffer:
+            return False
+        if current is None:
+            current = self.cached(provider, "offers", match)
+        if not current:
+            return False
+        evidence = self.data["matches"][match_identity(match)]["evidence"][provider + ":offers"]
+        stamp = parse_time(evidence["observed_at"])
+        return bool(stamp and self.now - stamp >= offer_ttl(match, self.now) - timedelta(minutes=buffer))
+
     def targets(self, provider: str, role: str, *, limit: int = 60, eligible=None, bulk=False):
         from app.services.sstats_targeted_history import verified_fixture
 
@@ -444,6 +458,8 @@ class DailyMatchRegistry:
                     and observed is not None
                     and self.now - observed >= timedelta(minutes=360 - buffer)
                 )
+                if role == "offers":
+                    refresh_soon = self.offer_refresh_due(provider, match, current)
                 if not refresh_soon:
                     continue
             entry = self.data["matches"][match_identity(match)]
@@ -502,7 +518,9 @@ class DailyMatchRegistry:
             lane = 0 if minutes <= 240 else 1 if minutes <= 480 else 2
             has_current_role = self.has_role(match, role)
             other_role = "offers" if role == "context" else "context"
-            completes_pair = not has_current_role and self.has_role(match, other_role)
+            needs_quote_refresh = role == "offers" and refresh_soon and self.has_role(match, "context")
+            needs_role = not has_current_role or needs_quote_refresh
+            completes_pair = needs_role and self.has_role(match, other_role)
             # With a two-hour cadence and 30-minute publication lead, these
             # fixtures need this run; a later regular run would be too late.
             before_next_run = minutes <= 150
@@ -510,7 +528,7 @@ class DailyMatchRegistry:
                 lane == 0 and provider == "sstats" and role == "context" and verified_fixture(match) is not None
             )
             ranked.append((
-                (lane, has_current_role, not before_next_run, not completes_pair, not has_verified_history_route, minutes),
+                (lane, not needs_role, not before_next_run, not completes_pair, not has_verified_history_route, minutes),
                 match,
             ))
         ranked.sort(key=lambda item: item[0])
@@ -524,13 +542,17 @@ class DailyMatchRegistry:
         ]
         return (near + nxt + later)[: max(0, limit)]
 
-    def record(self, provider, role, targets, data, stats, *, observed_at=None):
+    def record(self, provider, role, targets, data, stats, *, observed_at=None, refresh_keys=()):
         fetched = observed_at or datetime.now(UTC)
         self.now = fetched
         counts = {"accepted": 0, "rejected": 0, "deferred": 0, "empty": 0, "blocked": 0}
+        refresh_results = Counter()
         for match in targets:
             entry = self.data["matches"][match_identity(match)]
             value = data.get(match.match_key)
+            receipt_key = provider + ":" + role
+            refreshing = role == "offers" and match.match_key in refresh_keys
+            previous = entry["evidence"].get(receipt_key) if refreshing else None
             rejected = False
             if role == "context" and provider != "weather" and value:
                 observed = value.details.get("daily_source_observed_at") or fetched.isoformat()
@@ -566,7 +588,13 @@ class DailyMatchRegistry:
                     observed = max(parse_time(row["metadata"]["fetched_at_utc"]) or fetched for row in payload).isoformat()
                 else:
                     observed = payload.get("details", {}).get("daily_source_observed_at") or observed
-                entry["evidence"][provider + ":" + role] = {"observed_at": observed, "payload": payload}
+                old_stamp = parse_time(previous["observed_at"]) if previous else None
+                if not old_stamp or (parse_time(observed) or fetched) > old_stamp:
+                    entry["evidence"][receipt_key] = {"observed_at": observed, "payload": payload}
+                    if refreshing:
+                        refresh_results["refreshed"] += 1
+                elif refreshing:
+                    refresh_results["no_newer_quote"] += 1
             # Empty or unavailable endpoints are retried in a later run, not in a tight loop.
             near = 30 <= (match.commence_time - fetched).total_seconds() / 60 <= 120
             delay = 0 if value else 30 if role == "offers" and near else 120
@@ -595,7 +623,9 @@ class DailyMatchRegistry:
                     counts["empty"] += 1
             if not value and not rejected and result in {"unavailable", "rate_limited"}:
                 counts["blocked"] += 1
-            entry["attempts"][provider + ":" + role] = {
+            if refreshing and not value:
+                refresh_results["no_usable_quote" if result == "empty" else result] += 1
+            entry["attempts"][receipt_key] = {
                 "at": fetched.isoformat(),
                 "retry_after": (fetched + timedelta(minutes=delay)).isoformat(),
                 "result": result,
@@ -607,6 +637,12 @@ class DailyMatchRegistry:
                    if role == "offers" and match.match_key in stats.get("line_diagnostics", {}) else {}),
             }
         self.save()
+        if refresh_keys:
+            stats["offer_refresh"] = {
+                "scheduled": len(refresh_keys),
+                "not_attempted": len(refresh_keys) - sum(refresh_results.values()),
+                **dict(refresh_results),
+            }
         return counts
 
     def observation(self, match, role):
