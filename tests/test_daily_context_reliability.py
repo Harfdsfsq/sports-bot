@@ -1170,6 +1170,40 @@ def test_sstats_newest_first_preserves_complete_windows_when_later_window_times_
     assert not read_json('.data/provider_cache/sstats-history-v5-2026-07-01-2026-07-14.json', {})
 
 
+def test_sstats_deadline_keeps_unvisited_fresh_windows_without_retimestamping(tmp_path, monkeypatch):
+    import asyncio
+
+    from app.config import Settings
+    from app.providers.sstats import SStatsContextProvider
+    from app.services.daily_match_registry import write_json
+
+    monkeypatch.chdir(tmp_path)
+    provider = SStatsContextProvider(Settings(_env_file=None))
+    stamp = (datetime.now(UTC) - timedelta(minutes=25)).isoformat()
+    cached = {'id': 2, 'date': '2026-07-07'}
+    write_json('.data/provider_cache/sstats-window-v5-2026-07-01-2026-07-07.json',
+               {'observed_at': stamp, 'rows': [cached]})
+    stats = {}
+
+    async def fetch(client, start, end, stats):
+        assert (start, end) == ('2026-07-08', '2026-07-14')
+        await asyncio.Event().wait()
+
+    monkeypatch.setattr(provider, '_fetch_rows_window', fetch)
+
+    async def run():
+        task = asyncio.create_task(provider._fetch_rows(None, '2026-07-01', '2026-07-14', stats, newest_first=True))
+        await asyncio.sleep(0)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    asyncio.run(run())
+    assert provider._daily_partial_rows == [cached]
+    assert provider._daily_partial_observed_at == stamp
+    assert stats['history_windows_salvaged'] == 1
+
+
 def test_sstats_extension_timeout_defers_missing_evidence_instead_of_empty_cache(tmp_path):
     from app.services.daily_match_registry import DailyMatchRegistry, match_identity
     now = datetime.now(UTC)

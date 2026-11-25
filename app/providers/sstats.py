@@ -570,21 +570,41 @@ class SStatsContextProvider:
         seen_signatures: set[tuple[Any, ...]] = set()
         observations = []
 
+        def append_unique(batch, destination, seen):
+            for row in batch:
+                signature = (
+                    row.get("id"),
+                    row.get("flashId"),
+                    row.get("date"),
+                    self._extract_team_name(row, "home"),
+                    self._extract_team_name(row, "away"),
+                )
+                if signature not in seen:
+                    seen.add(signature)
+                    destination.append(row)
+
+        def cached_window(start, end):
+            path = Path(f".data/provider_cache/sstats-window-v5-{start}-{end}.json")
+            saved_window = read_json(path, {})
+            if not isinstance(saved_window, dict):
+                return path, None, None
+            observed = parse_time(saved_window.get("observed_at"))
+            if (
+                observed
+                and timedelta(0) <= datetime.now(UTC) - observed < self._history_cache_ttl(end)
+                and isinstance(saved_window.get("rows"), list)
+            ):
+                return path, saved_window["rows"], observed
+            return path, None, None
+
         windows = self._date_windows(from_date, to_date, chunk_days)
         if newest_first or (daily_cache and os.getenv("DAILY_SSTATS_RECENT_WINDOWS_FIRST", "true").lower() == "true"):
             windows.reverse()
-        for window_from, window_to in windows:
+        for index, (window_from, window_to) in enumerate(windows):
             batch_rows = None
             if daily_cache:
-                window_path = Path(f".data/provider_cache/sstats-window-v5-{window_from}-{window_to}.json")
-                saved_window = read_json(window_path, {})
-                window_observed = parse_time(saved_window.get("observed_at"))
-                if (
-                    window_observed
-                    and timedelta(0) <= datetime.now(UTC) - window_observed < self._history_cache_ttl(window_to)
-                    and isinstance(saved_window.get("rows"), list)
-                ):
-                    batch_rows = saved_window["rows"]
+                window_path, batch_rows, window_observed = cached_window(window_from, window_to)
+                if batch_rows is not None:
                     observations.append(window_observed)
                     stats["history_windows_cache_hits"] = stats.get("history_windows_cache_hits", 0) + 1
             if batch_rows is None:
@@ -598,6 +618,22 @@ class SStatsContextProvider:
                 try:
                     batch_rows = await self._fetch_rows_window(client, window_from, window_to, stats)
                     window_incomplete = stats.get("history_pagination_incomplete", False)
+                except asyncio.CancelledError:
+                    if daily_cache:
+                        recovered: list[dict[str, Any]] = []
+                        recovered_signatures: set[tuple[Any, ...]] = set()
+                        append_unique(self._daily_partial_rows, recovered, recovered_signatures)
+                        oldest = parse_time(self._daily_partial_observed_at)
+                        for start, end in windows[index + 1:]:
+                            _, cached_rows, stamp = cached_window(start, end)
+                            if cached_rows is None or stamp is None:
+                                continue
+                            append_unique(cached_rows, recovered, recovered_signatures)
+                            oldest = min(oldest, stamp) if oldest else stamp
+                            stats["history_windows_salvaged"] = stats.get("history_windows_salvaged", 0) + 1
+                        self._daily_partial_rows = recovered
+                        self._daily_partial_observed_at = oldest.isoformat() if oldest else None
+                    raise
                 finally:
                     if earlier_incomplete:
                         stats["history_pagination_incomplete"] = True
@@ -610,18 +646,7 @@ class SStatsContextProvider:
                         and not window_incomplete
                     ):
                         write_json(window_path, {"observed_at": window_observed.isoformat(), "rows": batch_rows})
-            for row in batch_rows:
-                signature = (
-                    row.get("id"),
-                    row.get("flashId"),
-                    row.get("date"),
-                    self._extract_team_name(row, "home"),
-                    self._extract_team_name(row, "away"),
-                )
-                if signature in seen_signatures:
-                    continue
-                seen_signatures.add(signature)
-                rows.append(row)
+            append_unique(batch_rows, rows, seen_signatures)
             if daily_cache:
                 # Only windows returned by the fetcher enter this checkpoint.
                 # A timeout in the next window must not discard completed work.

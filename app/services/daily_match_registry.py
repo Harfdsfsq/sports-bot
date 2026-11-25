@@ -50,6 +50,11 @@ def match_identity(match: Match) -> str:
     return hashlib.sha256(identity.encode()).hexdigest()[:24]
 
 
+def offer_ttl(match: Match, now: datetime) -> timedelta:
+    lead = match.commence_time - now
+    return timedelta(minutes=15 if lead <= timedelta(hours=4) else 120 if lead <= timedelta(hours=8) else 240)
+
+
 class DailyMatchRegistry:
     def __init__(self, path: Path, now: datetime):
         self.path, self.now = Path(path), now.astimezone(UTC)
@@ -352,19 +357,18 @@ class DailyMatchRegistry:
         if not evidence:
             return None
         observed = parse_time(evidence["observed_at"])
-        minutes_to_start = (match.commence_time - self.now).total_seconds() / 60
-        ttl = (
-            (15 if minutes_to_start <= 240 else 120 if minutes_to_start <= 480 else 240)
-            if role == "offers"
-            else 120
-            if provider == "weather"
-            else 360
-        )
-        if observed is None or not -timedelta(seconds=5) <= self.now - observed <= timedelta(minutes=ttl):
+        ttl = offer_ttl(match, self.now) if role == "offers" else timedelta(minutes=120 if provider == "weather" else 360)
+        if observed is None or not -timedelta(seconds=5) <= self.now - observed <= ttl:
             return None
         try:
             if role == "offers":
-                return [Offer(**row) for row in evidence["payload"] if is_full_match_market(row)]
+                return [
+                    Offer(**row)
+                    for row in evidence["payload"]
+                    if is_full_match_market(row)
+                    and (stamp := parse_time((row.get("metadata") or {}).get("fetched_at_utc", evidence["observed_at"])))
+                    and -timedelta(seconds=5) <= self.now - stamp <= ttl
+                ]
             context = MatchContext(**evidence["payload"])
             if provider != "weather" and admit_context(provider, match, context, evidence["observed_at"], self.now):
                 return None
@@ -535,24 +539,32 @@ class DailyMatchRegistry:
                     value = None
                     counts["rejected"] += 1
                     rejected = True
-                    # A bad response must not evict still-valid previous evidence.
-                    if self.cached(provider, role, match) is None:
+                    identity_invalid = any(reason != "context_source_stale" for reason in reasons)
+                    # Keep the old receipt for the collected coverage audit
+                    # when the update failed freshness checks alone.
+                    if identity_invalid and self.cached(provider, role, match) is None:
                         entry["evidence"].pop(provider + ":" + role, None)
                     self.data["issues"].append(
                         {"provider": provider, "reason": reasons[0], "match_id": match_identity(match)}
                     )
             if role == "offers" and value:
-                value = [offer for offer in value if is_full_match_market(offer)]
+                ttl = offer_ttl(match, fetched)
+                value = [
+                    offer for offer in value if is_full_match_market(offer)
+                    and (stamp := parse_time(offer.metadata.get("fetched_at_utc", fetched)))
+                    and -timedelta(seconds=5) <= fetched - stamp <= ttl
+                ]
             if value:
                 counts["accepted"] += 1
                 payload = [asdict(offer) for offer in value] if role == "offers" else asdict(value)
                 if role == "offers":
                     for row in payload:
-                        row["metadata"].update(
-                            {"fetched_at_utc": fetched.isoformat(), "registry_match_id": match_identity(match)}
-                        )
+                        row["metadata"].setdefault("fetched_at_utc", fetched.isoformat())
+                        row["metadata"]["registry_match_id"] = match_identity(match)
                 observed = fetched.isoformat()
-                if role == "context":
+                if role == "offers":
+                    observed = max(parse_time(row["metadata"]["fetched_at_utc"]) or fetched for row in payload).isoformat()
+                else:
                     observed = payload.get("details", {}).get("daily_source_observed_at") or observed
                 entry["evidence"][provider + ":" + role] = {"observed_at": observed, "payload": payload}
             # Empty or unavailable endpoints are retried in a later run, not in a tight loop.

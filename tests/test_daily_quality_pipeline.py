@@ -107,6 +107,24 @@ def test_cache_never_relabels_old_quote_as_fresh(tmp_path):
     assert r.coverage()['line'] == 0
 
 
+def test_registry_expires_each_quote_from_its_own_receipt_time(tmp_path):
+    now = datetime(2026, 10, 3, 0, tzinfo=UTC)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now)
+    r.sync([m])
+    early = (now - timedelta(minutes=14)).isoformat()
+    late = (now - timedelta(minutes=1)).isoformat()
+    prices = [
+        Offer('odds_api_io', 'Unibet', 'totals', 'Under', 1.9, 2.5, metadata={'fetched_at_utc': early}),
+        Offer('odds_api_io', 'Betano', 'totals', 'Under', 1.9, 2.5, metadata={'fetched_at_utc': late}),
+    ]
+    r.record('odds_api_io', 'offers', [m], {m.match_key: prices}, {}, observed_at=now)
+    assert [q.metadata['fetched_at_utc'] for q in r.cached('odds_api_io', 'offers', m)] == [early, late]
+    r.now += timedelta(minutes=2)
+    assert [q.bookmaker for q in r.cached('odds_api_io', 'offers', m)] == ['Betano']
+    assert r.observation(m, 'offers') == late
+
+
 def test_registry_caps_inventory_at_300(tmp_path):
     now = datetime.now(UTC).replace(hour=0)
     r = DailyMatchRegistry(tmp_path / 'registry.json', now)
@@ -1345,10 +1363,12 @@ def test_fresh_retrieval_does_not_refresh_week_old_prediction(profile):
     assert source_is_fresh('bzzoiro', ctx, now.isoformat(), now)
 
 
-def test_weather_does_not_restore_rejected_sporting_context(profile):
+def test_weather_does_not_restore_rejected_sporting_context(profile, tmp_path):
     now = datetime.now(UTC)
     m = match(now)
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    runner.registry.sync([m])
     runner.inventory_matches = [m]
     runner.daily_rejections = __import__('collections').Counter()
     runner.settings = Settings(_env_file=None)
@@ -1356,6 +1376,7 @@ def test_weather_does_not_restore_rejected_sporting_context(profile):
     maps = {'thesportsdb': {m.match_key: bad}, 'weather': {m.match_key: bad}}
     assert not runner._prepare_model_context_maps(maps, {m.match_key: bad})
     assert not maps['weather'] and not maps['thesportsdb']
+    assert runner.decision_coverage['near'] == 1 and runner.decision_coverage['near_ready'] == 0
 
 
 def test_audited_predictions_cannot_train_or_calibrate(profile):

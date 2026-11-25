@@ -490,6 +490,8 @@ class DailyQualityRunner(PredictionRunner):
                     "daily_evidence_observed_at"
                 ) or context.details.get("daily_source_observed_at")
         self.research_contexts = fresh
+        self.registry.now = datetime.now(UTC)
+        self.decision_coverage = {"as_of_utc": self.registry.now.isoformat(), **self.registry.coverage()}
         return fresh
 
     def _retain_fixture_venues(self, provider, contexts):
@@ -940,7 +942,9 @@ class DailyQualityRunner(PredictionRunner):
             )
             from app.services.system_readiness import assess
 
-            summary["system_readiness"] = assess(summary, self.registry.coverage())
+            summary["system_readiness"] = assess(
+                summary, getattr(self, "decision_coverage", None) or self.registry.coverage()
+            )
             write_json(".data/exports/latest-system-readiness.json", summary["system_readiness"])
             if self.market_monitor:
                 self.market_monitor.restore_trial_tracking(
@@ -984,6 +988,7 @@ class DailyQualityRunner(PredictionRunner):
             summary["daily_quality"] = {
                 "quality_review": quality_review,
                 "coverage": self.registry.coverage(),
+                "decision_coverage": getattr(self, "decision_coverage", {}),
                 "next_day_inventory": getattr(self, "next_day_inventory_count", 0),
                 "published_today": self.registry.data["published"],
                 "rejections": dict(self.daily_rejections),

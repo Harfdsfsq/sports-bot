@@ -2,6 +2,8 @@ from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
+import pytest
+
 from app.services.totals_loss_review import assess, run
 
 NOW = datetime(2026, 11, 18, 9, tzinfo=UTC)
@@ -80,6 +82,7 @@ def test_forward_comparison_preserves_refusals_and_counts_returns_separately():
     assert second["baseline"]["settled"] == 3 and second["filtered"]["settled"] == 2
     assert second["filtered"]["closing_price"]["measured"] == 1
     assert second["filtered"]["closing_price"]["coverage_pct"] == 50
+    assert second["filtered"]["roi_at_lower_entry_odds_pct"]["1.0"] == pytest.approx(58.9)
 
     rows[0].update(status="pending", resolution_reason="result_not_found", provider_result_status="Postponed")
     third = run(history, NOW + timedelta(hours=5))

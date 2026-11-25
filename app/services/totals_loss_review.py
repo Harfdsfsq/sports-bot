@@ -92,11 +92,13 @@ def assess(row):
 def outcomes(settled):
     counts = Counter()
     pnl = 0.0
+    gross_winning_payout = 0.0
     for pick, total in settled:
         delta = (total - pick["point"]) * (1 if pick["side"] == "over" else -1)
         if delta > 0:
             counts["wins"] += 1
             pnl += pick["odds"] - 1
+            gross_winning_payout += pick["odds"]
         elif delta < 0:
             counts["losses"] += 1
             pnl -= 1
@@ -109,6 +111,10 @@ def outcomes(settled):
         "settled": len(settled),
         "paper_pnl": round(pnl, 4),
         "roi_pct": 100 * pnl / len(settled) if settled else None,
+        "roi_at_lower_entry_odds_pct": {
+            str(decrease): 100 * (pnl - gross_winning_payout * decrease / 100) / len(settled) if settled else None
+            for decrease in (0.5, 1.0)
+        },
         "hit_rate_pct_excluding_pushes": 100 * counts["wins"] / decisive if decisive else None,
     }
 
