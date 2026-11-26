@@ -832,17 +832,17 @@ class DailyQualityRunner(PredictionRunner):
             from app.services.goal_research import GoalHistory
 
             history = None
+            capture_started_at = None
             try:
                 history = GoalHistory()
-                refresh = await history.refresh_overdue_results(self.settings, datetime.now(UTC))
                 summary["goal_research"] = history.run_research(self.inventory_matches, datetime.now(UTC))
-                summary["goal_research"]["result_refresh"] = refresh
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary["goal_research"] = {"status": "error", "error_type": type(exc).__name__}
             try:
                 from app.services.totals_strategy_lab import run_lab
 
                 self.registry.now = datetime.now(UTC)
+                capture_started_at = self.registry.now
                 fresh_contexts = {
                     key: context
                     for key, context in getattr(self, "research_contexts", {}).items()
@@ -891,6 +891,18 @@ class DailyQualityRunner(PredictionRunner):
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary["totals_loss_review"] = {"status": "error", "error_type": type(exc).__name__}
             write_json(".data/exports/latest-totals-loss-review.json", summary["totals_loss_review"])
+            from app.services.market_totals_paper import REPORT_PATH as MARKET_PAPER_REPORT
+            from app.services.market_totals_paper import run as run_market_paper
+
+            try:
+                if history is None or capture_started_at is None:
+                    raise ValueError("goal_history_unavailable")
+                summary["market_totals_paper"] = run_market_paper(
+                    history, datetime.now(UTC), capture_started_at=capture_started_at
+                )
+            except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
+                summary["market_totals_paper"] = {"mode": "paper_only", "status": "error", "error_type": type(exc).__name__}
+            write_json(MARKET_PAPER_REPORT, summary["market_totals_paper"])
             try:
                 from app.services.prospective_validation import REPORT_PATH, evaluate
 
@@ -905,6 +917,15 @@ class DailyQualityRunner(PredictionRunner):
                     "error_type": type(exc).__name__,
                 }
             write_json(REPORT_PATH, summary["prospective_validation"])
+            if history is not None:
+                # Backfill may take minutes. Persist new forecasts first, then
+                # make newly recovered results available to the next run.
+                try:
+                    summary["goal_research"]["result_refresh"] = await history.refresh_overdue_results(
+                        self.settings, datetime.now(UTC)
+                    )
+                except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
+                    summary["goal_research"]["result_refresh"] = {"status": "error", "error_type": type(exc).__name__}
             write_json(".data/exports/latest-goal-research.json", summary["goal_research"])
             write_json(
                 ".data/exports/latest-totals-strategy-lab.json",

@@ -32,6 +32,7 @@ TESTS = (
     "runtime_identity_and_enrichment",
     "conservative_totals",
     "totals_loss_review",
+    "market_totals_paper",
     "reviewed_fixture_aliases",
     "repair_inventory_refresh_plan_counts_env",
 )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -606,13 +607,15 @@ class OddsApiIoProvider:
                     if daily:
                         queried = stats["odds_requests"] > before_requests
                         account_state = stats["accounts"][str(account["name"])]
+                        missing_ids = set(stats.get("missing_batch_event_ids", []))
                         for item in chunk:
                             key = item["match"].match_key
-                            if queried:
+                            missing = int(item["event"]["id"]) in missing_ids
+                            if queried or missing:
                                 attempted_keys.add(key)
                             diagnostics[key]["accounts"][str(account["name"])] = {
                                 "bookmakers": account_state.get("effective_bookmakers") or account["bookmakers"],
-                                "result": "request_error" if stats["response_errors"] > before_errors
+                                "result": "event_not_found" if missing else "request_error" if stats["response_errors"] > before_errors
                                 or account_state.get("auth_error") or account_state.get("plan_restriction")
                                 else "response_absent" if queried else "not_queried",
                             }
@@ -696,7 +699,9 @@ class OddsApiIoProvider:
                         diagnostic["reason"] = "quotes_collected"
                     elif results:
                         diagnostic["reason"] = (
-                            "no_quotes_from_selected_books"
+                            "event_not_found"
+                            if all(r == "event_not_found" for r in results)
+                            else "no_quotes_from_selected_books"
                             if all(r in {"response_absent", "empty_bookmakers"} for r in results)
                             else "no_supported_full_match_markets"
                             if all(r == "no_supported_full_match_markets" for r in results)
@@ -885,6 +890,8 @@ class OddsApiIoProvider:
         account_name: str = "account1",
         fallback_books: str = "",
     ) -> list[dict[str, Any]]:
+        missing_ids = set(stats.get("missing_batch_event_ids", []))
+        event_ids = [event_id for event_id in event_ids if event_id not in missing_ids]
         if not event_ids:
             return []
         default_books = list(
@@ -968,6 +975,22 @@ class OddsApiIoProvider:
                 account_stats["rate_limited"] = True
                 stats["rate_limited"] = True
                 return []
+            if response.status_code == 400 and os.getenv("PUBLICATION_PROFILE") == "daily_quality":
+                payload = self._safe_json(response)
+                message = payload.get("error") if isinstance(payload, dict) else None
+                missing = re.fullmatch(r"One or more eventIds not found:\s*(\d+(?:\s*,\s*\d+)*)\s*", str(message))
+                if missing:
+                    invalid = {int(value.strip()) for value in missing[1].split(",")}
+                    if invalid <= set(event_ids):
+                        missing_ids.update(invalid)
+                        stats["missing_batch_event_ids"] = sorted(missing_ids)
+                        stats["missing_batch_responses"] = stats.get("missing_batch_responses", 0) + 1
+                        event_ids = [event_id for event_id in event_ids if event_id not in invalid]
+                        if event_ids and attempts < 2:
+                            stats["missing_batch_retries"] = stats.get("missing_batch_retries", 0) + 1
+                            continue
+                        if not event_ids:
+                            return []
             if response.status_code == 200:
                 payload = self._safe_json(response)
                 if payload is None:

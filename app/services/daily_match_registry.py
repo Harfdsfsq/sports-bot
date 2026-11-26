@@ -282,6 +282,8 @@ class DailyMatchRegistry:
                 labels.append("expired_quote")
             if "fixture_identity_mismatch" in account_results:
                 labels.append("fixture_identity_mismatch")
+            if "event_not_found" in account_results:
+                labels.append("provider_event_not_found")
             if account_results & {"empty_bookmakers", "response_absent"}:
                 labels.append("no_quote_from_selected_books")
             if "no_supported_full_match_markets" in account_results:
