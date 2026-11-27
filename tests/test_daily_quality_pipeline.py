@@ -28,6 +28,7 @@ def profile(monkeypatch):
         if line and not line.startswith('#'):
             key, value = line.split('=', 1)
             monkeypatch.setenv(key, value)
+    monkeypatch.setenv('DAILY_LIVE_A_ONLY', 'false')
     monkeypatch.setenv('PUBLISH_DRY_RUN', 'true')
     monkeypatch.setenv('MAX_PICKS_PER_RUN', '2')
 
@@ -106,6 +107,65 @@ def test_cache_never_relabels_old_quote_as_fresh(tmp_path):
     assert r.coverage()['line'] == 0
 
 
+def test_registry_expires_each_quote_from_its_own_receipt_time(tmp_path):
+    now = datetime(2026, 10, 3, 0, tzinfo=UTC)
+    r = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now)
+    r.sync([m])
+    early = (now - timedelta(minutes=14)).isoformat()
+    late = (now - timedelta(minutes=1)).isoformat()
+    prices = [
+        Offer('odds_api_io', 'Unibet', 'totals', 'Under', 1.9, 2.5, metadata={'fetched_at_utc': early}),
+        Offer('odds_api_io', 'Betano', 'totals', 'Under', 1.9, 2.5, metadata={'fetched_at_utc': late}),
+    ]
+    r.record('odds_api_io', 'offers', [m], {m.match_key: prices}, {}, observed_at=now)
+    assert [q.metadata['fetched_at_utc'] for q in r.cached('odds_api_io', 'offers', m)] == [early, late]
+    r.now += timedelta(minutes=2)
+    assert [q.bookmaker for q in r.cached('odds_api_io', 'offers', m)] == ['Betano']
+    assert r.observation(m, 'offers') == late
+
+
+def test_expiring_near_quote_refresh_keeps_last_valid_receipt_when_no_market(tmp_path, monkeypatch):
+    monkeypatch.setenv('DAILY_OFFER_REFRESH_BUFFER_MINUTES', '8')
+    now = datetime(2026, 10, 3, 0, tzinfo=UTC)
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    near, far = match(now, 90, 'Near'), match(now, 300, 'Far')
+    registry.sync([near, far])
+    original = now - timedelta(minutes=10)
+    data = {
+        m.match_key: [Offer('odds_api_io', 'Unibet', 'totals', 'Under', 1.9, 2.5,
+                            metadata={'fetched_at_utc': original.isoformat()})]
+        for m in (near, far)
+    }
+    registry.record('odds_api_io', 'offers', [near, far], data, {}, observed_at=now)
+    assert [m.match_key for m in registry.targets('odds_api_io', 'offers')] == [near.match_key]
+    stats = {}
+    registry.record('odds_api_io', 'offers', [near], {}, stats, observed_at=now, refresh_keys={near.match_key})
+    assert stats['offer_refresh'] == {'scheduled': 1, 'not_attempted': 0, 'no_usable_quote': 1}
+    assert registry.observation(near, 'offers') == original.isoformat()
+    assert not registry.targets('odds_api_io', 'offers')
+    registry.now = now + timedelta(minutes=6)
+    assert registry.cached('odds_api_io', 'offers', near) is None
+
+
+@pytest.mark.parametrize('newer', [True, False])
+def test_quote_refresh_records_only_a_newer_provider_receipt(tmp_path, newer):
+    now = datetime(2026, 10, 3, 0, tzinfo=UTC)
+    registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    m = match(now)
+    registry.sync([m])
+    original = now - timedelta(minutes=10)
+    received = now if newer else original
+    for price, stamp in [(1.9, original), (2.0, received)]:
+        offers = [Offer('odds_api_io', 'Unibet', 'totals', 'Under', price, 2.5,
+                        metadata={'fetched_at_utc': stamp.isoformat()})]
+        stats = {}
+        registry.record('odds_api_io', 'offers', [m], {m.match_key: offers}, stats,
+                        observed_at=now, refresh_keys={m.match_key} if price == 2.0 else set())
+    assert stats['offer_refresh']['refreshed' if newer else 'no_newer_quote'] == 1
+    assert registry.cached('odds_api_io', 'offers', m)[0].price == (2.0 if newer else 1.9)
+
+
 def test_registry_caps_inventory_at_300(tmp_path):
     now = datetime.now(UTC).replace(hour=0)
     r = DailyMatchRegistry(tmp_path / 'registry.json', now)
@@ -127,7 +187,7 @@ def test_provider_id_conflicts_do_not_overwrite_verified_mapping(tmp_path):
 def test_daily_cap_and_smaller_b_limit(profile, tmp_path):
     now = datetime.now(UTC)
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
-    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
     runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
     runner.registry.data['published'] = [{'tier': 'B'}] * 4
     runner.daily_rejections = {}
@@ -516,7 +576,7 @@ def test_same_match_cannot_be_published_in_another_market_next_run(profile, tmp_
     from collections import Counter
     now = datetime.now(UTC)
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
-    runner.settings = SimpleNamespace(max_picks_per_run=2)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
     runner.registry = DailyMatchRegistry(tmp_path/'registry.json', now)
     runner.registry.data['published'] = [{'match_id': 'miami-id', 'tier': 'B'}]
     runner.daily_rejections = Counter()
@@ -621,7 +681,7 @@ def test_sstats_inventory_uses_date_range_and_nested_league(profile, monkeypatch
     assert stats['rows_fetched'] == 2
 
 
-@pytest.mark.parametrize('count,revision,minutes,due', [(183, 3, 119, False), (183, 3, 120, True), (300, 3, 180, False), (183, 2, 1, True)])
+@pytest.mark.parametrize('count,revision,minutes,due', [(183, 4, 119, False), (183, 4, 120, True), (300, 4, 180, False), (183, 3, 1, True)])
 def test_incomplete_inventory_refresh_is_bounded(count, revision, minutes, due):
     from scripts.daily_inventory_refresh_due import refresh_due
     now = datetime.now(UTC)
@@ -1344,10 +1404,12 @@ def test_fresh_retrieval_does_not_refresh_week_old_prediction(profile):
     assert source_is_fresh('bzzoiro', ctx, now.isoformat(), now)
 
 
-def test_weather_does_not_restore_rejected_sporting_context(profile):
+def test_weather_does_not_restore_rejected_sporting_context(profile, tmp_path):
     now = datetime.now(UTC)
     m = match(now)
     runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', now)
+    runner.registry.sync([m])
     runner.inventory_matches = [m]
     runner.daily_rejections = __import__('collections').Counter()
     runner.settings = Settings(_env_file=None)
@@ -1355,6 +1417,7 @@ def test_weather_does_not_restore_rejected_sporting_context(profile):
     maps = {'thesportsdb': {m.match_key: bad}, 'weather': {m.match_key: bad}}
     assert not runner._prepare_model_context_maps(maps, {m.match_key: bad})
     assert not maps['weather'] and not maps['thesportsdb']
+    assert runner.decision_coverage['near'] == 1 and runner.decision_coverage['near_ready'] == 0
 
 
 def test_audited_predictions_cannot_train_or_calibrate(profile):
@@ -1769,3 +1832,24 @@ def test_report_timeout_is_not_retried_or_leaked(monkeypatch,capsys):
     assert report.send_telegram('test') is False
     assert calls==[45]
     assert 'private-token' not in capsys.readouterr().out
+
+
+def test_a_only_mode_never_sends_b_even_with_higher_ev(profile, tmp_path, monkeypatch):
+    monkeypatch.setenv('DAILY_LIVE_A_ONLY', 'true')
+    runner = DailyQualityRunner.__new__(DailyQualityRunner)
+    runner.settings = SimpleNamespace(max_picks_per_run=2, publish_dry_run=True)
+    runner.registry = DailyMatchRegistry(tmp_path / 'registry.json', datetime.now(UTC))
+    runner.daily_rejections = {}
+    def c(tier, ev):
+        return SimpleNamespace(match_key=tier, source_summary={'publication_tier': tier, 'quality_score': 80}, ev_pct=ev, commence_time=datetime.now(UTC)+timedelta(hours=1), stake_amount=5, bankroll_snapshot=1000)
+    a, b = c('A', 6), c('B', 20)
+    assert runner._select_publishable_candidates([b, a]) == [a]
+    assert runner.daily_rejections['b_tier_observation_only'] == 1
+
+
+def test_window_sla_does_not_call_empty_window_complete(tmp_path):
+    r = DailyMatchRegistry(tmp_path / 'r.json', datetime.now(UTC))
+    assert r.coverage()['near_ready_pct'] is None
+    r.sync([match(r.now)])
+    assert r.coverage()['near_missing_to_95'] == 1
+    assert r.coverage()['near_coverage_status'] == 'below_target'

@@ -161,6 +161,29 @@ def test_rate_limited_odds_account_does_not_stop_other_account(budget_env, monke
     assert calls == ['first', 'second']
 
 
+def test_odds_multi_retries_without_explicitly_missing_event_ids(budget_env, monkeypatch):
+    from app.providers.odds_api_io import OddsApiIoProvider
+
+    provider = OddsApiIoProvider(SimpleNamespace(odds_api_io_per_run_max=20))
+    calls = []
+
+    async def request(client, key, ids, books):
+        calls.append((key, ids[:]))
+        if 15856070000 in ids:
+            return httpx.Response(400, json={"error": "One or more eventIds not found: 15856070000"})
+        return httpx.Response(200, json=[{"id": i} for i in ids])
+
+    monkeypatch.setattr(provider, "_request_odds_multi", request)
+    stats = {"accounts": {}, "odds_requests": 0, "response_errors": 0, "odds_http_statuses": [], "payload_shapes": []}
+    for account, key in [("account1", "first"), ("account2", "second")]:
+        rows = asyncio.run(provider._fetch_odds_multi_chunk(
+            None, key, [10, 15856070000, 11], "Unibet", stats, account_name=account,
+        ))
+        assert rows == [{"id": 10}, {"id": 11}]
+    assert calls == [("first", [10, 15856070000, 11]), ("first", [10, 11]), ("second", [10, 11])]
+    assert stats["missing_batch_retries"] == 1 and stats["response_errors"] == 0
+
+
 def test_workflow_maps_both_keys_and_profile_contains_no_credentials():
     root = Path(__file__).resolve().parents[1]
     config = (root / 'config/daily_quality.env').read_text()
@@ -196,7 +219,11 @@ def test_full_odds_fetch_keeps_second_account_after_first_429(budget_env, monkey
             return httpx.Response(200, request=httpx.Request('GET', url), json={'bookmakers': ['Bet365', 'Unibet']})
         assert url.endswith('/odds/multi')
         ids = [int(n) for n in kwargs['params']['eventIds'].split(',')]
-        return httpx.Response(429 if key == 'first' else 200, request=httpx.Request('GET', url), json=[] if key == 'first' else [{'id': n} for n in ids])
+        rows = [] if key == 'first' else [
+            {'id': n, 'home': matches[n - 1].home_team, 'away': matches[n - 1].away_team,
+             'date': matches[n - 1].commence_time.isoformat(), 'status': 'pending'} for n in ids
+        ]
+        return httpx.Response(429 if key == 'first' else 200, request=httpx.Request('GET', url), json=rows)
     monkeypatch.setattr(httpx.AsyncClient, 'get', get)
     monkeypatch.setattr(provider, '_parse_event_odds', lambda payload, match: [Offer('odds_api_io', 'Bet365', 'totals', 'Under', 2.0, 2.5)])
     offers, stats, _ = asyncio.run(provider.fetch_offers(matches))

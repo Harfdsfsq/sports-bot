@@ -48,6 +48,15 @@ def summarize(rows, version):
         except (KeyError, TypeError, ValueError):
             continue
     outcomes = Counter(r.get('status') for r in unique)
+    quality_cohorts = {}
+    for tier in ('A', 'B', 'unclassified'):
+        subset = [r for r in unique if (r.get('paper_quality_tier') or 'unclassified') == tier]
+        finished = [r for r in subset if r.get('status') in {'won', 'lost', 'push', 'void'}]
+        profit = sum(float(r['odds']) - 1 if r['status'] == 'won' else -1 if r['status'] == 'lost' else 0 for r in finished)
+        quality_cohorts[tier] = {'tracked': len(subset), 'settled': len(finished),
+                                'paper_pnl': round(profit, 3),
+                                'paper_roi_pct': round(100 * profit / len(finished), 3) if finished else None,
+                                'research_blocked': sum(bool(r.get('paper_research_blockers')) for r in subset)}
     segments = {}
     for side in ('over', 'under'):
         subset = [r for r in settled if r.get('selection_key') == side]
@@ -72,4 +81,5 @@ def summarize(rows, version):
             'paired_scores': len(pairs),
             'brier': mean(a for a, _ in pairs) if pairs else None,
             'market_brier': mean(b for _, b in pairs) if pairs else None,
-            'segments': segments, 'excluded': dict(excluded), 'automatic_live_promotion': False}
+            'segments': segments, 'quality_cohorts': quality_cohorts,
+            'excluded': dict(excluded), 'automatic_live_promotion': False}

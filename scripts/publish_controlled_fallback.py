@@ -6,7 +6,7 @@ import math
 import os
 import re
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib import parse, request
@@ -21,22 +21,33 @@ try:
         translate_team_name,
     )
 except Exception:
-    def normalize_telegram_text(text: Any) -> str: return str(text or "")
-    def translate_league_name(name: Any) -> str: return str(name or "")
-    def translate_reject_reason(reason: Any) -> str: return str(reason or "")
-    def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str: return str(selection or "")
-    def translate_team_name(name: Any) -> str: return str(name or "")
 
-UTC = timezone.utc
+    def normalize_telegram_text(text: Any) -> str:
+        return str(text or "")
+
+    def translate_league_name(name: Any) -> str:
+        return str(name or "")
+
+    def translate_reject_reason(reason: Any) -> str:
+        return str(reason or "")
+
+    def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str:
+        return str(selection or "")
+
+    def translate_team_name(name: Any) -> str:
+        return str(name or "")
+
+
+UTC = UTC
 
 try:
     from app.services.publication_lifecycle import is_sent_pick_row
 except Exception:
+
     def is_sent_pick_row(row: Any) -> bool:
         if not isinstance(row, dict):
             return False
         return str(row.get("telegram_sent") or "").strip().lower() in {"1", "true", "yes", "on"}
-
 
 
 def env_bool(name: str, default: bool) -> bool:
@@ -94,12 +105,14 @@ def payload_timestamp(payload: Any) -> datetime | None:
         payload.get("updated_at"),
     ]
     summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
-    candidates.extend([
-        summary.get("current_time_utc"),
-        summary.get("started_time_utc"),
-        summary.get("current_time_local"),
-        summary.get("started_time_local"),
-    ])
+    candidates.extend(
+        [
+            summary.get("current_time_utc"),
+            summary.get("started_time_utc"),
+            summary.get("current_time_local"),
+            summary.get("started_time_local"),
+        ]
+    )
     for value in candidates:
         dt = parse_dt(value)
         if dt is not None:
@@ -159,8 +172,8 @@ def load_context_source_index() -> dict[str, Any]:
 
     for path in paths:
         payload = load_json(path, {})
-        by_match = payload.get("by_match") if isinstance(payload, dict) else None
-        if isinstance(by_match, dict) and any(by_match.values()):
+        cached_by_match = payload.get("by_match") if isinstance(payload, dict) else None
+        if isinstance(cached_by_match, dict) and any(cached_by_match.values()):
             _CONTEXT_SOURCE_INDEX_CACHE = payload
             return payload
     observations = load_json(Path(".data/exports/latest-context-observations.json"), [])
@@ -242,8 +255,12 @@ def weather_confirmation_state(candidate: dict[str, Any]) -> dict[str, Any]:
                 details.update(nested)
 
     text = json.dumps(details, ensure_ascii=False).lower() if details else ""
-    supports_under = any(token in text for token in ("heavy_rain", "rain", "wind", "storm", "weather_supports_under", "under_weather"))
-    supports_over = any(token in text for token in ("fast_pitch", "clear_weather", "weather_supports_over", "over_weather"))
+    supports_under = any(
+        token in text for token in ("heavy_rain", "rain", "wind", "storm", "weather_supports_under", "under_weather")
+    )
+    supports_over = any(
+        token in text for token in ("fast_pitch", "clear_weather", "weather_supports_over", "over_weather")
+    )
     risk_flag = any(token in text for token in ("risk", "postpon", "storm", "extreme", "weather_risk"))
     relevant = family in {"totals", "teamtotals", "btts"} and (supports_under or supports_over or risk_flag)
     return {
@@ -268,7 +285,14 @@ def candidate_confirmation_sources(candidate: dict[str, Any]) -> tuple[list[str]
                 if src:
                     sources.add(src)
 
-    for field in ("confirmation_sources", "context_sources", "context_source_names", "merged_context_sources", "providers", "provider_names"):
+    for field in (
+        "confirmation_sources",
+        "context_sources",
+        "context_source_names",
+        "merged_context_sources",
+        "providers",
+        "provider_names",
+    ):
         for item in _source_values(candidate.get(field)):
             src = normalize_confirmation_source(item)
             if src:
@@ -337,7 +361,12 @@ def quality_proxy_score(candidate: dict[str, Any], metrics: dict[str, Any], raw_
     if not env_bool("CONTROLLED_FALLBACK_USE_QUALITY_PROXY", True):
         return raw_quality, "raw_missing"
     source = str(candidate.get("_candidate_source") or "").strip().lower()
-    if source not in {"latest_rescue_candidates", "artifact_rescue_candidates", "debug_candidates_before_quality", "debug_candidates_after_quality"}:
+    if source not in {
+        "latest_rescue_candidates",
+        "artifact_rescue_candidates",
+        "debug_candidates_before_quality",
+        "debug_candidates_after_quality",
+    }:
         return raw_quality, "raw_missing"
 
     confidence = float(metrics.get("confidence") or 0.0)
@@ -360,7 +389,6 @@ def quality_proxy_score(candidate: dict[str, Any], metrics: dict[str, Any], raw_
     return round(score, 3), "proxy"
 
 
-
 def parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
         return None
@@ -377,12 +405,7 @@ def parse_dt(value: Any) -> datetime | None:
 
 
 def telegram_match_tz() -> Any:
-    name = (
-        os.getenv("TELEGRAM_MATCH_TIMEZONE")
-        or os.getenv("APP_TIMEZONE")
-        or os.getenv("TZ")
-        or "Europe/Moscow"
-    )
+    name = os.getenv("TELEGRAM_MATCH_TIMEZONE") or os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow"
     try:
         return ZoneInfo(str(name))
     except Exception:
@@ -409,7 +432,6 @@ def format_match_time_for_telegram(value: Any) -> str:
     if env_bool("TELEGRAM_SHOW_UTC_MATCH_TIME", False):
         text += f" / UTC {kickoff.strftime('%d.%m.%Y %H:%M')}"
     return text
-
 
 
 def poisson_cdf(k: int, lam: float) -> float:
@@ -457,7 +479,9 @@ def total_line_probability_from_xg(selection: Any, point: Any, expected_home: An
     if frac in {0.25, 0.75}:
         low = math.floor(line) if frac == 0.25 else math.floor(line) + 0.5
         high = math.floor(line) + 0.5 if frac == 0.25 else math.floor(line) + 1.0
-        probability = (over_prob(low) + over_prob(high)) / 2.0 if is_over else (under_prob(low) + under_prob(high)) / 2.0
+        probability = (
+            (over_prob(low) + over_prob(high)) / 2.0 if is_over else (under_prob(low) + under_prob(high)) / 2.0
+        )
     else:
         probability = over_prob(line) if is_over else under_prob(line)
 
@@ -505,8 +529,12 @@ def _nested_xg_value(candidate: dict[str, Any], side: str) -> Any:
     """
     side = "home" if str(side).lower().startswith("h") else "away"
     direct_keys = (
-        f"expected_{side}", f"{side}_expected", f"xg_{side}", f"{side}_xg",
-        f"expected_goals_{side}", f"{side}_expected_goals",
+        f"expected_{side}",
+        f"{side}_expected",
+        f"xg_{side}",
+        f"{side}_xg",
+        f"expected_goals_{side}",
+        f"{side}_expected_goals",
     )
     containers: list[Any] = [candidate]
     for key in ("context", "source_summary", "diagnostics", "analysis", "metadata", "features", "provider_context"):
@@ -541,6 +569,14 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
     fam = family_norm(candidate)
     if fam not in {"totals", "teamtotals"}:
         return {"enabled": False, "reason": "family_not_total"}
+
+    summary_xg = (candidate.get("source_summary") or {}).get("xg") or {}
+    enrichment = (candidate.get("diagnostics") or {}).get("xg_enrichment") or {}
+    xg_source = str(
+        summary_xg.get("source") or enrichment.get("source_mode") or enrichment.get("source") or "unspecified"
+    )
+    derived_xg = any(word in xg_source.lower() for word in ("market", "implied", "proxy", "synthetic"))
+    hard_confirmation = xg_source.lower() in {"sstats", "sstats_form", "bzzoiro", "football_data", "api_football"}
 
     expected_home = candidate.get("expected_home")
     expected_away = candidate.get("expected_away")
@@ -585,7 +621,7 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
 
     direction_ok = True
     margin = env_float("CONTROLLED_FALLBACK_XG_DIRECTION_MARGIN", 0.05)
-    if total_xg is not None and line is not None:
+    if not derived_xg and total_xg is not None and line is not None:
         if is_over and total_xg < line - margin:
             direction_ok = False
         if is_under and total_xg > line + margin:
@@ -593,6 +629,9 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
 
     return {
         "enabled": True,
+        "xg_source": xg_source,
+        "xg_hard_confirmation": hard_confirmation and not derived_xg,
+        "xg_direction_evaluated": not derived_xg,
         "xg_probability": round(probability, 6),
         "xg_probability_pct": round(probability * 100.0, 3),
         "xg_model_gap_pp": round(gap_pp, 3),
@@ -602,8 +641,6 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
         "xg_total": round(total_xg, 3) if total_xg is not None else None,
         "xg_direction_ok": direction_ok,
     }
-
-
 
 
 def btts_probability_from_xg(selection: Any, expected_home: Any, expected_away: Any) -> float | None:
@@ -676,8 +713,6 @@ def btts_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) 
     }
 
 
-
-
 def poisson_goal_probs(lam: float, max_goals: int = 12) -> list[float]:
     if lam < 0:
         return []
@@ -687,7 +722,9 @@ def poisson_goal_probs(lam: float, max_goals: int = 12) -> list[float]:
     return probs
 
 
-def dnb_probability_from_xg(selection: Any, home_team: Any, away_team: Any, expected_home: Any, expected_away: Any) -> dict[str, Any] | None:
+def dnb_probability_from_xg(
+    selection: Any, home_team: Any, away_team: Any, expected_home: Any, expected_away: Any
+) -> dict[str, Any] | None:
     try:
         home_xg = float(expected_home)
         away_xg = float(expected_away)
@@ -792,19 +829,20 @@ def dnb_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -
     optimism_gap_pp = max(0.0, gap_pp)
     direction_ok = optimism_gap_pp <= env_float("CONTROLLED_FALLBACK_DNB_MAX_MODEL_OPTIMISM_GAP_PP", 12.0)
 
-    payload.update({
-        "enabled": True,
-        "dnb_model_gap_pp": round(gap_pp, 3),
-        "dnb_abs_gap_pp": round(abs_gap_pp, 3),
-        "dnb_model_optimism_gap_pp": round(optimism_gap_pp, 3),
-        "dnb_selected_implied_probability": round(selected_implied, 6),
-        "dnb_xg_no_push_edge_pp": round(dnb_xg_no_push_edge_pp, 3),
-        "dnb_xg_ev_no_push_pct": round(dnb_xg_ev_no_push_pct, 3),
-        "dnb_xg_ev_unconditional_pct": round(dnb_xg_ev_unconditional_pct, 3),
-        "dnb_direction_ok": direction_ok,
-    })
+    payload.update(
+        {
+            "enabled": True,
+            "dnb_model_gap_pp": round(gap_pp, 3),
+            "dnb_abs_gap_pp": round(abs_gap_pp, 3),
+            "dnb_model_optimism_gap_pp": round(optimism_gap_pp, 3),
+            "dnb_selected_implied_probability": round(selected_implied, 6),
+            "dnb_xg_no_push_edge_pp": round(dnb_xg_no_push_edge_pp, 3),
+            "dnb_xg_ev_no_push_pct": round(dnb_xg_ev_no_push_pct, 3),
+            "dnb_xg_ev_unconditional_pct": round(dnb_xg_ev_unconditional_pct, 3),
+            "dnb_direction_ok": direction_ok,
+        }
+    )
     return payload
-
 
 
 def quality_payload(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -857,14 +895,15 @@ def canonical_publication_key(candidate: dict[str, Any]) -> str:
         point_key = f"{float(point):g}" if point not in (None, "") else ""
     except Exception:
         point_key = str(point or "").strip().lower()
-    match_key = (
-        str(candidate.get("canonical_match_id") or candidate.get("match_key") or candidate.get("event_key") or "").strip().lower()
-        or "|".join([
+    match_key = str(
+        candidate.get("canonical_match_id") or candidate.get("match_key") or candidate.get("event_key") or ""
+    ).strip().lower() or "|".join(
+        [
             str(candidate.get("league_name") or "").strip().lower(),
             str(candidate.get("home_team") or "").strip().lower(),
             str(candidate.get("away_team") or "").strip().lower(),
             str(candidate.get("commence_time") or candidate.get("kickoff") or "")[:10],
-        ])
+        ]
     )
     raw = "|".join(
         [
@@ -879,7 +918,11 @@ def canonical_publication_key(candidate: dict[str, Any]) -> str:
 
 
 def _truth_match_key(candidate: dict[str, Any]) -> str:
-    return str(candidate.get("match_key") or candidate.get("canonical_match_id") or candidate.get("event_key") or "").strip().lower()
+    return (
+        str(candidate.get("match_key") or candidate.get("canonical_match_id") or candidate.get("event_key") or "")
+        .strip()
+        .lower()
+    )
 
 
 def load_day_inventory_truth_row(candidate: dict[str, Any]) -> dict[str, Any] | None:
@@ -957,10 +1000,16 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     confidence = as_float(candidate.get("confidence"), 0.0)
     books = as_int(candidate.get("books_count"), 0)
     source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-    coverage_contract = source_summary.get("publish_coverage_contract") if isinstance(source_summary.get("publish_coverage_contract"), dict) else {}
+    coverage_contract = (
+        source_summary.get("publish_coverage_contract")
+        if isinstance(source_summary.get("publish_coverage_contract"), dict)
+        else {}
+    )
     contract_line_sources = _source_values(coverage_contract.get("odds_sources"))
     raw_sources = as_int(candidate.get("sources_count"), 0)
-    odds_sources = as_int(coverage_contract.get("odds_sources_count"), as_int(candidate.get("odds_sources_count"), raw_sources))
+    odds_sources = as_int(
+        coverage_contract.get("odds_sources_count"), as_int(candidate.get("odds_sources_count"), raw_sources)
+    )
     confirmation_sources, confirmation_meta = candidate_confirmation_sources(candidate)
     declared_confirmation_count = as_int(candidate.get("confirmation_sources_count"), 0)
     confirmation_sources_count = max(declared_confirmation_count, len(confirmation_sources))
@@ -1031,7 +1080,11 @@ def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, 
     rows = candidate.get("raw_bucket_offers")
     if not isinstance(rows, list) or not rows:
         source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-        rows = source_summary.get("raw_bucket_offers") or source_summary.get("bucket_offers") or source_summary.get("offers")
+        rows = (
+            source_summary.get("raw_bucket_offers")
+            or source_summary.get("bucket_offers")
+            or source_summary.get("offers")
+        )
     if not isinstance(rows, list):
         rows = []
 
@@ -1065,11 +1118,13 @@ def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, 
     if len(prices_by_book) < min_books:
         return [f"tier_b_bookmaker_quorum_prices_missing:{len(prices_by_book)}/{min_books}"]
     if min_books <= 1:
-        metrics["tier_b_bookmaker_quorum"].update({
-            "single_book_b_tier_contract": True,
-            "selected_price": round(selected_price, 4),
-            "max_deviation_pct": None,
-        })
+        metrics["tier_b_bookmaker_quorum"].update(
+            {
+                "single_book_b_tier_contract": True,
+                "selected_price": round(selected_price, 4),
+                "max_deviation_pct": None,
+            }
+        )
         return []
 
     prices = sorted(prices_by_book.values())
@@ -1080,12 +1135,14 @@ def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, 
         return ["tier_b_bookmaker_quorum_missing_selected_price"]
     deviation_pct = abs(selected - median_price) / median_price * 100.0
     max_deviation = env_float("CONTROLLED_FALLBACK_TIER_B_MAX_BOOKMAKER_MEDIAN_DEVIATION_PCT", 8.0)
-    metrics["tier_b_bookmaker_quorum"].update({
-        "median_price": round(median_price, 4),
-        "selected_price": round(selected, 4),
-        "selected_vs_median_deviation_pct": round(deviation_pct, 3),
-        "max_deviation_pct": max_deviation,
-    })
+    metrics["tier_b_bookmaker_quorum"].update(
+        {
+            "median_price": round(median_price, 4),
+            "selected_price": round(selected, 4),
+            "selected_vs_median_deviation_pct": round(deviation_pct, 3),
+            "max_deviation_pct": max_deviation,
+        }
+    )
     if deviation_pct > max_deviation:
         return [f"tier_b_bookmaker_quorum_price_outlier:{deviation_pct:.2f}>{max_deviation:.2f}"]
     return []
@@ -1136,7 +1193,13 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
         reasons.append("h2h_rescue_odds_too_high")
 
     xg = metrics.get("xg_sanity") or {}
-    if not bool(xg.get("enabled")) and str(xg.get("reason") or "") in {"xg_zero_placeholder", "xg_total_too_low_placeholder", "invalid_negative_xg"}:
+    if xg.get("enabled") and xg.get("xg_direction_evaluated") is False:
+        reasons.append("market_derived_xg_not_independent")
+    if not bool(xg.get("enabled")) and str(xg.get("reason") or "") in {
+        "xg_zero_placeholder",
+        "xg_total_too_low_placeholder",
+        "invalid_negative_xg",
+    }:
         reasons.append(str(xg.get("reason")))
     if bool(xg.get("enabled")):
         if not bool(xg.get("xg_direction_ok", True)):
@@ -1198,9 +1261,10 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
         reasons.append(f"tier_{tier.lower()}_odds_above_max")
 
     # Proxy quality is useful for reserve ranking, but it must not create a false Tier A signal.
-    if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_RAW_QUALITY", True):
-        if str(metrics.get("quality_score_source") or "") == "proxy":
-            reasons.append("tier_a_proxy_quality_not_allowed")
+    if (tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_RAW_QUALITY", True)) and (
+        str(metrics.get("quality_score_source") or "") == "proxy"
+    ):
+        reasons.append("tier_a_proxy_quality_not_allowed")
 
     # Strict contract: both A and B require 2 independent odds sources, 2 books
     # or price confirmations, and 2 context confirmations.
@@ -1208,21 +1272,42 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
         if env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES", True):
             min_odds_sources = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2)
             if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
-                reasons.append(f"tier_a_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
-        min_confirmations = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES", 2))
+                reasons.append(
+                    f"tier_a_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}"
+                )
+        min_confirmations = env_int(
+            "CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES",
+            env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES", 2),
+        )
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
-            reasons.append(f"tier_a_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
+            reasons.append(
+                f"tier_a_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}"
+            )
     elif tier == "B":
         if env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES", True):
             min_odds_sources = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 2))
             if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
-                reasons.append(f"tier_b_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
-        min_books = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 2)))
+                reasons.append(
+                    f"tier_b_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}"
+                )
+        min_books = max(
+            2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 2))
+        )
         if int(metrics.get("books_count") or 0) < min_books:
-            reasons.append(f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}")
-        min_confirmations = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 2)))
+            reasons.append(
+                f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}"
+            )
+        min_confirmations = max(
+            2,
+            env_int(
+                "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES",
+                env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 2),
+            ),
+        )
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
-            reasons.append(f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
+            reasons.append(
+                f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}"
+            )
         reasons.extend(_bookmaker_quorum_price_guard(candidate, metrics))
 
     xg = metrics.get("xg_sanity") or {}
@@ -1233,9 +1318,10 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
             reasons.append(f"tier_{tier.lower()}_xg_gap_above_max")
         if tier in {"A", "B"} and not bool(xg.get("xg_direction_ok", True)):
             reasons.append(f"tier_{tier.lower()}_xg_direction_conflict")
-        if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_XG_SANITY", True):
-            if gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_XG_GAP_PP", 6.5):
-                reasons.append("tier_a_xg_confirmation_missing")
+        if (tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_XG_SANITY", True)) and (
+            gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_XG_GAP_PP", 6.5)
+        ):
+            reasons.append("tier_a_xg_confirmation_missing")
 
     btts = metrics.get("btts_sanity") or {}
     if bool(btts.get("enabled")):
@@ -1245,9 +1331,10 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
             reasons.append(f"tier_{tier.lower()}_btts_gap_above_max")
         if tier in {"A", "B"} and not bool(btts.get("btts_direction_ok", True)):
             reasons.append(f"tier_{tier.lower()}_btts_direction_conflict")
-        if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_BTTS_SANITY", True):
-            if gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_BTTS_GAP_PP", 7.0):
-                reasons.append("tier_a_btts_confirmation_missing")
+        if (tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_BTTS_SANITY", True)) and (
+            gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_BTTS_GAP_PP", 7.0)
+        ):
+            reasons.append("tier_a_btts_confirmation_missing")
 
     dnb = metrics.get("dnb_sanity") or {}
     if bool(dnb.get("enabled")):
@@ -1257,16 +1344,22 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
             reasons.append(f"tier_{tier.lower()}_dnb_gap_above_max")
         if tier in {"A", "B"} and not bool(dnb.get("dnb_direction_ok", True)):
             reasons.append(f"tier_{tier.lower()}_dnb_direction_conflict")
-        if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_DNB_SANITY", True):
-            if optimism_gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_DNB_OPTIMISM_GAP_PP", 6.0):
-                reasons.append("tier_a_dnb_confirmation_missing")
+        if (tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_DNB_SANITY", True)) and (
+            optimism_gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_DNB_OPTIMISM_GAP_PP", 6.0)
+        ):
+            reasons.append("tier_a_dnb_confirmation_missing")
 
     q_reasons = [r.lower() for r in metrics.get("quality_reasons") or []]
-    allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard"))
+    allowed_stops = env_set(
+        prefix + "ALLOWED_QUALITY_STOPS",
+        os.getenv(
+            "CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS",
+            "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard",
+        ),
+    )
     if q_reasons and q_reasons[0] not in allowed_stops:
         reasons.append(f"tier_{tier.lower()}_quality_stop_not_allowed:{q_reasons[0]}")
     return reasons
-
 
 
 def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, Any], tier: str) -> list[str]:
@@ -1286,16 +1379,18 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     if require_two_books and int(metrics.get("books_count") or 0) < 2:
         reasons.append("telegram_publish_books_guard")
 
-    if env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", tier_name != "B"):
-        if int(metrics.get("books_count") or 0) < 2 and str(metrics.get("quality_score_source") or "") == "proxy":
-            reasons.append("proxy_single_book_guard")
+    if (env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", tier_name != "B")) and (
+        int(metrics.get("books_count") or 0) < 2 and str(metrics.get("quality_score_source") or "") == "proxy"
+    ):
+        reasons.append("proxy_single_book_guard")
 
     if tier_name == "C" and not env_bool("CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED", False):
         reasons.append("tier_c_watch_only")
 
-    if env_bool("CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY", tier_name != "B"):
-        if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("books_count") or 0) < 2:
-            reasons.append("proxy_without_market_confirmation")
+    if (env_bool("CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY", tier_name != "B")) and (
+        str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("books_count") or 0) < 2
+    ):
+        reasons.append("proxy_without_market_confirmation")
 
     if tier_name == "B":
         require_independent_sources = env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES", False)
@@ -1342,14 +1437,22 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     # If all prices come from one provider, proxy signals need stronger numeric confirmation.
     # This avoids "looks good but only one data pipeline" publications while still allowing
     # strong 2-book signals when there is clear EV, edge and confidence.
-    if env_bool("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", True):
-        if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2:
-            if float(metrics.get("canonical_edge_pp") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0):
-                reasons.append("proxy_single_source_edge_below_min")
-            if float(metrics.get("canonical_ev_pct") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 7.0):
-                reasons.append("proxy_single_source_ev_below_min")
-            if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 68.0):
-                reasons.append("proxy_single_source_confidence_below_min")
+    if (env_bool("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", True)) and (
+        str(metrics.get("quality_score_source") or "") == "proxy"
+        and int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2
+    ):
+        if float(metrics.get("canonical_edge_pp") or 0.0) < env_float(
+            "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0
+        ):
+            reasons.append("proxy_single_source_edge_below_min")
+        if float(metrics.get("canonical_ev_pct") or 0.0) < env_float(
+            "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 7.0
+        ):
+            reasons.append("proxy_single_source_ev_below_min")
+        if float(metrics.get("confidence") or 0.0) < env_float(
+            "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 68.0
+        ):
+            reasons.append("proxy_single_source_confidence_below_min")
 
     if fam in {"totals", "teamtotals"} and env_bool("CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM", True):
         xg = metrics.get("xg_sanity") or {}
@@ -1383,7 +1486,9 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
             # With proxy quality and one source it is more likely an xG/match mapping/outlier problem.
             if env_bool("CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED", True):
                 quality_source = str(metrics.get("quality_score_source") or "")
-                single_source = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2
+                single_source = (
+                    int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2
+                )
                 if quality_source == "proxy" and single_source:
                     abs_gap = abs(float(dnb.get("dnb_model_gap_pp") or 0.0))
                     xg_ev = float(dnb.get("dnb_xg_ev_unconditional_pct") or 0.0)
@@ -1400,16 +1505,19 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
 
     min_edge = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", 1.8)
     min_ev = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", 4.0)
-    if float(metrics.get("canonical_edge_pp") or 0.0) < min_edge:
-        if not final_edge_tolerance_allowed(candidate, metrics, min_edge, min_ev):
-            reasons.append("final_edge_below_min")
+    if (float(metrics.get("canonical_edge_pp") or 0.0) < min_edge) and (
+        not final_edge_tolerance_allowed(candidate, metrics, min_edge, min_ev)
+    ):
+        reasons.append("final_edge_below_min")
     if float(metrics.get("canonical_ev_pct") or 0.0) < min_ev:
         reasons.append("final_ev_below_min")
 
     return reasons
 
 
-def final_edge_tolerance_allowed(candidate: dict[str, Any], metrics: dict[str, Any], min_edge: float, min_ev: float) -> bool:
+def final_edge_tolerance_allowed(
+    candidate: dict[str, Any], metrics: dict[str, Any], min_edge: float, min_ev: float
+) -> bool:
     """Allow a tiny final-edge miss only when every safety signal is already strong.
 
     The fallback recalculates value against the selected price, so a candidate can miss
@@ -1431,9 +1539,13 @@ def final_edge_tolerance_allowed(candidate: dict[str, Any], metrics: dict[str, A
     confirmation_count = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0)
     if confirmation_count < env_int("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_CONFIRMATION_SOURCES", 2):
         return False
-    if float(metrics.get("quality_score") or 0.0) < env_float("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_QUALITY", 75.0):
+    if float(metrics.get("quality_score") or 0.0) < env_float(
+        "CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_QUALITY", 75.0
+    ):
         return False
-    if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_CONFIDENCE", 68.0):
+    if float(metrics.get("confidence") or 0.0) < env_float(
+        "CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_CONFIDENCE", 68.0
+    ):
         return False
 
     fam = family_norm(candidate)
@@ -1498,39 +1610,43 @@ def build_watchlist(evaluated: list[dict[str, Any]], limit: int | None = None) -
     watchlist: list[dict[str, Any]] = []
     for row in rows[:max_items]:
         metrics = row.get("metrics") or {}
-        watchlist.append({
-            "match_key": row.get("match_key"),
-            "home_team": row.get("home_team"),
-            "away_team": row.get("away_team"),
-            "home_team_ru": row.get("home_team_ru"),
-            "away_team_ru": row.get("away_team_ru"),
-            "league_name": row.get("league_name"),
-            "league_name_ru": row.get("league_name_ru"),
-            "family": row.get("family"),
-            "selection": row.get("selection"),
-            "point": row.get("point"),
-            "commence_time": row.get("commence_time"),
-            "commence_time_display": row.get("commence_time_display"),
-            "reject_reasons": row.get("reject_reasons") or [],
-            "reject_reasons_ru": row.get("reject_reasons_ru") or [],
-            "metrics": {
-                "odds": metrics.get("odds"),
-                "canonical_edge_pp": metrics.get("canonical_edge_pp"),
-                "canonical_ev_pct": metrics.get("canonical_ev_pct"),
-                "confidence": metrics.get("confidence"),
-                "quality_score": metrics.get("quality_score"),
-                "quality_score_source": metrics.get("quality_score_source"),
-                "books_count": metrics.get("books_count"),
-                "sources_count": metrics.get("sources_count"),
-                "odds_sources_count": metrics.get("odds_sources_count"),
-                "confirmation_sources_count": metrics.get("confirmation_sources_count"),
-                "confirmation_sources": metrics.get("confirmation_sources"),
-            },
-        })
+        watchlist.append(
+            {
+                "match_key": row.get("match_key"),
+                "home_team": row.get("home_team"),
+                "away_team": row.get("away_team"),
+                "home_team_ru": row.get("home_team_ru"),
+                "away_team_ru": row.get("away_team_ru"),
+                "league_name": row.get("league_name"),
+                "league_name_ru": row.get("league_name_ru"),
+                "family": row.get("family"),
+                "selection": row.get("selection"),
+                "point": row.get("point"),
+                "commence_time": row.get("commence_time"),
+                "commence_time_display": row.get("commence_time_display"),
+                "reject_reasons": row.get("reject_reasons") or [],
+                "reject_reasons_ru": row.get("reject_reasons_ru") or [],
+                "metrics": {
+                    "odds": metrics.get("odds"),
+                    "canonical_edge_pp": metrics.get("canonical_edge_pp"),
+                    "canonical_ev_pct": metrics.get("canonical_ev_pct"),
+                    "confidence": metrics.get("confidence"),
+                    "quality_score": metrics.get("quality_score"),
+                    "quality_score_source": metrics.get("quality_score_source"),
+                    "books_count": metrics.get("books_count"),
+                    "sources_count": metrics.get("sources_count"),
+                    "odds_sources_count": metrics.get("odds_sources_count"),
+                    "confirmation_sources_count": metrics.get("confirmation_sources_count"),
+                    "confirmation_sources": metrics.get("confirmation_sources"),
+                },
+            }
+        )
     return watchlist
 
 
-def evaluate_candidate(candidate: dict[str, Any], sent_index: dict[str, Any]) -> tuple[bool, list[str], dict[str, Any], str | None]:
+def evaluate_candidate(
+    candidate: dict[str, Any], sent_index: dict[str, Any]
+) -> tuple[bool, list[str], dict[str, Any], str | None]:
     metrics = candidate_metrics(candidate)
     hard = hard_reject_reasons(candidate, metrics, sent_index)
     if hard:
@@ -1548,25 +1664,39 @@ def evaluate_candidate(candidate: dict[str, Any], sent_index: dict[str, Any]) ->
     return False, all_tier_reasons, metrics, None
 
 
-def candidate_rank(candidate: dict[str, Any], metrics: dict[str, Any], tier: str) -> tuple[float, float, float, float, float]:
+def candidate_rank(
+    candidate: dict[str, Any], metrics: dict[str, Any], tier: str
+) -> tuple[float, float, float, float, float]:
     tier_bonus = {"уровень A": 30.0, "уровень B": 15.0, "уровень C": 0.0}.get(tier, 0.0)
     proxy_penalty = 5.0 if str(metrics.get("quality_score_source") or "") == "proxy" else 0.0
     xg = metrics.get("xg_sanity") or {}
-    xg_gap_penalty = min(
-        10.0,
-        float(xg.get("xg_model_optimism_gap_pp") or max(0.0, float(xg.get("xg_model_gap_pp") or 0.0))) * 0.45,
-    ) if bool(xg.get("enabled")) else 0.0
+    xg_gap_penalty = (
+        min(
+            10.0,
+            float(xg.get("xg_model_optimism_gap_pp") or max(0.0, float(xg.get("xg_model_gap_pp") or 0.0))) * 0.45,
+        )
+        if bool(xg.get("enabled"))
+        else 0.0
+    )
     btts = metrics.get("btts_sanity") or {}
     btts_gap_penalty = min(10.0, float(btts.get("btts_abs_gap_pp") or 0.0) * 0.45) if bool(btts.get("enabled")) else 0.0
     dnb = metrics.get("dnb_sanity") or {}
-    dnb_gap_penalty = min(8.0, float(dnb.get("dnb_model_optimism_gap_pp") or 0.0) * 0.50) if bool(dnb.get("enabled")) else 0.0
+    dnb_gap_penalty = (
+        min(8.0, float(dnb.get("dnb_model_optimism_gap_pp") or 0.0) * 0.50) if bool(dnb.get("enabled")) else 0.0
+    )
     return (
-        tier_bonus + float(metrics["canonical_ev_pct"]) - proxy_penalty - xg_gap_penalty - btts_gap_penalty - dnb_gap_penalty,
+        tier_bonus
+        + float(metrics["canonical_ev_pct"])
+        - proxy_penalty
+        - xg_gap_penalty
+        - btts_gap_penalty
+        - dnb_gap_penalty,
         float(metrics["canonical_edge_pp"]),
         float(metrics["quality_score"]),
         float(metrics["publication_score"]),
         float(metrics["confidence"]),
     )
+
 
 def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     pool: list[dict[str, Any]] = []
@@ -1628,7 +1758,9 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
 
     add_rows("latest_rescue_candidates", rescue_payload)
     add_rows("artifact_rescue_candidates", artifact_rescue_payload)
-    if isinstance(debug, dict) and (not env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True) or is_payload_fresh(debug, reference)):
+    if isinstance(debug, dict) and (
+        not env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True) or is_payload_fresh(debug, reference)
+    ):
         add_rows("debug_candidates_before_quality", debug.get("candidates_before_quality") or [])
         add_rows("debug_candidates_after_quality", debug.get("candidates_after_quality") or [])
     elif isinstance(debug, dict) and debug:
@@ -1647,7 +1779,11 @@ def already_has_picks() -> bool:
     # latest-picks.json may contain generated candidates that never reached Telegram.
     # Only an actually sent/published pick may suppress fallback publication.
     latest_picks = load_json(".data/exports/latest-picks.json", [])
-    if isinstance(latest_picks, list) and len(latest_picks) > 0 and env_bool("CONTROLLED_FALLBACK_SKIP_IF_LATEST_PICKS", True):
+    if (
+        isinstance(latest_picks, list)
+        and len(latest_picks) > 0
+        and env_bool("CONTROLLED_FALLBACK_SKIP_IF_LATEST_PICKS", True)
+    ):
         if not env_bool("CONTROLLED_FALLBACK_FILTER_POOL_BY_TIME", True):
             return any(is_sent_pick_row(row) for row in latest_picks if isinstance(row, dict))
         now = datetime.now(UTC)
@@ -1692,7 +1828,6 @@ def send_telegram(text: str) -> tuple[bool, str]:
         return bool(ok and not blocked), body[:1000]
     except Exception as exc:
         return False, f"{type(exc).__name__}: {exc}"
-
 
 
 def clean_point_text(point: Any) -> str:
@@ -1781,7 +1916,6 @@ def clean_handicap_selection_text(candidate: dict[str, Any], selection: str) -> 
     return normalize_telegram_text(value)
 
 
-
 def bet_line_text(candidate: dict[str, Any], selection: str) -> str:
     fam = family_norm(candidate)
     handicap_title = handicap_market_title(candidate)
@@ -1794,7 +1928,6 @@ def bet_line_text(candidate: dict[str, Any], selection: str) -> str:
     point = candidate.get("point")
     point_text = "" if point in (None, "", "null") else f" ({clean_point_text(point)})"
     return f"{market_title(fam)} — {selection}{point_text}"
-
 
 
 def market_title(family: str) -> str:
@@ -1833,7 +1966,9 @@ def stake_amount_for_tier(tier: str, bankroll: dict[str, Any], used_stake: float
     open_exposure = as_float(bankroll.get("open_exposure"), 0.0)
     available = max(0.0, bank - open_exposure - max(0.0, used_stake))
     stake_pct = env_float("CONTROLLED_FALLBACK_STAKE_PCT", 0.65)
-    max_stake = env_float("CONTROLLED_FALLBACK_MAX_STAKE_" + tier.replace("уровень ", "TIER_").replace(" ", "_").upper(), 5.0)
+    max_stake = env_float(
+        "CONTROLLED_FALLBACK_MAX_STAKE_" + tier.replace("уровень ", "TIER_").replace(" ", "_").upper(), 5.0
+    )
     min_stake = env_float("CONTROLLED_FALLBACK_MIN_STAKE", 5.0)
     total_cap_pct = env_float("CONTROLLED_FALLBACK_TOTAL_STAKE_CAP_PCT", 1.8)
     total_cap = bank * total_cap_pct / 100.0 if bank > 0 else max_stake
@@ -1873,7 +2008,9 @@ def pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], t
     home = translate_team_name(candidate.get("home_team") or "")
     away = translate_team_name(candidate.get("away_team") or "")
     league = translate_league_name(candidate.get("league_name") or "")
-    selection = translate_selection_text(candidate.get("selection") or "", candidate.get("home_team") or "", candidate.get("away_team") or "")
+    selection = translate_selection_text(
+        candidate.get("selection") or "", candidate.get("home_team") or "", candidate.get("away_team") or ""
+    )
 
     expected_home = candidate.get("expected_home")
     expected_away = candidate.get("expected_away")
@@ -1930,14 +2067,23 @@ def select_top_picks(
 
         # Extra top-bundle guard: additional picks must be materially good, not just barely pass.
         if len(selected) > 0 and env_bool("CONTROLLED_FALLBACK_EXTRA_PICK_STRICT", True):
-            if float(metrics.get("canonical_ev_pct") or 0.0) < env_float("CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT", 7.0):
+            if float(metrics.get("canonical_ev_pct") or 0.0) < env_float(
+                "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT", 7.0
+            ):
                 continue
-            if float(metrics.get("canonical_edge_pp") or 0.0) < env_float("CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP", 3.0):
+            if float(metrics.get("canonical_edge_pp") or 0.0) < env_float(
+                "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP", 3.0
+            ):
                 continue
-            if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE", 67.0):
+            if float(metrics.get("confidence") or 0.0) < env_float(
+                "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE", 67.0
+            ):
                 continue
 
-        match_key = str(candidate.get("match_key") or f"{candidate.get('home_team')}|{candidate.get('away_team')}|{candidate.get('commence_time')}")
+        match_key = str(
+            candidate.get("match_key")
+            or f"{candidate.get('home_team')}|{candidate.get('away_team')}|{candidate.get('commence_time')}"
+        )
         if match_counts.get(match_key, 0) >= per_match:
             continue
 
@@ -1978,9 +2124,10 @@ def build_top_bundle_message(
         if idx != n:
             lines.append("")
     lines.append("")
-    lines.append("📝 Комментарий: это не гарантия прибыли. Сумма снижена, потому что часть сигналов остаётся controlled reserve, а не clean quality-pass.")
+    lines.append(
+        "📝 Комментарий: это не гарантия прибыли. Сумма снижена, потому что часть сигналов остаётся controlled reserve, а не clean quality-pass."
+    )
     return normalize_telegram_text("\n".join(lines))
-
 
 
 def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str, bankroll: dict[str, Any]) -> str:
@@ -1988,8 +2135,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
     open_exposure = as_float(bankroll.get("open_exposure"), 0.0)
     available = max(0.0, bank - open_exposure)
     stake = stake_amount_for_tier(tier, bankroll, 0.0)
-    point = candidate.get("point")
-    point_text = "" if point in (None, "", "null") else f" ({point})"
+    candidate.get("point")
     expected_home = candidate.get("expected_home")
     expected_away = candidate.get("expected_away")
     xg_line = ""
@@ -2028,7 +2174,9 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
     home = translate_team_name(candidate.get("home_team") or "")
     away = translate_team_name(candidate.get("away_team") or "")
     league = translate_league_name(candidate.get("league_name") or "")
-    selection = translate_selection_text(candidate.get("selection") or "", candidate.get("home_team") or "", candidate.get("away_team") or "")
+    selection = translate_selection_text(
+        candidate.get("selection") or "", candidate.get("home_team") or "", candidate.get("away_team") or ""
+    )
 
     return normalize_telegram_text(
         f"🔥 1 контролируемый прогноз на ближайшие {publish_window_label()}\n\n"
@@ -2079,7 +2227,9 @@ def build_no_pick_message(report: dict[str, Any]) -> str:
             home = item.get("home_team_ru") or translate_team_name(item.get("home_team") or "")
             away = item.get("away_team_ru") or translate_team_name(item.get("away_team") or "")
             family = str(item.get("family") or "")
-            selection = translate_selection_text(item.get("selection") or "", item.get("home_team") or "", item.get("away_team") or "")
+            selection = translate_selection_text(
+                item.get("selection") or "", item.get("home_team") or "", item.get("away_team") or ""
+            )
             point = item.get("point")
             point_text = "" if point in (None, "", "null") else f" ({clean_point_text(point)})"
             reasons = ", ".join(translate_reject_reason(reason) for reason in (item.get("reject_reasons") or [])[:3])
@@ -2116,7 +2266,9 @@ def main() -> int:
             "min_kickoff_lead_minutes": effective_min_kickoff_lead_minutes(),
             "base_min_kickoff_lead_minutes": env_int("MIN_KICKOFF_LEAD_MINUTES", 20),
             "manual_late_mode_enabled": env_bool("MANUAL_LATE_MODE_ENABLED", False),
-            "manual_late_adaptive_min_kickoff_lead_minutes": env_int("MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES", 0),
+            "manual_late_adaptive_min_kickoff_lead_minutes": env_int(
+                "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES", 0
+            ),
             "publish_window_hours": env_int("PUBLISH_WINDOW_HOURS", 24),
         },
     }
@@ -2223,7 +2375,8 @@ def main() -> int:
                     "match_key": chosen.get("match_key"),
                     "home_team": chosen.get("home_team"),
                     "away_team": chosen.get("away_team"),
-                    "match_name": chosen.get("match_name") or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
+                    "match_name": chosen.get("match_name")
+                    or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
                     "league_name": chosen.get("league_name"),
                     "family": chosen.get("family"),
                     "selection": chosen.get("selection"),
@@ -2237,100 +2390,110 @@ def main() -> int:
                     "publication_lifecycle_status": "telegram_sent",
                     "canonical_publication_key": canonical_publication_key(chosen),
                 }
-            selected_rows.append({
-                "dedupe_key": key,
-                "canonical_publication_key": canonical_publication_key(chosen),
-                "telegram_sent": bool(sent),
-                "publication_lifecycle_status": "telegram_sent" if sent else "dry_run_selected",
-                "status": "pending" if sent else "generated",
-                "match_key": chosen.get("match_key"),
-                "home_team": chosen.get("home_team"),
-                "away_team": chosen.get("away_team"),
-                "match_name": chosen.get("match_name") or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
-                "home_team_ru": translate_team_name(chosen.get("home_team") or ""),
-                "away_team_ru": translate_team_name(chosen.get("away_team") or ""),
-                "league_name": chosen.get("league_name"),
-                "league_name_ru": translate_league_name(chosen.get("league_name") or ""),
-                "family": chosen.get("family"),
-                "market_family": chosen.get("family"),
-                "selection": chosen.get("selection"),
-                "point": chosen.get("point"),
-                "odds": chosen.get("odds"),
-                "selected_odds": chosen.get("odds"),
-                "price": chosen.get("odds"),
-                "tier": tier,
-                "stake": stake,
-                "stake_amount": stake,
-                "commence_time": chosen.get("commence_time"),
-                "kickoff": chosen.get("commence_time"),
-                "commence_time_display": kickoff_text(chosen),
-                "metrics": metrics,
-                "bet_payload": {
+            selected_rows.append(
+                {
+                    "dedupe_key": key,
+                    "canonical_publication_key": canonical_publication_key(chosen),
+                    "telegram_sent": bool(sent),
+                    "publication_lifecycle_status": "telegram_sent" if sent else "dry_run_selected",
+                    "status": "pending" if sent else "generated",
+                    "match_key": chosen.get("match_key"),
                     "home_team": chosen.get("home_team"),
                     "away_team": chosen.get("away_team"),
-                    "match_name": chosen.get("match_name") or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
+                    "match_name": chosen.get("match_name")
+                    or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
+                    "home_team_ru": translate_team_name(chosen.get("home_team") or ""),
+                    "away_team_ru": translate_team_name(chosen.get("away_team") or ""),
                     "league_name": chosen.get("league_name"),
-                    "kickoff": chosen.get("commence_time"),
-                    "commence_time": chosen.get("commence_time"),
-                    "odds": chosen.get("odds"),
-                    "selection": chosen.get("selection"),
+                    "league_name_ru": translate_league_name(chosen.get("league_name") or ""),
                     "family": chosen.get("family"),
+                    "market_family": chosen.get("family"),
+                    "selection": chosen.get("selection"),
+                    "point": chosen.get("point"),
+                    "odds": chosen.get("odds"),
+                    "selected_odds": chosen.get("odds"),
+                    "price": chosen.get("odds"),
+                    "tier": tier,
                     "stake": stake,
                     "stake_amount": stake,
-                },
-            })
+                    "commence_time": chosen.get("commence_time"),
+                    "kickoff": chosen.get("commence_time"),
+                    "commence_time_display": kickoff_text(chosen),
+                    "metrics": metrics,
+                    "bet_payload": {
+                        "home_team": chosen.get("home_team"),
+                        "away_team": chosen.get("away_team"),
+                        "match_name": chosen.get("match_name")
+                        or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
+                        "league_name": chosen.get("league_name"),
+                        "kickoff": chosen.get("commence_time"),
+                        "commence_time": chosen.get("commence_time"),
+                        "odds": chosen.get("odds"),
+                        "selection": chosen.get("selection"),
+                        "family": chosen.get("family"),
+                        "stake": stake,
+                        "stake_amount": stake,
+                    },
+                }
+            )
         save_sent_index(sent_index)
     else:
         for chosen, metrics, tier, stake in selected_items:
-            selected_rows.append({
-                "dedupe_key": dedupe_key(chosen),
-                "match_key": chosen.get("match_key"),
-                "home_team": chosen.get("home_team"),
-                "away_team": chosen.get("away_team"),
-                "match_name": chosen.get("match_name") or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
-                "home_team_ru": translate_team_name(chosen.get("home_team") or ""),
-                "away_team_ru": translate_team_name(chosen.get("away_team") or ""),
-                "league_name": chosen.get("league_name"),
-                "league_name_ru": translate_league_name(chosen.get("league_name") or ""),
-                "family": chosen.get("family"),
-                "market_family": chosen.get("family"),
-                "selection": chosen.get("selection"),
-                "point": chosen.get("point"),
-                "odds": chosen.get("odds"),
-                "selected_odds": chosen.get("odds"),
-                "price": chosen.get("odds"),
-                "tier": tier,
-                "stake": stake,
-                "stake_amount": stake,
-                "commence_time": chosen.get("commence_time"),
-                "kickoff": chosen.get("commence_time"),
-                "commence_time_display": kickoff_text(chosen),
-                "metrics": metrics,
-                "bet_payload": {
+            selected_rows.append(
+                {
+                    "dedupe_key": dedupe_key(chosen),
+                    "match_key": chosen.get("match_key"),
                     "home_team": chosen.get("home_team"),
                     "away_team": chosen.get("away_team"),
-                    "match_name": chosen.get("match_name") or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
+                    "match_name": chosen.get("match_name")
+                    or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
+                    "home_team_ru": translate_team_name(chosen.get("home_team") or ""),
+                    "away_team_ru": translate_team_name(chosen.get("away_team") or ""),
                     "league_name": chosen.get("league_name"),
-                    "kickoff": chosen.get("commence_time"),
-                    "commence_time": chosen.get("commence_time"),
-                    "odds": chosen.get("odds"),
-                    "selection": chosen.get("selection"),
+                    "league_name_ru": translate_league_name(chosen.get("league_name") or ""),
                     "family": chosen.get("family"),
+                    "market_family": chosen.get("family"),
+                    "selection": chosen.get("selection"),
+                    "point": chosen.get("point"),
+                    "odds": chosen.get("odds"),
+                    "selected_odds": chosen.get("odds"),
+                    "price": chosen.get("odds"),
+                    "tier": tier,
                     "stake": stake,
                     "stake_amount": stake,
-                },
-            })
+                    "commence_time": chosen.get("commence_time"),
+                    "kickoff": chosen.get("commence_time"),
+                    "commence_time_display": kickoff_text(chosen),
+                    "metrics": metrics,
+                    "bet_payload": {
+                        "home_team": chosen.get("home_team"),
+                        "away_team": chosen.get("away_team"),
+                        "match_name": chosen.get("match_name")
+                        or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
+                        "league_name": chosen.get("league_name"),
+                        "kickoff": chosen.get("commence_time"),
+                        "commence_time": chosen.get("commence_time"),
+                        "odds": chosen.get("odds"),
+                        "selection": chosen.get("selection"),
+                        "family": chosen.get("family"),
+                        "stake": stake,
+                        "stake_amount": stake,
+                    },
+                }
+            )
 
-    report.update({
-        "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
-        "published": bool(sent),
-        "dry_run": bool(dry_run),
-        "selected_count": len(selected_rows),
-        "selected": selected_rows[0] if selected_rows else None,
-        "selected_all": selected_rows,
-        "telegram_result": send_result,
-        "message": message,
-    })
+    report.update(
+        {
+            "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
+            "published": bool(sent),
+            "dry_run": bool(dry_run),
+            "selected_count": len(selected_rows),
+            "selected": selected_rows[0] if selected_rows else None,
+            "selected_all": selected_rows,
+            "telegram_result": send_result,
+            "message": message,
+        }
+    )
     write_json("artifacts/controlled-fallback-report.json", report)
     write_json(".data/exports/latest-controlled-fallback-report.json", report)
     return 0 if (sent or dry_run) else 1

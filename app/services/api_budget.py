@@ -30,6 +30,7 @@ class Policy:
 
 # Zero means no published quota for that window, never an invented allowance.
 POLICIES = {
+    'the_odds': Policy(rpm=10, day=8, month=500),
     'odds_api_io': Policy(hour=100, day=500),
     'bzzoiro': Policy(rpm=600, day=7500),  # below the documented 25 requests/s burst
     'sstats': Policy(rpm=30),  # conservative public-IP limit
@@ -43,6 +44,7 @@ POLICIES = {
     'espn': Policy(rpm=30),
 }
 HOSTS = {
+    'api.the-odds-api.com': 'the_odds',
     'api.odds-api.io': 'odds_api_io', 'sports.bzzoiro.com': 'bzzoiro',
     'api.sstats.net': 'sstats', 'api.football-data.org': 'football_data',
     'www.thesportsdb.com': 'thesportsdb', 'thesportsdb.com': 'thesportsdb',
@@ -166,6 +168,13 @@ class ApiBudget:
         with self.state() as data:
             row = data['accounts'][provider + ':' + fingerprint]
             row['last_status'] = response.status_code
+            if provider == 'the_odds' and response.headers.get('x-requests-remaining') is not None:
+                try:
+                    remaining = max(0,int(response.headers['x-requests-remaining']))
+                    next_month = now.replace(year=now.year+1,month=1,day=1,hour=0,minute=0,second=0,microsecond=0) if now.month==12 else now.replace(month=now.month+1,day=1,hour=0,minute=0,second=0,microsecond=0)
+                    row.update(server_remaining=remaining,server_reset_at=next_month.timestamp())
+                except ValueError:
+                    row['server_header_invalid'] = True
             if provider == 'odds_api_io' and response.headers.get('x-ratelimit-reset'):
                 try:
                     reset = datetime.fromisoformat(response.headers['x-ratelimit-reset'].replace('Z', '+00:00'))

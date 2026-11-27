@@ -78,7 +78,10 @@ def test_line_movement_key_is_stable_for_russian_english_totals(monkeypatch, tmp
     first = dict(base, selection="Under 2.5")
     second = dict(base, selection="Меньше 2.5", odds=2.06, ev_pct=7.0, edge_pct=3.5)
 
+    # These observations represent two cron runs, even under GitHub Actions.
+    monkeypatch.setenv("GITHUB_RUN_ID", "first-observation")
     out1 = mod.evaluate_and_record_line_movement(first, object(), now=now)
+    monkeypatch.setenv("GITHUB_RUN_ID", "second-observation")
     out2 = mod.evaluate_and_record_line_movement(second, object(), now=now + timedelta(minutes=130))
 
     assert out1["status"] == "awaiting_next_run"

@@ -64,11 +64,9 @@ def _sent_row(row: Any) -> bool:
     if not isinstance(row, dict):
         return False
     value = str(row.get("telegram_sent") or "").strip().lower()
-    lifecycle = str(
-        row.get("publication_lifecycle_status")
-        or row.get("publication_lifecycle_stage")
-        or ""
-    ).strip().lower()
+    lifecycle = (
+        str(row.get("publication_lifecycle_status") or row.get("publication_lifecycle_stage") or "").strip().lower()
+    )
     return value in {"1", "true", "yes", "on"} or lifecycle == "telegram_sent"
 
 
@@ -96,11 +94,7 @@ def _debug_summary(payload: Any) -> dict[str, Any]:
 
 def _debug_started_at(payload: Any) -> datetime | None:
     summary = _debug_summary(payload)
-    return _parse_time(
-        summary.get("started_time_utc")
-        or summary.get("started_at_utc")
-        or summary.get("started_time")
-    )
+    return _parse_time(summary.get("started_time_utc") or summary.get("started_at_utc") or summary.get("started_time"))
 
 
 def _run_lifecycle_truth(now: datetime) -> dict[str, Any]:
@@ -123,18 +117,11 @@ def _run_lifecycle_truth(now: datetime) -> dict[str, Any]:
     step_lower = step_text.lower()
     status_match = re.search(r"status\s+(\d+)", step_lower)
     process_status = int(status_match.group(1)) if status_match else None
-    timed_out = process_status == 124 or bool(
-        re.search(r"\brun bot timed out\b", step_lower)
-    )
-    failed_step = "run bot failed" in step_lower or (
-        process_status is not None and process_status != 0
-    )
+    timed_out = process_status == 124 or bool(re.search(r"\brun bot timed out\b", step_lower))
+    failed_step = "run bot failed" in step_lower or (process_status is not None and process_status != 0)
     step_ok = "run bot ok" in step_lower
     lifecycle_status = str(lifecycle.get("status") or "").strip().lower()
-    current_lifecycle = bool(
-        started is not None
-        and timedelta(0) <= now - started <= timedelta(hours=2)
-    )
+    current_lifecycle = bool(started is not None and timedelta(0) <= now - started <= timedelta(hours=2))
 
     failure_reason = ""
     failure_detail = _runtime_failure_detail()
@@ -146,12 +133,7 @@ def _run_lifecycle_truth(now: datetime) -> dict[str, Any]:
         failure_reason = f"runner_{lifecycle_status}"
     elif current_lifecycle and not fresh_debug and step_ok:
         failure_reason = "runner_completed_without_fresh_debug"
-    elif (
-        current_lifecycle
-        and not fresh_debug
-        and age_minutes is not None
-        and age_minutes >= 8.0
-    ):
+    elif current_lifecycle and not fresh_debug and age_minutes is not None and age_minutes >= 8.0:
         failure_reason = "runner_incomplete_without_fresh_debug"
 
     return {
@@ -193,9 +175,7 @@ def _current_run_anchor(now: datetime) -> tuple[datetime, str]:
         if not isinstance(payload, dict):
             continue
         parsed = _parse_time(
-            payload.get("created_at_utc")
-            or payload.get("started_at_utc")
-            or payload.get("created_at")
+            payload.get("created_at_utc") or payload.get("started_at_utc") or payload.get("created_at")
         )
         if parsed is not None and timedelta(0) <= now - parsed <= timedelta(hours=2):
             return parsed - timedelta(minutes=1), filename
@@ -302,9 +282,7 @@ def _repair_odds_event_bootstrap_api(
     bootstrap = bootstrap if isinstance(bootstrap, dict) else {}
     if not bootstrap:
         match_bootstrap = source_stats.get("match_bootstrap")
-        match_bootstrap = (
-            match_bootstrap if isinstance(match_bootstrap, dict) else {}
-        )
+        match_bootstrap = match_bootstrap if isinstance(match_bootstrap, dict) else {}
         attempts = match_bootstrap.get("attempts")
         attempts = attempts if isinstance(attempts, dict) else {}
         candidate = attempts.get("odds_api_io")
@@ -354,14 +332,10 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
     main_count = debug_count if debug_counter_declared else len(fresh_picks)
 
     cumulative_sent_picks = (
-        sum(_sent_row(row) for row in picks if isinstance(row, dict))
-        if isinstance(picks, list)
-        else 0
+        sum(_sent_row(row) for row in picks if isinstance(row, dict)) if isinstance(picks, list) else 0
     )
     cumulative_sent_pending = (
-        sum(_sent_row(row) for row in pending if isinstance(row, dict))
-        if isinstance(pending, list)
-        else 0
+        sum(_sent_row(row) for row in pending if isinstance(row, dict)) if isinstance(pending, list) else 0
     )
 
     funnel = payload.setdefault("funnel", {})
@@ -387,9 +361,7 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
             "current_run_sent_picks_count": main_count,
             "cumulative_sent_picks_count": cumulative_sent_picks,
             "cumulative_sent_pending_count": cumulative_sent_pending,
-            "ignored_cumulative_sent_picks_count": max(
-                0, cumulative_sent_picks - main_count
-            ),
+            "ignored_cumulative_sent_picks_count": max(0, cumulative_sent_picks - main_count),
             "ignored_ledger_sent_pending_count": cumulative_sent_pending,
             "old_main_pipeline_count": old_main,
             "published_at_utc_accepted_as_send_evidence": False,
@@ -405,9 +377,7 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
             "main_pipeline_publication_counter_diagnostics": diagnostics,
             "published_count": published_count,
             "fallback_published": fallback_count > 0,
-            "final_publication_status": (
-                "published" if published_count > 0 else "not_published"
-            ),
+            "final_publication_status": ("published" if published_count > 0 else "not_published"),
         }
     )
 
@@ -469,7 +439,7 @@ def repair_payload(payload: Any, *, now: datetime | None = None) -> dict[str, An
 
 
 def _install(module: Any) -> None:
-    base = module.v9.v8.v7.v5
+    base = module
     original_build = base.build_payload
 
     def build_payload() -> dict[str, Any]:
@@ -486,10 +456,9 @@ def main() -> int:
     except Exception:
         pass
     v13._refresh_truth()
-    module = v13._load_v12()
-    v13._install(module)
+    module = v13._load_v5()
     _install(module)
-    return int(module.v9.v8.v7.v5.main() or 0)
+    return int(module.main() or 0)
 
 
 if __name__ == "__main__":

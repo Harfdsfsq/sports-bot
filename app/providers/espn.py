@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -10,6 +11,8 @@ import httpx
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.services.api_budget import BudgetedAsyncClient
+from app.services.espn_identity import espn_event_identity, ncaa_league_slug
+from app.services.fixture_identity import direct_fixture_identity
 from app.utils import canonicalize_league_name, canonicalize_team_name, clamp, parse_datetime, score_event_match
 
 ESPN_SOCCER_LEAGUE_ALIASES = {
@@ -147,7 +150,7 @@ class EspnContextProvider:
                     url = f'{self.site_base_url}/sports/soccer/{slug}/scoreboard'
                     stats['scoreboard_requests'] += 1
                     try:
-                        response = await client.get(url, params={'dates': target_day})
+                        response = await client.get(url, params={'dates': target_day, 'limit': 1000})
                     except Exception as exc:
                         stats['response_errors'] += 1
                         stats['last_body_preview'] = f'scoreboard request failed: {exc}'
@@ -259,7 +262,13 @@ class EspnContextProvider:
         return discovered[:limit]
 
     def _league_slug(self, league_name: str) -> str | None:
+        college_slug = ncaa_league_slug(league_name)
+        if college_slug:
+            return college_slug
         key = canonicalize_league_name(league_name)
+        # Do not spend quota on a men's league for women/youth competitions.
+        if re.search(r"\b(?:women|womens|female|u\d{2}|under \d{2})\b", key):
+            return None
         candidates = [key]
         compact = key.replace(' - ', ' ').replace('-', ' ')
         if compact not in candidates:
@@ -298,6 +307,17 @@ class EspnContextProvider:
         best_quality: str | None = None
         best_score = 0.0
         for slug, event in pool:
+            if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+                competition = self._event_competition(event)
+                state = ((competition.get('status') or event.get('status') or {}).get('type') or {}).get('state')
+                if state and state != 'pre':
+                    continue
+                if direct_fixture_identity(match, espn_event_identity(event, slug)):
+                    # Ambiguous provider receipts cannot be decided by response order.
+                    if best_event is not None and best_event.get('id') != event.get('id'):
+                        return None, None, None
+                    best_event, best_slug, best_quality = event, slug, 'exact'
+                continue
             start = self._event_start(event)
             if start is None:
                 continue
@@ -319,6 +339,8 @@ class EspnContextProvider:
                 best_quality = quality
                 best_event = event
                 best_slug = slug
+        if os.getenv('PUBLICATION_PROFILE') == 'daily_quality':
+            return best_event, best_slug, best_quality
         threshold = float(getattr(self.settings, 'espn_event_match_threshold', 44.0) or 44.0)
         return (best_event, best_slug, best_quality) if best_score >= threshold else (None, None, None)
 
@@ -342,62 +364,64 @@ class EspnContextProvider:
         draw_prob: float | None = None
         summary_payload: dict[str, Any] | None = None
 
-        probability_url = f'{self.core_base_url}/sports/soccer/leagues/{slug}/events/{event_id}/competitions/{competition_id}/probabilities'
-        stats['probability_requests'] += 1
-        try:
-            response = await client.get(probability_url)
-        except Exception as exc:
-            stats['response_errors'] += 1
-            stats['last_body_preview'] = f'probabilities request failed: {exc}'
-            response = None
-        if response is not None:
-            stats['http_statuses'].append(response.status_code)
-            stats['last_body_preview'] = response.text[:1200]
-            if response.status_code == 200:
-                payload = self._safe_json(response)
-                item = self._probability_item(payload)
-                if item is not None:
-                    home_prob = self._to_float(item.get('homeWinPercentage'))
-                    away_prob = self._to_float(item.get('awayWinPercentage'))
-                    draw_prob = self._to_float(item.get('tiePercentage'))
-                    if len(preview['sample_probabilities']) < 3:
-                        preview['sample_probabilities'].append(item)
-            else:
-                soft_statuses = {str(item).strip() for item in (getattr(self.settings, 'espn_soft_fail_statuses', []) or [])}
-                if str(response.status_code) in soft_statuses:
-                    stats['soft_failures'] += 1
+        scoreboard_only = os.getenv('PUBLICATION_PROFILE') == 'daily_quality' and slug.startswith('usa.ncaa.')
+        if not scoreboard_only:
+            probability_url = f'{self.core_base_url}/sports/soccer/leagues/{slug}/events/{event_id}/competitions/{competition_id}/probabilities'
+            stats['probability_requests'] += 1
+            try:
+                response = await client.get(probability_url)
+            except Exception as exc:
+                stats['response_errors'] += 1
+                stats['last_body_preview'] = f'probabilities request failed: {exc}'
+                response = None
+            if response is not None:
+                stats['http_statuses'].append(response.status_code)
+                stats['last_body_preview'] = response.text[:1200]
+                if response.status_code == 200:
+                    payload = self._safe_json(response)
+                    item = self._probability_item(payload)
+                    if item is not None:
+                        home_prob = self._to_float(item.get('homeWinPercentage'))
+                        away_prob = self._to_float(item.get('awayWinPercentage'))
+                        draw_prob = self._to_float(item.get('tiePercentage'))
+                        if len(preview['sample_probabilities']) < 3:
+                            preview['sample_probabilities'].append(item)
                 else:
-                    stats['response_errors'] += 1
+                    soft_statuses = {str(item).strip() for item in (getattr(self.settings, 'espn_soft_fail_statuses', []) or [])}
+                    if str(response.status_code) in soft_statuses:
+                        stats['soft_failures'] += 1
+                    else:
+                        stats['response_errors'] += 1
 
-        summary_url = f'{self.site_base_url}/sports/soccer/{slug}/summary'
-        stats['summary_requests'] += 1
-        try:
-            response = await client.get(summary_url, params={'event': event_id})
-        except Exception as exc:
-            stats['response_errors'] += 1
-            stats['last_body_preview'] = f'summary request failed: {exc}'
-            response = None
-        if response is not None:
-            stats['http_statuses'].append(response.status_code)
-            stats['last_body_preview'] = response.text[:1200]
-            if response.status_code == 200:
-                payload = self._safe_json(response)
-                if isinstance(payload, dict):
-                    summary_payload = payload
-                    predictor = self._extract_predictor(payload)
-                    if predictor is not None and (home_prob is None or away_prob is None):
-                        maybe_home = self._to_float((predictor.get('homeTeam') or {}).get('gameProjection'))
-                        maybe_away = self._to_float((predictor.get('awayTeam') or {}).get('gameProjection'))
-                        if maybe_home is not None:
-                            home_prob = maybe_home / 100.0 if maybe_home > 1.0 else maybe_home
-                        if maybe_away is not None:
-                            away_prob = maybe_away / 100.0 if maybe_away > 1.0 else maybe_away
-            else:
-                soft_statuses = {str(item).strip() for item in (getattr(self.settings, 'espn_soft_fail_statuses', []) or [])}
-                if str(response.status_code) in soft_statuses:
-                    stats['soft_failures'] += 1
+            summary_url = f'{self.site_base_url}/sports/soccer/{slug}/summary'
+            stats['summary_requests'] += 1
+            try:
+                response = await client.get(summary_url, params={'event': event_id})
+            except Exception as exc:
+                stats['response_errors'] += 1
+                stats['last_body_preview'] = f'summary request failed: {exc}'
+                response = None
+            if response is not None:
+                stats['http_statuses'].append(response.status_code)
+                stats['last_body_preview'] = response.text[:1200]
+                if response.status_code == 200:
+                    payload = self._safe_json(response)
+                    if isinstance(payload, dict):
+                        summary_payload = payload
+                        predictor = self._extract_predictor(payload)
+                        if predictor is not None and (home_prob is None or away_prob is None):
+                            maybe_home = self._to_float((predictor.get('homeTeam') or {}).get('gameProjection'))
+                            maybe_away = self._to_float((predictor.get('awayTeam') or {}).get('gameProjection'))
+                            if maybe_home is not None:
+                                home_prob = maybe_home / 100.0 if maybe_home > 1.0 else maybe_home
+                            if maybe_away is not None:
+                                away_prob = maybe_away / 100.0 if maybe_away > 1.0 else maybe_away
                 else:
-                    stats['response_errors'] += 1
+                    soft_statuses = {str(item).strip() for item in (getattr(self.settings, 'espn_soft_fail_statuses', []) or [])}
+                    if str(response.status_code) in soft_statuses:
+                        stats['soft_failures'] += 1
+                    else:
+                        stats['response_errors'] += 1
 
         home_form = self._form_score(home_team)
         away_form = self._form_score(away_team)
@@ -409,6 +433,8 @@ class EspnContextProvider:
             summary_home_form, summary_away_form = self._summary_form_scores(summary_payload, match.home_team, match.away_team)
             home_form = home_form if home_form is not None else summary_home_form
             away_form = away_form if away_form is not None else summary_away_form
+        if scoreboard_only and (home_form is None or away_form is None):
+            return None
         partial_context = False
         if home_prob is None or away_prob is None:
             if home_form is not None and away_form is not None:
@@ -482,6 +508,7 @@ class EspnContextProvider:
                 'home_absences': home_injuries,
                 'away_absences': away_injuries,
                 'espn_partial_context': partial_context,
+                'espn_scoreboard_only': scoreboard_only,
             },
         )
 

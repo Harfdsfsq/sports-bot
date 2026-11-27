@@ -16,13 +16,22 @@ def main():
             os.environ[key] = value
     from app.config import Settings
     from app.providers.odds_api_io import OddsApiIoProvider
+    from app.providers.sstats_pari_daily import SStatsPariDailyProvider
     from app.services.daily_match_registry import DailyMatchRegistry, write_json
-    from app.services.daily_price_watch import watch_pre_kickoff_prices
+    from app.services.daily_price_watch import refresh_totals25_gaps, watch_pre_kickoff_prices
     from app.services.market_monitor import MarketMonitor
 
     settings = Settings(_env_file=None)
     registry = DailyMatchRegistry(Path('.data/daily_quality/registry.json'), datetime.now(UTC))
-    summary = asyncio.run(watch_pre_kickoff_prices(registry, MarketMonitor(settings), OddsApiIoProvider(settings)))
+    odds = OddsApiIoProvider(settings)
+    pari = SStatsPariDailyProvider(settings)
+
+    async def collect():
+        closing = await watch_pre_kickoff_prices(registry, MarketMonitor(settings), odds, pari_provider=pari)
+        closing["totals25_gap_collection"] = await refresh_totals25_gaps(registry, odds, pari_provider=pari)
+        return closing
+
+    summary = asyncio.run(collect())
     summary.update(mode='price_watch_only', created_at_utc=datetime.now(UTC).isoformat())
     write_json('.data/exports/latest-price-watch.json', summary)
     if summary.get('error_type'):
