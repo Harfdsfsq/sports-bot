@@ -21,6 +21,7 @@ from app.utils import normalize_bookmaker_name
 
 PROTOCOL = "priced-totals-v1"
 MODELS = ("market", "current_goals", "opponent", "shrunk", "overdispersed", "calibrated")
+PAPER_BOOKS = frozenset({"bet365", "unibet", "williamhill", "1xbet", "betano", "pari"})
 
 
 def logit(p):

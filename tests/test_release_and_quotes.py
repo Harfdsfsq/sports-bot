@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.schemas import Offer
+from app.schemas import MatchContext, Offer
 from app.services.daily_match_registry import DailyMatchRegistry, match_identity, read_json
 from tests.test_native_data_expansion import fixture
 
@@ -130,6 +130,46 @@ def test_pari_closing_watch_is_independent_and_never_restamps_prices(tmp_path, m
     assert bool(rows["paper|opponent"].get("reference_price")) is not stale
     if not stale:
         assert rows["paper|opponent"]["reference_at"] == at
+
+
+def test_quote_only_gap_collection_feeds_next_run_and_leaves_misses_retryable(tmp_path):
+    from app.services.daily_price_watch import fresh_totals25_books, refresh_totals25_gaps
+
+    now = datetime.now(UTC)
+    registry = DailyMatchRegistry(tmp_path / "registry.json", now)
+    m = replace(fixture(now), metadata={"provider_source_ids": {"sstats_pari": "42"}})
+    no_market = replace(m, home_team="Liverpool", metadata={})
+    no_context = replace(m, home_team="Brighton", metadata={})
+    registry.sync([m, no_market, no_context])
+    contexts = {x.match_key: MatchContext("sstats", {"HomeTeam": x.home_team, "AwayTeam": x.away_team},
+                                          expected_home=1, expected_away=1) for x in (m, no_market)}
+    registry.record("sstats", "context", [m, no_market], contexts, {}, observed_at=now)
+    calls = []
+
+    def quotes(source, books, at):
+        return [Offer(source, book, "totals", side, 1.95, 2.5,
+                      metadata={"fetched_at_utc": at.isoformat()})
+                for book in books for side in ("over", "under")]
+
+    class Odds:
+        async def fetch_offers(self, targets):
+            calls.append([x.match_key for x in targets])
+            return {m.match_key: quotes("odds_api_io", ["Unibet", "Betano"], now),
+                    no_market.match_key: quotes("odds_api_io", ["Unibet"], now - timedelta(minutes=10))}, {}, {}
+
+    class Pari:
+        async def fetch_offers(self, targets):
+            assert [x.match_key for x in targets] == [m.match_key]
+            return {m.match_key: quotes("sstats_pari", ["Pari"], now)}, {}, {}
+
+    report = asyncio.run(refresh_totals25_gaps(registry, Odds(), pari_provider=Pari()))
+    assert report["targets"] == 2 and report["matches_with_three_books"] == 1
+    assert len(calls) == 1 and set(calls[0]) == {m.match_key, no_market.match_key}
+    restored = DailyMatchRegistry(registry.path, now + timedelta(minutes=5))
+    assert fresh_totals25_books(restored, m) == {"unibet", "betano", "pari"}
+    assert "odds_api_io:offers" not in restored.data["matches"][match_identity(no_market)]["attempts"]
+    restored.now = now + timedelta(minutes=16)
+    assert not fresh_totals25_books(restored, m)
 
 
 @pytest.mark.parametrize("problem", ["none", "daily_limit", "drawdown"])

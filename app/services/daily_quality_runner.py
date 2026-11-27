@@ -839,7 +839,7 @@ class DailyQualityRunner(PredictionRunner):
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary["goal_research"] = {"status": "error", "error_type": type(exc).__name__}
             try:
-                from app.services.totals_strategy_lab import run_lab
+                from app.services.totals_strategy_lab import PAPER_BOOKS, run_lab
 
                 self.registry.now = datetime.now(UTC)
                 capture_started_at = self.registry.now
@@ -862,7 +862,7 @@ class DailyQualityRunner(PredictionRunner):
                     fresh_contexts,
                     self.registry,
                     self.registry.now,
-                    allowed_books={"bet365", "unibet", "williamhill", "1xbet", "betano", "pari"},
+                    allowed_books=PAPER_BOOKS,
                 )
             except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
                 summary["totals_strategy_lab"] = {"status": "error", "error_type": type(exc).__name__}
